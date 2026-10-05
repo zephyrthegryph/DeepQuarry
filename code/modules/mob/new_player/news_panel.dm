@@ -21,19 +21,18 @@ CAPABILITIES(/mob/new_player)
 	rel_set(src, nameof(host), host_mob)
 	rel_set(src, nameof(channel), CHANNEL)
 
-DECLARE_UI_STATE(/datum/news_panel, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/news_panel, "LatestNews", UI_TITLE("Latest News"))
+CAPABILITIES(/datum/news_panel)
+	interface("LatestNews", title = "Latest News", state = nameof(GLOB.tgui_always_state))
+	op("next", ui_act("next"), then(PROC_REF(ui_act_next)))
+	op("prev", ui_act("prev"), then(PROC_REF(ui_act_prev)))
 
 /datum/news_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/news_panel, "merge:ui_data_datum_news_panel{channel_name:text,page:bool,total:num,has_messages:bool,title:text,author:text,body:text}")
-
 /// The computed part of /datum/news_panel's window data (declared on its UI_DATA row).
-/datum/news_panel/proc/ui_data_datum_news_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/news_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host || !channel)
 		return data
@@ -48,15 +47,14 @@ UI_DATA_REPLACE(/datum/news_panel, "merge:ui_data_datum_news_panel{channel_name:
 		data["body"] = M.body
 	return data
 
-/datum/news_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/news_panel/proc/ui_gate(datum/act/op/A)
 	if(!host || !channel)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/news_panel, "next", ui_act_next)
-UI_ACT_PROC(/datum/news_panel, ui_act_next)
+/datum/news_panel/proc/ui_act_next(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!host.current_news_page || !channel.messages || host.current_news_page == channel.messages.len)
 		return TRUE
 	host.current_news_page++
@@ -64,8 +62,9 @@ UI_ACT_PROC(/datum/news_panel, ui_act_next)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/news_panel, "prev", ui_act_prev)
-UI_ACT_PROC(/datum/news_panel, ui_act_prev)
+/datum/news_panel/proc/ui_act_prev(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!host.current_news_page || !channel.messages || host.current_news_page <= 1)
 		return TRUE
 	host.current_news_page--

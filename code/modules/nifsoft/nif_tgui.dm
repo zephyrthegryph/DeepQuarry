@@ -23,6 +23,11 @@ CAPABILITIES(/obj/item/nif)
 	links(/obj/item/nif::human, /mob/living/carbon/human::nif)
 	owns_many(nameof(nifsofts), /datum/nifsoft)
 	owns_one(nameof(menu_ref), /datum/nif_menu)
+	interface("NIF", state = nameof(GLOB.tgui_nif_main_state), input = in_hand())
+	op("setTheme", ui_act("setTheme", arg("theme")), then(PROC_REF(ui_act_settheme)))
+	op("toggle_module", ui_act("toggle_module", arg("module", schema_ref(/datum/nifsoft))), then(PROC_REF(ui_act_toggle_module)))
+	op("uninstall", ui_act("uninstall", arg("module", schema_ref(/datum/nifsoft))), then(PROC_REF(ui_act_uninstall)))
+	op("dismissNotification", ui_act("dismissNotification"), then(PROC_REF(ui_act_dismissnotification)))
 
 /**
  * Small helper datum to manage the HUD icon.
@@ -110,12 +115,10 @@ CAPABILITIES(/obj/item/nif)
 /**
  * The NIF State ensures that only our authorized implanted user can touch us.
  */
-DECLARE_UI_STATE(/obj/item/nif, GLOB.tgui_nif_main_state)
 
 /**
  * Standard TGUI stub to open the NIF.js template.
  */
-DECLARE_UI(/obj/item/nif, "NIF")
 
 /obj/item/nif/ui_prepare(mob/user, datum/tgui/ui)
 	if(!ishuman(user))
@@ -126,7 +129,16 @@ DECLARE_UI(/obj/item/nif, "NIF")
  * tgui_data gives the UI any relevant data it needs.
  * In our case, that's basically everything from our statpanel.
  */
-UI_DATA(/obj/item/nif, "valid_themes=valid_ui_themes:list", "last_notification", "nif_stat=stat", "merge:ui_data_obj_item_nif{theme:unknown,nutrition:num,isSynthetic:unknown,nif_percent:num,modules:list}")
+/obj/item/nif/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["valid_themes"] = valid_ui_themes
+	data["last_notification"] = last_notification
+	data["nif_stat"] = stat
+	var/list/merged_1 = ui_data_obj_item_nif(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/nif's window data (declared on its UI_DATA row).
 /obj/item/nif/proc/ui_data_obj_item_nif(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -166,15 +178,15 @@ UI_DATA(/obj/item/nif, "valid_themes=valid_ui_themes:list", "last_notification",
 /**
  * tgui_act handles all user input in the UI.
  */
-UI_ACT(/obj/item/nif, "setTheme", ui_act_settheme, UI_ARG_VALUE("theme"))
-UI_ACT_PROC(/obj/item/nif, ui_act_settheme)
-	if((params["theme"] in valid_ui_themes) || params["theme"] == null)
-		save_data["ui_theme"] = params["theme"]
+/obj/item/nif/proc/ui_act_settheme(datum/act/op/A, theme)
+	if((theme in valid_ui_themes) || theme == null)
+		save_data["ui_theme"] = theme
 	return TRUE
 
-UI_ACT(/obj/item/nif, "toggle_module", ui_act_toggle_module, UI_ARG_REF("module", "nifsofts", /datum/nifsoft))
-UI_ACT_PROC(/obj/item/nif, ui_act_toggle_module)
-	var/datum/nifsoft/NS = params["module"]
+/obj/item/nif/proc/ui_act_toggle_module(datum/act/op/A, module)
+	if(!isnull(module) && !(module in src.nifsofts))
+		return FALSE
+	var/datum/nifsoft/NS = module
 	if(!istype(NS))
 		return
 	if(NS.activates)
@@ -184,16 +196,16 @@ UI_ACT_PROC(/obj/item/nif, ui_act_toggle_module)
 			NS.activate()
 	return TRUE
 
-UI_ACT(/obj/item/nif, "uninstall", ui_act_uninstall, UI_ARG_REF("module", "nifsofts", /datum/nifsoft))
-UI_ACT_PROC(/obj/item/nif, ui_act_uninstall)
-	var/datum/nifsoft/NS = params["module"]
+/obj/item/nif/proc/ui_act_uninstall(datum/act/op/A, module)
+	if(!isnull(module) && !(module in src.nifsofts))
+		return FALSE
+	var/datum/nifsoft/NS = module
 	if(!istype(NS))
 		return
 	NS.uninstall()
 	return TRUE
 
-UI_ACT(/obj/item/nif, "dismissNotification", ui_act_dismissnotification)
-UI_ACT_PROC(/obj/item/nif, ui_act_dismissnotification)
+/obj/item/nif/proc/ui_act_dismissnotification(datum/act/op/A)
 	last_notification = null
 	return TRUE
 

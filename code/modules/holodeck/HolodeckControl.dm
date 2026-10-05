@@ -84,12 +84,19 @@
 /**
  * Open the UI!
  */
-DECLARE_UI(/obj/machinery/computer/HolodeckControl, "Holodeck")
 
 /**
  * Data for the TGUI UI
  */
-UI_DATA(/obj/machinery/computer/HolodeckControl, "currentProgram=current_program:text", "safetyDisabled=safety_disabled:num", "merge:ui_data_obj_machinery_computer_HolodeckControl{supportedPrograms:list,restrictedPrograms:list,isSilicon:bool,emagged:num,gravity:bool}")
+/obj/machinery/computer/HolodeckControl/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["currentProgram"] = current_program
+	data["safetyDisabled"] = safety_disabled
+	var/list/merged_1 = ui_data_obj_machinery_computer_HolodeckControl(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/computer/HolodeckControl's window data (declared on its UI_DATA row).
 /obj/machinery/computer/HolodeckControl/proc/ui_data_obj_machinery_computer_HolodeckControl(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -116,17 +123,16 @@ UI_DATA(/obj/machinery/computer/HolodeckControl, "currentProgram=current_program
 
 	return data
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "program", ui_act_program, UI_ARG_TEXT("program"))
-UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_program)
-	var/prog = params["program"]
+/obj/machinery/computer/HolodeckControl/proc/ui_act_program(datum/act/op/A, program)
+	var/prog = program
 	if(prog in (supported_programs + restricted_programs))
 		if(loadProgram(prog))
 			current_program = prog
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "AIoverride", ui_act_aioverride)
-UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_aioverride)
-	if(!issilicon(ui.user))
+/obj/machinery/computer/HolodeckControl/proc/ui_act_aioverride(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		return
 
 	if(safety_disabled && emagged)
@@ -135,15 +141,14 @@ UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_aioverride)
 	safety_disabled = !safety_disabled
 	update_projections()
 	if(safety_disabled)
-		message_admins("[key_name_admin(ui.user)] overrode the holodeck's safeties")
-		log_game("[key_name(ui.user)] overrided the holodeck's safeties")
+		message_admins("[key_name_admin(user)] overrode the holodeck's safeties")
+		log_game("[key_name(user)] overrided the holodeck's safeties")
 	else
-		message_admins("[key_name_admin(ui.user)] restored the holodeck's safeties")
-		log_game("[key_name(ui.user)] restored the holodeck's safeties")
+		message_admins("[key_name_admin(user)] restored the holodeck's safeties")
+		log_game("[key_name(user)] restored the holodeck's safeties")
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "gravity", ui_act_gravity)
-UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_gravity)
+/obj/machinery/computer/HolodeckControl/proc/ui_act_gravity(datum/act/op/A)
 	toggleGravity(linkedholodeck())
 	return TRUE
 
@@ -189,6 +194,10 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 CAPABILITIES(/obj/machinery/computer/HolodeckControl)
 	ref_many(nameof(holographic_objs))
 	ref_many(nameof(holographic_mobs))
+	interface("Holodeck")
+	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
+	op("AIoverride", ui_act("AIoverride"), then(PROC_REF(ui_act_aioverride)))
+	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))
 
 /obj/machinery/computer/HolodeckControl/on_destroy(force)
 	emergencyShutdown()

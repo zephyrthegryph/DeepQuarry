@@ -55,6 +55,15 @@ CAPABILITIES(/obj/item/dogborg/sleeper)
 	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
 	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("RobotSleeper", state = nameof(GLOB.tgui_conscious_state), input = in_hand())
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("clean", ui_act("clean"), then(PROC_REF(ui_act_clean)))
+	op("analyze", ui_act("analyze"), then(PROC_REF(ui_act_analyze)))
+	op("port", ui_act("port", arg("value", schema_text(4096))), then(PROC_REF(ui_act_port)))
+	op("ingest", ui_act("ingest"), then(PROC_REF(ui_act_ingest)))
+	op("deliveryslot", ui_act("deliveryslot", arg("value", schema_text(4096))), then(PROC_REF(ui_act_deliveryslot)))
+	op("slot_eject", ui_act("slot_eject"), then(PROC_REF(ui_act_slot_eject)))
+	op("inject", ui_act("inject", arg("value", schema_text(4096))), then(PROC_REF(ui_act_inject)))
 //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
@@ -284,10 +293,6 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/dogborg/sleeper, GLOB.tgui_conscious_state)
-
-DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
-
 /obj/item/dogborg/sleeper/ui_title(mob/user)
 	return "[name] Console"
 
@@ -308,10 +313,8 @@ DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
 	data["chems"] = robot_chems
 	return data
 
-UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleeper{our_patient:list,eject_port:text,cleaning:num,medsensor:unknown,delivery:num,delivery_tag:text,delivery_lists:list,compactor:num,max_item_count:num,ore_storage:num,current_capacity:num,max_ore_storage:num,contents:list,deliveryslot_1:bool,deliveryslot_2:bool,deliveryslot_3:bool,items_preserved:list,has_destructive_analyzer:num,techweb_name:unknown}")
-
 /// The computed part of /obj/item/dogborg/sleeper's window data (declared on its UI_DATA row).
-/obj/item/dogborg/sleeper/proc/ui_data_obj_item_dogborg_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/dogborg/sleeper/ui_data(datum/act/eval/A)
 	var/list/patient_data
 
 	if(patient)
@@ -368,20 +371,21 @@ UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleep
 		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
 	return data
-/obj/item/dogborg/sleeper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(ui.user == patient)
+/obj/item/dogborg/sleeper/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user == patient)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_eject)
+/obj/item/dogborg/sleeper/proc/ui_act_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	go_out()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "clean", ui_act_clean)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_clean)
+/obj/item/dogborg/sleeper/proc/ui_act_clean(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(cleaning)
 		return FALSE
 	cleaning = TRUE
@@ -392,34 +396,39 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_clean)
 		to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "analyze", ui_act_analyze)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_analyze)
+/obj/item/dogborg/sleeper/proc/ui_act_analyze(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	med_analyzer.scan_mob(patient,hound)
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "port", ui_act_port, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_port)
-	var/new_port = params["value"]
+/obj/item/dogborg/sleeper/proc/ui_act_port(datum/act/op/A, value)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_port = value
 	if(!(new_port in list("disposal", "ingestion")))
 		return FALSE
 	eject_port = new_port
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "ingest", ui_act_ingest)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_ingest)
+/obj/item/dogborg/sleeper/proc/ui_act_ingest(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	vore_ingest_all()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "deliveryslot", ui_act_deliveryslot, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_deliveryslot)
-	var/new_tag = params["value"]
+/obj/item/dogborg/sleeper/proc/ui_act_deliveryslot(datum/act/op/A, value)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_tag = value
 	if(!(new_tag in deliverylists))
 		return FALSE
 	delivery_tag = new_tag
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "slot_eject", ui_act_slot_eject)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_slot_eject)
+/obj/item/dogborg/sleeper/proc/ui_act_slot_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!length(deliverylists[delivery_tag]))
 		return FALSE
 	hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
@@ -430,18 +439,20 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_slot_eject)
 	deliverylists[delivery_tag].Cut()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "inject", ui_act_inject, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
-	if(!patient || (patient.stat & DEAD))
-		to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))
+/obj/item/dogborg/sleeper/proc/ui_act_inject(datum/act/op/A, value)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	var/selected_reagent = params["value"]
+	if(!patient || (patient.stat & DEAD))
+		to_chat(user, span_notice("ERROR: Subject cannot metabolise chemicals."))
+		return FALSE
+	var/selected_reagent = value
 	if(!(selected_reagent in TYPE_TABLE_GET(src, sleeper_injection_chems)))
 		return FALSE
 	if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
-		inject_chem(ui.user, selected_reagent)
+		inject_chem(user, selected_reagent)
 	else
-		to_chat(ui.user, span_notice("ERROR: Subject is not in stable condition for injections."))
+		to_chat(user, span_notice("ERROR: Subject is not in stable condition for injections."))
 	return TRUE
 
 /obj/item/dogborg/sleeper/proc/inject_chem(mob/user, chem)

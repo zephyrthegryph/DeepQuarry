@@ -30,6 +30,10 @@ CAPABILITIES(/obj/item/walkpod)
 	op("stop", ui_act(), then(PROC_REF(ui_act_stop)))
 	op("play", ui_act(), then(PROC_REF(ui_act_play)))
 	owns_one(nameof(deployed_headpods), /obj/item/headpods)
+	interface("Jukebox", title = "PodZu Music Player", input = in_hand())
+	op("change_track", ui_act("change_track", arg("change_track", schema_ref(/datum/track))), then(PROC_REF(ui_act_change_track)))
+	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
+	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
 
 /// Person whomst is listening to us. periodic_step() checks on them and plays music while set (DECLARE_PERIODIC_WHILE).
 OM_FIELD_VIEW(/obj/item/walkpod, mob/living, listener, CHANGE_EXPLICIT)
@@ -172,9 +176,16 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 /obj/item/walkpod/proc/getTracksList()
 	return SSmedia_tracks.jukebox_tracks
 
-DECLARE_UI(/obj/item/walkpod, "Jukebox", UI_TITLE("PodZu Music Player"))
-
-UI_DATA(/obj/item/walkpod, "playing:num", "loop_mode", "volume:num", "merge:ui_data_obj_item_walkpod{current_track_ref:text,current_track:unknown,current_genre:unknown,percent:unknown,tracks:list}")
+/obj/item/walkpod/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["playing"] = playing
+	data["loop_mode"] = loop_mode
+	data["volume"] = volume
+	var/list/merged_1 = ui_data_obj_item_walkpod(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/walkpod's window data (declared on its UI_DATA row).
 /obj/item/walkpod/proc/ui_data_obj_item_walkpod(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -196,23 +207,22 @@ UI_DATA(/obj/item/walkpod, "playing:num", "loop_mode", "volume:num", "merge:ui_d
 
 	return data
 
-UI_ACT(/obj/item/walkpod, "change_track", ui_act_change_track, UI_ARG_REF("change_track", "proc:getTracksList", /datum/track))
-UI_ACT_PROC(/obj/item/walkpod, ui_act_change_track)
-	var/datum/track/T = params["change_track"]
+/obj/item/walkpod/proc/ui_act_change_track(datum/act/op/A, change_track)
+	if(!isnull(change_track) && !(change_track in getTracksList()))
+		return FALSE
+	var/datum/track/T = change_track
 	if(istype(T))
 		rel_set(src, nameof(/obj/item/walkpod::current_track), T)
 		StartPlaying()
 	return TRUE
 
-UI_ACT(/obj/item/walkpod, "loopmode", ui_act_loopmode, UI_ARG_NUM("loopmode"))
-UI_ACT_PROC(/obj/item/walkpod, ui_act_loopmode)
-	var/newval = params["loopmode"]
+/obj/item/walkpod/proc/ui_act_loopmode(datum/act/op/A, loopmode)
+	var/newval = loopmode
 	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
 	return TRUE
 
-UI_ACT(/obj/item/walkpod, "volume", ui_act_volume, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/item/walkpod, ui_act_volume)
-	var/newval = params["val"]
+/obj/item/walkpod/proc/ui_act_volume(datum/act/op/A, val)
+	var/newval = val
 	volume = clamp(newval, 0, 1)
 	update_music() // To broadcast volume change without restarting song
 	return TRUE

@@ -13,6 +13,11 @@
 
 CAPABILITIES(/obj/structure/noticeboard)
 	owns_many(nameof(notices))
+	interface("NoticeBoard")
+	op("read", ui_act("read", arg("ref", schema_ref(/obj/item/paper))), then(PROC_REF(ui_act_read)))
+	op("look", ui_act("look", arg("ref", schema_ref(/obj/item/photo))), then(PROC_REF(ui_act_look)))
+	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
+	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
 
 /obj/structure/noticeboard/Initialize(mapload)
 	. = ..()
@@ -161,12 +166,8 @@ DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 	tgui_interact(user)
 	return ..()
 
-DECLARE_UI(/obj/structure/noticeboard, "NoticeBoard")
-
-UI_DATA(/obj/structure/noticeboard, "merge:ui_data_obj_structure_noticeboard{notices:list}")
-
 /// The computed part of /obj/structure/noticeboard's window data (declared on its UI_DATA row).
-/obj/structure/noticeboard/proc/ui_data_obj_structure_noticeboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/structure/noticeboard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/tgui_notices = list()
@@ -180,43 +181,49 @@ UI_DATA(/obj/structure/noticeboard, "merge:ui_data_obj_structure_noticeboard{not
 	data["notices"] = tgui_notices
 	return data
 
-UI_ACT(/obj/structure/noticeboard, "read", ui_act_read, UI_ARG_REF("ref", null, /obj/item/paper))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_read)
-	var/obj/item/paper/P = params["ref"]
-	if(P && P.loc == src)
-		P.show_content(ui.user)
-	. = TRUE
-
-UI_ACT(/obj/structure/noticeboard, "look", ui_act_look, UI_ARG_REF("ref", null, /obj/item/photo))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_look)
-	var/obj/item/photo/P = params["ref"]
-	if(P && P.loc == src)
-		P.show(ui.user)
-	. = TRUE
-
-UI_ACT(/obj/structure/noticeboard, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_remove)
-	if(!in_range(src, ui.user))
+/obj/structure/noticeboard/proc/ui_act_read(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
 		return FALSE
-	var/obj/item/I = params["ref"]
+	var/obj/item/paper/P = ref
+	if(P && P.loc == src)
+		P.show_content(user)
+	. = TRUE
+
+/obj/structure/noticeboard/proc/ui_act_look(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/photo/P = ref
+	if(P && P.loc == src)
+		P.show(user)
+	. = TRUE
+
+/obj/structure/noticeboard/proc/ui_act_remove(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!in_range(src, user))
+		return FALSE
+	var/obj/item/I = ref
 	remove_paper(I)
 	if(istype(I))
-		ui.user.put_in_hands(I)
-	add_fingerprint(ui.user)
+		user.put_in_hands(I)
+	add_fingerprint(user)
 	. = TRUE
 
-UI_ACT(/obj/structure/noticeboard, "write", ui_act_write, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_write)
-	if(!in_range(src, ui.user))
+/obj/structure/noticeboard/proc/ui_act_write(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
 		return FALSE
-	var/obj/item/P = params["ref"]
+	if(!in_range(src, user))
+		return FALSE
+	var/obj/item/P = ref
 	if((P && P.loc == src)) //if the paper's on the board
-		var/mob/living/M = ui.user
+		var/mob/living/M = user
 		if(istype(M))
 			var/obj/item/pen/E = M.get_type_in_hands(/obj/item/pen)
 			if(E)
 				add_fingerprint(M)
-				P.attackby(E, ui.user)
+				P.attackby(E, user)
 			else
 				to_chat(M, span_notice("You'll need something to write with!"))
 				. = TRUE

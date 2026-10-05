@@ -19,11 +19,16 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/computer/telecomms/traffic, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/machinery/computer/telecomms/traffic, "TrafficControl", UI_TITLE("Telecommunications Traffic Control"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/telecomms/traffic, "temp:text", "network", "screen:num", "merge:ui_data_obj_machinery_computer_telecomms_traffic{servers:list,selected_id:num,autoruncode:bool}")
+/obj/machinery/computer/telecomms/traffic/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["temp"] = temp
+	data["network"] = network
+	data["screen"] = screen
+	var/list/merged_1 = ui_data_obj_machinery_computer_telecomms_traffic(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/computer/telecomms/traffic's window data (declared on its UI_DATA row).
 /obj/machinery/computer/telecomms/traffic/proc/ui_data_obj_machinery_computer_telecomms_traffic(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -46,51 +51,51 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/traffic, "temp:text", "network
 	set_temp("")
 	return OP_OK
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "set_network", ui_act_set_network)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_set_network)
-	traffic_set_network(ui.user)
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_set_network(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_set_network(user)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_scan)
-	traffic_operation(ui.user, "scan")
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_operation(user, "scan")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "flush_buffer", ui_act_flush_buffer)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_flush_buffer)
-	traffic_operation(ui.user, "release")
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_flush_buffer(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_operation(user, "release")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "view_server", ui_act_view_server, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_view_server)
-	var/id = "[params["id"]]"
-	traffic_view_server(ui.user, id)
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_view_server(datum/act/op/A, id_arg)
+	var/mob/user = A.actor
+	var/id = "[id_arg]"
+	traffic_view_server(user, id)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "main_menu", ui_act_main_menu)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_main_menu)
-	traffic_operation(ui.user, "mainmenu")
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_main_menu(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_operation(user, "mainmenu")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_refresh)
-	traffic_operation(ui.user, "refresh")
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_refresh(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_operation(user, "refresh")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "edit_code", ui_act_edit_code)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_edit_code)
-	traffic_operation(ui.user, "editcode")
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_edit_code(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_operation(user, "editcode")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/traffic, "toggle_run", ui_act_toggle_run)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/traffic, ui_act_toggle_run)
-	traffic_operation(ui.user, "togglerun")
+/obj/machinery/computer/telecomms/traffic/proc/ui_act_toggle_run(datum/act/op/A)
+	var/mob/user = A.actor
+	traffic_operation(user, "togglerun")
 	SStgui.update_uis(src)
 	return TRUE

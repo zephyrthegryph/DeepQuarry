@@ -40,7 +40,7 @@
 	var/before_logs = length(GLOB.lastsignalers)
 	var/datum/data/pda/app/signaller/interim_actor_probe/app = allocate(/datum/data/pda/app/signaller/interim_actor_probe)
 	rel_set(app, nameof(app.test_radio), sender)
-	app.ui_act_signal(user)
+	op_ui_act(user, app, "signal")
 	TEST_ASSERT_EQUAL(sender.actor_ref_seen, REF(user), "the real UI handler forwards its supplied actor")
 	own(receiver.last_signal)
 	TEST_ASSERT_EQUAL(receiver.received_count, 1, "the actual radio service delivers the first transmission")

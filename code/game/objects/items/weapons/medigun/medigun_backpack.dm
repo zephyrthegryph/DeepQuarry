@@ -43,6 +43,15 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))
 	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module, starts = nameof(smodule))
 	owns_one(nameof(bcell), starts = nameof(bcell))
+	interface("Medigun", input = in_hand())
+	op("celleject", ui_act("celleject"), then(PROC_REF(ui_act_celleject)))
+	op("cancel_healing", ui_act("cancel_healing"), then(PROC_REF(ui_act_cancel_healing)))
+	op("toggle_maintenance", ui_act("toggle_maintenance"), then(PROC_REF(ui_act_toggle_maintenance)))
+	op("rem_smodule", ui_act("rem_smodule"), then(PROC_REF(ui_act_rem_smodule)))
+	op("rem_mani", ui_act("rem_mani"), then(PROC_REF(ui_act_rem_mani)))
+	op("rem_laser", ui_act("rem_laser"), then(PROC_REF(ui_act_rem_laser)))
+	op("rem_cap", ui_act("rem_cap"), then(PROC_REF(ui_act_rem_cap)))
+	op("rem_bin", ui_act("rem_bin"), then(PROC_REF(ui_act_rem_bin)))
 
 //backpack item
 /obj/item/medigun_backpack/cmo

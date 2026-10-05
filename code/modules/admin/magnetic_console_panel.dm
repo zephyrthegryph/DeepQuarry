@@ -9,11 +9,32 @@
 // modified (see code/game/machinery/magnet.dm) to call tgui_interact
 // directly instead of the legacy HTML body.
 
-DECLARE_UI(/obj/machinery/magnetic_controller, "MagneticConsole", UI_TITLE("Magnetic Control Console"))
+CAPABILITIES(/obj/machinery/magnetic_controller)
+	interface("MagneticConsole", title = "Magnetic Control Console", state = nameof(GLOB.tgui_default_state))
+	op("set_frequency", ui_act("set_frequency"), then(PROC_REF(ui_act_set_frequency)))
+	op("set_code", ui_act("set_code"), then(PROC_REF(ui_act_set_code)))
+	op("probe", ui_act("probe"), then(PROC_REF(ui_act_probe)))
+	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
+	op("elec_minus", ui_act("elec_minus"), then(PROC_REF(ui_act_elec_minus)))
+	op("elec_plus", ui_act("elec_plus"), then(PROC_REF(ui_act_elec_plus)))
+	op("mag_minus", ui_act("mag_minus"), then(PROC_REF(ui_act_mag_minus)))
+	op("mag_plus", ui_act("mag_plus"), then(PROC_REF(ui_act_mag_plus)))
+	op("speed_minus", ui_act("speed_minus"), then(PROC_REF(ui_act_speed_minus)))
+	op("speed_plus", ui_act("speed_plus"), then(PROC_REF(ui_act_speed_plus)))
+	op("set_path", ui_act("set_path"), then(PROC_REF(ui_act_set_path)))
+	op("toggle_moving", ui_act("toggle_moving"), then(PROC_REF(ui_act_toggle_moving)))
 
-DECLARE_UI_STATE(/obj/machinery/magnetic_controller, GLOB.tgui_default_state)
-
-UI_DATA_REPLACE(/obj/machinery/magnetic_controller, "frequency:num", "code", "speed:num", "path", "merge:ui_data_obj_machinery_magnetic_controller{autolink:bool,moving:bool,magnets:list}")
+/obj/machinery/magnetic_controller/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["frequency"] = frequency
+	data["code"] = code
+	data["speed"] = speed
+	data["path"] = path
+	var/list/merged_1 = ui_data_obj_machinery_magnetic_controller(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/magnetic_controller's window data (declared on its UI_DATA row).
 /obj/machinery/magnetic_controller/proc/ui_data_obj_machinery_magnetic_controller(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -35,9 +56,8 @@ UI_DATA_REPLACE(/obj/machinery/magnetic_controller, "frequency:num", "code", "sp
 	data["magnets"] = magnet_rows
 	return data
 
-/obj/machinery/magnetic_controller/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/magnetic_controller/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return FALSE
 	if(!user)
@@ -46,75 +66,99 @@ UI_DATA_REPLACE(/obj/machinery/magnetic_controller, "frequency:num", "code", "sp
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "set_frequency", ui_act_set_frequency)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_set_frequency)
+/obj/machinery/magnetic_controller/proc/ui_act_set_frequency(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_operation(user, "setfreq")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "set_code", ui_act_set_code)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_set_code)
+/obj/machinery/magnetic_controller/proc/ui_act_set_code(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	// Legacy panel used the same "setfreq" handler for both.
 	magnet_operation(user, "setfreq")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "probe", ui_act_probe)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_probe)
+/obj/machinery/magnetic_controller/proc/ui_act_probe(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_operation(user, "probe")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "toggle_power", ui_act_toggle_power)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_toggle_power)
+/obj/machinery/magnetic_controller/proc/ui_act_toggle_power(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_radio_op(user, "togglepower")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "elec_minus", ui_act_elec_minus)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_elec_minus)
+/obj/machinery/magnetic_controller/proc/ui_act_elec_minus(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_radio_op(user, "minuselec")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "elec_plus", ui_act_elec_plus)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_elec_plus)
+/obj/machinery/magnetic_controller/proc/ui_act_elec_plus(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_radio_op(user, "pluselec")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "mag_minus", ui_act_mag_minus)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_mag_minus)
+/obj/machinery/magnetic_controller/proc/ui_act_mag_minus(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_radio_op(user, "minusmag")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "mag_plus", ui_act_mag_plus)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_mag_plus)
+/obj/machinery/magnetic_controller/proc/ui_act_mag_plus(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_radio_op(user, "plusmag")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "speed_minus", ui_act_speed_minus)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_speed_minus)
+/obj/machinery/magnetic_controller/proc/ui_act_speed_minus(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_operation(user, "minusspeed")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "speed_plus", ui_act_speed_plus)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_speed_plus)
+/obj/machinery/magnetic_controller/proc/ui_act_speed_plus(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_operation(user, "plusspeed")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "set_path", ui_act_set_path)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_set_path)
+/obj/machinery/magnetic_controller/proc/ui_act_set_path(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_operation(user, "setpath")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/magnetic_controller, "toggle_moving", ui_act_toggle_moving)
-UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_toggle_moving)
+/obj/machinery/magnetic_controller/proc/ui_act_toggle_moving(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	magnet_operation(user, "togglemoving")
 	SStgui.update_uis(src)
 	return TRUE

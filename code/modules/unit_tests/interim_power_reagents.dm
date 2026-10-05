@@ -91,15 +91,15 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/computer/rdconsole_tg/console = allocate(/obj/machinery/computer/rdconsole_tg, T)
 	TEST_ASSERT(!console.locked, "the research console starts unlocked")
-	console.ui_act_togglelock(user, list(), null, null, "toggleLock")
+	op_ui_act(user, console, "toggleLock")
 	TEST_ASSERT(!console.locked, "a user without research access cannot lock it")
 	var/obj/item/card/id/id = allocate(/obj/item/card/id, T)
 	id.access = list(ACCESS_RESEARCH)
 	TEST_ASSERT(user.put_in_active_hand(id), "the user holds the research-access ID")
 	TEST_ASSERT(console.allowed(user), "the held ID grants the console's required access")
-	console.ui_act_togglelock(user, list(), null, null, "toggleLock")
+	op_ui_act(user, console, "toggleLock")
 	TEST_ASSERT(console.locked, "the supplied authorized actor can lock the console")
-	console.ui_act_togglelock(user, list(), null, null, "toggleLock")
+	op_ui_act(user, console, "toggleLock")
 	TEST_ASSERT(!console.locked, "the same actor can unlock it again")
 
 /// The public insertion path must finish the newly seated patient's presentation and buckle state.

@@ -215,9 +215,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 		return ..()
 	return STATUS_CLOSE
 
-DECLARE_UI(/obj/machinery/particle_accelerator/control_box, "ParticleAccelerator")
-
-UI_DATA_REPLACE(/obj/machinery/particle_accelerator/control_box, "assembled:num", "strength:num", "merge:ui_data_obj_machinery_particle_accelerator_control_box{power:num}")
+/obj/machinery/particle_accelerator/control_box/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["assembled"] = assembled
+	data["strength"] = strength
+	var/list/merged_1 = ui_data_obj_machinery_particle_accelerator_control_box(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/particle_accelerator/control_box's window data (declared on its UI_DATA row).
 /obj/machinery/particle_accelerator/control_box/proc/ui_data_obj_machinery_particle_accelerator_control_box(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -225,33 +231,32 @@ UI_DATA_REPLACE(/obj/machinery/particle_accelerator/control_box, "assembled:num"
 	data["power"] = active
 	return data
 
-UI_ACT(/obj/machinery/particle_accelerator/control_box, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_power)
+/obj/machinery/particle_accelerator/control_box/proc/ui_act_power(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wire_is_cut(src, WIRE_POWER))
 		return
-	toggle_power(ui.user)
+	toggle_power(user)
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/machinery/particle_accelerator/control_box, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_scan)
+/obj/machinery/particle_accelerator/control_box/proc/ui_act_scan(datum/act/op/A)
 	part_scan()
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/machinery/particle_accelerator/control_box, "add_strength", ui_act_add_strength)
-UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_add_strength)
+/obj/machinery/particle_accelerator/control_box/proc/ui_act_add_strength(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wire_is_cut(src, WIRE_PARTICLE_STRENGTH))
 		return
-	add_strength(ui.user)
+	add_strength(user)
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/machinery/particle_accelerator/control_box, "remove_strength", ui_act_remove_strength)
-UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_strength)
+/obj/machinery/particle_accelerator/control_box/proc/ui_act_remove_strength(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wire_is_cut(src, WIRE_PARTICLE_STRENGTH))
 		return
-	remove_strength(ui.user)
+	remove_strength(user)
 	. = TRUE
 	update_icon()
 
@@ -275,6 +280,11 @@ CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
 	on_wire(WIRE_PARTICLE_STRENGTH, cut = PROC_REF(strength_wire_cut), pulse = PROC_REF(strength_wire_pulsed))
 	on_wire(WIRE_PARTICLE_INTERFACE, cut = PROC_REF(interface_wire_cut), pulse = PROC_REF(interface_wire_pulsed))
 	on_wire(WIRE_PARTICLE_POWER_LIMIT, cut = PROC_REF(limit_wire_cut), pulse = PROC_REF(limit_wire_pulsed))
+	interface("ParticleAccelerator")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("add_strength", ui_act("add_strength"), then(PROC_REF(ui_act_add_strength)))
+	op("remove_strength", ui_act("remove_strength"), then(PROC_REF(ui_act_remove_strength)))
 
 
 /// The wires are bare at the second construction step.

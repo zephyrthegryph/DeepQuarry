@@ -1,5 +1,7 @@
 CAPABILITIES(/obj/item/book/manual/wiki)
 	op("open_wiki", ui_act(), then(PROC_REF(ui_act_open_wiki)))
+	interface("WikiBook", state = nameof(GLOB.tgui_default_state), input = in_hand())
+	ui_shape(title = bool(), intro = schema_text(), url = any)
 
 // Wiki books that are linked to the configured wiki link.
 //
@@ -29,17 +31,11 @@ CAPABILITIES(/obj/item/book/manual/wiki)
 		return
 	tgui_interact(user)
 
-DECLARE_UI_STATE(/obj/item/book/manual/wiki, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/item/book/manual/wiki, "WikiBook")
-
 /obj/item/book/manual/wiki/ui_title(mob/user)
 	return title || name
 
-UI_DATA_REPLACE(/obj/item/book/manual/wiki, "merge:ui_data_obj_item_book_manual_wiki{title:bool,intro:text,url:unknown}")
-
 /// The computed part of /obj/item/book/manual/wiki's window data (declared on its UI_DATA row).
-/obj/item/book/manual/wiki/proc/ui_data_obj_item_book_manual_wiki(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/book/manual/wiki/ui_data(datum/act/eval/A)
 	return list(
 		"title" = title || name,
 		"intro" = wiki_intro_html,

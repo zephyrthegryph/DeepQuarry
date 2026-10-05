@@ -112,8 +112,6 @@ CAPABILITIES(/datum/eventkit/player_effects)
 
 	return data
 
-DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
-
 /datum/prompt/text/admin_popup
 	title = "Reply"
 	timeout = 0

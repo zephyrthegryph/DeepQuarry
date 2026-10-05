@@ -88,6 +88,8 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 
 CAPABILITIES(/obj/item/anomaly_scanner)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("AnomalyScanner", input = in_hand())
+	ui_shape(anomaly_name = schema_text(), severity = num(), stability = num(), point_output = any, danger_type = any, unstable_type = any, containment_type = any, transformation_type = any, modifier = any, countdown = any)
 
 /// Old attack_self.
 /obj/item/anomaly_scanner/proc/interaction_self(datum/act/op/A)
@@ -101,12 +103,8 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-DECLARE_UI(/obj/item/anomaly_scanner, "AnomalyScanner")
-
-UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scanner{anomaly_name:text,severity:num,stability:num,point_output:unknown,danger_type:unknown,unstable_type:unknown,containment_type:unknown,transformation_type:unknown,modifier:unknown,countdown:unknown}")
-
 /// The computed part of /obj/item/anomaly_scanner's window data (declared on its UI_DATA row).
-/obj/item/anomaly_scanner/proc/ui_data_obj_item_anomaly_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/anomaly_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/obj/effect/anomaly/anom = buffered_anomaly
 

@@ -69,7 +69,16 @@
 	fx_sparks(src, 3)
 	return ..()
 
-UI_DATA(/mob/living/bot/cleanbot/edCLN, "red_switch:num", "green_switch:num", "blue_switch:num", "merge:ui_data_mob_living_bot_cleanbot_edCLN{version:text,rgbpanel:bool}")
+/mob/living/bot/cleanbot/edCLN/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["red_switch"] = red_switch
+	data["green_switch"] = green_switch
+	data["blue_switch"] = blue_switch
+	var/list/merged_1 = ui_data_mob_living_bot_cleanbot_edCLN(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /mob/living/bot/cleanbot/edCLN's window data (declared on its UI_DATA row).
 /mob/living/bot/cleanbot/edCLN/proc/ui_data_mob_living_bot_cleanbot_edCLN(mob/user, datum/tgui/ui, datum/tgui_state/state)

@@ -17,6 +17,10 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
+	interface("MechaSyringeGun", input = in_hand())
+	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
+	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
+	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
 
 DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
@@ -103,12 +107,18 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	reagents.clear_reagents()
 
 // structured TGUI for syringe-gun reagent management.
-DECLARE_UI(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "MechaSyringeGun")
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/ui_title(mob/user)
 	return "[name] Reagents"
 
-UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "synth_speed:num", "merge:ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun{total_volume:unknown,max_volume:unknown,known_reagents:list,current_reagents:list}")
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["synth_speed"] = synth_speed
+	var/list/merged_1 = ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun's window data (declared on its UI_DATA row).
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -135,9 +145,10 @@ UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "synth_s
 	data["current_reagents"] = current
 	return data
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "select_reagents", ui_act_select_reagents, UI_ARG_LIST("reagents"))
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_select_reagents)
-	var/list/picks = params["reagents"]
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_select_reagents(datum/act/op/A, reagents)
+	if(!isnull(reagents) && !islist(reagents))
+		return FALSE
+	var/list/picks = reagents
 	var/list/selected = list()
 	var/m = 0
 	for(var/reagent_id in picks)
@@ -152,14 +163,12 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_selec
 		src.mecha_log_message("Reagent processing started.")
 	return TRUE
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_reagent", ui_act_purge_reagent, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge_reagent)
-	if(params["id"])
-		reagents.del_reagent(params["id"])
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_reagent(datum/act/op/A, id)
+	if(id)
+		reagents.del_reagent(id)
 	return TRUE
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all", ui_act_purge_all)
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge_all)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_all(datum/act/op/A)
 	reagents.clear_reagents()
 	return TRUE
 

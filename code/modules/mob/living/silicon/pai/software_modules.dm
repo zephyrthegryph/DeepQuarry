@@ -18,8 +18,6 @@
 /datum/pai_software/proc/is_active(mob/living/silicon/pai/user)
 	return 0
 
-DECLARE_UI_STATE(/datum/pai_software, GLOB.tgui_always_state)
-
 CAPABILITIES(/datum/pai_software)
 	// Only a pAI works a program's buttons (silently: anyone else is not answered).
 	extend(TAG_UI, needs(req(PROC_REF(ui_pai), silent = TRUE)))
@@ -40,7 +38,7 @@ CAPABILITIES(/datum/pai_software)
 	default = 1
 
 CAPABILITIES(/datum/pai_software/directives)
-	interface("pAIDirectives")
+	interface("pAIDirectives", state = nameof(GLOB.tgui_always_state))
 	op("getdna", ui_act("getdna"), then(PROC_REF(ui_act_getdna)))
 
 /datum/pai_software/directives/ui_data(datum/act/eval/A)
@@ -122,7 +120,7 @@ CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample)
 	default = 1		//Comes with the communicator already, also why not
 
 CAPABILITIES(/datum/pai_software/crew_manifest)
-	interface("CrewManifest")
+	interface("CrewManifest", state = nameof(GLOB.tgui_always_state))
 	ui_shape(manifest = map_of(schema_text(), list_of(map_of(schema_text(), schema_text()))))
 
 /datum/pai_software/crew_manifest/ui_data(datum/act/eval/A)
@@ -149,7 +147,7 @@ CAPABILITIES(/datum/pai_software/crew_manifest)
 	toggle = 0
 
 CAPABILITIES(/datum/pai_software/med_records)
-	interface("pAIMedrecords")
+	interface("pAIMedrecords", state = nameof(GLOB.tgui_always_state))
 	op("select", ui_act("select", arg("select", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_select)))
 
 /datum/pai_software/med_records/ui_data(datum/act/eval/A)
@@ -200,7 +198,7 @@ CAPABILITIES(/datum/pai_software/med_records)
 	toggle = 0
 
 CAPABILITIES(/datum/pai_software/sec_records)
-	interface("pAISecrecords")
+	interface("pAISecrecords", state = nameof(GLOB.tgui_always_state))
 	op("select", ui_act("select", arg("select", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_select)))
 
 /datum/pai_software/sec_records/ui_data(datum/act/eval/A)
@@ -255,7 +253,7 @@ CAPABILITIES(/datum/pai_software/sec_records)
 	toggle = 0
 
 CAPABILITIES(/datum/pai_software/door_jack)
-	interface("pAIDoorjack", title = "Door Jack")
+	interface("pAIDoorjack", title = "Door Jack", state = nameof(GLOB.tgui_always_state))
 	op("jack", ui_act("jack"), then(PROC_REF(ui_act_jack)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 	op("cable", ui_act("cable"), then(PROC_REF(ui_act_cable)))
@@ -337,7 +335,7 @@ CAPABILITIES(/datum/pai_software/door_jack)
 	toggle = 0
 
 CAPABILITIES(/datum/pai_software/atmosphere_sensor)
-	interface("pAIAtmos")
+	interface("pAIAtmos", state = nameof(GLOB.tgui_always_state))
 	ui_shape(aircontents = list_of(map_of(schema_text(), schema_text())))
 
 /datum/pai_software/atmosphere_sensor/ui_data(datum/act/eval/A)
@@ -410,7 +408,7 @@ CAPABILITIES(/datum/pai_software/atmosphere_sensor)
 	toggle = 0
 
 CAPABILITIES(/datum/pai_software/signaller)
-	interface("Signaler", title = "Signaler")
+	interface("Signaler", title = "Signaler", state = nameof(GLOB.tgui_always_state))
 	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
 	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num(1, 100))), then(PROC_REF(ui_act_code)))

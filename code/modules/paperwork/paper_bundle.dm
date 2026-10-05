@@ -119,9 +119,20 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/paper_bundle, "PaperBundle")
+CAPABILITIES(/obj/item/paper_bundle)
+	interface("PaperBundle", input = in_hand())
+	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
 
-UI_DATA_REPLACE(/obj/item/paper_bundle, "page:num", "merge:ui_data_obj_item_paper_bundle{total_pages:num,scribble:unknown,page_name:text,page_kind:text,page_info:text}")
+/obj/item/paper_bundle/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["page"] = page
+	var/list/merged_1 = ui_data_obj_item_paper_bundle(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/paper_bundle's window data (declared on its UI_DATA row).
 /obj/item/paper_bundle/proc/ui_data_obj_item_paper_bundle(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -150,17 +161,18 @@ UI_DATA_REPLACE(/obj/item/paper_bundle, "page:num", "merge:ui_data_obj_item_pape
 		data["page_info"] = ""
 	return data
 
-/obj/item/paper_bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/paper_bundle/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!((src?.loc == user) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == user))))
 		to_chat(user, span_notice("You need to hold it in hands!"))
 		return FALSE
 	user.set_machine(src)
 	return TRUE
 
-UI_ACT(/obj/item/paper_bundle, "next_page", ui_act_next_page)
-UI_ACT_PROC(/obj/item/paper_bundle, ui_act_next_page)
+/obj/item/paper_bundle/proc/ui_act_next_page(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 		insert_sheet_at(user, page + 1, in_hand)
@@ -169,8 +181,10 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_next_page)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-UI_ACT(/obj/item/paper_bundle, "prev_page", ui_act_prev_page)
-UI_ACT_PROC(/obj/item/paper_bundle, ui_act_prev_page)
+/obj/item/paper_bundle/proc/ui_act_prev_page(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 		insert_sheet_at(user, page, in_hand)
@@ -179,13 +193,15 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_prev_page)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-UI_ACT(/obj/item/paper_bundle, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
+/obj/item/paper_bundle/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!length(pages))
 		return TRUE
 	var/obj/item/W = pages[page]
 	user.put_in_hands(W)
-	rel_remove(src, nameof(/datum/radial_menu::pages), pages[page])
+	rel_remove(src, nameof(pages), pages[page])
 	to_chat(user, span_notice("You remove the [W.name] from the bundle."))
 	if(length(pages) <= 1)
 		var/obj/item/paper/P = pages[1]

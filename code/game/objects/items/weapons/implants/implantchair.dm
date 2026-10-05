@@ -21,7 +21,7 @@
 
 CAPABILITIES(/obj/machinery/implantchair)
 	owns_many(nameof(implant_list), /obj/item/implant/loyalty)
-	interface("ImplantChair", title = "Implanter Status")
+	interface("ImplantChair", title = "Implanter Status", state = nameof(GLOB.tgui_default_state))
 	op("implant", ui_act("implant"), then(PROC_REF(ui_act_implant)))
 	op("replenish", ui_act("replenish"), then(PROC_REF(ui_act_replenish)))
 

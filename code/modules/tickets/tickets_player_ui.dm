@@ -6,7 +6,7 @@
 	var/tmp/datum/ticket/T
 
 CAPABILITIES(/datum/ticket_chat)
-	interface("TicketChat")
+	interface("TicketChat", state = nameof(GLOB.tgui_ticket_state))
 	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096))), then(PROC_REF(ui_act_send_msg)))
 
 /datum/ticket_chat/ui_opening(mob/user, datum/tgui/ui)
@@ -19,8 +19,6 @@ CAPABILITIES(/datum/ticket_chat)
 	. = ..()
 	if(user.client?.current_ticket())
 		user.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
-
-DECLARE_UI_STATE(/datum/ticket_chat, GLOB.tgui_ticket_state)
 
 /// The computed part of /datum/ticket_chat's window data (declared on its UI_DATA row).
 /datum/ticket_chat/ui_data(datum/act/eval/A)

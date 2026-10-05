@@ -373,7 +373,9 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
 )
 
-DECLARE_UI(/obj/machinery/transhuman/resleever, "ResleevingPod", UI_TITLE("Resleever"))
+CAPABILITIES(/obj/machinery/transhuman/resleever)
+	interface("ResleevingPod", title = "Resleever")
+	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())
 
 /obj/machinery/transhuman/resleever/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
@@ -381,10 +383,8 @@ DECLARE_UI(/obj/machinery/transhuman/resleever, "ResleevingPod", UI_TITLE("Resle
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machinery_transhuman_resleever{occupied:bool,name:text,health:num,stat:num,mindStatus:bool,mindName:text}")
-
 /// The computed part of /obj/machinery/transhuman/resleever's window data (declared on its UI_DATA row).
-/obj/machinery/transhuman/resleever/proc/ui_data_obj_machinery_transhuman_resleever(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/transhuman/resleever/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/mob/living/carbon/human/H = get_occupant()

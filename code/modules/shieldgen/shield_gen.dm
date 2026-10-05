@@ -31,6 +31,12 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator)
 	owns_many(nameof(field))
 	climb()
+	interface("ShieldGenerator")
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("change_radius", ui_act("change_radius", arg("val", num())), then(PROC_REF(ui_act_change_radius)))
+	op("strengthen_rate", ui_act("strengthen_rate", arg("val", num())), then(PROC_REF(ui_act_strengthen_rate)))
+	op("target_field_strength", ui_act("target_field_strength", arg("val", num())), then(PROC_REF(ui_act_target_field_strength)))
+	op("z_range", ui_act("z_range", arg("val", num(0, 10))), then(PROC_REF(ui_act_z_range)))
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -121,17 +127,13 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/shield_gen, "ShieldGenerator")
-
 /obj/machinery/shield_gen/tgui_status(mob/user)
 	if(has_stat(BROKEN))
 		return STATUS_CLOSE
 	return ..()
 
-UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_gen{capacitors:list,active:num,failing:bool,radius:num,max_radius:num,z_range:num,max_z_range:num,average_field_strength:num,target_field_strength:num,max_field_strength:num,shields:num,upkeep:num,strengthen_rate:num,max_strengthen_rate:num,gen_power:num}")
-
 /// The computed part of /obj/machinery/shield_gen's window data (declared on its UI_DATA row).
-/obj/machinery/shield_gen/proc/ui_data_obj_machinery_shield_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/shield_gen/ui_data(datum/act/eval/A)
 	var/list/lockedData = list()
 
 	if(!locked)
@@ -221,32 +223,28 @@ UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_g
 	else
 		average_field_strength = 0
 
-UI_ACT(/obj/machinery/shield_gen, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_toggle)
+/obj/machinery/shield_gen/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!active && !anchored)
-		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		to_chat(user, span_red("The [src] needs to be firmly secured to the floor first."))
 		return
 	toggle()
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "change_radius", ui_act_change_radius, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_change_radius)
-	field_radius = clamp(params["val"], 0, max_field_radius)
+/obj/machinery/shield_gen/proc/ui_act_change_radius(datum/act/op/A, val)
+	field_radius = clamp(val, 0, max_field_radius)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "strengthen_rate", ui_act_strengthen_rate, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_strengthen_rate)
-	strengthen_rate = clamp(params["val"], 0, max_strengthen_rate)
+/obj/machinery/shield_gen/proc/ui_act_strengthen_rate(datum/act/op/A, val)
+	strengthen_rate = clamp(val, 0, max_strengthen_rate)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "target_field_strength", ui_act_target_field_strength, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_target_field_strength)
-	target_field_strength = clamp(params["val"], 1, max_field_strength)
+/obj/machinery/shield_gen/proc/ui_act_target_field_strength(datum/act/op/A, val)
+	target_field_strength = clamp(val, 1, max_field_strength)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "z_range", ui_act_z_range, UI_ARG_NUM("val", 0, 10))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_z_range)
-	z_range = params["val"]
+/obj/machinery/shield_gen/proc/ui_act_z_range(datum/act/op/A, val)
+	z_range = val
 	. = TRUE
 
 DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen_blast_trip))

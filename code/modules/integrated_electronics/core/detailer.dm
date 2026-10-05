@@ -36,22 +36,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF
 	detail_overlay.color = detail_color
 	. += detail_overlay
 
-DECLARE_UI_STATE(/obj/item/integrated_electronics/detailer, GLOB.tgui_inventory_state)
+/obj/item/integrated_electronics/detailer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["detail_color"] = detail_color
+	data["color_list"] = color_list
+	return data
 
-DECLARE_UI(/obj/item/integrated_electronics/detailer, "ICDetailer")
-
-UI_DATA(/obj/item/integrated_electronics/detailer, "detail_color", "color_list:list")
-
-UI_ACT(/obj/item/integrated_electronics/detailer, "change_color", ui_act_change_color, UI_ARG_TEXT("color"))
-UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
-	if(!(params["color"] in color_list))
+/obj/item/integrated_electronics/detailer/proc/ui_act_change_color(datum/act/op/A, color)
+	if(!(color in color_list))
 		return // to prevent href exploits causing runtimes
-	detail_color = color_list[params["color"]]
+	detail_color = color_list[color]
 	update_icon()
 	return TRUE
 
 CAPABILITIES(/obj/item/integrated_electronics/detailer)
 	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
+	interface("ICDetailer", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	op("change_color", ui_act("change_color", arg("color", schema_text(4096))), then(PROC_REF(ui_act_change_color)))
 
 /obj/item/integrated_electronics/detailer/proc/detailer_controls_requested(datum/act/op/A)
 	tgui_interact(A.actor)

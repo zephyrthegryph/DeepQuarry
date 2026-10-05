@@ -176,6 +176,15 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	emag(then(PROC_REF(on_emag)))
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
+	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))
+	op("set_network", ui_act("set_network"), then(PROC_REF(ui_act_set_network)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("flush_buffer", ui_act("flush_buffer"), then(PROC_REF(ui_act_flush_buffer)))
+	op("view_server", ui_act("view_server", arg("id", schema_text(4096))), then(PROC_REF(ui_act_view_server)))
+	op("main_menu", ui_act("main_menu"), then(PROC_REF(ui_act_main_menu)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("edit_code", ui_act("edit_code"), then(PROC_REF(ui_act_edit_code)))
+	op("toggle_run", ui_act("toggle_run"), then(PROC_REF(ui_act_toggle_run)))
 
 /obj/machinery/computer/telecomms/traffic/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

@@ -445,10 +445,7 @@
 	if(user == owner)
 		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 
-DECLARE_UI_STATE(/datum/personal_crafting, GLOB.tgui_not_incapacitated_turf_state)
-
 //For the UI related things we're going to assume the user is a mob rather than typesetting it to an atom as the UI isn't generated if the parent is an atom
-DECLARE_UI(/datum/personal_crafting, "PersonalCrafting")
 
 /datum/personal_crafting/ui_opening(mob/user, datum/tgui/ui)
 	cur_category = categories[1]
@@ -458,7 +455,17 @@ DECLARE_UI(/datum/personal_crafting, "PersonalCrafting")
 	else
 		cur_subcategory = CAT_NONE
 
-UI_DATA_REPLACE(/datum/personal_crafting, "category=cur_category", "subcategory=cur_subcategory", "display_craftable_only:num", "display_compact:num", "merge:ui_data_datum_personal_crafting{busy:unknown,materialChoices:list,craftability:list}")
+/datum/personal_crafting/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["category"] = cur_category
+	data["subcategory"] = cur_subcategory
+	data["display_craftable_only"] = display_craftable_only
+	data["display_compact"] = display_compact
+	var/list/merged_1 = ui_data_datum_personal_crafting(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/personal_crafting's window data (declared on its UI_DATA row).
 /datum/personal_crafting/proc/ui_data_datum_personal_crafting(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -543,13 +550,20 @@ UI_DATA_REPLACE(/datum/personal_crafting, "category=cur_category", "subcategory=
 	data["crafting_recipes"] = crafting_recipes
 	return data
 
-UI_ACT(/datum/personal_crafting, "make", ui_act_make, UI_ARG_VALUE("materialSlots"), UI_ARG_REF("recipe", "glob:crafting_recipes"))
-UI_ACT_PROC(/datum/personal_crafting, ui_act_make)
-	do_make(ui.user, params["recipe"], params["materialSlots"])
+/datum/personal_crafting/proc/ui_act_make(datum/act/op/A, materialSlots, recipe)
+	var/mob/user = A.actor
+	if(!isnull(recipe) && !(recipe in GLOB.crafting_recipes))
+		return FALSE
+	if(isnull(recipe))
+		return FALSE
+	do_make(user, recipe, materialSlots)
 
 CAPABILITIES(/datum/personal_crafting)
 	op("toggle_recipes", ui_act(), then(PROC_REF(ui_act_toggle_recipes)))
 	op("toggle_compact", ui_act(), then(PROC_REF(ui_act_toggle_compact)))
+	interface("PersonalCrafting", state = nameof(GLOB.tgui_not_incapacitated_turf_state))
+	op("make", ui_act("make", arg("materialSlots"), arg("recipe", schema_ref())), then(PROC_REF(ui_act_make)))
+	op("set_category", ui_act("set_category", arg("category", schema_text(4096)), arg("subcategory", schema_text(4096))), then(PROC_REF(ui_act_set_category)))
 
 /datum/personal_crafting/proc/ui_act_toggle_recipes(datum/act/op/A)
 	display_craftable_only = !display_craftable_only
@@ -559,10 +573,9 @@ CAPABILITIES(/datum/personal_crafting)
 	display_compact = !display_compact
 	return OP_OK
 
-UI_ACT(/datum/personal_crafting, "set_category", ui_act_set_category, UI_ARG_TEXT("category"), UI_ARG_TEXT("subcategory"))
-UI_ACT_PROC(/datum/personal_crafting, ui_act_set_category)
-	cur_category = params["category"]
-	cur_subcategory = params["subcategory"] || ""
+/datum/personal_crafting/proc/ui_act_set_category(datum/act/op/A, category, subcategory)
+	cur_category = category
+	cur_subcategory = subcategory || ""
 	. = TRUE
 
 /datum/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)

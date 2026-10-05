@@ -98,4 +98,5 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 	ntos = TRUE
 
 /datum/tgui_module/atmos_control/robot
-DECLARE_UI_STATE(/datum/tgui_module/atmos_control/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/atmos_control/robot)
+	interface("AtmosControl", state = nameof(GLOB.tgui_self_state))

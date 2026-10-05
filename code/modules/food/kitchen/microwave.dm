@@ -46,6 +46,9 @@
 
 CAPABILITIES(/obj/machinery/microwave)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave)
+	interface("Microwave")
+	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
+	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
 
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
@@ -305,7 +308,6 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 /*******************
 *   Microwave Menu
 ********************/
-DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 /obj/machinery/microwave/ui_assets(mob/user)
 	return list(
@@ -322,7 +324,15 @@ DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 	return data
 
-UI_DATA(/obj/machinery/microwave, "broken:num", "operating:num", "merge:ui_data_obj_machinery_microwave{dirty:bool,items:list,reagents:list}")
+/obj/machinery/microwave/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["broken"] = broken
+	data["operating"] = operating
+	var/list/merged_1 = ui_data_obj_machinery_microwave(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/microwave's window data (declared on its UI_DATA row).
 /obj/machinery/microwave/proc/ui_data_obj_machinery_microwave(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -372,20 +382,21 @@ UI_DATA(/obj/machinery/microwave, "broken:num", "operating:num", "merge:ui_data_
 
 	return data
 
-/obj/machinery/microwave/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/microwave/proc/ui_gate(datum/act/op/A)
 	if(operating)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/microwave, "cook", ui_act_cook)
-UI_ACT_PROC(/obj/machinery/microwave, ui_act_cook)
+/obj/machinery/microwave/proc/ui_act_cook(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	cook()
 	return TRUE
 
-UI_ACT(/obj/machinery/microwave, "dispose", ui_act_dispose)
-UI_ACT_PROC(/obj/machinery/microwave, ui_act_dispose)
+/obj/machinery/microwave/proc/ui_act_dispose(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	dispose(user = user)
 	return TRUE
 

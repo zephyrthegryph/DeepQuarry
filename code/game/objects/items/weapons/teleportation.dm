@@ -32,17 +32,17 @@
 // frequency/refresh/clear actions move to tgui_act.
 CAPABILITIES(/obj/item/locator)
 	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
+	interface("Locator", title = "Persistent Signal Locator", input = in_hand())
+	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 
 /obj/item/locator/proc/locator_controls_opened(datum/act/op/A)
 	tgui_interact(A.actor)
 	return OP_OK
 
-DECLARE_UI(/obj/item/locator, "Locator", UI_TITLE("Persistent Signal Locator"))
-
-UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:text,has_scan:bool,location:bool,beacons:bool,implants:bool}")
-
 /// The computed part of /obj/item/locator's window data (declared on its UI_DATA row).
-/obj/item/locator/proc/ui_data_obj_item_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/locator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["frequency"] = format_frequency(frequency)
 	data["has_scan"] = !!last_location
@@ -60,9 +60,8 @@ UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:tex
 		return "weak"
 	return "very weak"
 
-/obj/item/locator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/locator/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/current_location = get_turf(user)
 	if(user.stat || user.restrained())
 		return FALSE
@@ -71,21 +70,24 @@ UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:tex
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/locator, "freq", ui_act_freq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/locator, ui_act_freq)
-	frequency += params["delta"]
+/obj/item/locator/proc/ui_act_freq(datum/act/op/A, delta)
+	if(!ui_gate(A))
+		return FALSE
+	frequency += delta
 	frequency = sanitize_frequency(frequency)
 	return TRUE
 
-UI_ACT(/obj/item/locator, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/item/locator, ui_act_clear)
+/obj/item/locator/proc/ui_act_clear(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	last_beacons = null
 	last_implants = null
 	last_location = null
 	return TRUE
 
-UI_ACT(/obj/item/locator, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/item/locator, ui_act_refresh)
+/obj/item/locator/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/turf/sr = get_turf(src)
 	if(!sr)
 		return TRUE

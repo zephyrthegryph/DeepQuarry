@@ -25,6 +25,8 @@
 CAPABILITIES(/obj/machinery/artifact_analyser)
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(scanned_object), /obj)
+	interface("XenoarchArtifactAnalyzer")
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 
 /obj/machinery/artifact_analyser/Initialize(mapload)
 	. = ..()
@@ -55,14 +57,19 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/artifact_analyser, "XenoarchArtifactAnalyzer")
-
 /obj/machinery/artifact_analyser/ui_prepare(mob/user, datum/tgui/ui)
 	if(!owned_scanner())
 		reconnect_scanner()
 	return TRUE
 
-UI_DATA(/obj/machinery/artifact_analyser, "scan_in_progress:num", "merge:ui_data_obj_machinery_artifact_analyser{owned_scanner:unknown}")
+/obj/machinery/artifact_analyser/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scan_in_progress"] = scan_in_progress
+	var/list/merged_1 = ui_data_obj_machinery_artifact_analyser(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/artifact_analyser's window data (declared on its UI_DATA row).
 /obj/machinery/artifact_analyser/proc/ui_data_obj_machinery_artifact_analyser(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -72,14 +79,8 @@ UI_DATA(/obj/machinery/artifact_analyser, "scan_in_progress:num", "merge:ui_data
 
 	return data
 
-/obj/machinery/artifact_analyser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/artifact_analyser, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
+/obj/machinery/artifact_analyser/proc/ui_act_scan(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(scan_in_progress)
 		scan_in_progress = FALSE
 		atom_say("Scanning halted.")
@@ -95,12 +96,12 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 			if(O.invisibility)
 				continue
 			if(istype(O, /obj/machinery/artifact))
-				var/obj/machinery/artifact/A = O
-				if(A.in_use)
+				var/obj/machinery/artifact/A2 = O
+				if(A2.in_use)
 					artifact_in_use = 1
 				else
-					A.set_anchored(TRUE)
-					A.in_use = 1
+					A2.set_anchored(TRUE)
+					A2.in_use = 1
 
 			if(artifact_in_use)
 				atom_say("Cannot scan. Too much interference.")

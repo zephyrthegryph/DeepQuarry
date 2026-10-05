@@ -39,6 +39,12 @@
 
 CAPABILITIES(/obj/machinery/disposal)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
+	interface("DisposalBin")
+	op("pumpOn", ui_act("pumpOn"), then(PROC_REF(ui_act_pumpon)))
+	op("pumpOff", ui_act("pumpOff"), then(PROC_REF(ui_act_pumpoff)))
+	op("engageHandle", ui_act("engageHandle"), then(PROC_REF(ui_act_engagehandle)))
+	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
 // into the bin before a flush). Drop policy is left to this type's own
@@ -473,9 +479,15 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 
 // user interaction
-DECLARE_UI(/obj/machinery/disposal, "DisposalBin")
 
-UI_DATA_REPLACE(/obj/machinery/disposal, "flushing=flush", "merge:ui_data_obj_machinery_disposal{isAI:num,mode:num,pressure:num}")
+/obj/machinery/disposal/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["flushing"] = flush
+	var/list/merged_1 = ui_data_obj_machinery_disposal(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/disposal's window data (declared on its UI_DATA row).
 /obj/machinery/disposal/proc/ui_data_obj_machinery_disposal(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -487,50 +499,55 @@ UI_DATA_REPLACE(/obj/machinery/disposal, "flushing=flush", "merge:ui_data_obj_ma
 
 	return data
 
-/obj/machinery/disposal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(ui.user.loc == src)
-		to_chat(ui.user, span_warning("You cannot reach the controls from inside."))
+/obj/machinery/disposal/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/action = A.window_action()
+	if(user.loc == src)
+		to_chat(user, span_warning("You cannot reach the controls from inside."))
 		return FALSE
 	if(mode == DISPOSALMODE_EJECTONLY && action != "eject") // If the mode is -1, only allow ejection
-		to_chat(ui.user, span_warning("The disposal units power is disabled."))
+		to_chat(user, span_warning("The disposal units power is disabled."))
 		return FALSE
 	if(has_stat(BROKEN))
 		return FALSE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	if(flushing)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/disposal, "pumpOn", ui_act_pumpon)
-UI_ACT_PROC(/obj/machinery/disposal, ui_act_pumpon)
+/obj/machinery/disposal/proc/ui_act_pumpon(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	set_mode(DISPOSALMODE_CHARGING)
 	wake_for_state_change()
 	return TRUE
 
-UI_ACT(/obj/machinery/disposal, "pumpOff", ui_act_pumpoff)
-UI_ACT_PROC(/obj/machinery/disposal, ui_act_pumpoff)
+/obj/machinery/disposal/proc/ui_act_pumpoff(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	set_mode(DISPOSALMODE_OFF)
 	wake_for_state_change()
 	return TRUE
 
-UI_ACT(/obj/machinery/disposal, "engageHandle", ui_act_engagehandle)
-UI_ACT_PROC(/obj/machinery/disposal, ui_act_engagehandle)
+/obj/machinery/disposal/proc/ui_act_engagehandle(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	flush = TRUE
 	update_icon()
 	wake_for_state_change()
 	return TRUE
 
-UI_ACT(/obj/machinery/disposal, "disengageHandle", ui_act_disengagehandle)
-UI_ACT_PROC(/obj/machinery/disposal, ui_act_disengagehandle)
+/obj/machinery/disposal/proc/ui_act_disengagehandle(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	flush = FALSE
 	update_icon()
 	wake_for_state_change()
 	return TRUE
 
-UI_ACT(/obj/machinery/disposal, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/disposal, ui_act_eject)
+/obj/machinery/disposal/proc/ui_act_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	eject()
 	wake_for_state_change()
 	return TRUE

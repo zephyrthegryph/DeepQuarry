@@ -86,6 +86,7 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 
 // Subtype for self_state
 /datum/tgui_module/power_monitor/robot
-DECLARE_UI_STATE(/datum/tgui_module/power_monitor/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/power_monitor/robot)
+	interface("PowerMonitor", state = nameof(GLOB.tgui_self_state))
 
 /// Sensors on the grid, rebuilt by refresh_sensors().

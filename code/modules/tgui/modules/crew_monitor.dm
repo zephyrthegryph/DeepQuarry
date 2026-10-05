@@ -80,12 +80,15 @@ CAPABILITIES(/datum/tgui_module/crew_monitor)
 
 // Subtype for glasses_state
 /datum/tgui_module/crew_monitor/glasses
-DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/crew_monitor/glasses)
+	interface("CrewMonitor", state = nameof(GLOB.tgui_glasses_state))
 
 // Subtype for self_state
 /datum/tgui_module/crew_monitor/robot
-DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/crew_monitor/robot)
+	interface("CrewMonitor", state = nameof(GLOB.tgui_self_state))
 
 // Subtype for nif_state
 /datum/tgui_module/crew_monitor/nif
-DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/nif, GLOB.tgui_nif_state)
+CAPABILITIES(/datum/tgui_module/crew_monitor/nif)
+	interface("CrewMonitor", state = nameof(GLOB.tgui_nif_state))

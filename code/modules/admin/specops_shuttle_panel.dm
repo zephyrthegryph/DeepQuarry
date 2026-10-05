@@ -20,14 +20,13 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/computer/specops_shuttle, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/machinery/computer/specops_shuttle, "SpecopsShuttle", UI_TITLE("Special Operations Shuttle"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/specops_shuttle, "merge:ui_data_obj_machinery_computer_specops_shuttle{status_message:text,state:text,timeleft:unknown,destination:text}")
+CAPABILITIES(/obj/machinery/computer/specops_shuttle)
+	interface("SpecopsShuttle", title = "Special Operations Shuttle", state = nameof(GLOB.tgui_default_state))
+	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
+	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 
 /// The computed part of /obj/machinery/computer/specops_shuttle's window data (declared on its UI_DATA row).
-/obj/machinery/computer/specops_shuttle/proc/ui_data_obj_machinery_computer_specops_shuttle(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/specops_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(temp)
 		data["status_message"] = temp
@@ -43,14 +42,14 @@ UI_DATA_REPLACE(/obj/machinery/computer/specops_shuttle, "merge:ui_data_obj_mach
 		data["destination"] = station_name()
 	return data
 
-UI_ACT(/obj/machinery/computer/specops_shuttle, "send_to_dock", ui_act_send_to_dock)
-UI_ACT_PROC(/obj/machinery/computer/specops_shuttle, ui_act_send_to_dock)
-	specops_send_to_dock(ui.user)
+/obj/machinery/computer/specops_shuttle/proc/ui_act_send_to_dock(datum/act/op/A)
+	var/mob/user = A.actor
+	specops_send_to_dock(user)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/specops_shuttle, "send_to_station", ui_act_send_to_station)
-UI_ACT_PROC(/obj/machinery/computer/specops_shuttle, ui_act_send_to_station)
-	specops_send_to_station(ui.user)
+/obj/machinery/computer/specops_shuttle/proc/ui_act_send_to_station(datum/act/op/A)
+	var/mob/user = A.actor
+	specops_send_to_station(user)
 	SStgui.update_uis(src)
 	return TRUE

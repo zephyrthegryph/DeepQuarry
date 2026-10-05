@@ -38,15 +38,11 @@ GENERAL_PROTECT_DATUM(/datum/log_holder)
 ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the rounds logs.", ADMIN_CATEGORY_LOGS)
 	logger.tgui_interact(user.mob)
 
-DECLARE_UI(/datum/log_holder, "LogViewer", UI_TITLE("Log Viewer"))
-
 /datum/log_holder/ui_prepare(mob/user, datum/tgui/ui)
 	if(!check_rights_for(user.client, R_ADMIN|R_MOD|R_DEBUG))
 		return FALSE
 
 	return TRUE
-
-DECLARE_UI_STATE(/datum/log_holder, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG))
 
 /datum/log_holder/tgui_static_data(mob/user)
 	var/list/data = list(
@@ -68,10 +64,8 @@ DECLARE_UI_STATE(/datum/log_holder, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG))
 
 	return data
 
-UI_DATA_REPLACE(/datum/log_holder, "merge:ui_data_datum_log_holder{}")
-
 /// The computed part of /datum/log_holder's window data (declared on its UI_DATA row).
-/datum/log_holder/proc/ui_data_datum_log_holder(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/log_holder/ui_data(datum/act/eval/A)
 	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()
@@ -95,6 +89,8 @@ UI_DATA_REPLACE(/datum/log_holder, "merge:ui_data_datum_log_holder{}")
 
 CAPABILITIES(/datum/log_holder)
 	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
+	interface("LogViewer", title = "Log Viewer", rights = R_ADMIN|R_MOD|R_DEBUG)
+	ui_shape()
 
 /datum/log_holder/proc/ui_act_log_refresh(datum/act/op/A)
 	cache_ui_data()

@@ -27,6 +27,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "ancho
 CAPABILITIES(/obj/machinery/shield_capacitor)
 	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
 	climb()
+	interface("ShieldCapacitor")
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("charge_rate", ui_act("charge_rate", arg("rate", num())), then(PROC_REF(ui_act_charge_rate)))
 
 /obj/machinery/shield_capacitor/Initialize(mapload)
 	. = ..()
@@ -93,14 +96,23 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/shield_capacitor, "ShieldCapacitor")
-
 /obj/machinery/shield_capacitor/tgui_status(mob/user)
 	if(has_stat(BROKEN))
 		return STATUS_CLOSE
 	return ..()
 
-UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_charge:num", "max_charge:num", "charge_rate:num", "max_charge_rate:num", "merge:ui_data_obj_machinery_shield_capacitor{active:num}")
+/obj/machinery/shield_capacitor/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["time_since_fail"] = time_since_fail
+	data["stored_charge"] = stored_charge
+	data["max_charge"] = max_charge
+	data["charge_rate"] = charge_rate
+	data["max_charge_rate"] = max_charge_rate
+	var/list/merged_1 = ui_data_obj_machinery_shield_capacitor(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/shield_capacitor's window data (declared on its UI_DATA row).
 /obj/machinery/shield_capacitor/proc/ui_data_obj_machinery_shield_capacitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -138,17 +150,16 @@ UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_
 		stored_charge = max_charge
 		return PROCESS_KILL
 
-UI_ACT(/obj/machinery/shield_capacitor, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_toggle)
+/obj/machinery/shield_capacitor/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!active && !anchored)
-		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		to_chat(user, span_red("The [src] needs to be firmly secured to the floor first."))
 		return
 	set_active(!active)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_capacitor, "charge_rate", ui_act_charge_rate, UI_ARG_NUM("rate"))
-UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_charge_rate)
-	charge_rate = clamp(params["rate"], 10000, max_charge_rate)
+/obj/machinery/shield_capacitor/proc/ui_act_charge_rate(datum/act/op/A, rate)
+	charge_rate = clamp(rate, 10000, max_charge_rate)
 	if(stored_charge < max_charge)
 		MACHINE_WAKE(src)
 	. = TRUE

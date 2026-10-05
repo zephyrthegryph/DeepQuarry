@@ -125,6 +125,8 @@
 
 CAPABILITIES(/obj/machinery/power/supermatter)
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter)
+	interface("AiSupermatter")
+	ui_shape(detonating = num(), integrity_percentage = num(), ambient_temp = num(), ambient_pressure = num())
 
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
@@ -607,10 +609,15 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 	Consume(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/power/supermatter, "AiSupermatter")
-
 // This is purely informational UI that may be accessed by AIs or robots
-UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num", "merge:ui_data_obj_machinery_power_supermatter{integrity_percentage:num,ambient_temp:num,ambient_pressure:num}")
+/obj/machinery/power/supermatter/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["detonating"] = grav_pulling
+	var/list/merged_1 = ui_data_obj_machinery_power_supermatter(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/power/supermatter's window data (declared on its UI_DATA row).
 /obj/machinery/power/supermatter/proc/ui_data_obj_machinery_power_supermatter(mob/user, datum/tgui/ui, datum/tgui_state/state)

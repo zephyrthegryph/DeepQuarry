@@ -161,6 +161,10 @@
 	var/datum/tgui_state/declared = ui_decl_of(src)?.state
 	if(declared)
 		return declared
+	// interface(state =, rights =): the state the window's declaration carries
+	declared = interface_state(src)
+	if(declared)
+		return declared
 	if(ui_rights)
 		return ADMIN_STATE(ui_rights)
 	return GLOB.tgui_default_state

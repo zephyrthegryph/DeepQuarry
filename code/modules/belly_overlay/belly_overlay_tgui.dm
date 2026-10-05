@@ -18,6 +18,8 @@
 
 CAPABILITIES(/datum/belly_overlay_tgui)
 	owns_one(nameof(active_ui), /datum/tgui)
+	interface("BellyOverlay", title = "Belly Overlay", state = nameof(GLOB.tgui_always_state))
+	ui_shape(visible = bool(), layers = list_of())
 
 /datum/belly_overlay_tgui/New(mob/M)
 	rel_set(src, nameof(owner), M)
@@ -28,14 +30,10 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 		winset(owner().client, SKIN_BELLY_OVERLAY, "is-visible=false")
 	..()
 
-DECLARE_UI_STATE(/datum/belly_overlay_tgui, GLOB.tgui_always_state)
-
 /datum/belly_overlay_tgui/ui_assets(mob/user)
 	// Belly overlay files are registered + sent lazily via
 	// dq_send_belly_overlay_urls() in show(), not as a static bundle.
 	return list()
-
-DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 
 /// Renders in the client's `mapwindow.belly_overlay` browser element.
 /datum/belly_overlay_tgui/ui_window(mob/user)
@@ -44,10 +42,8 @@ DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
 	rel_set(src, nameof(active_ui), ui)
 
-UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tgui{}")
-
 /// The computed part of /datum/belly_overlay_tgui's window data (declared on its UI_DATA row).
-/datum/belly_overlay_tgui/proc/ui_data_datum_belly_overlay_tgui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/belly_overlay_tgui/ui_data(datum/act/eval/A)
 	return src.state
 
 /datum/belly_overlay_tgui/tgui_close(mob/user)

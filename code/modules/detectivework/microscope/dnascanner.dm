@@ -74,14 +74,24 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning"
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui
 
-DECLARE_UI(/obj/machinery/dnaforensics, "DNAForensics", UI_TITLE("QuikScan DNA Analyzer"))
+CAPABILITIES(/obj/machinery/dnaforensics)
+	interface("DNAForensics", title = "QuikScan DNA Analyzer")
+	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
+	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
 
 /obj/machinery/dnaforensics/ui_prepare(mob/user, datum/tgui/ui)
 	if(has_stat(NOPOWER))
 		return FALSE
 	return TRUE
 
-UI_DATA(/obj/machinery/dnaforensics, "scanning:num", "merge:ui_data_obj_machinery_dnaforensics{scan_progress:num,bloodsamp:unknown,bloodsamp_desc:unknown}")
+/obj/machinery/dnaforensics/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scanning"] = scanning
+	var/list/merged_1 = ui_data_obj_machinery_dnaforensics(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/dnaforensics's window data (declared on its UI_DATA row).
 /obj/machinery/dnaforensics/proc/ui_data_obj_machinery_dnaforensics(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -91,15 +101,15 @@ UI_DATA(/obj/machinery/dnaforensics, "scanning:num", "merge:ui_data_obj_machiner
 	data["bloodsamp_desc"] = (bloodsamp() ? (bloodsamp().desc ? bloodsamp().desc : "No information on record.") : "")
 	return data
 
-/obj/machinery/dnaforensics/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/dnaforensics/proc/ui_gate(datum/act/op/A)
 	if(has_stat(NOPOWER))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/dnaforensics, "scanItem", ui_act_scanitem)
-UI_ACT_PROC(/obj/machinery/dnaforensics, ui_act_scanitem)
+/obj/machinery/dnaforensics/proc/ui_act_scanitem(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
 	if(scanning)
 		set_scanning(FALSE)
@@ -109,14 +119,15 @@ UI_ACT_PROC(/obj/machinery/dnaforensics, ui_act_scanitem)
 			scanner_progress = 0
 			set_scanning(TRUE)
 			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
-			to_chat(ui.user, span_notice("Scan initiated."))
+			to_chat(user, span_notice("Scan initiated."))
 			update_icon()
 		else
-			to_chat(ui.user, span_warning("Insert an item to scan."))
+			to_chat(user, span_warning("Insert an item to scan."))
 	. = TRUE
 
-UI_ACT(/obj/machinery/dnaforensics, "ejectItem", ui_act_ejectitem)
-UI_ACT_PROC(/obj/machinery/dnaforensics, ui_act_ejectitem)
+/obj/machinery/dnaforensics/proc/ui_act_ejectitem(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
 	if(bloodsamp())
 		bloodsamp().forceMove(loc)

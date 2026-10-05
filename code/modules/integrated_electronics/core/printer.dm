@@ -137,9 +137,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/integrated_circuit_printer, GLOB.tgui_physical_state)
-
-DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
+CAPABILITIES(/obj/item/integrated_circuit_printer)
+	interface("ICPrinter", state = nameof(GLOB.tgui_physical_state), input = in_hand())
+	op("import_circuit", ui_act("import_circuit"), then(PROC_REF(ui_act_import_circuit)))
+	op("build", ui_act("build", arg("build", schema_path(/datum))), then(PROC_REF(ui_act_build)))
 
 /obj/item/integrated_circuit_printer/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
@@ -192,7 +193,19 @@ DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
 
 	return data
 
-UI_DATA(/obj/item/integrated_circuit_printer, "metal:num", "max_metal:num", "metal_per_sheet:num", "debug:num", "upgraded", "is_printing", "merge:ui_data_obj_item_integrated_circuit_printer{can_clone:bool,print_time_remaining:num}")
+/obj/item/integrated_circuit_printer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["metal"] = metal
+	data["max_metal"] = max_metal
+	data["metal_per_sheet"] = metal_per_sheet
+	data["debug"] = debug
+	data["upgraded"] = upgraded
+	data["is_printing"] = is_printing
+	var/list/merged_1 = ui_data_obj_item_integrated_circuit_printer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/integrated_circuit_printer's window data (declared on its UI_DATA row).
 /obj/item/integrated_circuit_printer/proc/ui_data_obj_item_integrated_circuit_printer(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -203,28 +216,24 @@ UI_DATA(/obj/item/integrated_circuit_printer, "metal:num", "max_metal:num", "met
 
 	return data
 
-/obj/item/integrated_circuit_printer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/item/integrated_circuit_printer, "import_circuit", ui_act_import_circuit)
-UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_import_circuit)
+/obj/item/integrated_circuit_printer/proc/ui_act_import_circuit(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
 	if(!can_clone)
-		to_chat(ui.user, span_warning("This printer requires a clone upgrade disk to import circuit designs!"))
+		to_chat(user, span_warning("This printer requires a clone upgrade disk to import circuit designs!"))
 		return TRUE
 
 	if(is_printing) // Should not be possible to reach here.
-		to_chat(ui.user, span_warning("The printer is busy! Please wait for the current print job to finish."))
+		to_chat(user, span_warning("The printer is busy! Please wait for the current print job to finish."))
 		return TRUE
 
-	handle_circuit_import(ui.user)
+	handle_circuit_import(user)
 	return TRUE
 
-UI_ACT(/obj/item/integrated_circuit_printer, "build", ui_act_build, UI_ARG_PATH("build", /datum))
-UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
-	var/build_type = params["build"]
+/obj/item/integrated_circuit_printer/proc/ui_act_build(datum/act/op/A, build)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	var/build_type = build
 	if(!build_type || !ispath(build_type))
 		return 1
 
@@ -246,16 +255,16 @@ UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
 		return
 
 	if(!debug)
-		if(!Adjacent(ui.user))
-			to_chat(ui.user, span_notice("You are too far away from \the [src]."))
+		if(!Adjacent(user))
+			to_chat(user, span_notice("You are too far away from \the [src]."))
 			return 1
 		if(metal - cost < 0)
-			to_chat(ui.user, span_warning("You need [cost] metal to build that!."))
+			to_chat(user, span_warning("You need [cost] metal to build that!."))
 			return 1
 		metal -= cost
 	var/obj/item/built = new build_type(get_turf(loc))
-	ui.user.put_in_hands(built)
-	to_chat(ui.user, span_notice("[capitalize(built.name)] printed."))
+	user.put_in_hands(built)
+	to_chat(user, span_notice("[capitalize(built.name)] printed."))
 	play_sfx(src, SFX_ITEMS_JAWS_PRY)
 	return TRUE
 

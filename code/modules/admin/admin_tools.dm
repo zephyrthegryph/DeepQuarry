@@ -60,9 +60,10 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 		log_data = list()
 	refresh_data()
 
-DECLARE_UI(/datum/player_log_viwer, "PlayerLogViewer")
-
-DECLARE_UI_STATE(/datum/player_log_viwer, ADMIN_STATE(R_ADMIN|R_MOD))
+CAPABILITIES(/datum/player_log_viwer)
+	interface("PlayerLogViewer", rights = R_ADMIN|R_MOD)
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("select_client", ui_act("select_client", arg("ckey")), then(PROC_REF(ui_act_select_client)))
 
 /datum/player_log_viwer/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
@@ -73,29 +74,27 @@ DECLARE_UI_STATE(/datum/player_log_viwer, ADMIN_STATE(R_ADMIN|R_MOD))
 		"view_client" = client_view
 	)
 
-UI_DATA_REPLACE(/datum/player_log_viwer, "merge:ui_data_datum_player_log_viwer{on_cooldown:unknown,all_clients:unknown}")
-
 /// The computed part of /datum/player_log_viwer's window data (declared on its UI_DATA row).
-/datum/player_log_viwer/proc/ui_data_datum_player_log_viwer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/player_log_viwer/ui_data(datum/act/eval/A)
 	return list(
 		"on_cooldown" = refresh_cooldown(),
 		"all_clients" = persistent_clients_by_ckey(),
 	)
 
-UI_ACT(/datum/player_log_viwer, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/player_log_viwer, ui_act_refresh)
+/datum/player_log_viwer/proc/ui_act_refresh(datum/act/op/A)
+	var/mob/user = A.actor
 	if(refresh_cooldown())
 		return FALSE
 	refresh_data()
 	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
-	update_tgui_static_data(ui.user)
+	update_tgui_static_data(user)
 	return TRUE
 
-UI_ACT(/datum/player_log_viwer, "select_client", ui_act_select_client, UI_ARG_VALUE("ckey"))
-UI_ACT_PROC(/datum/player_log_viwer, ui_act_select_client)
+/datum/player_log_viwer/proc/ui_act_select_client(datum/act/op/A, ckey)
+	var/mob/user = A.actor
 	if(refresh_cooldown())
 		return FALSE
-	var/new_ckey = params["ckey"]
+	var/new_ckey = ckey
 	if(!(persistent_client_for(new_ckey)))
 		return FALSE
 	target_ckey = new_ckey
@@ -106,7 +105,7 @@ UI_ACT_PROC(/datum/player_log_viwer, ui_act_select_client)
 	client_view = TRUE
 	refresh_data()
 	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
-	update_tgui_static_data(ui.user)
+	update_tgui_static_data(user)
 	return TRUE
 
 /datum/player_log_viwer/proc/refresh_cooldown()

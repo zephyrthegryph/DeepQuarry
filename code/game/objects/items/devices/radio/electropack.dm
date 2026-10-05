@@ -94,12 +94,14 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/radio/electropack, "Electropack")
-
-UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_electropack{on:num,frequency:num,freq_display:text,code:unknown}")
+CAPABILITIES(/obj/item/radio/electropack)
+	interface("Electropack", input = in_hand())
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("delta", num())), then(PROC_REF(ui_act_code)))
 
 /// The computed part of /obj/item/radio/electropack's window data (declared on its UI_DATA row).
-/obj/item/radio/electropack/proc/ui_data_obj_item_radio_electropack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/radio/electropack/ui_data(datum/act/eval/A)
 	return list(
 		"on" = on,
 		"frequency" = frequency,
@@ -107,7 +109,8 @@ UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_elect
 		"code" = code,
 	)
 
-/obj/item/radio/electropack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/radio/electropack/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!..())
 		return FALSE
 	if(!can_use(user))
@@ -115,22 +118,25 @@ UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_elect
 	user.set_machine(src)
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_power)
+/obj/item/radio/electropack/proc/ui_act_power(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	on = !on
 	icon_state = "electropack[on]"
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "freq", ui_act_freq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_freq)
-	var/delta = params["delta"]
+/obj/item/radio/electropack/proc/ui_act_freq(datum/act/op/A, delta_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/delta = delta_arg
 	if(isnum(delta))
 		set_frequency(sanitize_frequency(frequency + delta))
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "code", ui_act_code, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_code)
-	var/delta = params["delta"]
+/obj/item/radio/electropack/proc/ui_act_code(datum/act/op/A, delta_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/delta = delta_arg
 	if(isnum(delta))
 		code = clamp(round(code + delta), 1, 100)
 	return TRUE

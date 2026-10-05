@@ -15,6 +15,9 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 CAPABILITIES(/obj/item/assembly/infra)
 	owns_many(nameof(i_beams))
+	interface("AssemblyInfrared", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	op("state", ui_act("state"), then(PROC_REF(ui_act_state)))
+	op("visible", ui_act("visible"), then(PROC_REF(ui_act_visible)))
 
 OM_FIELD(/obj/item/assembly/infra, on, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/assembly/infra, PERIODIC_SLOW, list("secured", "on"))
@@ -112,23 +115,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*")
 
-DECLARE_UI(/obj/item/assembly/infra, "AssemblyInfrared")
-
 /obj/item/assembly/infra/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
 		to_chat(user, span_warning("[src] is unsecured!"))
 		return FALSE
 	return TRUE
 
-UI_DATA(/obj/item/assembly/infra, "on:num", "visible:num")
+/obj/item/assembly/infra/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["on"] = on
+	data["visible"] = visible
+	return data
 
-UI_ACT(/obj/item/assembly/infra, "state", ui_act_state)
-UI_ACT_PROC(/obj/item/assembly/infra, ui_act_state)
+/obj/item/assembly/infra/proc/ui_act_state(datum/act/op/A)
 	toggle_state()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/infra, "visible", ui_act_visible)
-UI_ACT_PROC(/obj/item/assembly/infra, ui_act_visible)
+/obj/item/assembly/infra/proc/ui_act_visible(datum/act/op/A)
 	visible = !visible
 	for(var/obj/effect/beam/i_beam/I as anything in i_beams)
 		I.visible = visible

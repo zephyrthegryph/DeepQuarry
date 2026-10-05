@@ -119,9 +119,20 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/folder, "Folder")
+CAPABILITIES(/obj/item/folder)
+	interface("Folder", input = in_hand())
+	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
+	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
+	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
 
-UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_item_folder{items:list}")
+/obj/item/folder/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["folder_name"] = name
+	var/list/merged_1 = ui_data_obj_item_folder(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/folder's window data (declared on its UI_DATA row).
 /obj/item/folder/proc/ui_data_obj_item_folder(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -136,27 +147,30 @@ UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_it
 	data["items"] = items
 	return data
 
-/obj/item/folder/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/folder/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || user.restrained())
 		return FALSE
 	if(loc != user)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/folder, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/folder, ui_act_remove)
-	var/obj/item/O = params["ref"]
+/obj/item/folder/proc/ui_act_remove(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return FALSE
 	if(slot_remove(O, user.loc, user))
 		user.put_in_hands(O)
 	return TRUE
 
-UI_ACT(/obj/item/folder, "rename", ui_act_rename, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/folder, ui_act_rename)
-	var/obj/item/O = params["ref"]
+/obj/item/folder/proc/ui_act_rename(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return FALSE
 	if(istype(O, /obj/item/paper))
@@ -170,12 +184,14 @@ UI_ACT_PROC(/obj/item/folder, ui_act_rename)
 		pb.paper_bundle_verb_rename(user)
 	return TRUE
 
-UI_ACT(/obj/item/folder, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/folder, ui_act_open)
-	var/obj/item/O = params["ref"]
+/obj/item/folder/proc/ui_act_open(datum/act/op/A, kind, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return FALSE
-	switch(params["kind"])
+	switch(kind)
 		if("paper")
 			var/obj/item/paper/p = O
 			p.show_content(user)

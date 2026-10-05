@@ -370,9 +370,24 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/power/port_gen/pacman, PROC_REF(on_emag),
 		return STATUS_CLOSE
 	return ..()
 
-DECLARE_UI(/obj/machinery/power/port_gen/pacman, "PortableGenerator")
+CAPABILITIES(/obj/machinery/power/port_gen/pacman)
+	interface("PortableGenerator")
+	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("lower_power", ui_act("lower_power"), then(PROC_REF(ui_act_lower_power)))
+	op("higher_power", ui_act("higher_power"), then(PROC_REF(ui_act_higher_power)))
 
-UI_DATA_REPLACE(/obj/machinery/power/port_gen/pacman, "anchored:num", "temperature_current=temperature:num", "temperature_max=max_temperature:num", "temperature_overheat=overheating:num", "merge:ui_data_obj_machinery_power_port_gen_pacman{active:num,is_ai:bool,sheet_name:text,fuel_stored:num,fuel_capacity:num,fuel_usage:num,connected:num,ready_to_boot:bool,power_generated:unknown,power_output:num,unsafe_output:bool,power_available:unknown}")
+/obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["anchored"] = anchored
+	data["temperature_current"] = temperature
+	data["temperature_max"] = max_temperature
+	data["temperature_overheat"] = overheating
+	var/list/merged_1 = ui_data_obj_machinery_power_port_gen_pacman(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/power/port_gen/pacman's window data (declared on its UI_DATA row).
 /obj/machinery/power/port_gen/pacman/proc/ui_data_obj_machinery_power_port_gen_pacman(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -402,31 +417,25 @@ UI_DATA_REPLACE(/obj/machinery/power/port_gen/pacman, "anchored:num", "temperatu
 
 	return data
 
-/obj/machinery/power/port_gen/pacman/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/power/port_gen/pacman, "toggle_power", ui_act_toggle_power)
-UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_toggle_power)
+/obj/machinery/power/port_gen/pacman/proc/ui_act_toggle_power(datum/act/op/A)
+	add_fingerprint(A.actor)
 	TogglePower()
 	. = TRUE
 
-UI_ACT(/obj/machinery/power/port_gen/pacman, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_eject)
+/obj/machinery/power/port_gen/pacman/proc/ui_act_eject(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(!active)
 		DropFuel()
 		. = TRUE
 
-UI_ACT(/obj/machinery/power/port_gen/pacman, "lower_power", ui_act_lower_power)
-UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_lower_power)
+/obj/machinery/power/port_gen/pacman/proc/ui_act_lower_power(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(power_output > 1)
 		power_output--
 		. = TRUE
 
-UI_ACT(/obj/machinery/power/port_gen/pacman, "higher_power", ui_act_higher_power)
-UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_higher_power)
+/obj/machinery/power/port_gen/pacman/proc/ui_act_higher_power(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(power_output < max_power_output || (emagged && power_output < round(max_power_output * 2.5)))
 		power_output++
 		. = TRUE

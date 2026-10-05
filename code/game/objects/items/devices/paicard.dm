@@ -47,6 +47,17 @@ CAPABILITIES(/obj/item/paicard)
 	owns_one(nameof(multitool), /obj/item/multitool)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
 	owns_one(nameof(signaler), /obj/item/assembly/signaler)
+	interface("PAICard", title = "Personal AI Device", input = in_hand())
+	op("preview", ui_act("preview", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_preview)))
+	op("clear_preview", ui_act("clear_preview"), then(PROC_REF(ui_act_clear_preview)))
+	op("setdna", ui_act("setdna"), then(PROC_REF(ui_act_setdna)))
+	op("cleardna", ui_act("cleardna"), then(PROC_REF(ui_act_cleardna)))
+	op("wires", ui_act("wires", arg("wires", num())), then(PROC_REF(ui_act_wires)))
+	op("setlaws", ui_act("setlaws", arg("directive", schema_text(4096))), then(PROC_REF(ui_act_setlaws)))
+	op("clearlaws", ui_act("clearlaws"), then(PROC_REF(ui_act_clearlaws)))
+	op("select_pai", ui_act("select_pai", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_select_pai)))
+	op("select_tool", ui_act("select_tool", arg("tool")), then(PROC_REF(ui_act_select_tool)))
+	op("activate_tool", ui_act("activate_tool"), then(PROC_REF(ui_act_activate_tool)))
 
 /obj/item/paicard/relaymove(mob/user, direction)
 	if(user.stat || user.has_status(EFFECT_STUNNED))
@@ -128,8 +139,6 @@ CAPABILITIES(/obj/item/paicard)
 	new_pai.apply_preferences(new_pai.client)
 	return new_pai
 
-DECLARE_UI(/obj/item/paicard, "PAICard", UI_TITLE("Personal AI Device"))
-
 /obj/item/paicard/ui_prepare(mob/user, datum/tgui/ui)
 	if(is_damage_critical())
 		to_chat(user, span_warning("WARNING: CRITICAL HARDWARE FAILURE, SERVICE DEVICE IMMEDIATELY"))
@@ -142,10 +151,8 @@ DECLARE_UI(/obj/item/paicard, "PAICard", UI_TITLE("Personal AI Device"))
 		get_asset_datum(/datum/asset/spritesheet_batched/pai_icons),
 	)
 
-UI_DATA_REPLACE(/obj/item/paicard, "merge:ui_data_obj_item_paicard{active_pai_data:unknown,selected_pai_data:unknown,available_pais:unknown,waiting_for_response:num,emag_systems:unknown}")
-
 /// The computed part of /obj/item/paicard's window data (declared on its UI_DATA row).
-/obj/item/paicard/proc/ui_data_obj_item_paicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/paicard/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"active_pai_data" = null,
 		"selected_pai_data" = null,
@@ -198,28 +205,29 @@ UI_DATA_REPLACE(/obj/item/paicard, "merge:ui_data_obj_item_paicard{active_pai_da
 		"emag_data" = emag_data,
 	)
 
-/obj/item/paicard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/paicard/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(is_damage_critical())
 		return FALSE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "preview", ui_act_preview, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_preview)
+/obj/item/paicard/proc/ui_act_preview(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
 	if(pai)
 		return FALSE
 	if(in_use)
 		return FALSE
-	var/new_selection = params["ref"]
+	var/new_selection = ref
 	if(!istext(new_selection))
 		return FALSE
 	selected_pai = new_selection
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "clear_preview", ui_act_clear_preview)
-UI_ACT_PROC(/obj/item/paicard, ui_act_clear_preview)
+/obj/item/paicard/proc/ui_act_clear_preview(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(pai)
 		return FALSE
 	if(in_use)
@@ -227,14 +235,16 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_clear_preview)
 	selected_pai = null
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "setdna", ui_act_setdna)
-UI_ACT_PROC(/obj/item/paicard, ui_act_setdna)
+/obj/item/paicard/proc/ui_act_setdna(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!pai)
 		return FALSE
 	if(pai.master_dna)
 		return FALSE
 
-	var/mob/M = ui.user
+	var/mob/M = user
 	var/has_dna = FALSE
 	if(istype(M, /mob/living/carbon))
 		var/mob/living/carbon/carby = M
@@ -249,22 +259,24 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_setdna)
 		pai.master_dna = dna.unique_enzymes
 		to_chat(pai, span_warning(span_large("You have been bound to a new master.")))
 		return TRUE
-	to_chat(ui.user, span_notice("You don't have any DNA, or your DNA is incompatible with this device."))
+	to_chat(user, span_notice("You don't have any DNA, or your DNA is incompatible with this device."))
 	return FALSE
 
-UI_ACT(/obj/item/paicard, "cleardna", ui_act_cleardna)
-UI_ACT_PROC(/obj/item/paicard, ui_act_cleardna)
+/obj/item/paicard/proc/ui_act_cleardna(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!pai)
 		return FALSE
 	pai.master = null
 	pai.master_dna = null
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "wires", ui_act_wires, UI_ARG_NUM("wires"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_wires)
+/obj/item/paicard/proc/ui_act_wires(datum/act/op/A, wires)
+	if(!ui_gate(A))
+		return FALSE
 	if(!pai)
 		return FALSE
-	switch(params["wires"])
+	switch(wires)
 		if(4)
 			radio.ToggleBroadcast()
 			return TRUE
@@ -273,57 +285,64 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_wires)
 			return TRUE
 	return FALSE
 
-UI_ACT(/obj/item/paicard, "setlaws", ui_act_setlaws, UI_ARG_TEXT("directive"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_setlaws)
+/obj/item/paicard/proc/ui_act_setlaws(datum/act/op/A, directive)
+	if(!ui_gate(A))
+		return FALSE
 	if(!pai)
 		return FALSE
 	if(in_use)
 		return FALSE
-	var/newlaws = sanitize(params["directive"], MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	var/newlaws = sanitize(directive, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	if(newlaws)
 		pai.pai_laws = newlaws
 		show_laws(TRUE)
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "clearlaws", ui_act_clearlaws)
-UI_ACT_PROC(/obj/item/paicard, ui_act_clearlaws)
+/obj/item/paicard/proc/ui_act_clearlaws(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!pai)
 		return FALSE
 	pai.pai_laws = null
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "select_pai", ui_act_select_pai, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_select_pai)
+/obj/item/paicard/proc/ui_act_select_pai(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(pai)
 		return FALSE
 	if(in_use)
 		return FALSE
 	in_use = TRUE
-	SSpai.invite_ghost(ui.user, params["ref"], src)
+	SSpai.invite_ghost(user, ref, src)
 	in_use = FALSE
 	selected_pai = null
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "select_tool", ui_act_select_tool, UI_ARG_VALUE("tool"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_select_tool)
+/obj/item/paicard/proc/ui_act_select_tool(datum/act/op/A, tool)
+	if(!ui_gate(A))
+		return FALSE
 	if(!emagged || !has_emag_toolkit)
 		return FALSE
-	var/new_tool = params["tool"]
+	var/new_tool = tool
 	if(!(new_tool in systems_list))
 		return FALSE
 	selected_system = new_tool
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "activate_tool", ui_act_activate_tool)
-UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
+/obj/item/paicard/proc/ui_act_activate_tool(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!emagged || !has_emag_toolkit || !selected_system)
 		return FALSE
 	switch(selected_system)
 		if("MultiTool")
-			multitool.attack_self(ui.user)
+			multitool.attack_self(user)
 			return TRUE
 		if("Signaler")
-			signaler.attack_self(ui.user)
+			signaler.attack_self(user)
 			return TRUE
 	return FALSE
 

@@ -36,6 +36,10 @@ CAPABILITIES(/obj/item/flamethrower)
 	owns_one(nameof(ptank), /obj/item/tank/phoron)
 	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool)
 	every(2 SECONDS, then(PROC_REF(flamethrower_step)), when = nameof(lit))
+	interface("Flamethrower", input = in_hand())
+	op("light", ui_act("light"), then(PROC_REF(ui_act_light)))
+	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
 
 /obj/item/flamethrower/Initialize(mapload)
 	. = ..()
@@ -177,9 +181,16 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/flamethrower, "Flamethrower")
-
-UI_DATA_REPLACE(/obj/item/flamethrower, "lit:num", "constructed=status:num", "throw_amount", "merge:ui_data_obj_item_flamethrower{has_tank:bool,throw_min:num,throw_max:num,fuel_kpa:unknown}")
+/obj/item/flamethrower/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["lit"] = lit
+	data["constructed"] = status
+	data["throw_amount"] = throw_amount
+	var/list/merged_1 = ui_data_obj_item_flamethrower(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/flamethrower's window data (declared on its UI_DATA row).
 /obj/item/flamethrower/proc/ui_data_obj_item_flamethrower(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -191,15 +202,15 @@ UI_DATA_REPLACE(/obj/item/flamethrower, "lit:num", "constructed=status:num", "th
 	dat["fuel_kpa"] = check_fuel() ? ptank.air_contents.return_pressure() : 0
 	return dat
 
-/obj/item/flamethrower/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/flamethrower/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || user.restrained() || user.lying)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/flamethrower, "light", ui_act_light)
-UI_ACT_PROC(/obj/item/flamethrower, ui_act_light)
+/obj/item/flamethrower/proc/ui_act_light(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
 		return FALSE
 	set_lit(!lit)
@@ -210,14 +221,17 @@ UI_ACT_PROC(/obj/item/flamethrower, ui_act_light)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/flamethrower, "amount", ui_act_amount, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/obj/item/flamethrower, ui_act_amount)
-	throw_amount = params["amount"]
+/obj/item/flamethrower/proc/ui_act_amount(datum/act/op/A, amount)
+	if(!ui_gate(A))
+		return FALSE
+	throw_amount = amount
 	throw_amount = clamp(throw_amount,THROWER_MIN,THROWER_MAX)
 	return TRUE
 
-UI_ACT(/obj/item/flamethrower, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/item/flamethrower, ui_act_remove)
+/obj/item/flamethrower/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!ptank)
 		return FALSE
 	user.put_in_hands(ptank)

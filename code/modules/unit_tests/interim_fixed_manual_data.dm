@@ -12,7 +12,7 @@
 		TEST_ASSERT(!QDELETED(book), "the actual fixed manual initializes alive: [entry[1]]")
 		TEST_ASSERT_EQUAL(book.unique, 1, "actual fixed manuals retain their editing restriction: [entry[1]]")
 		TEST_ASSERT_EQUAL(book.ui_title(user), entry[2], "actual fixed manual UI retains its published title: [entry[1]]")
-		var/list/data = book.ui_data_obj_item_book(user, null, null)
+		var/list/data = book.tgui_data(user)
 		TEST_ASSERT_EQUAL(data["title"], entry[2], "actual book UI receives the original manual title: [entry[1]]")
 		TEST_ASSERT_EQUAL(data["author"], entry[3], "actual book UI receives the original attribution: [entry[1]]")
 		TEST_ASSERT(istext(data["content"]) && length(data["content"]) > 1000, "actual book UI receives substantial instructional HTML: [entry[1]]")
