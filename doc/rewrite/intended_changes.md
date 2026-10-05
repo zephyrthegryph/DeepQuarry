@@ -679,3 +679,6 @@ Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the leg
 * **An APC frame held to a wall builds the APC on the wall.** `try_build()` called `replace_with()` on the frame while it was still in the
   builder's hand, and `replace_with()` hands the successor the original's slot: the new APC frame went into the builder's hand. The frame is
   dropped first now (fixed on the legacy code with the tests).
+* **The APC's board goes into the build graph's own slot.** The `apc_construction` slot relation is gone: the ledger makes a slot from the
+  graph's `put_in(SLOT_CONSTRUCTION)` (one board, in the graph's space SPACE_HATCH, so the board sits behind the cover like the rest of the
+  ladder). A `slot(SLOT_X, capacity =, at =, accepts =)` entry declares any other such slot (the e0 door assembly's).
