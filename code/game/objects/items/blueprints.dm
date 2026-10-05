@@ -423,7 +423,6 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		return
 	for(var/obj/machinery/alarm/airpanel in area_contents_of_type(area, /obj/machinery/alarm))
 		airpanel.name = replacetext(airpanel.name,oldtitle,title)
-		airpanel.update_area()
 	for(var/obj/machinery/power/apc/apcpanel in area_contents_of_type(area, /obj/machinery/power/apc))
 		apcpanel.name = replacetext(apcpanel.name,oldtitle,title)
 		apcpanel.update_area() //DECIDE IF THIS IS WANTED OR NOT. This can mean that the APC will overwrite the current APC the area being expanded has since areas cant have multiple APCs.

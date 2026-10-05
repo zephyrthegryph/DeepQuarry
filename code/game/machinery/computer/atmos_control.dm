@@ -15,8 +15,13 @@
 	var/list/monitored_alarm_ids = null
 	var/datum/tgui_module/atmos_control/atmos_control
 
+MSG_DEF(atmoscontrol/emagged, "You cause the screen to flash as you gain full control.", "%U% does something to %T%, causing the screen to flash!")
+
+/// The console is its controller's window (ui_redirect()): a hand or a silicon's link opens it; an emag gives anyone full control of every alarm.
 CAPABILITIES(/obj/machinery/computer/atmoscontrol)
 	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control)
+	op("use", inputs(hand(), remote()), label("Use"), wait(0), needs(req(PROC_REF(console_works), because = MSG(machine/inoperable))), then(PROC_REF(open_console)))
+	emag(then(PROC_REF(emag_screen)), say = MSG(atmoscontrol/emagged), powered = FALSE)
 
 /obj/machinery/computer/atmoscontrol/laptop //[TO DO] Change name to PCU and update mapdata to include replacement computers
 	name = "\improper Atmospherics PCU"
@@ -28,23 +33,19 @@ CAPABILITIES(/obj/machinery/computer/atmoscontrol)
 	light_color = "#00cc00"
 	density = 0
 
-/obj/machinery/computer/atmoscontrol
-	silicon_use = SILICON_USE_UI
+/obj/machinery/computer/atmoscontrol/proc/console_works(datum/act/A)
+	return operable()
 
-/obj/machinery/computer/atmoscontrol/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+/obj/machinery/computer/atmoscontrol/proc/open_console(datum/act/op/A)
+	add_fingerprint(A.actor)
+	tgui_interact(A.actor)
+	return OP_OK
 
-DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/atmoscontrol/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	act_message(user, src, MSG_SELF(span_warning("You cause the screen to flash as you gain full control.")), \
-		MSG_OTHERS(span_warning("%U% does something %T%, causing the screen to flash!")), \
-		MSG_BLIND("You hear an electronic warble."))
-	var/datum/tgui_module/atmos_control/controller = ui_redirect(user)
+/// The emag gives the console's controller full control (made now when nobody opened the console yet).
+/obj/machinery/computer/atmoscontrol/proc/emag_screen(datum/act/op/A)
+	var/datum/tgui_module/atmos_control/controller = ui_redirect(A.actor)
 	controller.emagged = TRUE
-	return 1
+	return OP_OK
 
 /obj/machinery/computer/atmoscontrol/ui_redirect(mob/user)
 	if(!atmos_control)

@@ -15,7 +15,6 @@
 	of = list(
 		/obj/machinery/power/apc,
 		/obj/machinery/firealarm,
-		/obj/machinery/alarm,
 		/obj/machinery/portable_atmospherics/canister,
 		/obj/machinery/portable_atmospherics/powered/pump,
 		/obj/machinery/portable_atmospherics/powered/scrubber,
@@ -387,59 +386,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/power/firealarm/idle(obj/machinery/firealarm/M)
 	return !M.timing || (!M.operable())
 
-// ---------------------------------------------------------------- air alarms
-
-/// The elected main alarm (per area) is the only one that scans and regulates;
-/// followers park until elect_main_air_alarm() (an ownership change) wakes a
-/// replacement. Gas wakes go through om_watch_arm_value() (air_alarm.dm
-/// register_gas_dependencies(), code/datums/om/watch.dm): an air alarm's TLV table has several
-/// bands per gas plus a temperature/pressure signature, condensed into one comparable
-/// atmospheric_control_signature() value so the watch fires only on exactly the crossings a
-/// full band set would, not on every harmless room-air diffusion tick. Active temperature
-/// regulation has no "room reached target" event, so it keeps running every pipeline tick
-/// (idle() below) until scan_atmo() reports the room has settled.
-/datum/om/stage/machine/power/alarm
-	of = /obj/machinery/alarm
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_OCCUPANT | CHANGE_MACHINE_GAS
-	woken_by = "power_change(); atom_break()/atom_fix(); wire shorts; TLV/thermostat settings; elect_main_air_alarm(); a watched gas crossing"
-	reads = list("regulating_temperature")
-
-/datum/om/stage/machine/power/alarm/perform(obj/machinery/alarm/M, datum/om/frame/machine/F)
-	if(!M.alarm_area_ref())
-		return STAGE_IDLE
-	var/obj/machinery/alarm/MA = M.alarm_area_ref().main_air_alarm
-	if(!MA)
-		M.alarm_area_ref().elect_main_air_alarm()
-		MA = M.alarm_area_ref().main_air_alarm // try again
-	if(!MA || (!M.operable()) || M.shorted || MA.shorted)
-		M.register_gas_dependencies()
-		return STAGE_IDLE
-	// Only the elected controller scans and regulates. The main alarm publishes
-	// the area's danger/icon state to every display.
-	if(MA != M)
-		M.unregister_gas_dependencies()
-		return STAGE_IDLE
-	if(!get_turf(M))
-		return STAGE_IDLE
-	M.scan_atmo()
-	if(!M.regulating_temperature)
-		M.register_gas_dependencies()
-	return STAGE_IDLE
-
-/// Settled unless it is the area's working controller with regulation running: a follower,
-/// an unpowered/broken/shorted alarm or one with no area parks even if it was mid-regulation
-/// when it lost control (an election, a short or a power cut wakes it back up).
-/datum/om/stage/machine/power/alarm/idle(obj/machinery/alarm/M)
-	if(!M.regulating_temperature)
-		return TRUE
-	if(M.has_stat(NOPOWER|BROKEN) || M.shorted || !get_turf(M))
-		return TRUE
-	var/area/A = M.alarm_area_ref()
-	if(!A)
-		return TRUE
-	var/obj/machinery/alarm/MA = A.main_air_alarm
-	return !MA || MA != M || MA.shorted
-
 // ---------------------------------------------------------------- canisters
 
 /// Only canister is on this pipeline (see the NOTE in portable_atmospherics.dm): the other
@@ -637,8 +583,6 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// TRUE while the fire alarm's countdown runs.
 OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
-/// Heating/cooling mode of the air alarm's thermostat (0 off).
-OM_FIELD(/obj/machinery/alarm, regulating_temperature, 0, CHANGE_MACHINE_SETTINGS)
 /// The canister's release valve.
 OM_FIELD(/obj/machinery/portable_atmospherics/canister, valve_open, 0, CHANGE_MACHINE_SETTINGS)
 /// TRUE while the canister has nothing to do; until arm_wakes() or a frame says otherwise.

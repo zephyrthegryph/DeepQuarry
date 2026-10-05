@@ -105,7 +105,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 /datum/entry/part/req/unlocked_for_actor/holds(datum/act/op/A)
 	if(!lock_locked(A.holder))
 		return TRUE
-	return silicon_or_admin(A) // a silicon over a link the holder lets in, or an admin ghost (code/library/access/window_access.dm)
+	return silicon_or_admin(A) || window_vouched(A) // a silicon over a link the holder lets in, an admin ghost, or a window that vouches (code/library/access/window_access.dm)
 
 /datum/entry/part/req/unlocked_for_actor/read_keys(datum/act/op/A)
 	return A.holder ? list(list(A.holder, "capkey:[LOCK_LOCKED]")) : list()

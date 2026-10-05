@@ -41,6 +41,14 @@
 #define RCON_AUTO	2
 #define RCON_YES	3
 
+// The air alarm's modes (its window, its wires and the area's devices read them).
+#define AALARM_MODE_SCRUBBING	1
+#define AALARM_MODE_REPLACEMENT	2 //like scrubbing, but faster.
+#define AALARM_MODE_PANIC		3 //constantly sucks all air
+#define AALARM_MODE_CYCLE		4 //sucks off all air, then refill and switches to scrubbing
+#define AALARM_MODE_FILL		5 //emergency fill
+#define AALARM_MODE_OFF			6 //Shuts it all down.
+
 // A vent pump's pressure checks (its pressure_checks bits).
 /// Never past its external bound in the room.
 #define VENT_CHECK_EXTERNAL 1

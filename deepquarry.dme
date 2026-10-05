@@ -5712,6 +5712,7 @@
 #include "code\library\access\subversion.dm"
 #include "code\domains\atmos\gas.dm"
 #include "code\domains\atmos\area_air_device.dm"
+#include "code\domains\atmos\gas_watch.dm"
 #include "code\domains\power\powered.dm"
 #include "code\engine\stats\def.dm"
 #include "code\engine\stats\rules.dm"

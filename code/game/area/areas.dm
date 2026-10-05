@@ -145,8 +145,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if (danger_level < 1 || danger_level >= 2)
 			firedoors_update()
 
-		for (var/obj/machinery/alarm/AA in area_contents_of_type(src, /obj/machinery/alarm))
-			AA.update_icon()
+		air_alarms_refresh()
 
 		return 1
 	return 0
@@ -687,6 +686,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.
 CAPABILITIES(/area)
 	after_init(0, then(PROC_REF(area_after_init)))
+	ref_one(nameof(main_air_alarm), /obj/machinery/alarm)
 	on_change(nameof(apc), ANY, then(PROC_REF(apc_changed)))
 
 /area/proc/apc_changed(datum/act/A)

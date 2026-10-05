@@ -3920,10 +3920,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/obj/machinery/alarm/A = new(T)
 	TEST_ASSERT_NOTNULL(A, "couldn't construct air alarm")
-	// Ensure the alarm's area + threshold-limit-value table are set up, then
-	// drive the production scan path (scan_atmo → overall_danger_level) directly.
-	A.update_area()
-	A.set_initial_TLV()
+	// Drive the production scan path (scan_room) directly, as the area's working main alarm.
+	A.stat_remove(NOPOWER | BROKEN)
+	rel_set(A.alarm_area_ref(), nameof(/area::main_air_alarm), A)
+	A.alarm_area_ref().air_alarms_refresh()
 
 	// The alarm reads its turf's pressure. ~one atmosphere ≈ 101.3 kPa.
 	var/pressure = turf_air.return_pressure()
@@ -3931,14 +3931,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"turf pressure not standard atmosphere: got [pressure]")
 
 	// Baseline: standard breathable air should read as safe (danger_level 0).
-	A.scan_atmo()
+	A.scan_room(null)
 	TEST_ASSERT_EQUAL(A.danger_level, 0, \
 		"air alarm flagged danger on a standard breathable atmosphere: [A.danger_level]")
 
 	// Pollute with plasma well past the phoron TLV danger ceiling — the alarm
 	// must now read its turf and raise danger_level above safe.
 	turf_air.adjust_gas(/datum/gas/plasma, 50)
-	A.scan_atmo()
+	A.scan_room(null)
 	TEST_ASSERT(A.danger_level > 0, \
 		"air alarm did not detect a dangerous (plasma-laden) atmosphere: danger_level stayed [A.danger_level]")
 
@@ -3957,49 +3957,42 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	T.air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	T.air.set_temperature(T20C)
 	var/obj/machinery/alarm/A = new(T)
-	A.update_area()
-	A.set_initial_TLV()
-	rel_set(A.alarm_area_ref(), nameof(/area::main_air_alarm), A)
 	A.stat_remove(NOPOWER | BROKEN)
-	A.shorted = FALSE
-	A.scan_atmo()
+	rel_set(A.alarm_area_ref(), nameof(/area::main_air_alarm), A)
+	A.alarm_area_ref().air_alarms_refresh()
+	A.target_temperature = T20C
+	A.scan_room(null)
 	TEST_ASSERT_EQUAL(A.danger_level, 0, \
 		"air alarm flagged danger on a standard breathable atmosphere")
-	// register_gas_dependencies() (air_alarm.dm) arms an om_watch value watch
-	// (code/datums/om/watch.dm) on atmospheric_control_signature() instead of the deleted
-	// hand-rolled revision+signature gas_dependency_changed(): only a TLV/control-band crossing
-	// should raise CHANGE_MACHINE_GAS, not every harmless composition drift.
-	A.register_gas_dependencies()
-	TEST_ASSERT(om_watch_armed(A, "gas"), \
-		"stable air alarm did not arm a gas watch")
-	var/wakes_before = A.gas_dependency_wake_count
+	TEST_ASSERT(!A.scanning, "a settled room parks the alarm's scan")
+	// Its gas watch (gas_watch(), code/domains/atmos/gas_watch.dm) hears every published change of the room's air; only a change that crosses one
+	// of the alarm's bands wakes the scan (room_changed()), not a harmless drift.
+	var/datum/cap_data/gas_watch/watch = gas_watch_data(A)
+	TEST_ASSERT_NOTNULL(watch?.watch, "the alarm watches its room's air")
 	T.air.adjust_moles(/datum/gas/oxygen, 0.01)
-	for(var/i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT_EQUAL(A.gas_dependency_wake_count, wakes_before, \
-		"a harmless composition drift that crossed no alarm or control threshold woke the air alarm")
+	A.room_changed(dq_atmos_test_observation(T.air), 2)
+	TEST_ASSERT(!A.scanning, "a harmless composition drift that crossed no alarm or control threshold woke the air alarm")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
-	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(A.gas_dependency_wake_count > wakes_before)
-			break
-	TEST_ASSERT(A.gas_dependency_wake_count > wakes_before, \
-		"a gas change that crossed a danger threshold did not wake the air alarm")
-	A.scan_atmo()
+	A.room_changed(dq_atmos_test_observation(T.air), 2)
+	TEST_ASSERT(A.scanning, "a gas change that crossed a danger threshold did not wake the air alarm")
+	A.scan_room(null)
 	TEST_ASSERT(A.danger_level > 0, \
 		"air alarm did not detect a dangerous (plasma-laden) atmosphere after waking")
 	T.air.set_moles(/datum/gas/plasma, 0)
 	T.air.set_temperature(T20C)
-	A.register_gas_dependencies()
-	wakes_before = A.gas_dependency_wake_count
+	A.scan_room(null)
+	TEST_ASSERT(!A.scanning, "the clean room parks it again")
 	T.air.set_temperature(A.target_temperature + 3)
-	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(A.gas_dependency_wake_count > wakes_before)
-			break
-	TEST_ASSERT(A.gas_dependency_wake_count > wakes_before, \
-		"a temperature change requiring active regulation did not wake the air alarm")
+	A.room_changed(dq_atmos_test_observation(T.air), 2)
+	TEST_ASSERT(A.scanning, "a temperature change requiring active regulation did not wake the air alarm")
+	T.air.set_temperature(T20C)
 	qdel(A)
+
+/// An observation record of `air` (the layout a gas watch hands its callback, from the mixture id on at index 2).
+/proc/dq_atmos_test_observation(datum/gas_mixture/air)
+	var/datum/gas_sample/S = gas_sample(air)
+	return list(0, air.arena_id(), GAS_DEPENDENCY_ALL, 0, S.pressure, S.temperature, S.volume,
+		S.moles(GAS_O2), S.moles(GAS_CO2), S.moles(GAS_PHORON), S.moles(GAS_CH4), S.moles(GAS_N2O), S.moles(GAS_VOLATILE_FUEL), 0, 0, S.total_moles)
 
 #ifdef DQ_TEST_AIR_ALARM_RADIO
 TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
@@ -4071,18 +4064,17 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!om_attached(V, /datum/om/pipeline/machine), "a vent pump joined the machine pipeline")
 
 	var/obj/machinery/alarm/A = new(T)
-	A.update_area()
-	A.set_initial_TLV()
-	A.register_gas_dependencies()
-	var/alarm_wakes_before = A.gas_dependency_wake_count
+	A.stat_remove(NOPOWER | BROKEN)
+	rel_set(A.alarm_area_ref(), nameof(/area::main_air_alarm), A)
+	A.alarm_area_ref().air_alarms_refresh()
+	A.scan_room(null)
 	T.air.adjust_moles(/datum/gas/plasma, 1)
-	for(var/alarm_i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(A.gas_dependency_wake_count > alarm_wakes_before)
+	for(var/alarm_i in 1 to 600)
+		native_system().drain()
+		if(A.scanning)
 			break
-		if(!(alarm_i % 256))
-			stoplag()
-	TEST_ASSERT(A.gas_dependency_wake_count > alarm_wakes_before, "composition change did not wake air alarm")
+		stoplag()
+	TEST_ASSERT(A.scanning, "composition change did not wake air alarm")
 
 	var/obj/machinery/air_sensor/S = new(T)
 	S.register_gas_dependencies()
@@ -7386,8 +7378,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(observation[2], mixture_id, "dirty gas observation returned the wrong arena mixture")
 	TEST_ASSERT(abs(observation[GAS_DEPENDENCY_OBSERVATION_STRIDE] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
 	var/obj/machinery/alarm/alarm = new(test_turf)
-	var/direct_signature = alarm.atmospheric_control_signature(air)
-	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 2)
+	var/datum/gas_sample/S = gas_sample(air)
+	var/direct_signature = alarm.room_signature(S.pressure, S.temperature, alarm.sample_partials(S))
+	var/observed_signature = alarm.observed_signature(observation, 2)
 	TEST_ASSERT_EQUAL(observed_signature, direct_signature, "atomic Rust gas observation changed air-alarm threshold semantics")
 	qdel(W)
 	qdel(alarm)

@@ -82,6 +82,8 @@ TRACKED(/obj/machinery/atmospherics, pipe_color)
 	var/atom/A = holder
 	if(istype(A) && A.cap_data)
 		gas_watch_rearm(A)
+	if(istype(A) && cap_of(A, CAP_GAS_WATCH))
+		gas_watch_arm(A) // a gas_watch() follows its mixture
 
 /proc/atmos_air_assign(datum/holder, var_name, datum/gas_mixture/value)
 	var/datum/gas_mixture/old = holder.vars[var_name]
