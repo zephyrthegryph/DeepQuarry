@@ -1,0 +1,5 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Cold rooms chill people again: a body exchanges heat with the air around it, the floor it stands on, the walls beside it and, in space or near vacuum, the sky."
+  - balance: "Floors hold more heat (a steel deck plate), so a room's floor takes a chilled body's heat instead of the air warming at once."

@@ -198,6 +198,7 @@
 #include "dq_heat_api_tests.dm"
 #include "dq_heat_net_tests.dm"
 #include "dq_heat_machines_behaviour.dm"
+#include "dq_body_heat_behaviour.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"

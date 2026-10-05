@@ -1113,9 +1113,9 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
   Both run in Rust on the world step, so they no longer depend on how often the machine steps. Before: freezer loop 243.15 K after 20 s from
   293.15 K toward 200 K, room +20 000 J; heater loop 313.15 K after 20 s toward 400 K. After: freezer loop reaches 200 K, room +79 423 J;
   heater loop reaches 400 K (the 50-mol test loop is small: the old per-step caps made it slower than its rating).
-* **Bodies exchange heat with their surroundings only outside their comfort range (approved).** With energy conserved, a 280 kJ/K body against a
-  ~2 kJ/K tile of air would heat every occupied room, so the body↔environment link carries the old convection rate only while the old Life code
-  would have run convection (body outside its comfort band or air more than 20 K away); inside it the link conducts nothing.
+* **Bodies exchange heat with their surroundings only outside their comfort range (approved).** With energy conserved, a 280 kJ/K body at
+  game-rate conductance would heat every occupied room, so its links carry the old convection rate only while the old Life code would have run
+  convection (body outside its comfort band or air more than 20 K away); inside it they conduct nothing ("Body heat against the room").
 * **One-off writes are booked.** Every gas temperature or energy write outside the gas and heat domains became `heat_set()` (an authority write:
   spawn temperatures, admin, events, tests) or `heat_add()` with a `HEAT_SOURCE_*` (fire, reactions, spells, devices, materials). Values are
   unchanged; `heat_books()` now accounts for them. The radiance spell and the supermatter keep their 10 000 K clamp as an authority write.
@@ -1137,13 +1137,46 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
 * **Exosuit cabin.** A 1000 W resistive `heat_pump` toward 20 °C against the outside air, paid from the cell, while temperature control runs
   (was 25 % of the gap, capped at 10 K, per 2 s with no energy). Before: 305.85 K after four regulations from 333.15 K.
 * **Mob bodies.** `bodytemperature` is only the starting value; `body_temperature()` reads the mob's Rust heat body (`HUMAN_HEAT_CAPACITY`).
-  Convection is the conductance of the body's coupling to its surroundings (`C·(1−protection)·density / (divisor · 2 s)`, the old per-run rate),
-  zero inside the comfort range; radiation in space is a link to space over `HUMAN_EXPOSED_SURFACE_AREA`; thermoregulation, passive heat and
-  prosthetic heating are the body's metabolic power (the old per-run kelvin steps as watts over 2 s). Heat is conserved, so cold air chills a
-  body only as fast as the air (and what it touches) can take its heat: a human in a single cell of 50 K nitrogen warms the cell instead of
-  freezing. `dq_extreme_cold_damages_human` now chills the body against a thousand cells of 50 K gas before checking frostbite.
+  Thermoregulation, passive heat and prosthetic heating are the body's metabolic power (the old per-run kelvin steps as watts over one Life
+  frame). How the body meets the room is "Body heat against the room" below.
 * **Test clock.** `test_time()` advances the heat network's edges with it (`vg_heat_net_advance`), so heat-flow pins use the kernel clock.
 * **Material batches** keep their own DM heat model; the proc is renamed `add_batch_heat()` so it is not mistaken for a gas write.
+
+## Body heat against the room (rewrite/heat-followups)
+
+Pins: `code/modules/unit_tests/dq_body_heat_behaviour.dm` (a human in a sealed 9×9 room whose air, floor and walls start at the room's
+temperature; Life's environment and thermoregulation stages once per 6 s frame, the native world stepping between frames). "Before" is the
+pre-heat code (f24504821c: the body relaxed toward a mixture that never warmed); "regressed" is the conserved heat domain as it first landed
+(43dce9c2bb), where the body met only its tile's ~2 kJ/K of air.
+
+| Case | Before (f24504821c) | Regressed (43dce9c2bb) | After |
+|---|---|---|---|
+| Unsuited, −50 °C room: body after 1 / 5 / 10 / 20 frames | 304.6 / 287.2 / 273.7 / 262.1 K (holds ~262.7 K) | 307.9 / 304.7 / 302.9 / 300.1 K | 303.1 / 285.9 / 273.4 / 265.3 K (room air 223 → 239 K) |
+| Unsuited, 400 K room: after 10 / 20 frames | 347.8 / 357.7 K | 318.2 / 321.2 K | 348.7 / 354.6 K |
+| Unsuited, 1000 K room: after 5 frames | 444 K (past 360 K at frame 2) | — | 519.7 K, burned |
+| Suited, in space: after 100 frames | 310.15 K | 309.6 K | 310.2 K |
+| Ten people in a 20 °C room for 50 frames | air unchanged (bodies never heated air) | +0.7 K in the room harness | bodies linked at 0 W/K, 0 W of metabolism, temperature unchanged |
+
+* **A body is linked to its surroundings, not to one tile of air.** Life's environment stage sets three couplings through clothing
+  (`set_surroundings()`, `code/modules/heat/heat_mobs.dm`): convection at the old rate (`C·(1−protection)·density / (15 · 6 s)`, about
+  3.1 kW/K bare) shared between its tile's air (coupling slot 0) and heat links to the air of the tiles open to it (the plume it stirs);
+  contact with the floor solid it stands on (`BODY_FLOOR_CONDUCTANCE`, 6 kW/K bare) and with each wall beside it (30 % of that); and, in
+  space or below a tenth of a standard cell's moles, a radiative link to the 2.7 K sky over `HUMAN_EXPOSED_SURFACE_AREA × (1 − cold
+  protection)`. Before the fix the body could give a −50 °C room only what one tile of air held, so the tile warmed to the body's temperature
+  in seconds and the comfort gate shut.
+* **Floors hold heat.** A floor turf's solid is `FLOOR_HEAT_CAPACITY` = 80 kJ/K (a 2 cm steel deck plate of 1 m²; it was 10 kJ/K). The floor
+  is what takes a chilled body's heat: a body losing 50 K gives up 14 MJ, which would warm a 9×9 room's air by 80 K but its floor by about 2 K.
+  Walls keep their material capacity (312.5 kJ/K for steel) and conductance.
+* **The Life frame is 6 s.** The body's conductances and metabolic power were scaled to a 2 s run; they are now scaled to the real Life frame
+  (`LIFE_CYCLE_SECONDS`), the cadence the old per-run steps were applied at, so a body chills and recovers at the old real-time rate.
+* **The comfort gate stays.** Inside its comfort range (air within 20 K of the body, body between its cold and heat damage levels, pressure
+  safe) a body is linked at zero conductance. Game-rate exchange (kW/K, a hundred times a real body's) would otherwise make every occupied
+  room a heater. The gate now reads the plume's mean air temperature, not the one tile the body warms.
+* **Space radiation scales with protection.** It was the bare 5.2 m² whatever the body wore (and, before the heat domain, a 2.7 kJ step per
+  frame, about 450 W); now a space suit's cold protection removes it and a bare body radiates about 2.7 kW, which thermoregulation holds
+  within 2 K.
+* **`dq_extreme_cold_damages_human` is a plain cold room again**: a sealed room of 50 K nitrogen (air, floor and walls), no stand-in cold
+  mass.
 
 ## Missing forms: the DNA modifier console's window
 

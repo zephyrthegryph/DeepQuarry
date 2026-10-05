@@ -59,6 +59,14 @@
 #define BODYTEMP_COLD_DIVISOR 15
 /// Similar to the BODYTEMP_AUTORECOVERY_DIVISOR, but this is the divisor which is applied at the stage that follows autorecovery. This is the divisor which comes into play when the human's loc temperature is higher than their body temperature. Make it lower to gain bodytemp faster.
 #define BODYTEMP_HEAT_DIVISOR 15
+/// An unprotected body's contact with the floor solid it stands on, W/K (code/modules/heat/heat_mobs.dm, set_surroundings()). With the
+/// floor's heat capacity (FLOOR_HEAT_CAPACITY) and conduction this is what lets a cold room take a body's heat at the old rate while energy is
+/// conserved: the tile's air alone holds about 2 kJ/K against the body's 280 kJ/K.
+#define BODY_FLOOR_CONDUCTANCE 6000
+/// Each wall solid beside a body takes this fraction of its floor contact (radiation and touch).
+#define BODY_WALL_CONDUCTANCE_FRACTION 0.3
+/// Below this fraction of a standard cell's moles a body on a floor radiates to the sky as it does in space (near vacuum).
+#define BODY_SKY_DENSITY 0.1
 /// The maximum number of degrees that your body can cool in 1 tick, due to the environment, when in a cold area.
 #define BODYTEMP_COOLING_MAX -30
 /// The maximum number of degrees that your body can heat up in 1 tick, due to the environment, when in a hot area.
