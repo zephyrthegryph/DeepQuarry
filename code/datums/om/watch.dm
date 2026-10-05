@@ -92,29 +92,29 @@ CAPABILITIES(/datum/om_watch)
 /datum/om_watch/proc/gas_field_value(list/observation, observation_index, field)
 	switch(field)
 		if("pressure")
-			return observation[observation_index + 3]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_PRESSURE)
 		if("temperature")
-			return observation[observation_index + 4]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_TEMPERATURE)
 		if("volume")
-			return observation[observation_index + 5]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_VOLUME)
 		if("o2")
-			return observation[observation_index + 6]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_OXYGEN)
 		if("co2")
-			return observation[observation_index + 7]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_CARBON_DIOXIDE)
 		if("plasma")
-			return observation[observation_index + 8]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_PLASMA)
 		if("methane")
-			return observation[observation_index + 9]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_METHANE)
 		if("n2o")
-			return observation[observation_index + 10]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_NITROUS_OXIDE)
 		if("volatile_fuel")
-			return observation[observation_index + 11]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_VOLATILE_FUEL)
 		if("miasma")
-			return observation[observation_index + 12]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_MIASMA)
 		if("zauker")
-			return observation[observation_index + 13]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_ZAUKER)
 		if("total_moles")
-			return observation[observation_index + 14]
+			return GAS_OBSERVED(observation, observation_index, GAS_OBS_TOTAL_MOLES)
 	return null
 
 /// The interest mask a field belongs to, for aggregating a mixture's Rust-side publish mask
@@ -569,7 +569,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 			if(OM_WATCH_REVISION)
 				if(!(change_mask & W.interest_mask))
 					continue
-				var/observed_revision = (observation && observation_index) ? observation[observation_index + 2] : null
+				var/observed_revision = (observation && observation_index) ? GAS_OBSERVED(observation, observation_index, GAS_OBS_REVISION) : null
 				if(isnull(observed_revision) || observed_revision != W.armed_revision)
 					W.armed_revision = observed_revision
 					om_watch_fire(W, entity)

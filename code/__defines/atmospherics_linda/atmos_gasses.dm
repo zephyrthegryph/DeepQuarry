@@ -47,3 +47,28 @@
 #define GAS_READ_HEAT_CAPACITY 5
 /// Offset of a gas's moles (GAS_ID_* number) within a record.
 #define GAS_READ_MOLES(gas_id) (GAS_READ_HEADER + (gas_id) + 1)
+
+// The fields of a dirty-gas observation record (verdigris/ffi/src/gas/mix.rs drain_observations()), counted from the index a gas watch callback
+// is handed (the record's mixture id): read them with GAS_OBSERVED(observation, index, GAS_OBS_PRESSURE), never with a bare offset.
+#define GAS_OBS_MIXTURE 0
+#define GAS_OBS_MASK 1
+#define GAS_OBS_REVISION 2
+#define GAS_OBS_PRESSURE 3
+#define GAS_OBS_TEMPERATURE 4
+#define GAS_OBS_VOLUME 5
+#define GAS_OBS_OXYGEN 6
+#define GAS_OBS_CARBON_DIOXIDE 7
+#define GAS_OBS_PLASMA 8
+#define GAS_OBS_METHANE 9
+#define GAS_OBS_NITROUS_OXIDE 10
+#define GAS_OBS_VOLATILE_FUEL 11
+#define GAS_OBS_MIASMA 12
+#define GAS_OBS_ZAUKER 13
+#define GAS_OBS_TOTAL_MOLES 14
+/// The named field `field` (GAS_OBS_*) of the observation record at `index` of `observation`.
+#define GAS_OBSERVED(observation, index, field) ((observation)[(index) + (field)])
+
+// The state of a /datum/gas_heater (code/domains/atmos/gas.dm): what it is doing to the room's air.
+#define GAS_HEATER_IDLE 0
+#define GAS_HEATER_COOLING 1
+#define GAS_HEATER_HEATING 2
