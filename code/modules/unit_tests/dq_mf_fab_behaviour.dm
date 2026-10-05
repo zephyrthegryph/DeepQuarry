@@ -8,21 +8,18 @@
 
 /// The maintenance panel is open.
 /proc/mffab_panel_open(obj/machinery/M)
-	return !!M.panel_open
+	return !!panel_open(M)
 
 /// The machine is printing (a run, or an exosuit part under way).
 /proc/mffab_busy(obj/machinery/M)
-	if(istype(M, /obj/machinery/autolathe))
-		return !!om_busy(M)
-	if(istype(M, /obj/machinery/rnd))
-		var/obj/machinery/rnd/R = M
-		return !!R.busy
-	var/obj/machinery/mecha_part_fabricator_tg/F = M
-	return !!F.being_built()
+	if(istype(M, /obj/machinery/mecha_part_fabricator_tg))
+		var/obj/machinery/mecha_part_fabricator_tg/F = M
+		return !!F.being_built()
+	return !!fabricator_printing(M)
 
 /// `user` drags the machine onto `T`: where it drops what it prints.
 /proc/mffab_drag(mob/user, obj/machinery/M, turf/T)
-	call(M, "choose_drop_with_actor")(user, T)
+	test_drag(user, M, T)
 
 /// The designs the window offers `user` (its static data).
 /proc/mffab_design_count(obj/machinery/M, mob/user)
@@ -48,30 +45,13 @@
 	var/obj/machinery/mecha_part_fabricator_tg/F = M
 	return F.rmat.mat_container()
 
-/// The exosuit fabricator starts the first part of its queue. (The legacy one steps on a machine lane the test clock does not drive, and times a part
-/// by world.time: its step is run by hand.)
+/// The exosuit fabricator starts the first part of its queue (the queue's start does it: a moment passes).
 /proc/mffab_exofab_start(obj/machinery/mecha_part_fabricator_tg/F)
-	F.machine_step()
+	test_time(5)
 
 /// The exosuit fabricator works until it has nothing left to do: every part made, each dropped or held for a blocked exit.
 /proc/mffab_exofab_run(obj/machinery/mecha_part_fabricator_tg/F)
-	for(var/i in 1 to 20)
-		if(F.being_built())
-			EXPIRY_SET(F, build_finish, -1, CLOCK_WORLD)
-		F.machine_step()
-
-/// A window `user` keeps open on the machine while it asks something (a legacy question belongs to its window).
-/proc/mffab_open_window(mob/user, obj/machinery/M)
-	var/datum/tgui/ui = new(user, M, "HcTest")
-	ui.status = STATUS_INTERACTIVE
-	return ui
-
-/// A button pressed in that window.
-/proc/mffab_window_press(mob/user, obj/machinery/M, datum/tgui/ui, action, list/args)
-	return M.tgui_act(action, args || list(), ui)
-
-/proc/mffab_close_window(datum/tgui/ui)
-	qdel(ui)
+	test_time(5 MINUTES)
 
 /// What examining the machine tells `user`, as one text.
 /proc/mffab_examine(obj/machinery/M, mob/user)
@@ -155,7 +135,7 @@
 	touch(H, L, S)
 	TEST_ASSERT(!mffab_panel_open(L), "and closes it")
 
-/// With the panel open a hand reaches the wires; with it shut wirecutters do not.
+/// With the panel open a hand, wirecutters or a multitool reach the wires; with it shut the cutters do not.
 /datum/unit_test/dq_hc_struct/mffab/lathe_wires_behind_the_panel
 /datum/unit_test/dq_hc_struct/mffab/lathe_wires_behind_the_panel/run_gate()
 	var/mob/living/carbon/human/H = person()
@@ -168,6 +148,12 @@
 	H.drop_item()
 	touch(H, L, null)
 	TEST_ASSERT(length(wires_test(L).opened_for()) > shown, "an open panel shows a hand the wires")
+	shown = length(wires_test(L).opened_for())
+	touch(H, L, in_hand(H, /obj/item/tool/wirecutters))
+	TEST_ASSERT(length(wires_test(L).opened_for()) > shown, "and wirecutters")
+	shown = length(wires_test(L).opened_for())
+	touch(H, L, in_hand(H, /obj/item/multitool))
+	TEST_ASSERT(length(wires_test(L).opened_for()) > shown, "and a multitool")
 
 /// A crowbar takes the lathe apart into a frame with its board, only with the panel open.
 /datum/unit_test/dq_hc_struct/mffab/lathe_crowbar_dismantles_behind_the_panel
@@ -452,7 +438,7 @@
 	long_settle()
 	TEST_ASSERT_EQUAL(count_on(T, D.build_path), 2, "only the first run builds")
 
-/// Its drop direction: onto a blocked floor that is not a wall the legacy lathe still drops there (the autolathe drops on its own tile).
+/// Its drop direction: a blocked tile, wall or not, sends the build onto its own tile (as the autolathe's).
 /datum/unit_test/dq_hc_struct/mffab/protolathe_drop_direction
 /datum/unit_test/dq_hc_struct/mffab/protolathe_drop_direction/run_gate()
 	var/mob/living/carbon/human/H = person()
@@ -472,7 +458,8 @@
 	press(H, P, "build", list("ref" = D.id, "amount" = 1))
 	long_settle()
 	east.set_density(was_dense)
-	TEST_ASSERT_EQUAL(count_on(east, D.build_path), 2, "a blocked floor still takes it (legacy)")
+	TEST_ASSERT_EQUAL(count_on(east, D.build_path), 1, "a blocked floor gets nothing more")
+	TEST_ASSERT_EQUAL(count_on(T, D.build_path), 1, "the build lands on its own tile")
 
 /// Sheets come back out of its materials on request.
 /datum/unit_test/dq_hc_struct/mffab/protolathe_ejects_sheets
@@ -567,9 +554,11 @@
 	TEST_ASSERT_EQUAL(length(F.queue), 1, "one is taken out")
 	press(H, F, "clear_queue")
 	TEST_ASSERT_EQUAL(length(F.queue), 0, "the queue is cleared")
-	press(H, F, "build", list("designs" = list(D.id), "now" = FALSE))
-	press(H, F, "build_queue")
-	TEST_ASSERT(F.process_queue, "build_queue starts it")
+	press(H, F, "build", list("designs" = list(D.id, D.id), "now" = FALSE))
+	stock(F, D)
+	hc_ui(H, F, "build_queue")
+	mffab_exofab_start(F)
+	TEST_ASSERT(F.process_queue && mffab_busy(F), "build_queue starts it")
 	press(H, F, "stop_queue")
 	TEST_ASSERT(!F.process_queue, "stop_queue stops it")
 
@@ -602,13 +591,18 @@
 	mffab_exofab_run(F)
 	TEST_ASSERT_EQUAL(count_on(get_step(T, EAST), D.build_path), 1, "the part drops east")
 
-/// The legacy exosuit fabricator has no maintenance panel: a screwdriver does nothing.
+/// A screwdriver opens the exosuit fabricator's panel, and behind it a crowbar takes it apart into a frame with its board.
 /datum/unit_test/dq_hc_struct/mffab/exofab_panel
 /datum/unit_test/dq_hc_struct/mffab/exofab_panel/run_gate()
 	var/mob/living/carbon/human/H = person()
-	var/obj/machinery/mecha_part_fabricator_tg/F = exofab()
+	var/turf/T = tile(3, 3)
+	var/obj/machinery/mecha_part_fabricator_tg/F = exofab(T = T)
 	touch(H, F, in_hand(H, /obj/item/tool/screwdriver))
-	TEST_ASSERT(!mffab_panel_open(F), "no panel opens (legacy)")
+	TEST_ASSERT(mffab_panel_open(F), "a screwdriver opens the panel")
+	touch(H, F, in_hand(H, /obj/item/tool/crowbar))
+	TEST_ASSERT(QDELETED(F), "a crowbar takes it apart")
+	var/obj/structure/frame/frame = locate() in T
+	TEST_ASSERT(frame && istype(frame.circuit, /obj/item/circuitboard/mechfab), "into a frame holding its board")
 
 /// The prosthetics fabricator asks which manufacturer to build for.
 /datum/unit_test/dq_hc_struct/mffab/prosfab_manufacturer
@@ -622,9 +616,36 @@
 			wanted = company
 			break
 	TEST_ASSERT_NOTNULL(wanted, "(a manufacturer to pick)")
-	var/datum/tgui/window = mffab_open_window(H, F)
-	mffab_window_press(H, F, window, "manufacturer")
+	hc_ui(H, F, "manufacturer")
 	TEST_ASSERT(asked(H), "the manufacturer is asked for")
 	hci_answer(H, wanted)
 	settle()
-	mffab_close_window(window)
+	TEST_ASSERT_EQUAL(F.manufacturer, wanted, "and set")
+
+/// A species disk uploads its files in five seconds: the disk is used up and the species can be built for.
+/datum/unit_test/dq_hc_struct/mffab/prosfab_species_disk
+/datum/unit_test/dq_hc_struct/mffab/prosfab_species_disk/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/mecha_part_fabricator_tg/prosthetics/F = exofab(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
+	var/obj/item/disk/species/disk = allocate(/obj/item/disk/species/tajaran, get_turf(H))
+	TEST_ASSERT(!(SPECIES_TAJARAN in F.species_types), "(it cannot build for the species yet)")
+	H.put_in_active_hand(disk)
+	hci_click(H, F, disk)
+	test_time(4 SECONDS)
+	TEST_ASSERT(!QDELETED(disk) && !(SPECIES_TAJARAN in F.species_types), "nothing before the five seconds are up")
+	test_time(2 SECONDS)
+	TEST_ASSERT(QDELETED(disk), "the disk is used up")
+	TEST_ASSERT(SPECIES_TAJARAN in F.species_types, "and the species can be built for")
+
+/// A disk stuck to the hand cannot be used up, so nothing is uploaded and the disk stays.
+/datum/unit_test/dq_hc_struct/mffab/prosfab_stuck_species_disk
+/datum/unit_test/dq_hc_struct/mffab/prosfab_stuck_species_disk/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/mecha_part_fabricator_tg/prosthetics/F = exofab(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
+	var/obj/item/disk/species/disk = allocate(/obj/item/disk/species/tajaran, get_turf(H))
+	H.put_in_active_hand(disk)
+	add_trait(disk, TRAIT_NODROP, "mffab_stuck_disk")
+	hci_click(H, F, disk)
+	test_time(6 SECONDS)
+	TEST_ASSERT(!QDELETED(disk) && H.get_active_hand() == disk, "the disk stays in the hand")
+	TEST_ASSERT(!(SPECIES_TAJARAN in F.species_types), "and nothing is uploaded")

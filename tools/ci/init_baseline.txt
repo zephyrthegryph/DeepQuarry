@@ -214,7 +214,6 @@ initialize	code/game/machinery/telecomms/presets.dm	/obj/machinery/telecomms/rec
 initialize	code/game/machinery/telecomms/presets.dm	/obj/machinery/telecomms/bus/preset_two/Initialize(mapload)
 initialize	code/game/machinery/telecomms/presets.dm	/obj/machinery/telecomms/server/presets/unused/Initialize(mapload)
 initialize	code/game/machinery/telecomms/telecomunications.dm	/obj/machinery/telecomms/Initialize(mapload)
-initialize	code/game/machinery/telecomms/telecomunications.dm	/obj/machinery/telecomms/server/Initialize(mapload)
 initialize	code/game/machinery/teleporter.dm	/obj/machinery/computer/teleporter/Initialize(mapload)
 initialize	code/game/machinery/teleporter.dm	/obj/machinery/teleport/hub/Initialize(mapload)
 initialize	code/game/machinery/teleporter.dm	/obj/machinery/teleport/station/Initialize(mapload)

@@ -584,7 +584,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	to_chat(user, span_notice("Following parts detected in [src]:"))
 	for(var/obj/item/C in component_parts)
 		to_chat(user, span_notice("    [C.name]"))
-	if(panel_open || !R.panel_req)
+	if(panel_open || global.panel_open(src) || !R.panel_req) // the legacy panel var, or the panel() capability's key
 		var/list/req = dq_type_var(circuit, "req_components")
 		var/P
 		for(var/obj/item/A in component_parts)

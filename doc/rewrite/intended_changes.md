@@ -1226,3 +1226,42 @@ first: no click reached the legacy `wrench_act()`).
   delete is a requirement (its access, or emagged) instead of a check inside the effect, and an index with no entry is refused. The traffic
   console keeps its legacy form; its network and status line now live on the console base.
 - Magic numbers are named in `code/__defines/radio.dm` (TCOMMS_*).
+
+## Fabrication: the autolathe, the R&D production machines and the exosuit fabricators (rewrite/machines-full)
+
+The autolathe, the protolathe (and the department protolathes), the circuit imprinter and the exosuit and prosthetics fabricators share one
+library capability, `fabricator()` (code/library/machine/fabricator.dm): the print button, its refusals, the print run, where prints drop, the
+store's sheets button and item intake, and examine. A machine built from a board takes `board_machine()`, a dismantle graph (behind the open
+panel a crowbar takes it apart into the frame, its board and its parts), in place of `maintenance_flags`. Behaviour tests:
+`dq_mf_fab_behaviour.dm` (written green on the legacy code first).
+
+- **Refusals are requirements, told to the person who pressed.** One run at a time, a design the machine knows (a hacked design only while
+  hacked: the legacy protolathe built a hacked design it did not show), a design of its build type, every material slot filled, the store
+  not on hold and the materials for the whole run. The legacy lathes said these aloud (`atom_say()`) from inside the effect and returned;
+  nothing about the materials is spent either way.
+- **The print run** is a keyed timer chain on the machine (`fabricator.print`) owning its run record, not an OM task (autolathe) or a
+  DECLARE_REPEAT over loose vars (protolathe). It stops, and says why aloud as before, when the machine stops working (any reason: the
+  protolathe used to keep printing while EMPed or broken), the power draw fails, the store goes on hold or the materials run out.
+- **Where prints drop.** A drag of the machine onto a tile (by someone standing next to it, never while it prints) points it there; alt-click
+  forgets it (the protolathe's examine always promised this; only the autolathe had it). One rule for every lathe: a blocked tile, wall or
+  not, sends the print onto the machine's own tile (the protolathe dropped onto any dense floor that was not a wall). The exosuit fabricator
+  keeps its own rule (a blocked exit holds the part) and has no reset.
+- **The panel.** `panel()` with the wires behind it: a hand, wirecutters or a multitool at the open panel reach the wires (the autolathe's
+  cutters and multitool did not, the legacy tool overrides never ran under the router), and the screwdriver that opens the panel shows the
+  wires as before. The autolathe's panel does not open while it prints. The R&D machines' wrench (2 seconds, the panel shut) is `anchor()`.
+- **The exosuit and prosthetics fabricators now have a panel and come apart with a crowbar** into their frame and board (they had a board and
+  a panel sprite but no maintenance at all).
+- **The store.** An item used on a shut machine goes through the store's own use gate (sheets in, a sheet snatcher, a multitool on a silo
+  link), as the legacy attackby fall-through did; the panel's tools are not fed to it. The autolathe now takes sheets while it prints (the
+  protolathe always did).
+- **The exosuit fabricator's queue** runs on a part timer (`exofab_part`) instead of a polling machine step on `world.time`: the queue starts
+  when it is started. Stopping the queue mid-part lets that part finish and drop (the legacy step stopped looking at a part once the queue
+  was stopped, so it hung until the queue was started again). A part held for a blocked exit makes the queue wait for it (the legacy queue
+  went on and a second held part replaced the first). Better parts rescale the part under way, as before.
+- **The prosthetics fabricator's** species and manufacturer questions are `asks()` of their ops (the setting was applied only when the legacy
+  window was still interactive). Its limb and species disks are timed ops whose corrupted-disk refusal is a requirement.
+- **The window.** The autolathe and the fabricator declare their data's shape (`ui_shape()`, typed for TypeScript); the window shuts while
+  the disable wire holds (as the legacy `tgui_status()` did) and its buttons are refused. A touch on a shut autolathe whose shock wire is
+  live shocks (half the time) instead of opening the window, as before.
+- Examine lines come from the capability (material cost, drop direction) and are shown at any range; the autolathe no longer says its panel
+  is closed.

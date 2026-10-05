@@ -312,8 +312,6 @@ init_new_child	code/game/machinery/CableLayer.dm	rel_set(src, nameof(cable), new
 init_new_child	code/game/machinery/air_alarm.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
 init_new_child	code/game/machinery/atmoalter/pump.dm	rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
 init_new_child	code/game/machinery/atmoalter/scrubber.dm	rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
-init_new_child	code/game/machinery/autolathe.dm	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
-init_new_child	code/game/machinery/autolathe.dm	rel_set(src, nameof(materials), new /datum/material_container( \
 init_new_child	code/game/machinery/bomb_tester.dm	rel_set(src, nameof(faketank), new /datum/gas_mixture)
 init_new_child	code/game/machinery/camera/camera.dm	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 init_new_child	code/game/machinery/computer/ai_core.dm	rel_set(src, nameof(laws), new using_map.default_law_type)
@@ -330,8 +328,6 @@ init_new_child	code/game/machinery/frame.dm	rel_set(src, nameof(circuit), new fr
 init_new_child	code/game/machinery/gear_dispenser.dm	rel_set(src, nameof(one_setting), new one_setting)
 init_new_child	code/game/machinery/pda_multicaster.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 init_new_child	code/game/machinery/requests_console.dm	rel_set(src, nameof(announcement), new /datum/announcement)
-init_new_child	code/game/machinery/telecomms/telecomunications.dm	rel_set(src, nameof(Compiler), new /datum/TCS_Compiler())
-init_new_child	code/game/machinery/telecomms/telecomunications.dm	rel_set(src, nameof(server_radio), new /obj/item/radio/headset())
 init_new_child	code/game/machinery/virtual_reality/vr_console.dm	rel_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
 init_new_child	code/game/mecha/equipment/tools/cable_layer.dm	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
 init_new_child	code/game/mecha/equipment/tools/powertool.dm	rel_set(src, nameof(my_tool), new tooltype(src))
@@ -444,11 +440,7 @@ init_new_child	code/modules/reagents/reagent_containers/virology.dm	rel_add(src,
 init_new_child	code/modules/reagents/reagent_containers/virology.dm	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random/minor)
 init_new_child	code/modules/refinery/core/industrial_reagent_reactor.dm	rel_set(src, nameof(internal_tank), new /obj/machinery/portable_atmospherics/canister/empty())
 init_new_child	code/modules/research/message_server.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/modules/research/tg/machinery/_production.dm	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
-init_new_child	code/modules/research/tg/machinery/_production.dm	rel_set(src, nameof(materials), new /datum/remote_materials(
 init_new_child	code/modules/research/tg/machinery/destructive_analyzer.dm	rel_set(src, nameof(rmat), new /datum/remote_materials( \
-init_new_child	code/modules/research/tg/machinery/mech_fabricator.dm	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
-init_new_child	code/modules/research/tg/machinery/mech_fabricator.dm	rel_set(src, nameof(rmat), new /datum/remote_materials( \
 init_new_child	code/modules/resleeving/machines.dm	rel_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
 init_new_child	code/modules/shieldgen/shield_gen.dm	rel_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 init_new_child	code/modules/telesci/telesci_computer.dm	rel_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals

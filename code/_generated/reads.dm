@@ -245,6 +245,14 @@
 	. = ..()
 	. += drawn_from(nameof(lamp_shade), nameof(status))
 
+/obj/machinery/mecha_part_fabricator_tg/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(being_built))
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(being_built))
+
 /obj/machinery/porta_turret/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(turret_type))
@@ -265,6 +273,14 @@
 /obj/machinery/recharger/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))
+
+/obj/machinery/rnd/destructive_analyzer/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(loaded_item))
+
+/obj/machinery/rnd/production/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(production_animation), nameof(stripe_color))
 
 /obj/machinery/telecomms/generated_reads()
 	. = ..()

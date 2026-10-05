@@ -1,9 +1,16 @@
+// The R&D production machines: the protolathe, the circuit imprinter and the department protolathes (doc/rewrite/final_api.html section 16,
+// doc/rewrite/conversion_guide.md).
+//
+// ONE CAPABILITIES list adds to the R&D base (rdmachines.dm) what a production machine is: a fabricator (fabricator(): the build button, its
+// refusals, the run, where builds drop, the sheets button, examine) over its material store (its own, or an ore silo it links to), its window,
+// and the techweb designs it follows. The imperative parts below are its own: which designs it knows and how long one takes, the window's data,
+// the store's insertion animation and the look.
+
 /obj/machinery/rnd/production
 	name = "technology fabricator"
 	desc = "Makes researched and prototype items with materials and energy."
 	/// Energy cost per full stack of materials spent. Material insertion is 40% of this.
 	active_power_usage = 5000
-	// interaction_flags_atom = parent_type::interaction_flags_atom | INTERACT_ATOM_MOUSEDROP_IGNORE_CHECKS
 
 	/// The efficiency coefficient. Material costs and print times are multiplied by this number;
 	var/efficiency_coeff = 1
@@ -23,78 +30,63 @@
 	var/drop_direction = 0
 	///looping sound for printing items
 	var/datum/looping_sound/lathe_print/print_sound
-	///coalesces on_techweb_update() bursts: only the first update schedules the refresh
-	var/techweb_updating = FALSE
-	/// Personal account credited for the current print run's production bonus.
-	var/current_producer_account = 0
-	/// The current print run (start_making()): design, items left, time and power per item,
-	/// material cost coefficient and the chosen materials.
-	var/datum/design_techweb/build_design
-	var/build_remaining = 0
-	var/build_time_per_item = 1 SECOND
-	var/build_charge_per_item = 0
-	var/build_coefficient = 1
-	var/tmp/list/build_chosen_materials
+	/// The print run under way (fabricator()), owned while it runs.
+	var/datum/fab_run/print_run
+
+TRACKED(/obj/machinery/rnd/production, stripe_color)
 
 CAPABILITIES(/obj/machinery/rnd/production)
 	owns_one(nameof(materials), /datum/remote_materials)
-	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
-
-/// One item every build_time_per_item while busy printing.
-DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_item, "busy")
-
+	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
+	owns_one(nameof(print_run), /datum/fab_run)
+	fabricator(buildtypes = nameof(allowed_buildtypes), efficiency = nameof(efficiency_coeff), knows = PROC_REF(knows_design),
+		build_time = PROC_REF(design_build_time), department = DEPARTMENT_RESEARCH, eject = TRUE, eject_power = TRUE)
+	examine_line(PROC_REF(build_time_text))
+	interface("Fabricator")
+	ui_shape(busy = bool(), materials = list_of(row()), materialChoices = list_of(row()), onHold = bool(), materialMaximum = num(), queue = list_of(row()))
 
 /obj/machinery/rnd/production/Initialize(mapload)
-	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
-	rel_set(src, nameof(materials), new /datum/remote_materials(
-		src, \
-		mapload, \
-		mat_container_events = list( \
-			(/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)
-		) \
-	))
-
+	// ALLOW(decl): mapload is a constructor argument of its store: only a machine the map places links to the ore silo
+	rel_set(src, nameof(materials), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert))))
 	available_designs = list()
-
 	. = ..()
-
 	default_apply_parts()
 	RefreshParts()
-	update_icon()
 
-// ---- the wires ----
+/obj/machinery/rnd/production/proc/make_print_sound(current)
+	return new /datum/looping_sound/lathe_print(list(src), FALSE)
 
-/// A lathe's hacked designs went (a hack pulse ran out): the window of whoever pulsed the wire shows it.
-/obj/machinery/rnd/production/proc/lathe_hack_ran_out(datum/act/A)
-	update_tgui_static_data(wires_last_user(src))
+/obj/machinery/rnd/production/proc/build_time_text(datum/act/A)
+	return span_notice("Build time at <b>[efficiency_coeff * 100]%</b>.")
 
+// ---- the look ----
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/rnd/production/appearance_overlays()
-	. = list()
-
-	icon_state = "[initial(icon_state)][panel_open ? "_t" : ""]"
-
-	if(!stripe_color)
-		return .
-
-	var/mutable_appearance/stripe = mutable_appearance('icons/obj/machines/research_vr.dmi', "protolathe_stripe[panel_open ? "_t" : ""]")
-	stripe.color = stripe_color
-	. += stripe
-
-/obj/machinery/rnd/production/examine(mob/user, infix, suffix)
-	. = ..()
-
-	if(!in_range(user, src) && !isobserver(user))
-		return
-
-	. += span_notice("Material usage cost at <b>[efficiency_coeff * 100]%</b>")
-	. += span_notice("Build time at <b>[efficiency_coeff * 100]%</b>")
-	if(drop_direction)
-		. += span_notice("Currently configured to drop printed objects <b>[dir2text(drop_direction)]</b>.")
-		. += span_notice("Alt-click to reset.")
+/// Its open panel and its work have their own states; a department lathe wears its stripe.
+/obj/machinery/rnd/production/draw(datum/look/look)
+	..()
+	look.hide(LOOK_PANEL_OPEN)
+	var/open = panel_open(src)
+	if(open)
+		look.state("[initial(icon_state)]_t")
+	else if(production_animation && fabricator_printing(src))
+		look.state(production_animation)
 	else
-		. += span_notice("Drag towards a direction (while next to it) to change drop direction.")
+		look.state(initial(icon_state))
+	if(stripe_color)
+		look.overlay(production_stripe(stripe_color, open))
+
+/// A department lathe's stripe in its colour, open or shut (one shared appearance per colour and state).
+/proc/production_stripe(color, open)
+	var/static/list/stripes = list()
+	var/key = "[color][open ? "_t" : ""]"
+	var/mutable_appearance/stripe = stripes[key]
+	if(!stripe)
+		stripe = mutable_appearance('icons/obj/machines/research_vr.dmi', "protolathe_stripe[open ? "_t" : ""]")
+		stripe.color = color
+		stripes[key] = stripe
+	return stripe
+
+// ---- the techweb ----
 
 /obj/machinery/rnd/production/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
@@ -111,34 +103,42 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 /// Updates the list of designs this fabricator can print.
 /obj/machinery/rnd/production/proc/update_designs()
 	PROTECTED_PROC(TRUE)
-	techweb_updating = FALSE
-
 	var/previous_design_count = available_designs.len
-
 	available_designs.Cut()
-
 	for(var/design_id in stored_research.researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
-
-		// TODO: only enable this if we port departmental techfabs
-		// if((isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)) && (design.build_type & allowed_buildtypes))
 		if(design.build_type & allowed_buildtypes)
 			available_designs |= design
-
 	var/design_delta = available_designs.len - previous_design_count
-
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
-
 	update_static_data_for_all_viewers()
 
+/// Designs come and go in bursts: one refresh two seconds after the first of them.
 /obj/machinery/rnd/production/proc/on_techweb_update(datum/act/notice/A)
-	EVENT_HANDLER
+	if(!after_pending(src, "techweb_designs"))
+		after(src, 2 SECONDS, PROC_REF(update_designs), key = "techweb_designs")
 
-	if(!techweb_updating) //so we batch these updates together
-		techweb_updating = TRUE
-		after(src, 2 SECONDS, PROC_REF(update_designs))
+/// A lathe's hacked designs went (a hack pulse ran out): the window of whoever pulsed the wire shows it.
+/obj/machinery/rnd/production/proc/lathe_hack_ran_out(datum/act/A)
+	update_tgui_static_data(wires_last_user(src))
+
+// ---- the fabricator's questions ----
+
+/// It knows a researched design its department may make; a hacked design only while hacked.
+/obj/machinery/rnd/production/proc/knows_design(datum/design_techweb/D)
+	if(!stored_research || !LAZYACCESS(stored_research.researched_designs, D.id))
+		return FALSE
+	if(!isnull(allowed_department_flags) && !(D.departmental_flags & allowed_department_flags))
+		return FALSE
+	return hacked || !(RND_CATEGORY_HACKED in D.category)
+
+/// One item of `D` takes this long: faster with better manipulators.
+/obj/machinery/rnd/production/proc/design_build_time(datum/design_techweb/D)
+	return (D.construction_time * D.lathe_time_factor * efficiency_coeff) ** 0.8
+
+// ---- the store ----
 
 /**
  * Consumes power for the item inserted either into silo or local storage.
@@ -181,43 +181,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 
 ///When materials are instered into local storage
 /obj/machinery/rnd/production/proc/local_material_insert(datum/act/notice/N)
-	EVENT_HANDLER
 	var/datum/notice/matcontainer_item_consumed/event = N
-
 	process_item(event.item, event.mats_consumed, event.material_amount)
 
 /obj/machinery/rnd/production/RefreshParts()
 	. = ..()
-
 	var/total_storage = get_part_rating(/obj/item/stock_parts/matter_bin) * 37.5 * SHEET_MATERIAL_AMOUNT
 	materials.set_local_size(total_storage)
-
 	efficiency_coeff = compute_efficiency()
-
 	update_static_data_for_all_viewers()
 
 ///Computes this machines cost efficiency based on the available parts
 /obj/machinery/rnd/production/proc/compute_efficiency()
 	PROTECTED_PROC(TRUE)
+	return 1.2 - get_part_rating(/obj/item/stock_parts/manipulator) * 0.1
 
-	var/efficiency = 1.2 - get_part_rating(/obj/item/stock_parts/manipulator) * 0.1
-
-	return efficiency
-
-/**
- * The cost efficiency for an particular design
- * Arguments
- *
- * * path - the design path to check for
- */
-/obj/machinery/rnd/production/proc/build_efficiency(path)
-	PRIVATE_PROC(TRUE)
-	SHOULD_BE_PURE(TRUE)
-
-	if(ispath(path, /obj/item/stack))
-		return 1
-	else
-		return efficiency_coeff
+// ---- the window ----
 
 /obj/machinery/rnd/production/ui_assets(mob/user)
 	return list(
@@ -225,71 +204,32 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-DECLARE_UI(/obj/machinery/rnd/production, "Fabricator")
-
 /obj/machinery/rnd/production/tgui_static_data(mob/user)
 	var/list/data = ..()
-
 	var/list/designs = list()
-
-	var/datum/asset/spritesheet_batched/research_designs/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
-	var/size32x32 = "[spritesheet.name]32x32"
-
-	var/coefficient
 	for(var/datum/design_techweb/design in available_designs)
-		if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))
-			continue
-		if(!hacked && (RND_CATEGORY_HACKED in design.category))
-			continue
-
-		var/cost = list()
-
-		coefficient = build_efficiency(design.build_path)
-		for(var/mat_id in design.materials)
-			cost[mat_id] = OPTIMAL_COST(design.materials[mat_id] * coefficient)
-
-		var/css_id = sanitize_css_class_name(design.id)
-		var/size = spritesheet.icon_size_id(css_id)
-		designs[design.id] = list(
-			"name" = design.name,
-			"desc" = design.get_description(),
-			"cost" = cost,
-			"id" = design.id,
-			"categories" = design.category,
-			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
-			"materialConfigurable" = !!design.material_template,
-			"materialProfile" = design.material_application,
-			"materialSlots" = material_slots_tgui(material_template_singleton(design.material_template), design.material_total),
-		)
-
+		if(knows_design(design))
+			designs[design.id] = fabricator_design_row(design, efficiency_coeff)
 	data["designs"] = designs
 	data["fabName"] = name
-
 	var/list/material_data = materials.mat_container()?.tgui_static_data(user)
 	if(material_data)
 		data += material_data
-
 	return data
 
-UI_DATA_REPLACE(/obj/machinery/rnd/production, "busy:num", "merge:ui_data_obj_machinery_rnd_production{materials:list,materialChoices:unknown,onHold:bool,materialMaximum:unknown,queue:list}")
-
-/// The computed part of /obj/machinery/rnd/production's window data (declared on its UI_DATA row).
-/obj/machinery/rnd/production/proc/ui_data_obj_machinery_rnd_production(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
-	var/list/material_data = materials.mat_container()?.material_list_data(user)
+/obj/machinery/rnd/production/ui_data(datum/act/eval/A)
+	var/list/data = list(
+		"busy" = !!fabricator_printing(src),
+		// Loaded materials offered in the per-design material picker (selectable designs).
+		"materialChoices" = lathe_material_choice_list(materials?.mat_container()),
+		"onHold" = FALSE,
+		"materialMaximum" = materials.local_size,
+		"queue" = list(),
+	)
+	var/list/material_data = materials.mat_container()?.material_list_data(A.actor)
 	if(material_data)
 		data["materials"] = material_data
-	// Loaded materials offered in the per-design material picker (selectable designs).
-	data["materialChoices"] = material_choice_list()
-	data["onHold"] = FALSE //materials.on_hold()
-	data["materialMaximum"] = materials.local_size
-	data["queue"] = list()
-
 	return data
-
-/obj/machinery/rnd/production/proc/material_choice_list()
-	return lathe_material_choice_list(materials?.mat_container())
 
 // Shared: loaded materials (>= 1 sheet) offered in a lathe's per-design material
 // picker. Used by both the protolathe family and the autolathe.
@@ -333,207 +273,3 @@ UI_DATA_REPLACE(/obj/machinery/rnd/production, "busy:num", "merge:ui_data_obj_ma
 			"dielectricStrength" = mat.dielectric_strength,
 			"meltingPoint" = mat.melting_point,
 		)
-
-UI_ACT(/obj/machinery/rnd/production, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id", 64))
-UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_remove_mat)
-	var/datum/material/material = GLOB.name_to_material[params["id"]]
-	if(!istype(material))
-		return
-
-	var/amount = params["amount"]
-	if(isnull(amount))
-		return
-
-	//we use initial(active_power_usage) because higher tier parts will have higher active usage but we have no benifit from it
-	if(!use_power_oneoff(ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * initial(active_power_usage))))
-		atom_say("No power to dispense sheets")
-		return
-
-	materials.eject_sheets(material, amount)
-	return TRUE
-
-UI_ACT(/obj/machinery/rnd/production, "build", ui_act_build, UI_ARG_NUM("amount", 1, 50), UI_ARG_LIST("materialSlots"), UI_ARG_TEXT("ref", 256))
-UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
-	if(busy)
-		atom_say("Warning: fabricator is busy!")
-		return
-
-	//validate design
-	var/design_id = params["ref"]
-	if(!design_id)
-		return
-	var/datum/design_techweb/design = LAZYACCESS(stored_research.researched_designs, design_id) ? SSresearch.techweb_design_by_id(design_id) : null
-	if(!istype(design))
-		return FALSE
-	if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))
-		atom_say("This fabricator does not have the necessary keys to decrypt this design.")
-		return FALSE
-	if(design.build_type && !(design.build_type & allowed_buildtypes))
-		atom_say("This fabricator does not have the necessary manipulation systems for this design.")
-		return FALSE
-
-	//validate print quantity
-	var/print_quantity = params["amount"]
-	if(isnull(print_quantity))
-		return
-
-	// Material-selectable designs let the user pick which loaded material to use.
-	var/list/chosen_materials = params["materialSlots"] || list()
-	if(design.material_template && !design.material_choice_valid(chosen_materials))
-		atom_say("Select valid materials for every required construction slot.")
-		return FALSE
-	var/list/effective_mats = design.effective_materials(chosen_materials)
-
-	//efficiency for this design, stacks use exact materials
-	var/coefficient = build_efficiency(design.build_path)
-
-	//check for materials
-	if(!materials.can_use_resource())
-		return
-	if(!materials.mat_container().has_materials(effective_mats, coefficient, print_quantity))
-		atom_say("Not enough materials to complete prototype[print_quantity > 1 ? "s" : ""].")
-		return FALSE
-
-	//compute power & time to print 1 item
-	var/charge_per_item = 0
-	for(var/material in effective_mats)
-		charge_per_item += effective_mats[material]
-	charge_per_item = ROUND_UP((charge_per_item / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * coefficient * active_power_usage)
-	var/build_time_per_item = (design.construction_time * design.lathe_time_factor * efficiency_coeff) ** 0.8
-
-	//start production
-	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
-	current_producer_account = producer_id?.associated_account_number || 0
-	shared_set(src, nameof(/obj/machinery/rnd/production::build_design), design)
-	build_remaining = print_quantity
-	src.build_time_per_item = build_time_per_item
-	build_coefficient = coefficient
-	build_charge_per_item = charge_per_item
-	build_chosen_materials = chosen_materials
-	set_busy(TRUE)
-	SStgui.update_uis(src)
-	print_sound.start()
-	if(production_animation)
-		icon_state = production_animation
-
-	return TRUE
-
-/// Where printed items drop: the tile in drop_direction (unless it is a wall), else our own.
-/obj/machinery/rnd/production/proc/production_drop_target()
-	if(drop_direction)
-		var/turf/target_location = get_step(src, drop_direction)
-		if(!iswall(target_location))
-			return target_location
-	return get_turf(src)
-
-/**
- * One step of the print run (DECLARE_REPEAT while busy): makes the next item of build_design
- * (build_remaining left, build_time_per_item apart, build_charge_per_item power each, cost
- * scaled by build_coefficient) and drops it on production_drop_target().
-*/
-/obj/machinery/rnd/production/proc/do_make_item()
-	PROTECTED_PROC(TRUE)
-	var/datum/design_techweb/design = build_design
-	var/items_remaining = build_remaining
-	var/material_cost_coefficient = build_coefficient
-	var/charge_per_item = build_charge_per_item
-	var/list/chosen_materials = build_chosen_materials
-	var/turf/target = production_drop_target()
-
-	if(!items_remaining || !design) // how
-		finalize_build()
-		return REPEAT_STOP
-
-	if(has_stat(NOPOWER))
-		atom_say("Unable to continue production, power failure.")
-		finalize_build()
-		return REPEAT_STOP
-
-	if(!use_power_oneoff(charge_per_item)) // provide the wait time until lathe is ready
-		var/area/my_area = get_area(src)
-		var/obj/machinery/power/apc/my_apc = my_area.apc
-		if(!QDELETED(my_apc))
-			atom_say("Unable to continue production, APC overload.")
-		else
-			atom_say("Unable to continue production, no APC in area.")
-		finalize_build()
-		return REPEAT_STOP
-
-	if(!materials.can_use_resource())
-		atom_say("Unable to continue production, materials on hold.")
-		finalize_build()
-		return REPEAT_STOP
-
-	var/is_stack = ispath(design.build_path, /obj/item/stack)
-	var/list/design_materials = design.effective_materials(chosen_materials)
-	if(!materials.mat_container().has_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1))
-		atom_say("Unable to continue production, missing materials.")
-		finalize_build()
-		return REPEAT_STOP
-	materials.use_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1, "built", "[design.name]")
-
-	var/atom/movable/created
-	if(is_stack)
-		var/obj/item/stack/stack_item = initial(design.build_path)
-		var/max_stack_amount = initial(stack_item.max_amount)
-		var/number_to_make = (initial(stack_item.amount) * items_remaining)
-		while(number_to_make > max_stack_amount)
-			created = new stack_item(null, max_stack_amount) //it's imporant to spawn things in nullspace, since obj's like stacks qdel when they enter a tile/merge with other stacks of the same type, resulting in runtimes.
-			if(isitem(created))
-				created.pixel_x = rand(-6, 6)
-				created.pixel_y = rand(-6, 6)
-				var/obj/created_stack = created
-				created_stack.set_economic_provenance(DEPARTMENT_RESEARCH, max(10, build_time_per_item / 10), current_producer_account)
-			created.forceMove(target)
-			number_to_make -= max_stack_amount
-
-		created = new stack_item(null, number_to_make)
-	else
-		created = design.create_item(null, chosen_materials)
-		split_materials_uniformly(design_materials, material_cost_coefficient, created)
-
-	if(isitem(created))
-		created.pixel_x = rand(-6, 6)
-		created.pixel_y = rand(-6, 6)
-		var/obj/created_object = created
-		created_object.set_economic_provenance(DEPARTMENT_RESEARCH, max(10, build_time_per_item / 10), current_producer_account)
-	created.forceMove(target)
-
-	if(is_stack)
-		items_remaining = 0
-	else
-		items_remaining -= 1
-
-	build_remaining = items_remaining
-	if(!items_remaining)
-		finalize_build()
-		return REPEAT_STOP
-
-/// Resets the busy flag
-/// Called at the end of do_make_item's timer loop
-/obj/machinery/rnd/production/proc/finalize_build()
-	PROTECTED_PROC(TRUE)
-	print_sound.stop()
-	set_busy(FALSE)
-	shared_set(src, nameof(build_design), null)
-	build_chosen_materials = null
-	current_producer_account = 0
-	SStgui.update_uis(src)
-	icon_state = initial(icon_state)
-
-/obj/machinery/rnd/production/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
-	return choose_drop_with_actor(usr, over_location) // ALLOW(sys_usr_outside_verb): Native fabricator drag captures its actor before unchanged layout guards and notifications.
-
-/obj/machinery/rnd/production/proc/choose_drop_with_actor(mob/user, over_location)
-	if(!Adjacent(user))
-		return
-	if(isobserver(user) || user.is_incorporeal())
-		return
-	if(busy)
-		balloon_alert(user, "busy printing!")
-		return
-	var/direction = get_dir(src, over_location)
-	if(!direction)
-		return
-	drop_direction = direction
-	balloon_alert(user, "dropping [dir2text(drop_direction)]")

@@ -1,6 +1,14 @@
+// The R&D machines' base (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md): the protolathe, the circuit imprinter and the
+// destructive analyzer.
+//
+// ONE CAPABILITIES list says what they share: a machine built from a board (behind the open panel a crowbar takes it apart: board_machine()), a
+// wrench that frees it (2 seconds, the panel shut), a screwdriver panel with the R&D wiring behind it (the hack and the disable wires, a high
+// voltage decoy), a part-replacer target, the item it holds (the analyzer's), and a window that the disable wire shuts. Its link to the
+// techweb is its own: connected at init to the station's server, kept in `stored_research`.
+
+MSG_DEF_SELF(rnd/disabled, "It does not respond.")
+
 /obj/machinery/rnd
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	maintenance_wrench_time = 2 SECONDS
 	name = "R&D Device"
 	icon = 'icons/obj/machines/research_vr.dmi'
 	density = TRUE
@@ -12,8 +20,27 @@
 	///The item loaded inside the machine, used by experimentors and destructive analyzers only (owned; spills when the machine dies).
 	var/obj/item/loaded_item
 
-///Are we currently printing a machine
-OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
+/// The hacked designs are unlocked: the hack wire cut, or pulsed (lathe_wires()).
+STAT(/obj/machinery/rnd, hacked, ANY)
+/// The machine will not work: the disable wire cut, or pulsed (lathe_wires()).
+STAT(/obj/machinery/rnd, disabled, ANY)
+
+CAPABILITIES(/obj/machinery/rnd)
+	machine_basics(repair = NONE, frame = board_machine())
+	owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL)
+	panel()
+	extend("panel.open", wait(0))
+	extend("panel.open", then(PROC_REF(panel_toggled)))
+	// three wires and five duds, every machine its own colours: the hack and the disable (a pulse flips them) and a high-voltage decoy
+	wires(name = "R&D Machinery", count = 8, randomize = TRUE, by_hand = TRUE, status_lines = PROC_REF(wire_lights))
+	lathe_wires()
+	shock_wire(wire = WIRE_SHOCK)
+	anchor()
+	extend("anchor.toggle", wait(2 SECONDS), needs(req_closed(SPACE_PANEL)))
+	on_change(nameof(/atom/movable::anchored), ANY, then(PROC_REF(anchor_moved)))
+	part_replacement()
+	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
+	extend(TAG_UI, needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 
 /obj/machinery/rnd/Initialize(mapload)
 	. = ..()
@@ -28,11 +55,6 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 		log_research("[src] disconnected from techweb [stored_research] (destroyed).")
 	..()
 
-/obj/machinery/rnd/tgui_status(mob/user)
-	if(disabled)
-		return STATUS_CLOSE
-	return ..()
-
 ///Called when attempting to connect the machine to a techweb, forgetting the old.
 /obj/machinery/rnd/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
@@ -45,49 +67,14 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 /obj/machinery/rnd/proc/on_connected_techweb()
 	SHOULD_CALL_PARENT(FALSE)
 
-///Reset the state of this machine
-/obj/machinery/rnd/proc/reset_busy()
-	set_busy(FALSE)
+/// The panel was opened: whoever opened it sees the wires.
+/obj/machinery/rnd/proc/panel_toggled(datum/act/op/A)
+	if(panel_open(src))
+		wires_open(src, A.actor)
 
-/obj/machinery/rnd/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rnd_part_replace,
-		/datum/interaction/machine_hand/rnd_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/rnd_use
-	id = "rnd_use"
-	name = "Use"
-	effect = /obj/machinery/rnd/proc/interaction_rnd_use
-
-/obj/machinery/rnd/proc/interaction_rnd_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(panel_open && wiring_of(src))
-		wires_open(src, user)
-		return TRUE
-	if(disabled)
-		return TRUE
-	tgui_interact(user)
-	return TRUE
-
-/datum/interaction/machine_item/rnd_part_replace
-	id = "rnd_part_replace"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/rnd/proc/interaction_rnd_part_replace
-
-/obj/machinery/rnd/proc/interaction_rnd_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(default_part_replacement(user, held))
-		return TRUE
-	return FALSE
-
-/obj/machinery/rnd/screwdriver_act(mob/user, obj/item/tool)
-	var/result = ..()
-	if(ITEM_INTERACT_CONSUMED(result) && panel_open)
-		wires_open(src, user)
-	return result
+/// Freed or bolted down, its power follows.
+/obj/machinery/rnd/proc/anchor_moved(datum/act/A)
+	power_change()
 
 /obj/machinery/rnd/dismantle()
 	var/obj/item/our_item = own_take(src, nameof(loaded_item))
@@ -95,23 +82,9 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 		our_item.forceMove(drop_location())
 	. = ..()
 
-/// The hacked designs are unlocked: the hack wire cut, or pulsed (lathe_wires()).
-STAT(/obj/machinery/rnd, hacked, ANY)
-/// The machine will not work: the disable wire cut, or pulsed (lathe_wires()).
-STAT(/obj/machinery/rnd, disabled, ANY)
-
-CAPABILITIES(/obj/machinery/rnd)
-	owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL)
-	space(SPACE_PANEL, door = nameof(panel_open))
-	// three wires and five duds, every machine its own colours: the hack and the disable (a pulse flips them) and a high-voltage decoy
-	wires(name = "R&D Machinery", count = 8, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
-	lathe_wires()
-	shock_wire(wire = WIRE_SHOCK)
-
 // ---- the wires ----
 
 /obj/machinery/rnd/proc/wire_lights()
 	return list(
 		"The red light is [disabled ? "off" : "on"].",
 		"The blue light is [hacked ? "off" : "on"].")
-
