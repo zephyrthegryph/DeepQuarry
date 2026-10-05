@@ -495,6 +495,11 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		return FALSE
 	return !!(A.state & (1 << (CAPKEY_BIT(key_id) - 1)))
 
+/// Sets state key `key_id` of the holder's capability (the one capability of that id: no selector). TRUE when it changed. The everyday form of
+/// cap_key_set().
+/proc/key_set(datum/holder, key_id, value)
+	return cap_key_set(holder, key_id, value, null)
+
 /// Sets state key `key_id` of the holder's type-level activation (the activation is made now if it did not exist). Publishes the
 /// key on the holder when it changed. TRUE when it changed.
 /proc/cap_key_set(datum/holder, key_id, value, selector)

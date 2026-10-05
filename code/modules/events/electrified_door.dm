@@ -16,7 +16,7 @@
 		target_doors = shuffle(target_doors)
 
 		for(var/obj/machinery/door/airlock/target_door in target_doors)
-			if(!target_door.isElectrified() && target_door.arePowerSystemsOn() && target_door.get_integrity() >= target_door.max_integrity)
+			if(!target_door.electrified && target_door.power_systems_on() && target_door.get_integrity() >= target_door.max_integrity)
 				rel_set(src, nameof(chosen_door), target_door)
 				return
 
@@ -27,7 +27,7 @@
 	chosen_door().set_safeties(0)
 	if(severity >= EVENT_LEVEL_MODERATE)
 		chosen_door().electrify(-1)
-	chosen_door().lock()
+	set_bolted(chosen_door(), TRUE)
 	chosen_door().take_damage(chosen_door().max_integrity * 5/6, BRUTE)
 	hold(chosen_door(), STAT_AICONTROLDISABLED, null, SRC_ROUND_EVENT)
 	chosen_door().update_icon()

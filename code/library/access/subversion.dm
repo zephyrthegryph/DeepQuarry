@@ -22,5 +22,5 @@ CAPABILITY_TYPE(subversion_reset, CAP_SUBVERSION_RESET, /datum/capability/lib/su
 
 /// What a reset does to the holder: the default clears the emag (a type that is taken over another way overrides it and calls ..()).
 /atom/proc/reset_subversion(datum/act/op/A)
-	cap_key_set(src, EMAG_EMAGGED, FALSE, null)
+	key_set(src, EMAG_EMAGGED, FALSE)
 	return OP_OK

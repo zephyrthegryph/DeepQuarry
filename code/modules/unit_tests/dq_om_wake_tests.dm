@@ -89,31 +89,30 @@
 
 /datum/unit_test/dq_om_wake_airlock_deadlines/Run()
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
-	A.autoclose = TRUE
+	A.set_autoclose(TRUE)
 	TEST_ASSERT(!A.autoclose_pending(), "a fresh airlock has an autoclose pending")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "a fresh airlock is not asleep")
 
-	// Electrification and power loss are timed_set() values: each restores on its own timer, with
-	// no process() poll and no door deadline.
-	timed_set(A, nameof(A.electrified_until), 1, for_time = 0.1 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
-	TEST_ASSERT(A.isElectrified(), "timed_set electrified the airlock")
+	// Electrification and power loss are timed holds: each runs out on its own, with no process() poll and no door deadline.
+	hold(A, STAT_ELECTRIFIED, TRUE, SRC_LOCKDOWN, 0.1 SECONDS)
+	TEST_ASSERT(A.electrified, "the hold electrified the airlock")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "an electrified airlock's audit failed")
 	// A due timer still in flight (a busy world: GC reference searches stall the MC) is given
 	// time to land; a timer that was never set, or never comes due, still fails.
 	for(var/i in 1 to 200)
-		if(!A.electrified_until)
+		if(!A.electrified)
 			break
 		om_test_ticks(1)
-	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification did not revert on its timer")
+	TEST_ASSERT(!A.electrified, "the electrification did not run out")
 	TEST_ASSERT(!A.autoclose_pending(), "an airlock with no deadline kept a timer")
 
 	// Main power returns on its timer.
-	timed_set(A, nameof(A.main_power_lost_until), 1, for_time = 0.1 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
+	hold(A, STAT_MAIN_POWER_OUT, TRUE, SRC_BREAKER, 0.1 SECONDS)
 	for(var/i in 1 to 200)
-		if(A.main_power_lost_until <= 0)
+		if(!A.main_power_out)
 			break
 		om_test_ticks(1)
-	TEST_ASSERT(A.main_power_lost_until <= 0, "main power did not return at its deadline ([A.main_power_lost_until])")
+	TEST_ASSERT(!A.main_power_out, "main power did not return when its hold ran out")
 
 
 /// Bolts and power raise CHANGE_MACHINE_MODE for whoever watches the door.
@@ -123,7 +122,7 @@
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
 	var/datum/om_wake_test_subscriber/watcher = allocate(/datum/om_wake_test_subscriber)
 	om_test_watch(watcher, A, CHANGE_MACHINE_MODE)
-	var/failure = om_wake_test(watcher, om_callable(A, TYPE_PROC_REF(/obj/machinery/door/airlock, lock), TRUE))
+	var/failure = om_wake_test(watcher, om_callable(A, TYPE_PROC_REF(/obj/machinery/door/airlock, drop_bolts), TRUE))
 	TEST_ASSERT(!failure, failure)
 
 /// Cameras: EMP recovery and the motion alarm are timers; losing a target is a signal.

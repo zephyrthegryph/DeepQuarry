@@ -338,6 +338,7 @@
 		"floor <- /obj/item/storage/quickdraw" = "storage.gather,feed_replacer,storage.empty_out,storage.climb_in,storage.put_in,quickdraw.draw,storage.open,quickdraw.switch_alt,storage.toggle_open,storage.empty,storage.gather_mode,quickdraw.switch,storage.refuse |  | quickdraw.switch",
 		"floor <- /obj/item/storage/secure" = "emag.use,slice,storage.gather,storage.empty_out,storage.climb_in,feed_replacer,service_panel,reset_memory,storage.put_in,locked_click,storage.open,alt_open,storage.toggle_open,storage.empty,storage.gather_mode,emag.subvert,type,storage.refuse,ui_open,ui_open |  | ",
 		"floor <- /obj/item/storage" = "storage.gather,feed_replacer,storage.empty_out,storage.climb_in,storage.put_in,storage.open,storage.toggle_open,storage.empty,storage.gather_mode,storage.refuse |  | "
+
 	)
 	return table
 
@@ -591,5 +592,6 @@
 		"/obj/structure/p2_bare_seat" = "buckle.buckle_drag,buckle.buckle_self,buckle.buckle_grab,buckle.unbuckle",
 		"/obj/structure/table" = "slam,carpet,slice_blade,slice_arm_blade,construction.build:table_plated,climb.climb,put_on,construction.undo:table_plated,construction.undo:table_reinforced,construction.dismantle,repair,uncarpet,construction.build:table_reinforced,place_dragged,climb.climb_menu,flip,put_back,claw,place",
 		"/obj/structure/windoor_assembly" = "construction.build:windoor_assembly_wired,construction.build:windoor_assembly_boarded,rename,construction.build:windoor_assembly_secured,construction.build:windoor_assembly_finished,construction.undo:windoor_assembly_secured,construction.undo:windoor_assembly_wired,construction.undo:windoor_assembly_boarded,construction.undo:windoor_assembly_finished,construction.dismantle,rename_robot,flip"
+
 	)
 	return table

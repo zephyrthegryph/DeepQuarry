@@ -1,8 +1,10 @@
 // The parts a door answers to (doc/rewrite/final_api.html, section 11 "The library"; the airlock is the reference user, doc/rewrite/conversion_guide.md).
 //
-//   bolts(drop = "lock", raise = "unlock", starts = nameof(bolted_at_start))
-//        State key BOLTS_BOLTED. The bolts are the door's own mechanism: `drop` and `raise` name procs of the holder taking (forced) that move them and
-//        answer TRUE when they did. A map says a door starts bolted with the holder var `starts` names. The look shows them as the layer "bolts".
+//   bolts(drop = "drop_bolts", raise = "raise_bolts", starts = nameof(bolted_at_start))
+//        STAT_BOLTED, a door's stat composed from sourced holds: the door's own motor (SRC_DOOR_BOLTS: a wire, a button, a radio command), and each
+//        hand that bolts it on its own account (an AI's button holds with the AI as its source, so its unbolt releases only its own hold). `drop`
+//        and `raise` name procs of the holder taking (forced) that move them and answer TRUE when they did. A map says a door starts bolted with the
+//        holder var `starts` names. The look shows them as the layer "bolts".
 //        bolts(wire = WIRE_DOOR_BOLTS) brings the bolt wire: cut, the bolts drop (mending does not raise them); pulsed, they drop or rise.
 //   weld_shut(offered = PROC_REF(can_weld), starts = nameof(welded_at_start), tool = TOOL_WELDER)
 //        State key WELD_SHUT_WELDED and op weld_shut.toggle: a lit welder welds the closed door shut and frees it again where `offered` (a proc of the
@@ -12,21 +14,25 @@
 //        State key DOOR_EMERGENCY_ENGAGED: while engaged the door lets anyone through (the door's own check_access_list() reads it). The look shows
 //        it as the layer "emergency".
 //
-// Reads and writes of those keys go through the accessors the keys generate (bolts_bolted(), weld_shut_welded(), door_emergency_engaged()) and
+// Reads go through the stat var (`bolted`) and the accessors the keys generate (weld_shut_welded(), door_emergency_engaged()), and
 // through is_bolted()/set_bolted(), is_welded()/set_welded() and emergency_access_on()/set_emergency_access() below, the names the rest of the game
 // has always used.
 
 MSG_DEF_SELF(bolts/bolted, "The bolts are down.")
 MSG_DEF_SELF(bolts/not_bolted, "The bolts are up.")
 
-CAPABILITY_TYPE(bolts, CAP_BOLTS, /datum/capability/lib/bolts, key = NONE, drop = "lock", raise = "unlock", starts = null, wire = null)
-cap_keys(CAP_BOLTS, BOLTED = MSG(bolts/not_bolted))
+CAPABILITY_TYPE(bolts, CAP_BOLTS, /datum/capability/lib/bolts, key = NONE, drop = "drop_bolts", raise = "raise_bolts", starts = null, wire = null)
+
+/// The door's bolts are down, whoever holds them.
+STAT(/obj/machinery/door, bolted, ANY)
+/// A door's own bolt motor: what a wire, a button, a radio command or a map start drops the bolts with.
+SOURCE_DEF(door_bolts)
 
 /datum/capability/lib/bolts
 	holder_hooks = HOLDER_HOOK_INIT
 
 /datum/capability/lib/bolts/entries()
-	return list(look_layer(LOOK_BOLTS, when = BOLTS_BOLTED))
+	return list(look_layer(LOOK_BOLTS, when = STAT_BOLTED))
 
 /datum/capability/lib/bolts/brings_wires()
 	return wire ? list(wire) : null
@@ -44,14 +50,13 @@ cap_keys(CAP_BOLTS, BOLTED = MSG(bolts/not_bolted))
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]
 	if(wanted)
-		cap_key_set(A.holder, BOLTS_BOLTED, TRUE, null)
+		hold(A.holder, STAT_BOLTED, TRUE, SRC_DOOR_BOLTS)
 
 /// Are the bolts of A down? (A holder without bolts says no.)
 /proc/is_bolted(atom/A)
 	READS_FROM(A)
-	if(!cap_of(A, CAP_BOLTS))
-		return FALSE
-	return bolts_bolted(A, null)
+	var/obj/machinery/door/D = A
+	return istype(D) && cap_of(D, CAP_BOLTS) && D.bolted
 
 /// Drops (on) or raises the bolts of A through the holder's own mechanism; `forced` skips its refusals. TRUE when they moved.
 /proc/set_bolted(atom/A, on, forced = FALSE)
@@ -91,7 +96,7 @@ cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]
 	if(wanted)
-		cap_key_set(A.holder, WELD_SHUT_WELDED, TRUE, null)
+		key_set(A.holder, WELD_SHUT_WELDED, TRUE)
 
 /// The welder is lit.
 /datum/capability/lib/weld_shut/proc/welder_lit(datum/act/op/A)
@@ -113,7 +118,7 @@ cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 /proc/set_welded(atom/A, on)
 	if(!cap_of(A, CAP_WELD_SHUT))
 		return cap_set(A, CAP_WELDED, on)
-	return cap_key_set(A, WELD_SHUT_WELDED, !!on, null)
+	return key_set(A, WELD_SHUT_WELDED, !!on)
 
 // ---- door_emergency ----
 
@@ -139,4 +144,4 @@ cap_keys(CAP_DOOR_EMERGENCY, ENGAGED = MSG(emergency/off))
 
 /// Engages or lifts the emergency access of A.
 /proc/set_emergency_access(atom/A, on)
-	return cap_key_set(A, DOOR_EMERGENCY_ENGAGED, !!on, null)
+	return key_set(A, DOOR_EMERGENCY_ENGAGED, !!on)

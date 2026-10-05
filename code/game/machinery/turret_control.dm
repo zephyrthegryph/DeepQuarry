@@ -325,3 +325,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance
 		enabled = TRUE
 		updateTurrets()
 
+
+// A cyborg with access interfaces remotely as the AI does (FALSE: the robot adapter's default); without it, only by hand from next to it.
+EXTEND_INTERACTIONS(/obj/machinery/turretid, INTERACT_ROBOT("Use", PROC_REF(turretid_robot_use)))
+
+/obj/machinery/turretid/proc/turretid_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(allowed(user))
+		return FALSE
+	if(Adjacent(user))
+		attack_hand(user)
+	return TRUE

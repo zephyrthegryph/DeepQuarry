@@ -163,7 +163,7 @@
 				if(!D.density)
 					all_closed = FALSE
 					if(!D.operating)
-						D.unlock()
+						set_bolted(D, FALSE)
 						D.close(TRUE, TRUE)
 		if(all_closed)
 			break

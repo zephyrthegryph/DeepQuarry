@@ -219,7 +219,7 @@
 
 /obj/machinery/door/airlock/generated_reads()
 	. = ..()
-	. += drawn_from(nameof(frozen), nameof(lights), nameof(max_integrity))
+	. += drawn_from(nameof(bolted), nameof(frozen), nameof(lights), nameof(max_integrity))
 
 /obj/machinery/door/firedoor/generated_reads()
 	. = ..()

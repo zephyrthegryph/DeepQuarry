@@ -69,7 +69,7 @@ MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my
 /proc/airlock_helper_configure(device, obj/machinery/embedded_controller/radio/controller, tag_addon, command)
 	if(istype(device, /obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/my_airlock = device
-		my_airlock.lock()
+		set_bolted(my_airlock, TRUE)
 		keyed_set_id(my_airlock, nameof(my_airlock.id_tag), controller.id_tag + tag_addon) // airlocks are keyed targets by id_tag
 		my_airlock.frequency = controller.frequency
 		my_airlock.set_frequency(controller.frequency)

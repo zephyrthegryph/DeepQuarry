@@ -55,6 +55,8 @@
 
 TRACKED(/obj/machinery/door, operating)
 TRACKED(/obj/machinery/door, reinforcing)
+TRACKED(/obj/machinery/door, autoclose)
+TRACKED(/obj/machinery/door, normalspeed)
 
 MSG_DEF_SELF(door/already_reinforced, "It is already reinforced.")
 MSG_DEF_SELF(door/repair_first, "It looks broken. Repair it before reinforcing it.")
@@ -79,8 +81,9 @@ CAPABILITIES(/obj/machinery/door)
 	op("repair", tool(TOOL_WELDER), when(PROC_REF(repairable)), priority(OP_PRIORITY_PART), wait(PROC_REF(repair_time)),
 		needs(req_is(nameof(density), because = MSG(door/close_first))), fixes(), says(MSG(door/repaired)))
 	on_notice(/datum/notice/hit, then(PROC_REF(door_thrown_at)))
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(door_blobbed))))
 
+// A simple mob's smash reaches an atom only through attack_generic() until the generic attack is a hit action (section 14): kept.
 /obj/machinery/door/attack_generic(mob/user, damage)
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
@@ -92,6 +95,7 @@ CAPABILITIES(/obj/machinery/door)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
 
+// ALLOW(init/INSTANCE_STATE): a door's layer, blast resistance and bounds follow whether the map placed it shut or open and how wide it is
 /obj/machinery/door/Initialize(mapload)
 	. = ..()
 	apply_rad_shield_material()
@@ -174,6 +178,7 @@ CAPABILITIES(/obj/machinery/door)
 		return FALSE
 	return TRUE
 
+// The bump is movement, not an op (doors(), library/machine/doors.dm): the bump action has no emitter on the bumped atom yet, so this stays.
 /obj/machinery/door/Bumped(atom/AM)
 	. = ..()
 	if(panel_is_open(src) || operating)
@@ -255,12 +260,6 @@ CAPABILITIES(/obj/machinery/door)
 			do_animate("deny")
 	return
 
-/obj/machinery/door/bullet_act(obj/item/projectile/Proj)
-	var/damage = Proj.get_structure_damage()
-	. = ..()
-	if(damage && !QDELETED(src))
-		update_icon()
-
 /// A throw that lands is loud.
 /obj/machinery/door/proc/door_thrown_at(datum/act/A)
 	var/datum/notice/hit/N = A
@@ -269,11 +268,20 @@ CAPABILITIES(/obj/machinery/door)
 	visible_message(span_danger("[name] was hit by [N.packet?.source]."))
 	playsound(src, hitsound, 100, 1)
 
-/// An EMP may pop an airlock or windoor open.
+/// An EMP may pop the door open (the airlock and the windoor hook it: on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))).
 /obj/machinery/door/proc/door_emp(datum/act/A)
 	var/datum/notice/hit/emp/N = A
-	if(prob(20 / max(N.packet?.severity, 1)) && (istype(src, /obj/machinery/door/airlock) || istype(src, /obj/machinery/door/window)))
+	if(prob(20 / max(N.packet?.severity, 1)))
 		open()
+
+/// A blob reaching a shut door: a broken one gives way, a sound one takes the hit (the hit goes on); an open door is not in its way.
+/obj/machinery/door/proc/door_blobbed(datum/act/A)
+	if(!density)
+		return OP_OK
+	if(has_stat(BROKEN))
+		open(TRUE)
+		return OP_OK
+	return HOOK_DECLINE
 
 // ---- strike: a weapon on a closed door (cards open it, plasteel reinforces it) ----
 
@@ -352,7 +360,7 @@ CAPABILITIES(/obj/machinery/door)
 /// The emag sparks (a door that is still and working); the door gives way a moment later and stays open for good.
 /obj/machinery/door/proc/door_emag(datum/act/op/A)
 	do_animate("spark")
-	after(src, 0.6 SECONDS, PROC_REF(trigger_emag))
+	after(src, 0.6 SECONDS, PROC_REF(trigger_emag), key = "emag")
 	return OP_OK
 
 /obj/machinery/door/proc/trigger_emag()
@@ -372,16 +380,7 @@ CAPABILITIES(/obj/machinery/door)
 
 /// What a door does when it breaks, after the base machinery break.
 /obj/machinery/door/proc/on_broken()
-	for (var/mob/O in viewers(src, null))
-		if ((O.client && !( O.blinded )))
-			O.show_message("[name] breaks!" )
-
-/obj/machinery/door/blob_act(obj/structure/blob/B)
-	if(density) // If it's closed.
-		if(has_stat(BROKEN))
-			open(1)
-		else
-			receive_blob(B)
+	visible_message("[name] breaks!")
 
 APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 

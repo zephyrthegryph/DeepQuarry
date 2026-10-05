@@ -1979,3 +1979,27 @@ TRACKED(/mob/living/silicon/robot, lockdown)
 
 /mob/living/silicon/robot/proc/lockdown_wire_pulsed(datum/act/A)
 	SetLockdown(!lockdown) // toggle
+
+/// The water reserve a module's extinguishers refill from (station.dm sets it for the modules that have one).
+/mob/living/silicon/robot
+	var/datum/matter_synth/water_res
+
+/// water res (a relation view: it reads null once the target is deleted).
+/mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
+	return water_res
+
+/mob/living/silicon/robot/proc/ex_reserve_refill()
+	set name = "Refill Extinguisher"
+	set category = VERB_CAT_OBJECT
+	var/datum/matter_synth/water = water_res()
+	for(var/obj/item/extinguisher/E in module.modules)
+		if(E.reagents.total_volume < E.max_water)
+			if(water && water.energy > 0)
+				var/amount = E.max_water - E.reagents.total_volume
+				if(water.energy < amount)
+					amount = water.energy
+				water.use_charge(amount)
+				E.reagents.add_reagent(REAGENT_ID_WATER, amount)
+				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
+			else
+				to_chat(src, span_filter_notice("Insufficient water reserves."))

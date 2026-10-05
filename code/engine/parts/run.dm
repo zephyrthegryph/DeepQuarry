@@ -870,6 +870,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /// Do: reserve the costs, chance, the effects in order, commit or release, feedback and the notice. Returns the op's result.
 /proc/op_do(datum/act/op/A)
 	var/datum/op_plan/P = A.oplan
+	// The holder may take the op over (extend(/datum/act/op, instead(...))): a live door shocks whoever touches it instead of doing what they meant.
+	if(op_taken_over(A))
+		return op_end(A, ACT_REPLACED, null)
 	var/why = op_reserve(A)
 	if(why)
 		return op_end(A, ACT_REFUSED, why)
@@ -904,6 +907,33 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(OP_DECLINE)
 			return op_end(A, ACT_DECLINED, null)
 	return op_end(A, ACT_REFUSED, A.reason || /datum/msg/op/failed)
+
+/// Runs the holder's takeovers of its own ops (instead hooks on /datum/act/op), in order, on the op's context. TRUE when one took the op over. The
+/// context's entry fields (activation, capability, source) are the op's own and come back as they were whatever the hook did.
+/proc/op_taken_over(datum/act/op/A)
+	var/datum/holder = A.holder
+	if(!holder || QDELETED(holder))
+		return FALSE
+	var/static_plan = act_plan_static(table_of(holder), /datum/act/op)
+	if(!static_plan && !length(holder.rx?.hooks))
+		return FALSE
+	var/datum/act_plan/plan = act_plan_for(holder, /datum/act/op)
+	if(!length(plan.instead))
+		return FALSE
+	var/datum/activation/was_activation = A.activation
+	var/datum/capability/was_cap = A.cap
+	var/datum/was_source = A.source
+	. = FALSE
+	for(var/datum/hook/H as anything in plan.instead)
+		if(!hook_conditions_hold(H, holder))
+			continue
+		hook_context(A, H)
+		var/took = hook_run_parts(H, A, H.entry.children)
+		A.activation = was_activation // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = was_cap
+		A.source = was_source // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		if(took)
+			return TRUE
 
 /// The percent a chance() names: a number, the name of a var of the holder (escape_chance = nameof(escapechance)), or a handler.
 /proc/op_chance_percent(datum/act/op/A, percent)
@@ -1151,7 +1181,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/D = A.holder
 	var/key = src.args["key"]
 	if(isnum(key))
-		cap_key_set(D, key, !cap_key_get(D, key), null)
+		key_set(D, key, !cap_key_get(D, key))
 		return OP_OK
 	if(!istext(key) || !(key in D.vars))
 		return OP_FAILED
@@ -1162,7 +1192,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/D = A.holder
 	var/key = src.args["key"]
 	if(isnum(key))
-		cap_key_set(D, key, src.args["value"], null)
+		key_set(D, key, src.args["value"])
 		return OP_OK
 	if(!istext(key) || !(key in D.vars))
 		return OP_FAILED

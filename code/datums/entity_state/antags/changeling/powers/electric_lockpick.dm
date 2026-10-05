@@ -52,7 +52,7 @@
 		var/obj/machinery/door/airlock/airlock = door
 
 		if(is_bolted(airlock)) //Check if we're bolted.
-			airlock.unlock()
+			set_bolted(airlock, FALSE)
 			to_chat(user, span_notice("We've unlocked \the [airlock].  Another pulse is requried to open it."))
 		else	//We're not bolted, so open the door already.
 			airlock.open()

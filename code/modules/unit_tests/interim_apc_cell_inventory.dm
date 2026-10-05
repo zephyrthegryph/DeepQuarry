@@ -5,7 +5,7 @@
 	var/obj/machinery/power/apc/apc = interim_apc_make(T)
 	var/obj/item/cell/cell = apc.cell
 	TEST_ASSERT_NOTNULL(cell, "the actual APC starts with its installed cell")
-	cap_key_set(apc, COVER_OPEN, TRUE, null)
+	key_set(apc, COVER_OPEN, TRUE)
 	TEST_ASSERT_EQUAL(interim_apc_take(apc, user, drop = TRUE), cell, "the actual public bay take op and inventory drop release the original actual cell")
 	TEST_ASSERT_NULL(apc.cell, "actual ejection clears the APC cell view")
 	TEST_ASSERT_EQUAL(cell.loc, T, "actual ejection releases the original cell to the floor")

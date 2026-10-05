@@ -159,7 +159,7 @@
 		return
 	if(omen_evil)
 		for(var/obj/machinery/door/airlock/darth_airlock in turf_contents_of_type(our_guy_pos, /obj/machinery/door/airlock))
-			if(is_bolted(darth_airlock) || !darth_airlock.arePowerSystemsOn())
+			if(is_bolted(darth_airlock) || !darth_airlock.power_systems_on())
 				continue
 			to_chat(living_guy, span_warning("The airlock suddenly closes on you!"))
 			living_guy.status_at_least(EFFECT_PARALYZED, 5)

@@ -388,6 +388,9 @@ MSG_DEF_SELF(porta_turret/firewall, "There seems to be a firewall preventing you
 	return locked ? /datum/msg/porta_turret/controlled : null
 
 /obj/machinery/porta_turret/proc/isLocked(mob/user)
+	var/mob/living/silicon/robot/R = user
+	if(istype(R)) // a cyborg's own ID card opens a locked turret's controls
+		return locked && !check_access(R.idcard)
 	var/why = lock_refusal(user)
 	if(why == /datum/msg/porta_turret/controls_locked)
 		to_chat(user, span_notice("Controls locked."))
@@ -1445,3 +1448,11 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/porta_turret/step_start_condition()
 	return enabled && operable()
+
+/// A cyborg with access interfaces remotely as the AI does; without it, only by hand from next to it (the turret's declare_interactions() lists it).
+/obj/machinery/porta_turret/proc/porta_turret_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(allowed(user))
+		return FALSE
+	if(Adjacent(user))
+		attack_hand(user)
+	return TRUE

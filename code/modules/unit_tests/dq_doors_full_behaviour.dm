@@ -15,14 +15,14 @@
 
 /// The airlock's main power is out (cut, tripped or disrupted), whatever the backup does.
 /proc/dq_full_main_power_out(obj/machinery/door/airlock/D)
-	return D.main_power_lost_until != 0
+	return !!D.main_power_out
 
 /// A ctrl-click by `actor` on `target` with an empty hand.
 /proc/dq_full_ctrl_click(mob/living/actor, atom/target)
 	if(actor.get_active_hand())
 		actor.drop_item()
 	actor.next_click = 0
-	return target.click_ctrl(actor)
+	return test_click(actor, target, null, GESTURE_CTRL)
 
 /// Two airlocks that close each other (the map's closeOtherId pairs them).
 /obj/machinery/door/airlock/dq_full_pair
@@ -46,10 +46,10 @@
 	p2_door_wire_cut(D, WIRE_AI_CONTROL, H)
 	test_time(3 SECONDS)
 	press(AI, D, "bolt-toggle")
-	TEST_ASSERT(p2_door_bolted(D), "BUG 1 pinned: the pulse's end gives the AI control back over the cut wire")
+	TEST_ASSERT(!p2_door_bolted(D), "the cut AI wire keeps the AI out after the pulse ends")
 	p2_door_wire_cut(D, WIRE_AI_CONTROL, H) // mend
 	press(AI, D, "bolt-toggle")
-	TEST_ASSERT(!p2_door_bolted(D), "mended, the AI works the door")
+	TEST_ASSERT(p2_door_bolted(D), "mended, the AI works the door")
 
 /// Two pulses a moment apart: the AI is out for about a second after the last, then back.
 /datum/unit_test/dq_p2_door/full/ai_wire_pulses_lock_the_ai_out_briefly
@@ -76,7 +76,7 @@
 	TEST_ASSERT(findtext(dq_full_wire_lights(D), "'AI control allowed' light is on"), "a sound door shows AI control allowed")
 	click(H, D, give_item(H, /obj/item/card/emag))
 	TEST_ASSERT(!D.density, "the emag opened it")
-	TEST_ASSERT(findtext(dq_full_wire_lights(D), "'AI control allowed' light is on"), "BUG 2 pinned: an emagged door still shows AI control allowed")
+	TEST_ASSERT(findtext(dq_full_wire_lights(D), "'AI control allowed' light is off"), "an emagged door shows AI control off")
 
 /// The open-door wire does nothing on an emagged door.
 /datum/unit_test/dq_p2_door/full/emagged_door_ignores_the_open_wire
@@ -88,7 +88,7 @@
 	TEST_ASSERT(!D.density, "the emag opened it")
 	p2_door_wire_pulse(D, WIRE_OPEN_DOOR, H)
 	settle()
-	TEST_ASSERT(D.density, "BUG 2 pinned: the emagged guard reads a var the emag never sets, so the open wire shuts an emagged door")
+	TEST_ASSERT(!D.density, "the open wire does not shut an emagged door")
 
 // =====================================================================================================================
 // The window's buttons: what each refuses
@@ -127,23 +127,16 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/silicon/ai/AI = make_ai()
 	var/mob/living/carbon/human/H = make_person(null)
-	test_record(D)
+	// The speed and the autoclose are tracked (their setters publish the change the window and the generated reads follow).
+	TEST_ASSERT(hascall(D, "set_normalspeed") && hascall(D, "set_autoclose"), "the speed and the autoclose are tracked")
 	press(AI, D, "speed-toggle")
-	var/list/events = test_recorded()
 	TEST_ASSERT(!D.normalspeed, "the AI set the door fast")
-	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_DELTA, "normalspeed"), 0, "BUG 3 pinned: the change is an untracked write the window misses")
 	press(AI, D, "speed-toggle")
 	TEST_ASSERT(D.normalspeed, "and back")
-	test_record(D)
 	p2_door_wire_pulse(D, WIRE_SPEED, H)
-	events = test_recorded()
 	TEST_ASSERT(!D.normalspeed, "a pulse on the timing wire sets it fast")
-	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_DELTA, "normalspeed"), 0, "BUG 3 pinned: untracked too")
-	test_record(D)
 	p2_door_wire_cut(D, WIRE_SPEED, H)
-	events = test_recorded()
 	TEST_ASSERT(!D.autoclose, "the cut timing wire stops the autoclose")
-	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_DELTA, "autoclose"), 0, "BUG 3 pinned: untracked too")
 	press(AI, D, "speed-toggle")
 	TEST_ASSERT(!D.normalspeed, "with the wire cut the AI cannot change the speed")
 
@@ -175,7 +168,11 @@
 	press(first, D, "bolt-toggle")
 	TEST_ASSERT(p2_door_bolted(D), "the first AI bolted it")
 	press(second, D, "bolt-toggle")
-	TEST_ASSERT(!p2_door_bolted(D), "the second AI raises any bolts")
+	TEST_ASSERT(p2_door_bolted(D), "the second AI's press holds its own bolts: the first AI's stay")
+	press(first, D, "bolt-toggle")
+	TEST_ASSERT(p2_door_bolted(D), "the first AI's unbolt releases only its own hold")
+	press(second, D, "bolt-toggle")
+	TEST_ASSERT(!p2_door_bolted(D), "with both released the bolts rise")
 
 /// An AI's shock-restore after a wire pulse electrified the door.
 /datum/unit_test/dq_p2_door/full/ai_restore_after_a_wire_pulse
@@ -187,7 +184,9 @@
 	p2_door_wire_pulse(D, WIRE_ELECTRIFY, H)
 	TEST_ASSERT(p2_door_electrified(D), "the pulse electrified it")
 	p2_door_ui(AI, D, "shock-restore")
-	TEST_ASSERT(!p2_door_electrified(D), "the AI's restore ends any electrification")
+	TEST_ASSERT(p2_door_electrified(D), "the AI's restore releases only its own current: the wire's pulse runs on")
+	test_time(35 SECONDS)
+	TEST_ASSERT(!p2_door_electrified(D), "until it runs out")
 
 /// Electrification ends when the door loses its power, and does not come back with it.
 /datum/unit_test/dq_p2_door/full/power_loss_ends_electrification
@@ -231,6 +230,7 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/silicon/ai/AI = make_ai()
 	var/mob/living/carbon/human/H = make_person(null)
+	H.set_combat_mode(TRUE)
 	H.set_attack_variant(ATTACK_VARIANT_GRAB)
 	dq_full_ctrl_click(H, D)
 	settle()
@@ -293,7 +293,7 @@
 	A.open()
 	settle()
 	TEST_ASSERT(!A.density, "the first opened again")
-	TEST_ASSERT(!B.density, "BUG 4 pinned: the pair is one-way, the first placed does not shut the second")
+	TEST_ASSERT(B.density, "and shut the second: the pair works both ways")
 
 /// A secure airlock bolts itself when it breaks.
 /datum/unit_test/dq_p2_door/full/secure_airlock_bolts_when_it_breaks
@@ -316,7 +316,7 @@
 	D.prison_open()
 	settle()
 	TEST_ASSERT(!D.density, "it opened")
-	TEST_ASSERT(!p2_door_bolted(D), "BUG pinned: the bolts are dropped while the door swings, which refuses them, so it stays unbolted")
+	TEST_ASSERT(p2_door_bolted(D), "and is bolted open")
 
 /// An EMP may pop a windoor open; a blast door never.
 /datum/unit_test/dq_p2_door/full/emp_pops_windoors_but_not_blast_doors

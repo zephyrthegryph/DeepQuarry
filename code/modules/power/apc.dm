@@ -385,8 +385,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(has_stat(BROKEN) && !cover_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
 		act_message(user, src, self = span_danger("You hit %T% with %I%!"), others = span_danger("%T% has been hit with %I% by %U%!"), blind = "You hear a bang!", item = held)
 		if(prob(20))
-			cap_key_set(src, COVER_OPEN, TRUE, null)
-			cap_key_set(src, COVER_REMOVED, TRUE, null)
+			key_set(src, COVER_OPEN, TRUE)
+			key_set(src, COVER_REMOVED, TRUE)
 			act_message(user, src, self = span_danger("You knock down the APC cover with %I%!"), others = span_danger("The APC cover was knocked down with %I% by %U%!"), blind = "You hear a bang!", item = held)
 
 /// A signaller held to the open wire panel: the wire window, where it can be attached to a wire.
@@ -406,7 +406,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// Claws at it (the slash, which only a shredder gets): a few slashes spring the cover, then the wires are shredded.
 /obj/machinery/power/apc/proc/apc_slashed(datum/act/A)
 	if(beenhit >= pick(3, 4) && !panel_open(src))
-		cap_key_set(src, PANEL_OPEN, TRUE, null)
+		key_set(src, PANEL_OPEN, TRUE)
 		visible_message(span_warning("The [name]'s cover flies open, exposing the wires!"))
 	else if(panel_open(src) && wires_cut_all(src))
 		visible_message(span_warning("The [name]'s wires are shredded!"))
@@ -474,7 +474,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(building)
 		set_dir(ndir)
 		rel_set(src, nameof(area), get_area(src)) // paired: the area's apc is this APC
-		cap_key_set(src, COVER_OPEN, TRUE, null)
+		key_set(src, COVER_OPEN, TRUE)
 		graph_place(src, STAGE_APC_FRAME)
 		set_operating(0)
 		name = "[area.name] APC"
@@ -893,7 +893,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!A || !A.is_malf() || hacker || aidisabled || A.stat == DEAD)
 		return 0
 	rel_set(src, nameof(hacker), A) // two-sided: lists us in A.hacked_apcs
-	cap_key_set(src, LOCK_LOCKED, TRUE, null)
+	key_set(src, LOCK_LOCKED, TRUE)
 	return 1
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -917,7 +917,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 	// Clear malf AI ownership.
 	rel_clear(src, nameof(hacker)) // two-sided: leaves the AI's hacked_apcs
-	cap_key_set(src, EMAG_EMAGGED, FALSE, null)
+	key_set(src, EMAG_EMAGGED, FALSE)
 	apply_area_power()
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -933,8 +933,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		for(var/obj/machinery/light/L as anything in area_lights())
 			L.flicker(rand(20, 30))
 	if(prob(25))
-		cap_key_set(src, EMAG_EMAGGED, TRUE, null)
-		cap_key_set(src, LOCK_LOCKED, FALSE, null)
+		key_set(src, EMAG_EMAGGED, TRUE)
+		key_set(src, LOCK_LOCKED, FALSE)
 	if(prob(25))
 		if(cell)
 			cell.corrupt()

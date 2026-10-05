@@ -6,7 +6,7 @@
 	var/obj/item/cell/original = apc.cell
 	var/obj/item/cell/replacement = allocate(/obj/item/cell, T)
 	TEST_ASSERT_NOTNULL(original, "the actual APC starts with an installed original cell")
-	cap_key_set(apc, COVER_OPEN, TRUE, null)
+	key_set(apc, COVER_OPEN, TRUE)
 	replacement.charge = replacement.maxcharge / 2
 	var/original_charge = original.charge
 	var/replacement_charge = replacement.charge
@@ -35,7 +35,7 @@
 	var/obj/item/cell/original = apc.cell
 	var/obj/item/cell/device/small = allocate(/obj/item/cell/device, T)
 	TEST_ASSERT_NOTNULL(original, "the actual size-refusal fixture has an original cell")
-	cap_key_set(apc, COVER_OPEN, TRUE, null)
+	key_set(apc, COVER_OPEN, TRUE)
 	TEST_ASSERT_EQUAL(interim_apc_take(apc, user, drop = TRUE), original, "the actual public bay take op and inventory drop empty the actual bay for the size test")
 	TEST_ASSERT_NULL(apc.cell, "the actual size-refusal fixture has an empty bay")
 	TEST_ASSERT(small.w_class != ITEMSIZE_NORMAL, "the actual device cell has a genuinely incompatible physical size")

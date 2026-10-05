@@ -68,7 +68,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]
 	if(wanted)
-		cap_key_set(A.holder, LOCK_LOCKED, TRUE, null)
+		key_set(A.holder, LOCK_LOCKED, TRUE)
 
 // ---- credentials ----
 

@@ -31,7 +31,7 @@ cap_keys(CAP_QUICKDRAW, DRAWS = MSG(quickdraw/is_off))
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]
 	if(wanted)
-		cap_key_set(A.holder, QUICKDRAW_DRAWS, TRUE, null)
+		key_set(A.holder, QUICKDRAW_DRAWS, TRUE)
 
 /// What the mode switch just did.
 /datum/capability/lib/quickdraw/proc/switched_message(datum/act/A)
@@ -67,6 +67,6 @@ cap_keys(CAP_QUICKDRAW, DRAWS = MSG(quickdraw/is_off))
 /datum/capability/lib/quickdraw/proc/alt_switch(datum/act/op/A)
 	var/obj/item/storage/S = A.holder
 	S.toggle_window(A.actor)
-	cap_key_set(S, QUICKDRAW_DRAWS, !quickdraw_draws(S), null)
+	key_set(S, QUICKDRAW_DRAWS, !quickdraw_draws(S))
 	to_chat(A.actor, quickdraw_draws(S) ? "[S] now draws the first object inside." : "[S] now opens as a container.")
 	return OP_OK

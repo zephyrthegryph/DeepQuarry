@@ -254,3 +254,13 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	R.set_emagged(TRUE)
 	to_chat(R, span_notice("Failsafe protocols overridden. New tools available."))
 	return OP_OK
+
+// A cyborg with access interfaces remotely as the AI does (FALSE: the robot adapter's default); without it, only by hand from next to it.
+EXTEND_INTERACTIONS(/obj/machinery/computer/robotics, INTERACT_ROBOT("Use", PROC_REF(robotics_console_robot_use)))
+
+/obj/machinery/computer/robotics/proc/robotics_console_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(allowed(user))
+		return FALSE
+	if(Adjacent(user))
+		attack_hand(user)
+	return TRUE

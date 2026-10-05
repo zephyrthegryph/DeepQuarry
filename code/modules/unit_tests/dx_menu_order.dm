@@ -214,17 +214,17 @@
 	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "panel.open"), "shut: a screwdriver works the panel, not the build ladder behind the cover")
 	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "ui_open"), "shut: an empty hand opens the window")
 	// the panel open (the cover shut): the wires
-	cap_key_set(A, PANEL_OPEN, TRUE, null)
+	key_set(A, PANEL_OPEN, TRUE)
 	TEST_ASSERT(assert_resolves(H, A, wirecutters, GESTURE_CLICK, "wires.cut"), "panel open: wirecutters go to the wires")
 	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "wires.pulse"), "panel open: a multitool goes to the wires")
 	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "wires.open"), "panel open: an empty hand opens the wires before the window")
 	// subverted, the cover shut: the reset sits in the hatch behind the cover (set aside), so the multitool still pulses a wire
-	cap_key_set(A, EMAG_EMAGGED, TRUE, null)
+	key_set(A, EMAG_EMAGGED, TRUE)
 	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "wires.pulse"), "subverted, cover shut: the multitool pulses a wire: [explain_click(H, A, multitool)]")
 	// the cover open: the build ladder's steps come first
-	cap_key_set(A, COVER_OPEN, TRUE, null)
+	key_set(A, COVER_OPEN, TRUE)
 	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "subversion_reset.use"), "subverted, cover open: the multitool resets it: [explain_click(H, A, multitool)]")
-	cap_key_set(A, EMAG_EMAGGED, FALSE, null)
+	key_set(A, EMAG_EMAGGED, FALSE)
 	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "construction.undo:apc_secured"), "cover open: the screwdriver unfastens the electronics before the panel")
 	graph_undo(A)
 	TEST_ASSERT_EQUAL(graph_current(A), STAGE_APC_WIRED, "back at the wired stage")
@@ -234,7 +234,7 @@
 	TEST_ASSERT_EQUAL(graph_current(A), STAGE_APC_BOARD, "back at the board stage")
 	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "construction.undo:apc_board"), "board: an empty hand takes the board out before the wires window")
 	// the cover shut again: no step back is offered, the tools fall through to the hatch
-	cap_key_set(A, COVER_OPEN, FALSE, null)
+	key_set(A, COVER_OPEN, FALSE)
 	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "wires.open"), "shut at the board stage: the undo is not offered, the hand reaches the wires")
 	if(A.terminal)
 		qdel(A.terminal) // made when the APC initialized; graph_undo() steps back without the ladder's own effects

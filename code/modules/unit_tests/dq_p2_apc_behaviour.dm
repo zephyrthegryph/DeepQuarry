@@ -52,8 +52,8 @@
 
 /// The APC's interface is subverted, as an emag leaves it: subverted and unlocked.
 /proc/p2_apc_subvert(obj/machinery/power/apc/A)
-	cap_key_set(A, EMAG_EMAGGED, TRUE, null)
-	cap_key_set(A, LOCK_LOCKED, FALSE, null)
+	key_set(A, EMAG_EMAGGED, TRUE)
+	key_set(A, LOCK_LOCKED, FALSE)
 
 /// Somebody opens the APC's window (the touch of a hand or a silicon).
 /proc/p2_apc_open_interface(obj/machinery/power/apc/A, mob/user)

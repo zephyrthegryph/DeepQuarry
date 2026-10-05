@@ -46,7 +46,7 @@
 /datum/unit_test/dq_p2_door/base_door_autocloses/run_gate()
 	var/obj/machinery/door/D = make_door(/obj/machinery/door)
 	var/mob/living/carbon/human/H = make_person(null)
-	D.autoclose = TRUE
+	D.set_autoclose(TRUE)
 	click(H, D, null)
 	TEST_ASSERT(!D.density, "open")
 	TEST_ASSERT(D.autoclose_pending(), "an autoclosing door waits to close")
