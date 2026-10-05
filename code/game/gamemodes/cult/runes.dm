@@ -192,7 +192,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	var/list/waiting_list
 
 /obj/effect/rune/proc/convert_answered(datum/act/request/A)
-	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
 		return
 	if(QDELETED(A.request.answerer))
 		return
@@ -203,7 +203,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	var/mob/living/carbon/target = ask.answerer
 	var/list/waiting_for_input = ask.waiting_list
 	waiting_for_input[target] = 0
-	if(A.answer && A.answer.answer_value == "Submit") //choosing 'Resist' does nothing of course.
+	if(A.answer && A.answer.value == "Submit") //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
 		rel_remove(src, nameof(converting), target)
 		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
@@ -666,7 +666,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	return 1
 
 /obj/effect/rune/proc/communicate_entered(datum/act/request/A)
-	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value)))
+	if(!A.answer && !(A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
 		return
 	if(QDELETED(A.request.answerer))
 		return
@@ -674,7 +674,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 
 /obj/effect/rune/proc/apply_communicate_entered(datum/act/request/A)
 	var/mob/living/user = A.request.answerer
-	var/input = A.answer ? A.answer.answer_value : ""
+	var/input = A.answer ? A.answer.value : ""
 	if(!input)
 		if (istype(src))
 			fizzle(user)
@@ -905,15 +905,15 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	. = ..()
 	if(.)
 		return
-	if(!isnull(answer_value))
-		var/mob/living/carbon/selected = answer_value
+	if(!isnull(value))
+		var/mob/living/carbon/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
 	return null
 
 /obj/effect/rune/proc/freedom_target_chosen(datum/act/request/A)
 	if(!A.answer)
-		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
 			return fizzle(A.request.answerer)
 		return
 	return apply_freedom_target_chosen(A)
@@ -921,7 +921,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 /obj/effect/rune/proc/apply_freedom_target_chosen(datum/act/request/A)
 	var/datum/prompt/choice/cult_ritual/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/mob/living/carbon/cultist = A.answer.answer_value
+	var/mob/living/carbon/cultist = A.answer.value
 	var/list/users = ask.users
 	var/dam = ask.dam
 	if(!cultist)
@@ -976,7 +976,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 
 /obj/effect/rune/proc/summon_target_chosen(datum/act/request/A)
 	if(!A.answer)
-		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
 			return fizzle(A.request.answerer)
 		return
 	return apply_summon_target_chosen(A)
@@ -984,7 +984,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 /obj/effect/rune/proc/apply_summon_target_chosen(datum/act/request/A)
 	var/datum/prompt/choice/cult_ritual/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/mob/living/carbon/cultist = A.answer.answer_value
+	var/mob/living/carbon/cultist = A.answer.value
 	var/list/users = ask.users
 	if(!cultist)
 		return fizzle(user)

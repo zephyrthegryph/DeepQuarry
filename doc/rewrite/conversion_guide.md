@@ -300,6 +300,9 @@ lint is a hard ban). Converting a machine:
 6. **What the test clock moves.** `test_time()` advances the heat network's declared edges only. Couplings that live in the native world (a
    body's slot coupling to its tile, turf gas diffusion, floor and wall solids) step with `SSair.run_gas_frames(seconds)`, which also steps
    the edges: a pin that involves a room uses it (`dq_body_heat_behaviour.dm`).
-7. **Mob bodies** are not machines: Life's environment stage calls `set_surroundings(air, surface, sky_area)` (W/K, W/K, m²) and the body's
+7. **Heat a datum holds** (not an atom: a batch, a service) is a heat store (`code/domains/heat/heat_store.dm`): keep its handle, link it with
+   `heat_store_link()`, read it with `heat_store_temperature()`, and release it at equilibrium. A sample that covers a stretch of time between
+   two reservoirs is `heat_conduct(a, b, conductance, seconds)`, never an exponential in DM.
+8. **Mob bodies** are not machines: Life's environment stage calls `set_surroundings(air, surface, sky_area)` (W/K, W/K, m²) and the body's
    links to the plume of air, the floor, the walls and the sky follow it when it moves. Don't add a `heat_link()` to a mob for its
    environment; add to `set_surroundings()`.

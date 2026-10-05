@@ -148,7 +148,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 /obj/machinery/atmospherics/unary/vent_pump/push_to_rust()
 	if(QDELETED(src))
 		return
-	if(!node || !can_pump())
+	if(!node || !can_pump()) // ALLOW(derived_reads): a port bind and a disconnect bump rust_device_rev
 		rust_unregister_device()
 		return
 	var/datum/gas_mixture/environment = return_air()
@@ -200,7 +200,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 		return
 	var/vent_icon = "vent"
 	// ALLOW(sys_dx_untracked_read): a pipe's level and a floor's plating are fixed while the vent stands on them; a change of either rebuilds the pipes
-	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe))
+	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
 		vent_icon += "h"
 	if(weld_shut_welded(src, null))
 		vent_icon += "weld"

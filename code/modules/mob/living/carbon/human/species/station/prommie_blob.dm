@@ -134,7 +134,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 /mob/living/carbon/human/proc/prommie_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		return
-	shapeshifter_set_colour(A.answer.answer_value)
+	shapeshifter_set_colour(A.answer.value)
 	get_forms()?.refresh_appearance()

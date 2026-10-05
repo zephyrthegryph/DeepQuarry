@@ -57,9 +57,9 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		return
-	var/message = capitalize(A.answer.answer_value)
+	var/message = capitalize(A.answer.value)
 
 	if(!can_broadcast(user))
 		return
@@ -116,8 +116,8 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 /obj/item/megaphone/super/proc/volume_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		broadcast_size = A.answer.answer_value
+	if(A.answer.value)
+		broadcast_size = A.answer.value
 
 /obj/item/megaphone/super/proc/adjust_font(mob/living/user)
 	open_request(src, /datum/prompt/choice, PROC_REF(font_chosen), answerer = user, choices = font_options, title = "Set Volume", question = "Set Volume", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
@@ -125,8 +125,8 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 /obj/item/megaphone/super/proc/font_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		broadcast_font = A.answer.answer_value
+	if(A.answer.value)
+		broadcast_font = A.answer.value
 
 /obj/item/megaphone/super/proc/adjust_color(mob/living/user)
 	open_request(src, /datum/prompt/choice, PROC_REF(color_chosen), answerer = user, choices = color_options, title = "Set Volume", question = "Set Volume", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
@@ -134,8 +134,8 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 /obj/item/megaphone/super/proc/color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		broadcast_color = A.answer.answer_value
+	if(A.answer.value)
+		broadcast_color = A.answer.value
 
 /obj/item/megaphone/super/do_broadcast(mob/living/user, message)
 	if(emagged)

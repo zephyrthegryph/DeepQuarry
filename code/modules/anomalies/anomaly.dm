@@ -176,7 +176,7 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	var/datum/prompt/choice/research_anomaly/request = A.request
 	var/mob/user = request.user_value()
 	var/callback = request.callback_expected ? request.captured_callback : request.callback_value
-	gun_self(user, request.captured_item, request.captured_interaction, callback, A.answer.answer_value)
+	gun_self(user, request.captured_item, request.captured_interaction, callback, A.answer.value)
 
 /obj/item/gun/energy/anomaly/consume_next_projectile()
 	var/obj/item/cell/battery = power_supply
@@ -261,7 +261,7 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 
 /obj/item/assembly/signaler/anomaly/choice/proc/resume_core_selection(datum/act/request/A)
 	var/datum/prompt/choice/research_anomaly/request = A.request
-	interaction_self(request.user_value(), request.captured_item, request.captured_interaction, A.answer.answer_value)
+	interaction_self(request.user_value(), request.captured_item, request.captured_interaction, A.answer.value)
 
 /datum/prompt/choice/research_anomaly
 	timeout = 0

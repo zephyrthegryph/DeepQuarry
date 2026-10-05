@@ -86,8 +86,8 @@ CAPABILITIES(/datum/prompt/choice/gold_sticker)
 	var/datum/prompt/choice/gold_sticker/ask = A.request
 	if(QDELETED(ask.answerer) || QDELETED(ask.asker))
 		return
-	if(!A.answer || ask.answer_value != "Yes")
-		if(ask.answer_value == "No" || (ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer || ask.value != "Yes")
+		if(ask.value == "No" || (ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 			sticker_refused(ask.answerer, ask.asker)
 		return
 	var/mob/living/M = ask.answerer

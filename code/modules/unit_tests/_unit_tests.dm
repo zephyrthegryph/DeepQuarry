@@ -200,6 +200,7 @@
 #include "dq_heat_machines_behaviour.dm"
 #include "dq_boot_gate.dm"
 #include "dq_body_heat_behaviour.dm"
+#include "dq_material_heat_behaviour.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"
@@ -1091,6 +1092,12 @@
 #include "round2_photocopier_ai_photo.dm"
 
 #include "round2_grenade_timer_configuration.dm"
+
+#include "round2_glass_window_choice.dm"
+
+#include "round2_helm_navigation_entry.dm"
+
+#include "round2_matrix_active_colour.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

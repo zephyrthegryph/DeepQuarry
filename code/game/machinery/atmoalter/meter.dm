@@ -197,7 +197,7 @@ CAPABILITIES(/datum/prompt/text/meter_id)
 	if(!A.answer)
 		return
 	var/datum/prompt/text/meter_id/R = A.request
-	id = A.answer.answer_value
+	id = A.answer.value
 	var/obj/item/multitool/multitool = R.tool.get_multitool()
 	if(multitool)
 		rel_set(multitool, nameof(multitool.connectable), src)

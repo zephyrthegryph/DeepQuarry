@@ -192,7 +192,7 @@ CAPABILITIES(/datum/prompt/color/prefs)
 	var/datum/preferences/preferences = ask.preferences
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	var/M = ask.marking
-	markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = sanitize_hexcolor(ask.answer_value))
+	markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = sanitize_hexcolor(ask.value))
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	SStgui.update_uis(preferences)
 
@@ -202,6 +202,6 @@ CAPABILITIES(/datum/prompt/color/prefs)
 	var/datum/prompt/color/prefs/marking/ask = A.answer
 	var/datum/preferences/preferences = ask.preferences
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
-	markings[ask.marking][ask.zone]["color"] = sanitize_hexcolor(ask.answer_value)
+	markings[ask.marking][ask.zone]["color"] = sanitize_hexcolor(ask.value)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	SStgui.update_uis(preferences)

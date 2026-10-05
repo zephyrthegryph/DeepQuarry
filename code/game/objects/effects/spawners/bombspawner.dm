@@ -50,21 +50,21 @@ CAPABILITIES(/datum/ttv_bomb_review)
 	run_step(PROC_REF(phoron_step), A)
 
 /datum/ttv_bomb_review/proc/phoron_step(datum/act/request/A)
-	phoron = A.answer.answer_value
+	phoron = A.answer.value
 	open_request(src, /datum/prompt/number/ttv_bomb_review, PROC_REF(oxygen_entered), answerer = actor, asker = actor, title = "Oxygen", question = "Enter oxygen amount (mol):", default = oxygen)
 
 /datum/ttv_bomb_review/proc/oxygen_entered(datum/act/request/A)
 	run_step(PROC_REF(oxygen_step), A)
 
 /datum/ttv_bomb_review/proc/oxygen_step(datum/act/request/A)
-	oxygen = A.answer.answer_value
+	oxygen = A.answer.value
 	open_request(src, /datum/prompt/number/ttv_bomb_review, PROC_REF(carbon_entered), answerer = actor, asker = actor, title = "Carbon Dioxide", question = "Enter carbon dioxide amount (mol):", default = carbon)
 
 /datum/ttv_bomb_review/proc/carbon_entered(datum/act/request/A)
 	run_step(PROC_REF(carbon_step), A)
 
 /datum/ttv_bomb_review/proc/carbon_step(datum/act/request/A)
-	spawn_ttv_bomb(get_turf(actor), /obj/effect/spawner/newbomb/radio/custom, phoron, oxygen, A.answer.answer_value)
+	spawn_ttv_bomb(get_turf(actor), /obj/effect/spawner/newbomb/radio/custom, phoron, oxygen, A.answer.value)
 	retire()
 
 /obj/effect/spawner/newbomb

@@ -76,3 +76,7 @@ changes:
   - bugfix: "Silicon camera album choices now finish viewing and local deletion, and remote photos are refused truthfully."
   - bugfix: "Silicons can finish printing a selected camera album photo at photocopiers."
   - bugfix: "Grenade timer configuration uses native requests and safely refuses missing timers."
+  - code_imp: "Migrated glass window construction choices to native requests."
+  - bugfix: "Cancelled helm navigation choices no longer leave orphan waypoint records."
+  - code_imp: "Migrated the ColorMate active colour picker to native requests."
+  - code_imp: "Migrated casino prize purchase confirmation and item choices to native requests."

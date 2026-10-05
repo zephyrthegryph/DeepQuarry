@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	var/reason = ..()
 	if(reason)
 		return reason
-	var/mob/living/that_one = answer_value
+	var/mob/living/that_one = value
 	if(QDELETED(that_one))
 		return "gone"
 	return istype(that_one.loc, /turf/simulated/floor/outdoors/fur) ? null : "not in the fur"
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	if(!A.answer)
 		return
 	var/mob/living/user = A.request.answerer
-	var/mob/living/that_one = A.answer.answer_value
+	var/mob/living/that_one = A.answer.value
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
@@ -382,10 +382,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/act/request/A)
 	if(!A.answer)
 		var/datum/request/R = A.request
-		if((R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT) && isnull(R.answer_value))
+		if((R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT) && isnull(R.value))
 			to_chat(src, span_warning("You decide not to transition."))
 		return
-	var/obj/effect/overmap/visitable/our_dest = A.answer.answer_value
+	var/obj/effect/overmap/visitable/our_dest = A.answer.value
 	if(QDELETED(our_dest))
 		return
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
@@ -500,7 +500,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	emote_beyond_entered(A.request.answerer, A.answer.answer_value)
+	emote_beyond_entered(A.request.answerer, A.answer.value)
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message)
 	message = sanitize_or_reflect(message,L)
@@ -983,7 +983,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 	if(!A.answer)
 		return
 	var/mob/living/L = A.request.answerer
-	var/message = sanitize_or_reflect(A.answer.answer_value, L)
+	var/message = sanitize_or_reflect(A.answer.value, L)
 	if (!message)
 		return
 	if (L.stat == DEAD)

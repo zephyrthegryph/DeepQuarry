@@ -1208,4 +1208,4 @@ UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
 
 /datum/vore_look/import_panel/proc/belly_import_apply(datum/act/request/A)
 	var/datum/prompt/choice/belly_import_confirmation/ask = A.answer
-	return import_belly_stage(ask.answerer, ask.input_data, ask.answer_value)
+	return import_belly_stage(ask.answerer, ask.input_data, ask.value)

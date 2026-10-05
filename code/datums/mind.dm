@@ -191,7 +191,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/obj_type = A.answer.answer_value
+	var/obj_type = A.answer.value
 	switch(obj_type)
 		if("assassinate","protect","debrain", "harm", "brig")
 			var/list/possible_targets = list("Free objective")
@@ -215,7 +215,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/mind_objective_edit/ask = A.answer
-	var/detail = ask.answer_value
+	var/detail = ask.value
 	if(isdatum(detail))
 		var/datum/selected = detail
 		if(QDELETED(selected))
@@ -229,19 +229,19 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if(!A.answer)
 		return
 	var/datum/prompt/number/mind_objective_edit/ask = A.answer
-	objective_edit_finished(ask.answerer, ask.obj_type, ask.answer_value)
+	objective_edit_finished(ask.answerer, ask.obj_type, ask.value)
 
 /datum/mind/proc/objective_detail_written(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/text/mind_objective_edit/ask = A.answer
-	objective_edit_finished(ask.answerer, ask.obj_type, ask.answer_value)
+	objective_edit_finished(ask.answerer, ask.obj_type, ask.value)
 
 /datum/mind/proc/objective_steal_type_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/mind_objective_edit/ask = A.answer
-	var/steal_type = ask.answer_value
+	var/steal_type = ask.value
 	var/obj/item/custom_target = steal_type
 	if(!custom_target)
 		objective_edit_finished(ask.answerer, ask.obj_type, "custom", steal_type)
@@ -252,7 +252,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if(!A.answer)
 		return
 	var/datum/prompt/text/mind_objective_edit/ask = A.answer
-	objective_edit_finished(ask.answerer, ask.obj_type, "custom", ask.steal_type, ask.answer_value)
+	objective_edit_finished(ask.answerer, ask.obj_type, "custom", ask.steal_type, ask.value)
 
 /datum/mind/proc/objective_edit_finished(mob/user, obj_type, detail = null, steal_type = null, steal_name = null)
 	objective_edit_apply(user, obj_type, detail, steal_type, steal_name)
@@ -349,7 +349,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 /datum/mind/proc/telecrystals_set(datum/act/request/A)
 	if(!A.answer)
 		return
-	tcrystals = A.answer.answer_value
+	tcrystals = A.answer.value
 	edit_memory(A.request.answerer)
 
 /datum/mind/proc/find_syndicate_uplink()

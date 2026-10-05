@@ -135,7 +135,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
-	var/temperature = material_service_of(src)?.temperature || T20C
+	var/temperature = material_service_of(src)?.temperature() || T20C
 	var/current = max(amount / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE
 	var/resistance = construction_electrical_resistance(0.1, MATERIAL_CABLE_REFERENCE_AREA, temperature, current / MATERIAL_CABLE_REFERENCE_AREA) || 0
 	return 1 / (1 + resistance * current / MATERIAL_SERVICE_NOMINAL_VOLTAGE)
@@ -150,7 +150,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		material_superconducting = FALSE
 		material_quenched = FALSE
 		return FALSE
-	var/temperature = service.temperature
+	var/temperature = service.temperature()
 	var/current_density = max(requested_output / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE / MATERIAL_CABLE_REFERENCE_AREA
 	var/within_current = current_density <= conductor.critical_current_density
 	if(material_quenched)
@@ -199,7 +199,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		return
 	service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(conductor?.critical_temperature && service.temperature >= conductor.critical_temperature)
+	if(conductor?.critical_temperature && service.temperature() >= conductor.critical_temperature)
 		material_superconducting = FALSE
 		material_quenched = TRUE
 		material_phase_feedback(TRUE)
@@ -217,9 +217,9 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	if(!thermal?.heat_pump_coefficient || !conductor?.critical_temperature)
 		return 0
 	var/target_temperature = conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
-	if(service.temperature <= target_temperature)
+	if(service.temperature() <= target_temperature)
 		return 0
-	var/available_cooling = (service.temperature - target_temperature) * service.thermal_mass()
+	var/available_cooling = (service.temperature() - target_temperature) * service.thermal_mass()
 	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * thermal.heat_pump_coefficient * 6)
 	var/work_joules = requested_cooling / max(thermal.heat_pump_coefficient, 0.1)
 	var/work_charge = min(charge, work_joules * CELLRATE)
@@ -227,10 +227,14 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	if(moved_heat <= 0)
 		return 0
 	charge -= work_charge
-	service.add_heat(-moved_heat)
+	// The pump moves the cell's heat into its surroundings, and its work ends there as heat too.
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
-	heat_add(ambient, moved_heat + work_charge / CELLRATE, HEAT_SOURCE_MATERIAL)
+	if(ambient)
+		heat_move(HEAT_STORE(service.heat_store), ambient, moved_heat)
+		heat_add(ambient, work_charge / CELLRATE, HEAT_SOURCE_DEVICE)
+	else
+		service.add_heat(-moved_heat, HEAT_SOURCE_MATERIAL)
 	service.input_joules += work_charge / CELLRATE
 	service.loss_joules += work_charge / CELLRATE
 	return moved_heat

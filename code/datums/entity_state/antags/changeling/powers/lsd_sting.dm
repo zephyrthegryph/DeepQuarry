@@ -25,4 +25,4 @@
 /mob/proc/changeling_lsdsting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_lsdsting_stage(A.answer.answer_value)
+	changeling_lsdsting_stage(A.answer.value)

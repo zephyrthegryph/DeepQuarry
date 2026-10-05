@@ -7,7 +7,7 @@
 /mob/proc/prayer_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/raw_msg = A.answer.answer_value
+	var/raw_msg = A.answer.value
 	if(!raw_msg)	return
 
 	if(src.client)

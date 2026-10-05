@@ -93,11 +93,11 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 /// A cancel, a timeout or a failed re-check (moved away, kiosk broken or opened) suspends the kiosk.
 /obj/machinery/medical_kiosk/proc/service_chosen(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value == "Cancel")
+	if(!A.answer || A.answer.value == "Cancel")
 		suspend()
 		return
 	var/mob/living/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 
 	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")

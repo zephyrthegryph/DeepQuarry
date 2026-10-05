@@ -601,7 +601,7 @@ CAPABILITIES(/obj/soulgem)
 
 /obj/soulgem/proc/soulgem_selected_apply(datum/act/request/A)
 	var/datum/prompt/choice/soulgem_consent/ask = A.answer
-	return soulgem_selected_stage(ask.answer_value, TRUE)
+	return soulgem_selected_stage(ask.value, TRUE)
 
 /obj/soulgem/proc/soulgem_transfer_answered(datum/act/request/A)
 	if(!A.answer)
@@ -611,7 +611,7 @@ CAPABILITIES(/obj/soulgem)
 
 /obj/soulgem/proc/soulgem_transfer_apply(datum/act/request/A)
 	var/datum/prompt/choice/soulgem_consent/ask = A.answer
-	return soulgem_transfer_stage(ask.soulgem_mob, ask.soulgem_destination, ask.answer_value, TRUE)
+	return soulgem_transfer_stage(ask.soulgem_mob, ask.soulgem_destination, ask.value, TRUE)
 
 /obj/soulgem/proc/soulgem_delete_answered(datum/act/request/A)
 	if(!A.answer)
@@ -621,7 +621,7 @@ CAPABILITIES(/obj/soulgem)
 
 /obj/soulgem/proc/soulgem_delete_apply(datum/act/request/A)
 	var/datum/prompt/choice/soulgem_consent/ask = A.answer
-	return soulgem_delete_stage(ask.soulgem_mob, ask.answer_value, TRUE)
+	return soulgem_delete_stage(ask.soulgem_mob, ask.value, TRUE)
 
 /datum/prompt/choice/soulgem_consent
 	timeout = 0
@@ -650,7 +650,7 @@ CAPABILITIES(/datum/prompt/choice/soulgem_consent)
 /datum/prompt/choice/soulgem_consent/recheck_extra()
 	if((soulgem_mob_expected && QDELETED(soulgem_mob)) || (soulgem_destination_expected && QDELETED(soulgem_destination)))
 		return "gone"
-	if(!isnull(answer_value) && istype(answer_value, /datum))
-		var/datum/selected = answer_value
+	if(!isnull(value) && istype(value, /datum))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"

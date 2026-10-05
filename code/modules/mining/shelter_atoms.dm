@@ -963,7 +963,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	if(request.captures_gone())
 		return
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	return survivalcapsule_self(user, request.captured_item, request.captured_interaction, A.answer.answer_value)
+	return survivalcapsule_self(user, request.captured_item, request.captured_interaction, A.answer.value)
 
 /datum/prompt/choice/shelter_template
 	question = "Which template would you like to load?"

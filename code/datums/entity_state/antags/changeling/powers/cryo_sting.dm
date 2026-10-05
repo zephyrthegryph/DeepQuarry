@@ -40,7 +40,7 @@
 /mob/proc/changeling_cryo_sting_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_cryo_sting_stage(A.answer.answer_value)
+	changeling_cryo_sting_stage(A.answer.value)
 
 /mob/proc/changeling_cryo_sting_ready()
 	to_chat(src, span_notice("Our cryogenic string is ready to be used once more."))

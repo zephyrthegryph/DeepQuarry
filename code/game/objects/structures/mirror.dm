@@ -160,7 +160,7 @@ CAPABILITIES(/obj/structure/mirror)
 	return ..()
 
 /obj/structure/mirror/raider/proc/become_vox_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/carbon/human/user = A.request.answerer
 	var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
@@ -174,7 +174,7 @@ CAPABILITIES(/obj/structure/mirror)
 /// The new vox is named: a closed window is the blank name, which is the default one.
 /mob/living/carbon/human/proc/raider_vox_named(datum/act/request/A)
 	var/mob/living/carbon/human/vox = src
-	var/newname = sanitizeSafe(A.answer ? A.answer.answer_value : "", MAX_NAME_LEN)
+	var/newname = sanitizeSafe(A.answer ? A.answer.value : "", MAX_NAME_LEN)
 	if(!newname || newname == "")
 		var/datum/language/L = GLOB.all_languages[vox.species.default_language]
 		newname = L.get_random_name()

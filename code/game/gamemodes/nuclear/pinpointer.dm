@@ -128,7 +128,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		return
 	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/mob/user = ask.answerer
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Location")
 			mode = 1
 			open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_x_chosen), answerer = user, question = "Please input the x coordinate to search for.")
@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	if(!context.answer)
 		return
 	var/datum/prompt/number/pinpointer_coordinate/ask = context.answer
-	open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_chosen), answerer = ask.answerer, question = "Please input the y coordinate to search for.", location_x = ask.answer_value)
+	open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_chosen), answerer = ask.answerer, question = "Please input the y coordinate to search for.", location_x = ask.value)
 
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/act/request/context)
 	if(!context.answer)
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/datum/prompt/number/pinpointer_coordinate/ask = context.answer
 	var/mob/user = ask.answerer
 	var/locationx = ask.location_x
-	var/locationy = ask.answer_value
+	var/locationy = ask.value
 	if(!locationx || !locationy)
 		return
 	var/turf/Z = get_turf(src)
@@ -164,7 +164,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		return
 	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/static/datum/objective/steal/itemlist
-	switch(ask.answer_value)
+	switch(ask.value)
 		if("Item")
 			if(!itemlist)
 				itemlist = new
@@ -177,7 +177,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		return
 	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/mob/user = ask.answerer
-	var/targetitem = ask.answer_value
+	var/targetitem = ask.value
 	var/datum/objective/steal/itemlist = new
 	rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
 	qdel(itemlist)
@@ -191,7 +191,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/DNAstring = A.answer.answer_value
+	var/DNAstring = A.answer.value
 	if(!DNAstring)
 		return
 	for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))

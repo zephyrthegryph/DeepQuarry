@@ -203,7 +203,7 @@ CAPABILITIES(/datum/protean_power)
 	if(!species)
 		return
 	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
-	species.base_species = A.answer.answer_value
+	species.base_species = A.answer.value
 	regenerate_icons()
 
 /datum/protean_power/hide_self
@@ -316,7 +316,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 		return
 	var/mob/living/carbon/human/H = ask.answerer
 	var/datum/forms/protean/F = ask.form
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
 	if(!refactory)
 		return
@@ -346,7 +346,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	var/obj/item/organ/external/eo = H.organs_by_name[ask.limb]
 	if(!eo)
 		return
-	eo.robotize(ask.answer_value)
+	eo.robotize(ask.value)
 	H.update_icons_body()
 
 /datum/protean_power/reform_limb/proc/regrow_limb(mob/living/carbon/human/H, datum/forms/protean/F, obj/item/organ/internal/nano/refactory/refactory, choice)
@@ -357,7 +357,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 
 /datum/protean_power/reform_limb/proc/regrow_limb_confirmed(datum/act/request/context)
 	var/datum/prompt/yes_no/protean_power/ask = context.request
-	if(!context.answer || !ask.answer_value || QDELETED(ask.form) || QDELETED(ask.power))
+	if(!context.answer || !ask.value || QDELETED(ask.form) || QDELETED(ask.power))
 		return
 	var/mob/living/carbon/human/H = ask.answerer
 	var/datum/forms/protean/F = ask.form
@@ -437,7 +437,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	if(!context.answer || QDELETED(ask.form) || QDELETED(ask.power))
 		return
 	var/mob/living/carbon/human/H = ask.answerer
-	var/input = ask.answer_value
+	var/input = ask.value
 	if(input == "Cancel")
 		return
 	if(input == "Rebuild")
@@ -454,19 +454,19 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	var/datum/prompt/choice/protean_power/reassemble_include/ask = context.request
 	if(!context.answer || QDELETED(ask.form) || QDELETED(ask.power))
 		return
-	if(ask.answer_value == "Cancel")
+	if(ask.value == "Cancel")
 		return
-	open_request(src, /datum/prompt/choice/protean_power/reassemble_include, PROC_REF(reassemble_answered), answerer = ask.answerer, question = "Include OOC notes?", power = src, form = ask.form, flavour = ask.answer_value)
+	open_request(src, /datum/prompt/choice/protean_power/reassemble_include, PROC_REF(reassemble_answered), answerer = ask.answerer, question = "Include OOC notes?", power = src, form = ask.form, flavour = ask.value)
 
 /datum/protean_power/reform_body/proc/reassemble_answered(datum/act/request/context)
 	var/datum/prompt/choice/protean_power/reassemble_include/ask = context.request
 	if(!context.answer || QDELETED(ask.form) || QDELETED(ask.power))
 		return
-	if(ask.answer_value == "Cancel")
+	if(ask.value == "Cancel")
 		return
 	var/mob/living/carbon/human/H = ask.answerer
 	var/flavour = ask.flavour
-	var/oocnotes = ask.answer_value
+	var/oocnotes = ask.value
 	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
 	act_message(H, null, MSG_SELF(span_danger("You begin to reassemble.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
 	om_task_start(/datum/om/task/timed/reform_body_activate_reform_body, H, H, flavour = flavour, oocnotes = oocnotes)
@@ -548,7 +548,7 @@ CAPABILITIES(/datum/protean_copy_review)
 	if(QDELETED(review.actor) || QDELETED(review.victim))
 		return "gone"
 	// A No stopped the old flow before its captured-power recheck.
-	return answer_value == FALSE ? null : review.why_not()
+	return value == FALSE ? null : review.why_not()
 
 /datum/prompt/choice/protean_copy_flavour
 	title = "Copy Form"
@@ -589,8 +589,8 @@ CAPABILITIES(/datum/protean_copy_review)
 	if(QDELETED(actor) || QDELETED(victim))
 		retire()
 		return
-	if(!A.answer || A.request.answer_value != TRUE)
-		if(isnull(A.request.answer_value) || A.request.answer_value == FALSE)
+	if(!A.answer || A.request.value != TRUE)
+		if(isnull(A.request.value) || A.request.value == FALSE)
 			to_chat(actor, span_notice("They declined your request."))
 		retire()
 		return
@@ -602,8 +602,8 @@ CAPABILITIES(/datum/protean_copy_review)
 		failed_step("flavour", result.error)
 
 /datum/protean_copy_review/proc/flavour_chosen_step(datum/act/request/A)
-	if(A.answer && A.request.answer_value != "Cancel")
-		power.copy_agreed(actor, victim, A.request.answer_value)
+	if(A.answer && A.request.value != "Cancel")
+		power.copy_agreed(actor, victim, A.request.value)
 	retire()
 
 /datum/protean_power/copy_form/proc/copy_agreed(mob/living/carbon/human/H, mob/living/carbon/human/victim, input)
@@ -681,7 +681,7 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	. = ..()
 	if(.)
 		return
-	if(QDELETED(stack) || stack != answerer.get_active_hand() || answer_value > stack.get_amount())
+	if(QDELETED(stack) || stack != answerer.get_active_hand() || value > stack.get_amount())
 		return "stack changed"
 	return null
 
@@ -691,7 +691,7 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 		return
 	var/mob/living/carbon/human/H = ask.answerer
 	var/obj/item/stack/material/matstack = ask.stack
-	var/howmuch = ask.answer_value
+	var/howmuch = ask.value
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
 	if(!howmuch || !refactory)
 		return

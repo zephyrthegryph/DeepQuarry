@@ -232,7 +232,7 @@
 /obj/item/rig/proc/apply_select_module_answer(datum/act/request/A)
 	var/datum/prompt/choice/rig_module_selection/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/obj/item/rig_module/module = A.answer.answer_value
+	var/obj/item/rig_module/module = A.answer.value
 	if(QDELETED(module))
 		return
 	return rig_select_module_verb(user, null, null, module)
@@ -246,7 +246,7 @@
 /obj/item/rig/proc/apply_toggle_module_answer(datum/act/request/A)
 	var/datum/prompt/choice/rig_module_selection/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/obj/item/rig_module/module = A.answer.answer_value
+	var/obj/item/rig_module/module = A.answer.value
 	if(QDELETED(module))
 		return
 	return rig_toggle_module_verb(user, null, null, module)
@@ -260,7 +260,7 @@
 /obj/item/rig/proc/apply_engage_module_answer(datum/act/request/A)
 	var/datum/prompt/choice/rig_module_selection/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/obj/item/rig_module/module = A.answer.answer_value
+	var/obj/item/rig_module/module = A.answer.value
 	if(QDELETED(module))
 		return
 	return rig_engage_module_verb(user, null, null, module)
@@ -275,8 +275,8 @@
 		return
 	if(original_client_ckey && !GLOB.directory[original_client_ckey])
 		return "gone"
-	if(!isnull(answer_value))
-		var/obj/item/rig_module/module = answer_value
+	if(!isnull(value))
+		var/obj/item/rig_module/module = value
 		if(!istype(module) || QDELETED(module))
 			return "gone"
 	return null

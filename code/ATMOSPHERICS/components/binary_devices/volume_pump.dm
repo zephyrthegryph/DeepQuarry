@@ -175,7 +175,6 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 
 /// The window's data.
 /obj/machinery/atmospherics/binary/volume_pump/ui_data(datum/act/eval/A)
-	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
 	// this is the data which will be sent to the ui
 	var/list/data = list(
 		"on" = use_power,

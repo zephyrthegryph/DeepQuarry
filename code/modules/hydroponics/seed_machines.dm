@@ -410,7 +410,7 @@ CAPABILITIES(/obj/machinery/botany/extractor)
 
 /obj/item/disk/botany/proc/botany_disk_wipe_apply(datum/act/request/A)
 	var/datum/prompt/choice/botany_disk_wipe/ask = A.answer
-	return botany_disk_wipe_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.answer_value, TRUE)
+	return botany_disk_wipe_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
 
 /datum/prompt/choice/botany_disk_wipe
 	timeout = 0

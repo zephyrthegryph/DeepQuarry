@@ -2233,7 +2233,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	var/gender_change
 
 /mob/living/carbon/human/proc/gender_change_drug_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/datum/prompt/yes_no/gender_change_drug/ask = A.answer
 	change_gender_identity(ask.gender_change)

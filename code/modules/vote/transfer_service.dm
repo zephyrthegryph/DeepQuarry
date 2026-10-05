@@ -38,7 +38,7 @@ SYSTEM_DEF(transfer)
 /datum/system/transfer/proc/hard_end_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_shift_end = A.answer.answer_value
+	var/new_shift_end = A.answer.value
 	if(!new_shift_end)
 		return
 

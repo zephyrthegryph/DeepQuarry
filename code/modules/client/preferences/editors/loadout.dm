@@ -631,13 +631,13 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	if(!A.answer)
 		return
 	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
-	write_tweak_meta(ask, sanitize_hexcolor(ask.answer_value, default = ask.default))
+	write_tweak_meta(ask, sanitize_hexcolor(ask.value, default = ask.default))
 
 /datum/preference_editor/loadout/proc/tint_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
-	write_tweak_meta(ask, list("mode" = "tint", "value" = sanitize_hexcolor(ask.answer_value, default = ask.default)))
+	write_tweak_meta(ask, list("mode" = "tint", "value" = sanitize_hexcolor(ask.value, default = ask.default)))
 
 /datum/preference_editor/loadout/proc/swatch_color_picked(datum/act/request/A)
 	if(!A.answer)
@@ -650,7 +650,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
 	var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
 	var/original = ask.original
-	var/sanitized = sanitize_hexcolor(ask.answer_value, default = original)
+	var/sanitized = sanitize_hexcolor(ask.value, default = original)
 	if(sanitized == original)
 		swaps -= original  // identity entry — strip rather than persist
 	else

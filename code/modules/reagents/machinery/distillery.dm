@@ -195,7 +195,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	var/mob/user = A.request.answerer
 	if(!user)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("examine")
 			user.examinate(src)
 
@@ -230,8 +230,8 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/target_temp_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(isnum(A.answer.answer_value) && !use_atmos)
-		target_temp = clamp(A.answer.answer_value, min_temp, max_temp)
+	if(isnum(A.answer.value) && !use_atmos)
+		target_temp = clamp(A.answer.value, min_temp, max_temp)
 		update_icon()
 
 /datum/interaction/machine_item/distillery_install_beaker
@@ -266,7 +266,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	var/obj/item/reagent_containers/glass/W = A.request.subject
 	if(!user || !istype(W) || QDELETED(W) || W.loc != user || user.incapacitated() || !in_range(user, src))
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("install input")
 			if(!InputBeaker)
 				W.add_fingerprint(user)

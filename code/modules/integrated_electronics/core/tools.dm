@@ -696,9 +696,9 @@ CAPABILITIES(/datum/circuit_memory_review)
 
 /datum/circuit_memory_review/proc/run_step(step, datum/act/request/A)
 	var/obj/item/refreshed_item = source_item
-	var/refresh = !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && !isnull(A.request.answer_value)))
+	var/refresh = !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && !isnull(A.request.value)))
 	if(!A.answer || why_not())
-		if(!why_not() && A.request.outcome == REQ_CANCELLED && !isnull(A.request.answer_value))
+		if(!why_not() && A.request.outcome == REQ_CANCELLED && !isnull(A.request.value))
 			if(A.request.last_error == CIRCUIT_MEMORY_ACCESS_DENIED)
 				var/mob/user = actor
 				to_chat(user, span_danger("[icon2html(source_item, user.client)]Access Denied!"))
@@ -719,7 +719,7 @@ CAPABILITIES(/datum/circuit_memory_review)
 	run_step(PROC_REF(type_step), A)
 
 /datum/circuit_memory_review/proc/type_step(datum/act/request/A)
-	type_name = A.answer.answer_value
+	type_name = A.answer.value
 	if(istype(source_item, /obj/item/integrated_circuit/memory/constant))
 		var/obj/item/integrated_circuit/memory/constant/chip = source_item
 		chip.memory_type_selected(src)
@@ -739,10 +739,10 @@ CAPABILITIES(/datum/circuit_memory_review)
 /datum/circuit_memory_review/proc/value_step(datum/act/request/A)
 	if(istype(source_item, /obj/item/integrated_circuit/memory/constant))
 		var/obj/item/integrated_circuit/memory/constant/chip = source_item
-		chip.memory_value_selected(src, A.answer.answer_value)
+		chip.memory_value_selected(src, A.answer.value)
 	else if(istype(source_item, /obj/item/integrated_electronics/debugger))
 		var/obj/item/integrated_electronics/debugger/debugger = source_item
-		debugger.memory_value_selected(src, A.answer.answer_value)
+		debugger.memory_value_selected(src, A.answer.value)
 	retire()
 
 #undef CIRCUIT_MEMORY_ACCESS_DENIED

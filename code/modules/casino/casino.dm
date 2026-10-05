@@ -895,7 +895,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 		return FALSE
 	if(A.answer)
 		return TRUE
-	if(!opened || A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value))
+	if(!opened || A.request.outcome != REQ_CANCELLED || !isnull(A.request.value))
 		return FALSE
 	return isnull(request_recheck(A.request))
 
@@ -923,7 +923,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/datum/prompt/text/casino_item_tf/ask = A.request
 	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	var/text = A.answer ? ask.answer_value : ""
+	var/text = A.answer ? ask.value : ""
 	if(!ask.tf_description)
 		var/obj/item/item_path = ask.tf_type
 		var/datum/prompt/text/casino_item_tf/description_request = open_request(src, /datum/prompt/text/casino_item_tf, PROC_REF(item_tf_text_entered), answerer = ask.answerer, tf_type = ask.tf_type, tf_name = text, tf_description = TRUE, title = "TF Item Description", question = "Choose your item description for \the [initial(item_path.name)] (Leave blank or cancel to use its default description)")
@@ -951,7 +951,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/datum/prompt/choice/casino_item_tf/ask = A.request
 	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	if(!A.answer || ask.answer_value != "Yes")
+	if(!A.answer || ask.value != "Yes")
 		item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, null)
 		return
 	var/obj/item/item_path = ask.tf_type
@@ -986,7 +986,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/datum/prompt/color/casino_item_tf/ask = A.request
 	if(!casino_item_tf_continues(A, ask.tf_opened))
 		return
-	item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, A.answer ? ask.answer_value : "")
+	item_tf_transform(ask.answerer, ask.tf_type, ask.tf_name, ask.tf_desc, A.answer ? ask.value : "")
 
 /obj/machinery/casinosentientprize_handler/proc/item_tf_transform(mob/living/sentient_prize, item_type, item_name, item_desc, item_color)
 	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
@@ -999,6 +999,9 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	sentient_prize.tf_into(newitem, TRUE, item_name)
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)
+	insert_chip_stage(cashmoney, user, buystate, list())
+
+/obj/machinery/casinosentientprize_handler/proc/insert_chip_stage(obj/item/spacecasinocash/cashmoney, mob/user, buystate, list/purchase_answers)
 	// Snapshot the shared instance var: it can be reassigned/nulled by another user's
 	// interaction while this purchase sleeps on a dialog, so work off a stable local.
 	var/obj/item/clothing/accessory/collar/casinosentientprize/collar = selected_collar
@@ -1023,7 +1026,10 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/list/tf_choice = null
 	var/declined_tf = FALSE
 	if(buystate == "buy" && collar.sentientprizeitemtf)
-		var/confirm_item_tf_claim = rerun_ask(user, "k854", PROC_REF(insert_chip), args, /datum/om/prompt/choice/alert, message = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", title = "Confirm Prize Item Transformation", choices = list("Yes", "No"))
+		if(!("k854" in purchase_answers))
+			open_request(src, /datum/prompt/choice/casino_purchase/confirmation, PROC_REF(casino_purchase_answered), answerer = user, subject = cashmoney, buy_mode = buystate, captured = purchase_answers.Copy())
+			return
+		var/confirm_item_tf_claim = purchase_answers["k854"]
 		if(isnull(confirm_item_tf_claim))
 			return
 		// Re-validate the snapshotted collar after the sleeping dialog: it may have been
@@ -1032,7 +1038,12 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 			to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
 			return
 		if(confirm_item_tf_claim == "Yes")
-			var/_answer_k861 = rerun_ask(user, "k861", PROC_REF(insert_chip), args, /datum/om/prompt/choice, message = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", title = "Choose Sentient Prize Item", choices = GLOB.item_tf_options, cancel_answer = "")
+			if(!("k861" in purchase_answers))
+				var/datum/prompt/choice/casino_purchase/item/ask = open_request(src, /datum/prompt/choice/casino_purchase/item, PROC_REF(casino_purchase_answered), answerer = user, subject = cashmoney, buy_mode = buystate, captured = purchase_answers.Copy(), choices = GLOB.item_tf_options.Copy())
+				if(ask?.is_open())
+					ask.purchase_opened = TRUE
+				return
+			var/_answer_k861 = purchase_answers["k861"]
 			if(isnull(_answer_k861))
 				return
 			tf_choice = _answer_k861
@@ -1103,7 +1114,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	var/mob/living/user = answerer
 	if(!istype(user) || QDELETED(user) || user.incapacitated() || !(ishuman(user) || isrobot(user)))
 		return "The operator cannot set the prize price."
-	if(!isnull(answer_value) && (!isnum(answer_value) || answer_value < 1 || answer_value > 1000))
+	if(!isnull(value) && (!isnum(value) || value < 1 || value > 1000))
 		return "The prize price is invalid."
 
 /datum/prompt/number/casino_prize_price/present(mob/user)
@@ -1115,12 +1126,12 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 /obj/machinery/casinosentientprize_handler/proc/prize_price_answered(datum/act/request/A)
 	var/mob/living/user = A.request.answerer
 	if(!A.answer)
-		if(!isnull(A.request.answer_value) && !QDELETED(user))
+		if(!isnull(A.request.value) && !QDELETED(user))
 			if(A.request.last_error == "The prize price is invalid.")
 				to_chat(user, span_notice("Invalid price."))
 			SStgui.update_uis(src)
 		return
-	casinosentientprize_price = A.answer.answer_value
+	casinosentientprize_price = A.answer.value
 	to_chat(user, span_notice("You set the price to [casinosentientprize_price]"))
 	SStgui.update_uis(src)
 
@@ -1156,7 +1167,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_use_apply(datum/act/request/A)
 	var/datum/prompt/choice/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_use_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_management_answered(datum/act/request/A)
@@ -1167,7 +1178,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_management_apply(datum/act/request/A)
 	var/datum/prompt/choice/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_interval_answered(datum/act/request/A)
@@ -1178,7 +1189,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_interval_apply(datum/act/request/A)
 	var/datum/prompt/number/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.answer_value
+	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_interval_stage(ask.wheel_operator, ask.wheel_answers)
 
 /datum/prompt/choice/wheel_review
@@ -1265,3 +1276,46 @@ CAPABILITIES(/datum/prompt/number/wheel_review)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+/datum/prompt/choice/casino_purchase
+	timeout = 0
+	recheck_on_open = TRUE
+	var/buy_mode
+	var/answer_key
+	var/purchase_opened = FALSE
+
+/datum/prompt/choice/casino_purchase/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer) || !subject || QDELETED(subject))
+		return "gone"
+	return null
+
+/datum/prompt/choice/casino_purchase/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/casino_purchase/refusal(given)
+	return null
+
+/datum/prompt/choice/casino_purchase/confirmation
+	question = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?"
+	title = "Confirm Prize Item Transformation"
+	buttons = TRUE
+	choices = list("Yes", "No")
+	answer_key = "k854"
+
+/datum/prompt/choice/casino_purchase/item
+	question = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)"
+	title = "Choose Sentient Prize Item"
+	answer_key = "k861"
+
+/obj/machinery/casinosentientprize_handler/proc/casino_purchase_answered(datum/act/request/A)
+	var/datum/prompt/choice/casino_purchase/ask = A.request
+	if(!A.answer)
+		// Only a genuine close of the optional item question means a normal purchase.
+		if(ask.answer_key != "k861" || !ask.purchase_opened || ask.outcome != REQ_CANCELLED || !isnull(ask.value) || !isnull(request_recheck(ask)))
+			return
+	var/list/purchase_answers = ask.captured.Copy()
+	purchase_answers[ask.answer_key] = A.answer ? A.answer.value : ""
+	// Queue the original rerun completion push before the non-yielding replay, so a
+	// runtime still leaves its normal presentation push scheduled.
+	SStgui.update_uis(src)
+	insert_chip_stage(ask.subject, ask.answerer, ask.buy_mode, purchase_answers)

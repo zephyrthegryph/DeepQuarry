@@ -77,14 +77,14 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_pick)
 	return TRUE
 
 /datum/tgui/proc/explore_shuttle_destination_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/explore/console = src_object()
 	var/allowed = console.ui_act_allowed(user, "pick", src, state())
 	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
 	if(request_recheck(A.request))
 		return
-	if(console.explore_destination_stage(src, TRUE, A.answer.answer_value, A.request))
+	if(console.explore_destination_stage(src, TRUE, A.answer.value, A.request))
 		SStgui.update_uis(console)
 
 /proc/explore_destination_refusal(usable, destination_key, list/possible_d)

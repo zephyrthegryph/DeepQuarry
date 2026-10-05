@@ -339,7 +339,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/flavor_text_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	return flavor_text_apply(A.answer.answer_value)
+	return flavor_text_apply(A.answer.value)
 
 /mob/proc/flavor_text_apply(new_text)
 	flavor_text = new_text
@@ -426,7 +426,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	choices = list("Quit Round", "No")
 
 /mob/proc/abandon_mob_confirmed(datum/act/request/A)
-	if(A.answer?.answer_value != "Yes, leave")
+	if(A.answer?.value != "Yes, leave")
 		return
 	if(mind?.assigned_role)
 		open_request(src, /datum/prompt/choice/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered), answerer = src)
@@ -436,7 +436,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/abandon_mob_quit_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	abandon_mob_finish(A.answer.answer_value == "Quit Round")
+	abandon_mob_finish(A.answer.value == "Quit Round")
 
 /// Leaves the body for the lobby; `quit_round` also frees the job and removes the records.
 /mob/proc/abandon_mob_finish(quit_round)
@@ -558,7 +558,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/observe_target_apply(datum/act/request/A)
 	var/datum/prompt/choice/observe_target/ask = A.answer
 	var/is_admin = ask.is_admin
-	var/mob/mob_eye = ask.choices[ask.answer_value]
+	var/mob/mob_eye = ask.choices[ask.value]
 
 	if(client && mob_eye)
 		begin_remote_view(/datum/remote_view, mob_eye)
@@ -968,8 +968,8 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	var/self
 
 /datum/prompt/choice/yank_object/recheck_extra()
-	if(!isnull(answer_value))
-		var/obj/item/selected = answer_value
+	if(!isnull(value))
+		var/obj/item/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
 
@@ -981,7 +981,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 /mob/proc/yank_object_apply(datum/act/request/A)
 	var/datum/prompt/choice/yank_object/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/selection = ask.answer_value
+	var/obj/item/selection = ask.value
 	var/self = ask.self
 	var/mob/S = src
 	if(!(selection in get_visible_implants(0)))
@@ -1373,8 +1373,8 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	rights = R_SPAWN
 
 /datum/prompt/choice/vv_spawn/recheck_extra()
-	if(isdatum(answer_value))
-		var/datum/selected = answer_value
+	if(isdatum(value))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"
 
@@ -1419,7 +1419,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_language_added_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/new_language = ask.answer_value
+	var/new_language = ask.value
 	if(add_language(new_language))
 		to_chat(user, "Added [new_language] to [src].")
 		return
@@ -1433,7 +1433,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_language_removed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/datum/language/rem_language = ask.answer_value
+	var/datum/language/rem_language = ask.value
 	if(remove_language(rem_language.name))
 		to_chat(user, "Removed [rem_language] from [src].")
 		return
@@ -1446,7 +1446,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 
 /mob/proc/vv_verb_added_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_debug/ask = A.answer
-	var/verb = ask.answer_value
+	var/verb = ask.value
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
 		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
@@ -1460,8 +1460,8 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_verb_removed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_debug/ask = A.answer
 	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
-	revoke(src, granted_verb(ask.answer_value), verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, ask.answer_value, verb_source(VERB_SOURCE_ADMIN))
+	revoke(src, granted_verb(ask.value), verb_source(VERB_SOURCE_ADMIN))
+	om_grant(src, GRANT_VERB_HIDE, ask.value, verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_organ_added(datum/act/request/A)
 	if(!A.answer)
@@ -1471,7 +1471,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_organ_added_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/new_organ = ask.answer_value
+	var/new_organ = ask.value
 	var/mob/living/carbon/M = src
 	if(locate_in_list(M.internal_organ_list(), new_organ))
 		to_chat(user, "Mob already has that organ.")
@@ -1486,7 +1486,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_organ_removed_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/obj/item/organ/rem_organ = ask.answer_value
+	var/obj/item/organ/rem_organ = ask.value
 	var/mob/living/carbon/M = src
 	if(!(locate_in_list(M.internal_organ_list(), rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
@@ -1502,7 +1502,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	return vv_ai_faction_apply(A)
 
 /mob/proc/vv_ai_faction_apply(datum/act/request/A)
-	open_request(src, /datum/prompt/choice/vv_ai_stance, PROC_REF(vv_ai_stance_chosen), answerer = A.answer.answerer, faction = A.answer.answer_value)
+	open_request(src, /datum/prompt/choice/vv_ai_stance, PROC_REF(vv_ai_stance_chosen), answerer = A.answer.answerer, faction = A.answer.value)
 
 /mob/proc/vv_ai_stance_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1511,7 +1511,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 
 /mob/proc/vv_ai_stance_apply(datum/act/request/A)
 	var/datum/prompt/choice/vv_ai_stance/ask = A.answer
-	open_request(src, /datum/prompt/choice/vv_ai_wake, PROC_REF(vv_ai_configured), answerer = ask.answerer, faction = ask.faction, stance = ask.answer_value)
+	open_request(src, /datum/prompt/choice/vv_ai_wake, PROC_REF(vv_ai_configured), answerer = ask.answerer, faction = ask.faction, stance = ask.value)
 
 /mob/proc/vv_ai_configured(datum/act/request/A)
 	if(!A.answer)
@@ -1526,7 +1526,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	L.faction = ask.faction
 	if(ask.stance)
 		L.set_use_stance(ask.stance)
-	if(ask.answer_value == "Yes")
+	if(ask.value == "Yes")
 		L.status_adjust(EFFECT_SLEEPING, -100)
 
 VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))

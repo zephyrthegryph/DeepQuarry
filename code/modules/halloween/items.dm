@@ -110,10 +110,10 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 
 /obj/structure/candybowl/proc/candybowl_repeat_answered(datum/act/request/context)
 	if(!context.answer)
-		if(!isnull(context.request.answer_value) && context.request.last_error == CANDYBOWL_EMPTY)
+		if(!isnull(context.request.value) && context.request.last_error == CANDYBOWL_EMPTY)
 			SStgui.update_uis(src)
 		return
-	finish_candy_search(context.request.answerer, context.answer.answer_value)
+	finish_candy_search(context.request.answerer, context.answer.value)
 	SStgui.update_uis(src)
 
 /obj/structure/candybowl/proc/finish_candy_search(mob/user, choice)

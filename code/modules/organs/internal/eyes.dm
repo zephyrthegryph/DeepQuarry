@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 /obj/item/organ/internal/eyes/proc/eye_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_color = A.answer.answer_value
+	var/new_color = A.answer.value
 	if(new_color && owner)
 		// input() supplies us with a hex color, which we can't use, so we convert it to rbg values.
 		var/list/new_color_rgb_list = hex2rgb(new_color)

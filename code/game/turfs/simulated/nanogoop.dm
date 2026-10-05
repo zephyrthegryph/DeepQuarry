@@ -100,13 +100,13 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_state_chosen(datum/act/request/A)
 	var/datum/prompt/choice/nanite_state/ask = A.request
-	if(A.answer.answer_value == "On")
+	if(A.answer.value == "On")
 		open_request(src, /datum/prompt/choice/nanite_targets, PROC_REF(nanite_targets_chosen), answerer = ask.answerer, subject = src, ask_flags = ask.ask_flags, from_ai = ask.from_ai)
 		return
 	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, A.answer.answer_value)
+		nanite_ai_interface_chosen(ask.answerer, A.answer.value)
 	else
-		nanite_interface_chosen(ask.answerer, A.answer.answer_value)
+		nanite_interface_chosen(ask.answerer, A.answer.value)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -116,9 +116,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_targets_chosen(datum/act/request/A)
 	var/datum/prompt/choice/nanite_targets/ask = A.request
 	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, "On", A.answer.answer_value)
+		nanite_ai_interface_chosen(ask.answerer, "On", A.answer.value)
 	else
-		nanite_interface_chosen(ask.answerer, "On", A.answer.answer_value)
+		nanite_interface_chosen(ask.answerer, "On", A.answer.value)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, state, targets)
 	switch(state)

@@ -95,11 +95,11 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 		return "closed"
 
 /obj/structure/disposaloutlet/proc/outlet_range_answered(datum/act/request/context)
-	if(isnull(context.request.answer_value) || context.request.last_error == "gone")
+	if(isnull(context.request.value) || context.request.last_error == "gone")
 		return
 	SStgui.update_uis(src)
 	if(context.answer)
-		apply_outlet_range(context.request.answerer, context.answer.answer_value)
+		apply_outlet_range(context.request.answerer, context.answer.value)
 
 /obj/structure/disposaloutlet/proc/apply_outlet_range(mob/user, new_range)
 	eject_range = new_range

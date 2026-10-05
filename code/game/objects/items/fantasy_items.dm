@@ -351,7 +351,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(!choice || !check_menu(user))
 		return
 
@@ -371,7 +371,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_name = A.answer.answer_value
+	var/new_name = A.answer.value
 	if(!check_menu(user))
 		return
 	if(beacons_left <= 0)

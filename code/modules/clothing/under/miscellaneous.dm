@@ -2454,7 +2454,7 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 
 /obj/item/clothing/under/hyperfiber/bluespace/proc/apply_uniform_size(datum/act/request/A)
 	var/datum/prompt/number/bluespace_clothing_size/request = A.request
-	return bluespace_size(request.answerer, A.answer.answer_value, request.large_bounds)
+	return bluespace_size(request.answerer, A.answer.value, request.large_bounds)
 
 /obj/item/clothing/gloves/bluespace/deluxe/proc/bracelet_size_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -2464,7 +2464,7 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 
 /obj/item/clothing/gloves/bluespace/deluxe/proc/apply_bracelet_size(datum/act/request/A)
 	var/datum/prompt/number/bluespace_clothing_size/request = A.request
-	return bluespace_size(request.answerer, A.answer.answer_value, request.large_bounds)
+	return bluespace_size(request.answerer, A.answer.value, request.large_bounds)
 
 /datum/prompt/number/bluespace_clothing_size
 	title = "Set Size"

@@ -203,7 +203,7 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 		setting_action = ask.setting_action
 	else
 		setting_action = "set_faction"
-	spawner.apply_spawner_setting(setting_action, context.answer.answer_value)
+	spawner.apply_spawner_setting(setting_action, context.answer.value)
 	SStgui.update_uis(spawner)
 
 /datum/eventkit/mob_spawner/proc/apply_spawner_setting(setting_action, value)
@@ -262,7 +262,7 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 	if(!context.answer)
 		return
 	var/datum/prompt/choice/mob_spawner_spawn/ask = context.answer
-	if(ask.answer_value != "Yes")
+	if(ask.value != "Yes")
 		return
 	var/datum/eventkit/mob_spawner/spawner = src_object()
 	if(spawner.apply_spawn_choice(src, context.request.answerer, ask.spawn_amount, ask.spawn_desc, ask.spawn_flavor_text, ask.spawn_health, ask.spawn_max_health, ask.spawn_melee_damage_lower, ask.spawn_melee_damage_upper, ask.spawn_name, ask.spawn_size_multiplier, ask.spawn_x, ask.spawn_y, ask.spawn_z))

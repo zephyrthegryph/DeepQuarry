@@ -150,7 +150,7 @@ CAPABILITIES(/datum/nifsoft/sizechange)
 	var/mob/living/carbon/human/human = implant?.human
 	if(!human || ask.subject != implant || ask.answerer != human || human.nif != implant || implant.stat != NIF_WORKING || !A.answer)
 		return
-	var/new_size = ask.answer_value
+	var/new_size = ask.value
 	if(!human.size_range_check(new_size))
 		if(new_size)
 			to_chat(human, span_notice("The safety features of the NIF Program prevent you from choosing this size."))

@@ -148,7 +148,7 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_togglesmeltin
 	var/obj/machinery/mineral/processing_unit_console/console = src_object()
 	// ui_act_allowed's inherited gate is TRUE; its original replay effect is the fingerprint.
 	console.add_fingerprint(user)
-	var/new_setting = A.answer.answer_value
+	var/new_setting = A.answer.value
 	if(!new_setting)
 		return
 	switch(new_setting)

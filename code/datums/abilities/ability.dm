@@ -151,7 +151,7 @@
 /datum/interaction/ability/picker/proc/target_picked_apply(datum/act/request/A)
 	var/datum/prompt/choice/ability_target/ask = A.answer
 	var/mob/living/actor = ask.answerer
-	var/atom/target = ask.answer_value
+	var/atom/target = ask.value
 	if(!istype(actor) || !target || !(target in candidates(actor)))
 		return
 	if(!applies_to(target))
@@ -249,8 +249,8 @@ GLOBAL_LIST_INIT(ability_interaction_types, init_ability_interaction_types())
 	timeout = 0
 
 /datum/prompt/choice/ability_target/recheck_extra()
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/atom/selected = answer_value
+	var/atom/selected = value
 	if(!istype(selected) || QDELETED(selected))
 		return "gone"

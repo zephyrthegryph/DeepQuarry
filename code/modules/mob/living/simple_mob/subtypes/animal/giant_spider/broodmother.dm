@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/royal_spider_egg)
 	return TRUE
 
 /obj/item/royal_spider_egg/proc/release_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	var/turf/drop_loc = user.loc

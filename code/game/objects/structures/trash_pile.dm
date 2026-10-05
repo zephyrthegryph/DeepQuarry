@@ -79,7 +79,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	return !hider()
 
 /obj/structure/trash_pile/proc/exit_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/L = A.request.answerer
 	if(L == hider())
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	L.forceMove(get_turf(src))
 
 /obj/structure/trash_pile/proc/hide_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/L = A.request.answerer
 	L.forceMove(src)
@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	return istype(M) && M.client && isobserver(M)
 
 /obj/structure/trash_pile/proc/mouse_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/observer/user = A.request.answerer
 

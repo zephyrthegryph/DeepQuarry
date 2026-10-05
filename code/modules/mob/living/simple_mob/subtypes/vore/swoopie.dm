@@ -294,7 +294,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/L = A.answer.answer_value
+	var/mob/living/L = A.answer.value
 	if(L == src || !istype(Vac) || !Adjacent(L))
 		return
 	L.put_in_active_hand(Vac)

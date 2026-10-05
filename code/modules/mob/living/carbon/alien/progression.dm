@@ -65,7 +65,7 @@
 /mob/living/carbon/human/proc/adult_name_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_name = A.answer.answer_value
+	var/new_name = A.answer.value
 	if(new_name)
 		fully_replace_character_name(real_name, new_name)
 

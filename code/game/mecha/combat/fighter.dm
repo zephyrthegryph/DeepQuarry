@@ -170,11 +170,11 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 	var/obj/mecha/combat/fighter/F = subject
 	if(QDELETED(F) || QDELETED(answerer))
 		return "gone"
-	if(isnull(answer_value))
+	if(isnull(value))
 		return null
 	if(answerer.loc != F)
 		return "not inside it"
-	var/obj/effect/overmap/visitable/V = choices[answer_value]
+	var/obj/effect/overmap/visitable/V = choices[value]
 	if(F.slot_item(MECHA_SLOT_PILOT) != answerer || F.x != start_x || F.y != start_y || F.z != start_z || get_dist(V, get_overmap_sector(F.z)) > 1)
 		return "moved"
 	return null
@@ -187,7 +187,7 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 		overmap_destination_chosen(ask)
 	else if(ask.last_error == "moved")
 		to_chat(ask.answerer, span_warning("You or they appear to have moved!"))
-	else if(isnull(ask.answer_value) && ask.outcome == REQ_CANCELLED && ask.last_error != "nothing to ask")
+	else if(isnull(ask.value) && ask.outcome == REQ_CANCELLED && ask.last_error != "nothing to ask")
 		back_off_edge(ask.edge)
 
 /obj/mecha/combat/fighter/proc/back_off_edge(what_edge)
@@ -385,8 +385,8 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 
 /obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color_apply(datum/act/request/context)
 	var/datum/prompt/choice/ask = context.answer
-	if(ask.answer_value != "CANCEL")
-		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(stripe_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.answer_value)
+	if(ask.value != "CANCEL")
+		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(stripe_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.value)
 
 /obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/act/request/context)
 	if(!context.answer)
@@ -397,12 +397,12 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
 		return
-	if(ask.answer_value)
+	if(ask.value)
 		switch(ask.zone)
 			if("Fore Stripe")
-				stripe1_color = ask.answer_value
+				stripe1_color = ask.value
 			if("Aft Stripe")
-				stripe2_color = ask.answer_value
+				stripe2_color = ask.value
 	update_icon()
 
 /obj/effect/decal/mecha_wreckage/gunpod

@@ -47,14 +47,14 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/multi, ui_act_pick)
 	SStgui.update_uis(src)
 
 /datum/tgui/proc/shuttle_destination_entered(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/multi/console = src_object()
 	var/allowed = console.ui_act_allowed(user, "pick", src, state())
 	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
 	if(request_recheck(A.request))
 		return
-	console.shuttle_destination_stage(src, TRUE, A.answer.answer_value, A.request)
+	console.shuttle_destination_stage(src, TRUE, A.answer.value, A.request)
 
 /datum/prompt/choice/shuttle_destination
 	question = "Choose shuttle destination"

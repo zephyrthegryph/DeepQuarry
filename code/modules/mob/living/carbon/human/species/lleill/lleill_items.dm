@@ -157,7 +157,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/mob/living/carbon/human/chosen_target = A.answer.answer_value
+	var/mob/living/carbon/human/chosen_target = A.answer.value
 	if(homunculus)
 		return
 	if(chosen_target)
@@ -176,7 +176,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/h_action = A.answer.answer_value
+	var/h_action = A.answer.value
 	var/mob/living/simple_mob/homunculus/H = homunculus
 	if(!H)
 		return
@@ -191,7 +191,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	if(!A.answer)
 		return
 	var/mob/living/simple_mob/homunculus/H = homunculus
-	H?.say(A.answer.answer_value)
+	H?.say(A.answer.value)
 
 
 //Speaking Glamour (universal translator)
@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 	if(!A.answer)
 		return
 	var/mob/living/M = A.request.answerer
-	var/m_action = A.answer.answer_value
+	var/m_action = A.answer.value
 	var/mob/living/carbon/human/L = connected_mob
 	if(!istype(L) || m_action == "No")
 		return

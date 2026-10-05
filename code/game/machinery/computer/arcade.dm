@@ -1231,7 +1231,7 @@ CAPABILITIES(/obj/item/orion_ship)
 	if(!A.answer)
 		return
 	var/datum/prompt/number/claw_pin/R = A.request
-	var/datum/money_account/customer_account = attempt_account_access(R.account, A.answer.answer_value, 2)
+	var/datum/money_account/customer_account = attempt_account_access(R.account, A.answer.value, 2)
 	if(!customer_account)
 		visible_message(span_info("Unable to access account: incorrect credentials."))
 		return

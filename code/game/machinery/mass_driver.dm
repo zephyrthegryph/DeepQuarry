@@ -37,7 +37,7 @@
 	if(!A.answer)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return
-	var/new_id = A.answer.answer_value
+	var/new_id = A.answer.value
 	if(!new_id)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING

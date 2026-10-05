@@ -67,7 +67,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, get_ai_t
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/settings_request_answered(datum/act/request/context)
 	if(!context.answer)
 		return
-	settings_request_stage(context.request.answerer, context.answer.answer_value)
+	settings_request_stage(context.request.answerer, context.answer.value)
 	if(!QDELETED(src))
 		SStgui.update_uis(src)
 

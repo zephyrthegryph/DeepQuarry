@@ -53,7 +53,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 	var/datum/prompt/number/mecha_cable_cut/ask = context.answer
 	if(!cable)
 		return
-	var/m = min(ask.answer_value, cable.get_amount())
+	var/m = min(ask.value, cable.get_amount())
 	if(m)
 		use_cable(m)
 		new /obj/item/stack/cable_coil(get_turf(chassis), m)

@@ -192,7 +192,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 	if(!user || om_busy(src) || (isAI(user) && has_stat(NOPOWER)) || user.incapacitated())
 		return
 
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("eject")
 			eject(user)
 		if("grind")

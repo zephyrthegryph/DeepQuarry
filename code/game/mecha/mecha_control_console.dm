@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 /datum/prompt/text/mecha_tracker_message/recheck_extra()
 	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
 		return "gone"
-	if(!isnull(answer_value) && GLOB.tgui_default_state.can_use_topic(owner, answerer) < STATUS_INTERACTIVE)
+	if(!isnull(value) && GLOB.tgui_default_state.can_use_topic(owner, answerer) < STATUS_INTERACTIVE)
 		return "can't use it"
 	return null
 
@@ -83,8 +83,8 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 		return
 	var/obj/item/mecha_parts/mecha_tracking/tracker = A.request.subject
 	var/obj/mecha/M = tracker.in_mecha()
-	if(A.answer.answer_value && M)
-		M.occupant_message(A.answer.answer_value)
+	if(A.answer.value && M)
+		M.occupant_message(A.answer.value)
 
 /obj/item/mecha_parts/mecha_tracking
 	name = "Exosuit tracking beacon"

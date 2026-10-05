@@ -132,7 +132,7 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 /obj/item/communicator/proc/reply_apply(datum/act/request/A)
 	var/datum/prompt/text/communicator_reply/ask = A.answer
 	var/mob/user = ask.answerer
-	var/message = ask.answer_value
+	var/message = ask.value
 	var/obj/item/communicator/comm = ask.comm
 	if(!message || !comm.exonet)
 		return
@@ -224,7 +224,7 @@ CAPABILITIES(/datum/prompt/text/ghost_text)
 /mob/observer/dead/proc/ghost_text_recipient_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/obj/item/communicator/recipient = A.answer.answer_value
+	var/obj/item/communicator/recipient = A.answer.value
 	if(!istype(recipient) || QDELETED(recipient))
 		return
 	open_request(src, /datum/prompt/text/ghost_text, PROC_REF(ghost_text_written), answerer = src, recipient = recipient)
@@ -238,7 +238,7 @@ CAPABILITIES(/datum/prompt/text/ghost_text)
 	var/datum/prompt/text/ghost_text/ask = A.answer
 	var/obj/item/communicator/chosen_communicator = ask.recipient
 	var/mob/observer/dead/O = src
-	var/text_message = sanitize(ask.answer_value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	var/text_message = sanitize(ask.value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	if(text_message && O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
 

@@ -32,7 +32,7 @@
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
-	var/new_data = A.answer.answer_value
+	var/new_data = A.answer.value
 	if(isnum(new_data) && holder().check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data] into the pin."))
 		write_data_to_pin(new_data)

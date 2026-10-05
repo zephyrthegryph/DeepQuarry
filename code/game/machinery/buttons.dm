@@ -86,7 +86,7 @@
 /obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mobtype = GLOB.vr_mob_spawner_options[A.answer.answer_value]
+	var/mobtype = GLOB.vr_mob_spawner_options[A.answer.value]
 	if(!mobtype)
 		return
 	open_request(src, /datum/prompt/choice/mob_spawner_faction, PROC_REF(spawn_choices_made), answerer = A.request.answerer, title = "Faction", question = "Do you want the mob's faction to remain the same or be passive?", choices = list("Normal", "Neutral"), buttons = TRUE, mobtype = mobtype, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
@@ -99,7 +99,7 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/mob_spawner_faction/R = A.request
-	var/neutral = (A.answer.answer_value == "Neutral")
+	var/neutral = (A.answer.value == "Neutral")
 	var/mobtype = R.mobtype
 	var/mob/living/simple_mob/old_mob = mobspawned()
 	rel_clear(src, nameof(mobspawned))

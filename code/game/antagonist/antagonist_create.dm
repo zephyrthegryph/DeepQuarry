@@ -130,7 +130,7 @@
 	if(QDELETED(player))
 		return
 	// Closing the original name prompt supplied a blank answer and still refreshed access.
-	var/newname = A.answer ? A.answer.answer_value : ""
+	var/newname = A.answer ? A.answer.value : ""
 	if (newname)
 		player.real_name = newname
 		player.name = player.real_name

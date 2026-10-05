@@ -1075,6 +1075,33 @@ fn heat_body_capacity(h: ByondValue, capacity: ByondValue) -> Result<ByondValue>
     Ok(ok.into())
 }
 
+/// A body's heat, computed in `f64` before it crosses to DM: `list(temperature
+/// K, latent heat stored in its phase plateau J, energy J)`. The latent heat
+/// stored is `0` below the plateau and all of it above. Null if the body
+/// does not exist.
+#[auxmacros::bind("/proc/heat_body_state")]
+fn heat_body_state(h: ByondValue) -> Result<ByondValue> {
+    let Some(e) = body(&h)? else {
+        return Ok(ByondValue::null());
+    };
+    let row = with_world(|w| {
+        Ok(w.read::<HeatBody>(e).map(|b| {
+            let t = body_temperature_now(w, e, &b);
+            let latent = if b.phase_temperature > 0.0 {
+                (b.energy - b.capacity * b.phase_temperature).clamp(0.0, b.phase_latent)
+            } else {
+                0.0
+            };
+            (t, latent, b.energy)
+        }))
+    })?;
+    match row {
+        #[allow(clippy::cast_possible_truncation)]
+        Some((t, latent, energy)) => crate::world::list([t as f32, latent as f32, energy as f32]),
+        None => Ok(ByondValue::null()),
+    }
+}
+
 #[auxmacros::bind("/proc/heat_body_phase")]
 fn heat_body_phase(
     h: ByondValue,

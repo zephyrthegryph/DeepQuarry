@@ -123,7 +123,7 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_switch_modes)
 
 UI_ACT(/datum/tgui_input_colormatrix, "choose_color", ui_act_choose_color)
 UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_choose_color)
-	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), title = "[title] colour picking", message = "Choose a color: ", default = activecolor, ui_refresh = src)
+	open_request(src, /datum/prompt/color/matrix_active_colour, PROC_REF(color_chosen), answerer = ui.user, title = "[title] colour picking", question = "Choose a color: ", default = activecolor)
 	return TRUE
 
 UI_ACT(/datum/tgui_input_colormatrix, "paint", ui_act_paint)
@@ -184,8 +184,32 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_val)
 	build_val = params["buildval"]
 	return TRUE
 
-/datum/tgui_input_colormatrix/proc/color_chosen(datum/om/prompt/color/ask)
-	activecolor = ask.picked_color
+/datum/tgui_input_colormatrix/proc/color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	activecolor = A.answer.value
+	SStgui.update_uis(src)
+
+/datum/prompt/color/matrix_active_colour
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/color/matrix_active_colour/normalize(given)
+	return given
+
+/datum/prompt/color/matrix_active_colour/refusal(given)
+	return null
+
+/datum/prompt/color/matrix_active_colour/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker
+
+/datum/prompt/color/matrix_active_colour/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	return null
 
 /datum/tgui_input_colormatrix/proc/set_entry(entry)
 	src.entry = entry

@@ -1649,7 +1649,7 @@ UI_ACT_PROC(/datum/vore_look, set_spont_belly)
 	parent_type = /datum/prompt/choice/vore_reload_preferences
 
 /datum/tgui/proc/vore_reload_preferences_answered(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Reload")
+	if(!A.answer || A.answer.value != "Reload")
 		return
 	var/datum/vore_look/panel = src_object()
 	if(panel.vore_reload_preferences_apply(src))
@@ -1664,7 +1664,7 @@ UI_ACT_PROC(/datum/vore_look, set_spont_belly)
 	return TRUE
 
 /datum/tgui/proc/vore_load_preferences_answered(datum/act/request/A)
-	if(!A.answer || A.answer.answer_value != "Load")
+	if(!A.answer || A.answer.value != "Load")
 		return
 	var/datum/vore_look/panel = src_object()
 	if(panel.vore_load_preferences_apply(src))
@@ -1700,7 +1700,7 @@ UI_ACT_PROC(/datum/vore_look, set_spont_belly)
 	if(!A.answer)
 		return
 	var/list/answers = A.request.captured.Copy()
-	answers[A.request.step_name] = A.answer.answer_value
+	answers[A.request.step_name] = A.answer.value
 	var/datum/vore_look/panel = src_object()
 	if(panel.vore_save_preferences_step(src, answers))
 		SStgui.update_uis(panel)

@@ -98,7 +98,7 @@ CAPABILITIES(/datum/trader_review)
 	. = ..()
 	if(.)
 		return
-	var/datum/selected = answer_value
+	var/datum/selected = value
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/datum/trader_review/review = owner
@@ -113,7 +113,7 @@ CAPABILITIES(/datum/trader_review)
 		return
 	var/datum/trader_review/review = owner
 	// A No ended the old confirmation before the flow's late permission checks.
-	return answer_value == FALSE ? null : review.why_not()
+	return value == FALSE ? null : review.why_not()
 
 /datum/trader_review/proc/why_not()
 	if(QDELETED(actor) || QDELETED(trader) || (product_selected && QDELETED(product)))
@@ -149,7 +149,7 @@ CAPABILITIES(/datum/trader_review)
 	retire()
 
 /datum/trader_review/proc/failed_answer(datum/request/R)
-	stopped(isnull(R.answer_value) ? "cancelled" : R.last_error)
+	stopped(isnull(R.value) ? "cancelled" : R.last_error)
 
 /datum/trader_review/proc/start_step()
 	stage = "ask"
@@ -162,7 +162,7 @@ CAPABILITIES(/datum/trader_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	var/choice = A.request.answer_value
+	var/choice = A.request.value
 	if(choice == "Return banked funds")
 		trader.return_funds()
 	if(choice != "Yes")
@@ -184,7 +184,7 @@ CAPABILITIES(/datum/trader_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	rel_set(src, nameof(product), A.request.answer_value)
+	rel_set(src, nameof(product), A.request.value)
 	if(QDELETED(product))
 		stopped("gone")
 		return
@@ -205,7 +205,7 @@ CAPABILITIES(/datum/trader_review)
 	run_step(PROC_REF(trade_answered_step), A)
 
 /datum/trader_review/proc/trade_answered_step(datum/act/request/A)
-	if(A.answer && A.request.answer_value == FALSE)
+	if(A.answer && A.request.value == FALSE)
 		stopped("declined")
 		return
 	if(!A.answer)
@@ -252,7 +252,7 @@ CAPABILITIES(/datum/trader_review)
 	if(!A.answer)
 		failed_answer(A.request)
 		return
-	if(A.request.answer_value == "I want my change")
+	if(A.request.value == "I want my change")
 		trader.return_funds()
 	else
 		to_chat(actor, span_notice("You decided leave your change banked."))

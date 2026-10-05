@@ -161,7 +161,7 @@
 
 /mob/living/proc/waddle_settings_apply(datum/act/request/A)
 	var/datum/prompt/number/waddle_settings/ask = A.answer
-	ask.waddle_answers[ask.answer_key] = ask.answer_value
+	ask.waddle_answers[ask.answer_key] = ask.value
 	if(ask.waddle_debugging)
 		return waddle_debug_stage(ask.waddle_answers)
 	return waddle_adjust_stage(ask.waddle_answers)

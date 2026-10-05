@@ -198,7 +198,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	return null
 
 /obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/act/request/context)
-	if(!context.answer || context.answer.answer_value != "Remove")
+	if(!context.answer || context.answer.value != "Remove")
 		return
 	return destroy_cell_apply(context)
 
@@ -221,8 +221,8 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/proc/shield_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		effect_color = A.answer.answer_value
+	if(A.answer.value)
+		effect_color = A.answer.value
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)

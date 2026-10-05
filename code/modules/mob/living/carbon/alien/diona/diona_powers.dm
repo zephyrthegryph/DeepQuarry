@@ -43,7 +43,7 @@
 /mob/living/carbon/alien/diona/proc/merge_target_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/living/M = A.answer.answer_value
+	var/mob/living/M = A.answer.value
 	if(QDELETED(M))
 		return
 	if(!do_merge(M))

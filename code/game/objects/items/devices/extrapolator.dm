@@ -151,8 +151,8 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 		return
 	if(QDELETED(answerer) || (target_expected && QDELETED(extraction_target)) || (disease_expected && QDELETED(extraction_disease)))
 		return "gone"
-	if(isdatum(answer_value))
-		var/datum/selected = answer_value
+	if(isdatum(value))
+		var/datum/selected = value
 		if(QDELETED(selected))
 			return "gone"
 	return null
@@ -182,7 +182,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 
 /obj/item/extrapolator/proc/apply_analyze_target_answered(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/analyze_target/ask = A.request
-	analyze_target_chosen(ask.answerer, A.answer.answer_value)
+	analyze_target_chosen(ask.answerer, A.answer.value)
 
 /obj/item/extrapolator/proc/analyze_target_chosen(mob/user, atom/target)
 	var/list/result = target?.extrapolator_act(user, src, dry_run = TRUE)
@@ -272,7 +272,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 
 /obj/item/extrapolator/proc/apply_disease_chosen(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/disease/ask = A.request
-	open_request(src, /datum/prompt/choice/viral_extrapolator/isolate_what, PROC_REF(isolation_chosen), answerer = ask.answerer, extraction_target = ask.extraction_target, target_expected = !isnull(ask.extraction_target), extraction_disease = A.answer.answer_value, disease_expected = !isnull(A.answer.answer_value))
+	open_request(src, /datum/prompt/choice/viral_extrapolator/isolate_what, PROC_REF(isolation_chosen), answerer = ask.answerer, extraction_target = ask.extraction_target, target_expected = !isnull(ask.extraction_target), extraction_disease = A.answer.value, disease_expected = !isnull(A.answer.value))
 
 /obj/item/extrapolator/proc/isolation_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -284,7 +284,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 	var/mob/living/user = ask.answerer
 	var/atom/target = ask.extraction_target
 	var/datum/affliction/contagion/engineered/target_disease = ask.extraction_disease
-	if(A.answer.answer_value == "Symptom")
+	if(A.answer.value == "Symptom")
 		isolate_symptom(user, target, target_disease)
 	else
 		isolate_disease(user, target, target_disease)
@@ -311,7 +311,7 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 
 /obj/item/extrapolator/proc/apply_symptom_answered(datum/act/request/A)
 	var/datum/prompt/choice/viral_extrapolator/symptom/ask = A.request
-	symptom_chosen(ask.answerer, A.answer.answer_value, ask.extraction_target)
+	symptom_chosen(ask.answerer, A.answer.value, ask.extraction_target)
 
 /obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/viral_trait/chosen, atom/target)
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]...")), MSG_OTHERS(span_notice("%U% slots [target] into %T%, which begins to whir and beep!")))

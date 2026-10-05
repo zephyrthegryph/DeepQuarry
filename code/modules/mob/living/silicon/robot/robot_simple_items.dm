@@ -117,7 +117,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	if(!A.answer)
 		return
 	cut_overlays()
-	assume_selected_item(integrated_tool_named(A.answer.answer_value))
+	assume_selected_item(integrated_tool_named(A.answer.value))
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
@@ -255,7 +255,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	set_cable_color(A.answer.answer_value, A.request.answerer)
+	set_cable_color(A.answer.value, A.request.answerer)
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc
 		var/image/cable_image = our_belt.integrated_tool_images[name]

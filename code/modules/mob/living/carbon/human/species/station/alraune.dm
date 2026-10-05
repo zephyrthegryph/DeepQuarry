@@ -228,7 +228,7 @@ CAPABILITIES(/datum/prompt/choice/fruit_gland)
 		return
 	var/datum/prompt/choice/fruit_gland/ask = A.request
 	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
-	fruit_gland.fruit_type = ask.answer_value
+	fruit_gland.fruit_type = ask.value
 	grant(src, granted_verb(/mob/living/carbon/human/proc/alraune_fruit_pick), src)
 	grant(src, granted_verb(/mob/living/carbon/human/proc/alraune_fruit_reagent), src)
 	rel_set(fruit_gland, nameof(fruit_gland.organ_owner), src)
@@ -300,12 +300,12 @@ CAPABILITIES(/datum/prompt/choice/fruit_gland)
 
 /mob/living/carbon/human/proc/alraune_poison_chosen(datum/act/request/A)
 	var/datum/prompt/choice/fruit_gland/ask = A.request
-	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.answer_value)))
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
 		return
 	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
 	if(QDELETED(fruit_gland))
 		return
-	var/poison_choice = A.answer ? ask.answer_value : ""
+	var/poison_choice = A.answer ? ask.value : ""
 	if(!poison_choice)
 		to_chat(src, span_notice("You have chosen no poison to add, any previously chosen poisons have been cleared and no poison will be added to produced fruits."))
 		fruit_gland.poison_reagent = null

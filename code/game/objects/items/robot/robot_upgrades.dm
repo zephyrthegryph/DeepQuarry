@@ -78,8 +78,8 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 /obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		heldname = A.answer.answer_value
+	if(A.answer.value)
+		heldname = A.answer.value
 
 /obj/item/borg/upgrade/utility/rename/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE

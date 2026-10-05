@@ -64,5 +64,5 @@
 	if(!context.answer)
 		return
 	// The old kept replay refreshes windows even if its effect faults.
-	. = changeling_fakedeath_stage(context.answer.answer_value, TRUE)
+	. = changeling_fakedeath_stage(context.answer.value, TRUE)
 	SStgui.update_uis(src)

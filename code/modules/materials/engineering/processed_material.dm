@@ -84,6 +84,8 @@ CAPABILITIES(/datum/material/processed_alloy)
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
 	rel_set(material, nameof(material.batch_template), batch.copy_batch())
+	// A template is a definition, not a piece of stock: it records the temperature stock is made at and holds no heat of its own.
+	material.batch_template.settle_heat(null)
 	material.hardness = batch.hardness
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
@@ -309,6 +311,9 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 		rel_set(src, nameof(batch_state), processed.batch_template.copy_for_amount(amount))
 
 
+/// Hot stock's conductance to the air, per J/K of its heat capacity, W/K: the old 8 % of the gap per 2 s step (-ln(0.92) / 2 s).
+#define PROCESSED_STOCK_COOLING_RATE 0.0417
+
 /// Hot stock glowing and cooling towards ambient (update_thermal_processing(), periodic_step()).
 OM_FIELD(/obj/item/stack/material/processed_alloy, hot, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, "hot")
@@ -322,28 +327,30 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 
 /obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
 	var/datum/material_batch/batch = physical_batch()
-	if(batch?.temperature > T20C + 40)
+	if(batch?.temperature() > T20C + 40)
 		set_light(2, 1, "#ff7b22")
 		set_hot(TRUE)
 	else
 		set_light(0)
 		set_hot(FALSE)
 
+/// Hot stock cools through a heat link to its turf's air (PROCESSED_STOCK_COOLING_RATE of its capacity, W/K: the old 8 % of the gap per
+/// 2 s), and gives the rest to the air and lets its heat store go once within 5 K of it.
 /obj/item/stack/material/processed_alloy/periodic_step()
 	var/datum/material_batch/batch = physical_batch()
 	if(!batch)
 		set_hot(FALSE)
 		return
-	var/ambient_temperature = T20C
 	var/turf/open/turf = get_turf(src)
-	if(istype(turf) && turf.air)
-		ambient_temperature = turf.air.return_temperature()
-	batch.temperature += (ambient_temperature - batch.temperature) * 0.08
-	if(abs(batch.temperature - ambient_temperature) < 5)
-		batch.temperature = ambient_temperature
+	var/datum/gas_mixture/air = istype(turf) ? turf.air : null
+	var/ambient_temperature = air ? air.return_temperature() : T20C
+	if(abs(batch.temperature() - ambient_temperature) < 5)
+		batch.settle_heat(air ? turf : null)
 		set_light(0)
 		set_hot(FALSE)
-	return
+		return
+	if(air)
+		batch.cool_into(turf, batch.thermal_capacity() * PROCESSED_STOCK_COOLING_RATE)
 
 /obj/item/stack/material/processed_alloy/split(tamount)
 	var/old_amount = get_amount()
@@ -388,7 +395,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 		new_target.cost_ledger[category] = (new_target.cost_ledger[category] || 0) + source_portion.cost_ledger[category]
 	new_target.cost_basis += source_portion.cost_basis
 	new_target.energy_spent += source_portion.energy_spent
-	new_target.temperature = (target_batch.temperature * target_before + source_batch.temperature * transferred) / max(target_before + transferred, 1)
+	// The two portions' heat mixes: they meet at their common temperature, then the merged batch (now the size of both) holds both.
+	if(abs(new_target.temperature() - source_portion.temperature()) > 0.01)
+		heat_equalize(HEAT_STORE(new_target.ensure_heat_store()), HEAT_STORE(source_portion.ensure_heat_store()))
 	new_target.recalculate()
 	own_clear(processed_target, nameof(processed_target.batch_state), OWN_DELETE)
 	rel_set(processed_target, nameof(processed_target.batch_state), new_target)
@@ -440,7 +449,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	if(!istype(material, /datum/material/processed_alloy))
 		return
 	var/datum/material_batch/batch = physical_batch()
-	if(batch.temperature > T20C + 40)
+	if(batch.temperature() > T20C + 40)
 		. += span_warning("The alloy is still dangerously hot.")
 	if(length(batch.surface_layers))
 		. += span_notice("Surface treatment: [jointext(batch.surface_layers, ", ")].")

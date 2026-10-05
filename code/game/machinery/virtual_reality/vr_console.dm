@@ -259,7 +259,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	return avatar() == R.answerer
 
 /obj/machinery/vr_sleeper/proc/perform_exit_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	perform_exit()
 
@@ -311,7 +311,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	if(!A.answer)
 		return
 	var/mob/living/carbon/human/occupant = A.request.answerer
-	if(A.answer.answer_value && avatar())
+	if(A.answer.value && avatar())
 		vr_reenter(occupant)
 		return
 	// Delink the mob
@@ -341,13 +341,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 /obj/machinery/vr_sleeper/proc/location_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	open_request(src, /datum/prompt/yes_no/vr_avatar_mob, PROC_REF(as_mob_answered), valid = PROC_REF(occupant_inside), answerer = A.request.answerer, title = "Join as a mob?", question = "Would you like to play as a different creature?", location = A.answer.answer_value, timeout = 0)
+	open_request(src, /datum/prompt/yes_no/vr_avatar_mob, PROC_REF(as_mob_answered), valid = PROC_REF(occupant_inside), answerer = A.request.answerer, title = "Join as a mob?", question = "Would you like to play as a different creature?", location = A.answer.value, timeout = 0)
 
 /obj/machinery/vr_sleeper/proc/as_mob_answered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/datum/prompt/yes_no/vr_avatar_mob/R = A.request
-	if(A.answer.answer_value)
+	if(A.answer.value)
 		open_request(src, /datum/prompt/choice/vr_avatar_creature, PROC_REF(creature_chosen), valid = PROC_REF(occupant_inside), answerer = R.answerer, title = "Mob list", question = "Please select a creature:", choices = GLOB.vr_mob_tf_options, location = R.location, timeout = 0)
 		return
 	vr_avatar_chosen(R.answerer, R.location, null)
@@ -356,7 +356,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/vr_avatar_creature/R = A.request
-	vr_avatar_chosen(R.answerer, R.location, GLOB.vr_mob_tf_options[A.answer.answer_value])
+	vr_avatar_chosen(R.answerer, R.location, GLOB.vr_mob_tf_options[A.answer.value])
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_chosen(mob/living/carbon/human/occupant, S, tf)
 	if(avatar())
@@ -410,9 +410,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	open_request(src, /datum/prompt/text, PROC_REF(vr_avatar_named), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/act/request/A)
-	if(A.answer && A.answer.answer_value)
-		avatar().real_name = A.answer.answer_value
-		avatar().name = A.answer.answer_value
+	if(A.answer && A.answer.value)
+		avatar().real_name = A.answer.value
+		avatar().name = A.answer.value
 
 /obj/machinery/vr_sleeper/proc/vr_reenter(mob/living/carbon/human/occupant)
 	// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.

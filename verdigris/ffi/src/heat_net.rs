@@ -791,6 +791,32 @@ fn heat_equalize(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_re
     Ok((moved as f32).into())
 }
 
+/// Conducts between two reservoirs for `seconds` at `conductance` W/K in one
+/// conserved operation: the exact pair solution (never past equilibrium),
+/// as a one-off for a sample that covers a stretch of time. Returns the
+/// joules moved from the first to the second.
+#[auxmacros::bind("/proc/heat_conduct")]
+fn heat_conduct(
+    a_kind: ByondValue,
+    a_ref: ByondValue,
+    b_kind: ByondValue,
+    b_ref: ByondValue,
+    conductance: ByondValue,
+    seconds: ByondValue,
+) -> Result<ByondValue> {
+    let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
+    let (g, dt) = (f(&conductance)?.max(0.0), f(&seconds)?.max(0.0));
+    if g <= 0.0 || dt <= 0.0 {
+        return Ok(0.0f32.into());
+    }
+    let moved = one_off(&[a, b], |c, books| {
+        let (Some(sa), Some(sb)) = (c.state(a), c.state(b)) else { return 0.0 };
+        transfer::transfer(c, books, a, b, transfer::link_heat(sa, sb, g, dt))
+    });
+    #[allow(clippy::cast_possible_truncation)]
+    Ok((moved as f32).into())
+}
+
 /// Brings a reservoir to `temperature` K by an external, booked source
 /// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
 /// temperature) expressed as the joules it takes. Returns the joules added.
@@ -921,6 +947,25 @@ mod tests {
         assert!((ta - tb).abs() < 0.5, "{ta} vs {tb}");
         assert!(((energy(a) + energy(b)) - before).abs() / before < 1e-5);
         assert_eq!(NET.with_borrow(|n| n.violations), 0);
+    }
+
+    #[test]
+    fn a_one_off_conduction_is_the_exact_pair_solution_and_conserves() {
+        reset();
+        let (a, b) = (main_mix(500.0, 10.0), main_mix(300.0, 10.0));
+        let (ra, rb) = (Res::Mix(a.id()), Res::Mix(b.id()));
+        let (sa, sb) = (read_state(ra).unwrap(), read_state(rb).unwrap());
+        let before = sa.capacity * sa.temperature + sb.capacity * sb.temperature;
+        let expected = transfer::link_heat(sa, sb, 20.0, 5.0);
+        let moved = one_off(&[ra, rb], |c, books| {
+            let (Some(sa), Some(sb)) = (c.state(ra), c.state(rb)) else { return 0.0 };
+            transfer::transfer(c, books, ra, rb, transfer::link_heat(sa, sb, 20.0, 5.0))
+        });
+        assert!((moved - expected).abs() < 1e-6 * expected.abs().max(1.0));
+        let (ta, tb) = (read_state(ra).unwrap(), read_state(rb).unwrap());
+        assert!(ta.temperature < 500.0 && tb.temperature > 300.0 && ta.temperature > tb.temperature);
+        let after = ta.capacity * ta.temperature + tb.capacity * tb.temperature;
+        assert!((after - before).abs() / before < 1e-5);
     }
 
     #[test]

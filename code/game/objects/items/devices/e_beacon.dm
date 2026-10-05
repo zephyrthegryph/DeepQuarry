@@ -33,7 +33,7 @@
 	return B.beacon_active ? "already active" : null
 
 /obj/item/emergency_beacon/proc/activation_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
 	var/mob/user = A.request.answerer
 	//short delay, so they can still abort if they want to

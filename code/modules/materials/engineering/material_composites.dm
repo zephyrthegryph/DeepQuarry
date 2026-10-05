@@ -97,7 +97,7 @@
 
 	if(allow_pressure && base_pressure > 0)
 		var/pressure_delta = abs(internal.return_pressure() - (external?.return_pressure() || 0))
-		var/pressure_limit = material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, service_owns_heat ? wear.service.temperature : internal_temperature)
+		var/pressure_limit = material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, service_owns_heat ? wear.service.temperature() : internal_temperature)
 		var/load_ratio = pressure_delta / max(pressure_limit, ONE_ATMOSPHERE)
 		if(load_ratio >= MATERIAL_PRESSURE_BURST_RATIO)
 			material_environment_rupture()
@@ -126,14 +126,9 @@
 
 	if(!service_owns_heat && external && abs(internal_temperature - external_temperature) > 0.5)
 		var/conductance = construction_thermal_conductance(0.25, max(wall_thickness_mm / 1000, 0.001), (internal_temperature + external_temperature) * 0.5)
-		if(!isnull(conductance))
-			var/internal_capacity = internal.heat_capacity()
-			var/external_capacity = external.heat_capacity()
-			if(internal_capacity > 0 && external_capacity > 0)
-				var/equilibrium_energy = (internal_temperature - external_temperature) / (1 / internal_capacity + 1 / external_capacity)
-				var/heat = equilibrium_energy * (1 - 2.718281828 ** (-conductance * elapsed_seconds * (1 / internal_capacity + 1 / external_capacity)))
-				heat_move(internal, external, heat)
-				active = abs(heat) > 0.01 || active
+		if(conductance > 0)
+			var/heat = heat_conduct(internal, external, conductance, elapsed_seconds) // the exact pair solution, in Rust
+			active = abs(heat) > 0.01 || active
 
 	if(!service_owns_heat && structure && max(internal_temperature, external_temperature) >= structure.melting_point)
 		take_damage(max(1, (max(internal_temperature, external_temperature) - structure.melting_point) / 100) * elapsed_seconds, BURN)

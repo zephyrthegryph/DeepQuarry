@@ -49,4 +49,4 @@
 /mob/proc/changeling_enfeebling_string_target_answered(datum/act/request/A)
 	if(!A.answer)
 		return
-	changeling_enfeebling_string_stage(A.answer.answer_value)
+	changeling_enfeebling_string_stage(A.answer.value)

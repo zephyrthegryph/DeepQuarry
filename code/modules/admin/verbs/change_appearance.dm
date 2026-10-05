@@ -13,16 +13,16 @@ ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", 
 	. = ..()
 	if(.)
 		return
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	var/mob/living/carbon/human/human_target = answer_value
+	var/mob/living/carbon/human/human_target = value
 	if(!human_target.client)
 		return "The selected human has no client."
 
 /datum/admin_verb/change_human_appearance_self/proc/self_appearance_target_answered(datum/act/request/context)
-	var/mob/living/carbon/human/human_target = context.request.answer_value
+	var/mob/living/carbon/human/human_target = context.request.value
 	if(!context.answer)
-		if(!isnull(context.request.answer_value) && istype(human_target) && !QDELETED(human_target) && !human_target.client)
+		if(!isnull(context.request.value) && istype(human_target) && !QDELETED(human_target) && !human_target.client)
 			to_chat(human_target, span_filter_warning("Only mobs with clients can alter their own appearance."))
 		return
 	open_request(src, /datum/prompt/choice/admin_self_appearance_whitelist, PROC_REF(self_appearance_whitelist_answered), answerer = context.request.answerer, subject = human_target, question = "Do you wish for [human_target] to be allowed to select non-whitelisted races?")
@@ -50,11 +50,11 @@ ADMIN_VERB(change_human_appearance_self, R_FUN, "Change Mob Appearance - Self", 
 /datum/admin_verb/change_human_appearance_self/proc/self_appearance_whitelist_answered(datum/act/request/context)
 	var/mob/living/carbon/human/human_target = context.request.subject
 	if(!context.answer)
-		if(!isnull(context.request.answer_value) && istype(human_target) && !QDELETED(human_target) && !human_target.client)
+		if(!isnull(context.request.value) && istype(human_target) && !QDELETED(human_target) && !human_target.client)
 			to_chat(human_target, span_filter_warning("Only mobs with clients can alter their own appearance."))
 		return
 	var/mob/user = context.request.answerer
-	switch(context.answer.answer_value)
+	switch(context.answer.value)
 		if("Yes")
 			log_and_message_admins("has allowed [human_target] to change [human_target.p_their()] appearance, without whitelisting of races.", user)
 			human_target.change_appearance(APPEARANCE_ALL, human_target, check_species_whitelist = 0)
@@ -135,27 +135,27 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		return
 	switch(stage)
 		if(0)
-			rel_set(src, nameof(target), context.request.answer_value)
+			rel_set(src, nameof(target), context.request.value)
 		if(1)
-			if(context.request.answer_value != "Yes")
+			if(context.request.value != "Yes")
 				retire()
 				return
 		if(2)
-			new_facial = context.request.answer_value
+			new_facial = context.request.value
 		if(3)
-			new_hair = context.request.answer_value
+			new_hair = context.request.value
 		if(4)
-			new_eyes = context.request.answer_value
+			new_eyes = context.request.value
 		if(5)
-			new_skin = context.request.answer_value
+			new_skin = context.request.value
 		if(6)
-			new_tone = context.request.answer_value
+			new_tone = context.request.value
 		if(7)
-			new_hstyle = context.request.answer_value
+			new_hstyle = context.request.value
 		if(8)
-			new_fstyle = context.request.answer_value
+			new_fstyle = context.request.value
 		if(9)
-			new_gender = context.request.answer_value
+			new_gender = context.request.value
 	stage++
 	replay_prefix()
 	if(stage < 10)
@@ -224,8 +224,8 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	var/reason = review.refusal()
 	if(reason)
 		return reason
-	if(!isnull(answer_value))
-		var/mob/living/carbon/human/picked = answer_value
+	if(!isnull(value))
+		var/mob/living/carbon/human/picked = value
 		return QDELETED(picked) ? "target is gone" : null
 
 /datum/prompt/choice/admin_edit_confirm
@@ -373,7 +373,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	open_appearance_editor(context)
 
 /datum/admin_verb/change_human_appearance_admin/proc/open_appearance_editor(datum/act/request/context)
-	var/mob/living/carbon/human/target_human = context.request.answer_value
+	var/mob/living/carbon/human/target_human = context.request.value
 	var/mob/user = context.request.answerer
 	log_and_message_admins("is altering the appearance of [target_human].", user)
 	target_human.change_appearance(APPEARANCE_ALL, user, check_species_whitelist = 0, state = ADMIN_STATE(R_FUN))
@@ -390,11 +390,11 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	. = ..()
 	if(.)
 		return
-	if(isnull(answer_value))
+	if(isnull(value))
 		return
-	if(!istype(answer_value, /mob/living/carbon/human))
+	if(!istype(value, /mob/living/carbon/human))
 		return "The selected human is no longer available."
-	var/mob/living/carbon/human/picked = answer_value
+	var/mob/living/carbon/human/picked = value
 	if(QDELETED(picked))
 		return "The selected human is no longer available."
 

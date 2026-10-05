@@ -139,9 +139,9 @@ CAPABILITIES(/datum/prompt/text/uplink_announcement)
 
 /datum/uplink_item/abstract/announcements/fake_centcom/proc/announcement_title_apply(datum/act/request/A)
 	var/datum/prompt/text/uplink_announcement/ask = A.answer
-	if(!ask.answer_value)
+	if(!ask.value)
 		return
-	open_request(src, /datum/prompt/text/uplink_announcement, PROC_REF(announcement_message_entered), answerer = ask.payment_operator, payment_uplink = ask.payment_uplink, payment_operator = ask.payment_operator, headline = ask.answer_value, question = "Enter your announcement message.", title = "Announcement Title")
+	open_request(src, /datum/prompt/text/uplink_announcement, PROC_REF(announcement_message_entered), answerer = ask.payment_operator, payment_uplink = ask.payment_uplink, payment_operator = ask.payment_operator, headline = ask.value, question = "Enter your announcement message.", title = "Announcement Title")
 
 /datum/uplink_item/abstract/announcements/fake_centcom/proc/announcement_message_entered(datum/act/request/A)
 	if(!A.answer)
@@ -151,6 +151,6 @@ CAPABILITIES(/datum/prompt/text/uplink_announcement)
 
 /datum/uplink_item/abstract/announcements/fake_centcom/proc/announcement_message_apply(datum/act/request/A)
 	var/datum/prompt/text/uplink_announcement/ask = A.answer
-	if(!ask.answer_value)
+	if(!ask.value)
 		return
-	return buy_prepared(ask.payment_uplink, ask.payment_operator, list("title" = ask.headline, "message" = ask.answer_value))
+	return buy_prepared(ask.payment_uplink, ask.payment_operator, list("title" = ask.headline, "message" = ask.value))

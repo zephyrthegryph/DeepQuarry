@@ -10,7 +10,7 @@ ADMIN_VERB(cinematic, R_FUN, "Cinematic", "Show a cinematic to all players.", AD
 	play_selected_cinematic(context)
 
 /datum/admin_verb/cinematic/proc/play_selected_cinematic(datum/act/request/context)
-	var/choice = context.request.answer_value
+	var/choice = context.request.value
 	if(!choice || !ispath(choice, /datum/cinematic))
 		return
 	play_cinematic(choice, world)

@@ -52,7 +52,7 @@
 		return
 	var/datum/prompt/choice/browse_files/ask = A.answer
 	var/list/state = ask.state.Copy()
-	var/choice = ask.answer_value
+	var/choice = ask.value
 	var/path = state["path"]
 	state["left"] -= 1
 	switch(choice)
@@ -87,7 +87,7 @@
 		return
 	var/datum/prompt/yes_no/browse_files_folder/ask = A.answer
 	var/list/state = ask.state.Copy()
-	if(!ask.answer_value)
+	if(!ask.value)
 		browse_files_ask(state)
 		return
 	for(var/file in flist(state["path"]))

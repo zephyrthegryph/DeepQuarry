@@ -40,10 +40,10 @@
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/ask = A.answer
-	if(ask.choices[ask.answer_value])
-		poster_decl = ask.choices[ask.answer_value]
+	if(ask.choices[ask.value])
+		poster_decl = ask.choices[ask.value]
 		name = "rolled-up poly-poster - [poster_decl.name]"
-		to_chat(ask.answerer, "The poster is now: [ask.answer_value].")
+		to_chat(ask.answerer, "The poster is now: [ask.value].")
 
 // Wall object
 /obj/structure/sign/poster/custom // placed wall object

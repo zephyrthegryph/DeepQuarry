@@ -130,7 +130,7 @@ CAPABILITIES(/obj/structure/morgue)
 /obj/structure/morgue/proc/label_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if (t)
 		src.name = text("Morgue- '[]'", t)
 	else
@@ -286,7 +286,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /obj/structure/morgue/crematorium/label_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if (t)
 		src.name = text("Crematorium- '[]'", t)
 	else

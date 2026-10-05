@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	if(!context.answer)
 		return
 	var/mob/user = context.request.answerer
-	switch(context.answer.answer_value)
+	switch(context.answer.value)
 		if("Edit")
 			agentcard_module.tgui_interact(user)
 		if("Show")

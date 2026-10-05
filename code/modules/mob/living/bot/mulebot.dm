@@ -164,14 +164,14 @@ CAPABILITIES(/mob/living/bot/mulebot)
 /mob/living/bot/mulebot/proc/beacon_of_answer(datum/act/request/A)
 	if(!A.answer)
 		return null
-	return GetBeaconList()[A.answer.answer_value]
+	return GetBeaconList()[A.answer.value]
 
 /mob/living/bot/mulebot/proc/home_tag_chosen(datum/act/request/A)
 	var/obj/machinery/navbeacon/beacon = beacon_of_answer(A)
 	if(!beacon)
 		return
 	rel_set(src, nameof(home), get_turf(beacon))
-	homeName = A.answer.answer_value
+	homeName = A.answer.value
 
 /// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
 /mob/living/bot/mulebot/proc/mulebot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -207,7 +207,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 		return
 	resetTarget()
 	rel_set(src, nameof(target), get_turf(beacon))
-	targetName = A.answer.answer_value
+	targetName = A.answer.value
 
 /mob/living/bot/mulebot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	locked = !locked

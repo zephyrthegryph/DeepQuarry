@@ -344,14 +344,14 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
 	if(!context.answer)
 		return
 	var/obj/machinery/account_database/terminal = context.request.subject
-	if(terminal.apply_ui_add_funds(user, context.answer.answer_value))
+	if(terminal.apply_ui_add_funds(user, context.answer.value))
 		SStgui.update_uis(terminal)
 
 /datum/tgui/proc/account_remove_funds_answered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/obj/machinery/account_database/terminal = context.request.subject
-	if(terminal.apply_ui_remove_funds(user, context.answer.answer_value))
+	if(terminal.apply_ui_remove_funds(user, context.answer.value))
 		SStgui.update_uis(terminal)
 
 /datum/prompt/number/account_ui_funds

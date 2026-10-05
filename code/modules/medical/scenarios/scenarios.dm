@@ -248,7 +248,7 @@ ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/dq_medical_scenario subtypes defined."))
 		return
-	var/picked_key = A.request.answer_value
+	var/picked_key = A.request.value
 	if(!picked_key)
 		return
 	var/scenario_type = options[picked_key]

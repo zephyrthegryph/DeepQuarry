@@ -220,11 +220,11 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/custom_species_named(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.answer_value))
+	if(!A.answer || isnull(A.answer.value))
 		return
 	if(!can_change(owner(), APPEARANCE_RACE) || !("Custom Species" in valid_species))
 		return
-	if(change_race(A.request.answerer, "Custom Species", A.answer.answer_value))
+	if(change_race(A.request.answerer, "Custom Species", A.answer.value))
 		SStgui.update_uis(src)
 
 /datum/tgui_module/appearance_changer/proc/change_race(mob/user, race, custom_name)
@@ -567,7 +567,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/race_name_answered_apply(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/new_name = A.answer.answer_value
+	var/new_name = A.answer.value
 	if(can_change(owner(), APPEARANCE_RACE)) // new name can be empty, it uses base species if so
 		owner().custom_species = new_name
 		return TRUE
@@ -646,7 +646,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_size = A.answer.answer_value
+	var/new_size = A.answer.value
 	if(new_size && ISINRANGE(new_size,RESIZE_MINIMUM * 100,RESIZE_MAXIMUM * 100) && can_change(owner(), APPEARANCE_MISC))
 		owner().resize(new_size / 100, animate = FALSE, ignore_prefs = TRUE)
 		owner().regenerate_icons()
@@ -694,7 +694,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/species_sound_answered_apply(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/choice = A.answer.answer_value
+	var/choice = A.answer.value
 	if(choice && can_change(owner(), APPEARANCE_MISC))
 		var/datum/species/own_species = proto_private(owner(), nameof(/datum/dna::species)) // PROTO: private copy
 		own_species.species_sounds = choice
@@ -719,9 +719,9 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/flavor_text_written_apply(datum/act/request/A)
 	var/select_key = pending_flavor_key
-	if(!A.answer || isnull(A.answer.answer_value) || !select_key || !can_change(owner(), APPEARANCE_MISC))
+	if(!A.answer || isnull(A.answer.value) || !select_key || !can_change(owner(), APPEARANCE_MISC))
 		return
-	var/msg = strip_html_simple(A.answer.answer_value)
+	var/msg = strip_html_simple(A.answer.value)
 	if(msg == "!clear") // allows empty to wipe flavor
 		msg = ""
 	var/mob/living/carbon/human/flavor_owner = owner()
@@ -733,7 +733,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return
 
 /datum/tgui_module/appearance_changer/proc/saveslot_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value || !can_change(owner(), APPEARANCE_ALL_COSMETIC))
+	if(!A.answer || !A.answer.value || !can_change(owner(), APPEARANCE_ALL_COSMETIC))
 		return
 	if(owner() && owner().client) //sanity
 		owner().client.prefs.vanity_copy_to(owner(), FALSE, TRUE, FALSE, FALSE, FALSE)
@@ -814,7 +814,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/obj/machinery/computer/transhuman/designer/DC = designer_console()
 	if(!A.answer || !DC?.selected_record || !DC.disk || !owner())
 		return
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		to_chat(user, span_warning("ERROR: This body record is restricted."))
 	else
 		message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
@@ -1398,7 +1398,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 /// The colour changed something: the changer's windows refresh.
 /datum/tgui_module/appearance_changer/proc/appearance_color_picked(datum/act/request/A)
 	var/datum/prompt/color/appearance/ask = A.request
-	if(!A.answer || !ask.answer_value || !owner())
+	if(!A.answer || !ask.value || !owner())
 		return
 	. = apply_color(ask)
 	if(.)
@@ -1409,57 +1409,57 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 	var/name_marking = ask.marking_name
 	switch(ask.field)
 		if("skin_color")
-			var/r_skin = hex2num(copytext(ask.answer_value, 2, 4))
-			var/g_skin = hex2num(copytext(ask.answer_value, 4, 6))
-			var/b_skin = hex2num(copytext(ask.answer_value, 6, 8))
+			var/r_skin = hex2num(copytext(ask.value, 2, 4))
+			var/g_skin = hex2num(copytext(ask.value, 4, 6))
+			var/b_skin = hex2num(copytext(ask.value, 6, 8))
 			if(owner().change_skin_color(r_skin, g_skin, b_skin))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_SKINCOLOR, ask.answerer)
 				return TRUE
 		if("hair_color")
-			var/r_hair = hex2num(copytext(ask.answer_value, 2, 4))
-			var/g_hair = hex2num(copytext(ask.answer_value, 4, 6))
-			var/b_hair = hex2num(copytext(ask.answer_value, 6, 8))
+			var/r_hair = hex2num(copytext(ask.value, 2, 4))
+			var/g_hair = hex2num(copytext(ask.value, 4, 6))
+			var/b_hair = hex2num(copytext(ask.value, 6, 8))
 			if(owner().change_hair_color(r_hair, g_hair, b_hair))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("hair_color_grad")
-			var/r_grad = hex2num(copytext(ask.answer_value, 2, 4))
-			var/g_grad = hex2num(copytext(ask.answer_value, 4, 6))
-			var/b_grad = hex2num(copytext(ask.answer_value, 6, 8))
+			var/r_grad = hex2num(copytext(ask.value, 2, 4))
+			var/g_grad = hex2num(copytext(ask.value, 4, 6))
+			var/b_grad = hex2num(copytext(ask.value, 6, 8))
 			if(owner().change_grad_color(r_grad, g_grad, b_grad))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("facial_hair_color")
-			var/r_facial = hex2num(copytext(ask.answer_value, 2, 4))
-			var/g_facial = hex2num(copytext(ask.answer_value, 4, 6))
-			var/b_facial = hex2num(copytext(ask.answer_value, 6, 8))
+			var/r_facial = hex2num(copytext(ask.value, 2, 4))
+			var/g_facial = hex2num(copytext(ask.value, 4, 6))
+			var/b_facial = hex2num(copytext(ask.value, 6, 8))
 			if(owner().change_facial_hair_color(r_facial, g_facial, b_facial))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("eye_color")
-			var/r_eyes = hex2num(copytext(ask.answer_value, 2, 4))
-			var/g_eyes = hex2num(copytext(ask.answer_value, 4, 6))
-			var/b_eyes = hex2num(copytext(ask.answer_value, 6, 8))
+			var/r_eyes = hex2num(copytext(ask.value, 2, 4))
+			var/g_eyes = hex2num(copytext(ask.value, 4, 6))
+			var/b_eyes = hex2num(copytext(ask.value, 6, 8))
 			if(owner().change_eye_color(r_eyes, g_eyes, b_eyes))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_EYES, ask.answerer)
 				return TRUE
 		if("ears_color")
-			owner().r_ears = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_ears = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_ears = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_ears = hex2num(copytext(ask.value, 2, 4))
+			owner().g_ears = hex2num(copytext(ask.value, 4, 6))
+			owner().b_ears = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("ears2_color")
-			owner().r_ears2 = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_ears2 = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_ears2 = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_ears2 = hex2num(copytext(ask.value, 2, 4))
+			owner().g_ears2 = hex2num(copytext(ask.value, 4, 6))
+			owner().b_ears2 = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
@@ -1467,65 +1467,65 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 		if("ears_secondary_color")
 			if(channel > length(owner().ear_secondary_colors))
 				return
-			owner().ear_secondary_colors[channel] = ask.answer_value
+			owner().ear_secondary_colors[channel] = ask.value
 			update_dna(owner())
 			owner().update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail_color")
-			owner().r_tail = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_tail = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_tail = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_tail = hex2num(copytext(ask.value, 2, 4))
+			owner().g_tail = hex2num(copytext(ask.value, 4, 6))
+			owner().b_tail = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail2_color")
-			owner().r_tail2 = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_tail2 = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_tail2 = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_tail2 = hex2num(copytext(ask.value, 2, 4))
+			owner().g_tail2 = hex2num(copytext(ask.value, 4, 6))
+			owner().b_tail2 = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail3_color")
-			owner().r_tail3 = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_tail3 = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_tail3 = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_tail3 = hex2num(copytext(ask.value, 2, 4))
+			owner().g_tail3 = hex2num(copytext(ask.value, 4, 6))
+			owner().b_tail3 = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing_color")
-			owner().r_wing = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_wing = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_wing = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_wing = hex2num(copytext(ask.value, 2, 4))
+			owner().g_wing = hex2num(copytext(ask.value, 4, 6))
+			owner().b_wing = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing2_color")
-			owner().r_wing2 = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_wing2 = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_wing2 = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_wing2 = hex2num(copytext(ask.value, 2, 4))
+			owner().g_wing2 = hex2num(copytext(ask.value, 4, 6))
+			owner().b_wing2 = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing3_color")
-			owner().r_wing3 = hex2num(copytext(ask.answer_value, 2, 4))
-			owner().g_wing3 = hex2num(copytext(ask.answer_value, 4, 6))
-			owner().b_wing3 = hex2num(copytext(ask.answer_value, 6, 8))
+			owner().r_wing3 = hex2num(copytext(ask.value, 2, 4))
+			owner().g_wing3 = hex2num(copytext(ask.value, 4, 6))
+			owner().b_wing3 = hex2num(copytext(ask.value, 6, 8))
 			update_dna(owner())
 			owner().update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("marking")
 			var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[name_marking]
-			if (owner().change_marking_color(mark_datum, ask.answer_value))
+			if (owner().change_marking_color(mark_datum, ask.value))
 				return TRUE
 		if("blood_color")
 			if(can_change(owner(), APPEARANCE_MISC))
-				owner().dna.blood_color = ask.answer_value
+				owner().dna.blood_color = ask.value
 				changed_hook(APPEARANCECHANGER_CHANGED_RACE, ask.answerer)
 				return TRUE

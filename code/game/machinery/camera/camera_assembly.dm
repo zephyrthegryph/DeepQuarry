@@ -114,10 +114,10 @@ CAPABILITIES(/obj/item/camera_assembly)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	if(!A.answer.answer_value)
+	if(!A.answer.value)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return
-	var/list/tempnetwork = splittext(A.answer.answer_value, ",")
+	var/list/tempnetwork = splittext(A.answer.value, ",")
 	if(tempnetwork.len < 1)
 		to_chat(user, "No network found please hang up and try your call again.")
 		return
@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	rel_set(C, nameof(C.assembly), src)
 	C.auto_turn()
 	C.replace_networks(uniqueList(R.networks))
-	C.c_tag = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	C.c_tag = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	ask_camera_direction(R.answerer, C, 5)
 
 /// Turns the new camera until the builder is happy, with up to `chances` more tries.
@@ -162,8 +162,8 @@ CAPABILITIES(/datum/prompt/choice/camera_direction)
 		return
 	var/datum/prompt/choice/camera_direction/R = A.request
 	var/obj/machinery/camera/C = R.camera
-	if(A.answer.answer_value != "LEAVE IT")
-		C.dir = text2dir(A.answer.answer_value)
+	if(A.answer.value != "LEAVE IT")
+		C.dir = text2dir(A.answer.value)
 	if(R.chances > 0)
 		open_request(src, /datum/prompt/yes_no/camera_direction_ok, PROC_REF(camera_direction_confirmed), answerer = R.answerer, title = "Confirmation", question = "Is this what you want? Chances Remaining: [R.chances]", camera = C, chances = R.chances, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
@@ -176,7 +176,7 @@ CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
 
 /obj/item/camera_assembly/proc/camera_direction_confirmed(datum/act/request/A)
 	var/datum/prompt/yes_no/camera_direction_ok/R = A.request
-	if(!A.answer || A.answer.answer_value)
+	if(!A.answer || A.answer.value)
 		return
 	ask_camera_direction(R.answerer, R.camera, R.chances - 1)
 

@@ -113,7 +113,7 @@
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
-	var/new_input = A.answer.answer_value
+	var/new_input = A.answer.value
 	if(isnum(new_input) && CanInteract(user, GLOB.tgui_physical_state))
 		set_pin_data(IC_OUTPUT, 1, new_input)
 		push_data()
@@ -155,7 +155,7 @@
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(!user)
 		return
-	var/new_input = sanitizeSafe(A.answer.answer_value, MAX_KEYPAD_INPUT_LEN, 0, 0)
+	var/new_input = sanitizeSafe(A.answer.value, MAX_KEYPAD_INPUT_LEN, 0, 0)
 	if(istext(new_input) && CanInteract(user, GLOB.tgui_physical_state))
 		set_pin_data(IC_OUTPUT, 1, new_input)
 		push_data()
@@ -179,7 +179,7 @@
 /obj/item/integrated_circuit/input/colorpad/proc/color_entered(datum/act/request/A)
 	if(!A.answer)
 		return
-	set_pin_data(IC_OUTPUT, 1, A.answer.answer_value)
+	set_pin_data(IC_OUTPUT, 1, A.answer.value)
 	push_data()
 	activate_pin(1)
 

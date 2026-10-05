@@ -537,7 +537,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/t = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(t)
 		src.id = t
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
@@ -627,7 +627,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/new_id = sanitizeSafe(A.answer.answer_value, MAX_NAME_LEN)
+	var/new_id = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(new_id)
 		id = new_id
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))

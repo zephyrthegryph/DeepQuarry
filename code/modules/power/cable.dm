@@ -231,7 +231,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		. += span_warning("[avail > 0 ? "[DisplayPower(avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
-		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service_of(src)?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
+		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service_of(src)?.temperature() || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
 		if(material?.critical_temperature)
 			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
 
@@ -942,7 +942,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/alien)
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	var/N = A.answer.answer_value
+	var/N = A.answer.value
 	if(N)
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)

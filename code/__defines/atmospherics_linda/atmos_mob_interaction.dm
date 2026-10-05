@@ -62,7 +62,7 @@
 /// An unprotected body's contact with the floor solid it stands on, W/K (code/modules/heat/heat_mobs.dm, set_surroundings()). With the
 /// floor's heat capacity (FLOOR_HEAT_CAPACITY) and conduction this is what lets a cold room take a body's heat at the old rate while energy is
 /// conserved: the tile's air alone holds about 2 kJ/K against the body's 280 kJ/K.
-#define BODY_FLOOR_CONDUCTANCE 6000
+#define BODY_FLOOR_CONDUCTANCE 4000
 /// Each wall solid beside a body takes this fraction of its floor contact (radiation and touch).
 #define BODY_WALL_CONDUCTANCE_FRACTION 0.3
 /// Below this fraction of a standard cell's moles a body on a floor radiates to the sky as it does in space (near vacuum).
