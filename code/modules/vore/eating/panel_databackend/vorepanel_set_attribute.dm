@@ -1544,6 +1544,8 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle5)
 	return box
 
 /datum/prompt/number/vore_size_multiplier/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
 	var/datum/tgui/original_ui = owner
 	if(!istype(original_ui) || QDELETED(original_ui))
 		return "gone"
