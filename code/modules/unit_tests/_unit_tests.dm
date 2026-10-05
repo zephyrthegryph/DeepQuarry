@@ -1063,6 +1063,8 @@
 #include "interim_pda_message_missing_sender.dm"
 #include "round2_gender_change_drug_request.dm"
 
+#include "round2_combat_player_requests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
