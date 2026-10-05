@@ -256,19 +256,40 @@
 /datum/stat_decl/obj/machinery/rnd/__hacked/spec()
 	return list(/obj/machinery/rnd, /obj/machinery/rnd/proc/__stat_hacked)
 
-/// STAT(/obj/machinery/smartfridge, scan_id, TOP) at code/modules/food/kitchen/smartfridge/smartfridge.dm:36
+/// STAT(/obj/machinery/seed_storage, electrified, TOP) at code/modules/hydroponics/seed_storage.dm:52
+/obj/machinery/seed_storage/var/electrified = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/seed_storage/proc/__stat_electrified()
+	return list("electrified", "TOP", list(id = STAT_ELECTRIFIED, base = 0))
+/datum/stat_decl/obj/machinery/seed_storage/__electrified/spec()
+	return list(/obj/machinery/seed_storage, /obj/machinery/seed_storage/proc/__stat_electrified)
+
+/// STAT(/obj/machinery/smartfridge, electrified, TOP) at code/modules/food/kitchen/smartfridge/smartfridge.dm:36
+/obj/machinery/smartfridge/var/electrified = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/smartfridge/proc/__stat_electrified()
+	return list("electrified", "TOP", list(id = STAT_ELECTRIFIED, base = 0))
+/datum/stat_decl/obj/machinery/smartfridge/__electrified/spec()
+	return list(/obj/machinery/smartfridge, /obj/machinery/smartfridge/proc/__stat_electrified)
+
+/// STAT(/obj/machinery/smartfridge, scan_id, TOP) at code/modules/food/kitchen/smartfridge/smartfridge.dm:34
 /obj/machinery/smartfridge/var/scan_id = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/smartfridge/proc/__stat_scan_id()
 	return list("scan_id", "TOP", list(id = STAT_SCAN_ID, base = TRUE))
 /datum/stat_decl/obj/machinery/smartfridge/__scan_id/spec()
 	return list(/obj/machinery/smartfridge, /obj/machinery/smartfridge/proc/__stat_scan_id)
 
-/// STAT(/obj/machinery/smartfridge, shoot_inventory, ANY) at code/modules/food/kitchen/smartfridge/smartfridge.dm:34
+/// STAT(/obj/machinery/smartfridge, shoot_inventory, ANY) at code/modules/food/kitchen/smartfridge/smartfridge.dm:32
 /obj/machinery/smartfridge/var/shoot_inventory = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/smartfridge/proc/__stat_shoot_inventory()
 	return list("shoot_inventory", "ANY", list(id = STAT_SHOOT_INVENTORY))
 /datum/stat_decl/obj/machinery/smartfridge/__shoot_inventory/spec()
 	return list(/obj/machinery/smartfridge, /obj/machinery/smartfridge/proc/__stat_shoot_inventory)
+
+/// STAT(/obj/machinery/suit_cycler, electrified, TOP) at code/game/machinery/suit_storage/suit_cycler.dm:6
+/obj/machinery/suit_cycler/var/electrified = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/suit_cycler/proc/__stat_electrified()
+	return list("electrified", "TOP", list(id = STAT_ELECTRIFIED, base = 0))
+/datum/stat_decl/obj/machinery/suit_cycler/__electrified/spec()
+	return list(/obj/machinery/suit_cycler, /obj/machinery/suit_cycler/proc/__stat_electrified)
 
 /// STAT(/obj/machinery/suit_cycler, safeties, ALL) at code/game/machinery/suit_storage/suit_cycler.dm:331
 /obj/machinery/suit_cycler/var/safeties = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
@@ -277,14 +298,21 @@
 /datum/stat_decl/obj/machinery/suit_cycler/__safeties/spec()
 	return list(/obj/machinery/suit_cycler, /obj/machinery/suit_cycler/proc/__stat_safeties)
 
-/// STAT(/obj/machinery/vending, scan_id, TOP) at code/modules/economy/vending.dm:120
+/// STAT(/obj/machinery/vending, electrified, TOP) at code/modules/economy/vending.dm:117
+/obj/machinery/vending/var/electrified = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/vending/proc/__stat_electrified()
+	return list("electrified", "TOP", list(id = STAT_ELECTRIFIED, base = 0))
+/datum/stat_decl/obj/machinery/vending/__electrified/spec()
+	return list(/obj/machinery/vending, /obj/machinery/vending/proc/__stat_electrified)
+
+/// STAT(/obj/machinery/vending, scan_id, TOP) at code/modules/economy/vending.dm:119
 /obj/machinery/vending/var/scan_id = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_scan_id()
 	return list("scan_id", "TOP", list(id = STAT_SCAN_ID, base = TRUE))
 /datum/stat_decl/obj/machinery/vending/__scan_id/spec()
 	return list(/obj/machinery/vending, /obj/machinery/vending/proc/__stat_scan_id)
 
-/// STAT(/obj/machinery/vending, shoot_inventory, ANY) at code/modules/economy/vending.dm:122
+/// STAT(/obj/machinery/vending, shoot_inventory, ANY) at code/modules/economy/vending.dm:121
 /obj/machinery/vending/var/shoot_inventory = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/vending/proc/__stat_shoot_inventory()
 	return list("shoot_inventory", "ANY", list(id = STAT_SHOOT_INVENTORY))

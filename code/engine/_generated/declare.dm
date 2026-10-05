@@ -249,7 +249,7 @@
 /datum/capdef_decl/c_granted_verb/spec()
 	return list(CAP_GRANTED_VERB, /datum/capability/def/granted_verb, "verb_path", STACK, "granted_verb", "verb_path, verb_name, verb_desc, on, hidden")
 
-/// CAPABILITY_TYPE(id_scan, CAP_ID_SCAN) at code/library/machine/wire_caps.dm:72
+/// CAPABILITY_TYPE(id_scan, CAP_ID_SCAN) at code/library/machine/wire_caps.dm:56
 /datum/capability/lib/id_scan
 	var/stat = null
 	var/cut_value = TRUE
@@ -282,7 +282,7 @@
 /datum/capdef_decl/c_interior/spec()
 	return list(CAP_INTERIOR, /datum/capability/lib/interior, NONE, STACK, "interior", "escape_wait, escape_chance")
 
-/// CAPABILITY_TYPE(item_throw, CAP_ITEM_THROW) at code/library/machine/wire_caps.dm:76
+/// CAPABILITY_TYPE(item_throw, CAP_ITEM_THROW) at code/library/machine/wire_caps.dm:60
 /datum/capability/lib/item_throw
 	var/stat = null
 	var/pulse_lasts = WIRE_PULSE_TOGGLES
@@ -292,7 +292,7 @@
 /datum/capdef_decl/c_item_throw/spec()
 	return list(CAP_ITEM_THROW, /datum/capability/lib/item_throw, NONE, STACK, "item_throw", "stat, pulse_lasts")
 
-/// CAPABILITY_TYPE(lathe_wires, CAP_LATHE_WIRES) at code/library/machine/wire_caps.dm:84
+/// CAPABILITY_TYPE(lathe_wires, CAP_LATHE_WIRES) at code/library/machine/wire_caps.dm:68
 /datum/capability/lib/lathe_wires
 	var/hack_stat = STAT_HACKED
 	var/disable_stat = STAT_DISABLED
@@ -527,7 +527,7 @@
 /datum/capdef_decl/c_rotatable/spec()
 	return list(CAP_ROTATABLE, /datum/capability/lib/rotatable, NONE, STACK, "rotatable", "only_flip, while_anchored")
 
-/// CAPABILITY_TYPE(safety_wire, CAP_SAFETY_WIRE) at code/library/machine/wire_caps.dm:80
+/// CAPABILITY_TYPE(safety_wire, CAP_SAFETY_WIRE) at code/library/machine/wire_caps.dm:64
 /datum/capability/lib/safety_wire
 	var/stat = null
 	var/pulse_lasts = WIRE_PULSE_TOGGLES
@@ -541,15 +541,14 @@
 /datum/capability/lib/shock_wire
 	var/wire = WIRE_ELECTRIFY
 	var/stat = null
-	var/counter = null
 	var/cut_value = TRUE
 	var/pulse_value = TRUE
 	var/pulse_lasts = 30 SECONDS
-/proc/shock_wire(wire, stat, counter, cut_value, pulse_value, pulse_lasts)
+/proc/shock_wire(wire, stat, cut_value, pulse_value, pulse_lasts)
 	RETURN_TYPE(/datum/capability/lib/shock_wire)
-	return cap_construct(CAP_SHOCK_WIRE, /datum/capability/lib/shock_wire, list(wire, stat, counter, cut_value, pulse_value, pulse_lasts), "wire, stat, counter, cut_value, pulse_value, pulse_lasts")
+	return cap_construct(CAP_SHOCK_WIRE, /datum/capability/lib/shock_wire, list(wire, stat, cut_value, pulse_value, pulse_lasts), "wire, stat, cut_value, pulse_value, pulse_lasts")
 /datum/capdef_decl/c_shock_wire/spec()
-	return list(CAP_SHOCK_WIRE, /datum/capability/lib/shock_wire, NONE, STACK, "shock_wire", "wire, stat, counter, cut_value, pulse_value, pulse_lasts")
+	return list(CAP_SHOCK_WIRE, /datum/capability/lib/shock_wire, NONE, STACK, "shock_wire", "wire, stat, cut_value, pulse_value, pulse_lasts")
 
 /// CAPABILITY_TYPE(space, CAP_SPACE) at code/engine/library/spaces.dm:112
 /datum/capability/lib/space
@@ -19824,33 +19823,31 @@
 	into += entry_line(88)
 	into += list(global.op("build_frame", global.ui_act(), global.needs(global.req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), global.req_at_least(nameof(metal_amount), 75000, because = MSG(robot_fabricator/metal))), global.then(PROC_REF(build_frame))))
 
-/// CAPABILITIES(/obj/machinery/seed_storage) at code/modules/hydroponics/seed_storage.dm:52
+/// CAPABILITIES(/obj/machinery/seed_storage) at code/modules/hydroponics/seed_storage.dm:54
 /obj/machinery/seed_storage/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/hydroponics/seed_storage.dm", 52, /obj/machinery/seed_storage)
-	into += entry_line(53)
-	into += list(global.owns_many(nameof(piles), /datum/seed_pile))
-	into += entry_line(54)
-	into += list(global.owns_many(nameof(piles_contra), /datum/seed_pile))
+	into += entry_block("code/modules/hydroponics/seed_storage.dm", 54, /obj/machinery/seed_storage)
 	into += entry_line(55)
-	into += list(global.interface("SeedStorage"))
+	into += list(global.owns_many(nameof(piles), /datum/seed_pile))
 	into += entry_line(56)
-	into += list(global.op("vend", global.ui_act("vend", global.arg("id", global.num())), global.then(PROC_REF(ui_act_vend))))
+	into += list(global.owns_many(nameof(piles_contra), /datum/seed_pile))
 	into += entry_line(57)
-	into += list(global.op("purge", global.ui_act("purge", global.arg("id", global.num())), global.then(PROC_REF(ui_act_purge))))
+	into += list(global.interface("SeedStorage"))
 	into += entry_line(58)
-	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
+	into += list(global.op("vend", global.ui_act("vend", global.arg("id", global.num())), global.then(PROC_REF(ui_act_vend))))
 	into += entry_line(59)
-	into += list(global.wires(name = "Seed Storage", count = 4, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights)))
+	into += list(global.op("purge", global.ui_act("purge", global.arg("id", global.num())), global.then(PROC_REF(ui_act_purge))))
 	into += entry_line(60)
-	into += list(global.shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30))
+	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
 	into += entry_line(61)
-	into += list(global.on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_moved), pulse = PROC_REF(shock_wire_moved)))
+	into += list(global.wires(name = "Seed Storage", count = 4, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights)))
 	into += entry_line(62)
-	into += list(global.on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed)))
+	into += list(global.shock_wire(stat = STAT_ELECTRIFIED))
 	into += entry_line(63)
-	into += list(global.on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed)))
+	into += list(global.on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed)))
 	into += entry_line(64)
+	into += list(global.on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed)))
+	into += entry_line(65)
 	into += list(global.on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed)))
 
 /// CAPABILITIES(/obj/machinery/shield_capacitor) at code/modules/shieldgen/shield_capacitor.dm:27
@@ -19997,15 +19994,13 @@
 	into += entry_line(48)
 	into += list(global.extend(/datum/act/touch_wires, global.instead(global.then(PROC_REF(wire_touch_shocks)))))
 	into += entry_line(49)
-	into += list(global.shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30))
+	into += list(global.shock_wire(stat = STAT_ELECTRIFIED))
 	into += entry_line(50)
 	into += list(global.id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE))
 	into += entry_line(51)
 	into += list(global.item_throw(stat = STAT_SHOOT_INVENTORY))
 	into += entry_line(52)
-	into += list(global.on_notice(/datum/notice/wire_cut, global.then(PROC_REF(wires_wake))))
-	into += entry_line(53)
-	into += list(global.on_notice(/datum/notice/wire_pulsed, global.then(PROC_REF(wires_wake))))
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(throw_frame)), when = global.cond_all(STAT_OPERABLE, STAT_SHOOT_INVENTORY)))
 
 /// CAPABILITIES(/obj/machinery/smartfridge/drying_rack) at code/modules/food/kitchen/smartfridge/drying_rack.dm:13
 /obj/machinery/smartfridge/drying_rack/declared_entries(list/into)
@@ -20014,13 +20009,13 @@
 	into += entry_line(14)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/smartfridge/secure) at code/modules/food/kitchen/smartfridge/smartfridge.dm:370
+/// CAPABILITIES(/obj/machinery/smartfridge/secure) at code/modules/food/kitchen/smartfridge/smartfridge.dm:362
 /obj/machinery/smartfridge/secure/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/kitchen/smartfridge/smartfridge.dm", 370, /obj/machinery/smartfridge/secure)
-	into += entry_line(371)
+	into += entry_block("code/modules/food/kitchen/smartfridge/smartfridge.dm", 362, /obj/machinery/smartfridge/secure)
+	into += entry_line(363)
 	into += list(global.configure(global.wires(count = 4, randomize = TRUE)))
-	into += entry_line(372)
+	into += entry_line(364)
 	into += list(global.extend("release", global.needs(global.req(PROC_REF(ui_gate), silent = TRUE))))
 
 /// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:51
@@ -20083,7 +20078,7 @@
 	into += entry_line(338)
 	into += list(global.safety_wire(stat = STAT_SAFETIES))
 	into += entry_line(339)
-	into += list(global.shock_wire(counter = nameof(electrified), cut_value = -1, pulse_value = 30))
+	into += list(global.shock_wire(stat = STAT_ELECTRIFIED))
 	into += entry_line(340)
 	into += list(global.on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed)))
 	into += entry_line(341)
@@ -20303,81 +20298,81 @@
 	into += entry_line(96, "window")
 	into += list(global.extend("remote_lethal", global.needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), global.then(PROC_REF(push_settings))))
 
-/// CAPABILITIES(/obj/machinery/vending) at code/modules/economy/vending.dm:124
+/// CAPABILITIES(/obj/machinery/vending) at code/modules/economy/vending.dm:123
 /obj/machinery/vending/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/economy/vending.dm", 124, /obj/machinery/vending)
-	into += entry_line(125)
+	into += entry_block("code/modules/economy/vending.dm", 123, /obj/machinery/vending)
+	into += entry_line(124)
 	into += list(global.machine_basics(repair = NONE))
-	into += entry_line(126)
+	into += entry_line(125)
 	into += list(global.panel())
-	into += entry_line(127)
+	into += entry_line(126)
 	into += list(global.extend("panel.open", global.wait(0)))
-	into += entry_line(128)
+	into += entry_line(127)
 	into += list(global.wires(name = "Vending machine", count = 4, emp = FALSE, status_lines = PROC_REF(wire_lights)))
-	into += entry_line(129)
+	into += entry_line(128)
 	into += list(global.extend(/datum/act/touch_wires, global.instead(global.then(PROC_REF(wire_touch_shocks)))))
-	into += entry_line(130)
+	into += entry_line(129)
 	into += list(global.item_throw(stat = STAT_SHOOT_INVENTORY))
+	into += entry_line(130)
+	into += list(global.shock_wire(stat = STAT_ELECTRIFIED))
 	into += entry_line(131)
-	into += list(global.shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30))
-	into += entry_line(132)
 	into += list(global.id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE))
-	into += entry_line(133)
+	into += entry_line(132)
 	into += list(global.on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed)))
-	into += entry_line(134)
+	into += entry_line(133)
 	into += list(global.emag(say = MSG(vending/shorted), repeatable = TRUE))
-	into += entry_line(135)
+	into += entry_line(134)
 	into += list(global.anchor())
-	into += entry_line(136)
+	into += entry_line(135)
 	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_closed(SPACE_PANEL))))
-	into += entry_line(137)
+	into += entry_line(136)
 	into += list(global.rotatable())
-	into += entry_line(138)
+	into += entry_line(137)
 	into += list(global.extend(CAP_ROTATABLE, global.when(nameof(can_rotate))))
-	into += entry_line(139)
+	into += entry_line(138)
 	into += list(global.owns_one(nameof(coin), /obj/item/coin))
-	into += entry_line(140)
+	into += entry_line(139)
 	into += list(global.owns_many(nameof(product_records), /datum/stored_item/vending_product))
-	into += entry_line(141)
+	into += entry_line(140)
 	into += list(global.ref_one(nameof(currently_vending), /datum/stored_item/vending_product))
-	into += entry_line(142)
+	into += entry_line(141)
 	into += list(global.on_notice(/datum/notice/hit/explosion, global.then(PROC_REF(vending_blast_malfunction))))
-	into += entry_line(143)
+	into += entry_line(142)
 	into += list(global.on_change(nameof(coin), ANY, global.then(PROC_REF(coin_changed))))
-	into += entry_line(144)
+	into += entry_line(143)
 	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(timed_work_frame)), when = global.cond_all(STAT_OPERABLE, PROC_REF(timed_work_wanted))))
-	into += entry_line(145)
+	into += entry_line(144)
 	into += list(global.after_init(0, global.then(PROC_REF(slogans_start))))
 	// section window: The vendor's window and the buttons in it
-	into += entry_line(148, "window")
+	into += entry_line(147, "window")
 	into += list(global.interface("Vending"))
-	into += entry_line(149, "window")
+	into += entry_line(148, "window")
 	into += list(global.extend("ui_open", global.when(PROC_REF(bare_touch)), global.needs(global.req_on_authority(AUTH_PHYSICAL), req_operable()), global.then(PROC_REF(shock_guard), early = TRUE), global.then(PROC_REF(open_wires_beside_the_window))))
-	into += entry_line(150, "window")
+	into += entry_line(149, "window")
 	into += list(global.extend(TAG_UI, global.needs(req_operable(), global.req(PROC_REF(customer_capable), because = MSG(op/failed)))))
-	into += entry_line(151, "window")
+	into += entry_line(150, "window")
 	into += list(global.op("vend", global.ui_act(global.arg("vend")), global.needs( global.req(PROC_REF(vend_listed), because = MSG(vending/unavailable)), global.req(PROC_REF(vend_idle), because = MSG(vending/busy)), global.req(PROC_REF(vend_shut), because = MSG(vending/panel_open)), global.req(PROC_REF(vend_access_for_actor), because = MSG(vending/denied)), global.req(PROC_REF(vend_in_stock), because = MSG(vending/unavailable)), global.req(PROC_REF(vend_coin_ready), because = MSG(vending/need_coin)), global.req(PROC_REF(vend_payable), because = PROC_REF(vend_payment_refusal))), global.asks(/datum/prompt/number, fields = list("question" = "Enter pin code"), when = PROC_REF(pin_wanted)), global.costs(RES_CREDITS, PROC_REF(vend_price)), global.then(PROC_REF(vend_started)), global.logs(LOG_GAME)))
-	into += entry_line(163, "window")
+	into += entry_line(162, "window")
 	into += list(global.on_op("vend", global.then(PROC_REF(vend_turned_away)), outcome = ACT_REFUSED))
-	into += entry_line(164, "window")
+	into += entry_line(163, "window")
 	into += list(global.op("remove_coin", global.ui_act(), global.needs(global.req_full(nameof(coin), because = MSG(vending/no_coin)), global.req_on_authority(AUTH_PHYSICAL)), global.take_out(nameof(coin))))
-	into += entry_line(165, "window")
+	into += entry_line(164, "window")
 	into += list(global.op("toggle_voice", global.ui_act(), global.at(SPACE_PANEL), global.toggles(nameof(shut_up))))
 	// section intake: What it takes in, and the log
-	into += entry_line(168, "intake")
+	into += entry_line(167, "intake")
 	into += list(global.op("insert_coin", global.item(/obj/item/coin), global.when(nameof(has_premium)), global.needs(req_operable(), global.req_empty(nameof(coin), because = MSG(bay/full))), global.put_in(nameof(coin))))
-	into += entry_line(169, "intake")
+	into += entry_line(168, "intake")
 	into += list(global.op("reject_fake_coin", global.item(/obj/item/fake_coin), global.when(nameof(has_premium)), global.needs(global.req(PROC_REF(never), because = MSG(vending/fake_coin)))))
-	into += entry_line(170, "intake")
+	into += entry_line(169, "intake")
 	into += list(global.op("refill", global.item(/obj/item/refill_cartridge), global.needs(global.req_closed(SPACE_PANEL), req_operable(), global.req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), global.req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), global.req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))), global.then(PROC_REF(refilled)), global.says(MSG(vending/refilled)), global.consumes()))
-	into += entry_line(173, "intake")
+	into += entry_line(172, "intake")
 	into += list(global.op("stock", global.item(/obj/item), global.when(PROC_REF(stockable)), global.then(PROC_REF(stocked))))
-	into += entry_line(174, "intake")
+	into += entry_line(173, "intake")
 	into += list(global.op("open_with_item", global.item(/obj/item), global.priority(global.above("stock")), global.when(PROC_REF(item_opens_window)), global.needs(req_operable()), global.opens_ui()))
-	into += entry_line(175, "intake")
+	into += entry_line(174, "intake")
 	into += list(global.extend("open_with_item", global.then(PROC_REF(shock_guard), early = TRUE), global.then(PROC_REF(open_wires_beside_the_window))))
-	into += entry_line(176, "intake")
+	into += entry_line(175, "intake")
 	into += list(global.op("check_logs", global.hand(), global.when(nameof(has_logs)), global.when(PROC_REF(bare_touch)), global.label("Check vending logs"), global.priority(global.below("ui_open")), global.needs(global.req(PROC_REF(log_access_ok), because = MSG(vending/log_denied))), global.then(PROC_REF(check_logs_op))))
 
 /// CAPABILITIES(/obj/machinery/vending/nifsoft_shop) at code/modules/nifsoft/nif_softshop.dm:22

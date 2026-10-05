@@ -1056,3 +1056,15 @@ Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm`
   like) do not follow a hit a door or a fixture answered itself. A camera's smash used to return TRUE here.
 * Converted: the door base, airlock, blast door, firedoor, puzzle door, lift panel, drop pod door, cult pylon, light fixture, camera, expedition demo
   target, ladder and trash pile. The rest are held by the `generic_hit_ratchet_on_attack_generic_overrides` ceiling.
+## Electrification as timed holds (vending, smartfridge, seed storage, suit cycler; rewrite/machines-full)
+
+- `shock_wire()` has no counter mode any more. Every user declares `STAT(T, electrified, TOP, base = 0)` (as the airlock does) and
+  `shock_wire(stat = STAT_ELECTRIFIED)`: a pulse is a timed hold of exactly 30 seconds (before: 30 "frames" of a per-tick countdown, whose
+  real length followed the machine's step rate), a cut wire an untimed hold until mended, and mending releases both.
+- Sources do not overwrite each other: an event's or an admin's hold sits beside the wire's, and the strongest (TOP) wins; mending the wire
+  leaves another source's hold in place (before, any writer set the one counter).
+- The shock counts only while the machine is operable (`shock_live()`): an unpowered or broken machine shocks nobody, and is live again when
+  it comes back. A timed hold's clock keeps running while the machine is down, so a pulse can run out during an outage (before, the countdown
+  paused). The suit cycler no longer clears its shock when it loses power.
+- The `seconds_electrified` counter, its -1 sentinel and the countdown in the machines' periodic work are gone: an idle electrified vendor,
+  fridge or seed storage does no periodic work for its shock.

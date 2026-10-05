@@ -8,9 +8,9 @@
 //   ai_control(stat = STAT_AIDISABLED, pulse_lasts = 10 SECONDS)         WIRE_AI_CONTROL: cut locks the AI out until mended; a pulse, for a while
 //   power_wires(stat = STAT_SHORTED, count = 2, pulse_lasts =, shock = 50, shock_hands_only =)   WIRE_MAIN_POWER1 (and 2): cut shorts it (and may shock the hand)
 //   shock_wire(stat = STAT_SHOCKED, pulse_lasts = 5 SECONDS)            WIRE_ELECTRIFY (or wire = WIRE_SHOCK): live while cut, a while pulsed
-//   shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30)   the same on a machine whose shock is a countdown it runs
-//                                                                        down itself, a frame at a time: cut sets it to cut_value, a pulse to
-//                                                                        pulse_value, mending to 0 (through the holder's set_<counter>() when it has one)
+//   shock_wire(stat = STAT_ELECTRIFIED)                                  the same, 30 s a pulse, on STAT(T, electrified, TOP, base = 0); read it with
+//                                                                        shock_live(holder): live only while the holder is operable (an unpowered
+//                                                                        machine shocks nobody; a pulse's 30 s still run out while it is down)
 //   id_scan(stat = STAT_SCAN_ID, cut_value = TRUE, pulse_value = FALSE)   WIRE_IDSCAN: a scanner the wire overrides (pulses flip it)
 //   item_throw(stat = STAT_SHOOT_INVENTORY)                               WIRE_THROW_ITEM: the stock flies while cut; a pulse flips it
 //   safety_wire(stat = STAT_SAFETIES)                                     WIRE_SAFETY: the safeties are off while cut; a pulse flips them
@@ -42,32 +42,16 @@ CAPABILITY_TYPE(power_wires, CAP_POWER_WIRES, /datum/capability/lib/power_wires,
 	var/obj/machinery/M = holder
 	M.shock(user, shock)
 
-CAPABILITY_TYPE(shock_wire, CAP_SHOCK_WIRE, /datum/capability/lib/shock_wire, key = NONE, wire = WIRE_ELECTRIFY, stat = null, counter = null, cut_value = TRUE, pulse_value = TRUE, pulse_lasts = 30 SECONDS)
+CAPABILITY_TYPE(shock_wire, CAP_SHOCK_WIRE, /datum/capability/lib/shock_wire, key = NONE, wire = WIRE_ELECTRIFY, stat = null, cut_value = TRUE, pulse_value = TRUE, pulse_lasts = 30 SECONDS)
 
 /datum/capability/lib/shock_wire/brings_wires()
 	return list(wire)
 
-/// The countdown of a machine that runs its shock down itself (`counter`), set from the wire.
-/datum/capability/lib/shock_wire/proc/counter_set(datum/holder, value)
-	if(!counter)
-		return
-	var/setter = "set_[counter]"
-	if(hascall(holder, setter))
-		call(holder, setter)(value)
-	else
-		holder.vars[counter] = value // ALLOW(api): the countdown var the capability's counter param names, on a holder with no setter for it
-
-/// The shock wire cut: live for good.
-/datum/capability/lib/shock_wire/proc/counter_cut(datum/holder, cut_wire, mob/user)
-	counter_set(holder, cut_value)
-
-/// The shock wire pulsed: live for pulse_value frames.
-/datum/capability/lib/shock_wire/proc/counter_pulsed(datum/holder, pulsed_wire, mob/user)
-	counter_set(holder, pulse_value)
-
-/// The shock wire mended: safe.
-/datum/capability/lib/shock_wire/proc/counter_mended(datum/holder, mended_wire, mob/user)
-	counter_set(holder, 0)
+/// Is E electrified now: a hold on its STAT_ELECTRIFIED (the shock wire's, an AI's, an event's; the strongest wins, none overwrites another)
+/// while it is operable. A timed hold's clock runs on while E is down, so a pulse's 30 s can run out before the power comes back.
+/proc/shock_live(datum/E)
+	READS_FROM(E)
+	return stat_value(E, STAT_ELECTRIFIED) && stat_value(E, STAT_OPERABLE)
 
 CAPABILITY_TYPE(id_scan, CAP_ID_SCAN, /datum/capability/lib/id_scan, key = NONE, stat = null, cut_value = TRUE, pulse_value = TRUE, pulse_lasts = WIRE_PULSE_TOGGLES)
 

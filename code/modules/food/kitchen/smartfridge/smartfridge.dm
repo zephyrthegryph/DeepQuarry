@@ -17,8 +17,6 @@
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
-	/// Shocks the hand at it: frames left (-1 for good, from a cut wire; shock_wire() sets it, the fridge runs it down).
-	var/seconds_electrified = 0
 	locked = 0
 	var/is_secure = 0
 	var/wrenchable = 0
@@ -34,6 +32,8 @@
 STAT(/obj/machinery/smartfridge, shoot_inventory, ANY)
 /// Checks the ID for a secure stock (the ID wire pulsed stops it; cut, it scans for good: id_scan()).
 STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
+/// Shocks the hand at it: the shock wire cut (until mended) or pulsed (30 s); live only while operable (shock_live()).
+STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
@@ -46,31 +46,23 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Smartfridge", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
-	shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30)
+	shock_wire(stat = STAT_ELECTRIFIED)
 	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
 	item_throw(stat = STAT_SHOOT_INVENTORY)
-	on_notice(/datum/notice/wire_cut, then(PROC_REF(wires_wake)))
-	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wires_wake)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(throw_frame)), when = cond_all(STAT_OPERABLE, STAT_SHOOT_INVENTORY))
 
 /obj/machinery/smartfridge/proc/wire_lights()
 	return list(
-		"The orange light is [seconds_electrified ? "off" : "on"].",
+		"The orange light is [shock_live(src) ? "off" : "on"].",
 		"The red light is [shoot_inventory ? "off" : "blinking"].",
 		"A [scan_id ? "purple" : "yellow"] light is on.")
 
 /// Reaching into a live fridge's wires shocks a carbon at it instead.
 /obj/machinery/smartfridge/proc/wire_touch_shocks(datum/act/A)
 	var/datum/act/touch_wires/T = A
-	if(iscarbon(T.user) && Adjacent(T.user) && seconds_electrified && shock(T.user, 100))
+	if(iscarbon(T.user) && Adjacent(T.user) && shock_live(src) && shock(T.user, 100))
 		return OP_REFUSED
 	return HOOK_DECLINE
-
-/// After any wire moved: a fridge throwing or counting down a shock runs, else it sleeps.
-/obj/machinery/smartfridge/proc/wires_wake(datum/act/A)
-	if(shoot_inventory || seconds_electrified > 0)
-		MACHINE_WAKE(src)
-	else
-		MACHINE_SLEEP(src) // ALLOW(sys_periodic_toggle): the fridge's wire effects park its step as the legacy wire datum did; its throw is a stat the wires hold and its shock a plain countdown, not a tracked state to declare the work on
 
 /obj/machinery/smartfridge/secure
 	is_secure = 1
@@ -114,12 +106,12 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	if(!playing_sound && !has_stat(MACHINE_STAT_ANY))
 		soundloop.start()
 		playing_sound = TRUE
-	if(src.seconds_electrified > 0)
-		src.seconds_electrified--
-	if(src.shoot_inventory && prob(2))
-		src.throw_item()
-	if(seconds_electrified <= 0 && !shoot_inventory)
-		return PROCESS_KILL
+	return PROCESS_KILL // its only timed work, throwing its stock, is an every() on STAT_SHOOT_INVENTORY
+
+/// One frame of a fridge that throws its stock (every() runs it only while it is operable and throwing).
+/obj/machinery/smartfridge/proc/throw_frame(datum/act/timer/A)
+	if(prob(2))
+		throw_item()
 
 /obj/machinery/smartfridge/power_change()
 	. = ..()
@@ -136,7 +128,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 
 /// TRUE when process() still has time-dependent work to do once powered.
 /obj/machinery/smartfridge/proc/has_pending_work()
-	return seconds_electrified > 0 || shoot_inventory
+	return FALSE // the throwing is an every() on STAT_SHOOT_INVENTORY; a subtype with work of its own says so
 
 // Number of stored products, used to pick the fill-level overlay. Counts the
 // actual item_records contents rather than contents.len, because contents also
