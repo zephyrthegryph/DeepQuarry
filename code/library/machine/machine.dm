@@ -136,13 +136,13 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 
 // ---- the maintenance hatch ----
 
-CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null, wires_by_hand = FALSE, lock_wire = null)
+CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null, lock_wire = null)
 
-/// space(SPACE_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel (and its space SPACE_PANEL), the wires when given (a wire set, or a whole wires(...) entry),
-/// the ID lock (`lock_wire`: the wire it needs intact) and the emag when given, and the rules between them: the ID lock and the emag work only
+/// space(SPACE_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel (and its space SPACE_PANEL), the wires when given (a whole wires(...) entry),
+/// the ID lock (`lock_wire`: the wire it brings and needs intact) and the emag when given, and the rules between them: the ID lock and the emag work only
 /// with the cover and the panel closed (req_closed()), and the panel is latched shut while the cover is open when panel_needs_cover_closed. A
-/// machine passes its wire set and its emag effect here instead of declaring wires and emag again. What sits behind the cover (a cell bay, a
-/// build ladder) works at(SPACE_HATCH). `wires_by_hand` = TRUE: an empty hand opens the wires window too.
+/// machine passes its wires and its emag effect here instead of declaring wires and emag again. What sits behind the cover (a cell bay, a
+/// build ladder) works at(SPACE_HATCH).
 ///
 /// The hatch is where every tool on a wall machine meets something, so it says ONCE which answers a click when several could: a construction step
 /// before the panel (screwdriver) and the wires (wirecutters), the subversion reset before the wires (multitool), and for an empty hand the
@@ -157,16 +157,12 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 		space(SPACE_HATCH, door = CAP_COVER),
 		cover || cover(),
 		panel())
-	if(ispath(wires) || istext(wires))
-		entries += wires(wires, by_hand = wires_by_hand)
-	else if(wires)
-		entries += wires // a whole wires(...) entry: the set with its lights, reach and the rest
+	if(wires)
+		entries += wires // a whole wires(...) entry: its name, count, lights, reach and the rest
 	if(lock)
-		entries += lock(starts_locked = starts_locked)
+		entries += lock(starts_locked = starts_locked, wire = lock_wire)
 		entries += extend("lock.toggle", needs(closed_up))
 		entries += extend("lock.toggle_worn", needs(closed_up))
-		if(lock_wire)
-			entries += extend(CAP_LOCK, needs(req_wire(lock_wire)))
 	if(emag)
 		entries += emag(emag, say = emag_say)
 		entries += extend("emag.use", needs(closed_up))

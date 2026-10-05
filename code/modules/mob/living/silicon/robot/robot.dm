@@ -1927,12 +1927,6 @@ TRACKED(/mob/living/silicon/robot, lockdown)
 
 // ---- the wires (declared with the cyborg's capabilities, code/library/mob/hands.dm) ----
 
-/// A cyborg's four working wires (and a dud), every cyborg its own colours.
-/datum/wire_set/robot
-	name = "Cyborg"
-	count = 5
-	randomize = TRUE
-	wires = list(WIRE_AI_CONTROL, WIRE_BORG_CAMERA, WIRE_BORG_LAWCHECK, WIRE_BORG_LOCKED)
 
 /mob/living/silicon/robot/proc/wire_lights()
 	return list(

@@ -46,7 +46,7 @@ CAPABILITIES(/obj/machinery/camera)
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/camera, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Camera", count = 6, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_FOCUS, cut = PROC_REF(focus_wire_cut), pulse = PROC_REF(focus_wire_pulsed))
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
 	on_wire(WIRE_CAM_LIGHT, cut = PROC_REF(light_wire_cut), pulse = PROC_REF(light_wire_pulsed))
@@ -614,12 +614,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 
 // ---- the wires ----
 
-/// A camera's wires: focus, power, light and alarm (and two duds), every camera its own colours.
-/datum/wire_set/camera
-	name = "Camera"
-	count = 6
-	randomize = TRUE
-	wires = list(WIRE_FOCUS, WIRE_MAIN_POWER1, WIRE_CAM_LIGHT, WIRE_CAM_ALARM)
 
 /obj/machinery/camera/proc/wire_lights()
 	return list(

@@ -266,16 +266,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(
 
 CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/disposals, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Disposals Sorting Pipe", count = 6, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_SORT_SCAN, cut = PROC_REF(scan_wire_cut), pulse = PROC_REF(scan_wire_pulsed))
 	on_wire(WIRE_SORT_FORWARD, pulse = PROC_REF(forward_wire_pulsed))
 	on_wire(WIRE_SORT_SIDE, pulse = PROC_REF(side_wire_pulsed))
 
-/// A sorting junction's wires: forward, side and the scan (and three duds).
-/datum/wire_set/disposals
-	name = "Disposals Sorting Pipe"
-	count = 6
-	wires = list(WIRE_SORT_FORWARD, WIRE_SORT_SIDE, WIRE_SORT_SCAN)
 
 /obj/structure/disposalpipe/sortjunction/proc/wire_lights()
 	return list(

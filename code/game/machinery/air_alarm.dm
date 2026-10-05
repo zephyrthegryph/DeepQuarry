@@ -89,8 +89,6 @@
 	var/rcon_time = 0
 	locked = 1
 	panel_open = FALSE // If it's been screwdrivered open.
-	var/aidisabled = 0
-	var/shorted = 0
 	circuit = /obj/item/circuitboard/airalarm
 
 	mode = AALARM_MODE_SCRUBBING
@@ -126,7 +124,10 @@
 	/// Monotonic revision for correction-aware contract atmosphere telemetry.
 	var/contract_atmos_revision = 0
 
-TRACKED(/obj/machinery/alarm, aidisabled)
+/// The AI control wire locks the AI out: cut, until mended; pulsed, for ten seconds (ai_control()).
+STAT(/obj/machinery/alarm, aidisabled, ANY)
+/// The power wire shorts the alarm: cut, until mended; pulsed, for twenty minutes (power_wires()).
+STAT(/obj/machinery/alarm, shorted, ANY)
 
 CAPABILITIES(/obj/machinery/alarm)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm)
@@ -157,10 +158,11 @@ CAPABILITIES(/obj/machinery/alarm)
 	op("alarm", ui_act("alarm"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_alarm)))
 	op("reset", ui_act("reset"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_reset)))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/alarm, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Air alarm", count = 5, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	power_wires(stat = STAT_SHORTED, pulse_lasts = 20 MINUTES, shock = 50)
+	ai_control(stat = STAT_AIDISABLED, pulse_lasts = 10 SECONDS)
+	on_change(nameof(shorted), ANY, then(PROC_REF(shorted_changed)))
 	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
-	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
-	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
 	on_wire(WIRE_SYPHON, cut = PROC_REF(syphon_wire_cut), pulse = PROC_REF(syphon_wire_pulsed))
 	on_wire(WIRE_AALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
 
@@ -1211,12 +1213,6 @@ TYPE_TABLE(/obj/machinery/alarm/sifwilderness, alarm_TLV, air_alarm_TLV_sifwilde
 
 // ---- the wires ----
 
-/// An air alarm's five wires.
-/datum/wire_set/alarm
-	name = "Air alarm"
-	count = 5
-	wires = list(WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_SYPHON, WIRE_AI_CONTROL, WIRE_AALARM)
-
 /obj/machinery/alarm/proc/wire_lights()
 	return list(
 		"The Air Alarm is [locked ? "locked." : "unlocked."]",
@@ -1232,40 +1228,12 @@ TYPE_TABLE(/obj/machinery/alarm/sifwilderness, alarm_TLV, air_alarm_TLV_sifwilde
 /obj/machinery/alarm/proc/idscan_wire_pulsed(datum/act/A)
 	set_locked(!locked)
 
-/// The power wire cut shorts the alarm (and may shock); mended, it works again.
-/obj/machinery/alarm/proc/power_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	shock(N.user, 50)
-	shorted = !N.mended
+/// The power wires shorted the alarm or gave it back: the area's alarms show it.
+/obj/machinery/alarm/proc/shorted_changed(datum/act/A)
+	for(var/obj/machinery/alarm/AA in alarm_area_ref())
+		AA.update_icon()
 	update_icon()
 	changed(src, CHANGE_MACHINE_SETTINGS)
-
-/// The power wire pulsed shorts it for twenty minutes.
-/obj/machinery/alarm/proc/power_wire_pulsed(datum/act/A)
-	if(!shorted)
-		shorted = TRUE
-		for(var/obj/machinery/alarm/AA in alarm_area_ref())
-			AA.update_icon()
-		changed(src, CHANGE_MACHINE_SETTINGS)
-	after(src, 20 MINUTES, PROC_REF(clear_wire_short))
-
-/obj/machinery/alarm/proc/clear_wire_short()
-	if(shorted)
-		shorted = FALSE
-		update_icon()
-		changed(src, CHANGE_MACHINE_SETTINGS)
-
-/obj/machinery/alarm/proc/ai_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	set_aidisabled(!N.mended)
-
-/// The AI wire pulsed locks the AI out for ten seconds.
-/obj/machinery/alarm/proc/ai_wire_pulsed(datum/act/A)
-	set_aidisabled(TRUE)
-	after(src, 10 SECONDS, PROC_REF(clear_wire_ai_disabled))
-
-/obj/machinery/alarm/proc/clear_wire_ai_disabled()
-	set_aidisabled(FALSE)
 
 /// The syphon wire cut panics the vents.
 /obj/machinery/alarm/proc/syphon_wire_cut(datum/act/A)

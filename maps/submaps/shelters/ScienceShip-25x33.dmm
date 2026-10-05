@@ -2086,7 +2086,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "YX" = (
 /obj/machinery/autolathe{
-	hacked = 1
+	hacked_at_start = 1
 	},
 /turf/simulated/shuttle/floor/purple,
 /area/survivalpod/superpose/ScienceShip)

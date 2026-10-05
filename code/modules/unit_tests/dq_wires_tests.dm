@@ -1,17 +1,13 @@
 // The wires library's bulk operations on a bare holder: cut-all and mend-all change each wire once, a random cut takes only intact wires, and the
 // interactive cut toggles. The holder counts the cut and mend notices it hears.
 
-/datum/wire_set/unit_test
-	name = "unit test"
-	count = 2
-	wires = list(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
-
 /obj/wires_unit_test
 	var/cuts = 0
 	var/mends = 0
 
 CAPABILITIES(/obj/wires_unit_test)
-	wires(/datum/wire_set/unit_test, tools = FALSE, at = null)
+	wires(name = "unit test", count = 2, tools = FALSE, at = null)
+	power_wires(count = 2)
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(heard_cut)))
 
 /obj/wires_unit_test/proc/heard_cut(datum/act/A)
@@ -59,3 +55,4 @@ CAPABILITIES(/obj/wires_unit_test)
 	TEST_ASSERT(!wire_is_cut(H, WIRE_MAIN_POWER1), "Interactive cutting should mend a cut wire")
 	TEST_ASSERT_EQUAL(H.cuts, 1, "Interactive cutting should issue one cut notice")
 	TEST_ASSERT_EQUAL(H.mends, 1, "Interactive mending should issue one mend notice")
+

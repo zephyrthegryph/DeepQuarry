@@ -42,7 +42,17 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	op("remove_new_track", ui_act("remove_new_track", arg("ref")), then(PROC_REF(ui_act_remove_new_track)))
 	emag(then(PROC_REF(on_emag)))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/jukebox, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Jukebox", count = 11, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	// its own wires: what each does is heard below (a pulse on a dud may shock), so they are declared bare
+	on_wire(WIRE_MAIN_POWER1)
+	on_wire(WIRE_JUKEBOX_HACK)
+	on_wire(WIRE_SPEEDUP)
+	on_wire(WIRE_SPEEDDOWN)
+	on_wire(WIRE_REVERSE)
+	on_wire(WIRE_START)
+	on_wire(WIRE_STOP)
+	on_wire(WIRE_PREV)
+	on_wire(WIRE_NEXT)
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_cut_heard)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_pulse_heard)))
 
@@ -507,15 +517,6 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 
 // ---- the wires ----
 
-/// A jukebox's nine working wires (and two duds), every jukebox its own colours.
-/datum/wire_set/jukebox
-	name = "Jukebox"
-	count = 11
-	randomize = TRUE
-	wires = list(
-		WIRE_MAIN_POWER1, WIRE_JUKEBOX_HACK,
-		WIRE_SPEEDUP, WIRE_SPEEDDOWN, WIRE_REVERSE,
-		WIRE_START, WIRE_STOP, WIRE_PREV, WIRE_NEXT)
 
 /// The lights hint at the state each wire drives.
 /obj/machinery/media/jukebox/proc/wire_lights()

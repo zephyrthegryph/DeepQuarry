@@ -66,15 +66,22 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 				A.play_ambience(M)
 		// Disable safeties on the doors during firemode, reset when done
 		for(var/obj/machinery/door/airlock/door in F.doors)
-			door.set_safe(new_fire_mode ? FALSE : initial(door.safe))
+			turbolift_fire_safeties(door, src, new_fire_mode)
 
 	// Disable safeties on the doors during firemode, reset when done
 	for(var/obj/machinery/door/airlock/door in doors)
-		door.set_safe(new_fire_mode ? FALSE : initial(door.safe))
+		turbolift_fire_safeties(door, src, new_fire_mode)
 	update_ext_panel_icons()
 	control_panel_interior.update_icon()
 
 // Cancel all pending calls
+/// Fire mode holds a door's safeties off for the lift; out of fire mode the lift lets go (the door's own safeties are back).
+/proc/turbolift_fire_safeties(obj/machinery/door/airlock/door, datum/turbolift/lift, fire_mode)
+	if(fire_mode)
+		hold(door, STAT_SAFE, null, lift)
+	else
+		release(door, STAT_SAFE, lift)
+
 /datum/turbolift/proc/cancel_pending_floors()
 	for(var/datum/turbolift_floor/floor in queued_floors)
 		if(floor.ext_panel)

@@ -7,10 +7,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 
-	///Is this machne hacked via wires
-	var/hacked = FALSE
-	///Is this machine disabled via wires
-	var/disabled = FALSE
 	///Ref to global science techweb.
 	var/datum/techweb/stored_research
 	///The item loaded inside the machine, used by experimentors and destructive analyzers only (owned; spills when the machine dies).
@@ -99,37 +95,23 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 		our_item.forceMove(drop_location())
 	. = ..()
 
+/// The hacked designs are unlocked: the hack wire cut, or pulsed (lathe_wires()).
+STAT(/obj/machinery/rnd, hacked, ANY)
+/// The machine will not work: the disable wire cut, or pulsed (lathe_wires()).
+STAT(/obj/machinery/rnd, disabled, ANY)
+
 CAPABILITIES(/obj/machinery/rnd)
 	owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL)
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/rnd, tools = FALSE, status_lines = PROC_REF(wire_lights))
-	on_wire(WIRE_HACK, cut = PROC_REF(hack_wire_cut), pulse = PROC_REF(hack_wire_pulsed))
-	on_wire(WIRE_DISABLE, cut = PROC_REF(disable_wire_cut), pulse = PROC_REF(disable_wire_pulsed))
+	// three wires and five duds, every machine its own colours: the hack and the disable (a pulse flips them) and a high-voltage decoy
+	wires(name = "R&D Machinery", count = 8, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	lathe_wires()
+	shock_wire(wire = WIRE_SHOCK)
 
 // ---- the wires ----
-
-/// An R&D machine's wires: three that work and five duds, every machine its own colours.
-/datum/wire_set/rnd
-	name = "R&D Machinery"
-	count = 8
-	randomize = TRUE
-	wires = list(WIRE_HACK, WIRE_DISABLE, WIRE_SHOCK)
 
 /obj/machinery/rnd/proc/wire_lights()
 	return list(
 		"The red light is [disabled ? "off" : "on"].",
 		"The blue light is [hacked ? "off" : "on"].")
 
-/obj/machinery/rnd/proc/hack_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	hacked = !N.mended
-
-/obj/machinery/rnd/proc/hack_wire_pulsed(datum/act/A)
-	hacked = !hacked
-
-/obj/machinery/rnd/proc/disable_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	disabled = !N.mended
-
-/obj/machinery/rnd/proc/disable_wire_pulsed(datum/act/A)
-	disabled = !disabled

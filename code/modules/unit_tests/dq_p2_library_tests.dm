@@ -102,7 +102,7 @@
 	TEST_ASSERT_EQUAL(open?.outcome, ACT_COMMITTED, "with the panel open the multitool reaches them")
 	var/datum/cap_data/wires/W = wiring_of(B)
 	TEST_ASSERT_NOTNULL(W, "the wire record is made with the box")
-	TEST_ASSERT_EQUAL(W.set_type, /datum/wire_set/p2_box, "of the set the capability names")
+	TEST_ASSERT_EQUAL(W.def?.name, "p2 box", "of the wiring the capability names")
 	wires_cut(B, WIRE_IDSCAN)
 	TEST_ASSERT(wire_is_cut(B, WIRE_IDSCAN), "a cut wire is read through the accessor")
 	wires_toggle(B, WIRE_IDSCAN)

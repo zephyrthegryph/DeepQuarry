@@ -1,9 +1,3 @@
-/// A RIG's five wires, every suit its own colours.
-/datum/wire_set/rig
-	name = "Unknown"
-	count = 5
-	randomize = TRUE
-	wires = list(WIRE_RIG_SECURITY, WIRE_RIG_AI_OVERRIDE, WIRE_RIG_SYSTEM_CONTROL, WIRE_RIG_INTERFACE_LOCK, WIRE_RIG_INTERFACE_SHOCK)
 /*
  * Rig security can be snipped to disable ID access checks on rig.
  * Rig AI override can be pulsed to toggle whether or not the AI can take control of the suit.

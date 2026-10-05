@@ -30,9 +30,7 @@
 	var/overloaded = 0                  // Whether the field has overloaded and shut down to regenerate.
 	var/hacked = 0                      // Whether the generator has been hacked by cutting the safety wire.
 	var/offline_for = 0                 // The generator will be inoperable for this duration in ticks.
-	var/input_cut = 0                   // Whether the input wire is cut.
 	var/mode_changes_locked = 0         // Whether the control wire is cut, locking out changes.
-	var/ai_control_disabled = 0         // Whether the AI control is disabled.
 	var/list/mode_list = null           // A list of shield_mode datums.
 	var/full_shield_strength = 0        // The amount of power shields need to be at full operating strength.
 	var/initial_shield_modes = MODEFLAG_HYPERKINETIC|MODEFLAG_EM|MODEFLAG_ATMOSPHERIC|MODEFLAG_HUMANOIDS
@@ -42,17 +40,22 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
+/// The power wire cut cuts the input (power_wires()).
+STAT(/obj/machinery/power/shield_generator, input_cut, ANY)
+/// The AI control wire cut locks the AI out (ai_control()).
+STAT(/obj/machinery/power/shield_generator, ai_control_disabled, ANY)
+
 // Segments currently down and regenerating (they leave the list when they die).
 CAPABILITIES(/obj/machinery/power/shield_generator)
 	ref_many(nameof(damaged_segments))
 	owns_many(nameof(field_segments))
 	owns_many(nameof(mode_list))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/shield_generator, tools = FALSE, status_lines = PROC_REF(wire_lights))
-	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
+	wires(name = "Shield Generator", count = 5, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	power_wires(stat = STAT_INPUT_CUT)
+	ai_control(stat = STAT_AI_CONTROL_DISABLED, pulse_lasts = 0)
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	on_wire(WIRE_SHIELD_CONTROL, cut = PROC_REF(control_wire_cut))
-	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut))
 	interface("OvermapShieldGenerator")
 	op("begin_shutdown", ui_act("begin_shutdown"),
 		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", "title" = "Are you sure?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k504", when = PROC_REF(is_running)),
@@ -71,22 +74,12 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	op("toggle_mode", ui_act("toggle_mode", arg("toggle_mode", num())), then(PROC_REF(ui_act_toggle_mode)))
 	op("switch_idle", ui_act("switch_idle", arg("switch_idle", num())), then(PROC_REF(ui_act_switch_idle)))
 
-/// A shield generator's four working wires (and a dud).
-/datum/wire_set/shield_generator
-	name = "Shield Generator"
-	count = 5
-	wires = list(WIRE_MAIN_POWER1, WIRE_CONTRABAND, WIRE_AI_CONTROL, WIRE_SHIELD_CONTROL)
-
 /obj/machinery/power/shield_generator/proc/wire_lights()
 	return list(
 		"The orange light is [mode_changes_locked ? "on." : "off."]",
 		"The blue light is [ai_control_disabled ? "off." : "blinking."]",
 		"The violet light is [hacked ? "pulsing." : "steady."]",
 		"The red light is [input_cut ? "off." : "on."]")
-
-/obj/machinery/power/shield_generator/proc/power_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	input_cut = !N.mended
 
 /// The contraband wire cut takes the hack off (and the modes it allowed).
 /obj/machinery/power/shield_generator/proc/contraband_wire_cut(datum/act/A)
@@ -105,10 +98,6 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 /obj/machinery/power/shield_generator/proc/control_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
 	mode_changes_locked = !N.mended
-
-/obj/machinery/power/shield_generator/proc/ai_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	ai_control_disabled = !N.mended
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/shield_generator/appearance_overlays()

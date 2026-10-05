@@ -45,11 +45,6 @@ DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_ITEM(null, PROC_REF(interacti
 
 TRACKED(/obj/item/plastique, timer)
 
-/// The charge's one wire: cut or pulsed, it goes off.
-/datum/wire_set/c4
-	name = "Explosive wires"
-	count = 1
-	wires = list(WIRE_EXPLODE)
 
 /obj/item/plastique/proc/explode_wire(datum/act/A)
 	var/datum/notice/wire_cut/N = A
@@ -59,7 +54,7 @@ TRACKED(/obj/item/plastique, timer)
 
 CAPABILITIES(/obj/item/plastique)
 	space(SPACE_PANEL, door = nameof(open_panel))
-	wires(/datum/wire_set/c4, tools = FALSE)
+	wires(name = "Explosive wires", count = 1, tools = FALSE)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
 	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
 		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))

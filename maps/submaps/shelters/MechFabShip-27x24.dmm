@@ -813,7 +813,7 @@
 /area/template_noop)
 "zC" = (
 /obj/machinery/autolathe{
-	hacked = 1
+	hacked_at_start = 1
 	},
 /obj/effect/floor_decal/techfloor{
 	dir = 8

@@ -276,7 +276,7 @@
 /area/survivalpod/superpose/MercShip)
 "dC" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "hacked autolathe"
 	},
 /turf/simulated/floor/tiled/techfloor,

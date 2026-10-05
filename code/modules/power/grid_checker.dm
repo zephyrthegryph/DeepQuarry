@@ -135,7 +135,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 
 CAPABILITIES(/obj/machinery/power/grid_checker)
 	space(SPACE_PANEL, door = nameof(opened))
-	wires(/datum/wire_set/grid_checker, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Grid Checker", count = 8, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_REBOOT, pulse = PROC_REF(reboot_wire_pulsed))
 	on_wire(WIRE_LOCKOUT, cut = PROC_REF(lockout_wire_cut), pulse = PROC_REF(lockout_wire_pulsed))
 	on_wire(WIRE_ALLOW_MANUAL1, cut = PROC_REF(manual_wire_cut))
@@ -143,11 +143,6 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 	on_wire(WIRE_ALLOW_MANUAL3, cut = PROC_REF(manual_wire_cut))
 	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_touched), pulse = PROC_REF(shock_wire_touched))
 
-/// A grid checker's six working wires (and two duds).
-/datum/wire_set/grid_checker
-	name = "Grid Checker"
-	count = 8
-	wires = list(WIRE_REBOOT, WIRE_LOCKOUT, WIRE_ALLOW_MANUAL1, WIRE_ALLOW_MANUAL2, WIRE_ALLOW_MANUAL3, WIRE_ELECTRIFY)
 
 /obj/machinery/power/grid_checker/proc/wire_lights()
 	return list(

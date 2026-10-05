@@ -270,17 +270,12 @@ UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_stren
 // ---- the wires ----
 
 CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
-	wires(/datum/wire_set/particle_control, tools = FALSE, at = null, reach = PROC_REF(wires_exposed_now))
+	wires(name = "Particle accelerator control", count = 5, tools = FALSE, at = null, reach = PROC_REF(wires_exposed_now))
 	on_wire(WIRE_PARTICLE_POWER, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
 	on_wire(WIRE_PARTICLE_STRENGTH, cut = PROC_REF(strength_wire_cut), pulse = PROC_REF(strength_wire_pulsed))
 	on_wire(WIRE_PARTICLE_INTERFACE, cut = PROC_REF(interface_wire_cut), pulse = PROC_REF(interface_wire_pulsed))
 	on_wire(WIRE_PARTICLE_POWER_LIMIT, cut = PROC_REF(limit_wire_cut), pulse = PROC_REF(limit_wire_pulsed))
 
-/// The control box's four working wires (and a dud).
-/datum/wire_set/particle_control
-	name = "Particle accelerator control"
-	count = 5
-	wires = list(WIRE_PARTICLE_POWER, WIRE_PARTICLE_STRENGTH, WIRE_PARTICLE_INTERFACE, WIRE_PARTICLE_POWER_LIMIT)
 
 /// The wires are bare at the second construction step.
 /obj/machinery/particle_accelerator/control_box/proc/wires_exposed_now(datum/act/A)

@@ -23,7 +23,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	req_access = list(ACCESS_CAPTAIN,ACCESS_HEADS)
 
 	active = 0          // PLEASE HOLD.
-	var/safeties = 1        // The cycler won't start with a living thing inside it unless safeties are off.
 	var/radiation_level = 2 // 1 is removing germs, 2 is removing blood, 3 is removing phoron.
 	var/model_text = ""     // Some flavour text for the topic box.
 	locked = 1          // If locked, nothing can be taken from or added to the cycler.
@@ -302,7 +301,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	to_chat(A.actor, span_danger("You run the sequencer across the interface, corrupting the operating protocols."))
 
 	set_emagged(1)
-	safeties = 0
+	hold(src, STAT_SAFETIES, null, src) // the corrupted protocols keep the safeties off for good
 	req_access = list()
 	return OP_OK
 
@@ -328,14 +327,17 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	tgui_interact(user)
 	return TRUE
 
+/// The cycler won't start with a living thing inside it unless the safeties are off: the safety wire cut or pulsed, or an emag (safety_wire()).
+STAT(/obj/machinery/suit_cycler, safeties, ALL)
+
 CAPABILITIES(/obj/machinery/suit_cycler)
 	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/suit_cycler, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Suit storage unit", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
-	on_wire(WIRE_SAFETY, cut = PROC_REF(safety_wire_cut), pulse = PROC_REF(safety_wire_pulsed))
-	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
-	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
+	safety_wire(stat = STAT_SAFETIES)
+	shock_wire(counter = nameof(electrified), cut_value = -1, pulse_value = 30)
+	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed)) // the cycler's own lock: cut opens it, mended it locks
 	op("dispense", ui_act("dispense", arg("item", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("department", ui_act("department", arg("department")), then(PROC_REF(ui_act_department)))
 	op("species", ui_act("species", arg("species")), then(PROC_REF(ui_act_species)))
@@ -613,12 +615,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 
 // ---- the wires ----
 
-/// A suit cycler's three wires.
-/datum/wire_set/suit_cycler
-	name = "Suit storage unit"
-	count = 3
-	wires = list(WIRE_IDSCAN, WIRE_ELECTRIFY, WIRE_SAFETY)
-
 /obj/machinery/suit_cycler/proc/wire_lights()
 	return list(
 		"The orange light is [electrified ? "off" : "on"].",
@@ -631,20 +627,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	if(iscarbon(T.user) && Adjacent(T.user) && electrified && shock(T.user, 100))
 		return OP_REFUSED
 	return HOOK_DECLINE
-
-/obj/machinery/suit_cycler/proc/safety_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	safeties = N.mended
-
-/obj/machinery/suit_cycler/proc/safety_wire_pulsed(datum/act/A)
-	safeties = !safeties
-
-/obj/machinery/suit_cycler/proc/shock_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	set_electrified(N.mended ? 0 : -1)
-
-/obj/machinery/suit_cycler/proc/shock_wire_pulsed(datum/act/A)
-	set_electrified(30)
 
 /obj/machinery/suit_cycler/proc/idscan_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A

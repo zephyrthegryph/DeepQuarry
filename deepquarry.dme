@@ -5699,6 +5699,7 @@
 #include "code\library\machine\panel.dm"
 #include "code\library\machine\parts.dm"
 #include "code\library\machine\wires.dm"
+#include "code\library\machine\wire_caps.dm"
 #include "code\library\machine\machine.dm"
 #include "code\library\machine\emp_disable.dm"
 #include "code\library\machine\doors.dm"

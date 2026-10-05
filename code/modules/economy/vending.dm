@@ -93,16 +93,12 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 	// Things that can go wrong
 	var/shoot_inventory_chance = 1
 
-	/// Does it check the customer's ID for the product lock (a wire turns this off).
-	var/scan_id = TRUE
 	var/obj/item/coin/coin
 
 	/// Stop spouting those godawful pitches!
 	var/shut_up = TRUE
-	/// Shock customers like an airlock: steps left (-1 for permanently, from a cut wire).
+	/// Shock customers like an airlock: frames left (-1 for permanently, from a cut wire; shock_wire() sets it, the timed work runs it down).
 	var/seconds_electrified = 0
-	/// Fire items at customers! We're broken!
-	var/shoot_inventory = 0
 
 	var/list/log // Lazy: purchase log entries.
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
@@ -112,21 +108,23 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 // What the window shows and what the machine's timed work reads.
 TRACKED(/obj/machinery/vending, vend_ready)
 TRACKED(/obj/machinery/vending, categories)
-TRACKED(/obj/machinery/vending, scan_id)
 TRACKED(/obj/machinery/vending, shut_up)
 TRACKED(/obj/machinery/vending, seconds_electrified)
-TRACKED(/obj/machinery/vending, shoot_inventory)
+/// Does it check the customer's ID for the product lock (the ID scan wire pulsed turns it off; cut, it scans for good: id_scan()).
+STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
+/// Fire items at customers! The throw wire cut, a pulse, a brand intelligence (item_throw()).
+STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
 	machine_basics(repair = NONE)
 	panel()
 	extend("panel.open", wait(0))
-	wires(/datum/wire_set/vending, emp = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Vending machine", count = 4, emp = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
-	on_wire(WIRE_THROW_ITEM, cut = PROC_REF(throw_wire_cut), pulse = PROC_REF(throw_wire_pulsed))
+	item_throw(stat = STAT_SHOOT_INVENTORY)
+	shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30)
+	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
-	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
-	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
 	emag(say = MSG(vending/shorted), repeatable = TRUE)
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_closed(SPACE_PANEL)))
@@ -819,11 +817,12 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 // ---- the wires ----
 
-/// A vendor's four wires: the throw, the ID scan, the shock and the contraband.
-/datum/wire_set/vending
-	name = "Vending machine"
-	count = 4
-	wires = list(WIRE_THROW_ITEM, WIRE_IDSCAN, WIRE_ELECTRIFY, WIRE_CONTRABAND)
+/// The vendor is told to shoot its stock, or to stop (the brand intelligence event): a hold of its own beside the throw wire's.
+/obj/machinery/vending/proc/set_shoot_inventory(on)
+	if(on)
+		hold(src, STAT_SHOOT_INVENTORY, null, SRC_ROUND_EVENT)
+	else
+		release(src, STAT_SHOOT_INVENTORY, SRC_ROUND_EVENT)
 
 /obj/machinery/vending/proc/wire_lights()
 	return list(
@@ -839,13 +838,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 		return OP_REFUSED
 	return HOOK_DECLINE
 
-/obj/machinery/vending/proc/throw_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	set_shoot_inventory(!N.mended)
-
-/obj/machinery/vending/proc/throw_wire_pulsed(datum/act/A)
-	set_shoot_inventory(!shoot_inventory)
-
 /// The contraband wire cut hides the contraband again (mending does not show it).
 /obj/machinery/vending/proc/contraband_wire_cut(datum/act/A)
 	set_categories(categories & ~CAT_HIDDEN)
@@ -853,17 +845,3 @@ GLOBAL_LIST_EMPTY(vending_products)
 /// The contraband wire pulsed shows or hides the contraband.
 /obj/machinery/vending/proc/contraband_wire_pulsed(datum/act/A)
 	set_categories(categories ^ CAT_HIDDEN)
-
-/obj/machinery/vending/proc/shock_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	set_seconds_electrified(N.mended ? 0 : -1)
-
-/obj/machinery/vending/proc/shock_wire_pulsed(datum/act/A)
-	set_seconds_electrified(30)
-
-/// The ID scan wire cut leaves the vendor scanning; pulsed, the scan flips.
-/obj/machinery/vending/proc/idscan_wire_cut(datum/act/A)
-	set_scan_id(TRUE)
-
-/obj/machinery/vending/proc/idscan_wire_pulsed(datum/act/A)
-	set_scan_id(!scan_id)

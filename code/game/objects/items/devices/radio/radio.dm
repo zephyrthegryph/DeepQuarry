@@ -128,16 +128,11 @@ CAPABILITIES(/obj/item/radio)
 	after_init(0, then(PROC_REF(radio_after_init)))
 	op("controls", in_hand(), label("Open radio controls"), then(PROC_REF(radio_controls_opened)))
 	space(SPACE_PANEL, door = nameof(b_stat))
-	wires(/datum/wire_set/radio, tools = FALSE)
+	wires(name = "Radio", count = 3, tools = FALSE)
 	on_wire(WIRE_RADIO_SIGNAL, cut = PROC_REF(signal_wire_cut), pulse = PROC_REF(signal_wire_pulsed))
 	on_wire(WIRE_RADIO_RECEIVER, cut = PROC_REF(receiver_wire_cut), pulse = PROC_REF(receiver_wire_pulsed))
 	on_wire(WIRE_RADIO_TRANSMIT, cut = PROC_REF(transmit_wire_cut), pulse = PROC_REF(transmit_wire_pulsed))
 
-/// A radio's three wires: the signal, the receiver and the transmitter.
-/datum/wire_set/radio
-	name = "Radio"
-	count = 3
-	wires = list(WIRE_RADIO_SIGNAL, WIRE_RADIO_RECEIVER, WIRE_RADIO_TRANSMIT)
 
 /// The signal wire cut kills the speaker and the mic; mended, each comes back unless its own wire is cut.
 /obj/item/radio/proc/signal_wire_cut(datum/act/A)

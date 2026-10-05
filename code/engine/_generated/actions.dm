@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.crosser = crosser // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(cut_wire) at code/library/machine/wires.dm:52
+/// ACTION(cut_wire) at code/library/machine/wires.dm:55
 /datum/notice/wire_cut
 	var/wire
 	var/mended
@@ -963,7 +963,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.destination = destination // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(pulse_wire) at code/library/machine/wires.dm:54
+/// ACTION(pulse_wire) at code/library/machine/wires.dm:57
 /datum/notice/wire_pulsed
 	var/wire
 	var/mob/user
@@ -1195,7 +1195,7 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.tool = tool // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
-/// ACTION(touch_wires) at code/library/machine/wires.dm:56
+/// ACTION(touch_wires) at code/library/machine/wires.dm:59
 /datum/act/touch_wires
 	parent_type = /datum/act/action
 	var/mob/user
