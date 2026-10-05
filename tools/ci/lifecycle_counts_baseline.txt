@@ -343,7 +343,6 @@ qdel	code/game/world.dm	qdel(world) //shut it down
 qdel	code/modules/admin/DB ban/ban_panle_ui.dm	qdel(playermob.client)
 qdel	code/modules/admin/admin.dm	qdel(frommob)
 qdel	code/modules/admin/admin_verbs.dm	qdel(to_remove)
-qdel	code/modules/admin/modify_robot.dm	qdel(source)
 qdel	code/modules/admin/modify_robot.dm	qdel(rem_item)
 qdel	code/modules/admin/modify_robot.dm	qdel(rem_kit)
 qdel	code/modules/admin/modify_robot.dm	qdel(synth)

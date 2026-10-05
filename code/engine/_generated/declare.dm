@@ -921,11 +921,11 @@
 	into += entry_line(30)
 	into += list(global.ref_one(nameof(target_mob), /mob))
 
-/// CAPABILITIES(/datum/admin_ticket_panel_review) at code/modules/tickets/procs.dm:159
+/// CAPABILITIES(/datum/admin_ticket_panel_review) at code/modules/tickets/procs.dm:194
 /datum/admin_ticket_panel_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/tickets/procs.dm", 159, /datum/admin_ticket_panel_review)
-	into += entry_line(160)
+	into += entry_block("code/modules/tickets/procs.dm", 194, /datum/admin_ticket_panel_review)
+	into += entry_line(195)
 	into += list(global.ref_one(nameof(actor), /mob))
 
 /// CAPABILITIES(/datum/admin_trader_dispatch_review) at code/modules/admin/verbs/trader.dm:21
