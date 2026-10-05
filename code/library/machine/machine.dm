@@ -138,7 +138,7 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 
 CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, key = NONE, cover = null, wires = null, emag = null, lock = TRUE, panel_needs_cover_closed = FALSE, starts_locked = FALSE, emag_say = null, wires_by_hand = FALSE, lock_wire = null)
 
-/// space(SPACE_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel (and its space SPACE_PANEL), the wires when given,
+/// space(SPACE_HATCH, door = CAP_COVER), the cover you pass (a crowbar's by default), the panel (and its space SPACE_PANEL), the wires when given (a wire set, or a whole wires(...) entry),
 /// the ID lock (`lock_wire`: the wire it needs intact) and the emag when given, and the rules between them: the ID lock and the emag work only
 /// with the cover and the panel closed (req_closed()), and the panel is latched shut while the cover is open when panel_needs_cover_closed. A
 /// machine passes its wire set and its emag effect here instead of declaring wires and emag again. What sits behind the cover (a cell bay, a
@@ -157,8 +157,10 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 		space(SPACE_HATCH, door = CAP_COVER),
 		cover || cover(),
 		panel())
-	if(wires)
+	if(ispath(wires) || istext(wires))
 		entries += wires(wires, by_hand = wires_by_hand)
+	else if(wires)
+		entries += wires // a whole wires(...) entry: the set with its lights, reach and the rest
 	if(lock)
 		entries += lock(starts_locked = starts_locked)
 		entries += extend("lock.toggle", needs(closed_up))

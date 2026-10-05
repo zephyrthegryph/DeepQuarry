@@ -11,7 +11,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/camera/interim_wire_actor_probe/camera = allocate(/obj/machinery/camera/interim_wire_actor_probe, T)
-	var/datum/wires/camera/wires = camera.wires
+	var/datum/wires_test_adapter/wires = wires_test(camera)
 	TEST_ASSERT(istype(wires), "the actual camera initializes its wire controller")
 	TEST_ASSERT(camera.status, "the actual camera starts enabled")
 	wires.cut(WIRE_MAIN_POWER1, actor)

@@ -6,7 +6,7 @@
 	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	p2_door_set_power(door, TRUE)
-	var/datum/wires/airlock/wires = wire_set_of(door)
+	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT(istype(wires), "the actual airlock has its real wire controller")
 	TEST_ASSERT(door.arePowerSystemsOn() && door.autoclose, "the actual powered airlock starts with automatic closing enabled")
 	wires.cut(WIRE_SPEED, null)

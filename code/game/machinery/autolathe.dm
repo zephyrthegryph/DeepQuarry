@@ -45,6 +45,11 @@ CAPABILITIES(/obj/machinery/autolathe)
 	owns_one(nameof(materials), /datum/material_container)
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
 	interface("Autolathe")
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/autolathe, tools = FALSE, status_lines = PROC_REF(wire_lights), starts_cut = PROC_REF(wires_cut_at_start))
+	on_wire(WIRE_LATHE_HACK, cut = PROC_REF(hack_wire_cut), pulse = PROC_REF(hack_wire_pulsed))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
+	on_wire(WIRE_LATHE_DISABLE, cut = PROC_REF(disable_wire_cut), pulse = PROC_REF(disable_wire_pulsed))
 	op("make", ui_act("make", arg("id", schema_text(256)), arg("multiplier", num(1, 50)), arg("materialSlots")), then(PROC_REF(ui_act_make)))
 
 /obj/machinery/autolathe/Initialize(mapload)
@@ -57,8 +62,6 @@ CAPABILITIES(/obj/machinery/autolathe)
 		container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
 	))
 	. = ..()
-
-	set_wires(new /datum/wires/autolathe(src))
 
 	stored_research_static = SSresearch.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 
@@ -91,13 +94,13 @@ CAPABILITIES(/obj/machinery/autolathe)
 /obj/machinery/autolathe/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/autolathe/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/autolathe/tgui_status(mob/user)
@@ -125,7 +128,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 
 /obj/machinery/autolathe/interact(mob/user)
 	if(panel_open)
-		return wires.Interact(user)
+		return wires_open(src, user)
 
 	if(has_stat(NOPOWER | EMPED))
 		return
@@ -567,3 +570,62 @@ DECLARE_APPEARANCE(/obj/machinery/autolathe, "panel_open", list("1" = list(APPEA
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking
 	return stored_research_static
+
+// ---- the wires ----
+
+/// An autolathe's three working wires (and three duds): the hack, the shock and the disable.
+/datum/wire_set/autolathe
+	name = "Autolathe"
+	count = 6
+	wires = list(WIRE_LATHE_HACK, WIRE_ELECTRIFY, WIRE_LATHE_DISABLE)
+
+/// A lathe mapped hacked starts with its hack wire cut.
+/obj/machinery/autolathe/proc/wires_cut_at_start()
+	return hacked ? list(WIRE_LATHE_HACK) : null
+
+/obj/machinery/autolathe/proc/wire_lights()
+	return list(
+		"The red light is [disabled ? "off" : "on"].",
+		"The green light is [shocked ? "off" : "on"].",
+		"The blue light is [hacked ? "off" : "on"].")
+
+/obj/machinery/autolathe/proc/hack_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	hacked = !N.mended
+	update_tgui_static_data(N.user)
+
+/// The hack wire pulsed flips the hack for five seconds.
+/obj/machinery/autolathe/proc/hack_wire_pulsed(datum/act/A)
+	var/datum/notice/wire_pulsed/N = A
+	hacked = !hacked
+	update_tgui_static_data(N.user)
+	after(src, 5 SECONDS, PROC_REF(hack_pulse_ends), with = list(N.user))
+
+/obj/machinery/autolathe/proc/hack_pulse_ends(mob/user)
+	if(!wire_is_cut(src, WIRE_LATHE_HACK))
+		hacked = FALSE
+		update_tgui_static_data(user)
+
+/obj/machinery/autolathe/proc/shock_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	shocked = !N.mended
+
+/obj/machinery/autolathe/proc/shock_wire_pulsed(datum/act/A)
+	shocked = !shocked
+	after(src, 5 SECONDS, PROC_REF(shock_pulse_ends))
+
+/obj/machinery/autolathe/proc/shock_pulse_ends()
+	if(!wire_is_cut(src, WIRE_ELECTRIFY))
+		shocked = FALSE
+
+/obj/machinery/autolathe/proc/disable_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	disabled = !N.mended
+
+/obj/machinery/autolathe/proc/disable_wire_pulsed(datum/act/A)
+	disabled = !disabled
+	after(src, 5 SECONDS, PROC_REF(disable_pulse_ends))
+
+/obj/machinery/autolathe/proc/disable_pulse_ends()
+	if(!wire_is_cut(src, WIRE_LATHE_DISABLE))
+		disabled = FALSE

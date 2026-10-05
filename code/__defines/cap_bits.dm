@@ -13,8 +13,7 @@
 #define CAP_BROKEN (1<<3)
 /// emag(): emagged.
 #define CAP_EMAGGED (1<<4)
-/// wires(): exposed without a panel (types whose wires sit behind their own hatch).
-#define CAP_WIRES_EXPOSED (1<<5)
+// (1<<5): retired (the legacy wires capability's CAP_WIRES_EXPOSED).
 /// Door weld_shut(): welded shut.
 #define CAP_WELDED (1<<6)
 /// smokable(): lit.

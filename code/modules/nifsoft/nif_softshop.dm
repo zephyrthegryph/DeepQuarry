@@ -22,9 +22,7 @@
 
 MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restrictions.", "%U% shorts out %T%'s access lock.")
 
-// These wires can't be hacked for contraband; an emag can (Yeees, YEEES! Give me that black market tech).
 CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
-	configure(wires(kind = /datum/wires/vending/no_contraband))
 	configure(emag(parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
 	owns_one(nameof(entopic), /datum/entopic)
 
@@ -150,11 +148,9 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	//TODO: Make it throw disks at people with random software? That might be fun. EVEN THE ILLEGAL ONES? ;o
 	return 0
 
-/datum/wires/vending/no_contraband
-
-/datum/wires/vending/no_contraband/on_pulse(index) //Can't hack for contraband, need emag.
-	if(index != WIRE_CONTRABAND)
-		..(index)
+/// Its wires can't be hacked for contraband; an emag can (Yeees, YEEES! Give me that black market tech).
+/obj/machinery/vending/nifsoft_shop/contraband_wire_pulsed(datum/act/A)
+	return
 
 /// The emag's effect (it runs before the emagged key is set): unlock the hidden stock, or decline when it already is.
 /obj/machinery/vending/nifsoft_shop/proc/on_emag(datum/act/op/A)

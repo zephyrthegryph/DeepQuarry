@@ -178,14 +178,6 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /atom/proc/screen_override()
 	return FALSE
 
-/// The wires capability's wires are exposed when everything they sit behind is open; without one,
-/// the CAP_WIRES_EXPOSED bit answers.
-/proc/wires_exposed(atom/A)
-	var/datum/capability/wires/W = cap_of(A, /datum/capability/wires)
-	if(W)
-		return (A.cap_state & W.behind) == W.behind
-	return !!(A.cap_state & CAP_WIRES_EXPOSED)
-
 /**
  * Verbs this type has by what it is, beyond the /type/verb/ procs it inherits: a per-type list
  * (built once, no per-instance entry), read by the verb store. For a difference between types that

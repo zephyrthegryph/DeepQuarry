@@ -170,8 +170,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	configure(construction_graph(start = STAGE_APC_SECURED))
 	maintenance_hatch(
 		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
-		wires = /datum/wires/apc,
-		wires_by_hand = TRUE,
+		wires = wires(/datum/wire_set/apc, by_hand = TRUE, emp = FALSE, reach = cond_not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
 		lock_wire = WIRE_IDSCAN,
 		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
 		emag_say = MSG(apc/emagged),
@@ -194,6 +193,10 @@ CAPABILITIES(/obj/machinery/power/apc)
 	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), at(SPACE_PANEL), when(cond_not(COVER_OPEN)), wait(0),
 		then(PROC_REF(signaler_at_the_wires)))
 	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))
+	on_wire(WIRE_IDSCAN, pulse = PROC_REF(id_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER2, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
+	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
 	on_notice(/datum/notice/attacked_by, then(PROC_REF(apc_struck)))
 	on_notice(/datum/notice/slashed, then(PROC_REF(apc_slashed)))
 	on_change(nameof(cell), ANY, then(PROC_REF(cell_changed)))
@@ -438,15 +441,74 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// A signaller held to the open wire panel: the wire window, where it can be attached to a wire.
 /obj/machinery/power/apc/proc/signaler_at_the_wires(datum/act/op/A)
-	wire_set_of(src)?.Interact(A.actor)
+	wires_open(src, A.actor)
 	return OP_OK
+
+// ---- the wires ----
+
+/// The APC's wires: the ID scanner, two main power wires and AI control, behind the panel with the cover shut.
+/datum/wire_set/apc
+	name = "APC"
+	count = 4
+	wires = list(WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_MAIN_POWER2, WIRE_AI_CONTROL)
+
+/// The lights under the APC's wires.
+/obj/machinery/power/apc/proc/wire_lights()
+	return list(
+		"The APC is [lock_locked(src) ? "" : "un"]locked.",
+		shorted ? "The APCs power has been shorted." : "The APC is working properly!",
+		"The 'AI control allowed' light is [aidisabled ? "off" : "on"].")
+
+/// The ID scanner wire pulsed: the ID lock lets go for thirty seconds.
+/obj/machinery/power/apc/proc/id_wire_pulsed(datum/act/A)
+	cap_key_set(src, LOCK_LOCKED, FALSE, null)
+	after(src, 30 SECONDS, PROC_REF(id_scan_relocks), key = "id_scan_relock")
+
+/// A main power wire cut shorts the APC (and may shock the cutter); mending the last cut one clears the short.
+/obj/machinery/power/apc/proc/power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		if(isliving(N.user))
+			shock(N.user, 50)
+		set_shorted(TRUE)
+	else if(!wire_is_cut(src, WIRE_MAIN_POWER1) && !wire_is_cut(src, WIRE_MAIN_POWER2))
+		set_shorted(FALSE)
+		if(isliving(N.user))
+			shock(N.user, 50)
+
+/// A main power wire pulsed shorts the APC for two minutes.
+/obj/machinery/power/apc/proc/power_wire_pulsed(datum/act/A)
+	if(shorted)
+		return
+	set_shorted(TRUE)
+	after(src, 2 MINUTES, PROC_REF(main_power_pulse_ends), key = "main_power_pulse")
+
+/obj/machinery/power/apc/proc/main_power_pulse_ends()
+	if(!wire_is_cut(src, WIRE_MAIN_POWER1) && !wire_is_cut(src, WIRE_MAIN_POWER2))
+		set_shorted(FALSE)
+
+/// The AI control wire cut turns AI control off until it is mended.
+/obj/machinery/power/apc/proc/ai_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_aidisabled(!N.mended)
+
+/// The AI control wire pulsed turns AI control off for a second.
+/obj/machinery/power/apc/proc/ai_wire_pulsed(datum/act/A)
+	if(aidisabled)
+		return
+	set_aidisabled(TRUE)
+	after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends), key = "ai_control_pulse")
+
+/obj/machinery/power/apc/proc/ai_control_pulse_ends()
+	if(!wire_is_cut(src, WIRE_AI_CONTROL))
+		set_aidisabled(FALSE)
 
 /// Claws at it (the slash, which only a shredder gets): a few slashes spring the cover, then the wires are shredded.
 /obj/machinery/power/apc/proc/apc_slashed(datum/act/A)
 	if(beenhit >= pick(3, 4) && !panel_open(src))
 		cap_key_set(src, PANEL_OPEN, TRUE, null)
 		visible_message(span_warning("The [name]'s cover flies open, exposing the wires!"))
-	else if(panel_open(src) && wire_set_of(src).cut_all())
+	else if(panel_open(src) && wires_cut_all(src))
 		visible_message(span_warning("The [name]'s wires are shredded!"))
 	else
 		beenhit += 1

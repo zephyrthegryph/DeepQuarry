@@ -120,6 +120,12 @@ MSG_DEF_SELF(smes/coils_full, "You can't insert more coils into this SMES unit!"
 MSG_DEF_SELF(smes/tag_taken, "That RCON tag already exists.")
 
 CAPABILITIES(/obj/machinery/power/smes/buildable)
+	wires(/datum/wire_set/smes, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_SMES_RCON, cut = PROC_REF(rcon_wire_cut), pulse = PROC_REF(rcon_wire_pulsed))
+	on_wire(WIRE_SMES_INPUT, cut = PROC_REF(input_wire_cut), pulse = PROC_REF(input_wire_pulsed))
+	on_wire(WIRE_SMES_OUTPUT, cut = PROC_REF(output_wire_cut), pulse = PROC_REF(output_wire_pulsed))
+	on_wire(WIRE_SMES_GROUNDING, cut = PROC_REF(grounding_wire_cut), pulse = PROC_REF(grounding_wire_pulsed))
+	on_wire(WIRE_SMES_FAILSAFES, cut = PROC_REF(failsafe_wire_cut), pulse = PROC_REF(failsafe_wire_pulsed))
 	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), then(PROC_REF(failing_refusal)))
 	op("install_coil", item(/obj/item/smes_coil), at(SPACE_PANEL), then(PROC_REF(coil_installed)))
 	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), at(SPACE_PANEL),
@@ -143,7 +149,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 /obj/machinery/power/smes/buildable/proc/open_wires_beside_the_window(datum/act/op/A)
 	var/mob/user = A.actor
 	if(panel_open && user && !isAI(user))
-		wires.Interact(user)
+		wires_open(src, user)
 	return OP_OK
 
 /// What a thing with the unit failing is told.
@@ -164,7 +170,6 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 	. = ..()
 	own_take_all(src, nameof(component_parts))
 	rel_add(src, nameof(component_parts), new /obj/item/stack/cable_coil(src,30))
-	set_wires(new /datum/wires/smes(src))
 
 	// Allows for mapped-in SMESs with larger capacity/IO
 	if(mapload)
@@ -381,3 +386,58 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 /// The failsafes on or off.
 /obj/machinery/power/smes/buildable/proc/set_safeties(state)
 	safeties_enabled = state
+
+// ---- the wires ----
+
+/// A buildable unit's five wires: remote control, input, output, grounding and the failsafes.
+/datum/wire_set/smes
+	name = "SMES"
+	count = 5
+	wires = list(WIRE_SMES_RCON, WIRE_SMES_INPUT, WIRE_SMES_OUTPUT, WIRE_SMES_GROUNDING, WIRE_SMES_FAILSAFES)
+
+/obj/machinery/power/smes/buildable/proc/wire_lights()
+	return list(
+		"The green light is [(input_cut || input_pulsed || output_cut || output_pulsed) ? "off" : "on"].",
+		"The red light is [(safeties_enabled || grounding) ? "off" : "blinking"].",
+		"The blue light is [RCon ? "on" : "off"].")
+
+/obj/machinery/power/smes/buildable/proc/rcon_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_RCon(N.mended)
+
+/// The remote wire pulsed drops remote control for a second.
+/obj/machinery/power/smes/buildable/proc/rcon_wire_pulsed(datum/act/A)
+	if(RCon)
+		set_rcon(FALSE)
+		after(src, 1 SECOND, PROC_REF(set_rcon), key = "rcon_pulse", with = list(TRUE))
+
+/obj/machinery/power/smes/buildable/proc/input_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_input_cut(!N.mended)
+
+/obj/machinery/power/smes/buildable/proc/input_wire_pulsed(datum/act/A)
+	toggle_input()
+
+/obj/machinery/power/smes/buildable/proc/output_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_output_cut(!N.mended)
+
+/obj/machinery/power/smes/buildable/proc/output_wire_pulsed(datum/act/A)
+	toggle_output()
+
+/obj/machinery/power/smes/buildable/proc/grounding_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_grounding(N.mended)
+
+/obj/machinery/power/smes/buildable/proc/grounding_wire_pulsed(datum/act/A)
+	set_grounding(0)
+
+/obj/machinery/power/smes/buildable/proc/failsafe_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	safeties_enabled = N.mended
+
+/// The failsafe wire pulsed drops the safeties for a second.
+/obj/machinery/power/smes/buildable/proc/failsafe_wire_pulsed(datum/act/A)
+	if(safeties_enabled)
+		set_safeties(FALSE)
+		after(src, 1 SECOND, PROC_REF(set_safeties), key = "failsafe_pulse", with = list(TRUE))

@@ -10,7 +10,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/effect/mine/training/mine = allocate(/obj/effect/mine/training, T)
-	var/datum/wires/mines/wires = mine.wires
+	var/datum/wires_test_adapter/wires = wires_test(mine)
 	TEST_ASSERT(wires, "the actual deployed training mine initializes its wire controller")
 	TEST_ASSERT(mine in T.dangerous_objects, "actual initialization registers the training mine as a floor danger")
 	TEST_ASSERT(!mine.triggered, "the real training mine starts untriggered")
@@ -27,7 +27,7 @@
 		mine.Bumped(user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "actual crossing or scheduled detonation consumes the deployed mine")
-	TEST_ASSERT(QDELETED(wires), "actual consumption deletes the mine's owned wire controller")
+	TEST_ASSERT(isnull(wiring_of(mine)), "actual consumption drops the mine's wire record")
 	TEST_ASSERT(!(mine in T.dangerous_objects), "actual teardown removes the old mine from the floor danger index")
 	TEST_ASSERT_NULL(locate_within(T, /obj/effect/mine/training), "the detonation leaves no duplicate deployed mine")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/mine/training)), 1, "actual training detonation refunds exactly one original-type casing")

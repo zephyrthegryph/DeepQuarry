@@ -26617,8 +26617,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/disposalpipe/segment{
 	dir = 4
@@ -28100,8 +28099,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/effect/floor_decal/borderfloor,
 /obj/effect/floor_decal/corner/red/border,
@@ -30809,8 +30807,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/effect/floor_decal/borderfloor,
 /obj/effect/floor_decal/corner/red/border,
@@ -34937,8 +34934,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/item/forensics/sample_kit,
 /turf/simulated/floor/tiled/freezer,
@@ -77593,8 +77589,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /turf/simulated/floor/wood,
 /area/crew_quarters/bar)
@@ -79004,8 +78999,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/closet/secure_closet/personal,
 /obj/machinery/firealarm{
@@ -79059,8 +79053,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/closet/secure_closet/personal,
 /obj/item/clothing/head/kitty,
@@ -86021,8 +86014,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/cable/green{
 	icon_state = "4-8"

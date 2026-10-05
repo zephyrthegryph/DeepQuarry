@@ -18,13 +18,12 @@
 
 /obj/item/plastique/Initialize(mapload)
 	. = ..()
-	set_wires(new /datum/wires/explosive/c4(src))
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
 /// Old attackby.
 /obj/item/plastique/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
-		wires.Interact(user)
+		wires_open(src, user)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
@@ -35,18 +34,33 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/plastique/wirecutter_act(mob/user, obj/item/tool)
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/plastique/multitool_act(mob/user, obj/item/tool)
-	wires.Interact(user)
+	wires_open(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 TRACKED(/obj/item/plastique, timer)
 
+/// The charge's one wire: cut or pulsed, it goes off.
+/datum/wire_set/c4
+	name = "Explosive wires"
+	count = 1
+	wires = list(WIRE_EXPLODE)
+
+/obj/item/plastique/proc/explode_wire(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(istype(N) && N.mended)
+		return
+	explode(get_turf(src))
+
 CAPABILITIES(/obj/item/plastique)
+	space(SPACE_PANEL, door = nameof(open_panel))
+	wires(/datum/wire_set/c4, tools = FALSE)
+	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
 	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
 		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
 

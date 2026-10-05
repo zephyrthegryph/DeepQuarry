@@ -80,7 +80,7 @@
 
 	switch(ask.choice)
 		if("Reset")
-			if(target.wires)
+			if(wiring_of(target))
 				if(!ability_pay(user, price))
 					return
 				target.reset_wires()

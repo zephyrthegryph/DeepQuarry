@@ -59,11 +59,6 @@
 	/// Thickness of that shielding in mm.
 	var/rad_shield_thickness_mm = 0
 
-	var/datum/wires/wires = null
-
-/// An atom owns its wiring: the destroy transaction's links phase deletes it
-/// (lifecycle.md section 4), so no Destroy() override hand-deletes `wires`.
-/// Salvaged from Codex's main-tree wires-ownership work onto the links framework.
 
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
@@ -192,8 +187,7 @@
 	protection = ACT_FINAL(pulse, protection, protection)
 	act_done(pulse)
 	if(!(protection & EMP_PROTECT_WIRES))
-		var/datum/wires/W = istype(wires) ? wires : wires_of(src) // the wires capability keeps its own
-		W?.emp_pulse()
+		wires_emp(src)
 
 	if(!(protection & EMP_PROTECT_CONTENTS))
 		for(var/atom/A in contents)
@@ -726,10 +720,6 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	dq_set_blood_color(src, null)
 	germ_level = 0
 	dq_set_fluorescent(src, 0)
-
-/// Sets the wire datum of an atom
-/atom/proc/set_wires(datum/wires/new_wires)
-	rel_set(src, nameof(wires), new_wires)
 
 /// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)

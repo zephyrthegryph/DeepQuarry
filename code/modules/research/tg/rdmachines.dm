@@ -25,7 +25,6 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
 		on_connected_techweb()
-	set_wires(new /datum/wires/rnd(src))
 
 // the techweb logs the disconnection.
 /obj/machinery/rnd/on_destroy(force)
@@ -67,8 +66,8 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 	effect = /obj/machinery/rnd/proc/interaction_rnd_use
 
 /obj/machinery/rnd/proc/interaction_rnd_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(wires && panel_open)
-		wires.Interact(user)
+	if(panel_open && wiring_of(src))
+		wires_open(src, user)
 		return TRUE
 	if(disabled)
 		return TRUE
@@ -90,8 +89,8 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/rnd/screwdriver_act(mob/user, obj/item/tool)
 	var/result = ..()
-	if(ITEM_INTERACT_CONSUMED(result) && wires && panel_open)
-		wires.Interact(user)
+	if(ITEM_INTERACT_CONSUMED(result) && panel_open)
+		wires_open(src, user)
 	return result
 
 /obj/machinery/rnd/dismantle()
@@ -102,3 +101,35 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 
 CAPABILITIES(/obj/machinery/rnd)
 	owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL)
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/rnd, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_HACK, cut = PROC_REF(hack_wire_cut), pulse = PROC_REF(hack_wire_pulsed))
+	on_wire(WIRE_DISABLE, cut = PROC_REF(disable_wire_cut), pulse = PROC_REF(disable_wire_pulsed))
+
+// ---- the wires ----
+
+/// An R&D machine's wires: three that work and five duds, every machine its own colours.
+/datum/wire_set/rnd
+	name = "R&D Machinery"
+	count = 8
+	randomize = TRUE
+	wires = list(WIRE_HACK, WIRE_DISABLE, WIRE_SHOCK)
+
+/obj/machinery/rnd/proc/wire_lights()
+	return list(
+		"The red light is [disabled ? "off" : "on"].",
+		"The blue light is [hacked ? "off" : "on"].")
+
+/obj/machinery/rnd/proc/hack_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	hacked = !N.mended
+
+/obj/machinery/rnd/proc/hack_wire_pulsed(datum/act/A)
+	hacked = !hacked
+
+/obj/machinery/rnd/proc/disable_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	disabled = !N.mended
+
+/obj/machinery/rnd/proc/disable_wire_pulsed(datum/act/A)
+	disabled = !disabled

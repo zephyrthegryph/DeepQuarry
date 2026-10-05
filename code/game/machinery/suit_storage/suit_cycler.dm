@@ -80,7 +80,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	if(!target_department() || !target_species())
 		atom_break()
 
-	set_wires(new /datum/wires/suit_storage_unit(src))
 
 /obj/machinery/suit_cycler/proc/load_departments()
 	var/list/typecache = GLOB.suit_cycler_typecache[type]
@@ -331,6 +330,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 
 CAPABILITIES(/obj/machinery/suit_cycler)
 	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(/datum/wire_set/suit_cycler, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
+	on_wire(WIRE_SAFETY, cut = PROC_REF(safety_wire_cut), pulse = PROC_REF(safety_wire_pulsed))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
+	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
 	op("dispense", ui_act("dispense", arg("item", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("department", ui_act("department", arg("department")), then(PROC_REF(ui_act_department)))
 	op("species", ui_act("species", arg("species")), then(PROC_REF(ui_act_species)))
@@ -605,3 +610,45 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_species() as /datum/suit_cycler_choice/species
 	return target_species_static
+
+// ---- the wires ----
+
+/// A suit cycler's three wires.
+/datum/wire_set/suit_cycler
+	name = "Suit storage unit"
+	count = 3
+	wires = list(WIRE_IDSCAN, WIRE_ELECTRIFY, WIRE_SAFETY)
+
+/obj/machinery/suit_cycler/proc/wire_lights()
+	return list(
+		"The orange light is [electrified ? "off" : "on"].",
+		"The red light is [safeties ? "off" : "blinking"].",
+		"The yellow light is [locked ? "on" : "off"].")
+
+/// Reaching into a live cycler's wires shocks a carbon at it instead (a shock that misses lets them through).
+/obj/machinery/suit_cycler/proc/wire_touch_shocks(datum/act/A)
+	var/datum/act/touch_wires/T = A
+	if(iscarbon(T.user) && Adjacent(T.user) && electrified && shock(T.user, 100))
+		return OP_REFUSED
+	return HOOK_DECLINE
+
+/obj/machinery/suit_cycler/proc/safety_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	safeties = N.mended
+
+/obj/machinery/suit_cycler/proc/safety_wire_pulsed(datum/act/A)
+	safeties = !safeties
+
+/obj/machinery/suit_cycler/proc/shock_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_electrified(N.mended ? 0 : -1)
+
+/obj/machinery/suit_cycler/proc/shock_wire_pulsed(datum/act/A)
+	set_electrified(30)
+
+/obj/machinery/suit_cycler/proc/idscan_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	set_locked(N.mended)
+
+/obj/machinery/suit_cycler/proc/idscan_wire_pulsed(datum/act/A)
+	set_locked(!locked)

@@ -38,7 +38,6 @@ CAPABILITIES(/atom)
 	owns_one(nameof(light), /datum/light_source)
 	owns_one(nameof(reagents), /datum/reagents)
 	owns_one(nameof(rx_node), /datum/dq_rx_node)
-	owns_one(nameof(wires), /datum/wires)
 	owns_many(nameof(alt_appearances_owned))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 

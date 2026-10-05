@@ -10,7 +10,7 @@
 	door.autoclose = FALSE
 	door.req_access = list(ACCESS_SECURITY)
 	var/list/access_before = door.req_access
-	var/datum/wires/airlock/wires = wire_set_of(door)
+	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT(istype(wires), "the actual airlock creates its real airlock wires datum")
 	TEST_ASSERT(door.arePowerSystemsOn(), "the actual wire-pulse fixture has available actuator power")
 	TEST_ASSERT(door.requiresID() && !door.check_access(null), "the actual restricted airlock starts with an intact ID scanner")
