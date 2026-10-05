@@ -1068,3 +1068,11 @@ Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm`
   paused). The suit cycler no longer clears its shock when it loses power.
 - The `seconds_electrified` counter, its -1 sentinel and the countdown in the machines' periodic work are gone: an idle electrified vendor,
   fridge or seed storage does no periodic work for its shock.
+
+## Atmospherics: the cryo cell's pipe and on-state
+
+* The cryo cell's on-state is its own tracked `cooling` (`set_cooling()`), not the machine core's `on`; its pipe check is the unary device's
+  `piped()` (shared with every unary device), not a read of `node` of its own.
+* `gas_body_heat_exchange()` wakes the pipe network that owns the gas (`gas_touched(air)`) whenever the gas's temperature moves; the cell no
+  longer marks the network by hand. Before, it marked it only when the gas moved by more than 1 K in a tick, so a slow exchange now records
+  every change (a revision bump, no extra pipenet pass). A body already at the gas's temperature changes nothing (no rounding drift).
