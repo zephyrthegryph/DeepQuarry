@@ -124,7 +124,7 @@
 			break
 	if(SM.Adjacent(target))
 		var/dmg = rand(SM.melee_damage_lower, SM.melee_damage_upper) * damage_mult
-		target.attack_generic(SM, dmg, "slams into")
+		generic_hit(target, SM, dmg, "slams into")
 		act_message(SM, target, others = span_danger("%U% slams into %T% with crushing force!"))
 		if(isliving(target))
 			var/mob/living/L = target

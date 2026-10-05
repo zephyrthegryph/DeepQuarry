@@ -37,8 +37,14 @@
 /obj/structure/lift
 	silicon_use = SILICON_USE_HAND
 
-/obj/structure/lift/attack_generic(mob/user)
-	return attack_hand(user)
+CAPABILITIES(/obj/structure/lift)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/lift/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	attack_hand(user)
+	return OP_OK
 
 DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hammer on it", PROC_REF(interaction_hand)), INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
 

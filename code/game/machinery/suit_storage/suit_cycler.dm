@@ -2,12 +2,12 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 /// If this is > 0, the cycler is decontaminating whatever is inside it (steps left).
 OM_FIELD(/obj/machinery/suit_cycler, irradiating, 0, CHANGE_MACHINE_SETTINGS)
-/// Shock timer from the electrify wire: > 0 counts down each step, -1 is permanent (cut wire).
-OM_FIELD(/obj/machinery/suit_cycler, electrified, 0, CHANGE_MACHINE_SETTINGS)
-/// Derived field: a UV cycle is running, or the electrify timer is counting down.
-OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irradiating", "electrified"))
+/// Shocks the hand at it: the shock wire cut (until mended) or pulsed (30 s); live only while operable (shock_live()).
+STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
+/// Derived field: a UV cycle is running.
+OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irradiating"))
 /obj/machinery/suit_cycler/proc/cycler_has_work()
-	return (active && irradiating > 0) || electrified > 0
+	return active && irradiating > 0
 
 DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has_work")
 
@@ -210,7 +210,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/interaction_insert_grab(mob/user, obj/item/grab/G, datum/interaction/interaction)
-	if(electrified != 0)
+	if(shock_live(src))
 		if(shock(user, 100))
 			return TRUE
 
@@ -244,7 +244,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	effect = /obj/machinery/suit_cycler/proc/interaction_insert_helmet
 
 /obj/machinery/suit_cycler/proc/interaction_insert_helmet(mob/user, obj/item/clothing/head/helmet/space/void/IH, datum/interaction/interaction)
-	if(electrified != 0)
+	if(shock_live(src))
 		if(shock(user, 100))
 			return TRUE
 
@@ -264,7 +264,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	effect = /obj/machinery/suit_cycler/proc/interaction_insert_suit
 
 /obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
-	if(electrified != 0)
+	if(shock_live(src))
 		if(shock(user, 100))
 			return TRUE
 
@@ -276,7 +276,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/hacking_tool_act(mob/user)
-	if(electrified && shock(user, 100))
+	if(shock_live(src) && shock(user, 100))
 		return ITEM_INTERACT_BLOCKING
 	if(panel_open)
 		attack_hand(user)
@@ -289,7 +289,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	return hacking_tool_act(user)
 
 /obj/machinery/suit_cycler/screwdriver_act(mob/user, obj/item/tool)
-	if(electrified && shock(user, 100))
+	if(shock_live(src) && shock(user, 100))
 		return ITEM_INTERACT_BLOCKING
 	set_panel_open(!panel_open)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -320,7 +320,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 
-	if(electrified != 0)
+	if(shock_live(src))
 		if(shock(user, 100))
 			return TRUE
 
@@ -336,7 +336,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	wires(name = "Suit storage unit", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
 	safety_wire(stat = STAT_SAFETIES)
-	shock_wire(counter = nameof(electrified), cut_value = -1, pulse_value = 30)
+	shock_wire(stat = STAT_ELECTRIFIED)
 	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed)) // the cycler's own lock: cut opens it, mended it locks
 	op("dispense", ui_act("dispense", arg("item", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("department", ui_act("department", arg("department")), then(PROC_REF(ui_act_department)))
@@ -492,16 +492,12 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 /obj/machinery/suit_cycler/machine_step()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 
-	if(electrified > 0)
-		set_electrified(electrified - 1)
-
 	if(!active)
 		return
 
 	if(!operable())
 		set_active(0)
 		set_irradiating(0)
-		set_electrified(0)
 		return
 
 	// Repair and repaint jobs complete through their existing delayed callbacks;
@@ -617,14 +613,14 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 
 /obj/machinery/suit_cycler/proc/wire_lights()
 	return list(
-		"The orange light is [electrified ? "off" : "on"].",
+		"The orange light is [shock_live(src) ? "off" : "on"].",
 		"The red light is [safeties ? "off" : "blinking"].",
 		"The yellow light is [locked ? "on" : "off"].")
 
 /// Reaching into a live cycler's wires shocks a carbon at it instead (a shock that misses lets them through).
 /obj/machinery/suit_cycler/proc/wire_touch_shocks(datum/act/A)
 	var/datum/act/touch_wires/T = A
-	if(iscarbon(T.user) && Adjacent(T.user) && electrified && shock(T.user, 100))
+	if(iscarbon(T.user) && Adjacent(T.user) && shock_live(src) && shock(T.user, 100))
 		return OP_REFUSED
 	return HOOK_DECLINE
 

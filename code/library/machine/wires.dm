@@ -121,10 +121,10 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 	// power_wires(stat =, count =, pulse_lasts =, shock =): cut, the power is lost (and the hand may be shocked); pulsed, it trips for pulse_lasts.
 	WIRE_DEF(WIRE_MAIN_POWER1, "Primary Power", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))), pulse = wire_pulse_holds(), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))))
 	WIRE_DEF(WIRE_MAIN_POWER2, "Secondary Power", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))), pulse = wire_pulse_holds(), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))))
-	// shock_wire(stat =, cut_value =, pulse_value =, pulse_lasts =): cut, live until mended; pulsed, live for pulse_lasts.
-	// shock_wire(counter =, ...): a countdown the machine runs down itself is set instead (cut_value while cut, pulse_value pulsed, 0 mended).
-	WIRE_DEF(WIRE_ELECTRIFY, "Electrification", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_cut))), pulse = list(wire_pulse_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_pulsed))), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_mended))))
-	WIRE_DEF(WIRE_SHOCK, "High Voltage Ground", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_cut))), pulse = list(wire_pulse_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_pulsed))), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_mended))))
+	// shock_wire(stat =, cut_value =, pulse_value =, pulse_lasts =): cut, live until mended (an untimed hold); pulsed, live for pulse_lasts (a timed
+	// hold, refreshed by a second pulse); mending releases both. Read it with shock_live(): the hold counts only while the holder is operable.
+	WIRE_DEF(WIRE_ELECTRIFY, "Electrification", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
+	WIRE_DEF(WIRE_SHOCK, "High Voltage Ground", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
 	// item_throw(stat =): cut, the machine throws its stock until mended; pulsed, the throwing flips.
 	WIRE_DEF(WIRE_THROW_ITEM, "Item Throw", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
 	// safety_wire(stat =): cut, the safeties are off until mended; pulsed, they flip.

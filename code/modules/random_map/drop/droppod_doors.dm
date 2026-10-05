@@ -21,8 +21,14 @@
 		attack_hand(user)
 	return TRUE
 
-/obj/structure/droppod_door/attack_generic(mob/user)
+CAPABILITIES(/obj/structure/droppod_door)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/droppod_door/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	attack_hand(user)
+	return OP_OK
 
 DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \

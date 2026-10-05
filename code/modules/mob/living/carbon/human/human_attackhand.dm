@@ -286,7 +286,7 @@
 		return
 
 	if(has_hands && !istype(H))
-		attack_generic(H,rand(1,3),"punched")
+		generic_hit(src, H, rand(1,3), "punched")
 		return
 
 	var/rand_damage = rand(1, 5)

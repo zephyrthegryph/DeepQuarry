@@ -87,7 +87,7 @@
 	return !!V.shoot_inventory
 
 /proc/p2v_electrified(obj/machinery/vending/V)
-	return V.seconds_electrified
+	return !!shock_live(V)
 
 /proc/p2v_scans_id(obj/machinery/vending/V)
 	return !!V.scan_id
@@ -100,9 +100,9 @@
 /proc/p2v_set_shoot(obj/machinery/vending/V, on)
 	V.set_shoot_inventory(on)
 
-/// The vendor is electrified for `n` frames (-1: for good).
-/proc/p2v_set_electrified(obj/machinery/vending/V, n)
-	V.set_seconds_electrified(n)
+/// The vendor is electrified by an event for `lasts` (null: until released).
+/proc/p2v_set_electrified(obj/machinery/vending/V, lasts)
+	hold(V, STAT_ELECTRIFIED, 1, SRC_ROUND_EVENT, lasts)
 
 /// The look the vendor draws: its icon state and overlays.
 /proc/p2v_look(obj/machinery/vending/V)
@@ -971,9 +971,9 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	TEST_ASSERT(!p2v_shoot(V), "and mending it stops it")
 	TEST_ASSERT_EQUAL(p2v_electrified(V), 0, "not electrified")
 	p2v_wires_pulse(H, V, WIRE_ELECTRIFY)
-	TEST_ASSERT_EQUAL(p2v_electrified(V), 30, "the electrify wire pulsed shocks for thirty frames")
+	TEST_ASSERT_EQUAL(p2v_electrified(V), 1, "the electrify wire pulsed shocks (for thirty seconds)")
 	p2v_wires_cut(H, V, WIRE_ELECTRIFY)
-	TEST_ASSERT_EQUAL(p2v_electrified(V), -1, "cut, it shocks for good")
+	TEST_ASSERT_EQUAL(p2v_electrified(V), 1, "cut, it shocks for good")
 	p2v_wires_mend(H, V, WIRE_ELECTRIFY)
 	TEST_ASSERT_EQUAL(p2v_electrified(V), 0, "mended, it stops")
 
@@ -1077,7 +1077,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	TEST_ASSERT_EQUAL(V.p2v_shocks, 0, "a vendor that is not electrified does not shock")
 	TEST_ASSERT(H in V.p2v_opened, "and opens")
 	V.p2v_opened = null
-	p2v_set_electrified(V, 30)
+	p2v_set_electrified(V, 30 SECONDS)
 	V.p2v_shock_result = 1
 	touch(H, V, null)
 	TEST_ASSERT_EQUAL(V.p2v_shocks, 1, "an electrified vendor shocks the touch")
@@ -1087,18 +1087,30 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	TEST_ASSERT(V.p2v_shocks > 1, "it shocks again")
 	TEST_ASSERT(H in V.p2v_opened, "and a shock that misses opens the window")
 
-/// The electrified count runs down a frame at a time and stays at minus one when it is for good.
+/// The shock wire pulsed electrifies the vendor for exactly thirty seconds (a timed hold); cut, until mended; an event's hold beside the wire's
+/// is not overwritten by it; and an inoperable vendor is not live (the hold's clock still runs while it is down).
 /datum/unit_test/dq_p2_vending/electrified_counts_down
 /datum/unit_test/dq_p2_vending/electrified_counts_down/run_gate()
 	var/obj/machinery/vending/V = p2v_vendor()
-	p2v_set_electrified(V, 3)
-	p2v_settle(2 SECONDS + 0.5 SECONDS)
-	TEST_ASSERT(p2v_electrified(V) < 3 && p2v_electrified(V) >= 1, "it ran down")
-	p2v_settle(10 SECONDS)
-	TEST_ASSERT_EQUAL(p2v_electrified(V), 0, "and stopped at nothing")
-	p2v_set_electrified(V, -1)
-	p2v_settle(10 SECONDS)
-	TEST_ASSERT_EQUAL(p2v_electrified(V), -1, "a permanent shock does not run down")
+	wires_pulse(V, WIRE_ELECTRIFY)
+	TEST_ASSERT(p2v_electrified(V), "a pulse electrifies it")
+	p2v_settle(29 SECONDS)
+	TEST_ASSERT(p2v_electrified(V), "still live at 29 seconds")
+	p2v_settle(2 SECONDS)
+	TEST_ASSERT(!p2v_electrified(V), "and safe after 30")
+	wires_cut(V, WIRE_ELECTRIFY)
+	p2v_settle(60 SECONDS)
+	TEST_ASSERT(p2v_electrified(V), "cut, it stays live")
+	p2v_set_electrified(V, null)
+	wires_mend(V, WIRE_ELECTRIFY)
+	TEST_ASSERT(p2v_electrified(V), "mending the wire leaves the event's hold")
+	release(V, STAT_ELECTRIFIED, SRC_ROUND_EVENT)
+	TEST_ASSERT(!p2v_electrified(V), "released, it is safe")
+	p2v_set_electrified(V, null)
+	V.set_stat(NOPOWER)
+	TEST_ASSERT(!p2v_electrified(V), "an unpowered vendor shocks nobody")
+	V.set_stat(0)
+	TEST_ASSERT(p2v_electrified(V), "and is live again with power")
 
 /// A vendor that shoots its stock throws a product at a living thing it can see, one frame in its chance.
 /datum/unit_test/dq_p2_vending/shooting_vendor_throws_stock

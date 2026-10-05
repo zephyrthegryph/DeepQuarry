@@ -310,7 +310,7 @@
 			om_task_timed(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
 
 	else
-		A.attack_generic(src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
+		generic_hit(A, src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(obj/mecha/M)
 	act_message(src, M, null, MSG_OTHERS(span_critical("%U% rips %T%'s access hatch open, dragging [M?.slot_item(MECHA_SLOT_PILOT)] out!")))

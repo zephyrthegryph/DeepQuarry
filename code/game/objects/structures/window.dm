@@ -164,7 +164,7 @@
 		var/mob/living/carbon/human/H = user
 		var/shreddamage = H.species.can_shred(H, FALSE, 15)
 		if(shreddamage)
-			attack_generic(H, shreddamage + 5, "attacks")
+			generic_hit(src, H, shreddamage + 5, "attacks")
 			return TRUE
 
 	play_sfx(src, SFX_EFFECTS_GLASSKNOCK)

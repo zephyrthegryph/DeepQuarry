@@ -13,6 +13,7 @@
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
 
 CAPABILITIES(/obj/structure/trash_pile)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	climb()
 	owns_one(nameof(mouse_nest), starts = /obj/structure/mob_spawner/mouse_nest)
 
@@ -59,7 +60,9 @@ CAPABILITIES(/obj/structure/trash_pile)
 		consume(W, user)
 	return TRUE
 
-/obj/structure/trash_pile/attack_generic(mob/user)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/trash_pile/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	//Simple Animal
 	if(isanimal(user))
 		var/mob/living/L = user
@@ -69,7 +72,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 		else if(!hider())
 			open_request(src, /datum/prompt/yes_no, PROC_REF(hide_answered), valid = PROC_REF(hide_valid), answerer = user, title = "Un-Hide?", question = "Do you want to hide in \the [src]?", yes_text = "Hide", no_text = "Stay", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	else
-		return ..()
+		return HOOK_DECLINE
 
 /// Re-checked: nobody else hid in the pile meanwhile.
 /obj/structure/trash_pile/proc/hide_valid(datum/request/R)

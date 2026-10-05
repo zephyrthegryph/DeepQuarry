@@ -133,5 +133,5 @@
 // The wires library (code/library/machine/wires.dm)
 /// pulse_lasts = WIRE_PULSE_TOGGLES: a pulse flips the wire's pulse hold instead of timing it.
 #define WIRE_PULSE_TOGGLES -1
-/// A cut wire's hold outranks a pulse's on a TOP stat (seconds_electrified: -1 while cut, whatever a pulse held).
+/// A cut wire's hold outranks a pulse's on a stat (a cut shock wire stays live whatever a pulse held).
 #define WIRE_CUT_PRIORITY (PRIORITY_DEFAULT + 1)

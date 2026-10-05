@@ -745,7 +745,7 @@
 	open_it(H, C)
 	var/obj/item/pen = probe(at)
 	close_it(H, C)
-	C.attack_generic(H, 50)
+	generic_hit(C, H, 50)
 	settle()
 	TEST_ASSERT(QDELETED(C), "the closet is gone")
 	TEST_ASSERT_EQUAL(pen.loc, at, "and its contents lie on the tile")
@@ -755,7 +755,7 @@
 /datum/unit_test/dq_p2_closet/a_small_nibble_does_nothing/run_gate()
 	var/obj/structure/closet/C = make(/obj/structure/closet)
 	var/mob/living/carbon/human/H = person(tile(1, 2))
-	C.attack_generic(H, 1)
+	generic_hit(C, H, 1)
 	settle()
 	TEST_ASSERT(!QDELETED(C), "the closet is still there")
 

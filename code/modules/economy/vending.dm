@@ -103,8 +103,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 
 	/// Stop spouting those godawful pitches!
 	var/shut_up = TRUE
-	/// Shock customers like an airlock: frames left (-1 for permanently, from a cut wire; shock_wire() sets it, the timed work runs it down).
-	var/seconds_electrified = 0
 
 	var/list/log // Lazy: purchase log entries.
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
@@ -115,7 +113,8 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 TRACKED(/obj/machinery/vending, vend_ready)
 TRACKED(/obj/machinery/vending, categories)
 TRACKED(/obj/machinery/vending, shut_up)
-TRACKED(/obj/machinery/vending, seconds_electrified)
+/// Shocks its customers like an airlock: the shock wire cut (until mended) or pulsed (30 s), an event; live only while operable (shock_live()).
+STAT(/obj/machinery/vending, electrified, TOP, base = 0)
 /// Does it check the customer's ID for the product lock (the ID scan wire pulsed turns it off; cut, it scans for good: id_scan()).
 STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 /// Fire items at customers! The throw wire cut, a pulse, a brand intelligence (item_throw()).
@@ -128,7 +127,7 @@ CAPABILITIES(/obj/machinery/vending)
 	wires(name = "Vending machine", count = 4, emp = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
 	item_throw(stat = STAT_SHOOT_INVENTORY)
-	shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30)
+	shock_wire(stat = STAT_ELECTRIFIED)
 	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	emag(say = MSG(vending/shorted), repeatable = TRUE)
@@ -176,9 +175,9 @@ CAPABILITIES(/obj/machinery/vending)
 	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")),
 		needs(req(PROC_REF(log_access_ok), because = MSG(vending/log_denied))), then(PROC_REF(check_logs_op)))
 
-/// The timed work is wanted (with the vendor working): it is switched on, and is electrified, shooting its stock, or has slogans to pitch.
+/// The timed work is wanted (with the vendor working): it is switched on, and is shooting its stock or has slogans to pitch.
 /obj/machinery/vending/proc/timed_work_wanted(datum/act/A)
-	return active && (seconds_electrified > 0 || shoot_inventory || (!shut_up && length(slogan_list)))
+	return active && (shoot_inventory || (!shut_up && length(slogan_list)))
 
 // ALLOW(init/INSTANCE_STATE): the vendor's slogans and ads are split from its type's strings once, and its stock records are built from its product lists
 /obj/machinery/vending/Initialize(mapload)
@@ -360,7 +359,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// A touch that is shocked: an electrified vendor shocks whoever touches it, and a shock that lands opens nothing.
 /obj/machinery/vending/proc/shock_guard(datum/act/op/A)
-	if(seconds_electrified != 0 && shock(A.actor, 100))
+	if(shock_live(src) && shock(A.actor, 100))
 		return OP_REFUSED
 	return OP_OK
 
@@ -619,11 +618,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 // ---- timed work: electrified, shooting stock, pitching ----
 
-/// One frame of the machine's own work (every() runs it only while timed_work_wanted() holds): the shock runs down, it pitches, it shoots.
+/// One frame of the machine's own work (every() runs it only while timed_work_wanted() holds): it pitches, it shoots.
 /obj/machinery/vending/proc/timed_work_frame(datum/act/timer/A)
-	if(seconds_electrified > 0)
-		set_seconds_electrified(seconds_electrified - 1)
-
 	//Pitch to the people!  Really sell it!
 	if((COOLDOWN_FINISHED(src, slogan_cooldown)) && length(slogan_list) && (!shut_up) && prob(5))
 		var/slogan = pick(slogan_list)
@@ -711,7 +707,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /obj/machinery/vending/proc/wire_lights()
 	return list(
-		"The orange light is [seconds_electrified ? "on" : "off"].",
+		"The orange light is [shock_live(src) ? "on" : "off"].",
 		"The red light is [shoot_inventory ? "off" : "blinking"].",
 		"The green light is [(categories & CAT_HIDDEN) ? "on" : "off"].",
 		"A [scan_id ? "purple" : "yellow"] light is on.")
@@ -719,7 +715,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 /// Reaching into a live vendor's wires shocks a carbon toucher instead.
 /obj/machinery/vending/proc/wire_touch_shocks(datum/act/A)
 	var/datum/act/touch_wires/T = A
-	if(iscarbon(T.user) && seconds_electrified && shock(T.user, 100))
+	if(iscarbon(T.user) && shock_live(src) && shock(T.user, 100))
 		return OP_REFUSED
 	return HOOK_DECLINE
 

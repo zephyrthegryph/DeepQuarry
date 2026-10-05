@@ -885,13 +885,14 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /// A simple mob that smashes an airlock which has lost its power: through bolts or a weld it breaks into the internals (an op, so it takes its time),
 /// otherwise it forces the door open or shut at once. A door that works takes the smash as damage.
-// Kept: a simple mob's smash reaches an atom only through attack_generic until the generic attack is a hit action
-/obj/machinery/door/airlock/attack_generic(mob/living/user, damage)
+/obj/machinery/door/airlock/smashed_by(datum/act/hit/generic/A)
+	var/mob/living/user = A.attacker
+	var/damage = A.damage
 	if(operable())
 		return ..()
 	if(damage < STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
-		return
+		return OP_OK
 	if(bolted || weld_shut_welded(src))
 		act_message(user, src, others = span_danger("%U% begins breaking into %T% internals!"))
 		perform_op(user, src, "break_in", origin = ORIGIN_SYSTEM)
@@ -901,6 +902,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	else
 		act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 		close(TRUE)
+	return OP_OK
 
 /// A thrown metal thing striking a live door sparks.
 /obj/machinery/door/airlock/door_thrown_at(datum/act/A)

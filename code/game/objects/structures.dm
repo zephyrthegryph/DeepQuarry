@@ -24,12 +24,12 @@
 	if(breakable)
 		if(user.has_mutation(HULK))
 			user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
-			attack_generic(user,1,"smashes")
+			generic_hit(src, user, 1, "smashes")
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user
 			var/shreddamage = H.species.can_shred(user, FALSE, 11)
 			if(shreddamage)
-				attack_generic(user, shreddamage, "attacks")
+				generic_hit(src, user, shreddamage, "attacks")
 	climb_shake_off(src, user)
 	return ..()
 
