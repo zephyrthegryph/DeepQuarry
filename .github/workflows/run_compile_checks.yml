@@ -26,6 +26,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6.0.2
+      - name: Restore analyze build cache (every DM build runs `analyze gen` first)
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/analyze -> target
+          shared-key: analyze-gen
       - name: Ensure +x on CI directory
         run: |
           chmod -R +x ./tools/ci
