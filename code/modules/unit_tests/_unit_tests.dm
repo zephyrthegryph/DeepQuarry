@@ -1005,6 +1005,8 @@
 
 #include "round2_flashlight_flicker_timing.dm"
 
+#include "round2_mecha_native_tank_pressure.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

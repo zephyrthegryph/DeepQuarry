@@ -1209,7 +1209,9 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	if(!target_mob)
 		return
 
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(cryo_confirmed), title = "Confirmation", message = "Are you sure you want to cryo [target_mob]?", no_first = TRUE, requires = PROMPT_ADMIN(permissions), subject = target_mob)
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryo_confirmed), answerer = user.mob, title = "Confirmation", question = "Are you sure you want to cryo [target_mob]?", choices = list("No", "Yes"), buttons = TRUE, subject = target_mob)
 
 /// Cryopods by their list name ("name (x,y,z)"): human or robot ones.
 /datum/admin_verb/despawn_player/proc/cryopods(robot)
@@ -1221,16 +1223,22 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 			pods["[selected_cryopod.name] ([selected_cryopod.x],[selected_cryopod.y],[selected_cryopod.z])"] = selected_cryopod
 	return pods
 
-/datum/admin_verb/despawn_player/proc/cryopod_chosen(datum/om/prompt/choice/ask)
+/datum/admin_verb/despawn_player/proc/cryopod_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/admin_cryo_review/ask = context.answer
 	var/mob/target_mob = ask.subject
 	var/list/pods = cryopods(issilicon(target_mob))
-	var/obj/machinery/cryopod/selected_cryopod = pods[ask.choice]
+	var/obj/machinery/cryopod/selected_cryopod = pods[ask.answer_value]
 	if(!selected_cryopod)
 		return
 	target_mob.ghostize()
 	selected_cryopod.despawn_occupant(target_mob)
 
-/datum/admin_verb/despawn_player/proc/cryo_confirmed(datum/om/prompt/confirm/ask)
+/datum/admin_verb/despawn_player/proc/cryo_confirmed(datum/act/request/context)
+	if(context.answer?.answer_value != "Yes")
+		return
+	var/datum/prompt/choice/admin_cryo_review/ask = context.answer
 	var/mob/admin = ask.answerer
 	var/client/user = admin.client
 	var/mob/target_mob = ask.subject
@@ -1253,7 +1261,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	feedback_add_details("admin_verb","ACRYO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 	if(ishuman(target_mob))
-		om_ask(admin, /datum/om/prompt/choice, PROC_REF(cryopod_chosen), title = "Cryopod Choice", message = "Select a cryopod to use", choices = human_cryopods, requires = PROMPT_ADMIN(permissions), subject = target_mob)
+		open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryopod_chosen), answerer = admin, title = "Cryopod Choice", question = "Select a cryopod to use", choices = human_cryopods, subject = target_mob)
 		return
 
 	else if(issilicon(target_mob))
@@ -1264,7 +1272,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 			ai.clear_client()
 			return
 		else
-			om_ask(admin, /datum/om/prompt/choice, PROC_REF(cryopod_chosen), title = "Cryopod Choice", message = "Select a cryopod to use", choices = robot_cryopods, requires = PROMPT_ADMIN(permissions), subject = target_mob)
+			open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryopod_chosen), answerer = admin, title = "Cryopod Choice", question = "Select a cryopod to use", choices = robot_cryopods, subject = target_mob)
 			return
 
 	else if(isliving(target_mob))
@@ -1613,3 +1621,15 @@ ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/R
 
 /datum/prompt/choice/allow_impossible_respawn/recheck_extra()
 	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_cryo_review
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_ADMIN|R_EVENT
+
+/datum/prompt/choice/admin_cryo_review/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+	var/mob/target_mob = subject
+	if(!istype(target_mob) || QDELETED(target_mob))
+		return "gone"
