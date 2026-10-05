@@ -17735,13 +17735,13 @@
 	into += entry_line(403)
 	into += list(global.op("doors", global.ui_act("doors"), global.then(PROC_REF(ui_act_doors))))
 
-/// CAPABILITIES(/obj/machinery/conveyor_switch) at code/modules/recycling/conveyor2.dm:259
+/// CAPABILITIES(/obj/machinery/conveyor_switch) at code/modules/recycling/conveyor2.dm:253
 /obj/machinery/conveyor_switch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/recycling/conveyor2.dm", 259, /obj/machinery/conveyor_switch)
-	into += entry_line(260)
+	into += entry_block("code/modules/recycling/conveyor2.dm", 253, /obj/machinery/conveyor_switch)
+	into += entry_line(254)
 	into += list(global.ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id)))
-	into += entry_line(261)
+	into += entry_line(255)
 	into += list(global.ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id)))
 
 /// CAPABILITIES(/obj/machinery/deployable/barrier) at code/game/machinery/deployable.dm:89
