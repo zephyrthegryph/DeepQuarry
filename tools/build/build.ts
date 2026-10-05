@@ -103,6 +103,28 @@ function findDreamChecker(): string | null {
 
 Juke.chdir('../..', import.meta.url);
 
+// Worktree guard. Many agents build in parallel git worktrees with
+// byte-identical build.ts; Bun's shared runtime transpiler cache has been
+// observed resolving one worktree's invocation to another checkout, silently
+// overwriting the wrong deepquarry.dmb. The entry scripts disable that cache
+// and export DQ_BUILD_ROOT (derived by the shell, not by Bun); refuse to run
+// unless the root we chdir'd into is the invoking worktree's toplevel.
+{
+  const real = (p: string) => fs.realpathSync.native(path.resolve(p)).toLowerCase();
+  const scriptRoot = path.resolve(path.dirname(process.argv[1] ?? '.'), '../..');
+  const expected = process.env.DQ_BUILD_ROOT || scriptRoot;
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: expected, encoding: 'utf-8' });
+  const toplevel = top.status === 0 ? top.stdout.trim() : expected;
+  const roots = { cwd: process.cwd(), argv: scriptRoot, DQ_BUILD_ROOT: expected, git: toplevel };
+  const distinct = new Set(Object.values(roots).map(real));
+  if (distinct.size !== 1) {
+    console.error('build.ts: repo root mismatch, refusing to build the wrong checkout:');
+    for (const [k, v] of Object.entries(roots)) console.error(`  ${k}: ${v}`);
+    console.error('  (stale Bun transpiler cache? run via tools/build/build.sh, or set BUN_RUNTIME_TRANSPILER_CACHE_PATH=0)');
+    process.exit(1);
+  }
+}
+
 export const DefineParameter = new Juke.Parameter({
   type: 'string[]',
   alias: 'D',

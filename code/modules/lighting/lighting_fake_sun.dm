@@ -22,6 +22,7 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 	var/weather_visuals_icon_state = null
 
 CAPABILITIES(/obj/effect/fake_sun)
+	after_init(0, then(PROC_REF(light_levels)))
 	owns_one(nameof(sun), /atom/movable/sun_visuals)
 	owns_one(nameof(visuals), /atom/movable/weather_visuals)
 
@@ -100,7 +101,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 	. = ..()
 	world_suns += src
 	if(!advanced_lighting)
-		return INITIALIZE_HINT_LATELOAD
+		return
 	do_sun = FALSE
 
 	//Copied code
@@ -125,9 +126,9 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 		SSlighting.z_to_pshandler.len = z
 	SSlighting.z_to_pshandler[z] = pshandler
 	SSlighting.update_sunlight(pshandler) //Queue an update for when it starts running
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/effect/fake_sun/LateInitialize()
+/// Lights the levels it is connected to, once they exist (a dark choice lights nothing).
+/obj/effect/fake_sun/proc/light_levels(datum/act/timer/A)
 	if(family)	//Allows one to make multiple fake_suns to use the same settings
 		for(var/obj/effect/fake_sun/l in world_suns)	//check all the suns that exist
 			if(l.family == family && l.shared_settings)	//do you have settings we need?

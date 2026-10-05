@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "AI and cyborg shift/ctrl/alt/middle-clicks on doors, APCs, turret controls, intercoms, kitchen appliances and lights are remote controls the machine declares, with the same rules as its control window."
+  - bugfix: "A cyborg's gripper keeps the cell it takes out of an APC and can put it back in; a restraining bolt now blocks every remote control."
+  - balance: "Cyborgs handle things only with a gripper selected; an AI with a door's AI-control wire cut can no longer electrify it or switch its bolt lights."

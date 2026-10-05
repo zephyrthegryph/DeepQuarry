@@ -1279,12 +1279,12 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 #undef SHOWER_BOILING
 #undef SHOWER_TEMP_BOILING
 
-// === merged from watercloset_ch.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/structure/toilet/item/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/toilet/item)
+	after_init(0, then(PROC_REF(take_loose_items)))
 
-/obj/structure/toilet/item/LateInitialize()
+// === merged from watercloset_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+/// Takes in the loose items lying on its turf.
+/obj/structure/toilet/item/proc/take_loose_items(datum/act/timer/A)
 	if(istype(loc, /mob/living)) return
 	var/obj/item/I
 	for(I in turf_contents_of_type(loc, /obj/item))

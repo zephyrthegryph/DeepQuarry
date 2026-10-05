@@ -6,12 +6,14 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "drop_marker"
 
-/obj/effect/calldown_attack/Initialize(mapload)
-	. = ..()
-	var/delay = rand(2.5 SECONDS, 3 SECONDS)
-	after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
+CAPABILITIES(/obj/effect/calldown_attack)
+	after_init(PROC_REF(strike_delay), then(PROC_REF(spawn_object)))
 
-/obj/effect/calldown_attack/proc/spawn_object()
+/// The strike falls 1.8 to 2.3 seconds after the marker appears (rolled per marker).
+/obj/effect/calldown_attack/proc/strike_delay(datum/act/timer/A)
+	return rand(2.5 SECONDS, 3 SECONDS) - 0.7 SECONDS
+
+/obj/effect/calldown_attack/proc/spawn_object(datum/act/timer/A)
 	new /obj/effect/falling_effect/calldown_attack(loc)
 	expire(0.7 SECONDS)
 

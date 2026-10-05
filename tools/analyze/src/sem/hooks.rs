@@ -83,6 +83,7 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "then", ctx: Ctx::Op, role: Role::Effect },
     HookForm { kw: "because", ctx: Ctx::Op, role: Role::Reason },
     HookForm { kw: "every", ctx: Ctx::Timer, role: Role::Work },
+    HookForm { kw: "after_init", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "after", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "delayed", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "instead", ctx: Ctx::Action, role: Role::Effect },
@@ -245,7 +246,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         let in_asks_when = f.kw == "when"
             && bs == be
             && ranges.iter().any(|&(oidx, s, e)| HOOK_FORMS[oidx].kw == "asks" && s != e && start >= s && start < e);
-        // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change) runs in that context.
+        // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change, after_init) runs in that context.
         let mut ctx = if in_asks_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();
         if matches!(f.kw, "then" | "when") {
@@ -253,7 +254,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             for r in &ranges {
                 let (oidx, s, e) = *r;
                 let kw = HOOK_FORMS[oidx].kw;
-                if matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change") && s != e && start >= s && start < e && outer.map(|o| s <= o.1).unwrap_or(true) {
+                if matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change" | "after_init") && s != e && start >= s && start < e && outer.map(|o| s <= o.1).unwrap_or(true) {
                     outer = Some(r);
                 }
             }

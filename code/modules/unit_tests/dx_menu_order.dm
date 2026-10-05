@@ -1,5 +1,6 @@
-// The order ops answer a click and fill a menu in (resolve.dm: op_resolution_sort). The golden table below was captured BEFORE the default
-// relative priority (op_default_anchor) replaced the priority(above("storage.put_in")) lines that only ordered menu entries, so it proves the removal changed no click or menu order.
+// The order ops answer a click and fill a menu in (resolve.dm: op_resolution_sort). The golden tables (dx_menu_order_golden.dm) were last
+// captured when binding specificity (op_binding_specificity) replaced the storage.put_in default anchor; they pin every click and menu order
+// since, so an ordering change shows up as a DXDIFF line.
 //
 // One scenario is a target and a held item (null: an empty hand); the target is the holder type, a floor, or a box, so a holder's own ops and
 // the ops it brings as a held item are both ordered. Each scenario records three strings:
@@ -127,6 +128,8 @@
 	var/datum/op_resolution/S = new
 	S.ordered = list()
 	var/list/item_types = list()
+	var/broad = FALSE
+	var/tooled = FALSE
 	var/seq = 0
 	for(var/datum/op_plan/P as anything in index.ordered)
 		var/key = P.key
@@ -137,6 +140,11 @@
 			C.oplan = P
 			C.tier = P.tier
 			C.seq = ++seq
+			C.specificity = op_binding_specificity(B)
+			if(C.specificity == 1)
+				broad = TRUE
+			else if(C.specificity == 2)
+				tooled = TRUE
 			if("family" in C.vars)
 				C.vars["family"] = call("/proc/op_family_of")(key)
 			if(B.bind_kind == BIND_ITEM || B.bind_kind == BIND_STACK)
@@ -148,6 +156,8 @@
 						interesting = TRUE
 				item_types += item_type
 			S.ordered += C
+	if(broad && tooled)
+		interesting = TRUE // a tool and a broad item: binding specificity orders them
 	if(!interesting)
 		return null
 	op_resolution_sort(S)
@@ -155,7 +165,18 @@
 
 /datum/unit_test/dx_menu_order_static/Run()
 	var/list/golden = dx_menu_order_static_golden()
-	TEST_ASSERT(length(golden), "the golden table exists")
+	if(!length(golden))
+		// capture (see dx_menu_order_golden.dm): every type the static order lists
+		for(var/type in typesof(/obj, /mob, /turf))
+			var/order = null
+			try
+				order = dx_menu_order_static(type)
+			catch
+				continue // a type that cannot build its table outside a map; the capture lists only the ones that can
+			if(order)
+				log_test("DXSTATIC|[type]|[order]")
+		TEST_FAIL("no golden table: captured the orders into the log (DXSTATIC lines)")
+		return
 	for(var/name in golden)
 		var/type = text2path(name)
 		TEST_ASSERT(ispath(type), "[name] is still a type")

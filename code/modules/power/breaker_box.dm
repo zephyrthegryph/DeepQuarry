@@ -36,12 +36,12 @@
 /obj/machinery/power/breakerbox/activated
 	icon_state = "bbox_on"
 
-// Enabled on server startup. Used in substations to keep them in bypass mode.
-/obj/machinery/power/breakerbox/activated/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/machinery/power/breakerbox/activated)
+	after_init(0, then(PROC_REF(switch_on)))
 
-/obj/machinery/power/breakerbox/activated/LateInitialize()
+// Enabled on server startup. Used in substations to keep them in bypass mode.
+/// Switched on once the cables around it exist (substations start in bypass).
+/obj/machinery/power/breakerbox/activated/proc/switch_on(datum/act/timer/A)
 	set_breaker_on(1)
 
 /obj/machinery/power/breakerbox/examine(mob/user)

@@ -32,10 +32,10 @@ CAPABILITY_TYPE(e1_solo, CAP_E1_SOLO, /datum/capability/e1_solo, key = NONE, not
 /datum/capability/e1_solo/on_holder_preinit(datum/act/eval/A)
 	GLOB.e1_log += "holder_preinit:[A.holder.type]"
 
-/datum/capability/e1_solo/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/e1_solo/on_holder_init(datum/act/eval/A)
 	GLOB.e1_log += "holder_init:[A.holder.type]:[A.mapload ? "map" : "runtime"]"
 
-/datum/capability/e1_solo/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/e1_solo/on_holder_destroy(datum/act/eval/A)
 	GLOB.e1_log += "holder_destroy:[A.holder.type]"
 
 cap_keys(CAP_E1_SOLO, ARMED = null, LIT = null)
@@ -153,6 +153,29 @@ CAPABILITIES(/obj/e1_starts)
 
 /obj/e1_starts/proc/make_computed(datum/act/A)
 	return /obj/item/e1_part/tarnished
+
+/// slot(starts =, starts_args =) and a capability built on a slot (cell_bay(starts = PROC_REF(x))).
+/obj/e1_slot_starts
+	name = "e1 slot starts"
+	var/flag = TRUE
+	var/obj/item/e0_fixture/cell/cell
+
+CAPABILITIES(/obj/e1_slot_starts)
+	slot("e1_pair", accepts = list(/obj/item/e1_part), capacity = 2, starts = list(/obj/item/e1_part = 2))
+	slot("e1_pick", accepts = list(/obj/item/e1_part), capacity = 1, starts = pick_one(list(/obj/item/e1_part/tarnished = 1)))
+	slot("e1_cond", accepts = list(/obj/item/e1_part), capacity = 1, starts = when(nameof(flag), /obj/item/e1_part/labelled), starts_args = list("conditional"))
+	cell_bay(nameof(cell), accepts = /obj/item/e0_fixture/cell, starts = PROC_REF(pick_cell))
+
+/obj/e1_slot_starts/proc/pick_cell(datum/act/A)
+	return /obj/item/e0_fixture/cell
+
+/// A part that takes a constructor argument (starts_args on a slot).
+/obj/item/e1_part/labelled
+	var/label
+
+/obj/item/e1_part/labelled/Initialize(mapload, label_arg)
+	. = ..()
+	label = label_arg
 
 /// A holder for the per-instance lifetime tests: no declared relations, so it is only a holder.
 /obj/e1_holder

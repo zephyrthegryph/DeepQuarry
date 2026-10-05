@@ -10,9 +10,8 @@
 	var/do_rotation = TRUE
 
 /// A wreck that never learned what gun it was (spawned without a type) cleans itself up.
-/obj/item/broken_gun/reactions()
-	. = ..()
-	. += after_init(30 SECONDS, PROC_REF(validate_gun_type))
+CAPABILITIES(/obj/item/broken_gun)
+	after_init(30 SECONDS, then(PROC_REF(validate_gun_type)))
 
 TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 
@@ -29,7 +28,7 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 		setup_repair_needs()
 
 
-/obj/item/broken_gun/proc/validate_gun_type()
+/obj/item/broken_gun/proc/validate_gun_type(datum/act/A)
 	if(!my_guntype)
 		consume(src)
 

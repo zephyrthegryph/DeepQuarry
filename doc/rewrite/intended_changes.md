@@ -609,7 +609,6 @@ Pinned by `code/modules/unit_tests/dq_fwg3_inputs.dm` (run on the legacy interac
 * **Bedsheets.** Laying a sheet out is the `lay_out` op; a pillow re-declares `lay_out` and `use_item`, so the sheet's own layering never runs for a pillow (it did through the `special_handling` chain, which is gone). The exercise mat's item use passes, as before.
 * **Linen bin.** The hand, item and telekinesis ("Take sheet") are ops; a telekinetic actor pulls a sheet out onto the bin's tile from range.
 * **Inflatables.** Inflating is the `inflate` op (a torn one re-declares it). The wall's hand, item and "Deflate" are ops; ctrl-click and the menu share `deflate_by()`. The door re-declares the hand and drops the item use (`without("use_item")`), as its old list did; its silicon "Open" stays a legacy entry until silicon entry points are ops.
-
 ### fw-gaps3 content: window routing (embedded controllers, telecrystal storage, sleeper, air alarm, atmospherics filters)
 
 Pinned by `code/modules/unit_tests/dq_fwg3_windows.dm` (buttons through `hc_ui()`, run on the legacy declarations first; the questions of the air alarm, the sleeper and the omni filter could not be answered through the legacy harness, so they are pinned on the converted forms only).
@@ -620,3 +619,35 @@ Pinned by `code/modules/unit_tests/dq_fwg3_windows.dm` (buttons through `hc_ui()
 * **Air alarm.** Every lockable control is behind a silent requirement (`controls_usable_by()`, which reads the actor's open window's state so a remote console still bypasses the lock); `aidisabled` is tracked. The thermostat and threshold questions are unchanged `open_request()`s.
 * **Atmospherics filters.** The omni filter's flow-rate and filter questions are `asks()` steps behind a silent requirement (configuring, with the filter off); `configuring` is tracked. The trinary filter's three buttons are ops.
 * **Rubber duckies.** Each duck's squeeze re-declares the horn's `honk` op (the two in-hand ops clashed at boot since the horn was converted).
+
+## Silicon entry points (phase A): remote() ops, the interface provider, the gripper as a provider
+
+Pinned by `code/modules/unit_tests/dq_silicon_entry_tests.dm` (16 tests, green on the legacy hooks first; the converted code passes the same tests, one
+of them strengthened as noted below). The shared hooks (`silicon_inspect`/`_pull`/`_alternate`/`_swap_hands`/`_quick`, `is_ai_remote_interface`,
+`remote_interface_blocked`, the gripper's `handle_afterattack_special`, the airlock's `silicon_or_ghost`) are gone; the `silicon_entry` lint bans them.
+
+* **A silicon's shift-, ctrl-, alt- and middle-click on a machine is an op** with a `remote()` binding pinned to that gesture (airlock `remote_open`,
+  `remote_bolts`, `remote_shock`, `remote_lights`; APC `remote_breaker`; turret control `remote_power`, `remote_lethal`; intercom `remote_microphone`,
+  `remote_channel`; appliance `remote_power`; light `remote_flicker`). A player's shift-, ctrl- and middle-click now go through the op resolver first
+  (`op_gesture_of_params()`); a gesture no op pins falls through to the legacy click exactly as before. Ctrl and middle have no intent of their own: only
+  an op that pins them answers them.
+* **The gesture ops ask the same requirements as the window's buttons.** An AI with the airlock's AI-control wire cut can no longer alt-click it
+  electrified or middle-click its bolt lights (only bolting and opening were refused before). The APC's ctrl-click asks the window's rules (its AI-control
+  wire, the hacker), and the turret control's asks its firewall; neither did before.
+* **The link is a provider that comes and goes** (`remote_interface()`, library/mob/silicon.dm): an AI that is not conscious or whose wireless is off, a
+  cyborg that cannot act, has a working restraining bolt or looks through a camera has no interface, so no remote() op is a candidate. Before, the bolt
+  blocked only the airlock, APC and turret control hooks, and an AI with wireless off still reached remote() ops through the op path. A bolted cyborg's
+  shift-click on an airlock now examines it (it did nothing).
+* **Whose link a machine lets in is `remote_link_allowed()`** (input over AUTH_REMOTE_ACCESS; an AI is trusted, a cyborg shows its ID card). It replaces
+  `siliconaccess()` in the APC's lock and overload, the lock library's exemption and the airlock's window. **A pAI is no longer counted as a silicon by
+  these** (it has no interface; it reaches doors through its cable). The APC's "remote user" branch and the turret control's firewall read the input's
+  authority, not the mob type.
+* **A cyborg's selected gripper is a provider and is preferred over its chassis manipulators** (`held_carrier()`): what it takes goes into the
+  gripper (`op_deliver()`, `carry()`), and what it carries is A.held. The cell charger and the recharger
+  lose their `isrobot()` branch: a cyborg's gripper takes the charging item into a pocket, and a cyborg without one sets it down on its own tile (both were set down on the charger's tile); the chargers' pins
+  give their cyborg a gripper.
+* **The gripper carries a cell in and out of an APC through the APC's own ops** (`cell_bay.cell.take`/`.insert`). On master the APC's take op had
+  already overtaken the gripper's special case and dropped the cell on the cyborg's tile; the pin now asserts the gripper holds it and puts it back.
+* **A cyborg's cell comes out through an op** (`take_power_part` on the cyborg: a person's hand or another cyborg's gripper), replacing the hand
+  interaction's cell branch and the gripper's cyborg case. A gripper that cannot hold the cell lets it drop instead of refusing.
+* **The airlock's remote-control window opens only through remote()** (it had a hand binding hidden by a silicon-or-ghost condition).

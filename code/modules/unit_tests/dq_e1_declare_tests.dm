@@ -237,6 +237,24 @@
 	TEST_ASSERT(istype(S.computed, /obj/item/e1_part/tarnished), "PROC_REF(x) computes the starting occupant")
 	TEST_ASSERT(owner_of(S.picked) == S && owner_of(S.argy) == S, "and the holder owns what it started with")
 
+/datum/unit_test/dq_e1/slot_starting_contents
+
+/datum/unit_test/dq_e1/slot_starting_contents/run_e1()
+	var/obj/e1_slot_starts/S = allocate(/obj/e1_slot_starts)
+	var/parts = 0
+	var/tarnished = 0
+	var/obj/item/e1_part/labelled/labelled
+	for(var/obj/item/e1_part/P in S.contents)
+		parts++
+		if(istype(P, /obj/item/e1_part/tarnished))
+			tarnished++
+		if(istype(P, /obj/item/e1_part/labelled))
+			labelled = P
+	TEST_ASSERT_EQUAL(parts, 4, "slot(starts = list(T = 2)), pick_one() and when(cond, T) made four parts inside the holder")
+	TEST_ASSERT_EQUAL(tarnished, 1, "pick_one() made its pick")
+	TEST_ASSERT(labelled?.label == "conditional", "when(cond, T) made it and starts_args reached its constructor")
+	TEST_ASSERT(istype(S.cell, /obj/item/e0_fixture/cell) && S.cell.loc == S, "cell_bay(starts = PROC_REF(x)) filled the bay from the proc's answer")
+
 /datum/unit_test/dq_e1/capability_lifecycle_hooks
 
 /datum/unit_test/dq_e1/capability_lifecycle_hooks/run_e1()

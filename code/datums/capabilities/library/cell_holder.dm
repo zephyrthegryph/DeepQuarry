@@ -63,7 +63,7 @@
 	C.key = cell_var ? "charger:[cell_var]" : "charger"
 	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
-/datum/capability/charger/on_holder_init(atom/holder, mapload)
+/datum/capability/charger/legacy_holder_init(atom/holder, mapload)
 	if(!holder.periodic_cadence)
 		holder.periodic_cadence = cadence // joins the lane
 

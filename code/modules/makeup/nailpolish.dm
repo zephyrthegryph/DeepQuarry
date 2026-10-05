@@ -1,6 +1,7 @@
 /obj/item/organ/external/var/datum/nail_polish/nail_polish
 
 CAPABILITIES(/obj/item/organ/external)
+	after_init(0, then(PROC_REF(icon_after_init)))
 	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)
 

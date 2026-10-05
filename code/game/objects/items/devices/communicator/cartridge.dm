@@ -56,13 +56,12 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Power-ON cartridge"
 	icon_state = "cart-e"
 
-/obj/item/commcard/engineering/Initialize(mapload)
-	..()
-	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/commcard/engineering)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/halogen_counter))
+	after_init(0, then(PROC_REF(find_grid_sensors)))
 
-/obj/item/commcard/engineering/LateInitialize()
-	. = ..()
+/// Finds the power sensors, once the map has them.
+/obj/item/commcard/engineering/proc/find_grid_sensors(datum/act/timer/A)
 	internal_data["grid_sensors"] = find_powernet_sensors()
 	internal_data["powernet_target"] = ""
 
@@ -79,9 +78,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper BreatheDeep cartridge"
 	icon_state = "cart-a"
 
-/obj/item/commcard/atmos/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+CAPABILITIES(/obj/item/commcard/atmos)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer))
 
 // Medical Cartridge:
 // Devices
@@ -93,10 +91,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Med-U cartridge"
 	icon_state = "cart-m"
 
-/obj/item/commcard/medical/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
+CAPABILITIES(/obj/item/commcard/medical)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/halogen_counter))
 
 /obj/item/commcard/medical/get_data()
 	return list(list("field" = "med_records", "value" = get_med_records()))
@@ -112,9 +108,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper ChemWhiz cartridge"
 	icon_state = "cart-chem"
 
-/obj/item/commcard/medical/chemistry/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
+CAPABILITIES(/obj/item/commcard/medical/chemistry)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/halogen_counter, /obj/item/reagent_scanner))
 
 // Detective Cartridge:
 // Devices
@@ -181,9 +176,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "generic signaler cartridge"
 	desc = "A data cartridge with an integrated radio signaler module."
 
-/obj/item/commcard/signal/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
+CAPABILITIES(/obj/item/commcard/signal)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler))
 
 /obj/item/commcard/signal/get_data()
 	return list(
@@ -203,10 +197,8 @@ CAPABILITIES(/obj/item/commcard)
 	icon_state = "cart-tox"
 	// UI templates inherited
 
-/obj/item/commcard/signal/science/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+CAPABILITIES(/obj/item/commcard/signal/science)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler, /obj/item/reagent_scanner, /obj/item/analyzer))
 
 // Supply Cartridge:
 // Templates
@@ -346,11 +338,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Signal Ace DELUXE"
 	icon_state = "cart-rd"
 
-/obj/item/commcard/head/rd/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
+CAPABILITIES(/obj/item/commcard/head/rd)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/reagent_scanner, /obj/item/assembly/signaler))
 
 /obj/item/commcard/head/rd/get_data()
 	var/list/data = ..()
@@ -371,11 +360,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Med-U DELUXE"
 	icon_state = "cart-cmo"
 
-/obj/item/commcard/head/cmo/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
+CAPABILITIES(/obj/item/commcard/head/cmo)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/reagent_scanner, /obj/item/halogen_counter))
 
 /obj/item/commcard/head/cmo/get_data()
 	var/list/data = ..()
@@ -395,14 +381,12 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Power-On DELUXE"
 	icon_state = "cart-ce"
 
-/obj/item/commcard/head/ce/Initialize(mapload)
-	..()
-	rel_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/commcard/head/ce)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/halogen_counter))
+	after_init(0, then(PROC_REF(find_grid_sensors)))
 
-/obj/item/commcard/head/ce/LateInitialize()
-	. = ..()
+/// Finds the power sensors, once the map has them.
+/obj/item/commcard/head/ce/proc/find_grid_sensors(datum/act/timer/A)
 	internal_data["grid_sensors"] = find_powernet_sensors()
 	internal_data["powernet_target"] = ""
 
@@ -438,13 +422,8 @@ CAPABILITIES(/obj/item/commcard)
 	desc = "Now with 200% more value!"
 	icon_state = "cart-c"
 
-/obj/item/commcard/head/captain/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	rel_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
+CAPABILITIES(/obj/item/commcard/head/captain)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/healthanalyzer, /obj/item/reagent_scanner, /obj/item/halogen_counter, /obj/item/assembly/signaler))
 
 /obj/item/commcard/head/captain/get_data()
 	var/list/data = ..()
@@ -528,9 +507,8 @@ CAPABILITIES(/obj/item/commcard)
 	name = "\improper Explorator cartridge"
 	icon_state = "cart-tox"
 
-/obj/item/commcard/explorer/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(internal_devices), new /obj/item/gps/explorer(src))
+CAPABILITIES(/obj/item/commcard/explorer)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/gps/explorer))
 
 /obj/item/commcard/explorer/get_data()
 	var/list/gps_lists = get_GPS_lists()

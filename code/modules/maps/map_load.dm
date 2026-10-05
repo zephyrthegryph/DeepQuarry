@@ -305,7 +305,7 @@ GLOBAL_VAR(map_load_active)
 	phase = MAP_LOAD_INIT
 	return JOB_MORE
 
-/// INIT: SSatoms initializes the new atoms, one chunk per step, through the same frame InitializeAtoms() opens.
+/// SSatoms initializes the new atoms, one chunk per step, through the same frame InitializeAtoms() opens.
 /datum/map_load/proc/do_init(datum/map_template/T, sync)
 	var/datum/atom_init_job/I = init_job
 	if(I.run_step(null, sync) == JOB_MORE)

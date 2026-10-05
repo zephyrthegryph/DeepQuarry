@@ -91,7 +91,7 @@
 /datum/capability/toggle_state/verbs()
 	return list(verb_ref)
 
-/datum/capability/toggle_state/on_holder_init(atom/holder, mapload)
+/datum/capability/toggle_state/legacy_holder_init(atom/holder, mapload)
 	grant(holder, granted_verb(verb_ref), src)
 
 /datum/capability/toggle_state/hidden_verbs(atom/holder)

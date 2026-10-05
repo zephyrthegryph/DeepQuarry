@@ -46,28 +46,23 @@
 	switch(result)
 		if (INITIALIZE_HINT_NORMAL)
 			EMPTY_BLOCK_GUARD // Pass
-		if(INITIALIZE_HINT_LATELOAD)
-			if(arguments[1]) //mapload
-				// The running frame runs it after its last atom (atoms_batch.dm rule 2).
-				var/datum/materialize_batch/batch = active_batch
-				if(batch)
-					batch.late_loaders += A
-				else
-					late_loaders += A
-			else
-				A.LateInitialize()
 		if(INITIALIZE_HINT_QDEL)
 			qdel(A)
 			qdeleted = TRUE
 		else
 			BadInitializeCalls[the_type] |= BAD_INIT_NO_HINT
 
+	// after_init() entries (code/engine/actions/after_init.dm): Initialize() has returned, so they run now (made at runtime) or when the
+	// map-load frame closes (atoms_batch.dm rule 2). A deleted atom is only dropped from the waiting list.
+	if(after_init_pending?[A])
+		after_init_initialized(A, arguments[1])
+
 	if(!A) //possible harddel
 		qdeleted = TRUE
 	else if(!(A.flags & ATOM_INITIALIZED))
 		BadInitializeCalls[the_type] |= BAD_INIT_DIDNT_INIT
 	else
-		// L2 lifecycle: enter the live world. A mapload LateInitialize() is
+		// L2 lifecycle: enter the live world. A mapload after_init() is
 		// deferred to the end of the batch; materializing does not wait for it,
 		// so the registrations moved out of Initialize() keep their old timing.
 		if(!materialize_suppressed && !qdeleted && !QDELING(A))
@@ -175,7 +170,7 @@
 
 	// Declared instance state (code/datums/lifecycle/declarations.dm): children, gas, reagents,
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
-	lifecycle_decls_init(src)
+	lifecycle_decls_init(src, mapload)
 	// Capabilities' per-instance state, then the first look (code/datums/capabilities/).
 	caps_init(src, mapload)
 
@@ -184,18 +179,3 @@
 		update_light()
 	*/
 	return INITIALIZE_HINT_NORMAL
-
-/**
- * Late Initialization, for code that should run after all atoms have run Initialization
- *
- * To have your LateIntialize proc be called, your atoms [Initialization][/atom/proc/Initialize]
- *  proc must return the hint
- * [INITIALIZE_HINT_LATELOAD] otherwise it will never be called.
- *
- * useful for doing things like finding other machines on REGISTRY_MEMBERS(REGISTRY_MACHINES) because you can guarantee
- * that all atoms will actually exist in the "WORLD" at this time and that all their Initialization
- * code has been run
- */
-/atom/proc/LateInitialize()
-	SHOULD_CALL_PARENT(FALSE)
-	stack_trace("[src] ([type]) called LateInitialize but has nothing on it!")

@@ -131,7 +131,7 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 /// Picks the op named `op_key` from the context menu of `target`, as a player's pick would: origin ORIGIN_MENU, the actor's held
 /// item, the same gates as a click. The only form that takes the menu path. Its contents are read with action_options().
 /proc/test_menu(mob/actor, atom/target, op_key)
-	return inbox_menu(actor, target, op_key, actor?.get_active_hand())
+	return inbox_menu(actor, target, op_key, actor?.held_for_ops())
 
 /// Answers the actor's open request with a value, or ends it with an outcome (REQ_CANCELLED, REQ_TIMED_OUT) when
 /// `outcome` is given: a REQ_* constant is a small number a value could equal, so the outcome has its own argument.

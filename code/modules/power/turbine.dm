@@ -347,11 +347,8 @@ CAPABILITIES(/obj/machinery/power/turbine)
 // Turbine Computer
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/obj/machinery/computer/turbine_computer/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/machinery/computer/turbine_computer/LateInitialize()
+/// Finds its compressor and doors, once they exist.
+/obj/machinery/computer/turbine_computer/proc/find_machinery(datum/act/timer/A)
 	locate_machinery()
 
 /obj/machinery/computer/turbine_computer/proc/locate_machinery()
@@ -398,6 +395,7 @@ CAPABILITIES(/obj/machinery/power/turbine)
 	effect = /atom/proc/interaction_swallow
 
 CAPABILITIES(/obj/machinery/computer/turbine_computer)
+	after_init(0, then(PROC_REF(find_machinery)))
 	interface("TurbineControl")
 	op("power-on", ui_act("power-on"), then(PROC_REF(ui_act_power_on)))
 	op("power-off", ui_act("power-off"), then(PROC_REF(ui_act_power_off)))

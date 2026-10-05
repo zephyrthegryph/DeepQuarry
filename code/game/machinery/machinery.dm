@@ -610,7 +610,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	return 1
 
 // This is it's own proc so it can be more easily found when looking for machines that can upgrade themselves from mapped parts
-// Should be called from LateInitialize()
+// Called from a mapped machine's after_init() pass
 /obj/machinery/proc/apply_mapped_upgrades()
 	return
 

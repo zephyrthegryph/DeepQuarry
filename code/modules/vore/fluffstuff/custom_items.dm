@@ -640,6 +640,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	<p>This device contains antimatter. Please consult all local regulations when travelling to ensure compliance with local laws.</p>"}
 
 /obj/item/storage/box/khcrystal
+	starts_with = list(
+		/obj/item/paper/khcrystal_manual = 1,
+		/obj/item/clothing/accessory/collar/khcrystal = 1,
+	)
 	name = "life crystal case"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "khlifebox"
@@ -654,11 +658,6 @@ CAPABILITIES(/obj/item/storage/box/khcrystal)
 	configure(storage(accepts = list(
 		/obj/item/paper/khcrystal_manual,
 		/obj/item/clothing/accessory/collar/khcrystal)))
-
-/obj/item/storage/box/khcrystal/Initialize(mapload)
-	. = ..()
-	new /obj/item/paper/khcrystal_manual(src)
-	new /obj/item/clothing/accessory/collar/khcrystal(src)
 
 /obj/item/cane/fluff
 	name = "cane"
@@ -1045,6 +1044,9 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 	add_fingerprint(user)
 
 /obj/item/storage/backpack/fluff/stunstaff
+	starts_with = list(
+		/obj/item/melee/baton/fluff/stunstaff = 1,
+	)
 	name = "Electrostaff sheath"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "holster_stunstaff"
@@ -1058,10 +1060,6 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 
 CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	configure(storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE))
-
-/obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
-	. = ..()
-	new /obj/item/melee/baton/fluff/stunstaff(src)
 
 /*
  * Awoo Sword

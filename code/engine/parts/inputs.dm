@@ -13,14 +13,24 @@
 // until it declares an op. A click on a target that has one resolves among the new ops and the legacy interaction entries beside them in ONE
 // pass (legacy entries are candidates carrying the tier and intent of their macro).
 
-/// The gesture a click's params mean, for the gestures the new resolver takes: a plain left click and an alt-click. null: the legacy click
-/// handles it (shift examines, ctrl pulls, middle points).
+/// The gesture a click's params mean, for the gestures the new resolver takes: a plain left click, an alt-, shift-, ctrl- and middle-click. A
+/// shift-, ctrl- or middle-click that no op answers (no op pins it, as a silicon's remote controls do) goes on to the legacy click (shift
+/// examines, ctrl pulls, middle points). null: the legacy click alone handles it (a right click, a combination of modifiers).
 /proc/op_gesture_of_params(params)
 	var/list/modifiers = params2list(params)
-	if(modifiers["shift"] || modifiers["ctrl"] || modifiers["middle"] || modifiers["right"])
+	if(modifiers["right"])
 		return null
+	var/held_down = !!modifiers["shift"] + !!modifiers["ctrl"] + !!modifiers["alt"]
+	if(held_down > 1)
+		return null
+	if(modifiers["middle"])
+		return held_down ? null : GESTURE_MIDDLE
 	if(modifiers["alt"])
 		return GESTURE_ALT
+	if(modifiers["shift"])
+		return GESTURE_SHIFT
+	if(modifiers["ctrl"])
+		return GESTURE_CTRL
 	return GESTURE_CLICK
 
 /// The click seam. A driver-built click is always the new resolver's; a player's is when the target, the held item or the actor has an op.
@@ -33,7 +43,7 @@
 	// The click event (hooks on the target see it), then the new resolver when something of the click has an op, else the mob's click handling.
 	OM_EMIT(E.target, /datum/om/event/click, E.location, E.control, E.params, E.actor)
 	var/gesture = op_gesture_of_params(E.params)
-	var/obj/item/held = actor?.get_active_hand()
+	var/obj/item/held = actor?.held_for_ops()
 	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held) || op_has_click_ops(actor)))
 		var/datum/op_result/result = op_resolve_click_with_params(actor, target, held, gesture, ORIGIN_CLICK, E.params, TRUE, TRUE)
 		if(result)

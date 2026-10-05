@@ -23,10 +23,10 @@
 	C.key = "trait:[trait]"
 	return C
 
-/datum/capability/type_trait/on_holder_init(atom/holder, mapload)
+/datum/capability/type_trait/legacy_holder_init(atom/holder, mapload)
 	add_trait(holder, trait, key)
 
-/datum/capability/type_trait/on_holder_destroy(atom/holder)
+/datum/capability/type_trait/legacy_holder_destroy(atom/holder)
 	remove_trait(holder, trait, key)
 
 /datum/capability/type_trait/examine(atom/holder, mob/user)

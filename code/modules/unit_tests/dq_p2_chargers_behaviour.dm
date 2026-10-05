@@ -93,6 +93,16 @@
 	R.enable_godmode()
 	return R
 
+/// The cyborg's gripper (of `type`), selected: a cyborg handles things with it (doc/rewrite/final_api.html 16.8).
+/datum/unit_test/dq_p2_chargers/proc/p2c_gripper(mob/living/silicon/robot/R, type = /obj/item/gripper/omni)
+	if(!R.module)
+		rel_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
+	var/obj/item/gripper/G = new type(R.module)
+	rel_add(R.module, nameof(R.module.modules), G)
+	R.activate_module(G)
+	R.select_module(R.module_slot_of(G))
+	return G
+
 /// A big, empty cell, so a charge never saturates.
 /datum/unit_test/dq_p2_chargers/proc/p2c_cell(type = /obj/item/cell)
 	var/obj/item/cell/C = allocate(type, run_loc_floor_bottom_left)
@@ -233,13 +243,14 @@
 	var/obj/machinery/cell_charger/C = p2c_cell_charger()
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/mob/living/silicon/robot/R = p2c_borg(get_step(run_loc_floor_bottom_left, EAST)) // beside it, not on its tile: the cell is set down on the charger's own
+	var/obj/item/gripper/G = p2c_gripper(R)
 	var/obj/item/cell/cell = p2c_cell()
 	touch(H, C, cell)
 	TEST_ASSERT_EQUAL(p2c_held(C), cell, "in")
 	p2c_borg_touch(R, C)
 	p2c_settle()
 	TEST_ASSERT_NULL(p2c_held(C), "the borg took it out")
-	TEST_ASSERT_EQUAL(cell.loc, C.loc, "onto the floor")
+	TEST_ASSERT_EQUAL(G.get_wrapped_item(), cell, "into its gripper")
 
 /// The cell charges at the charger's rate each machine frame and the machine draws active power.
 /datum/unit_test/dq_p2_chargers/cell_charger_charges_the_cell
@@ -449,12 +460,14 @@
 	var/obj/machinery/recharger/R = p2c_recharger()
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/mob/living/silicon/robot/B = p2c_borg(get_step(run_loc_floor_bottom_left, EAST)) // beside it, not on its tile: the device is set down on the recharger's own
+	var/obj/item/gripper/grip = p2c_gripper(B)
 	var/obj/item/G = p2c_gun()
 	touch(H, R, G)
 	p2c_borg_touch(B, R)
 	p2c_settle()
 	TEST_ASSERT_NULL(p2c_held(R), "taken by the borg")
-	TEST_ASSERT_EQUAL(G.loc, R.loc, "onto the floor")
+	TEST_ASSERT(G.loc != R, "out of the recharger, into the gripper when it may hold it")
+	TEST_ASSERT(isnull(grip.get_wrapped_item()) || grip.get_wrapped_item() == G, "and the gripper holds nothing else")
 
 /// The wrench moves a recharger unless it is the wall type, and not while it holds something.
 /datum/unit_test/dq_p2_chargers/recharger_wrench

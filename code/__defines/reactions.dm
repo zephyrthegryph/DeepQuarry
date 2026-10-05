@@ -33,8 +33,6 @@
 #define RXN_EVERY 6
 /// A derived() / generated read folded into reactions(): only feeds READERS.
 #define RXN_READ 7
-/// after_init(delay, handler): a one-shot timer armed at init (code/datums/reactions/after_init.dm).
-#define RXN_AFTER_INIT 8
 
 // ---- what a type's reactions() declares for the kernel (generated: code/_generated/reads.dm, rx_boot_types()) ----
 /// The type declares every().
@@ -43,8 +41,6 @@
 #define RXB_CROSS (1<<1)
 /// The type declares on_notice().
 #define RXB_NOTICE (1<<2)
-/// The type declares after_init(): rx_enrol() arms its timers at init.
-#define RXB_INIT (1<<3)
 /// The source a holder joins its every() work under (join(key, holder, RX_ENROL_SOURCE)).
 #define RX_ENROL_SOURCE "rx_enrol"
 /// Deciseconds an urgent crossing may wait for the kernel's U phase before it counts as a breach.

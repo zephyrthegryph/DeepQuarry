@@ -51,10 +51,10 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)))
 
 /// The holder is climbable while it has the capability: the trait the old behaviour added.
-/datum/capability/lib/climb/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/climb/on_holder_init(datum/act/eval/A)
 	add_trait(A.holder, TRAIT_CLIMBABLE, "capability_climb")
 
-/datum/capability/lib/climb/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/lib/climb/on_holder_destroy(datum/act/eval/A)
 	remove_trait(A.holder, TRAIT_CLIMBABLE, "capability_climb")
 
 /// The mob dragged is the actor itself.

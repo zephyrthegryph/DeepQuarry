@@ -142,10 +142,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 
 /obj/effect/map_effect/portal/master/Initialize(mapload)
 	find_lines()
-	..()
-	return INITIALIZE_HINT_LATELOAD
+	. = ..()
 
-/obj/effect/map_effect/portal/master/LateInitialize()
+CAPABILITIES(/obj/effect/map_effect/portal/master)
+	after_init(0, then(PROC_REF(pair_up)))
+
+/// Finds its counterparts and draws, once every portal of the map exists.
+/obj/effect/map_effect/portal/master/proc/pair_up(datum/act/timer/A)
 	find_counterparts()
 	make_visuals()
 	apply_offset()

@@ -2,7 +2,7 @@
 //
 // robot_module: the human-readable module name (e.g. "Engineering"), keyed
 //   against GLOB.robot_modules. Determines what abilities the cyborg has at
-//   spawn — no post-spawn popup required (see LateInitialize override in
+//   spawn — no post-spawn popup required (see the chargen override in
 //   code/modules/mob/living/silicon/robot/cyborg_spawn.dm).
 // robot_chassis: the /datum/robot_sprite.name belonging to the chosen module
 //   (e.g. "Engiebot"), keyed against SSrobot_sprites.cyborg_sprites_by_module.

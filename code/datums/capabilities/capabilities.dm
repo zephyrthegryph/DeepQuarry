@@ -223,7 +223,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
 	if(flags & TYPE_DERIVES_CAPS)
 		for(var/datum/capability/C as anything in caps_of(holder))
-			C.on_holder_init(holder, mapload)
+			C.legacy_holder_init(holder, mapload)
 			cap_join_systems(holder, C)
 		refresh_granted_verbs(holder) // capability verbs are there from init, not a frame later
 	if(flags & TYPE_DERIVES_DEPS)
@@ -282,7 +282,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 		return
 	var/list/caps = caps_all(holder)
 	for(var/datum/capability/C as anything in caps)
-		C.on_holder_destroy(holder)
+		C.legacy_holder_destroy(holder)
 		cap_leave_systems(holder, C)
 	holder.cap_extras = null
 	for(var/key in holder.cap_data)

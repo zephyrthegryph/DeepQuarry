@@ -270,10 +270,14 @@ CAPABILITIES(/obj/structure/prop/prism)
 	if(length(my_turrets)) //Preset controls.
 		for(var/obj/structure/prop/prism/P in my_turrets)
 			rel_set(P, nameof(P.remote_dial), src)
-	else
-		. = INITIALIZE_HINT_LATELOAD
 
-/obj/structure/prop/prismcontrol/LateInitialize()
+CAPABILITIES(/obj/structure/prop/prismcontrol)
+	after_init(0, then(PROC_REF(find_turrets)))
+
+/// A control without preset turrets takes the nearby prisms on its dial.
+/obj/structure/prop/prismcontrol/proc/find_turrets(datum/act/timer/A)
+	if(length(my_turrets))
+		return // preset controls set their turrets up in Initialize()
 	for(var/obj/structure/prop/prism/P in orange(src, world.view)) //Don't search a huge area.
 		if(P.dialID == dialID && !P.remote_dial && P.external_control_lock)
 			rel_add(src, nameof(my_turrets), P) // the pair sets P.remote_dial

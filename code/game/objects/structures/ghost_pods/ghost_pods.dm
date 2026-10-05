@@ -270,10 +270,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 	if(notify)
 		trigger()
 
-/obj/structure/ghost_pod/ghost_activated/Initialize(mapload)
-	. = ..()
-	if(!mapload)
-		return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/ghost_pod/ghost_activated)
+	after_init(0, then(PROC_REF(start_up_spawned)))
 
-/obj/structure/ghost_pod/ghost_activated/LateInitialize()
+/// A pod made during the round starts up once it exists (a mapped one waits).
+/obj/structure/ghost_pod/ghost_activated/proc/start_up_spawned(datum/act/timer/A)
+	if(A.mapload)
+		return
 	ghostpod_startup(spawn_active)

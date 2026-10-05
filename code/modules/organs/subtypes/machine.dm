@@ -38,6 +38,7 @@
 	butcherable = FALSE
 
 CAPABILITIES(/obj/item/organ/internal/mmi_holder)
+	after_init(0, then(PROC_REF(mmi_after_init)))
 	owns_one(nameof(stored_mmi), /obj/item/mmi)
 
 
@@ -50,7 +51,6 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 		installed.forceMove(src)
 	else
 		rel_set(src, nameof(stored_mmi), new brain_type(src))
-	return INITIALIZE_HINT_LATELOAD
 
 /// THE way an MMI goes into a human's brain slot (surgery, vore reform): born in `target`, a
 /// holder of the MMI's kind takes the slot and stores `M`. Returns the holder.
@@ -64,7 +64,10 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 		holder_type = /obj/item/organ/internal/mmi_holder/robot
 	return new holder_type(target, 1, M)
 
-/obj/item/organ/internal/mmi_holder/LateInitialize()
+/// Takes its name and brain from the body it was made in, once that has placed it.
+/obj/item/organ/internal/mmi_holder/proc/mmi_after_init(datum/act/timer/A)
+	if(!ishuman(owner) || ismannequin(owner))
+		return
 	update_from_mmi()
 
 

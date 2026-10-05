@@ -204,20 +204,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
 
 /obj/item/storage/box/snakesnackbox
+	starts_with = list(
+		/obj/item/reagent_containers/food/snacks/snakesnack = 7,
+	)
 	name = "box of Snake Snax"
 	desc = "A box containing Noodle's special sugermouse treats."
 	icon = 'icons/mob/snake_vr.dmi'
 	icon_state = "sneksnakbox"
 	storage_slots = 7
-
-/obj/item/storage/box/snakesnackbox/Initialize(mapload)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	. = ..()
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/snakesnack, null, list(REAGENT_ID_SUGAR = 2))

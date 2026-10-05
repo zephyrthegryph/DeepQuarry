@@ -181,6 +181,10 @@ The full suite is one integration run per merge batch, not per worker.
 * **A capability key write marks the holder's outputs** (`capability_key_changed()` raises `CHANGE_CAPABILITY`), and a type whose table has a look layer is
   a type that is redrawn (`present_declares_look()`); without both the refresh-drift audit reports a draw that changed unmarked.
 * **Op clashes are a build error**: two ops with the same binding and tier need exclusive `when()`s, different tiers or `priority(above(key))`.
+* **The more specific binding wins a tie** (same input, intent, tier and side): `item(T)` for T narrower than `/obj/item` (deeper first),
+  then `tool(Q)` / `any_of_tools(...)`, then the broad `item(/obj/item)` catch-all, whatever `when()` proc gates it. So a vendor's
+  `stock` (`item(/obj/item)`, `when(stockable)`) never needs `priority(below(...))` under its panel's screwdriver, and a narrower
+  `item(T)` answers above `storage.put_in` by itself. Write `priority(above(...))` or `click_order()` only to override this.
 * **Tool ops wait.** `tool(Q)` brings the profile's wait; an op that only opens a window says `wait(0)`.
 * **`options that names a state-dependent message`**: `says(CAP_PROC(x))` with `x(A)` returning a `/datum/msg` type; a toggle says what it did.
 

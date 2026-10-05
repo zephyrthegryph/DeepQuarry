@@ -65,17 +65,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, TYPE_PROC_REF(/
 		icon_screen = initial(icon_screen)
 	. += ..()
 
-/obj/machinery/computer/message_monitor/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/machinery/computer/message_monitor/LateInitialize()
+/// Links the first message server when the map has one and none is set.
+/obj/machinery/computer/message_monitor/proc/link_default_server(datum/act/timer/A)
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer())
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
+	after_init(0, then(PROC_REF(link_default_server)))
 	interface("MessageMonitor")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("auth", ui_act("auth", arg("key", schema_text(4096))), then(PROC_REF(ui_act_auth)))
@@ -461,11 +459,11 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/item/paper/monitorkey
 	name = "Monitor Decryption Key"
 
-/obj/item/paper/monitorkey/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/paper/monitorkey)
+	after_init(0, then(PROC_REF(write_daily_key)))
 
-/obj/item/paper/monitorkey/LateInitialize()
+/// Writes the message servers' key, once they all exist.
+/obj/item/paper/monitorkey/proc/write_daily_key(datum/act/timer/A)
 	for(var/obj/machinery/message_server/server in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(!isnull(server.decryptkey))
 			info = "<center><h2>Daily Key Reset</h2></center><br>The new message monitor key is '[server.decryptkey]'.<br>Please keep this a secret and away from the clown.<br>If necessary, change the password to a more secure one."

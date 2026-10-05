@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	after_init(5 SECONDS, then(PROC_REF(register_to_holder)))
 	owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)

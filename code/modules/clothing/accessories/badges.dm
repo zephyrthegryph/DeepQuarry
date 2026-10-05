@@ -404,6 +404,11 @@ OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 	The body has absorbed too much radiation if the film turned black.</p>"}
 
 /obj/item/storage/box/dosimeter
+	starts_with = list(
+		/obj/item/paper/dosimeter_manual = 1,
+		/obj/item/clothing/accessory/dosimeter = 1,
+		/obj/item/dosimeter_film = 3,
+	)
 	name = "dosimeter case"
 	desc = "This case can only hold the Dosimeter, a few films and a manual."
 	icon = 'icons/inventory/accessory/item.dmi'
@@ -420,10 +425,3 @@ CAPABILITIES(/obj/item/storage/box/dosimeter)
 		/obj/item/clothing/accessory/dosimeter,
 		/obj/item/dosimeter_film)))
 
-/obj/item/storage/box/dosimeter/Initialize(mapload)
-	. = ..()
-	new /obj/item/paper/dosimeter_manual(src)
-	new /obj/item/clothing/accessory/dosimeter(src)
-	new /obj/item/dosimeter_film(src)
-	new /obj/item/dosimeter_film(src)
-	new /obj/item/dosimeter_film(src)

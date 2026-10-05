@@ -199,11 +199,14 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 	dries = FALSE // We do this ourselves
 	slips = FALSE
 
-/obj/effect/effect/foam/firefighting/Initialize(mapload)
-	. = ..()
-	after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
+CAPABILITIES(/obj/effect/effect/foam/firefighting)
+	after_init(PROC_REF(foam_lifetime), then(PROC_REF(dissolve)))
 
-/obj/effect/effect/foam/firefighting/proc/dissolve()
+/// How long it lasts: the old lifetime, one per 2 s step.
+/obj/effect/effect/foam/firefighting/proc/foam_lifetime(datum/act/timer/A)
+	return (lifetime + 1) * 2 SECONDS
+
+/obj/effect/effect/foam/firefighting/proc/dissolve(datum/act/timer/A)
 	flick("[icon_state]-disolve", src)
 	expire(5)
 

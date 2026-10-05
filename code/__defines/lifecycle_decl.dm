@@ -15,7 +15,7 @@
 //                  4. registries       DECLARE_REGISTRY (conditional ones are joined here)
 //                  5. service members  DECLARE_SERVICE_MEMBER
 //                  6. binds            DECLARE_BIND (batched per SSatoms batch)
-//                  7. behaviours       DECLARE_BEHAVIOUR, DECLARE_PERIODIC, DECLARE_START_TIMER
+//                  7. behaviours       DECLARE_BEHAVIOUR, DECLARE_PERIODIC (a timer at init is after_init(), code/engine/actions/after_init.dm)
 //   dematerialize (/atom/on_dematerialize()): 7..4 in reverse (periodic stop, service leave;
 //                registries, behaviours and timers are already left by the core).
 //   destroy      phase 1 (unbind): DECLARE_BIND release. Phase 4 deletes the children
@@ -100,10 +100,6 @@
 /// 8b. Periodic work (om_task_periodic(src, PIPELINE)) started at materialize, stopped at
 /// dematerialize. The type implements periodic_step().
 #define DECLARE_PERIODIC(PATH, PIPELINE) _LIFECYCLE_DECL(PATH, set_periodic(PIPELINE))
-/// 8c. LEGACY: the foundation form is `after_init(delay, PROC_REF(x))` in reactions() (armed at init;
-/// code/datums/reactions/after_init.dm).
-/// om_after(src, DELAY, PROC) at materialize. DELAY: a time, or a var name. PROC: PROC_REF(x).
-#define DECLARE_START_TIMER(PATH, DELAY, PROC) _LIFECYCLE_DECL(PATH, add_timer(DELAY, PROC))
 
 // Verbs a type has by what it is (code/datums/om/grant_verbs.dm, doc/rewrite/systems.md §19).
 // Applied by the verb store with no per-instance store entry; a runtime GRANT_VERB_HIDE still

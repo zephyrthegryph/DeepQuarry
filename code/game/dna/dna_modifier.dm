@@ -350,6 +350,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 
 /// Old attackby.
 CAPABILITIES(/obj/machinery/computer/scan_consolenew)
+	after_init(25 SECONDS, then(PROC_REF(injector_cooldown_finish)))
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
 
 /obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -366,7 +367,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
 	return TRUE
 
-DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_REF(injector_cooldown_finish))
 
 /obj/machinery/computer/scan_consolenew/Initialize(mapload)
 	. = ..()
@@ -735,7 +735,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 /**
  * Called when the injector creation cooldown finishes
  */
-/obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish()
+/obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish(datum/act/A)
 	injector_ready = TRUE
 
 

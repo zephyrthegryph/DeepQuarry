@@ -99,8 +99,6 @@
 /// INTERACT_*_DEFAULT shapes. The same scale as the resolver's INTERACTION_DEFAULT_PRIORITY.
 #define OP_PRIORITY_DEFAULT -2000
 #define OP_PRIORITY_NORMAL 0
-/// The storage catch-all op that takes any item: an op for a narrower item answers above it by default (op_default_anchor).
-#define OP_KEY_STORAGE_PUT_IN "storage.put_in"
 /// A maintenance part worked with a tool (a cover, a panel, wires, a repair): ahead of the holder's own uses of that tool.
 #define OP_PRIORITY_PART 10
 /// Taking out what sits in an open bay or slot by hand: ahead of the holder's own empty-hand use (the APC's cell over

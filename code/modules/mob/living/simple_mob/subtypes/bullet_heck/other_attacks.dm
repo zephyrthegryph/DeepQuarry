@@ -47,15 +47,14 @@
 	icon_state = "drop_marker"
 	var/ammmotype = /obj/effect/falling_effect/callstrike_bomb
 
-/obj/effect/artillery_attack/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/effect/artillery_attack)
+	after_init(PROC_REF(strike_delay), then(PROC_REF(spawner)))
 
-/obj/effect/artillery_attack/LateInitialize()
-	var/delay = rand(25, 30)
-	after(src, delay, PROC_REF(spawner))
+/// The strike lands 2.5 to 3 seconds after the marker appears.
+/obj/effect/artillery_attack/proc/strike_delay(datum/act/timer/A)
+	return rand(2.5 SECONDS, 3 SECONDS)
 
-/obj/effect/artillery_attack/proc/spawner()
+/obj/effect/artillery_attack/proc/spawner(datum/act/timer/A)
 	new ammmotype(src.loc)
 	expire(0.7 SECONDS)
 

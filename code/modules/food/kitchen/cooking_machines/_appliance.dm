@@ -46,6 +46,9 @@
 
 CAPABILITIES(/obj/machinery/appliance)
 	owns_many(nameof(cooking_objs))
+	// the AI's ctrl-click switches it on or off over its link
+	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle power"),
+		wait(0), then(PROC_REF(remote_power)))
 
 /// Whether or not the machine is currently operating (cooking its contents).
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
@@ -168,10 +171,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	update_icon()
 
-/obj/machinery/appliance/silicon_pull(mob/living/silicon/user)
-	if(!isAI(user))
-		return FALSE
-	attempt_toggle_power(user)
+/obj/machinery/appliance/proc/remote_power(datum/act/op/A)
+	attempt_toggle_power(A.actor)
+	return OP_OK
 
 /obj/machinery/appliance/proc/choose_output(mob/user, new_output)
 	if (!user.IsAdvancedToolUser())

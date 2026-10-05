@@ -14,9 +14,12 @@
 /obj/item/organ/internal/xenos/eggsac/grey
 	icon_state = "sac_grey"
 
-TYPE_TABLE(/obj/item/organ/internal/xenos/eggsac/grey/colormatch, internal_late_initialize, TRUE)
 
-/obj/item/organ/internal/xenos/eggsac/grey/colormatch/LateInitialize()
+CAPABILITIES(/obj/item/organ/internal/xenos/eggsac/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
+
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/xenos/eggsac/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
@@ -56,9 +59,12 @@ TYPE_TABLE(/obj/item/organ/internal/xenos/eggsac/grey/colormatch, internal_late_
 	icon_state = "plasma_grey"
 	stored_plasma = 200
 
-TYPE_TABLE(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch, internal_late_initialize, TRUE)
 
-/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch/LateInitialize()
+CAPABILITIES(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
+
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
@@ -92,9 +98,12 @@ TYPE_TABLE(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch, internal
 /obj/item/organ/internal/xenos/acidgland/grey
 	icon_state = "acidgland_grey"
 
-TYPE_TABLE(/obj/item/organ/internal/xenos/acidgland/grey/colormatch, internal_late_initialize, TRUE)
 
-/obj/item/organ/internal/xenos/acidgland/grey/colormatch/LateInitialize()
+CAPABILITIES(/obj/item/organ/internal/xenos/acidgland/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
+
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/xenos/acidgland/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
@@ -118,9 +127,12 @@ TYPE_TABLE(/obj/item/organ/internal/xenos/acidgland/grey/colormatch, internal_la
 /obj/item/organ/internal/xenos/hivenode/grey
 	icon_state = "xenode_grey"
 
-TYPE_TABLE(/obj/item/organ/internal/xenos/hivenode/grey/colormatch, internal_late_initialize, TRUE)
 
-/obj/item/organ/internal/xenos/hivenode/grey/colormatch/LateInitialize()
+CAPABILITIES(/obj/item/organ/internal/xenos/hivenode/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
+
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/xenos/hivenode/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
@@ -139,9 +151,12 @@ TYPE_TABLE(/obj/item/organ/internal/xenos/hivenode/grey/colormatch, internal_lat
 /obj/item/organ/internal/xenos/resinspinner/grey
 	icon_state = "xenode_grey"
 
-TYPE_TABLE(/obj/item/organ/internal/xenos/resinspinner/grey/colormatch, internal_late_initialize, TRUE)
 
-/obj/item/organ/internal/xenos/resinspinner/grey/colormatch/LateInitialize()
+CAPABILITIES(/obj/item/organ/internal/xenos/resinspinner/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
+
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/xenos/resinspinner/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color

@@ -76,8 +76,9 @@ MSG_DEF_SELF(turretid/panel_locked, "The controls are locked.")
 MSG_DEF_SELF(turretid/firewall, "There seems to be a firewall preventing you from accessing this device.")
 
 /// Why the panel's controls refuse `user` (a message type), or null when they answer: reads only.
-/obj/machinery/turretid/proc/lock_refusal(mob/user)
-	if(isrobot(user) || isAI(user))
+/// Why `user` acting under `authority` may not work the panel, or null. Over a link (AUTH_REMOTE_ACCESS) only the firewall stops it; in person, the lock.
+/obj/machinery/turretid/proc/lock_refusal(mob/user, authority = actor_authority(user))
+	if(authority & AUTH_REMOTE_ACCESS)
 		return ailock ? /datum/msg/turretid/firewall : null // ALLOW(reads): the firewall is read when a button is pressed, never from a cached menu
 
 	if(isobserver(user))
@@ -154,16 +155,21 @@ CAPABILITIES(/obj/machinery/turretid)
 	op("authall", ui_act("authall"), then(PROC_REF(ui_act_authall)))
 	op("authdown", ui_act("authdown"), then(PROC_REF(ui_act_authdown)))
 	extend(TAG_UI, needs(req(PROC_REF(controller_unlocked), because = PROC_REF(controller_lock_reason))))
+	// a silicon's ctrl-click switches the turrets, its alt-click their lethal mode, over its link and under the window's rules
+	op("remote_power", remote(), gesture(GESTURE_CTRL), label("Toggle the turrets"), then(PROC_REF(ui_act_power)))
+	op("remote_lethal", remote(), gesture(GESTURE_ALT), label("Toggle lethal mode"), then(PROC_REF(ui_act_lethal)))
+	extend(list("remote_power", "remote_lethal"), needs(req(PROC_REF(remote_link_allowed), because = MSG(turretid/panel_locked)),
+		req(PROC_REF(controller_unlocked), because = PROC_REF(controller_lock_reason))))
 	emag(then(PROC_REF(on_emag)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(turretid_emp))))
 
 /// The window answers someone who has the panel's access.
 /obj/machinery/turretid/proc/controller_unlocked(datum/act/op/A)
-	return isnull(lock_refusal(A.actor))
+	return isnull(lock_refusal(A.actor, A.authority))
 
 /// Why the window refuses someone.
 /obj/machinery/turretid/proc/controller_lock_reason(datum/act/op/A)
-	return lock_refusal(A.actor) || /datum/msg/turretid/panel_locked
+	return lock_refusal(A.actor, A.authority) || /datum/msg/turretid/panel_locked
 
 /obj/machinery/turretid/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

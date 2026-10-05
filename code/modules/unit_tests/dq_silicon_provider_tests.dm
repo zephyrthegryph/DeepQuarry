@@ -1,5 +1,6 @@
-// The silicon providers (doc/rewrite/final_api.html section 8; round-5 decision NS1): an AI's interface is provides(AFF_CONTROL, authority =
-// AUTH_REMOTE_ACCESS), a cyborg's the same beside its gripper (library/mob/silicon.dm). The ops they work are remote() ops; a mob with neither refuses.
+// The silicon providers (doc/rewrite/final_api.html section 8, 16.8; round-5 decision NS1): an AI's interface is provides(AFF_CONTROL, authority =
+// AUTH_REMOTE_ACCESS), a cyborg's the same beside its module slots, and its selected gripper is its hand (library/mob/silicon.dm). The ops they work
+// are remote() ops; a mob with neither refuses.
 
 /// Base: the kernel on its injected clock around the test, a clean driver after.
 /datum/unit_test/dq_silicon
@@ -27,7 +28,7 @@
 	H.enable_godmode()
 	return H
 
-/// The providers declared on the silicons: the AI's interface alone, the borg's gripper and interface.
+/// The providers declared on the silicons: the AI's interface alone; the borg's interface and manipulators, and its gripper while selected.
 /datum/unit_test/dq_silicon/providers_declared
 
 /datum/unit_test/dq_silicon/providers_declared/run_gate()
@@ -48,10 +49,24 @@
 		if(V.authority_mask() == AUTH_REMOTE_ACCESS)
 			interface++
 			TEST_ASSERT_EQUAL(V.reach(), BORG_INTERFACE_REACH, "a borg's interface reaches as far as it sees")
-		else if(V.aff() & AFF_MANIPULATE)
+		else if((V.aff() & AFF_MANIPULATE))
 			hands++
 	TEST_ASSERT_EQUAL(interface, 1, "a borg has its interface")
-	TEST_ASSERT_EQUAL(hands, 1, "and its gripper")
+	TEST_ASSERT_EQUAL(hands, 1, "and its chassis manipulators")
+	hands = 0
+	if(!R.module)
+		rel_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
+	var/obj/item/gripper/G = new /obj/item/gripper(R.module)
+	rel_add(R.module, nameof(R.module.modules), G)
+	R.activate_module(G)
+	R.select_module(R.module_slot_of(G))
+	for(var/datum/prov/V as anything in providers_for(R, R.held_for_ops()))
+		if(V.authority_mask() != AUTH_REMOTE_ACCESS && (V.aff() & AFF_MANIPULATE) && V.source == G)
+			hands++
+			TEST_ASSERT_EQUAL(V.source, G, "the hand is the selected gripper")
+	TEST_ASSERT_EQUAL(hands, 1, "a selected gripper is a hand too")
+	var/datum/prov/picked = reach_pick_provider(providers_for(R, null), null, R.held_carrier())
+	TEST_ASSERT_EQUAL(picked?.source, G, "and the one that does the work")
 	for(var/datum/prov/V as anything in providers_for(H, null))
 		TEST_ASSERT(V.authority_mask() != AUTH_REMOTE_ACCESS, "a human has no remote interface")
 	TEST_ASSERT_EQUAL(actor_authority(AI), AUTH_REMOTE_ACCESS, "the AI's clicks carry remote access")

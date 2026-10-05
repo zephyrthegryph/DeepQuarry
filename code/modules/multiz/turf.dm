@@ -64,10 +64,13 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 	. = ..()
 	ASSERT(HasBelow(z))
 	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
-	return INITIALIZE_HINT_LATELOAD
 
-/turf/simulated/open/LateInitialize()
-	. = ..()
+/turf/simulated/open/runtime_after_init()
+	return TRUE
+
+/// Shows the level below, once it exists.
+/turf/simulated/open/sim_after_init(datum/act/timer/A)
+	..()
 	make_z_transparent(FALSE)
 	update_icon()
 
@@ -168,11 +171,14 @@ CAPABILITIES(/turf/simulated/open)
 
 /turf/simulated/floor/glass/Initialize(mapload)
 	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/turf/simulated/floor/glass/LateInitialize()
 	. = ..()
+
+/turf/simulated/floor/glass/runtime_after_init()
+	return TRUE
+
+/// Shows the level below and blends with the glass around it, once that exists.
+/turf/simulated/floor/glass/sim_after_init(datum/act/timer/A)
+	..()
 	make_z_transparent(TRUE)
 	blend_icons()
 

@@ -112,7 +112,8 @@
 	. = ..()
 	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
-DECLARE_START_TIMER(/obj/structure/timer_door, "time_til_open", /datum/proc/qdel_self)
+CAPABILITIES(/obj/structure/timer_door)
+	after_init(nameof(time_til_open), then(TYPE_PROC_REF(/datum, qdel_self)))
 
 DESTROY_EFFECTS(/obj/structure/timer_door, new /datum/destroy_effects_data(message = "%SRC% opens up!", message_class = "danger", sound = SFX_EFFECTS_BANG, sound_volume = 75))
 

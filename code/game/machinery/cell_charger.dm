@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 /obj/machinery/cell_charger/proc/can_insert(datum/act/op/A)
 	return isnull(insert_refusal(A))
 
-/// The empty hand takes the cell out. A cyborg beside it sets the cell down on the charger's tile instead of holding it.
+/// The empty hand takes the cell out. A cyborg takes it with its gripper.
 /obj/machinery/cell_charger/proc/take_cell(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/cell/cell = charging
@@ -87,12 +87,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 		return OP_REFUSED
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You remove [cell] from %T%."), MSG_OTHERS("%U% removes [cell] from %T%."))
-	if(isrobot(user))
-		varslot_set(src, nameof(charging), null)
-		cell.forceMove(loc)
-		cell.update_icon()
-		return OP_OK
-	varslot_take(src, nameof(charging), user)
+	varslot_take(src, nameof(charging), user, op_carrier(A)) // a cyborg's gripper carries it
 	cell.update_icon()
 	return OP_OK
 

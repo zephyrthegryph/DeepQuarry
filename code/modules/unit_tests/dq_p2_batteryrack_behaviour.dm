@@ -573,6 +573,6 @@
 /datum/unit_test/dq_p2_smes/rack_premade_input_and_output_on/run_gate()
 	var/obj/machinery/power/smes/batteryrack/R = allocate(/obj/machinery/power/smes/batteryrack/mapped/input_and_output_on, p2_smes_spot())
 	LAZYADD(p2_smeses, R)
-	R.LateInitialize()
+	R.map_late()
 	p2_settle()
 	TEST_ASSERT_EQUAL(p2_rack_mode(R), 3, "the mode is auto")

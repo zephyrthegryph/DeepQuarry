@@ -586,10 +586,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_
 /obj/machinery/power/rtg/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/power/rtg/LateInitialize()
+CAPABILITIES(/obj/machinery/power/rtg)
+	after_init(0, then(PROC_REF(mapped_upgrades_after_init)))
+
+/// A mapped RTG takes the parts laid on its tile.
+/obj/machinery/power/rtg/proc/mapped_upgrades_after_init(datum/act/timer/A)
+	if(!A.mapload)
+		return
 	apply_mapped_upgrades()
 
 /obj/machinery/power/rtg/apply_mapped_upgrades()

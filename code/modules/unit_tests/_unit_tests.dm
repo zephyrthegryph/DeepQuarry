@@ -186,6 +186,10 @@
 // the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
+#include "dq_after_init_tests.dm"
+#include "dq_init_settle_tests.dm"
+#include "dq_init_forms_behaviour_tests.dm"
+#include "dq_init_children_tests.dm"
 #include "dq_lifecycle_forms_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"
@@ -499,6 +503,7 @@
 #include "dq_hc_struct_behaviour.dm"
 #include "dq_hc_tgui_behaviour.dm"
 #include "dq_hc_machinery_behaviour.dm"
+#include "dq_silicon_entry_tests.dm"
 #include "dq_silicon_provider_tests.dm"
 #include "dq_p2_reagent_needle_behaviour.dm"
 #include "dq_p2_storage_behaviour.dm"

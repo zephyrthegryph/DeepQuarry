@@ -1338,8 +1338,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!istype(holder))
 		return OP_FAILED
 	var/slot_id = src.args["slot"]
+	var/obj/item/carrier = op_carrier(A)
 	if(op_var_slot(holder, slot_id))
-		var/atom/movable/taken = varslot_take(holder, slot_id, A.actor)
+		var/atom/movable/taken = varslot_take(holder, slot_id, A.actor, carrier)
 		if(!taken)
 			return OP_REFUSED
 		TEST_REC_TRANSFER(taken, holder, taken.loc, slot_id)
@@ -1349,7 +1350,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		return OP_REFUSED
 	var/atom/movable/thing = inside[1]
 	var/atom/destination = get_turf(A.actor || holder)
-	if(A.actor && istype(thing, /obj/item))
+	var/carried = carrier && istype(thing, /obj/item) && carrier.can_carry(thing, A.actor)
+	if(!carried && A.actor && istype(thing, /obj/item))
 		var/obj/item/I = thing
 		if(!A.actor.put_in_hands(I))
 			destination = get_turf(A.actor)
@@ -1358,8 +1360,28 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			return OP_OK
 	if(!holder.slot_remove(thing, destination, A.actor))
 		return OP_FAILED
+	if(carried && carrier.carry(thing, A.actor)) // out of the slot onto the floor, then into the carrier (a gripper's pocket)
+		destination = carrier
 	TEST_REC_TRANSFER(thing, holder, destination, slot_id)
 	return OP_OK
+
+/// The provider of an op that carries what it takes (a cyborg's gripper, not the actor's own hand), or null.
+/proc/op_carrier(datum/act/op/A)
+	var/obj/item/carrier = A.provider
+	if(!istype(carrier) || carrier == A.held)
+		return null
+	return carrier
+
+/// Where something an op took out goes: into the provider that carries it (a gripper), else the actor's hands, else the actor's floor. TRUE
+/// when it reached the carrier or a hand.
+/proc/op_deliver(datum/act/op/A, obj/item/thing)
+	var/obj/item/carrier = op_carrier(A)
+	if(carrier && carrier.can_carry(thing, A.actor) && carrier.carry(thing, A.actor))
+		return TRUE
+	if(A.actor && A.actor.put_in_hands(thing))
+		return TRUE
+	thing.forceMove(get_turf(A.actor || A.target_atom))
+	return FALSE
 
 /// Splits `n` units off a stack item into a new item (the original keeps the rest).
 /proc/op_split_units(obj/item/I, n)

@@ -5,17 +5,17 @@
 //! * `unordered_clash`: two ops one type composes (its own, its named bundles' and the capabilities its CAPABILITIES block expands to, with
 //!   their parameters substituted) that can answer the same input (the same intent, an overlapping held tool or item type, the same binding
 //!   kind) at the same tier, with nothing ordering them: no priority(above/below(...)) naming the other, no click_order() of a composing bundle
-//!   covering both, no default precedence (a narrower item before storage.put_in), no passes(), and when() parts that are not mutually
+//!   covering both, no binding specificity (a narrower item type, then a tool quality, then a broad item), no passes(), and when() parts that are not mutually
 //!   exclusive. The engine's boot check (RULE_OP_CLASH) catches the identical-binding case at runtime; this one also sees overlapping item
 //!   types, statically. Ops the engine derives (a construction ladder's steps) are not modelled.
 //!
 //!   What it models as the resolver does (code/engine/parts/resolve.dm): the intents each binding answers (answers(), hostile(), a pinned
 //!   gesture(): a drag answers INTENT_DROP_ONTO, never a click), the tier by value (hostile() yields ATTACK; OP_PRIORITY_PART - 1 is its own
 //!   tier), disjoint stance() sets, when() conjuncts that negate (c / cond_not(c), req_is(K) / req_is(K, FALSE), req(X) is X, graph stages
-//!   that do not meet), and a constructor's entries its params switch off (`lid ? op(...) : null`, `if(by_hand)`). It does not model
-//!   specificity, because the resolver has none: item(/obj/item) beside tool(Q) or item(T) is ordered only by declaration order (the silent
-//!   "first declared wins" the design rejects), so it is a clash unless a tier, an order or an exclusive when() separates them. An opaque
-//!   when() proc is not exclusive of anything; the engine has no annotation that says it is.
+//!   that do not meet), and a constructor's entries its params switch off (`lid ? op(...) : null`, `if(by_hand)`), and binding specificity
+//!   (op_binding_specificity): of two held-item bindings, an item type narrower than /obj/item answers before a tool quality, which answers
+//!   before a broad item (item(/obj/item), whatever acceptance proc gates it), and a deeper item type before a shallower one, so only two
+//!   bindings of equal specificity clash. An opaque when() proc is not exclusive of anything; the engine has no annotation that says it is.
 //! * `relative_priority`: a hand-written priority(above(...)) or priority(below(...)). Each one is a per-type patch for an order a bundle
 //!   should declare once (click_order()); the count is a ceiling that can only fall.
 //!
@@ -138,6 +138,25 @@ impl Bind {
             Bind::Tool(q) => format!("tool({})", q),
             Bind::Item(t) => format!("item({})", t),
             Bind::Stack(t) => format!("stack({})", t),
+        }
+    }
+
+    /// How specific the binding is about the held item (resolve.dm: op_binding_specificity): 0 names no held item (not compared), 1 a broad
+    /// item (item(/obj/item), whatever acceptance proc gates it), 2 a tool quality (tool(Q), any_of_tools(...)), 4 and up an item or stack
+    /// type narrower than /obj/item by path depth. The more specific answers first, so only equal specificities can clash.
+    fn specificity(&self) -> usize {
+        match self {
+            Bind::Hand | Bind::InHand => 0,
+            Bind::Tool(_) => 2,
+            Bind::Item(t) | Bind::Stack(t) => {
+                if t == "/obj/item" {
+                    1
+                } else if t.starts_with("/obj/item/") {
+                    t.split('/').count()
+                } else {
+                    0 // a mob or structure dragged in: not a held item
+                }
+            }
         }
     }
 }
@@ -1211,14 +1230,16 @@ impl Composition {
                 if self.chain_orders(a, b) {
                     continue;
                 }
-                // the default precedence: an op for a narrower item answers above the storage catch-all
-                if a.key == "storage.put_in" || b.key == "storage.put_in" {
-                    continue;
-                }
                 let mut input = None;
-                // two bindings meet when they take one held thing and answer an intent in common (plan.dm, op_plans_clash)
+                // two bindings meet when they take one held thing and answer an intent in common (plan.dm, op_plans_clash); binding
+                // specificity orders two held-item bindings of different specificity (an item type narrower than /obj/item, then a tool
+                // quality, then a broad item: resolve.dm, op_binding_specificity), so only an equal pair is unordered
                 'outer: for x in &a.binds {
                     for y in &b.binds {
+                        let (sx, sy) = (x.specificity(), y.specificity());
+                        if sx != 0 && sy != 0 && sx != sy {
+                            continue;
+                        }
                         let (ix, iy) = (bind_intents(a, x), bind_intents(b, y));
                         if !ix.iter().any(|i| iy.contains(i)) {
                             continue;
@@ -1266,6 +1287,16 @@ mod tests {
         assert!(overlap(&Bind::Item("/obj/item".into()), &Bind::Item("/obj/item/pen".into())).is_some());
         assert!(overlap(&Bind::Item("/obj/item/pen".into()), &Bind::Item("/obj/item/paper".into())).is_none());
         assert!(overlap(&Bind::Tool("TOOL_X".into()), &Bind::Tool("TOOL_Y".into())).is_none());
+    }
+
+    #[test]
+    fn specificity_orders_item_tool_broad() {
+        let broad = Bind::Item("/obj/item".into()).specificity();
+        let tool = Bind::Tool("TOOL_X".into()).specificity();
+        let pen = Bind::Item("/obj/item/pen".into()).specificity();
+        let plasteel = Bind::Stack("/obj/item/stack/material/plasteel".into()).specificity();
+        assert!(broad < tool && tool < pen && pen < plasteel);
+        assert_eq!(Bind::Hand.specificity(), 0);
     }
 
     #[test]
