@@ -424,7 +424,6 @@ init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_set(src, 
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	rel_set(src, nameof(battery), new cell_type(src))
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	rel_set(src, nameof(battery), new/obj/item/cell(src))
 init_new_child	code/modules/multiz/hoist.dm	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
-init_new_child	code/modules/nifsoft/nif_softshop.dm	rel_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 init_new_child	code/modules/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
 init_new_child	code/modules/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
 init_new_child	code/modules/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
