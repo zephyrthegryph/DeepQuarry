@@ -32,7 +32,7 @@
 		original_info = original.info
 		TEST_ASSERT(findtext(original_info, "Original stored record"), "the real paper contains its written fixture record")
 		TEST_ASSERT(actor.put_in_active_hand(original), "the real actor holds the original written sheet for insertion")
-		bin.interaction_item(actor, original, null)
+		test_op_handler(bin, "interaction_item", actor, original)
 		TEST_ASSERT_EQUAL(original.loc, bin, "actual insertion physically contains the original written sheet")
 		TEST_ASSERT_EQUAL(bin.amount, 31, "actual insertion credits exactly one custom sheet")
 		TEST_ASSERT_EQUAL(LAZYLEN(bin.papers), 1, "actual insertion records one custom paper identity")

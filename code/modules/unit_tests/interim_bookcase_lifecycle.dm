@@ -7,7 +7,7 @@
 	for(var/i in 1 to 2)
 		var/obj/item/book/book = allocate(/obj/item/book, T)
 		TEST_ASSERT(user.put_in_active_hand(book), "the actual book starts held for insertion")
-		shelf.interaction_item(user, book, null)
+		test_op_handler(shelf, "shelve_book", user, book)
 		TEST_ASSERT_EQUAL(book.loc, shelf, "actual insertion puts the book inside the shelf")
 		TEST_ASSERT_NULL(user.get_active_hand(), "actual insertion vacates the book's hand slot")
 		books += book

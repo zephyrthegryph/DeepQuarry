@@ -134,17 +134,14 @@ Thus, the two variables affect pump operation are set in New():
 
 	return 1
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/pump, "GasPump")
-
 /obj/machinery/atmospherics/binary/pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_machinery_atmospherics_binary_pump{}")
-
-/// The computed part of /obj/machinery/atmospherics/binary/pump's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/binary/pump/proc/ui_data_obj_machinery_atmospherics_binary_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/atmospherics/binary/pump/ui_data(datum/act/eval/A)
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
 
@@ -219,7 +216,12 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 	return TRUE
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
+	interface("GasPump")
 	op("power", ui_act("power"), then(PROC_REF(power_switched)))
+	// "set" asks for the value; "min" and "max" set it at once
+	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_press_question)), "title" = "Pressure control", "default" = computed(PROC_REF(set_press_default)), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "k231", when = PROC_REF(press_is_set)),
+		then(PROC_REF(ui_act_set_press)))
 
 /obj/machinery/atmospherics/binary/pump/proc/power_switched(datum/act/op/A)
 	set_use_power(!use_power)
@@ -227,21 +229,26 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 	add_fingerprint(A.actor)
 	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)
-	var/press = params["press"]
+/obj/machinery/atmospherics/binary/pump/proc/press_is_set(datum/act/op/A)
+	return A.args["press"] == "set"
+
+/obj/machinery/atmospherics/binary/pump/proc/set_press_question(datum/act/op/A)
+	return "Enter new output pressure (0-[max_pressure_setting]kPa)"
+
+/obj/machinery/atmospherics/binary/pump/proc/set_press_default(datum/act/op/A)
+	return get_target_pressure()
+
+/obj/machinery/atmospherics/binary/pump/proc/ui_act_set_press(datum/act/op/A, press)
 	switch(press)
 		if("min")
 			set_target_pressure(0)
 		if("max")
 			set_target_pressure(max_pressure_setting)
 		if("set")
-			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-				return
-			open_request(ui, /datum/prompt/number/atmos_scalar/pump_pressure, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure control", default = get_target_pressure(), display_max = max_pressure_setting)
-			return
+			var/new_pressure = A.step_value("k231")
+			set_target_pressure(between(0, new_pressure, max_pressure_setting))
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 	update_icon()
 
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
@@ -356,22 +363,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appear
 	. = ..()
 	. += rust_push(nameof(rust_device_rev))
 
-/obj/machinery/atmospherics/binary/pump/proc/apply_pump_pressure_answer(mob/user, value)
-	set_target_pressure(between(0, value, max_pressure_setting))
-	add_fingerprint(user)
-	update_icon()
-
 /datum/tgui/proc/atmos_scalar_answered(datum/act/request/context)
 	if(!context.answer)
 		return
 	var/datum/prompt/number/atmos_scalar/ask = context.answer
 	switch(ask.setting_kind)
-		if("pump_pressure")
-			var/obj/machinery/atmospherics/binary/pump/machine = src_object()
-			machine.apply_pump_pressure_answer(user, ask.answer_value)
-		if("volume_rate")
-			var/obj/machinery/atmospherics/binary/volume_pump/machine = src_object()
-			machine.apply_volume_rate_answer(user, ask.answer_value)
 		if("gate_pressure")
 			var/obj/machinery/atmospherics/binary/passive_gate/machine = src_object()
 			machine.apply_gate_pressure_answer(user, ask.answer_value)
@@ -409,14 +405,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appear
 	if(!machine.ui_act_allowed(original_ui.user, action_key, original_ui, original_ui.state()))
 		return "the atmos setting is unavailable"
 	return null
-
-/datum/prompt/number/atmos_scalar/pump_pressure
-	setting_kind = "pump_pressure"
-	machine_type = /obj/machinery/atmospherics/binary/pump
-
-/datum/prompt/number/atmos_scalar/volume_rate
-	setting_kind = "volume_rate"
-	machine_type = /obj/machinery/atmospherics/binary/volume_pump
 
 /datum/prompt/number/atmos_scalar/gate_pressure
 	setting_kind = "gate_pressure"

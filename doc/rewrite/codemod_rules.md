@@ -178,11 +178,19 @@ Tests: `dq_gap/ask_a_refused_answer_asks_again`, `ask_fields_are_literal_var_or_
 | a field that is a literal | written as it is |
 | a field that is a var of the holder (`choices = possible_transfer_amounts`) | `nameof(var)`: read from the capture when the question opens |
 | a field that is any other expression (`choices = GLOB.x`, `title = "[src]"`) | `computed(PROC_REF(<handler>_<key>_<field>))`, a generated proc `x(datum/act/op/A)` returning the expression (`var/mob/user = A.actor` and the held item are declared when it reads them) |
+| a field naming a macro some file `#undef`s (a file-local constant, gone when the generated declaration compiles) | `computed(...)` like any other expression |
 
 A handler's own falsy returns stay as they are in an op with a question (`OP_DECLINE` is for an op that has not waited), and its `PROC_REF(self)` mentions in the questions no longer make the handler `handler_shared`.
 The question has to be first: the requirements run before it, whatever stood before it would run after. Residue codes: `ask_not_first` (a statement stands before the first question), `ask_later` (another question after the first effect), `ask_guard` (the question is not followed by `if(isnull(x))` and a return), `ask_kind`
 (a prompt kind or subtype this table does not name), `ask_key`, `ask_actor` (the asker is not the actor), `ask_rerun` (the re-run names another proc or other arguments), `ask_fields`, `ask_field_<name>` (a field the new kind has no name for), `name_text_unknown`, `name_clash` (a generated proc's name is taken), `ask_expr`.
 Not converted: `verb_ask` and `client_ask` (an admin verb or a client proc is not an op: its code after the question moves into a `request()` callback by hand), `topic_ask`, `flow_ask`/`prompt_flow`, and a handler whose later question depends on an earlier answer (a hand conversion: `asks(..., when = PROC_REF(x))` skips a step by the earlier answer).
+The answer is read with `A.step_value("k")` (the prompt's `value`; `A.step_answer("k")` is the prompt itself). A `computed()` field and an `asks(..., when =)`
+condition run in the op's context (`A.args`, `A.held`, the earlier steps' answers); `analyze` checks them as such.
+
+**By hand, the shapes the codemod leaves (`ask_not_first`).** A question asked in one case only (after a guard, inside an `if` or a `switch` case on an
+argument) is the same `asks()` step with `when = PROC_REF(x)`, `x` the condition the old code tested before asking; the guard itself stays in the
+handler, which runs after the answer. A handler that branched on the held item's kind becomes one op per kind (`item(T)`, `tool(Q)`), the question on
+the op that asked it. Examples: the bookcase, the paper bin, the gas pumps, the ATM, the shield generator (fw-gaps3, `intended_changes.md`).
 
 ## Window routing: UI_ACT_FALLBACK, UI_ACT_FORWARD, UI_ACT_OVERRIDE
 

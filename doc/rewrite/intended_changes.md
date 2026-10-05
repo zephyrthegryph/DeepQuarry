@@ -645,6 +645,25 @@ Pinned by `code/modules/unit_tests/dq_fwg3_modals.dm` (modals opened and answere
   handler on either answer, which then needed the ID in hand). The ID check is unchanged.
 * **Yes/no labels.** The trash-eating PDA confirmation ("Definitely" / "Cancel") is an `open_request()` of `/datum/prompt/yes_no` with its labels.
 
+### fw-gaps3 content: questions that re-asked themselves (bookcase, ladder, chameleon stamp, alien coil, paper bin, trolley tank, gas pumps, ATM, artifact harvester, shield generator)
+
+The types the asks() codemod left because the question was not first in its handler (it stood after a guard, or inside an `if` or a `switch` case).
+Pinned by `code/modules/unit_tests/dq_fwg3_asks.dm` (the item and hand questions, run on the legacy re-run first) and `dq_fwg3_windows.dm` (the
+window questions, on the converted form: a legacy `act_ask` re-run needs the open window).
+
+* **A question asked only in one case is an `asks()` step with `when =`**: the bookcase asks which book only when it has some, the paper bin which paper
+  only with no custom paper on top, a gas pump the value only for "set", the ATM the PIN only when lowering the level without the account's card in, the
+  artifact harvester only for a charged battery, the shield generator its range and input cap only while the modes are unlocked and its shutdowns only
+  while it runs. The guard the old handler ran before the question still runs in the handler, after the answer.
+* **Held-kind branches are ops of their own**: a book on a bookcase and a pen on it are two ops (`item(/obj/item/book)`, `item(/obj/item/pen)`); a
+  trolley tank's beaker, multitool and pen likewise. **Fix:** the trolley tank's multitool repaint works again (the vehicle's generic item use, an op,
+  answered the multitool first and hit the tank since the vehicles were converted); its three uses sit one tier above it.
+* **Paper bin:** an unusable hand is a requirement with the old message. **Alien coil:** its touch re-declares the stack's `split` and asks with a
+  request, as the stack does. **Chameleon stamp:** the disguise question lists "EXIT" first, as before.
+* Not converted here (their `rerun_ask`/`act_ask` sites are held back by other residue, `codemod_rules.md`): the book (its in-hand ops on six
+  subtypes would need re-keying together), the craftable collar (its parent collar is legacy), the camera bug, and the client and admin datums
+  (preferences, songs, tickets, the event kit's mob spawner).
+
 ## Silicon entry points (phase A): remote() ops, the interface provider, the gripper as a provider
 
 Pinned by `code/modules/unit_tests/dq_silicon_entry_tests.dm` (16 tests, green on the legacy hooks first; the converted code passes the same tests, one

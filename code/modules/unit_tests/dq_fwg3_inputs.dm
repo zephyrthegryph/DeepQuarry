@@ -209,3 +209,25 @@
 	for(var/atom/movable/AM in T)
 		if(istype(AM, /obj/item/inflatable) || istype(AM, /obj/structure/inflatable))
 			qdel(AM)
+
+/// Filing cabinet: an empty one refuses the hand; a records cabinet fills itself first, then opens; telekinesis rummages in an anchored one at range.
+/datum/unit_test/dq_fwg3/filing_cabinet
+/datum/unit_test/dq_fwg3/filing_cabinet/run_fwg3()
+	var/turf/home = run_loc_floor_bottom_left
+	var/turf/away = locate(home.x + 3, home.y, home.z)
+	var/mob/living/carbon/human/H = person(home)
+	var/obj/structure/filingcabinet/F = allocate(/obj/structure/filingcabinet, home)
+	var/datum/op_result/R = test_click(H, F, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "an empty cabinet refuses the hand")
+	var/obj/item/paper/P = allocate(/obj/item/paper, home)
+	H.put_in_active_hand(P)
+	test_click(H, F, P)
+	TEST_ASSERT_EQUAL(P.loc, F, "a paper is filed")
+	R = test_click(H, F, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "a cabinet with files opens")
+	var/obj/structure/filingcabinet/far = allocate(/obj/structure/filingcabinet, away)
+	far.set_anchored(TRUE)
+	H.add_mutation(TK)
+	R = test_click(H, far, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "telekinesis rummages in an anchored cabinet at range")
+	H.remove_mutation(TK)

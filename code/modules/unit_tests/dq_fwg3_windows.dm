@@ -172,3 +172,60 @@
 	TEST_ASSERT(F.use_power != was, "the power button toggles it")
 	var/list/data = hc_data(F, H)
 	TEST_ASSERT_EQUAL(data["rate"], 50, "the window shows the rate")
+
+/// Gas pumps: "min" and "max" set the target at once; "set" asks for the value (the old act_ask re-run inside a switch: an asks() step with when =).
+/datum/unit_test/dq_fwg3_ui/gas_pumps
+/datum/unit_test/dq_fwg3_ui/gas_pumps/run_fwg3()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/obj/machinery/atmospherics/binary/pump/P = allocate(/obj/machinery/atmospherics/binary/pump, T)
+	hc_ui(H, P, "set_press", list("press" = "max"))
+	TEST_ASSERT_EQUAL(P.get_target_pressure(), P.max_pressure_setting, "max sets the most")
+	hc_ui(H, P, "set_press", list("press" = "min"))
+	TEST_ASSERT_EQUAL(P.get_target_pressure(), 0, "min sets none")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "and neither asks")
+	hc_ui(H, P, "set_press", list("press" = "set"))
+	p2cl_answer(H, 150)
+	test_time(1)
+	TEST_ASSERT_EQUAL(P.get_target_pressure(), 150, "set asks for the pressure")
+	var/obj/machinery/atmospherics/binary/volume_pump/V = allocate(/obj/machinery/atmospherics/binary/volume_pump, T)
+	hc_ui(H, V, "set_press", list("press" = "set"))
+	p2cl_answer(H, 20)
+	test_time(1)
+	TEST_ASSERT_EQUAL(V.transfer_rate, 20, "a volume pump asks for the rate")
+
+/// Shield generator: the range and input-cap questions are asked while the modes are unlocked; the shutdown questions only while it runs.
+/datum/unit_test/dq_fwg3_ui/shield_generator
+/datum/unit_test/dq_fwg3_ui/shield_generator/run_fwg3()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/obj/machinery/power/shield_generator/S = allocate(/obj/machinery/power/shield_generator, T)
+	S.mode_changes_locked = FALSE
+	hc_ui(H, S, "set_range")
+	p2cl_answer(H, 7)
+	test_time(1)
+	TEST_ASSERT_EQUAL(S.target_radius, 7, "the answered range is the target")
+	hc_ui(H, S, "set_input_cap")
+	p2cl_answer(H, 12)
+	test_time(1)
+	TEST_ASSERT_EQUAL(S.input_cap, 12000, "the answered cap, in kW")
+	S.running = 0
+	hc_ui(H, S, "begin_shutdown")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "an idle generator asks nothing")
+	S.mode_changes_locked = TRUE
+	hc_ui(H, S, "set_range")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "locked modes ask nothing")
+
+/// ATM and artifact harvester: their windows' data, and buttons that need an account or a battery do nothing without one.
+/datum/unit_test/dq_fwg3_ui/atm_and_harvester
+/datum/unit_test/dq_fwg3_ui/atm_and_harvester/run_fwg3()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/obj/machinery/atm/M = allocate(/obj/machinery/atm, T)
+	hc_ui(H, M, "change_security_level", list("new_security_level" = 0))
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "no account: no PIN question")
+	TEST_ASSERT("locked_down" in hc_data(M, H), "the window data has the lockdown")
+	var/obj/machinery/artifact_harvester/A = allocate(/obj/machinery/artifact_harvester, T)
+	hc_ui(H, A, "drainbattery")
+	TEST_ASSERT_NULL(SSrequests.open_for(H), "no battery: no drain question")
+	TEST_ASSERT("info" in hc_data(A, H), "the harvester's window data")

@@ -173,17 +173,14 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 
 	return TRUE
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/volume_pump, "GasPump")
-
 /obj/machinery/atmospherics/binary/volume_pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_obj_machinery_atmospherics_binary_volume_pump{on:unknown,rate:unknown,max_rate:num,last_flow_rate:unknown,last_power_draw:num,max_power_draw:unknown}")
-
-/// The computed part of /obj/machinery/atmospherics/binary/volume_pump's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/binary/volume_pump/proc/ui_data_obj_machinery_atmospherics_binary_volume_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/atmospherics/binary/volume_pump/ui_data(datum/act/eval/A)
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
 	// this is the data which will be sent to the ui
 	var/list/data = list(
 		"on" = use_power,
@@ -242,28 +239,38 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_o
 	return TRUE
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	interface("GasPump")
 	op("power", ui_act("power"), then(PROC_REF(power_switched)))
+	// "set" asks for the value; "min" and "max" set it at once
+	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_press_question)), "title" = "Flow Control", "default" = computed(PROC_REF(set_press_default)), "max_value" = nameof(max_transfer_rate), "timeout" = 0), step = "k269", when = PROC_REF(press_is_set)),
+		then(PROC_REF(ui_act_set_press)))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/power_switched(datum/act/op/A)
 	set_use_power(!use_power)
 	add_fingerprint(A.actor)
 	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
-	var/press = params["press"]
+/obj/machinery/atmospherics/binary/volume_pump/proc/press_is_set(datum/act/op/A)
+	return A.args["press"] == "set"
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/set_press_question(datum/act/op/A)
+	return "Enter new transfer rate (0-[max_transfer_rate] L/s)"
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/set_press_default(datum/act/op/A)
+	return src.transfer_rate
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/ui_act_set_press(datum/act/op/A, press)
 	switch(press)
 		if("min")
 			set_transfer_rate(0)
 		if("max")
 			set_transfer_rate(max_transfer_rate)
 		if("set")
-			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-				return
-			open_request(ui, /datum/prompt/number/atmos_scalar/volume_rate, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, display_max = max_transfer_rate)
-			return
+			var/new_rate = A.step_value("k269")
+			set_transfer_rate(between(0, new_rate, max_transfer_rate))
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 	update_icon()
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)
@@ -344,8 +351,3 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHA
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(transfer_rate), nameof(overclocked))
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/apply_volume_rate_answer(mob/user, value)
-	set_transfer_rate(between(0, value, max_transfer_rate))
-	add_fingerprint(user)
-	update_icon()

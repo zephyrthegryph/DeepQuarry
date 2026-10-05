@@ -27,6 +27,9 @@
 
 CAPABILITIES(/obj/structure/filingcabinet)
 	climb()
+	op("interaction_hand", hand(), ungated(), needs(req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
+	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("interaction_tk", tk(), then(PROC_REF(interaction_tk)))
 
 /obj/structure/filingcabinet/Initialize(mapload)
 	for(var/obj/item/I in contents_of(loc))
@@ -35,16 +38,18 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	. = ..()
 
 /// Old attackby.
-/obj/structure/filingcabinet/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/structure/filingcabinet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/folder) || istype(P, /obj/item/photo) || istype(P, /obj/item/paper_bundle))
 		if(!own_bring_in(src, nameof(contents), P, null, user, TRUE, null, FALSE))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You put [P] in [src]."))
 		open_animation()
 		SStgui.update_uis(src)
 	else
 		to_chat(user, span_notice("You can't put [P] in [src]!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/filingcabinet/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
@@ -65,26 +70,22 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/filingcabinet/proc/has_files)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_TK(null, PROC_REF(interaction_tk)), \
-)
+MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 
-/// Requirement: TRUE when the cabinet holds something to browse.
-/obj/structure/filingcabinet/proc/has_files(mob/user, atom/target, obj/item/held)
-	return contents_count(src) > 0 ? TRUE : "it's empty"
+/// Requirement: the cabinet holds something to browse.
+/obj/structure/filingcabinet/proc/has_files(datum/act/op/A)
+	return length(contents) > 0 // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
 
 /// Old attack_hand.
-/obj/structure/filingcabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
+/obj/structure/filingcabinet/proc/interaction_hand(datum/act/op/A)
+	tgui_interact(A.actor)
 	return TRUE
 
 /// Old attack_tk: rummage in an anchored cabinet at range.
-/obj/structure/filingcabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/proc/interaction_tk(datum/act/op/A)
 	if(!anchored)
-		return FALSE
-	attack_self_tk(user)
+		return OP_DECLINE
+	attack_self_tk(A.actor)
 	return TRUE
 
 /obj/structure/filingcabinet/attack_self_tk(mob/user)
@@ -157,19 +158,23 @@ UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
+// The records are written the first time the cabinet is opened, then the cabinet's own hand and telekinetic use follow.
 CAPABILITIES(/obj/structure/filingcabinet/security)
-	op("security_interaction_hand", hand(), then(PROC_REF(security_interaction_hand)))
-	op("security_interaction_tk", tk(), then(PROC_REF(security_interaction_tk)))
+	op("interaction_hand", hand(), ungated(), then(PROC_REF(security_interaction_hand)))
+	op("interaction_tk", tk(), then(PROC_REF(security_interaction_tk)))
 
-/// Old attack_hand.
+/// Old attack_hand: fill the records, then the cabinet's own use (its "It's empty." stays the base requirement's, asked of the filled cabinet).
 /obj/structure/filingcabinet/security/proc/security_interaction_hand(datum/act/op/A)
 	populate()
-	return OP_DECLINE
+	if(!has_files(A))
+		to_chat(A.actor, span_warning("It's empty."))
+		return OP_OK
+	return interaction_hand(A)
 
 /// Old attack_tk: fill the records first, then the base cabinet's telekinetic rummage.
 /obj/structure/filingcabinet/security/proc/security_interaction_tk(datum/act/op/A)
 	populate()
-	return OP_DECLINE
+	return interaction_tk(A)
 
 /*
  * Medical Record Cabinets
@@ -200,16 +205,20 @@ CAPABILITIES(/obj/structure/filingcabinet/security)
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
+// The records are written the first time the cabinet is opened, then the cabinet's own hand and telekinetic use follow.
 CAPABILITIES(/obj/structure/filingcabinet/medical)
-	op("medical_interaction_hand", hand(), then(PROC_REF(medical_interaction_hand)))
-	op("medical_interaction_tk", tk(), then(PROC_REF(medical_interaction_tk)))
+	op("interaction_hand", hand(), ungated(), then(PROC_REF(medical_interaction_hand)))
+	op("interaction_tk", tk(), then(PROC_REF(medical_interaction_tk)))
 
-/// Old attack_hand.
+/// Old attack_hand: fill the records, then the cabinet's own use (its "It's empty." stays the base requirement's, asked of the filled cabinet).
 /obj/structure/filingcabinet/medical/proc/medical_interaction_hand(datum/act/op/A)
 	populate()
-	return OP_DECLINE
+	if(!has_files(A))
+		to_chat(A.actor, span_warning("It's empty."))
+		return OP_OK
+	return interaction_hand(A)
 
 /// Old attack_tk: fill the records first, then the base cabinet's telekinetic rummage.
 /obj/structure/filingcabinet/medical/proc/medical_interaction_tk(datum/act/op/A)
 	populate()
-	return OP_DECLINE
+	return interaction_tk(A)

@@ -24,7 +24,7 @@
 CAPABILITIES(/obj/item/clothing/suit/space)
 	ref_many(nameof(supporting_limbs))
 	owns_many(nameof(breaches))
-	op("space_suit_patch_item", item(/obj/item), then(PROC_REF(space_suit_patch_item)))
+	op("space_suit_patch_item", item(/obj/item/stack/material), then(PROC_REF(space_suit_patch_item)))
 
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
