@@ -48,3 +48,4 @@ changes:
   - code_imp: "Migrated self-appearance, debug-screen placement, and gender-change confirmation prompts to native requests."
   - code_imp: "Removed obsolete content prompt types and unreachable prison-shuttle warnings."
   - code_imp: "Migrated the personal jukebox-volume prompt to a native request."
+  - code_imp: "Migrated the casino prize-price prompt to a native request."
