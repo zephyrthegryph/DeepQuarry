@@ -86,21 +86,20 @@
 
 /// The canister steps once: what one machine service interval of its own work does (the valve's release, the gauge).
 /proc/am_canister_tick(obj/machinery/portable_atmospherics/canister/C)
-	var/datum/om/stage/machine/power/canister/stage = new
-	stage.perform(C, null)
-	qdel(stage)
+	C.canister_step(null)
 
 /// The canister can be relabelled now (its window's can_relabel).
 /proc/am_canister_relabelable(obj/machinery/portable_atmospherics/canister/C)
-	return !!C.can_label
+	return !!C.can_relabel(null)
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
-	C.interaction_jetpack_refill(R, J)
+	R.next_click = 0
+	test_click(R, C, J)
 
 /// The number of entries in the canister's release log.
 /proc/am_canister_log_entries(obj/machinery/portable_atmospherics/canister/C)
-	return length(splittext(C.release_log, "<br>")) - 1
+	return length(C.release_log)
 
 /// Presses `action` on `alarm`'s window as it is shown by the remote atmospherics console `console` (a tgui module) to `user`. The window the
 /// console opens is used only while it lets `user` work it.
@@ -850,7 +849,7 @@
 // =====================================================================================================================
 
 /// The presets: each starts at 45 atmospheres of its gas at 20 C (air is a mix, the airlock canister holds three atmospheres, the engine set-up
-/// ones double). BUG: the chilled oxygen canister is filled twice, then chilled.
+/// ones double). The chilled oxygen canister holds one load, chilled to 80 K.
 /datum/unit_test/dq_atmos_m/canister_presets
 /datum/unit_test/dq_atmos_m/canister_presets/run_gate()
 	var/turf/T = tile(3, 1)
@@ -890,7 +889,7 @@
 	qdel(E)
 	var/obj/machinery/portable_atmospherics/canister/oxygen/prechilled/P = allocate(/obj/machinery/portable_atmospherics/canister/oxygen/prechilled, T)
 	TEST_ASSERT(abs(P.air_contents.return_temperature() - 80) < 0.1, "the chilled canister is at 80 K")
-	TEST_ASSERT(abs(P.air_contents.get_moles(/datum/gas/oxygen) - 2 * full) < 1, "BUG: and holds a double load")
+	TEST_ASSERT(abs(P.air_contents.get_moles(/datum/gas/oxygen) - full) < 1, "and holds one load")
 	qdel(P)
 
 /// The room filler empties its nitrous oxide into the room as it is placed.
@@ -1069,6 +1068,7 @@
 	TEST_ASSERT(C.destroyed, "wrecked")
 	TEST_ASSERT(!C.density, "it no longer blocks the way")
 	TEST_ASSERT(!C.air_contents || C.air_contents.total_moles() < gas * 0.01, "its gas has left it ([room] + [gas] -> [T.return_air().total_moles()])")
+	TEST_ASSERT(T.return_air().total_moles() > room + gas * 0.99, "into the room")
 	TEST_ASSERT(isnull(C.holding), "it no longer holds its tank")
 	for(var/turf/near in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		own_turf_contents(near)

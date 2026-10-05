@@ -536,39 +536,4 @@
 
 /// A canister runs the machine pipeline, parks once it has no valve flow, reaction or material
 /// work left, and a gas-mixture change on its subscribed mixture wakes it back up.
-/datum/unit_test/om_pipeline/canister_parks_and_wakes
-
-/datum/unit_test/om_pipeline/canister_parks_and_wakes/run_pipeline()
-	var/turf/simulated/floor/T = locate() in world
-	TEST_ASSERT_NOTNULL(T, "no floor for canister pipeline test")
-	var/obj/machinery/portable_atmospherics/canister/oxygen/C = allocate(/obj/machinery/portable_atmospherics/canister/oxygen, T)
-	TEST_ASSERT(om_attached(C, /datum/om/pipeline/machine), "a canister runs the machine pipeline")
-	TEST_ASSERT(!machine_stepping(C), "and doesn't poll")
-	var/datum/om/frame/S = om_pipe_state(C, /datum/om/pipeline/machine, TRUE)
-	// Machines join asleep: the zero-delay materialize_wakes() timer arms the gas watch.
-	sched.run_pass(1e9)
-	for(var/i in 1 to 3)
-		om_run_frame_now(C, /datum/om/pipeline/machine)
-	TEST_ASSERT(S.parked, "a closed, unreactive canister parks")
-	TEST_ASSERT(om_watch_armed(C), "parking armed a gas-mixture watch")
-	C.air_contents.adjust_moles(/datum/gas/oxygen, 5)
-	for(var/gas_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(!S.parked)
-			break
-	sched.run_pass(1e9)
-	// The live subsystem may consume the wake and settle the canister back to its dependency
-	// subscription before this test regains execution (see the equivalent check in
-	// dq_idle_portables_connectors_and_displays_hibernate, dq_atmos_tests.dm). Both states prove
-	// delivery; being neither unparked nor resubscribed is stale.
-	TEST_ASSERT(!S.parked || om_watch_armed(C), \
-		"a gas-mixture change on the watched mixture wakes the canister")
-	for(var/i in 1 to 3)
-		om_run_frame_now(C, /datum/om/pipeline/machine)
-	TEST_ASSERT(S.parked, "it settles and parks again")
-	C.set_valve_open(TRUE) // raises CHANGE_MACHINE_SETTINGS
-	sched.run_pass(1e9)
-	TEST_ASSERT(!S.parked, "opening the valve wakes it")
-	qdel(C)
-
 #endif

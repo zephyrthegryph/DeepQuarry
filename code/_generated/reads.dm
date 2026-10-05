@@ -241,6 +241,10 @@
 	. = ..()
 	. += drawn_from(nameof(turret_type))
 
+/obj/machinery/portable_atmospherics/canister/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(canister_color), nameof(destroyed), nameof(gauge_band), nameof(holding))
+
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))

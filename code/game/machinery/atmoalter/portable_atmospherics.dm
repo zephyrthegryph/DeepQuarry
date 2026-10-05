@@ -1,3 +1,6 @@
+// A portable atmospherics machine (a canister, a portable pump or scrubber, a hydroponics tray, a distillery): its own gas, a tank bay, and the port
+// under it a wrench connects it to.
+
 /obj/machinery/portable_atmospherics
 	material_template = /datum/material_template/pressure
 	material_total = 2 * SHEET_MATERIAL_AMOUNT
@@ -15,10 +18,23 @@
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
 
+TRACKED(/obj/machinery/portable_atmospherics, destroyed)
+
+MSG_DEF_SELF(portable/no_port, "Nothing happens.")
+MSG_DEF_SELF(portable/wrecked, "It is wrecked.")
+MSG_DEF_SELF(portable/port_taken, "It failed to connect to the port.")
+MSG_DEF(portable/connected, "You connect %T% to the port.", "%U% connects %T% to the port.")
+MSG_DEF(portable/disconnected, "You disconnect %T% from the port.", "%U% disconnects %T% from the port.")
+
 CAPABILITIES(/obj/machinery/portable_atmospherics)
 	after_init(0, then(PROC_REF(port_after_init)))
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(holding), /obj/item/tank)
+	ref_one(nameof(connected_port), /obj/machinery/atmospherics/portables_connector)
+	tank_bay(nameof(holding), when = PROC_REF(not_destroyed))
+	op("port", tool(TOOL_WRENCH), label("Connect to the port"), wait(0), when(PROC_REF(port_wrench_offered)),
+		needs(req(PROC_REF(not_destroyed), because = MSG(portable/wrecked)), req(PROC_REF(port_reachable), because = MSG(portable/no_port)), req(PROC_REF(port_free), because = MSG(portable/port_taken))),
+		says(PROC_REF(port_message)), then(PROC_REF(port_wrenched)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
@@ -32,45 +48,16 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector)
 	if(port)
 		connect(port)
-		update_icon()
 
-
-// Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
-// (code/game/machinery/machine_pipeline.dm, "canisters" section).
+/// The machine's own gas reacts while it stands alone (a connected one's gas is the pipe network's, which reacts there). NO_REACTION when nothing did.
 /obj/machinery/portable_atmospherics/proc/react_or_update()
-	if(!connected_port()) //only react when pipe_network will do it for you
-		//Allow for reactions
-		return air_contents.react(src)
-	update_icon()
-	return NO_REACTION
-
-/// Arms a "wake on any change" watch on this device's own gas contents -- process() has no
-/// specific threshold for "done reacting", it just wants to run again the next time anything
-/// touches its mixture.
-/obj/machinery/portable_atmospherics/proc/hibernate_until_gas_changes()
-	var/mixture_id = air_contents?.arena_id()
-	if(isnull(mixture_id))
-		return
-	// The machine pipeline wakes on changed() (machine_pipeline.dm).
-	var/list/wake = om_callable(src, PROC_REF(wake_om_pipeline))
-	om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = air_contents.revision())
-
-/obj/machinery/portable_atmospherics/proc/clear_gas_dependency()
-	om_watch_disarm(src, "gas")
-
-/obj/machinery/portable_atmospherics/proc/wake_from_gas()
-	clear_gas_dependency()
-	MACHINE_WAKE(src)
-
-/// OM machine pipeline (machine_pipeline.dm): a gas crossing raises changed() so the pipeline
-/// stage reschedules itself, same as a settings/power change.
-/obj/machinery/portable_atmospherics/proc/wake_om_pipeline()
-	clear_gas_dependency()
-	changed(src, CHANGE_MACHINE_GAS)
+	if(connected_port())
+		return NO_REACTION
+	return air_contents.react(src)
 
 /// A blob bursts a portable canister or pump outright.
 /obj/machinery/portable_atmospherics/proc/blob_bursts(datum/act/hit/blob/A)
-	damage_reaction_qdel(A.packet)
+	expire(0)
 	return TRUE
 
 /obj/machinery/portable_atmospherics/proc/StandardAirMix()
@@ -88,7 +75,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	atmos_air_set(src, nameof(air_contents), new_air)
 	return TRUE
 
-
 /obj/machinery/portable_atmospherics/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
 	//Make sure not already connected to something else
 	if(connected_port() || !new_port || new_port.connected_device)
@@ -100,7 +86,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 	//Perform the connection
 	rel_set(src, nameof(connected_port), new_port)
-	changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port().connected_device = src
 	connected_port().on = 1 //Activate port updates
 	MACHINE_WAKE(connected_port())
@@ -109,7 +94,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 	//Actually enforce the air sharing
 	connected_port().rust_attach_external_device(src)
-
 	return 1
 
 /obj/machinery/portable_atmospherics/proc/disconnect()
@@ -125,8 +109,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	old_port.set_on(0)
 	MACHINE_SLEEP(old_port)
 	rel_clear(src, nameof(connected_port))
-	changed(src, CHANGE_MACHINE_SETTINGS)
-
 	return 1
 
 /obj/machinery/portable_atmospherics/proc/update_connected_network()
@@ -137,115 +119,37 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	if (network)
 		network.mark_dirty()
 
-/obj/machinery/portable_atmospherics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/portable_atmos_insert_tank,
-	)
-	..()
+// ---- the port and the bay ----
 
-/// The old attackby's tank branch: `istype(W, /obj/item/tank) && !destroyed`.
-/datum/interaction/machine_item/portable_atmos_insert_tank
-	id = "portable_atmos_insert_tank"
-	name = "Insert tank"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/tank
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/proc/not_destroyed, null))
-	effect = /obj/machinery/portable_atmospherics/proc/interaction_insert_tank
-
-/obj/machinery/portable_atmospherics/proc/not_destroyed(mob/actor, atom/target, obj/item/held)
+/// Not wrecked: it takes a tank, a wrench.
+/obj/machinery/portable_atmospherics/proc/not_destroyed(datum/act/A)
 	return !destroyed
 
-/obj/machinery/portable_atmospherics/proc/interaction_insert_tank(mob/user, obj/item/W, datum/interaction/interaction)
-	if(holding)
-		return TRUE
-	var/obj/item/tank/T = W
-	if(!move_into(src, nameof(src.holding), T, user))
-		return TRUE
-	update_icon()
+/// The wrench means the port on this machine (a tray that bolts itself down says otherwise when it has no port).
+/obj/machinery/portable_atmospherics/proc/port_wrench_offered(datum/act/op/A)
 	return TRUE
 
-/obj/machinery/portable_atmospherics/wrench_act(mob/user, obj/item/tool)
-	if(destroyed)
-		return ITEM_INTERACT_BLOCKING
+/// Connected, or a port stands under it.
+/obj/machinery/portable_atmospherics/proc/port_reachable(datum/act/op/A)
+	return connected_port() || locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): asked when the wrench is used, never from a cached menu
+
+/// Connected, or the port under it has no device yet.
+/obj/machinery/portable_atmospherics/proc/port_free(datum/act/op/A)
+	if(connected_port())
+		return TRUE
+	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): asked when the wrench is used, never from a cached menu
+	return port && !port.connected_device
+
+/obj/machinery/portable_atmospherics/proc/port_message(datum/act/A)
+	return connected_port() ? /datum/msg/portable/connected : /datum/msg/portable/disconnected
+
+/// The wrench connects it to the port under it, or disconnects it.
+/obj/machinery/portable_atmospherics/proc/port_wrenched(datum/act/op/A)
 	if(connected_port())
 		disconnect()
-		to_chat(user, span_notice("You disconnect \the [src] from the port."))
-		update_icon()
-		playsound(src, tool.usesound, 50, TRUE)
-		return ITEM_INTERACT_SUCCESS
-	var/obj/machinery/atmospherics/portables_connector/possible_port = locate_within(loc, /obj/machinery/atmospherics/portables_connector)
-	if(!possible_port)
-		to_chat(user, span_notice("Nothing happens."))
-		return ITEM_INTERACT_BLOCKING
-	if(!connect(possible_port))
-		to_chat(user, span_notice("\The [src] failed to connect to the port."))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You connect \the [src] to the port."))
-	update_icon()
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/powered
-	material_template = /datum/material_template/pump
-	material_total = 5 * SHEET_MATERIAL_AMOUNT
-	var/power_rating
-	var/power_losses
-	var/last_power_draw = 0
-	var/obj/item/cell/cell
-	var/use_cell = TRUE
-	var/removeable_cell = TRUE
-
-/obj/machinery/portable_atmospherics/powered/powered()
-	if(use_power) //using area power
-		return ..()
-	if(cell && cell.charge)
-		return 1
-	return 0
-
-/obj/machinery/portable_atmospherics/powered/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/portable_atmos_insert_cell,
-	)
-	..()
-
-/// The old attackby's cell branch, before it fell to `..()` (the tank branch).
-/datum/interaction/machine_item/portable_atmos_insert_cell
-	id = "portable_atmos_insert_cell"
-	name = "Insert power cell"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/cell
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/powered/proc/wants_cell, null))
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("cell"), "there is already a power cell installed"))
-	effect = /obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell
-
-/obj/machinery/portable_atmospherics/powered/proc/wants_cell(mob/actor, atom/target, obj/item/held)
-	return use_cell
-
-/obj/machinery/portable_atmospherics/powered/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	var/obj/item/cell/C = I
-
-	C.add_fingerprint(user)
-	if(!move_into(src, nameof(src.cell), C, user))
-		return TRUE
-	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and insert [C].")), \
-		MSG_OTHERS(span_notice("%U% opens the panel on %T% and inserts [C].")))
-	power_change()
-	return TRUE
-
-/obj/machinery/portable_atmospherics/powered/screwdriver_act(mob/user, obj/item/tool)
-	if(!removeable_cell)
-		return ITEM_INTERACT_BLOCKING
-	if(!cell)
-		to_chat(user, span_warning("There is no power cell installed."))
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and remove [cell].")), \
-		MSG_OTHERS(span_notice("%U% opens the panel on %T% and removes [cell].")))
-	playsound(src, tool.usesound, 50, TRUE)
-	cell.add_fingerprint(user)
-	cell.forceMove(loc)
-	own_take(src, nameof(cell))
-	power_change()
-	return ITEM_INTERACT_SUCCESS
+	else
+		connect(locate_within(loc, /obj/machinery/atmospherics/portables_connector))
+	return OP_OK
 
 /obj/machinery/portable_atmospherics/proc/log_open(mob/user)
 	// was iterating XGM `air_contents.gas` (string-id dict).
@@ -263,12 +167,54 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	log_admin("[user] ([user.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[user] ([user.ckey]) opened '[src.name]' containing [gases].")
 
-/obj/machinery/portable_atmospherics/powered/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
-
 /// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
 	return connected_port
+
+// ---- the powered ones (a portable pump or scrubber, a distillery): a power cell ----
+
+/obj/machinery/portable_atmospherics/powered
+	material_template = /datum/material_template/pump
+	material_total = 5 * SHEET_MATERIAL_AMOUNT
+	var/power_rating
+	var/power_losses
+	var/last_power_draw = 0
+	var/obj/item/cell/cell
+	var/use_cell = TRUE
+	var/removeable_cell = TRUE
+
+MSG_DEF(portable/cell_in, "You open the panel on %T% and insert %I%.", "%U% opens the panel on %T% and inserts %I%.")
+MSG_DEF(portable/cell_out, "You open the panel on %T% and remove the power cell.", "%U% opens the panel on %T% and removes the power cell.")
+MSG_DEF_SELF(portable/cell_present, "There is already a power cell installed.")
+MSG_DEF_SELF(portable/no_cell, "There is no power cell installed.")
+
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
+	owns_one(nameof(cell), /obj/item/cell)
+	op("cell_in", item(/obj/item/cell), label("Insert power cell"), wait(0), when(nameof(use_cell)),
+		needs(req_empty(nameof(cell), because = MSG(portable/cell_present))), put_in(nameof(cell)), says(MSG(portable/cell_in)), then(PROC_REF(cell_changed)))
+	op("cell_out", tool(TOOL_SCREWDRIVER), label("Remove power cell"), when(nameof(removeable_cell)),
+		needs(req(PROC_REF(has_cell), because = MSG(portable/no_cell))), says(MSG(portable/cell_out)), then(PROC_REF(take_cell_out)))
+
+/obj/machinery/portable_atmospherics/powered/powered()
+	if(use_power) //using area power
+		return ..()
+	if(cell && cell.charge)
+		return 1
+	return 0
+
+/obj/machinery/portable_atmospherics/powered/proc/has_cell(datum/act/A)
+	return !isnull(cell)
+
+/obj/machinery/portable_atmospherics/powered/proc/take_cell_out(datum/act/op/A)
+	var/obj/item/cell/C = cell
+	C.add_fingerprint(A.actor)
+	C.forceMove(loc)
+	varslot_set(src, nameof(cell), null)
+	return cell_changed(A)
+
+/// A cell went in or came out: the machine's power follows.
+/obj/machinery/portable_atmospherics/powered/proc/cell_changed(datum/act/A)
+	power_change()
+	return OP_OK
 
 // air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.

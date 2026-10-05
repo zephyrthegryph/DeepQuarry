@@ -8,6 +8,8 @@
 //                                                  S.pressure, S.temperature, S.partial_pressure(GAS_O2), S.share(GAS_O2).
 //   /datum/gas_heater                              a heater/cooler on a room's air (the air alarm's thermostat): regulate(air, target) works the
 //                                                  air toward the target at its rated energy per call, starting and stopping with its hysteresis.
+//   gas_dump(source, into)                         empties a vessel into a room or another mixture.
+//   gas_fill(air, fractions, kpa, temperature)     a vessel filled to a pressure with a mix (a canister preset).
 //   gas_body_heat_exchange(air, body_k, body_j_per_k, share)
 //                                                  a body (a cryo cell's occupant) and a gas exchange heat: share 1 settles both at the mixed
 //                                                  temperature. The gas takes what the body gives. Returns the body's new temperature.
@@ -162,3 +164,32 @@
 	var/body_after = body_temperature + min(share, 1) * (settled - body_temperature)
 	air.set_temperature(S.temperature + body_capacity * (body_temperature - body_after) / S.heat_capacity)
 	return body_after
+
+// ---- filling a vessel ----
+
+/// Fills `air` (emptied first) to `kpa` at `temperature`, the moles shared out by `fractions` (gas id -> share; shares above 1 overfill: an engine
+/// set-up canister holds two loads). The canisters' presets.
+/proc/gas_fill(datum/gas_mixture/air, list/fractions, kpa, temperature = T20C)
+	if(!air || !length(fractions))
+		return
+	air.clear()
+	air.set_temperature(temperature)
+	var/moles = kpa * air.return_volume() / (R_IDEAL_GAS_EQUATION * temperature)
+	for(var/gas in fractions)
+		air.adjust_gas(gas, moles * fractions[gas])
+	air.set_temperature(temperature)
+
+/// The pressure of `air`, kPa (0 for none): a read of Rust-owned gas, never cached by a condition that asks it (READS_FROM: nothing to publish).
+/proc/gas_pressure_of(datum/gas_mixture/air)
+	READS_FROM()
+	return air ? air.return_pressure() : 0
+
+/// Empties `source` into `into` (a mixture or an atom whose air it is): a ruptured vessel, a room filler. Returns the moles moved.
+/proc/gas_dump(datum/gas_mixture/source, into)
+	var/datum/gas_mixture/sink = isatom(into) ? into:return_air() : into
+	if(!source || !sink)
+		return 0
+	var/sink_volume = max(sink.return_volume(), 1)
+	// A target the sink cannot reach before the source runs dry: everything moves.
+	var/target = sink.return_pressure() + 2 * source.return_pressure() * source.return_volume() / sink_volume + 1
+	return gas_release(source, into, target)
