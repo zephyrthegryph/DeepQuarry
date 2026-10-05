@@ -31,10 +31,10 @@ CAPABILITY_TYPE(powered_by, CAP_POWERED_BY, /datum/capability/lib/powered_by, ke
 /datum/capability/lib/powered_by
 	holder_hooks = HOLDER_HOOK_INIT | HOLDER_HOOK_DESTROY
 
-/datum/capability/lib/powered_by/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/powered_by/on_holder_init(datum/act/eval/A)
 	var/datum/system/S = system(of_system)
 	S?.kernel_join(A.holder, src, role)
 
-/datum/capability/lib/powered_by/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/lib/powered_by/on_holder_destroy(datum/act/eval/A)
 	var/datum/system/S = system(of_system)
 	S?.kernel_leave(A.holder, src)

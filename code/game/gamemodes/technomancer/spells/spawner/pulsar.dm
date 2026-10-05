@@ -34,11 +34,11 @@
 OM_FIELD(/obj/effect/temporary_effect/pulse, pulsing, TRUE, CHANGE_EXPLICIT)
 DECLARE_REPEAT(/obj/effect/temporary_effect/pulse, "pulse_delay", pulse_step, "pulsing")
 
-/obj/effect/temporary_effect/pulse/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/effect/temporary_effect/pulse)
+	after_init(0, then(PROC_REF(first_pulse)))
 
-/obj/effect/temporary_effect/pulse/LateInitialize()
+/// The first pulse, as the effect appears.
+/obj/effect/temporary_effect/pulse/proc/first_pulse(datum/act/timer/A)
 	pulse_loop()
 
 /// The first pulse, at once; the declared repeat runs the rest every pulse_delay.

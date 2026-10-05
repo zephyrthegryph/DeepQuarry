@@ -105,7 +105,7 @@ fn reaction_kind_flag(call: &str) -> &'static str {
         "every" => "RXB_EVERY",
         "on_cross" => "RXB_CROSS",
         "on_notice" => "RXB_NOTICE",
-        _ => "RXB_INIT",
+        _ => unreachable!("reaction kind {call}"),
     }
 }
 
@@ -987,7 +987,7 @@ fn reaction_declarations(model: &Model) -> (BTreeMap<String, BTreeSet<&'static s
         let text = proc.body.iter().map(|(_, l)| l.as_str()).collect::<Vec<_>>().join("\n");
         let mut pos = 0usize;
         loop {
-            let Some(m) = pat!(r"(?<![\w.])(every|on_cross|on_notice|after_init)\s*\(").captures_at(&text, pos) else { break };
+            let Some(m) = pat!(r"(?<![\w.])(every|on_cross|on_notice)\s*\(").captures_at(&text, pos) else { break };
             let (inner, end) = paren_args(&text, m.end(0) - 1);
             pos = end;
             flags.entry(proc.owner.clone()).or_default().insert(reaction_kind_flag(m.s(1)));

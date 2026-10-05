@@ -229,7 +229,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	return frozen != 1
 
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
-	..()
+	. = ..()
 	if(!ov_lowhealth)
 		setup_overlays()
 	rel_set(src, nameof(temp_chem_holder), new /obj())
@@ -237,7 +237,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	if(mechanical)
 		connect()
 	update_icon()
-	return INITIALIZE_HINT_LATELOAD
 
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
@@ -252,8 +251,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	MACHINE_WAKE(src)
 
 // Give the seeds time to initialize itself
-/obj/machinery/portable_atmospherics/hydroponics/LateInitialize()
-	. = ..()
+/// Plants the seeds lying on its turf.
+/obj/machinery/portable_atmospherics/hydroponics/port_after_init(datum/act/timer/A)
+	..()
 	var/obj/item/seeds/S = locate_within(loc, /obj/item/seeds)
 	if(S)
 		plant_seeds(S)

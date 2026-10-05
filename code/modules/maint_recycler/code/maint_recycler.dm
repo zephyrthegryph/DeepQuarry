@@ -114,6 +114,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(hatch), /obj/effect/overlay/recycler)
 	owns_one(nameof(item_overlay), /obj/effect/overlay/recycler)
@@ -150,12 +151,13 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	item_overlay.layer = src.layer-0.1
 	src.vis_contents |= item_overlay
 
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
 
 	//ditto for the monitor and door. sure, these COULD be overlays, but that is way more effort
 
-/obj/machinery/maint_recycler/LateInitialize()
+/// A mapped one moves to a marker, once the markers exist.
+/obj/machinery/maint_recycler/proc/move_after_init(datum/act/timer/A)
+	if(!A.mapload)
+		return
 	move_to_marker()
 
 /obj/machinery/maint_recycler/proc/move_to_marker()

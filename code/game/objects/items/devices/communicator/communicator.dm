@@ -103,7 +103,6 @@ OM_DERIVE_FIELD(/obj/item/communicator, has_connections, list("communicating", "
 	return length(voice_mobs) || length(communicating)
 DECLARE_PERIODIC_WHILE(/obj/item/communicator, PERIODIC_SLOW, "has_connections")
 //This is a pretty terrible way of doing this.
-DECLARE_START_TIMER(/obj/item/communicator, 5 SECONDS, PROC_REF(register_to_holder))
 
 // ITION START: Ayo communicator are better than PDAs /obj/item/communicator
 // Proc: AltClick()
@@ -196,7 +195,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Proc: register_to_holder()
 // Parameters: None
 // Description: Tries to register ourselves to the mob that we've presumably spawned in. Not the most amazing way of doing this.
-/obj/item/communicator/proc/register_to_holder()
+/obj/item/communicator/proc/register_to_holder(datum/act/A)
 	if(ismob(loc))
 		register_device(loc.name)
 		initialize_exonet(loc)

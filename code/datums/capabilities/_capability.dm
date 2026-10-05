@@ -99,9 +99,9 @@
 	return null
 
 /// Init / teardown hooks for per-instance state (default children, lazily created data).
-/datum/capability/proc/on_holder_init(atom/holder, mapload)
+/datum/capability/proc/legacy_holder_init(atom/holder, mapload)
 	return
-/datum/capability/proc/on_holder_destroy(atom/holder)
+/datum/capability/proc/legacy_holder_destroy(atom/holder)
 	return
 
 // ---- periodic work (until the core's systems() hook lands) ----

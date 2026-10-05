@@ -26,7 +26,7 @@ cap_keys(CAP_QUICKDRAW, DRAWS = MSG(quickdraw/is_off))
 		op("switch", menu(), label("Switch Quickdraw Mode"), needs(carried()), toggles(QUICKDRAW_DRAWS), says(CAP_PROC(switched_message))))
 
 /// A case that starts in quickdraw mode is in it from the moment its holder initializes.
-/datum/capability/lib/quickdraw/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/quickdraw/on_holder_init(datum/act/eval/A)
 	var/wanted = starts
 	if(istext(wanted))
 		wanted = A.holder.vars[wanted]

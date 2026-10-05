@@ -147,6 +147,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 	var/list/areas
 
 CAPABILITIES(/obj/machinery/gravity_generator/main)
+	after_init(0, then(PROC_REF(find_levels)))
 	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
 
 /// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
@@ -158,11 +159,8 @@ OM_DERIVE_FIELD(/obj/machinery/gravity_generator/main, unbroken, list("stat"))
 
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELINE, list("charging_state", "unbroken"))
 
-/obj/machinery/gravity_generator/main/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/machinery/gravity_generator/main/LateInitialize() //Needs to happen after overmap sectors are initialized so we can figure out where we are
+/// Finds its levels and areas, once the overmap sectors exist.
+/obj/machinery/gravity_generator/main/proc/find_levels(datum/act/A) //Needs to happen after overmap sectors are initialized so we can figure out where we are
 	update_list()
 	update_areas()
 

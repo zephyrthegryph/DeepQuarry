@@ -64,7 +64,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 		return null
 	return new set_type(holder)
 
-/datum/capability/lib/wires/on_holder_destroy_ctx(datum/act/eval/A)
+/datum/capability/lib/wires/on_holder_destroy(datum/act/eval/A)
 	var/datum/activation/act = cap_activation(A.holder, CAP_WIRES, null, FALSE)
 	var/datum/cap_data/wires/D = act?.data
 	if(D?.wire_set)

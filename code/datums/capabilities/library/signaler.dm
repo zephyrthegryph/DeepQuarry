@@ -59,7 +59,7 @@
 	data["minFrequency"] = RADIO_LOW_FREQ
 	data["maxFrequency"] = RADIO_HIGH_FREQ
 
-/datum/capability/signaler/on_holder_init(atom/holder, mapload)
+/datum/capability/signaler/legacy_holder_init(atom/holder, mapload)
 	// Joins the radio on its frequency (moves to systems() once the core has it).
 	var/obj/O = holder
 	if(istype(O))

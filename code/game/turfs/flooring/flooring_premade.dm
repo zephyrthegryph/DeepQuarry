@@ -89,8 +89,8 @@
 /turf/simulated/floor/wood/broken
 	icon_state = "wood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 /turf/simulated/floor/wood/sif
@@ -103,8 +103,8 @@
 /turf/simulated/floor/wood/sif/broken
 	icon_state = "sifwood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/sif/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/sif/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 
@@ -116,8 +116,8 @@
 /turf/simulated/floor/wood/alt/broken
 	icon_state = "wood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/alt/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 /turf/simulated/floor/wood/alt/tile
@@ -127,8 +127,8 @@
 /turf/simulated/floor/wood/alt/tile/broken
 	icon_state = "wood_tile-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/tile/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/alt/tile/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 /turf/simulated/floor/wood/alt/panel
@@ -143,8 +143,8 @@
 /turf/simulated/floor/wood/alt/parquet/broken
 	icon_state = "wood_parquet-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/parquet/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/alt/parquet/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 

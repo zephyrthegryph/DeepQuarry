@@ -159,6 +159,7 @@ CAPABILITIES(/datum/feed_network)
 	var/list/temp = null
 
 CAPABILITIES(/obj/machinery/newscaster)
+	after_init(0, then(PROC_REF(connect_exonet)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
 	op("set_attachment", ui_act("set_attachment"), then(PROC_REF(ui_act_set_attachment)))
@@ -187,13 +188,13 @@ CAPABILITIES(/obj/machinery/newscaster)
 REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
 /obj/machinery/newscaster/Initialize(mapload)
-	..()
+	. = ..()
 	unit_no = ++unit_no_cur
 	paper_remaining = 15
 	update_icon()
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/newscaster/LateInitialize()
+/// Joins the exonet node, once the map around it exists.
+/obj/machinery/newscaster/proc/connect_exonet(datum/act/timer/A)
 	rel_set(src, nameof(node), get_exonet_node())
 	update_icon()
 

@@ -1,7 +1,7 @@
 // Boot and bulk-destroy profiling (doc/rewrite/init_and_turfs.md).
 //
 // boot_profile: per-subsystem init times, and with -DBENCHMARK_DEEP_PROFILE
-// the per-type cost of Initialize(), materialize and LateInitialize() across
+// the per-type cost of Initialize(), materialize and the after_init() pass across
 // the whole boot. With --profile the BYOND proc profiler runs from the
 // Profiler subsystem's init (before map load) and its dump covers boot.
 //
@@ -16,7 +16,7 @@
 
 // ---- Deep-profile instrumentation state (only touched with -DBENCHMARK_DEEP_PROFILE) ----
 
-/// Timing frames for nested InitAtom()/LateInitialize() calls. Initialize()
+/// Timing frames for nested InitAtom()/after_init() calls. Initialize()
 /// often creates and initializes other atoms, so each frame subtracts its
 /// children to report self time.
 /datum/benchmark_init_stats
@@ -239,7 +239,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 
 /datum/benchmark/boot_profile
 	id = "boot_profile"
-	description = "Per-subsystem init time; per-type Initialize/materialize/LateInitialize cost (deep profile)"
+	description = "Per-subsystem init time; per-type Initialize/materialize/after_init cost (deep profile)"
 
 /datum/benchmark/boot_profile/Run()
 	// Read the boot profile before anything else runs.

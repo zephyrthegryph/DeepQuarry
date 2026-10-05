@@ -4,11 +4,14 @@
 	var/tmp/atom/linked	// The linked atom. It should have a disposal system connection to handle receiving disposal packets.
 
 /obj/structure/disposalpipe/trunk/Initialize(mapload)
-	..()
+	. = ..()
 	dpdir = dir
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/structure/disposalpipe/trunk/LateInitialize()
+CAPABILITIES(/obj/structure/disposalpipe/trunk)
+	after_init(0, then(PROC_REF(link_after_init)))
+
+/// Links the machine on its tile, once it exists.
+/obj/structure/disposalpipe/trunk/proc/link_after_init(datum/act/timer/A)
 	update()
 
 // its linked machine unlinks.

@@ -663,8 +663,11 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	return rows
 
 /// The kernel's drain point (the start of phases D, P and R): the marked stats recompute under the simulation lane's budget. Costs one list length
-/// when nothing is marked.
+/// when nothing is marked. While a map loads (a load frame is open, even one suspended between chunks) it does nothing: initial evaluation is
+/// silent until the load completes, and the load's own settling drain (SSatoms.initialize_atoms_finish()) then runs what is owed, once.
 /proc/stat_drain_point()
+	if(SSatoms?.map_loading())
+		return
 	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
 	if(length(GLOB.stat_marked))
 		stat_drain_marked(LANE_SIMULATION, FALSE)

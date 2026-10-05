@@ -63,6 +63,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	after_init(0, then(PROC_REF(closet_after_init)))
 	space(SPACE_INTERIOR, door = nameof(opened))
 	owns_one(nameof(door_obj), /obj/effect/overlay/closet_door)
 	anchor()
@@ -91,10 +92,10 @@ CAPABILITIES(/obj/structure/closet)
 
 /obj/structure/closet/Initialize(mapload)
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+	. = ..()
 
-/obj/structure/closet/LateInitialize()
+/// Declares what it starts with and takes in the loose items on its turf, once the map around it exists.
+/obj/structure/closet/proc/closet_after_init(datum/act/timer/A)
 	// starts_with is the generator: only types that can't be latent are made
 	// now; the rest stay declared until something needs them (C5).
 	dq_latent_declare(src)
@@ -627,6 +628,6 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 	. = ..()
 	join_bluespace_network()
 
-/// The icon is derived from closet_appearance in LateInitialize (C5 parity).
+/// The icon is derived from closet_appearance in closet_after_init() (C5 parity).
 /obj/structure/closet/state_exclude()
 	return ..() + list("icon")

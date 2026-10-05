@@ -177,4 +177,9 @@
 	if(T.get_lumcount() >= 0.5)
 		self.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
-DECLARE_START_TIMER(/mob/living/simple_mob/vore/alienanimals/spooky_ghost, 35 SECONDS, PROC_REF(death))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	after_init(35 SECONDS, then(PROC_REF(fade_out)))
+
+/// A summoned ghost lasts 35 seconds.
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/proc/fade_out(datum/act/A)
+	death()

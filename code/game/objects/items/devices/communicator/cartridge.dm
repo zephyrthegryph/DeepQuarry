@@ -57,12 +57,14 @@ CAPABILITIES(/obj/item/commcard)
 	icon_state = "cart-e"
 
 /obj/item/commcard/engineering/Initialize(mapload)
-	..()
-	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/item/commcard/engineering/LateInitialize()
 	. = ..()
+	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
+
+CAPABILITIES(/obj/item/commcard/engineering)
+	after_init(0, then(PROC_REF(find_grid_sensors)))
+
+/// Finds the power sensors, once the map has them.
+/obj/item/commcard/engineering/proc/find_grid_sensors(datum/act/timer/A)
 	internal_data["grid_sensors"] = find_powernet_sensors()
 	internal_data["powernet_target"] = ""
 
@@ -396,13 +398,15 @@ CAPABILITIES(/obj/item/commcard)
 	icon_state = "cart-ce"
 
 /obj/item/commcard/head/ce/Initialize(mapload)
-	..()
+	. = ..()
 	rel_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
 	rel_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/item/commcard/head/ce/LateInitialize()
-	. = ..()
+CAPABILITIES(/obj/item/commcard/head/ce)
+	after_init(0, then(PROC_REF(find_grid_sensors)))
+
+/// Finds the power sensors, once the map has them.
+/obj/item/commcard/head/ce/proc/find_grid_sensors(datum/act/timer/A)
 	internal_data["grid_sensors"] = find_powernet_sensors()
 	internal_data["powernet_target"] = ""
 

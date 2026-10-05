@@ -30,7 +30,7 @@
 	/// Counting down: true while the timer runs.
 	var/timing = FALSE
 
-	/// Brig closets sharing our id, found at LateInitialize (a relation view: they leave when they die).
+	/// Brig closets sharing our id, found by find_lockers() after init (a relation view: they leave when they die).
 	var/list/obj/targets
 	/// Brig doors and flashers sharing our id (keyed: linked when either end materializes).
 	var/list/obj/machinery/door/window/brigdoor/brig_doors
@@ -49,6 +49,7 @@ TRACKED(/obj/machinery/door_timer, timing)
 MSG_DEF_SELF(door_timer/denied, "Access denied.")
 
 CAPABILITIES(/obj/machinery/door_timer)
+	after_init(0, then(PROC_REF(find_lockers)))
 	ref_many(nameof(targets), /obj/structure/closet/secure_closet/brig)
 	ref_many(nameof(brig_doors), /obj/machinery/door/window/brigdoor, by = nameof(id))
 	ref_many(nameof(brig_flashers), /obj/machinery/flasher, by = nameof(id))
@@ -65,11 +66,8 @@ CAPABILITIES(/obj/machinery/door_timer)
 /obj/machinery/door_timer/proc/timer_access(datum/act/op/A)
 	return allowed(A.actor)
 
-/obj/machinery/door_timer/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/machinery/door_timer/LateInitialize()
+/// Finds the brig lockers with its id, once the map around it exists.
+/obj/machinery/door_timer/proc/find_lockers(datum/act/timer/A)
 	// Brig closets are objects without a keyed index (outside this scope): still found by scan.
 	for(var/obj/structure/closet/secure_closet/brig/C in REGISTRY_MEMBERS(REGISTRY_BRIG_CLOSETS))
 		if(C.id == id)

@@ -2358,7 +2358,7 @@
 	var/obj/machinery/door/window/brigdoor/D = allocate(/obj/machinery/door/window/brigdoor/p2_test, tile(1, 2))
 	p2_door_set_power(D, TRUE)
 	var/obj/machinery/door_timer/T = allocate(/obj/machinery/door_timer/p2_test, tile(2, 2))
-	T.atom_fix() // it broke itself at LateInitialize, before its keyed doors had linked
+	T.atom_fix() // it broke itself in its after-init pass, before its keyed doors had linked
 	p2_door_set_power(T, TRUE)
 	if(access)
 		T.req_access = access

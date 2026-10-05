@@ -57,7 +57,7 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 /datum/capability/lib/wall_mount
 	holder_hooks = HOLDER_HOOK_INIT
 
-/datum/capability/lib/wall_mount/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/wall_mount/on_holder_init(datum/act/eval/A)
 	var/atom/holder = A.holder
 	if(!A.mapload)
 		var/turf/here = get_turf(holder)

@@ -56,7 +56,7 @@
 	if(cap_of_all(A, C.key))
 		return FALSE
 	LAZYADD(A.cap_extras, C)
-	C.on_holder_init(A, FALSE)
+	C.legacy_holder_init(A, FALSE)
 	cap_join_systems(A, C)
 	refresh_granted_verbs(A)
 	changed(A, CHANGE_CAPABILITY)
@@ -66,7 +66,7 @@
 /proc/remove_capability(atom/A, key)
 	for(var/datum/capability/C as anything in A.cap_extras)
 		if(C.key == key || (ispath(key) && istype(C, key)))
-			C.on_holder_destroy(A)
+			C.legacy_holder_destroy(A)
 			cap_leave_systems(A, C)
 			LAZYREMOVE(A.cap_extras, C)
 			refresh_granted_verbs(A)

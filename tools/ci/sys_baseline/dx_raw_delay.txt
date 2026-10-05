@@ -1,5 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_raw_delay.py (doc/rewrite/systems.md); shrink-only, target 0
-dx_raw_delay	code/datums/lifecycle/declarations.dm	after(A, lifecycle_decl_value(A, timer[1]), timer[2])
 dx_raw_delay	code/game/machinery/floodlight.dm	after(src, 20, PROC_REF(flicker_restore))
 dx_raw_delay	code/game/machinery/suit_storage/suit_storage.dm	after(src, rand(0, 15), PROC_REF(lose_power))
 dx_raw_delay	code/game/machinery/telecomms/telecomunications.dm	after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due), key = "thermal_timer")

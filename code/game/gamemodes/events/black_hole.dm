@@ -9,9 +9,10 @@
 	density = FALSE
 	anchored = TRUE
 
-DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
+CAPABILITIES(/obj/effect/bhole)
+	after_init(0.4 SECONDS, then(PROC_REF(controller)))
 
-/obj/effect/bhole/proc/controller()
+/obj/effect/bhole/proc/controller(datum/act/A)
 	if(!isturf(loc))
 		consume(src)
 		return

@@ -227,11 +227,11 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 DECLARE_REAGENTS(/obj/item/organ/internal/brain/slime, 50, null)
 
-/obj/item/organ/internal/brain/slime/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/organ/internal/brain/slime)
+	after_init(0, then(PROC_REF(match_core_color)))
 
-/obj/item/organ/internal/brain/slime/LateInitialize()
+/// Matches the core to the Promethean's starting colour, once the body has placed it.
+/obj/item/organ/internal/brain/slime/proc/match_core_color(datum/act/timer/A)
 	//Match the core to the Promethean's starting color.
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
@@ -312,11 +312,11 @@ DECLARE_REAGENTS(/obj/item/organ/internal/brain/slime, 50, null)
 	desc = "A piece of juicy meat found in a person's head. This one is strange."
 	icon_state = "brain_grey"
 
-/obj/item/organ/internal/brain/grey/colormatch/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/organ/internal/brain/grey/colormatch)
+	after_init(0, then(PROC_REF(match_blood_color)))
 
-/obj/item/organ/internal/brain/grey/colormatch/LateInitialize()
+/// Takes its owner's blood colour, once the body has placed it.
+/obj/item/organ/internal/brain/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color

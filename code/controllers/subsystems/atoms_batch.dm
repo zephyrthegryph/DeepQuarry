@@ -6,13 +6,13 @@
 //
 // 1. Atoms initialize in the order the caller listed them (areas, turfs, then movables for
 //    a template); a yield never reorders or skips one.
-// 2. A frame's LateInitialize() calls run after every atom of that frame has initialized.
+// 2. A frame's after_init() entries (code/engine/actions/after_init.dm) run after every atom of that frame has initialized.
 // 3. Deferred work (BATCH_WORK_*: wall smoothing, cable binds) belongs to the frame that
-//    owns it and flushes once when that frame closes, before its LateInitialize() calls,
+//    owns it and flushes once when that frame closes, before its after_init() entries,
 //    in BATCH_WORK_* order.
 // 4. A frame opened while another frame is running (a nested InitializeAtoms() from inside
 //    an Initialize()) joins it: its deferred work goes to the running frame's owner, as the
-//    shared lists did before. Its own late loaders still run when it closes.
+//    shared lists did before. Its own after_init() entries still run when it closes.
 // 5. While a frame is suspended at a yield, no frame is active: atoms other code creates
 //    meanwhile initialize and bind normally instead of queueing into the sleeping frame,
 //    and a frame opened meanwhile owns its own work.
@@ -30,8 +30,8 @@
 	var/tmp/datum/materialize_batch/previous
 	/// BATCH_WORK_* -> (thing -> TRUE). Only an owner frame has one.
 	var/list/work
-	/// Atoms whose Initialize() returned INITIALIZE_HINT_LATELOAD during a mapload.
-	var/list/late_loaders
+	/// Map-loaded instances of this frame with after_init() entries: armed when the frame closes, after every atom of the load exists.
+	var/list/after_inits
 	/// Movables this frame created from templates, when the caller asked for them.
 	var/list/created_atoms
 	/// Chunks initialized and yields taken (tests and the boot log read them).
@@ -49,7 +49,6 @@
 	else
 		owner = src
 		work = new /list(BATCH_WORK_KINDS)
-	late_loaders = list()
 
 /datum/system/atoms
 	/// The frame currently initializing atoms, or null (no batch, or its frame is yielding).

@@ -1,29 +1,23 @@
-//! Port of `tools/ci/init_lint.py`: the `Initialize()` ratchet (Phase 4 track 4c,
-//! doc/rewrite/init_and_turfs.md sec 3.6).
+//! The init lint (doc/rewrite/final_api.html section 15/17, the "init" row; section 6 "Lifecycle").
 //!
-//! `Initialize()` should only set the instance's own state; type facts belong in the type table,
-//! world registration in `on_materialize()`. Rules:
+//! One rule for what an `Initialize()` override may do: per-instance state only, and it says which with a reason code.
+//! Starting contents are `starts =`, capability setup is `on_holder_init(A)`, work after init is `after_init()`. Rules:
 //!
-//! * `initialize` / `late_initialize`: a `/type/Initialize(` / `/type/LateInitialize(` override, except
-//!   one with an `// INIT: <reason>` on the header line or the comment line directly above it, or an
-//!   `ALLOW(init)` keep;
-//! * `world_reads`: a line in an `Initialize()` body that reaches outside the instance (`range(`,
-//!   `orange(`, `view(`, `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`);
-//! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (ceiling 0);
-//! * `table_init_overrides`: an `Initialize()`/`LateInitialize()` override on a type that inherits
-//!   `init_from_table = TRUE` (ceiling 0).
+//! * `initialize`: a `/type/Initialize(` override without `// ALLOW(init/CODE): <reason>` on the header line or the comment
+//!   line directly above it, CODE one of [`REASON_CODES`]. A bare `ALLOW(init)` (no code) does not keep it.
+//! * `late_initialize`: a `/type/LateInitialize(` override. Banned: `after_init(0, then(PROC_REF(x)))` runs when the
+//!   instance's init is complete (after the whole map load for a map-loaded one), `on_holder_init(A)` for capability setup.
+//! * `world_reads`: a line in an `Initialize()` body that reaches outside the instance (`range(`, `orange(`, `view(`,
+//!   `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`): move it to `on_holder_init(A)`, `after_init()` or `membership()`;
+//! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (banned);
+//! * `table_init_overrides`: an `Initialize()` override on a type that inherits `init_from_table = TRUE` (banned).
 //!
-//! Quirks kept from the Python:
-//! * files are read with `read().splitlines()` (also breaking on `\v`, `\f`, `\x1c`..`\x1e`, NEL and
-//!   U+2028/9, no final empty line), over an `os.walk` of `code/` then `maps/` (dot-files included);
-//! * the unit-test/benchmark exemption (`[lint.init]` in `tools/ci/lint_scopes.toml`) applies to the
-//!   per-file rules only: `table_init_overrides` reads every file, exempt ones too, and asks the
-//!   ALLOW question about every header line it meets, whether or not it would count;
-//! * the `init_from_table` flags are one global dict, so when two files flag the same type the last
-//!   one in `os.walk` order wins (`dm::walk::walk_order`); a header's ancestors are searched nearest
-//!   first and the search stops at the first flagged one;
-//! * an `// INIT:` reason keeps a header before the ALLOW question is asked, so an `ALLOW(init)` on
-//!   such a header is never recorded as used by the per-file rules (the table pass still asks).
+//! The `// INIT: <reason>` form of the old ratchet is gone: a kept override names its code in the one annotation form.
+//!
+//! Quirks kept from the Python port: files are read with `read().splitlines()` over an `os.walk` of `code/` then `maps/`
+//! (dot-files included); the unit-test/benchmark exemption (`[lint.init]` in `tools/ci/lint_scopes.toml`) applies to the
+//! per-file rules only: `table_init_overrides` reads every file and asks the ALLOW question about every header it meets;
+//! the `init_from_table` flags are one global dict (last file in walk order wins; nearest flagged ancestor).
 
 use std::collections::HashMap;
 
@@ -52,18 +46,18 @@ static META: Meta = Meta {
     policy: Policy::Sites {
         baseline: BASELINE,
         header: &[
-            "Initialize() ratchet sites (tools/ci/init_lint.py, doc/rewrite/init_and_turfs.md sec 3.6).",
-            "rule<TAB>file<TAB>normalized line. Shrink-only: fix sites, then `python tools/ci/init_lint.py --update`.",
+            "Initialize() ratchet sites (the init lint, tools/analyze/src/lints/init.rs; doc/rewrite/final_api.html sections 6 and 17).",
+            "rule<TAB>file<TAB>normalized line. Shrink-only: fix sites, then `analyze baseline --update --lint init`.",
         ],
-        banned: &["turf_on_materialize", "table_init_overrides"],
+        banned: &["late_initialize", "turf_on_materialize", "table_init_overrides"],
     },
     rules: &[
         RuleMeta {
             name: "initialize",
-            hint: "move type facts to the type table and registration to on_materialize(); an override that sets per-instance state says which with `// INIT: <state it sets>` on or above the header",
+            hint: "starting contents are `starts =`, capability setup is on_holder_init(A), timed or after-load work is after_init(); an override that only sets per-instance state carries `// ALLOW(init/CODE): <state it sets>` (CODE: INSTANCE_STATE, CTOR_ARGS, FRAMEWORK) on or above the header",
         },
-        RuleMeta { name: "late_initialize", hint: "use on_materialize() or a first-use accessor instead of LateInitialize()" },
-        RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_materialize()" },
+        RuleMeta { name: "late_initialize", hint: "LateInitialize() is banned: after_init(0, then(PROC_REF(x))) runs when the instance's init is complete (after the map load), on_holder_init(A) does capability setup" },
+        RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_holder_init(A), after_init() or through membership()" },
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
         RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
     ],
@@ -115,6 +109,19 @@ fn table_facts(f: &SourceFile) -> TableFacts {
     out
 }
 
+/// The reason codes an `ALLOW(init/CODE)` keep may carry (also listed in `[lint.init] reason_codes`):
+/// INSTANCE_STATE (a value only this instance has: a map edit, a random roll, a copy of where it is built), CTOR_ARGS (it
+/// consumes extra constructor arguments), FRAMEWORK (a base of the init chain itself).
+pub const REASON_CODES: &[&str] = &["INSTANCE_STATE", "CTOR_ARGS", "FRAMEWORK"];
+
+/// The code of an `ALLOW(init/CODE): reason` on `line`, Some("") for a bare `ALLOW(init): reason`, None for no keep.
+fn init_code(line: &str) -> Option<String> {
+    match crate::allow::parse(line) {
+        Some(a) if !a.reason.is_empty() && a.names.contains("init") => Some(a.codes.get("init").cloned().unwrap_or_default()),
+        _ => None,
+    }
+}
+
 struct Init;
 
 impl Lint for Init {
@@ -127,7 +134,6 @@ impl Lint for Init {
         let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
         let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
         let turf_materialize = pat_match!(r"^/turf(/[\w/]*)?/on_materialize\s*\(");
-        let reason = crate::pat!(r"//\s*INIT:\s*\S");
         let world_read =
             crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
 
@@ -143,14 +149,23 @@ impl Lint for Init {
             let late = late_header.is_match(line);
             if init || late {
                 in_init = init;
-                let above = if number > 1 { lines[number - 2] } else { "" };
-                if reason.is_match(line) || (py_lstrip(above).starts_with("//") && reason.is_match(above)) {
-                    continue; // an `// INIT:` reason keeps it (one count, not two)
-                }
-                if allowed_in(out, f, &lines, number, "init") {
+                if late {
+                    out.site("late_initialize", number);
                     continue;
                 }
-                out.site(if init { "initialize" } else { "late_initialize" }, number);
+                let above = if number > 1 { lines[number - 2] } else { "" };
+                let code = init_code(line).or_else(|| if py_lstrip(above).starts_with("//") { init_code(above) } else { None });
+                match code {
+                    Some(c) if REASON_CODES.contains(&c.as_str()) => {
+                        allowed_in(out, f, &lines, number, "init"); // records the annotation as used
+                    }
+                    Some(c) => out.site_msg(
+                        "initialize",
+                        number,
+                        format!("ALLOW(init{}) needs a reason code: ALLOW(init/CODE), CODE one of {}", if c.is_empty() { String::new() } else { format!("/{c}") }, REASON_CODES.join(", ")),
+                    ),
+                    None => out.site("initialize", number),
+                }
                 continue;
             }
             if col0(line) && !line.starts_with("//") {
@@ -200,11 +215,9 @@ impl Lint for Init {
         }
     }
 
+    // No parity: the reason codes and the LateInitialize ban have no Python counterpart (init_lint.py is gone).
     fn parity(&self) -> Option<Parity> {
-        let mut p = Parity::ratchet(&["tools/ci/init_lint.py"], &[BASELINE]);
-        p.update = Some(&["tools/ci/init_lint.py", "--update"]);
-        p.seed = Some(&["tools/ci/init_lint.py", "--seed"]);
-        Some(p)
+        None
     }
 }
 

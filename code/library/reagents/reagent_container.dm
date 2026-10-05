@@ -111,7 +111,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /// Look steps of the fill gauge.
 #define REAGENT_FILL_LEVELS 4
 
-/datum/capability/lib/reagent_container/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/reagent_container/on_holder_init(datum/act/eval/A)
 	var/atom/holder = A.holder
 	var/max_volume = setting(holder, volume, 30)
 	if(!holder.reagents)

@@ -76,6 +76,66 @@
 		value = (value in D.vars) ? D.vars[value] : call(D, value)(null)
 	return list(value, ctor_args)
 
+/**
+ * What a starts = spec makes for `holder` when it initializes: a list of new instances, empty when it makes nothing. Every form of section 6
+ * "Starting contents": a type; nameof(var) of a holder var holding one (a mapper's edit wins); list(T...) or list(T = n); pick_one(list);
+ * when(cond, T); PROC_REF(x), where x(datum/act/A) answers a type, an instance or a list of them. The instances are made at `loc` (null:
+ * nullspace, for contents moved in through the relation write) with `starts_args` after it as the constructor's arguments. Used by slot()
+ * and the capabilities built on a slot (cell_bay()); owns_one/owns_many keep own_init_starts(), which reads the same specs.
+ */
+/proc/starts_make(datum/holder, starts, list/starts_args, loc)
+	. = list()
+	if(istype(starts, /datum/entry))
+		var/datum/entry/inner = starts
+		switch(inner.kind)
+			if("pick_one")
+				var/list/weights = inner.args["weights"]
+				starts = pickweight(weights.Copy())
+			if(ENTRY_WHEN)
+				starts = starts_when(holder, inner)
+			if("starts")
+				return starts_make(holder, inner.args["value"], inner.args["args"] || starts_args, loc)
+			else
+				declare_report("starts = [inner.kind](): not a starting-contents form on [holder.type]")
+				return
+	if(istext(starts))
+		if(starts in holder.vars)
+			starts = holder.vars[starts]
+		else if(hascall(holder, starts))
+			starts = call(holder, starts)(null)
+		else
+			declare_report("starts = \"[starts]\": [holder.type] has no such var or proc")
+			return
+	if(isnull(starts))
+		return
+	if(isdatum(starts))
+		. += starts
+		return
+	if(islist(starts))
+		var/list/many = starts
+		for(var/item in many)
+			var/count = (!isnum(item) && isnum(many[item])) ? many[item] : 1
+			for(var/i in 1 to count)
+				. += starts_make(holder, item, starts_args, loc)
+		return
+	if(ispath(starts))
+		. += length(starts_args) ? new starts(arglist(list(loc) + starts_args)) : new starts(loc)
+
+/// slot(id, starts =, starts_args =) entries: what each starts with is made in nullspace and moved into the slot through the one transfer
+/// (forced: nothing a player does is being checked). A holder whose type has no ledger slot of that id keeps the thing as plain contents. Runs
+/// in the engine init (step 4 of section 6's order: after on_holder_preinit, before on_holder_init).
+/proc/slot_starts_init(datum/holder, datum/type_table/T)
+	if(!isatom(holder))
+		return
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_SLOT))
+		var/datum/entry/E = C.item
+		if(isnull(E.args["starts"]) || !op_whens_hold(holder, C.whens))
+			continue
+		var/slot_id = E.args["id"]
+		for(var/atom/movable/thing in starts_make(holder, E.args["starts"], E.args["starts_args"], null))
+			if(!move_into(holder, slot_id, thing, force = TRUE))
+				thing.forceMove(holder)
+
 /// when(cond, T) as a starts value: the type if the condition holds at init, else nothing.
 /proc/starts_when(datum/D, datum/entry/when_entry)
 	var/cond = when_entry.args["cond"]

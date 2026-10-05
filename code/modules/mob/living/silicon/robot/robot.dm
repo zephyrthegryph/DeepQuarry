@@ -205,10 +205,6 @@
 	add_hose_connector(/datum/hose_connector/input/borg)
 	add_hose_connector(/datum/hose_connector/output/borg)
 
-/mob/living/silicon/robot/LateInitialize()
-	pick_module()
-	update_icon()
-
 /mob/living/silicon/robot/proc/setup_radio()
 	rel_set(src, nameof(radio), new /obj/item/radio/borg(src))
 	rel_set(src, nameof(common_radio), radio) // an alias of the owned radio

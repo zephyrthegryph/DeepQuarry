@@ -99,6 +99,7 @@ TRACKED(/obj/machinery/power/smes, output_pulsed)
 TRACKED(/obj/machinery/power/smes, grid_check)
 
 CAPABILITIES(/obj/machinery/power/smes)
+	after_init(0, then(PROC_REF(mapped_after_init)))
 	machine_basics(repair = NONE, powered = FALSE)
 	space(SPACE_PANEL, door = nameof(panel_open), closed = MSG(smes/hatch_shut))
 	links(/obj/machinery/power/smes::terminals, /obj/machinery/power/terminal/smes_input::unit, a_many = TRUE)
@@ -153,10 +154,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	push_to_rust()
 	if(!should_be_mapped)
 		WARNING("Non-buildable or Non-magical SMES at [src.x]X [src.y]Y [src.z]Z")
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/power/smes/LateInitialize()
+/// A mapped SMES's late pass: the coils laid on its tile and its preset settings.
+/obj/machinery/power/smes/proc/mapped_after_init(datum/act/timer/A)
+	if(A.mapload && !has_stat(BROKEN)) // one without terminals broke in Initialize() and takes no late pass
+		map_late()
+
+/obj/machinery/power/smes/proc/map_late()
 	apply_mapped_upgrades()
 	apply_mapped_settings()
 	push_to_rust()

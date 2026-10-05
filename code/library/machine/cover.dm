@@ -56,7 +56,7 @@ cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 	return cover_open(A.holder, selector) ? /datum/msg/cover/opened : /datum/msg/cover/shut
 
 /// A cover that starts open is open from the moment its holder initializes.
-/datum/capability/lib/cover/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/cover/on_holder_init(datum/act/eval/A)
 	if(starts_open)
 		cap_key_set(A.holder, COVER_OPEN, TRUE, selector)
 

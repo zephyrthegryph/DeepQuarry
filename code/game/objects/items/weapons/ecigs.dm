@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
 	op("eject_cartridge", hand(), ungated(), when(req_empty_hand()), label("Eject cartridge"), then(PROC_REF(cartridge_ejected)))
 
-// INIT: sets its in-hand and worn state from the cartridge the type table loads it with (a draw never writes it)
+// ALLOW(init/INSTANCE_STATE): sets its in-hand and worn state from the cartridge the type table loads it with (a draw never writes it)
 /obj/item/clothing/mask/smokable/ecig/Initialize(mapload)
 	. = ..()
 	sync_item_state()

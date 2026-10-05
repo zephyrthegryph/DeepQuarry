@@ -31,8 +31,6 @@
 
 /obj/effect/shuttle_landmark/Initialize(mapload)
 	. = ..()
-	if(docking_controller_tag)
-		. = INITIALIZE_HINT_LATELOAD
 
 	// Even if this flag is set, hardcoded values take precedence.
 	if(flags & SLANDMARK_FLAG_AUTOSET)
@@ -50,7 +48,11 @@
 		landing_area = isarea(base_area) ? base_area : locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
 
-/obj/effect/shuttle_landmark/LateInitialize()
+CAPABILITIES(/obj/effect/shuttle_landmark)
+	after_init(0, then(PROC_REF(find_docking_controller)))
+
+/// Finds the docking controller its tag names, once the map has made it.
+/obj/effect/shuttle_landmark/proc/find_docking_controller(datum/act/timer/A)
 	if(!docking_controller_tag)
 		return
 	var/docking_tag = docking_controller_tag
@@ -143,12 +145,9 @@
 /obj/effect/shuttle_landmark/automatic/clearing
 	var/radius = 10
 
-/obj/effect/shuttle_landmark/automatic/clearing/Initialize(mapload)
+/// A clearing landmark also clears the dense turfs around it.
+/obj/effect/shuttle_landmark/automatic/clearing/find_docking_controller(datum/act/timer/A)
 	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/effect/shuttle_landmark/automatic/clearing/LateInitialize()
-	. = ..()
 	for(var/turf/T in range(radius, src))
 		if(T.density)
 			T.ChangeTurf(get_base_turf_by_area(T))

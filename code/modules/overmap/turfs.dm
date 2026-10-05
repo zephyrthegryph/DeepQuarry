@@ -21,11 +21,11 @@ GLOBAL_LIST_EMPTY(map_sectors)
 	var/map_is_to_my
 	var/tmp/turf/unsimulated/map/edge/wrap_buddy
 
-/turf/unsimulated/map/edge/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/turf/unsimulated/map/edge)
+	after_init(0, then(PROC_REF(find_wrap)))
 
-/turf/unsimulated/map/edge/LateInitialize()
+/// Finds the map it wraps to, once the overmap exists.
+/turf/unsimulated/map/edge/proc/find_wrap(datum/act/timer/A)
 	//This could be done by using the using_map.overmap_size much faster, HOWEVER, doing it programatically to 'find'
 	//  the edges this way allows for 'sub overmaps' elsewhere and whatnot.
 	for(var/side in GLOB.alldirs) //The order of this list is relevant: It should definitely break on finding a GLOB.cardinal FIRST.

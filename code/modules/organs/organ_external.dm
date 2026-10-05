@@ -388,12 +388,12 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	recalc_integrity()
 
 /obj/item/organ/external/Initialize(mapload, internal)
-	..(mapload, 0)
+	. = ..(mapload, 0)
 	if(istype(owner))
 		sync_colour_to_human(owner)
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/item/organ/external/LateInitialize()
+/// Draws itself, once the body it was made in has placed it.
+/obj/item/organ/external/proc/icon_after_init(datum/act/timer/A)
 	if(!QDELETED(src))
 		get_icon()
 

@@ -29,7 +29,7 @@
 //     `holder`: a /datum/reagents subtype (DECLARE_REAGENTS_TYPED).
 // Memory: the capability is one shared flyweight per distinct declaration (caps_intern_list()); an instance
 // owns only the /datum/reagents holder it always had. A type without the capability allocates nothing.
-// Timing: on_holder_init() runs in caps_init() at the end of /atom/Initialize(), so a subtype's Initialize()
+// Timing: legacy_holder_init() runs in caps_init() at the end of /atom/Initialize(), so a subtype's Initialize()
 // sees the reagents right after `. = ..()`, as with the macros.
 
 /datum/capability/reagents
@@ -84,7 +84,7 @@
 				stack_trace("refine(CAP_REAGENTS): the reagents capability has no refinable '[field]'")
 	return C
 
-/datum/capability/reagents/on_holder_init(atom/holder, mapload)
+/datum/capability/reagents/legacy_holder_init(atom/holder, mapload)
 	// A PROC_REF (text) names a holder proc answering the volume: no var is read by name.
 	var/max_volume = isnum(volume) ? volume : holder_call(holder, volume)
 	if(!isnum(max_volume))

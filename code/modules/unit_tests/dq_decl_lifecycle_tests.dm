@@ -66,6 +66,7 @@ CAPABILITIES(/obj/item/dq_decl_probe)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(helper), starts = /datum/dq_decl_owned_child)
 	owns_many(nameof(spares), starts = list(/obj/item/dq_decl_part = 2))
+	after_init(2 SECONDS, then(PROC_REF(timer_done)))
 
 DECLARE_GAS(/obj/item/dq_decl_probe, "air_contents", 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
 DECLARE_REAGENTS(/obj/item/dq_decl_probe, "volume", list(REAGENT_ID_WATER = 10))
@@ -75,16 +76,14 @@ DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)
 DECLARE_BIND(/obj/item/dq_decl_probe, /datum/decl_binder/dq_decl_test)
 DECLARE_BEHAVIOUR(/obj/item/dq_decl_probe, /datum/om/behaviour/dq_decl_test)
 DECLARE_PERIODIC(/obj/item/dq_decl_probe, PERIODIC_SLOW)
-DECLARE_START_TIMER(/obj/item/dq_decl_probe, 2 SECONDS, PROC_REF(timer_done))
 DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_contents = TRUE, debris = list(/obj/item/dq_decl_part/better = 2)))
 
-// INIT: records what the declarations had already set up (test probe)
 /obj/item/dq_decl_probe/Initialize(mapload)
 	. = ..()
 	saw_reagents_in_initialize = reagents?.total_volume
 	saw_part_in_initialize = istype(part)
 
-/obj/item/dq_decl_probe/proc/timer_done()
+/obj/item/dq_decl_probe/proc/timer_done(datum/act/A)
 	timer_fired = TRUE
 
 /obj/item/dq_decl_probe/periodic_step(delta)

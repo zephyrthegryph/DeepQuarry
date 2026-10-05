@@ -75,9 +75,10 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	. = ..()
 	luminosity = !(dynamic_lighting)
 	icon_state = ""
-	return INITIALIZE_HINT_LATELOAD // Areas tradiationally are initialized AFTER other atoms.
 
-/area/LateInitialize()
+/// An area's pass after the map load: its power state and spoiler cover, once its machines exist (area_after_init() is extended by the
+/// away-mission spawns and the turf initializers).
+/area/proc/area_after_init(datum/act/timer/A)
 	if(!requires_power || !apc)
 		power_light = 0
 		power_equip = 0
@@ -685,6 +686,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 /// dying APC lets go. The APC also feeds the area's lights_nightshift and lights_emergency_off (its contributes_to entries).
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.
 CAPABILITIES(/area)
+	after_init(0, then(PROC_REF(area_after_init)))
 	on_change(nameof(apc), ANY, then(PROC_REF(apc_changed)))
 
 /area/proc/apc_changed(datum/act/A)

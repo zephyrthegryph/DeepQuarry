@@ -34,15 +34,19 @@
 	if(!floortype && initial_flooring)
 		floortype = initial_flooring
 	if(floortype)
-		set_flooring(get_flooring_data(floortype), TRUE)
-		. = INITIALIZE_HINT_LATELOAD // We'll update our icons after everyone is ready
+		set_flooring(get_flooring_data(floortype), TRUE) // its icons update after init (sim_after_init())
 	if(can_dirty && can_start_dirty)
 		if(prob(dirty_prob))
 			dirt += rand(50,100)
 			update_dirt() //5% chance to start with dirt on a floor tile- give the janitor something to do
 
-/turf/simulated/floor/LateInitialize()
-	. = ..()
+/// A floor with flooring updates its icons after init wherever it was made.
+/turf/simulated/floor/runtime_after_init()
+	return !!flooring
+
+/// Its icons, once its neighbours exist.
+/turf/simulated/floor/sim_after_init(datum/act/timer/A)
+	..()
 	update_icon()
 
 /turf/simulated/floor/proc/swap_decals()

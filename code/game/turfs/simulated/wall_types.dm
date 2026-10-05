@@ -246,11 +246,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/a
 	density = TRUE
 	breakable = TRUE
 
-/obj/structure/hull_corner/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/hull_corner)
+	after_init(0, then(PROC_REF(look_after_init)))
 
-/obj/structure/hull_corner/LateInitialize()
+/// Draws against the walls around it, once they exist.
+/obj/structure/hull_corner/proc/look_after_init(datum/act/timer/A)
 	update_look()
 
 /obj/structure/hull_corner/proc/get_dirs_to_test()

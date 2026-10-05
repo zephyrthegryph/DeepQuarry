@@ -26,9 +26,9 @@
 /obj/machinery/computer/roguezones/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(shuttle_control), locate(/obj/machinery/computer/shuttle_control/belter))
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/computer/roguezones/LateInitialize()
+/// Makes the rogue controller the first console needs.
+/obj/machinery/computer/roguezones/proc/make_controller(datum/act/timer/A)
 	if(!GLOB.rm_controller)
 		GLOB.rm_controller = new /datum/controller/rogue()
 
@@ -52,6 +52,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/roguezones)
+	after_init(0, then(PROC_REF(make_controller)))
 	interface("RogueZones")
 	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
 	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))

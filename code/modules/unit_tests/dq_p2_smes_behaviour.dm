@@ -118,7 +118,7 @@
 
 /// The mapper's late pass: coils laid on the tile, the preset's settings.
 /proc/p2_smes_map_late(obj/machinery/power/smes/S)
-	S.LateInitialize()
+	S.map_late()
 
 /// The unit's explosion/damage entry: a hit of `amount` integrity.
 /proc/p2_smes_hit(obj/machinery/power/smes/S, amount)

@@ -116,9 +116,10 @@
 
 	var/escape_time = 8 SECONDS
 
-DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
+CAPABILITIES(/obj/effect/energy_net)
+	after_init(2 SECONDS, then(PROC_REF(check_empty))) // a net that caught nobody goes away
 
-/obj/effect/energy_net/proc/check_empty()
+/obj/effect/energy_net/proc/check_empty(datum/act/A)
 	if(!has_buckled_mobs())
 		consume(src)
 

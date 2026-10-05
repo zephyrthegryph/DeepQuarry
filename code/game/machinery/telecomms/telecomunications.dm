@@ -53,6 +53,7 @@
 // Links are symmetric membership: linking A to B lists each in the other's links, and a dying
 // machine leaves every partner's list (the framework clears both sides).
 CAPABILITIES(/obj/machinery/telecomms)
+	after_init(0, then(PROC_REF(autolink)))
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	emp_disable(PROC_REF(emp_outage))
@@ -150,11 +151,11 @@ CAPABILITIES(/obj/machinery/telecomms)
 REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 /obj/machinery/telecomms/Initialize(mapload)
-	..()
+	. = ..()
 	default_apply_parts()
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/telecomms/LateInitialize()
+/// Sets its listening level and links the machines it names, once they all exist.
+/obj/machinery/telecomms/proc/autolink(datum/act/timer/A)
 	//Set the listening_level if there's none.
 	if(!listening_level)
 		//Defaults to our Z level!

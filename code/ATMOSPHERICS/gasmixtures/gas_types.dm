@@ -379,7 +379,7 @@ GLOBAL_LIST_INIT(gas_path_by_idx, build_gas_path_table())
 	// Can't use the traditional loc because we are stored in nullspace, and we can't set plane before init because of the helping that SET_PLANE_EXPLICIT does IN init
 	var/plane_offset = 0
 
-// INIT: this overlay's plane offset
+// ALLOW(init/CTOR_ARGS): this overlay's plane offset is a constructor argument
 /obj/effect/overlay/gas/Initialize(mapload, offset)
 	plane_offset = offset
 	. = ..()

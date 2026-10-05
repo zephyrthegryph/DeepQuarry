@@ -71,8 +71,7 @@ CAPABILITIES(/obj/machinery/material_furnace)
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 
-// INIT: seeds this furnace's chamber air from the air of the turf it is built on
-// ALLOW(init): copies the build turf's air into this instance's chamber
+// ALLOW(init/INSTANCE_STATE): copies the build turf's air into this instance's chamber
 /obj/machinery/material_furnace/Initialize(mapload)
 	. = ..()
 	var/turf/furnace_turf = get_turf(src)

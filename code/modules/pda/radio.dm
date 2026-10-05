@@ -18,12 +18,12 @@
 	var/menu_message = ""
 
 /obj/item/radio/integrated/Initialize(mapload)
-	..()
+	. = ..()
 	if(istype(loc?.loc, /obj/item/pda))
 		rel_set(src, nameof(hostpda), loc.loc)
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/item/radio/integrated/LateInitialize()
+/// An integrated radio has no prelinks: it joins its bot filter instead.
+/obj/item/radio/integrated/radio_after_init(datum/act/timer/A)
 	if(bot_filter)
 		add_to_radio(bot_filter)
 

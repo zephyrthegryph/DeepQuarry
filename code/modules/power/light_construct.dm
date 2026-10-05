@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/light_construct)
 	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells), because = MSG(light_frame/no_cells)), req_empty(nameof(cell), because = MSG(bay/full))))
 	examine_line(PROC_REF(examine_cell))
 
-// INIT: fixture_type, facing and build stage taken from the fixture it was opened from
+// ALLOW(init/CTOR_ARGS): fixture_type, facing and build stage taken from the fixture it was opened from
 /obj/machinery/light_construct/Initialize(mapload, newdir, building = 0, datum/frame/frame_types/frame_type, obj/machinery/light/fixture = null)
 	. = ..()
 	if(fixture)
@@ -132,7 +132,7 @@ CAPABILITIES(/obj/machinery/light_construct)
 	fixture_type = /obj/machinery/light/floortube
 	sheets_refunded = 2
 
-// INIT: rotatable by hand
+// ALLOW(init/INSTANCE_STATE): make_rotatable() grants this construct its rotation ops
 /obj/machinery/light_construct/floortube/Initialize(mapload, newdir, building, datum/frame/frame_types/frame_type, obj/machinery/light/fixture)
 	. = ..()
 	make_rotatable()

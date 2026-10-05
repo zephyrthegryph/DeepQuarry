@@ -37,7 +37,7 @@
 	. = ..()
 	. += owns(var_name, type = /datum/gas_mixture)
 
-/datum/capability/gas_store/on_holder_init(atom/holder, mapload)
+/datum/capability/gas_store/legacy_holder_init(atom/holder, mapload)
 	if(!(var_name in holder.vars))
 		stack_trace("gas_store([var_name]) on [holder.type], which has no such var")
 		return

@@ -29,6 +29,7 @@
 DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
 
 CAPABILITIES(/obj/structure/low_wall)
+	after_init(0, then(PROC_REF(connect_after_init)))
 	climb()
 
 /obj/structure/low_wall/Initialize(mapload, materialtype)
@@ -46,10 +47,8 @@ CAPABILITIES(/obj/structure/low_wall)
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 
-
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/structure/low_wall/LateInitialize()
+/// Joins its neighbours, once they exist.
+/obj/structure/low_wall/proc/connect_after_init(datum/act/timer/A)
 	update_connections(1)
 	update_icon()
 
@@ -348,11 +347,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appea
 	noblend_objects = list(/obj/machinery/door/window)
 	color = "#666666"
 
-/obj/structure/grille/bay/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/grille/bay)
+	after_init(0, then(PROC_REF(connect_after_init)))
 
-/obj/structure/grille/bay/LateInitialize()
+/// Joins its neighbours, once they exist.
+/obj/structure/grille/bay/proc/connect_after_init(datum/act/timer/A)
 	update_connections(1)
 	update_icon()
 
@@ -407,9 +406,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, TYPE_PROC_REF(/atom, appearan
 	var/obj/item/stack/material/glass/G = glasstype
 	var/datum/material/M = get_material_by_name(initial(G.default_type))
 	color = M.icon_colour
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/structure/window/bay/LateInitialize()
+CAPABILITIES(/obj/structure/window/bay)
+	after_init(0, then(PROC_REF(connect_after_init)))
+
+/// Draws against its neighbours, once they exist.
+/obj/structure/window/bay/proc/connect_after_init(datum/act/timer/A)
 	icon_state = ""
 	update_icon()
 
@@ -495,11 +497,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, TYPE_PROC_REF(/atom, appearan
 	max_integrity = 24
 	alpha = 150
 
-/obj/structure/window/eris/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/window/eris)
+	after_init(0, then(PROC_REF(connect_after_init)))
 
-/obj/structure/window/eris/LateInitialize()
+/// Draws against its neighbours, once they exist.
+/obj/structure/window/eris/proc/connect_after_init(datum/act/timer/A)
 	icon_state = ""
 	update_icon()
 
