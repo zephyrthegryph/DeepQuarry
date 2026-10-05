@@ -330,8 +330,6 @@ init_new_child	code/game/machinery/frame.dm	rel_set(src, nameof(circuit), new fr
 init_new_child	code/game/machinery/gear_dispenser.dm	rel_set(src, nameof(one_setting), new one_setting)
 init_new_child	code/game/machinery/pda_multicaster.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 init_new_child	code/game/machinery/requests_console.dm	rel_set(src, nameof(announcement), new /datum/announcement)
-init_new_child	code/game/machinery/telecomms/telecomunications.dm	rel_set(src, nameof(Compiler), new /datum/TCS_Compiler())
-init_new_child	code/game/machinery/telecomms/telecomunications.dm	rel_set(src, nameof(server_radio), new /obj/item/radio/headset())
 init_new_child	code/game/machinery/virtual_reality/vr_console.dm	rel_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
 init_new_child	code/game/mecha/equipment/tools/cable_layer.dm	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
 init_new_child	code/game/mecha/equipment/tools/powertool.dm	rel_set(src, nameof(my_tool), new tooltype(src))
