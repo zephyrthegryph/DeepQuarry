@@ -109,21 +109,21 @@
 /datum/stat_decl/obj/machinery/alarm/__shorted/spec()
 	return list(/obj/machinery/alarm, /obj/machinery/alarm/proc/__stat_shorted)
 
-/// STAT(/obj/machinery/autolathe, disabled, ANY) at code/game/machinery/autolathe.dm:43
+/// STAT(/obj/machinery/autolathe, disabled, ANY) at code/game/machinery/autolathe.dm:51
 /obj/machinery/autolathe/var/disabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/autolathe/proc/__stat_disabled()
 	return list("disabled", "ANY", list(id = STAT_DISABLED))
 /datum/stat_decl/obj/machinery/autolathe/__disabled/spec()
 	return list(/obj/machinery/autolathe, /obj/machinery/autolathe/proc/__stat_disabled)
 
-/// STAT(/obj/machinery/autolathe, hacked, ANY) at code/game/machinery/autolathe.dm:41
+/// STAT(/obj/machinery/autolathe, hacked, ANY) at code/game/machinery/autolathe.dm:49
 /obj/machinery/autolathe/var/hacked = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/autolathe/proc/__stat_hacked()
 	return list("hacked", "ANY", list(id = STAT_HACKED))
 /datum/stat_decl/obj/machinery/autolathe/__hacked/spec()
 	return list(/obj/machinery/autolathe, /obj/machinery/autolathe/proc/__stat_hacked)
 
-/// STAT(/obj/machinery/autolathe, shocked, ANY) at code/game/machinery/autolathe.dm:45
+/// STAT(/obj/machinery/autolathe, shocked, ANY) at code/game/machinery/autolathe.dm:53
 /obj/machinery/autolathe/var/shocked = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/autolathe/proc/__stat_shocked()
 	return list("shocked", "ANY", list(id = STAT_SHOCKED))
@@ -242,14 +242,14 @@
 /datum/stat_decl/obj/machinery/power/smes/__working/spec()
 	return list(/obj/machinery/power/smes, /obj/machinery/power/smes/proc/__stat_working)
 
-/// STAT(/obj/machinery/rnd, disabled, ANY) at code/modules/research/tg/rdmachines.dm:101
+/// STAT(/obj/machinery/rnd, disabled, ANY) at code/modules/research/tg/rdmachines.dm:26
 /obj/machinery/rnd/var/disabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/rnd/proc/__stat_disabled()
 	return list("disabled", "ANY", list(id = STAT_DISABLED))
 /datum/stat_decl/obj/machinery/rnd/__disabled/spec()
 	return list(/obj/machinery/rnd, /obj/machinery/rnd/proc/__stat_disabled)
 
-/// STAT(/obj/machinery/rnd, hacked, ANY) at code/modules/research/tg/rdmachines.dm:99
+/// STAT(/obj/machinery/rnd, hacked, ANY) at code/modules/research/tg/rdmachines.dm:24
 /obj/machinery/rnd/var/hacked = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/rnd/proc/__stat_hacked()
 	return list("hacked", "ANY", list(id = STAT_HACKED))

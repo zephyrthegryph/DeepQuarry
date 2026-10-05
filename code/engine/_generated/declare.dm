@@ -220,6 +220,31 @@
 /datum/capdef_decl/c_emp_disable/spec()
 	return list(CAP_EMP_DISABLE, /datum/capability/lib/emp_disable, NONE, STACK, "emp_disable", "lasts, resist, extends")
 
+/// CAPABILITY_TYPE(fabricator, CAP_FABRICATOR) at code/library/machine/fabricator.dm:37
+/datum/capability/lib/fabricator
+	var/buildtypes = NONE
+	var/efficiency = null
+	var/materials = "materials"
+	var/print = TRUE
+	var/action = "build"
+	var/design_arg = "ref"
+	var/count_arg = "amount"
+	var/knows = null
+	var/build_time = null
+	var/department = null
+	var/worth_floor = 10
+	var/sound = "print_sound"
+	var/resets = TRUE
+	var/eject = FALSE
+	var/eject_power = FALSE
+	var/drop = "drop_direction"
+	var/run_var = "print_run"
+/proc/fabricator(buildtypes, efficiency, materials, print, action, design_arg, count_arg, knows, build_time, department, worth_floor, sound, resets, eject, eject_power, drop, run_var)
+	RETURN_TYPE(/datum/capability/lib/fabricator)
+	return cap_construct(CAP_FABRICATOR, /datum/capability/lib/fabricator, list(buildtypes, efficiency, materials, print, action, design_arg, count_arg, knows, build_time, department, worth_floor, sound, resets, eject, eject_power, drop, run_var), "buildtypes, efficiency, materials, print, action, design_arg, count_arg, knows, build_time, department, worth_floor, sound, resets, eject, eject_power, drop, run_var")
+/datum/capdef_decl/c_fabricator/spec()
+	return list(CAP_FABRICATOR, /datum/capability/lib/fabricator, NONE, STACK, "fabricator", "buildtypes, efficiency, materials, print, action, design_arg, count_arg, knows, build_time, department, worth_floor, sound, resets, eject, eject_power, drop, run_var")
+
 /// CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH) at code/domains/atmos/gas_watch.dm:11
 /datum/capability/lib/gas_watch
 	var/air = null
@@ -774,6 +799,13 @@
 /proc/door_emergency_engaged(datum/holder, selector)
 	return cap_key_get(holder, DOOR_EMERGENCY_ENGAGED, selector)
 
+/// cap_keys(CAP_FABRICATOR) at code/library/machine/fabricator.dm:38
+/datum/cap_keys_decl/k_fabricator/spec()
+	return list(CAP_FABRICATOR, list(PRINTING = MSG(fabricator/idle)))
+/// The state key PRINTING of fabricator, read on a holder (a granted capability with several selectors names the selector).
+/proc/fabricator_printing(datum/holder, selector)
+	return cap_key_get(holder, FABRICATOR_PRINTING, selector)
+
 /// cap_keys(CAP_PANEL) at code/library/machine/panel.dm:14
 /datum/cap_keys_decl/k_panel/spec()
 	return list(CAP_PANEL, list(OPEN = MSG(panel/closed)))
@@ -850,6 +882,8 @@
 	return list(STAGE_WINDOOR_ASSEMBLY_BOARDED, "windoor_assembly", "boarded")
 /datum/stage_def/windoor_assembly_finished/spec()
 	return list(STAGE_WINDOOR_ASSEMBLY_FINISHED, "windoor_assembly", "finished")
+/datum/stage_def/board_machine_built/spec()
+	return list(STAGE_BOARD_MACHINE_BUILT, "board_machine", "built")
 /datum/stage_def/apc_frame/spec()
 	return list(STAGE_APC_FRAME, "apc", "frame")
 /datum/stage_def/apc_board/spec()
@@ -16512,28 +16546,53 @@
 	into += entry_line(41)
 	into += list(global.op("manual", global.hand(), global.gesture(GESTURE_ALT), global.label("Manually toggle valve"), global.wait(0), global.when(PROC_REF(actor_living)), global.needs(global.req(PROC_REF(circuit_off), because = MSG(shutoff/automatic))), global.says(PROC_REF(manual_message)), global.then(PROC_REF(manual_toggled))))
 
-/// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:47
+/// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:55
 /obj/machinery/autolathe/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/autolathe.dm", 47, /obj/machinery/autolathe)
-	into += entry_line(48)
-	into += list(global.owns_one(nameof(materials), /datum/material_container))
-	into += entry_line(49)
-	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
-	into += entry_line(50)
-	into += list(global.interface("Autolathe"))
-	into += entry_line(51)
-	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
-	into += entry_line(52)
-	into += list(global.wires(name = "Autolathe", count = 6, tools = FALSE, status_lines = PROC_REF(wire_lights), starts_cut = PROC_REF(wires_cut_at_start)))
-	into += entry_line(53)
-	into += list(global.lathe_wires(pulse_lasts = 5 SECONDS, refresh = TRUE))
-	into += entry_line(54)
-	into += list(global.shock_wire(stat = STAT_SHOCKED, pulse_lasts = 5 SECONDS))
-	into += entry_line(55)
-	into += list(global.on_change(nameof(hacked), EXIT, global.then(PROC_REF(hack_ran_out))))
+	into += entry_block("code/game/machinery/autolathe.dm", 55, /obj/machinery/autolathe)
 	into += entry_line(56)
-	into += list(global.op("make", global.ui_act("make", global.arg("id", global.schema_text(256)), global.arg("multiplier", global.num(1, 50)), global.arg("materialSlots")), global.then(PROC_REF(ui_act_make))))
+	into += list(global.machine_basics(repair = NONE, frame = board_machine()))
+	into += entry_line(57)
+	into += list(global.owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials)))
+	into += entry_line(58)
+	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound)))
+	into += entry_line(59)
+	into += list(global.owns_one(nameof(print_run), /datum/fab_run))
+	into += entry_line(60)
+	into += list(global.panel())
+	into += entry_line(62)
+	into += list(global.extend("panel.open", global.wait(0), global.needs(global.req_is(FABRICATOR_PRINTING, FALSE, because = MSG(fabricator/busy)))))
+	into += entry_line(63)
+	into += list(global.extend("panel.open", global.then(PROC_REF(panel_toggled))))
+	into += entry_line(64)
+	into += list(global.wires(name = "Autolathe", count = 6, by_hand = TRUE, status_lines = PROC_REF(wire_lights), starts_cut = PROC_REF(wires_cut_at_start)))
+	into += entry_line(65)
+	into += list(global.lathe_wires(pulse_lasts = 5 SECONDS, refresh = TRUE))
+	into += entry_line(66)
+	into += list(global.shock_wire(stat = STAT_SHOCKED, pulse_lasts = 5 SECONDS))
+	into += entry_line(67)
+	into += list(global.on_change(nameof(hacked), EXIT, global.then(PROC_REF(hack_ran_out))))
+	into += entry_line(68)
+	into += list(global.part_replacement())
+	into += entry_line(69)
+	into += list(global.extend("part_replacement.replace", global.needs(global.req_is(FABRICATOR_PRINTING, FALSE, because = MSG(fabricator/busy)))))
+	into += entry_line(70)
+	into += list(global.fabricator(buildtypes = AUTOLATHE, efficiency = nameof(creation_efficiency), action = "make", design_arg = "id", count_arg = "multiplier", knows = PROC_REF(knows_design), build_time = PROC_REF(design_build_time), worth_floor = 5))
+	into += entry_line(72)
+	into += list(global.extend("fabricator.print", global.needs(global.req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage)))))
+	into += entry_line(74)
+	into += list(global.op("load_disk", global.item(/obj/item/disk), global.label("Upload designs"), global.when(global.req(list(/obj/item/disk/design_disk, /obj/item/disk/tech_disk))), global.needs(global.req_closed(SPACE_PANEL), req_operable(), global.req_is(FABRICATOR_PRINTING, FALSE, because = MSG(fabricator/busy))), global.wait(1.5 SECONDS), global.begins(MSG(autolathe/uploading)), global.then(PROC_REF(disk_loaded))))
+	into += entry_line(78)
+	into += list(global.op("touch", global.hand(), global.label("Touch"), global.priority(OP_PRIORITY_NORMAL + 1), global.when(PROC_REF(touch_shocks)), global.then(PROC_REF(toucher_shocked))))
+	// section window: The window: its designs, its materials and the print button (fabricator())
+	into += entry_line(81, "window")
+	into += list(global.interface("Autolathe"))
+	into += entry_line(82, "window")
+	into += list(ui_shape(materialtotal = global.num(), materialsmax = global.num(), active = global.bool(), materials = global.list_of(global.row()), materialChoices = global.list_of(global.row())))
+	into += entry_line(83, "window")
+	into += list(global.extend("ui_open", global.needs(global.req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage)))))
+	into += entry_line(84, "window")
+	into += list(global.extend(TAG_UI, global.needs(global.req_is(STAT_DISABLED, FALSE, because = MSG(autolathe/voltage)))))
 
 /// CAPABILITIES(/obj/machinery/beehive) at code/modules/hydroponics/beekeeping/beehive.dm:24
 /obj/machinery/beehive/declared_entries(list/into)
@@ -18707,18 +18766,60 @@
 	into += entry_line(69)
 	into += list(global.owns_one(nameof(chamber_air), /datum/gas_mixture))
 
-/// CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg) at code/modules/research/tg/machinery/mech_fabricator.dm:56
+/// CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg) at code/modules/research/tg/machinery/mech_fabricator.dm:69
 /obj/machinery/mecha_part_fabricator_tg/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/machinery/mech_fabricator.dm", 56, /obj/machinery/mecha_part_fabricator_tg)
-	into += entry_line(57)
-	into += list(global.op("clear_queue", global.ui_act(), global.then(PROC_REF(ui_act_clear_queue))))
-	into += entry_line(58)
-	into += list(global.op("stop_queue", global.ui_act(), global.then(PROC_REF(ui_act_stop_queue))))
-	into += entry_line(59)
-	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
-	into += entry_line(60)
+	into += entry_block("code/modules/research/tg/machinery/mech_fabricator.dm", 69, /obj/machinery/mecha_part_fabricator_tg)
+	into += entry_line(70)
+	into += list(global.machine_basics(repair = NONE, frame = board_machine()))
+	into += entry_line(71)
+	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound)))
+	into += entry_line(72)
 	into += list(global.owns_one(nameof(rmat), /datum/remote_materials))
+	into += entry_line(73)
+	into += list(global.owns_one(nameof(stored_part), /obj/item, on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(74)
+	into += list(global.panel())
+	into += entry_line(75)
+	into += list(global.extend("panel.open", global.wait(0)))
+	into += entry_line(76)
+	into += list(global.part_replacement())
+	into += entry_line(77)
+	into += list(global.extend("part_replacement.replace", global.needs(global.req_is(FABRICATOR_PRINTING, FALSE, because = MSG(exofab/processing)))))
+	into += entry_line(78)
+	into += list(global.fabricator(buildtypes = nameof(fab_type), efficiency = nameof(component_coeff), materials = nameof(rmat), print = FALSE, resets = FALSE, eject = TRUE))
+	into += entry_line(79)
+	into += list(global.examine_line(PROC_REF(status_text)))
+	into += entry_line(80)
+	into += list(global.on_change(nameof(process_queue), ENTER, global.then(PROC_REF(queue_started))))
+	into += entry_line(81)
+	into += list(global.every(1 SECOND, global.then(PROC_REF(release_stored_part)), when = nameof(stored_part)))
+	// section window: The window: the designs, the queue and its buttons
+	into += entry_line(84, "window")
+	into += list(global.interface("ExosuitFabricatorTg"))
+	into += entry_line(85, "window")
+	into += list(global.op("build", global.ui_act(global.arg("designs", global.list_of(global.schema_text(256))), global.arg("now", global.bool())), global.then(PROC_REF(ui_act_build))))
+	into += entry_line(86, "window")
+	into += list(global.op("del_queue_part", global.ui_act(global.arg("index", global.int(1, 1000))), global.then(PROC_REF(ui_act_del_queue_part))))
+	into += entry_line(87, "window")
+	into += list(global.op("clear_queue", global.ui_act(), global.then(PROC_REF(ui_act_clear_queue))))
+	into += entry_line(88, "window")
+	into += list(global.op("build_queue", global.ui_act(), global.sets(nameof(process_queue), TRUE)))
+	into += entry_line(89, "window")
+	into += list(global.op("stop_queue", global.ui_act(), global.sets(nameof(process_queue), FALSE)))
+
+/// CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics) at code/modules/research/tg/machinery/mech_prosfab.dm:23
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/tg/machinery/mech_prosfab.dm", 23, /obj/machinery/mecha_part_fabricator_tg/prosthetics)
+	into += entry_line(24)
+	into += list(global.op("limb_disk", global.item(/obj/item/disk/limb), global.label("Install blueprints"), global.needs(global.req(PROC_REF(limb_disk_valid), because = MSG(prosfab/corrupted))), global.wait(5 SECONDS), global.begins(MSG(prosfab/installing)), global.then(PROC_REF(limb_disk_done))))
+	into += entry_line(26)
+	into += list(global.op("species_disk", global.item(/obj/item/disk/species), global.label("Upload species files"), global.needs(global.req(PROC_REF(species_disk_valid), because = MSG(prosfab/corrupted))), global.wait(5 SECONDS), global.begins(MSG(prosfab/uploading)), global.then(PROC_REF(species_disk_done))))
+	into += entry_line(28)
+	into += list(global.op("species", global.ui_act(), global.asks(/datum/prompt/choice, fields = list("question" = "Select a new species", "title" = "Prosfab Species Selection", "choices" = global.computed(PROC_REF(species_choices)), "timeout" = 0)), global.then(PROC_REF(species_chosen))))
+	into += entry_line(30)
+	into += list(global.op("manufacturer", global.ui_act(), global.asks(/datum/prompt/choice, fields = list("question" = "Select a new manufacturer", "title" = "Prosfab Species Selection", "choices" = global.computed(PROC_REF(manufacturer_choices)), "timeout" = 0)), global.then(PROC_REF(manufacturer_chosen))))
 
 /// CAPABILITIES(/obj/machinery/media/jukebox) at code/game/machinery/jukebox.dm:33
 /obj/machinery/media/jukebox/declared_entries(list/into)
@@ -19912,42 +20013,72 @@
 	into += entry_line(67)
 	into += list(global.extend(TAG_UI, global.then(PROC_REF(ui_fingerprint), early = TRUE)))
 
-/// CAPABILITIES(/obj/machinery/rnd) at code/modules/research/tg/rdmachines.dm:103
+/// CAPABILITIES(/obj/machinery/rnd) at code/modules/research/tg/rdmachines.dm:28
 /obj/machinery/rnd/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/rdmachines.dm", 103, /obj/machinery/rnd)
-	into += entry_line(104)
+	into += entry_block("code/modules/research/tg/rdmachines.dm", 28, /obj/machinery/rnd)
+	into += entry_line(29)
+	into += list(global.machine_basics(repair = NONE, frame = board_machine()))
+	into += entry_line(30)
 	into += list(global.owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(105)
-	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
-	into += entry_line(107)
-	into += list(global.wires(name = "R&D Machinery", count = 8, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights)))
-	into += entry_line(108)
+	into += entry_line(31)
+	into += list(global.panel())
+	into += entry_line(32)
+	into += list(global.extend("panel.open", global.wait(0)))
+	into += entry_line(33)
+	into += list(global.extend("panel.open", global.then(PROC_REF(panel_toggled))))
+	into += entry_line(35)
+	into += list(global.wires(name = "R&D Machinery", count = 8, randomize = TRUE, by_hand = TRUE, status_lines = PROC_REF(wire_lights)))
+	into += entry_line(36)
 	into += list(global.lathe_wires())
-	into += entry_line(109)
+	into += entry_line(37)
 	into += list(global.shock_wire(wire = WIRE_SHOCK))
+	into += entry_line(38)
+	into += list(global.anchor())
+	into += entry_line(39)
+	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_closed(SPACE_PANEL))))
+	into += entry_line(40)
+	into += list(global.on_change(nameof(/atom/movable::anchored), ANY, global.then(PROC_REF(anchor_moved))))
+	into += entry_line(41)
+	into += list(global.part_replacement())
+	into += entry_line(42)
+	into += list(global.extend("ui_open", global.needs(global.req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled)))))
+	into += entry_line(43)
+	into += list(global.extend(TAG_UI, global.needs(global.req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled)))))
 
-/// CAPABILITIES(/obj/machinery/rnd/destructive_analyzer) at code/modules/research/tg/machinery/destructive_analyzer.dm:21
+/// CAPABILITIES(/obj/machinery/rnd/destructive_analyzer) at code/modules/research/tg/machinery/destructive_analyzer.dm:30
 /obj/machinery/rnd/destructive_analyzer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/machinery/destructive_analyzer.dm", 21, /obj/machinery/rnd/destructive_analyzer)
-	into += entry_line(22)
+	into += entry_block("code/modules/research/tg/machinery/destructive_analyzer.dm", 30, /obj/machinery/rnd/destructive_analyzer)
+	into += entry_line(31)
 	into += list(global.owns_one(nameof(rmat), /datum/remote_materials))
-	into += entry_line(23)
+	into += entry_line(32)
 	into += list(global.interface("DestructiveAnalyzer"))
-	into += entry_line(24)
+	into += entry_line(33)
+	into += list(global.extend("part_replacement.replace", global.needs(global.req(PROC_REF(idle), because = MSG(analyzer/busy)))))
+	into += entry_line(34)
 	into += list(global.op("eject_item", global.ui_act("eject_item"), global.then(PROC_REF(ui_act_eject_item))))
-	into += entry_line(25)
+	into += entry_line(35)
 	into += list(global.op("deconstruct", global.ui_act("deconstruct", global.arg("deconstruct_id", global.schema_text(4096))), global.then(PROC_REF(ui_act_deconstruct))))
 
-/// CAPABILITIES(/obj/machinery/rnd/production) at code/modules/research/tg/machinery/_production.dm:39
+/// CAPABILITIES(/obj/machinery/rnd/production) at code/modules/research/tg/machinery/_production.dm:38
 /obj/machinery/rnd/production/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/research/tg/machinery/_production.dm", 39, /obj/machinery/rnd/production)
-	into += entry_line(40)
+	into += entry_block("code/modules/research/tg/machinery/_production.dm", 38, /obj/machinery/rnd/production)
+	into += entry_line(39)
 	into += list(global.owns_one(nameof(materials), /datum/remote_materials))
+	into += entry_line(40)
+	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound)))
 	into += entry_line(41)
-	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
+	into += list(global.owns_one(nameof(print_run), /datum/fab_run))
+	into += entry_line(42)
+	into += list(global.fabricator(buildtypes = nameof(allowed_buildtypes), efficiency = nameof(efficiency_coeff), knows = PROC_REF(knows_design), build_time = PROC_REF(design_build_time), department = DEPARTMENT_RESEARCH, eject = TRUE, eject_power = TRUE))
+	into += entry_line(44)
+	into += list(global.examine_line(PROC_REF(build_time_text)))
+	into += entry_line(45)
+	into += list(global.interface("Fabricator"))
+	into += entry_line(46)
+	into += list(ui_shape(busy = global.bool(), materials = global.list_of(global.row()), materialChoices = global.list_of(global.row()), onHold = global.bool(), materialMaximum = global.num(), queue = global.list_of(global.row())))
 
 /// CAPABILITIES(/obj/machinery/rnd/production/circuit_imprinter) at code/modules/research/tg/machinery/circuit_imprinter.dm:10
 /obj/machinery/rnd/production/circuit_imprinter/declared_entries(list/into)
