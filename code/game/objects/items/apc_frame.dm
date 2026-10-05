@@ -34,4 +34,5 @@ MATERIAL_MIX(/obj/item/frame/apc, list(MAT_STEEL = 100, MAT_GLASS = 30))
 			new /obj/item/stack/cable_coil(loc, 10)
 			to_chat(user, "You cut the cables and disassemble the unused power terminal.")
 			qdel(T)
+	user.drop_from_inventory(src, loc) // built on the wall, not in the hand: replace_with() hands the successor the original's slot
 	replace_with(src, /obj/machinery/power/apc, ndir, 1)

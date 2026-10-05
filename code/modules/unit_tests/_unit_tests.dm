@@ -474,6 +474,7 @@
 #include "interim_anomaly_battery_effect_custody.dm"
 #include "interim_xenochimera_branch_replay.dm"
 #include "dq_p2_apc_behaviour.dm"
+#include "dq_wall_frame_behaviour.dm"
 #include "dq_emp_disable_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"

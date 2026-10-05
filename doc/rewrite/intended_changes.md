@@ -653,3 +653,12 @@ of them strengthened as noted below). The shared hooks (`silicon_inspect`/`_pull
 * **A cyborg's cell comes out through an op** (`take_power_part` on the cyborg: a person's hand or another cyborg's gripper), replacing the hand
   interaction's cell branch and the gripper's cyborg case. A gripper that cannot hold the cell lets it drop instead of refusing.
 * **The airlock's remote-control window opens only through remote()** (it had a hand binding hidden by a silicon-or-ghost condition).
+
+## Construction slots and the wall frames
+
+Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the legacy try_build() first), the APC ladder tests of
+`dq_p2_apc_behaviour.dm` and the e0 door assembly proof.
+
+* **An APC frame held to a wall builds the APC on the wall.** `try_build()` called `replace_with()` on the frame while it was still in the
+  builder's hand, and `replace_with()` hands the successor the original's slot: the new APC frame went into the builder's hand. The frame is
+  dropped first now (fixed on the legacy code with the tests).
