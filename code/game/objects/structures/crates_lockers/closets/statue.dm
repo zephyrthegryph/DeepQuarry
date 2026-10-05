@@ -102,14 +102,12 @@
 		for(var/mob/M in slot_contents())
 			shatter(M)
 
-/obj/structure/closet/statue/explosion_contents_severity(severity)
-	return severity
-
 /obj/structure/closet/statue/relaymove()
 	return
 
 // A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
 CAPABILITIES(/obj/structure/closet/statue)
+	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
 	without("door")
 	without("stuff")
 	without("stuff_grab")

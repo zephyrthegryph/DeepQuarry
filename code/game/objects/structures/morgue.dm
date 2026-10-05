@@ -23,6 +23,7 @@
 	unacidable = TRUE
 
 CAPABILITIES(/obj/structure/morgue)
+	blast_contents()
 	owns_one(nameof(connected), /obj/structure/m_tray)
 
 
@@ -52,9 +53,6 @@ CAPABILITIES(/obj/structure/morgue)
 		else
 			src.icon_state = "morgue1"
 	return
-
-/obj/structure/morgue/explosion_contents_severity(severity)
-	return severity
 
 /obj/structure/morgue/atom_destruction(damage_flag)
 	for(var/atom/movable/A as anything in contents)

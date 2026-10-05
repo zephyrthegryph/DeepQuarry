@@ -48,6 +48,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 TRACKED(/obj/machinery/bodyscanner, scan_ratio)
 
 CAPABILITIES(/obj/machinery/bodyscanner)
+	blast_contents() // the patient takes the full blast
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_BODY_SCANNER, bare = TRUE)
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -68,9 +69,6 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	scan_level = SCANNABLE_DIFFICULT
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
-
-/obj/machinery/bodyscanner/explosion_contents_severity(severity)
-	return severity // the explosion service asks the holder what reaches its contents: the scanner's patient takes the full blast
 
 /// Someone got in: the scan beeps and reads them.
 /obj/machinery/bodyscanner/proc/occupant_entered(datum/act/A)

@@ -160,6 +160,7 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
+	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))
 	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE)
 	configure(construction_graph(start = STAGE_APC_SECURED))
@@ -856,9 +857,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 // ─────────────────────────────────────────────────────────────────────────────
 // Damage / destruction
 // ─────────────────────────────────────────────────────────────────────────────
-
-/obj/machinery/power/apc/explosion_contents_severity(severity)
-	return severity
 
 /obj/machinery/power/apc/atom_break(damage_flag)
 	. = ..()

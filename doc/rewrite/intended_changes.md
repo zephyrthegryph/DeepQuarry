@@ -1076,3 +1076,12 @@ Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm`
 * `gas_body_heat_exchange()` wakes the pipe network that owns the gas (`gas_touched(air)`) whenever the gas's temperature moves; the cell no
   longer marks the network by hand. Before, it marked it only when the gas moved by more than 1 K in a tick, so a slow exchange now records
   every change (a revision bump, no extra pipenet pass). A body already at the gas's temperature changes nothing (no rounding drift).
+
+## Missing forms: an explosion's contents
+
+Pinned by `code/modules/unit_tests/dq_mfo_blast_contents.dm` (green on the overrides first), `dq_explosion_batch_tests.dm` and `dq_c8a_occupant_slot_tests.dm`.
+
+* **How hard a blast reaches a holder's contents is declared**: `blast_contents()` or `blast_contents(shield = 1)` in the holder's CAPABILITIES; the
+  explosion service reads it (`explosion_contents_severity_of()`). Every `explosion_contents_severity()` override is gone (body scanner, clone pod,
+  DNA scanner, pAI card, closet, statue, morgue, transit tube pod, bookcase, APC, atmospherics machinery) and the name is a hard ban.
+* No change in numbers: the DNA scanner declared two overrides, and the later one (the full blast) is what ran.

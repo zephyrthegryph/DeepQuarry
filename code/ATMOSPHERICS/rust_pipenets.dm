@@ -77,6 +77,7 @@
 	var/list/rust_flow_entities
 
 CAPABILITIES(/obj/machinery/atmospherics)
+	blast_contents() // a ventcrawler in the pipes takes the full blast
 	ref_one(nameof(node1))
 	ref_one(nameof(node2))
 	owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture)

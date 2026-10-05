@@ -453,11 +453,12 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 	. = receive_damage(packet)
 	packet.release()
 
-/// Severity the explosion delivers to this atom's contents, in bulk, in the
-/// same batch epoch; 0 shields them. A destroyed container spills whatever it
-/// held, so contents are queued before the container's own packet lands.
-/atom/movable/proc/explosion_contents_severity(severity)
-	return 0
+/// Severity the explosion delivers to `holder`'s contents, in bulk, in the same batch epoch: what its declared blast_contents() entry
+/// (code/library/structures/blast_contents.dm) lets through, 0 when it declares none. A destroyed container spills whatever it held, so
+/// contents are queued before the container's own packet lands.
+/proc/explosion_contents_severity_of(atom/movable/holder, severity)
+	var/datum/capability/lib/blast_contents/C = cap_of(holder, CAP_BLAST_CONTENTS)
+	return C ? C.contents_severity(severity) : 0
 
 /// An ionic hit (ion rounds): pulse the target at the ladder's severity.
 /atom/proc/receive_ionic(amount)
