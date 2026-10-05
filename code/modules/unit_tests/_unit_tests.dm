@@ -1013,10 +1013,12 @@
 
 #include "round2_mecha_native_tank_pressure.dm"
 
+#include "round2_chameleon_holder_allocation.dm"
+
+#include "round2_shield_idle_disposal.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
 //#undef TEST_FOCUS - This define is used by vscode unit test extension to pick specific unit tests to run and appended later so needs to be used out of scope here
 #endif
-#include "round2_chameleon_holder_allocation.dm"
-#include "round2_shield_idle_disposal.dm"
