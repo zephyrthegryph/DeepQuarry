@@ -61,6 +61,8 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	recheck_on_open = TRUE
 
 /datum/prompt/choice/mentor_ticket_panel_list/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
 	return admin_can(answerer?.client, 0) ? null : "no admin rights"
 
 /proc/mentor_ticket_panel_advanced_call(mob/actor)
