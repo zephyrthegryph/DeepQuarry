@@ -97,7 +97,7 @@
 	var/mob/living/carbon/human/H = person(T)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, next)
 	var/obj/machinery/sleep_console/console = allocate(/obj/machinery/sleep_console, T)
-	console.findsleeper()
+	test_time(1 SECOND) // paired_console(): the console pairs when its init is complete
 	TEST_ASSERT_EQUAL(console.sleeper, S, "the console found its sleeper")
 	hc_ui(H, console, "auto_eject_dead_on")
 	TEST_ASSERT(S.auto_eject_dead, "a button pressed on the console reaches the sleeper")
@@ -113,7 +113,7 @@
 	hc_ui(H, S, "changestasis")
 	p2cl_answer(H, "Light (50%)")
 	test_time(1 SECOND)
-	TEST_ASSERT_EQUAL(S.stasis_level, /datum/body_effect/stasis/light, "the stasis question sets the level")
+	TEST_ASSERT_EQUAL(S.stasis_rate, 0.5, "the stasis question sets the level")
 
 /// Air alarm: a locked alarm refuses a person's mode change; unlocked it takes it; the thermostat question sets the target.
 /datum/unit_test/dq_fwg3_ui/air_alarm

@@ -572,9 +572,9 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		. += slots[def.slot_id]
 
 /// Called on the holder whenever a thing enters or leaves one of its slots.
-/// Runs inside the move, so it must not sleep.
+/// Runs inside the move, so it must not sleep. An occupant pod's slot tells its pod (occupant_pod_slot_changed(): one list read for any other slot).
 /atom/proc/on_slot_changed(slot_id, atom/movable/thing, inserted)
-	return
+	occupant_pod_slot_changed(src, slot_id, thing, inserted)
 
 /// Whether `holder`'s own destroy transaction (L1, doc/rewrite/lifecycle.md
 /// §2) is running right now -- set from phase 0, for the life of the

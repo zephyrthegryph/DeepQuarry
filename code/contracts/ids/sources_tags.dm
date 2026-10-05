@@ -20,3 +20,5 @@ SOURCE_DEF(round_event)
 #define TAG_TOPIC 1002
 /// Ops that operate the thing (gated by a lock and by operability): extend(TAG_CONTROL, needs(...)).
 #define TAG_CONTROL 1003
+/// The ways into an occupant pod (occupant_pod(): a drag, a grab, "Move Inside"): extend(TAG_POD_ENTER, needs(...)) says what the machine asks of them all.
+#define TAG_POD_ENTER 1004

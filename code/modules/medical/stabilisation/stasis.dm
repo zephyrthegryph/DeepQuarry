@@ -194,4 +194,35 @@
 		acc = body_factor_accumulate(acc, body_effect_def(stasis_type_at(key)).factors)
 	return acc
 
+// --- The stat ------------------------------------------------------------------------------------------------------------------
+
+/// The source the stat clock_rate_bio holds its stasis under (one per mob, shared): a stasis bed's or a sleeper's hold on STAT_CLOCK_RATE_BIO
+/// (doc/rewrite/final_api.html section 16.4) reaches the body through it.
+/datum/stasis_rate_source
+	var/name = "biological clock rate"
+
+GLOBAL_DATUM_INIT(stasis_rate_source, /datum/stasis_rate_source, new)
+
+/// The stat clock_rate_bio (STAT_CLOCK_RATE_BIO, rule MIN, base 1) is the share of normal speed the mob's biology runs at; whatever holds it lower
+/// (a working sleeper's occupant slot, a stasis bed) puts the mob in the stasis level of that depth, as one source: the deepest level whose depth
+/// does not exceed 1 - rate. A rate of 1 releases it. The on_change hook in the /mob/living block (code/modules/combat_ai/integration/mob_living.dm)
+/// runs this at the drain after the stat moved.
+/mob/living/proc/clock_rate_bio_changed(datum/act/A)
+	set_stasis(stasis_type_for_rate(clock_rate_bio), GLOB.stasis_rate_source)
+
+/// The stasis level a biological clock rate stands for: the deepest whose depth is at most 1 - rate, or null for a rate of 1 or more.
+/proc/stasis_type_for_rate(rate)
+	if(!isnum(rate) || rate >= 1)
+		return null
+	var/wanted = 1 - max(rate, 0)
+	var/best = null
+	var/best_depth = 0
+	for(var/level_type in subtypesof(/datum/body_effect/stasis))
+		var/datum/body_effect/stasis/level = body_effect_def(level_type)
+		var/depth = level.stasis_depth()
+		if(depth <= wanted + 0.0001 && depth > best_depth)
+			best = level_type
+			best_depth = depth
+	return best
+
 #undef STASIS_NO_SOURCE

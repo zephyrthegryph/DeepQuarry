@@ -776,14 +776,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, 
 	desc = "A limited functionality sleeper, all it can do is put patients into stasis. It lacks the medication and configuration of the larger units."
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "sleeper"
-	stasis_level = /datum/body_effect/stasis/complete //Just one setting
 
-APPEARANCE_NONE(/obj/machinery/sleeper/survival_pod)
-DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/sleeper/survival_pod/appearance_overlays()
-	. = list()
-	if(src?.slot_item(OCCUPANT_SLOT_SLEEPER))
-		. += "sleeper_cover"
+/// The pod's own sprite: its cover closes over an occupant.
+/obj/machinery/sleeper/survival_pod/draw(datum/look/look)
+	..()
+	look.state("sleeper")
+	look.overlay("sleeper_cover", when = !!occupant_of(src))
 
 //Computer
 /obj/item/gps/computer

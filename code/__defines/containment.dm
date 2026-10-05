@@ -41,7 +41,7 @@
 #define OCCUPANT_SLOT_SLEEPER "sleeper_occupant"
 /// The sealed occupant slot of a cryo tube.
 #define OCCUPANT_SLOT_CRYO "cryo_occupant"
-/// The change key an occupant slot publishes on its holder when someone gets in or out (read through occupant_in()).
+/// The change key an occupant slot publishes on its holder when someone gets in or out (read through occupant_of()).
 #define OCCUPANT_KEY "occupant"
 /// The sealed occupant slot of an advanced medical body scanner.
 #define OCCUPANT_SLOT_BODY_SCANNER "body_scanner_occupant"
@@ -59,6 +59,8 @@
 #define OCCUPANT_SLOT_TYR_PROP "tyr_prop_occupant"
 /// The sealed occupant slot of a suit cycler.
 #define OCCUPANT_SLOT_SUIT_CYCLER "suit_cycler_occupant"
+/// The occupant pod test fixtures' slot (code/modules/unit_tests/dq_medpod_library_tests.dm).
+#define OCCUPANT_SLOT_TEST_FIXTURE "test_fixture_occupant"
 /// A mecha's sealed pilot slot.
 #define MECHA_SLOT_PILOT "mecha_pilot"
 /// A mecha's external hardpoint slot for attached equipment.

@@ -63,7 +63,7 @@
 	TEST_ASSERT(cell.operable(), "the cell works")
 	player_drag(H, patient, cell)
 	TEST_ASSERT_EQUAL(cell.slot_item(OCCUPANT_SLOT_CRYO), patient, "the dragged body is the occupant")
-	menu_pick(H, cell, "Eject occupant")
+	menu_pick(H, cell, "Eject")
 	TEST_ASSERT_NULL(cell.slot_item(OCCUPANT_SLOT_CRYO), "the menu's eject lets the occupant out")
 	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, T)
 	H.put_in_active_hand(B)
@@ -103,7 +103,7 @@
 	var/mob/living/carbon/human/other = person(T)
 	player_drag(H, other, S)
 	TEST_ASSERT_EQUAL(S.slot_item(OCCUPANT_SLOT_BODY_SCANNER), patient, "an occupied scanner takes nobody else")
-	menu_pick(H, S, "Eject Body Scanner")
+	menu_pick(H, S, "Eject")
 	TEST_ASSERT_NULL(S.slot_item(OCCUPANT_SLOT_BODY_SCANNER), "the menu's eject empties it")
 
 /// Reagent tanks: alt-click opens and closes the input; the menu sets the transfer amount (a choice question); a water cooler's hand gives a cup.

@@ -209,16 +209,16 @@
 /// relation.
 /// Exercised through the sleeper, one of several machines (also cryo,
 /// cryopod, mecha, rechargestation, the implant chair and the gibber, adv_med
-/// and the clone pod) built on /datum/om/relation/slot/occupant.
+/// and the clone pod) built on a sealed occupant slot (the sleeper's is occupant_pod()'s declared one).
 /datum/unit_test/dq_om_relation_occupant_slot_establishes
 
 /datum/unit_test/dq_om_relation_occupant_slot_establishes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
-	TEST_ASSERT_EQUAL(S?.slot_item(OCCUPANT_SLOT_SLEEPER), H, "the sleeper's occupant slot should hold H")
-	TEST_ASSERT_EQUAL(link_of(H, /datum/om/relation/slot/occupant/sleeper), S, "om_relation_of should agree with the slot")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/om/relation/slot/occupant/sleeper), "an edge should exist between H and S")
+	TEST_ASSERT_EQUAL(occupant_of(S), H, "the sleeper's occupant slot should hold H")
+	TEST_ASSERT_EQUAL(link_of(H, /datum/om/relation/slot/declared/sealed), S, "om_relation_of should agree with the slot")
+	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/om/relation/slot/declared/sealed), "an edge should exist between H and S")
 	S.slot_remove(H, get_turf(S))
 
 /// Hard-deleting the machine clears the occupant mob's relation lookup, with
@@ -231,7 +231,7 @@
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
 	qdel(S)
 	TEST_ASSERT(QDELETED(S), "setup: the sleeper should be deleted")
-	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/slot/occupant/sleeper), "the relation lookup should agree")
+	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/slot/declared/sealed), "the relation lookup should agree")
 
 /// Hard-deleting the occupant mob clears the slot, with no dangling reference
 /// left behind -- closing the same class of dangling-reference bug the
@@ -246,7 +246,7 @@
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the mob should be deleted")
-	TEST_ASSERT_NULL(S?.slot_item(OCCUPANT_SLOT_SLEEPER), "the sleeper's occupant slot should be cleared once the occupant is deleted")
+	TEST_ASSERT_NULL(occupant_of(S), "the sleeper's occupant slot should be cleared once the occupant is deleted")
 
 // ---------------------------------------------------------------- implanted_in
 

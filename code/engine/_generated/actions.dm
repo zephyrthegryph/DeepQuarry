@@ -905,6 +905,28 @@ GLOBAL_LIST_INIT(action_notice_types, list(
 	A.cinematic = cinematic // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
 	return act_resolve(A)
 
+/// ACTION(pod_enter) at code/library/containers/occupant_pod.dm:62
+/datum/notice/pod_entered
+	var/mob/living/occupant
+
+/proc/publish_pod_enter(datum/holder, mob/living/occupant)
+	if(!notice_wanted(holder, /datum/notice/pod_entered, ACT_COMMITTED))
+		return
+	var/datum/notice/pod_entered/N = notice_take(/datum/notice/pod_entered)
+	N.occupant = occupant // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	notice_publish(holder, N, ACT_COMMITTED)
+
+/// ACTION(pod_leave) at code/library/containers/occupant_pod.dm:63
+/datum/notice/pod_left
+	var/mob/living/occupant
+
+/proc/publish_pod_leave(datum/holder, mob/living/occupant)
+	if(!notice_wanted(holder, /datum/notice/pod_left, ACT_COMMITTED))
+		return
+	var/datum/notice/pod_left/N = notice_take(/datum/notice/pod_left)
+	N.occupant = occupant // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release
+	notice_publish(holder, N, ACT_COMMITTED)
+
 /// ACTION(pre_attack) at code/contracts/acts/world_actions.dm:45
 /datum/act/pre_attack
 	parent_type = /datum/act/action

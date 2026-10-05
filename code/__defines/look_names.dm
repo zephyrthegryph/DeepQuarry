@@ -29,3 +29,4 @@
 #define LOOK_CLOSED "closed"
 #define LOOK_ON "on"
 #define LOOK_OFF "off"
+#define LOOK_OCCUPIED "occupied"

@@ -162,13 +162,30 @@
 		found = C.item
 	return found
 
+/// The first live datum a holder's window forwards to (interface(forwards = nameof(v)): a var holding one, or a list), or null.
+/proc/present_forwarded_unit(datum/holder)
+	READS_FROM(holder)
+	var/datum/entry/declared = present_interface(holder)
+	var/where = declared?.args["forwards"]
+	if(!istext(where) || !(where in holder.vars))
+		return null
+	var/targets = holder.vars[where]
+	if(!islist(targets))
+		targets = targets ? list(targets) : null
+	for(var/datum/unit as anything in targets)
+		if(!QDELETED(unit) && unit != holder)
+			return unit
+	return null
+
 /// A type's own window data: the output of the standard name ui_data(datum/act/A). A.actor is the viewer. Base: no data. On /datum: a window's host
 /// need not be an atom (tgui modules, prompt windows, apps); only the reach rules of a window's ops are atom-specific.
 /datum/proc/ui_data(datum/act/eval/A)
 	return list()
 
 /// The window data of a holder that declares an interface or overrides ui_data(): the type's ui_data(A) (A.holder the holder, A.actor the viewer)
-/// merged over `data`, and its capabilities' data under data["caps"]. A holder that declares neither adds nothing.
+/// merged over `data`, and its capabilities' data under data["caps"]. A holder that declares neither adds nothing. A window that forwards
+/// (interface(forwards = nameof(v))) is its unit's panel: the first unit's data comes first and the holder's own goes over it, so the sleeper
+/// console shows its sleeper's data with no ui_data() of its own.
 /proc/present_tgui_data(datum/holder, mob/user, list/data)
 	var/datum/type_table/T = table_of(holder)
 	if(!length(T.items))
@@ -176,6 +193,13 @@
 	var/datum/act/eval/A = take(/datum/act/eval)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	var/datum/unit = present_forwarded_unit(holder)
+	if(unit)
+		A.holder = unit // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		var/list/shown = unit.ui_data(A)
+		for(var/key in shown)
+			data[key] = shown[key]
+		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	var/list/own = holder.ui_data(A)
 	A.release()
 	if(islist(own))

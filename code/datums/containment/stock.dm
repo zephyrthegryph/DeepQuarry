@@ -42,12 +42,8 @@
 		/obj/machinery/gibber,
 		/obj/machinery/transhuman/resleever,
 		/obj/machinery/implantchair,
-		/obj/machinery/sleeper,
-		/obj/machinery/atmospherics/unary/cryo_cell,
-		/obj/machinery/bodyscanner,
 		/obj/machinery/clonepod,
 		/obj/machinery/vr_sleeper,
-		/obj/machinery/transportpod,
 		/obj/machinery/suit_cycler,
 		/obj/mecha,
 	)

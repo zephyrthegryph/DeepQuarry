@@ -165,6 +165,8 @@ GLOBAL_VAR(declare_report_capture)
 			LAZYOR(T.rel_grant_vars, E.args["var"])
 		else if(istype(E) && E.kind == ENTRY_WHILE_SLOTTED)
 			T.has_slotted = TRUE
+	if(T.has_slotted)
+		table_slot_gates(T) // a gated or reading while_slotted entry is re-applied when what it reads changes (scopes.dm)
 	T.hook_flags = table_hook_flags(T)
 	return T
 
