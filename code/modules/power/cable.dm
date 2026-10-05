@@ -925,14 +925,25 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	if(Adjacent(user))
 		. += "It doesn't seem to have a beginning, or an end."
 
-EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Take wire", PROC_REF(alien_coil_hand)))
+// The endless coil's touch replaces the stack's split: it asks how much wire to take.
+CAPABILITIES(/obj/item/stack/cable_coil/alien)
+	op("split", hand(), ungated(), label("Take wire"), then(PROC_REF(alien_coil_hand)))
 
 /// Old attack_hand: take wire from the endless coil in the other hand; otherwise fall through to pickup.
-/obj/item/stack/cable_coil/alien/proc/alien_coil_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (user.get_inactive_hand() == src)
-		var/N = rerun_ask(user, "k889", PROC_REF(alien_coil_hand), args, /datum/om/prompt/number, message = "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", title = "Split stacks", default = 1, max = amount)
-		if(isnull(N))
-			return TRUE
+/obj/item/stack/cable_coil/alien/proc/alien_coil_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if (user.get_inactive_hand() != src)
+		return OP_DECLINE
+	open_request(src, /datum/prompt/number, PROC_REF(alien_wire_taken), answerer = user, title = "Split stacks", question = "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", default = 1, max_value = amount, min_value = 1, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+	return OP_OK
+
+/// The answered length of wire comes off into the hand.
+/obj/item/stack/cable_coil/alien/proc/alien_wire_taken(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/N = A.answer.answer_value
+	if(N)
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)
 			CC.set_amount(N, TRUE)
@@ -944,8 +955,6 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 				CC.add_fingerprint(user)
 				if (src && user.check_current_machine(src))
 					src.interact(user)
-		return TRUE
-	return FALSE
 
 #undef MAXCOIL
 

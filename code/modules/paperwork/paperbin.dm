@@ -41,27 +41,40 @@
 
 	return
 
-DECLARE_INTERACTIONS(/obj/item/paper_bin, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/paper_bin)
+	// a hand that cannot move takes nothing; with no custom paper in the bin it asks which paper
+	op("take_paper", hand(), ungated(), needs(req(PROC_REF(hand_usable), because = PROC_REF(hand_unusable_reason))),
+		asks(/datum/prompt/choice, fields = list("question" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k52", when = PROC_REF(no_custom_paper)),
+		then(PROC_REF(interaction_hand)))
+	op("put_paper", item(/obj/item/paper), then(PROC_REF(interaction_item)))
+
+/// The actor's using hand, when it is a limb that cannot be used (the old attack_hand refused it).
+/obj/item/paper_bin/proc/unusable_hand(mob/user)
+	var/mob/living/carbon/human/H = user
+	if(!istype(H))
+		return null
+	var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND] // ALLOW(reads): the hand's state is read when it reaches into the bin, never cached
+	if (H.hand) // ALLOW(reads): which hand is used is read when it reaches into the bin, never cached
+		temp = H.organs_by_name[BP_L_HAND]
+	return (temp && !temp.is_usable()) ? temp : null
+
+/obj/item/paper_bin/proc/hand_usable(datum/act/op/A)
+	return isnull(unusable_hand(A.actor))
+
+/obj/item/paper_bin/proc/hand_unusable_reason(datum/act/op/A)
+	var/obj/item/organ/external/temp = unusable_hand(A.actor)
+	return "You try to move your [temp?.name], but cannot!"
+
+/// The paper question is asked only when there is no custom paper on top.
+/obj/item/paper_bin/proc/no_custom_paper(datum/act/op/A)
+	return !length(papers) // ALLOW(reads): the bin's papers are read when it is reached into, never cached
 
 /// Old attack_hand.
-/obj/item/paper_bin/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
-		if (H.hand)
-			temp = H.organs_by_name[BP_L_HAND]
-		if(temp && !temp.is_usable())
-			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return TRUE
+/obj/item/paper_bin/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/response = ""
 	if(!length(papers) > 0)
-		var/_answer_k52 = rerun_ask(user, "k52", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "Do you take regular paper, or Carbon copy paper?", title = "Paper type request", choices = list("Regular", "Carbon-Copy", "Cancel"))
-		if(isnull(_answer_k52))
-			return TRUE
-		response = _answer_k52
+		response = A.step_value("k52")
 		if (response != "Regular" && response != "Carbon-Copy")
 			add_fingerprint(user)
 			return TRUE
@@ -95,18 +108,17 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 	return TRUE
 
 
-/// Old attackby.
-/obj/item/paper_bin/proc/interaction_item(mob/user, obj/item/paper/i, datum/interaction/interaction)
-	if(!istype(i))
-		return INTERACTION_HANDLED_PASS
-
+/// Old attackby: a paper goes in the bin (the click goes on).
+/obj/item/paper_bin/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/paper/i = A.held
 	if(!own_bring_in(src, nameof(papers), i, null, user, TRUE, null, FALSE))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_notice("You put [i] in [src]."))
 	rel_add(src, nameof(papers), i)
 	update_icon()
 	amount++
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 
 /obj/item/paper_bin/examine(mob/user)

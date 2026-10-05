@@ -10,20 +10,17 @@
 	var/state = 0
 	var/created_name = null
 
-DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/ladder_assembly)
+	op("name_ladder", item(/obj/item/pen),
+		asks(/datum/prompt/text, fields = list("question" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = nameof(created_name), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k15"),
+		then(PROC_REF(interaction_item)))
 
-/// Old attackby.
-/obj/structure/ladder_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen))
-		var/_answer_k15 = rerun_ask(user, "k15", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter the name for the ladder.", title = "Ladder Name", default = src.created_name, max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_k15))
-			return TRUE
-		var/t = sanitizeSafe(_answer_k15, MAX_NAME_LEN)
-		if(in_range(src, user))
-			created_name = t
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
+/// Old attackby: a pen names the ladder (the click goes on).
+/obj/structure/ladder_assembly/proc/interaction_item(datum/act/op/A)
+	var/t = sanitizeSafe(A.step_value("k15"), MAX_NAME_LEN)
+	if(in_range(src, A.actor))
+		created_name = t
+	return OP_PASS
 
 /obj/structure/ladder_assembly/wrench_act(mob/user, obj/item/W)
 	if(istype(get_area(src), /area/shuttle))

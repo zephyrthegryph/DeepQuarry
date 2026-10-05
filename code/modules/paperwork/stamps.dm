@@ -106,7 +106,10 @@
 	icon_state = "stamp-zenghu"
 
 // Syndicate stamp to forge documents.
-DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/stamp/chameleon)
+	op("disguise", in_hand(), label("Disguise"),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = computed(PROC_REF(stamp_choice_names)), "timeout" = 0), step = "k124"),
+		then(PROC_REF(interaction_self)))
 
 /// Stamp metadata is immutable; enumerating choices must not construct temporary items.
 /obj/item/stamp/chameleon/proc/stamp_choice_types()
@@ -117,15 +120,16 @@ DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(inte
 	return stamps
 
 /// Old attack_self.
-/obj/item/stamp/chameleon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The names the disguise question lists (EXIT first: picking it changes nothing).
+/obj/item/stamp/chameleon/proc/stamp_choice_names(datum/act/op/A)
+	. = list("EXIT")
+	for(var/name in sortList(stamp_choice_types()))
+		. += name
 
+/obj/item/stamp/chameleon/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/stamps = stamp_choice_types()
-
-	var/list/show_stamps = list("EXIT" = null) + sortList(stamps) // the list that will be shown to the user to pick from
-
-	var/input_stamp = rerun_ask(user, "k124", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Choose a stamp to disguise as:", title = "Stamp Choice", choices = show_stamps)
-	if(isnull(input_stamp))
-		return TRUE
+	var/input_stamp = A.step_value("k124")
 
 	if(user && (src?.loc == user)) // Er, how necessary is this in attack_self?
 

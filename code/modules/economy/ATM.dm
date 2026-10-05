@@ -156,17 +156,21 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	if(issilicon(user))
 		return STATUS_CLOSE
 
-DECLARE_UI(/obj/machinery/atm, "AutomatedTellerMachine")
-
 /obj/machinery/atm/tgui_static_data(mob/user)
 	var/list/data = ..()
 	data["machine_id"] = machine_id
 	return data
 
-UI_DATA(/obj/machinery/atm, "locked_down=ticks_left_locked_down:num", "merge:ui_data_obj_machinery_atm{emagged:num,held_card:unknown,authenticated_account:list,suspended:bool}")
+/// The window's data.
+/obj/machinery/atm/ui_data(datum/act/eval/A)
+	. = list()
+	.["locked_down"] = ticks_left_locked_down
+	var/list/part = ui_data_part_atm(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-/// The computed part of /obj/machinery/atm's window data (declared on its UI_DATA row).
-/obj/machinery/atm/proc/ui_data_obj_machinery_atm(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/atm/proc/ui_data_part_atm(datum/act/eval/A)
 	var/list/data = list()
 
 	data["emagged"] = emagged
@@ -207,6 +211,17 @@ UI_DATA(/obj/machinery/atm, "locked_down=ticks_left_locked_down:num", "merge:ui_
 CAPABILITIES(/obj/machinery/atm)
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	op("logout", ui_act(), then(PROC_REF(ui_act_logout)))
+	interface("AutomatedTellerMachine")
+	op("balance_statement", ui_act("balance_statement"), then(PROC_REF(ui_act_balance_statement)))
+	op("print_transaction", ui_act("print_transaction"), then(PROC_REF(ui_act_print_transaction)))
+	// lowering the level asks for the PIN again unless the account's own card is in the machine
+	op("change_security_level", ui_act("change_security_level", arg("new_security_level", num(0, 2))),
+		asks(/datum/prompt/number, fields = list("question" = "Re-enter your account PIN to lower the security level", "title" = "Confirm PIN", "timeout" = 0), step = "k325", when = PROC_REF(lowering_needs_pin)),
+		then(PROC_REF(ui_act_change_security_level)))
+	op("attempt_auth", ui_act("attempt_auth", arg("account_num", num()), arg("account_pin", num())), then(PROC_REF(ui_act_attempt_auth)))
+	op("transfer", ui_act("transfer", arg("funds_amount", num()), arg("purpose"), arg("target_acc_number", num())), then(PROC_REF(ui_act_transfer)))
+	op("e_withdrawal", ui_act("e_withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_e_withdrawal)))
+	op("withdrawal", ui_act("withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_withdrawal)))
 
 /obj/machinery/atm/proc/ui_act_insert_card(datum/act/op/A)
 	if(held_card())
@@ -237,8 +252,7 @@ CAPABILITIES(/obj/machinery/atm)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "balance_statement", ui_act_balance_statement)
-UI_ACT_PROC(/obj/machinery/atm, ui_act_balance_statement)
+/obj/machinery/atm/proc/ui_act_balance_statement(datum/act/op/A)
 	if(!authenticated_account())
 		return
 
@@ -272,8 +286,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_balance_statement)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "print_transaction", ui_act_print_transaction)
-UI_ACT_PROC(/obj/machinery/atm, ui_act_print_transaction)
+/obj/machinery/atm/proc/ui_act_print_transaction(datum/act/op/A)
 	if(!authenticated_account())
 		return
 
@@ -323,10 +336,18 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_print_transaction)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "change_security_level", ui_act_change_security_level, UI_ARG_NUM("new_security_level", 0, 2))
-UI_ACT_PROC(/obj/machinery/atm, ui_act_change_security_level)
+/// The PIN is asked when the level goes down and the account's own card is not in the machine.
+/obj/machinery/atm/proc/lowering_needs_pin(datum/act/op/A)
+	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
+	if(!account || !isnum(A.args["new_security_level"]) || A.args["new_security_level"] >= account.security_level)
+		return FALSE
+	var/obj/item/card/card = QDELETED(held_card) ? null : held_card // ALLOW(reads): the card is read when the button is pressed, never cached
+	return !(card && card.associated_account_number == account.account_number)
+
+/obj/machinery/atm/proc/ui_act_change_security_level(datum/act/op/A, new_security_level)
+	var/mob/user = A.actor
 	if(authenticated_account())
-		var/new_sec_level = params["new_security_level"]
+		var/new_sec_level = new_security_level
 		if(!isnum(new_sec_level))
 			return
 		// Lowering the security level weakens future access controls, so it must
@@ -336,7 +357,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_change_security_level)
 		if(new_sec_level < authenticated_account().security_level)
 			var/card_present = held_card() && held_card().associated_account_number == authenticated_account().account_number
 			if(!card_present)
-				var/tried_pin = act_ask(ui.user, action, params, ui, "k325", /datum/om/prompt/number, message = "Re-enter your account PIN to lower the security level", title = "Confirm PIN")
+				var/tried_pin = A.step_value("k325")
 				if(isnull(tried_pin))
 					return
 				// Re-validate auth/state after the sleeping input.
@@ -344,7 +365,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_change_security_level)
 					return
 				var/datum/money_account/reauth = attempt_account_access(authenticated_account().account_number, tried_pin, 1)
 				if(reauth != authenticated_account())
-					to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Incorrect PIN; security level unchanged."))
+					to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect PIN; security level unchanged."))
 					return
 		authenticated_account().security_level = new_sec_level
 	. = TRUE
@@ -353,16 +374,16 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_change_security_level)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "attempt_auth", ui_act_attempt_auth, UI_ARG_NUM("account_num"), UI_ARG_NUM("account_pin"))
-UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
+/obj/machinery/atm/proc/ui_act_attempt_auth(datum/act/op/A, account_num, account_pin)
+	var/mob/user = A.actor
 	if(ticks_left_locked_down)
 		return
-	var/tried_account_num = held_card() ? held_card().associated_account_number : params["account_num"]
-	var/tried_pin = params["account_pin"]
+	var/tried_account_num = held_card() ? held_card().associated_account_number : account_num
+	var/tried_pin = account_pin
 
 	// check if they have low security enabled
 	if(!tried_account_num)
-		scan_user(ui.user)
+		scan_user(user)
 	else
 		rel_set(src, nameof(/obj/machinery/atm::authenticated_account), attempt_account_access(tried_account_num, tried_pin, held_card() && held_card().associated_account_number == tried_account_num ? 2 : 1))
 
@@ -385,11 +406,11 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
 					T.time = stationtime2text()
 					rel_add(failed_account, nameof(/datum/money_account::transaction_log), T)
 			else
-				to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
+				to_chat(user, span_warning("[icon2html(src, user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
 				previous_account_number = tried_account_num
 				play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		else
-			to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] incorrect pin/account combination entered."))
+			to_chat(user, span_warning("[icon2html(src, user.client)] incorrect pin/account combination entered."))
 			number_incorrect_tries = 0
 	else
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
@@ -405,7 +426,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
 		T.time = stationtime2text()
 		rel_add(authenticated_account(), nameof(/datum/money_account::transaction_log), T)
 
-		to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account().owner_name].'"))
+		to_chat(user, span_notice("[icon2html(src, user.client)] Access granted. Welcome user '[authenticated_account().owner_name].'"))
 
 	previous_account_number = tried_account_num
 	. = TRUE
@@ -414,37 +435,37 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "transfer", ui_act_transfer, UI_ARG_NUM("funds_amount"), UI_ARG_VALUE("purpose"), UI_ARG_NUM("target_acc_number"))
-UI_ACT_PROC(/obj/machinery/atm, ui_act_transfer)
+/obj/machinery/atm/proc/ui_act_transfer(datum/act/op/A, funds_amount, purpose, target_acc_number)
+	var/mob/user = A.actor
 	if(!authenticated_account())
 		return
-	var/transfer_amount = params["funds_amount"]
+	var/transfer_amount = funds_amount
 	transfer_amount = round(transfer_amount, 0.01)
 	if(transfer_amount <= 0)
-		tgui_alert_async(ui.user, "That is not a valid amount.")
+		tgui_alert_async(user, "That is not a valid amount.")
 	else if(transfer_amount <= authenticated_account().money)
-		var/target_account_number = params["target_acc_number"]
-		var/transfer_purpose = params["purpose"]
+		var/target_account_number = target_acc_number
+		var/transfer_purpose = purpose
 		var/datum/money_account/target_account = get_account(target_account_number)
 		if(transfer_account_funds(authenticated_account(), target_account, transfer_amount, transfer_purpose, machine_id))
-			to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_info("Funds transfer successful."))
+			to_chat(user, "[icon2html(src, user.client)]" + span_info("Funds transfer successful."))
 		else
-			to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Funds transfer failed."))
+			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Funds transfer failed."))
 
 	else
-		to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("You don't have enough funds to do that!"))
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "e_withdrawal", ui_act_e_withdrawal, UI_ARG_NUM("funds_amount"))
-UI_ACT_PROC(/obj/machinery/atm, ui_act_e_withdrawal)
-	var/amount = max(params["funds_amount"],0)
+/obj/machinery/atm/proc/ui_act_e_withdrawal(datum/act/op/A, funds_amount)
+	var/mob/user = A.actor
+	var/amount = max(funds_amount,0)
 	amount = round(amount, 0.01)
 	if(amount <= 0)
-		tgui_alert_async(ui.user, "That is not a valid amount.")
+		tgui_alert_async(user, "That is not a valid amount.")
 		return
 
 	if(!authenticated_account())
@@ -452,21 +473,21 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_e_withdrawal)
 
 	if(authenticated_account().debit(amount, authenticated_account().owner_name, "E-wallet withdrawal", machine_id))
 		play_sfx(src, SFX_MACHINES_CHIME)
-		spawn_ewallet(amount,src.loc,ui.user)
+		spawn_ewallet(amount,src.loc,user)
 	else
-		to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("You don't have enough funds to do that!"))
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "withdrawal", ui_act_withdrawal, UI_ARG_NUM("funds_amount"))
-UI_ACT_PROC(/obj/machinery/atm, ui_act_withdrawal)
-	var/amount = max(params["funds_amount"],0)
+/obj/machinery/atm/proc/ui_act_withdrawal(datum/act/op/A, funds_amount)
+	var/mob/user = A.actor
+	var/amount = max(funds_amount,0)
 	amount = round(amount, 0.01)
 	if(amount <= 0)
-		tgui_alert_async(ui.user, "That is not a valid amount.")
+		tgui_alert_async(user, "That is not a valid amount.")
 		return
 
 	if(!authenticated_account())
@@ -474,9 +495,9 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_withdrawal)
 
 	if(authenticated_account().debit(amount, authenticated_account().owner_name, "Cash withdrawal", machine_id))
 		play_sfx(src, SFX_MACHINES_CHIME)
-		spawn_money(amount,src.loc,ui.user)
+		spawn_money(amount,src.loc,user)
 	else
-		to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("You don't have enough funds to do that!"))
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)

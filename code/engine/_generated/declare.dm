@@ -9271,11 +9271,11 @@
 	into += entry_line(64)
 	into += list(global.op("backup_implanter_interaction_load", global.item(/obj/item/implant/backup), global.label("Load implant"), global.then(PROC_REF(backup_implanter_interaction_load))))
 
-/// CAPABILITIES(/obj/item/barcodescanner) at code/modules/library/lib_items.dm:471
+/// CAPABILITIES(/obj/item/barcodescanner) at code/modules/library/lib_items.dm:475
 /obj/item/barcodescanner/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_items.dm", 471, /obj/item/barcodescanner)
-	into += entry_line(472)
+	into += entry_block("code/modules/library/lib_items.dm", 475, /obj/item/barcodescanner)
+	into += entry_line(476)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/batterer) at code/game/objects/items/devices/traitordevices.dm:39
@@ -9458,11 +9458,11 @@
 	into += entry_line(106)
 	into += list(global.op("activate", global.in_hand(), global.then(PROC_REF(activated))))
 
-/// CAPABILITIES(/obj/item/book/bundle) at code/modules/library/lib_items.dm:386
+/// CAPABILITIES(/obj/item/book/bundle) at code/modules/library/lib_items.dm:390
 /obj/item/book/bundle/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_items.dm", 386, /obj/item/book/bundle)
-	into += entry_line(387)
+	into += entry_block("code/modules/library/lib_items.dm", 390, /obj/item/book/bundle)
+	into += entry_line(391)
 	into += list(global.op("read_bundle", global.in_hand(), global.label("Read"), global.then(PROC_REF(interaction_read_bundle))))
 
 /// CAPABILITIES(/obj/item/book/codex) at code/modules/lore_codex/codex.dm:26
@@ -12492,6 +12492,15 @@
 	into += entry_line(463)
 	into += list(global.after_init(0, global.then(PROC_REF(write_daily_key))))
 
+/// CAPABILITIES(/obj/item/paper_bin) at code/modules/paperwork/paperbin.dm:44
+/obj/item/paper_bin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/paperbin.dm", 44, /obj/item/paper_bin)
+	into += entry_line(46)
+	into += list(global.op("take_paper", global.hand(), global.ungated(), global.needs(global.req(PROC_REF(hand_usable), because = PROC_REF(hand_unusable_reason))), global.asks(/datum/prompt/choice, fields = list("question" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k52", when = PROC_REF(no_custom_paper)), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(49)
+	into += list(global.op("put_paper", global.item(/obj/item/paper), global.then(PROC_REF(interaction_item))))
+
 /// CAPABILITIES(/obj/item/paperplane) at code/modules/paperwork/paperplane.dm:14
 /obj/item/paperplane/declared_entries(list/into)
 	..(into)
@@ -13817,6 +13826,13 @@
 	into += entry_line(576)
 	into += list(global.op("cable_coil_make_restraint", global.menu(), global.label("Make Cable Restraints"), global.needs(global.carried()), global.then(PROC_REF(cable_coil_make_restraint))))
 
+/// CAPABILITIES(/obj/item/stack/cable_coil/alien) at code/modules/power/cable.dm:929
+/obj/item/stack/cable_coil/alien/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/cable.dm", 929, /obj/item/stack/cable_coil/alien)
+	into += entry_line(930)
+	into += list(global.op("split", global.hand(), global.ungated(), global.label("Take wire"), global.then(PROC_REF(alien_coil_hand))))
+
 /// CAPABILITIES(/obj/item/stack/cable_coil/cyborg) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:240
 /obj/item/stack/cable_coil/cyborg/declared_entries(list/into)
 	..(into)
@@ -13905,6 +13921,13 @@
 	into += entry_block("code/modules/maintenance_panels/maintpanel_stack.dm", 15, /obj/item/stack/tile/maintenance_panel)
 	into += entry_line(16)
 	into += list(global.without("ui_open"))
+
+/// CAPABILITIES(/obj/item/stamp/chameleon) at code/modules/paperwork/stamps.dm:109
+/obj/item/stamp/chameleon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/stamps.dm", 109, /obj/item/stamp/chameleon)
+	into += entry_line(110)
+	into += list(global.op("disguise", global.in_hand(), global.label("Disguise"), global.asks(/datum/prompt/choice, fields = list("question" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = global.computed(PROC_REF(stamp_choice_names)), "timeout" = 0), step = "k124"), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/starcaster_news) at code/game/objects/items/devices/starcaster.dm:19
 /obj/item/starcaster_news/declared_entries(list/into)
@@ -15726,15 +15749,41 @@
 	into += list(global.ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad))
 	into += entry_line(22)
 	into += list(global.ref_one(nameof(cur_artifact), /obj))
+	into += entry_line(23)
+	into += list(global.interface("XenoarchArtifactHarvester"))
+	into += entry_line(24)
+	into += list(global.op("harvest", global.ui_act("harvest"), global.then(PROC_REF(ui_act_harvest))))
+	into += entry_line(25)
+	into += list(global.op("stopharvest", global.ui_act("stopharvest"), global.then(PROC_REF(ui_act_stopharvest))))
+	into += entry_line(26)
+	into += list(global.op("ejectbattery", global.ui_act("ejectbattery"), global.then(PROC_REF(ui_act_ejectbattery))))
+	into += entry_line(28)
+	into += list(global.op("drainbattery", global.ui_act("drainbattery"), global.asks(/datum/prompt/choice, fields = list("question" = "This action will dump all charge, safety gear is recommended before proceeding", "title" = "Warning", "choices" = list("Continue", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k162", when = PROC_REF(battery_has_charge)), global.then(PROC_REF(ui_act_drainbattery))))
 
-/// CAPABILITIES(/obj/machinery/atm) at code/modules/economy/ATM.dm:207
+/// CAPABILITIES(/obj/machinery/atm) at code/modules/economy/ATM.dm:211
 /obj/machinery/atm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/economy/ATM.dm", 207, /obj/machinery/atm)
-	into += entry_line(208)
+	into += entry_block("code/modules/economy/ATM.dm", 211, /obj/machinery/atm)
+	into += entry_line(212)
 	into += list(global.op("insert_card", global.ui_act(), global.then(PROC_REF(ui_act_insert_card))))
-	into += entry_line(209)
+	into += entry_line(213)
 	into += list(global.op("logout", global.ui_act(), global.then(PROC_REF(ui_act_logout))))
+	into += entry_line(214)
+	into += list(global.interface("AutomatedTellerMachine"))
+	into += entry_line(215)
+	into += list(global.op("balance_statement", global.ui_act("balance_statement"), global.then(PROC_REF(ui_act_balance_statement))))
+	into += entry_line(216)
+	into += list(global.op("print_transaction", global.ui_act("print_transaction"), global.then(PROC_REF(ui_act_print_transaction))))
+	into += entry_line(218)
+	into += list(global.op("change_security_level", global.ui_act("change_security_level", global.arg("new_security_level", global.num(0, 2))), global.asks(/datum/prompt/number, fields = list("question" = "Re-enter your account PIN to lower the security level", "title" = "Confirm PIN", "timeout" = 0), step = "k325", when = PROC_REF(lowering_needs_pin)), global.then(PROC_REF(ui_act_change_security_level))))
+	into += entry_line(221)
+	into += list(global.op("attempt_auth", global.ui_act("attempt_auth", global.arg("account_num", global.num()), global.arg("account_pin", global.num())), global.then(PROC_REF(ui_act_attempt_auth))))
+	into += entry_line(222)
+	into += list(global.op("transfer", global.ui_act("transfer", global.arg("funds_amount", global.num()), global.arg("purpose"), global.arg("target_acc_number", global.num())), global.then(PROC_REF(ui_act_transfer))))
+	into += entry_line(223)
+	into += list(global.op("e_withdrawal", global.ui_act("e_withdrawal", global.arg("funds_amount", global.num())), global.then(PROC_REF(ui_act_e_withdrawal))))
+	into += entry_line(224)
+	into += list(global.op("withdrawal", global.ui_act("withdrawal", global.arg("funds_amount", global.num())), global.then(PROC_REF(ui_act_withdrawal))))
 
 /// CAPABILITIES(/obj/machinery/atmospheric_field_generator) at code/game/machinery/atm_ret_field.dm:101
 /obj/machinery/atmospheric_field_generator/declared_entries(list/into)
@@ -15787,19 +15836,27 @@
 	into += entry_line(208)
 	into += list(global.op("toggle_valve", global.ui_act("toggle_valve"), global.then(PROC_REF(valve_switched))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:221
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/pump) at code/ATMOSPHERICS/components/binary_devices/pump.dm:218
 /obj/machinery/atmospherics/binary/pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 221, /obj/machinery/atmospherics/binary/pump)
-	into += entry_line(222)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pump.dm", 218, /obj/machinery/atmospherics/binary/pump)
+	into += entry_line(219)
+	into += list(global.interface("GasPump"))
+	into += entry_line(220)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
+	into += entry_line(222)
+	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(4096))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Pressure control", "default" = global.computed(PROC_REF(set_press_default)), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "k231", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_act_set_press))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:244
+/// CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump) at code/ATMOSPHERICS/components/binary_devices/volume_pump.dm:241
 /obj/machinery/atmospherics/binary/volume_pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 244, /obj/machinery/atmospherics/binary/volume_pump)
-	into += entry_line(245)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/volume_pump.dm", 241, /obj/machinery/atmospherics/binary/volume_pump)
+	into += entry_line(242)
+	into += list(global.interface("GasPump"))
+	into += entry_line(243)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
+	into += entry_line(245)
+	into += list(global.op("set_press", global.ui_act("set_press", global.arg("press", global.schema_text(4096))), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_press_question)), "title" = "Flow Control", "default" = global.computed(PROC_REF(set_press_default)), "max_value" = nameof(max_transfer_rate), "timeout" = 0), step = "k269", when = PROC_REF(press_is_set)), global.then(PROC_REF(ui_act_set_press))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:30
 /obj/machinery/atmospherics/omni/declared_entries(list/into)
@@ -18796,6 +18853,24 @@
 	into += list(on_wire(WIRE_SHIELD_CONTROL, cut = PROC_REF(control_wire_cut)))
 	into += entry_line(55)
 	into += list(on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut)))
+	into += entry_line(56)
+	into += list(global.interface("OvermapShieldGenerator"))
+	into += entry_line(57)
+	into += list(global.op("begin_shutdown", global.ui_act("begin_shutdown"), global.asks(/datum/prompt/choice, fields = list("question" = "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", "title" = "Are you sure?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k504", when = PROC_REF(is_running)), global.then(PROC_REF(ui_act_begin_shutdown))))
+	into += entry_line(60)
+	into += list(global.op("start_generator", global.ui_act("start_generator"), global.then(PROC_REF(ui_act_start_generator))))
+	into += entry_line(61)
+	into += list(global.op("toggle_idle", global.ui_act("toggle_idle", global.arg("toggle_idle", global.num())), global.then(PROC_REF(ui_act_toggle_idle))))
+	into += entry_line(62)
+	into += list(global.op("emergency_shutdown", global.ui_act("emergency_shutdown"), global.asks(/datum/prompt/choice, fields = list("question" = "Are you sure that you want to initiate an emergency shield shutdown? This will instantly drop the shield, and may result in unstable release of stored electromagnetic energy. Proceed at your own risk.", "title" = "Confirmation", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "k531", when = PROC_REF(is_on)), global.then(PROC_REF(ui_act_emergency_shutdown))))
+	into += entry_line(65)
+	into += list(global.op("set_range", global.ui_act("set_range"), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(range_question)), "title" = "Field Radius Control", "default" = nameof(field_radius), "max_value" = global.computed(PROC_REF(range_max)), "min_value" = 1, "timeout" = 0), step = "k550", when = PROC_REF(modes_unlocked)), global.then(PROC_REF(ui_act_set_range))))
+	into += entry_line(68)
+	into += list(global.op("set_input_cap", global.ui_act("set_input_cap"), global.asks(/datum/prompt/number, fields = list("question" = "Enter new input cap (in kW). Enter 0 or nothing to disable input cap.", "title" = "Generator Power Control", "default" = global.computed(PROC_REF(input_cap_kw)), "timeout" = 0), step = "k557", when = PROC_REF(modes_unlocked)), global.then(PROC_REF(ui_act_set_input_cap))))
+	into += entry_line(71)
+	into += list(global.op("toggle_mode", global.ui_act("toggle_mode", global.arg("toggle_mode", global.num())), global.then(PROC_REF(ui_act_toggle_mode))))
+	into += entry_line(72)
+	into += list(global.op("switch_idle", global.ui_act("switch_idle", global.arg("switch_idle", global.num())), global.then(PROC_REF(ui_act_switch_idle))))
 
 /// CAPABILITIES(/obj/machinery/power/smes) at code/modules/power/smes.dm:101
 /obj/machinery/power/smes/declared_entries(list/into)
@@ -19980,12 +20055,18 @@
 	into += entry_block("code/modules/library/lib_items.dm", 23, /obj/structure/bookcase)
 	into += entry_line(24)
 	into += list(global.climb())
+	into += entry_line(25)
+	into += list(global.op("take_book", global.hand(), global.ungated(), global.asks(/datum/prompt/choice, fields = list("question" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = global.computed(PROC_REF(shelved_books)), "timeout" = 0), step = "k65", when = PROC_REF(has_books)), global.then(PROC_REF(interaction_hand))))
+	into += entry_line(28)
+	into += list(global.op("shelve", global.item(/obj/item/book), global.then(PROC_REF(shelve_book))))
+	into += entry_line(29)
+	into += list(global.op("title_shelf", global.item(/obj/item/pen), global.asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"), global.then(PROC_REF(title_shelf))))
 
-/// CAPABILITIES(/obj/structure/bookcase/bookcart) at code/modules/library/lib_items.dm:116
+/// CAPABILITIES(/obj/structure/bookcase/bookcart) at code/modules/library/lib_items.dm:120
 /obj/structure/bookcase/bookcart/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_items.dm", 116, /obj/structure/bookcase/bookcart)
-	into += entry_line(117)
+	into += entry_block("code/modules/library/lib_items.dm", 120, /obj/structure/bookcase/bookcart)
+	into += entry_line(121)
 	into += list(global.op("bookcart_interaction_item", global.item(/obj/item), global.then(PROC_REF(bookcart_interaction_item))))
 
 /// CAPABILITIES(/obj/structure/cable/ender) at code/modules/power/cable_ender.dm:26
@@ -20709,6 +20790,13 @@
 	into += entry_line(35)
 	into += list(global.entry_link("/obj/structure/ladder::target_down", "/obj/structure/ladder::target_up"))
 
+/// CAPABILITIES(/obj/structure/ladder_assembly) at code/modules/multiz/ladder_assembly.dm:13
+/obj/structure/ladder_assembly/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/multiz/ladder_assembly.dm", 13, /obj/structure/ladder_assembly)
+	into += entry_line(14)
+	into += list(global.op("name_ladder", global.item(/obj/item/pen), global.asks(/datum/prompt/text, fields = list("question" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = nameof(created_name), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k15"), global.then(PROC_REF(interaction_item))))
+
 /// CAPABILITIES(/obj/structure/ledge) at code/game/objects/structures/ledges.dm:13
 /obj/structure/ledge/declared_entries(list/into)
 	..(into)
@@ -21230,6 +21318,12 @@
 	into += entry_block("code/modules/vehicles/cargo_train.dm", 399, /obj/vehicle/train/trolley_tank)
 	into += entry_line(400)
 	into += list(global.climb())
+	into += entry_line(402)
+	into += list(global.op("fill_container", global.item(/obj/item/reagent_containers/glass), global.priority(OP_PRIORITY_PART + 1), global.then(PROC_REF(fill_container))))
+	into += entry_line(403)
+	into += list(global.op("repaint", global.tool(TOOL_MULTITOOL), global.priority(OP_PRIORITY_PART + 1), global.wait(0), global.asks(/datum/prompt/color, fields = list("question" = "Please select paint color.", "title" = "Paint Color", "default" = nameof(paint_color), "timeout" = 0), step = "paint"), global.then(PROC_REF(repainted))))
+	into += entry_line(406)
+	into += list(global.op("relabel", global.item(/obj/item/pen), global.priority(OP_PRIORITY_PART + 1), global.asks(/datum/prompt/text, fields = list("question" = "What would you like the label to be?", "title" = global.computed(PROC_REF(label_title)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "k491"), global.then(PROC_REF(relabelled))))
 
 /// CAPABILITIES(/turf/open) at code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm:47
 /turf/open/declared_entries(list/into)

@@ -22,6 +22,13 @@
 
 CAPABILITIES(/obj/structure/bookcase)
 	climb()
+	op("take_book", hand(), ungated(),
+		asks(/datum/prompt/choice, fields = list("question" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = computed(PROC_REF(shelved_books)), "timeout" = 0), step = "k65", when = PROC_REF(has_books)),
+		then(PROC_REF(interaction_hand)))
+	op("shelve", item(/obj/item/book), then(PROC_REF(shelve_book)))
+	op("title_shelf", item(/obj/item/pen),
+		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
+		then(PROC_REF(title_shelf)))
 
 /obj/structure/bookcase/Initialize(mapload)
 	. = ..()
@@ -30,24 +37,20 @@ CAPABILITIES(/obj/structure/bookcase)
 			I.forceMove(src)
 	update_icon()
 
-/// Old attackby.
-/obj/structure/bookcase/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(istype(O, /obj/item/book))
-		user.drop_item()
-		O.forceMove(src)
-		update_icon()
-	else if(istype(O, /obj/item/pen))
-		var/_answer_k37 = rerun_ask(user, "k37", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to title this bookshelf?", max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_k37))
-			return TRUE
-		var/newname = sanitizeSafe(_answer_k37, MAX_NAME_LEN)
-		if(!newname)
-			return INTERACTION_HANDLED_PASS
-		else
-			name = ("bookcase ([newname])")
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// Old attackby: a book goes on the shelf (the click goes on).
+/obj/structure/bookcase/proc/shelve_book(datum/act/op/A)
+	var/mob/user = A.actor
+	user.drop_item()
+	A.held.forceMove(src)
+	update_icon()
+	return OP_PASS
+
+/// Old attackby: a pen names the shelf with the answered title (the click goes on).
+/obj/structure/bookcase/proc/title_shelf(datum/act/op/A)
+	var/newname = sanitizeSafe(A.step_value("k37"), MAX_NAME_LEN)
+	if(newname)
+		name = ("bookcase ([newname])")
+	return OP_PASS
 
 /obj/structure/bookcase/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, 1)
@@ -67,18 +70,19 @@ CAPABILITIES(/obj/structure/bookcase)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/structure/bookcase, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// The question is asked only while there are books on the shelf.
+/obj/structure/bookcase/proc/has_books(datum/act/op/A)
+	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
 
-/// Old attack_hand.
-/obj/structure/bookcase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents_count(src))
-		var/obj/item/book/choice = rerun_ask(user, "k65", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Which book would you like to remove from the shelf?", title = "Book Selection", choices = contents)
-		if(isnull(choice))
-			return TRUE
-		if(choice)
+/obj/structure/bookcase/proc/shelved_books(datum/act/op/A)
+	return contents_of(src)
+
+/// Old attack_hand: take the picked book.
+/obj/structure/bookcase/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/book/choice = A.step_value("k65")
+	if(choice)
+		if(choice.loc == src)
 			if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
 				return TRUE
 			if(ishuman(user))
