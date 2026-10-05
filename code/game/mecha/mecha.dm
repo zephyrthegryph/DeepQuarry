@@ -2460,7 +2460,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 /obj/mecha/proc/topic_set_internal_tank_valve(mob/user, list/args)
 	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
 		return
-	om_ask(user, /datum/om/prompt/number/mecha_maint/tank_valve, PROC_REF(tank_valve_entered), default = internal_tank_valve)
+	open_request(src, /datum/prompt/number/mecha_tank_valve, PROC_REF(tank_valve_entered), answerer = user, subject = src, default = internal_tank_valve)
 
 /obj/mecha/proc/topic_remove_passenger(mob/user, list/args)
 	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
@@ -2526,17 +2526,22 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 		tgui_alert_async(A.request.answerer, "nope.avi")
 
 /// Maintenance-panel settings: re-checked on the answer, still next to the mech with its bolts exposed.
-/datum/om/prompt/number/mecha_maint
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/number/mecha_maint/valid()
-	var/obj/mecha/M = subject
-	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
-
-/datum/om/prompt/number/mecha_maint/tank_valve
+/datum/prompt/number/mecha_tank_valve
 	title = "Pressure setting"
-	message = "Input new output pressure"
-	round_entry = FALSE
+	question = "Input new output pressure"
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
+
+/datum/prompt/number/mecha_tank_valve/recheck_extra()
+	var/obj/mecha/M = subject
+	return !istype(M) || QDELETED(M) || M.state < MECHA_BOLTS_SECURED ? "bolts secured" : null
+
+/datum/prompt/number/mecha_tank_valve/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, INFINITY, 0, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
 
 /datum/om/prompt/choice/mecha_remove_passenger
 	title = "Forcibly Remove Passenger"
@@ -2547,10 +2552,12 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	var/obj/mecha/M = subject
 	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
 
-/obj/mecha/proc/tank_valve_entered(datum/om/prompt/number/mecha_maint/tank_valve/ask)
-	if(ask.number)
-		internal_tank_valve = ask.number
-		to_chat(ask.answerer, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
+/obj/mecha/proc/tank_valve_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		internal_tank_valve = A.answer.answer_value
+		to_chat(A.request.answerer, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
 
 /obj/mecha/proc/passenger_removal_chosen(datum/om/prompt/choice/mecha_remove_passenger/ask)
 	var/mob/user = ask.answerer
