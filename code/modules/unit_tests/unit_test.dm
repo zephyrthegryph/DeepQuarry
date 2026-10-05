@@ -34,6 +34,8 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /// test's New() runs, so a small pool lets us round-robin instead of forcing
 /// every test to block on the previous test's straggling cleanup.
 #define UNIT_TEST_BLOCK_POOL_SIZE 8
+/// The blocks a focused run starts with; it grows up to UNIT_TEST_BLOCK_POOL_SIZE when a test waits for one.
+#define UNIT_TEST_BLOCK_POOL_FOCUSED 2
 
 /// Area of maps/templates/unit_tests.dmm. The template must only use types
 /// that exist: the map parser silently drops unknown paths, which left every
@@ -63,6 +65,8 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 GLOBAL_LIST_EMPTY(unit_test_block_pool)
 /// TRUE once the pool has been built (or an attempt was made to build it).
 GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
+/// TRUE while acquire_unit_test_block() adds a block to a focused run's pool.
+GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 
 /// Loads UNIT_TEST_BLOCK_POOL_SIZE independent copies of the unit-test room
 /// template, each on its own z-level, and records their corner turfs. Safe to
@@ -89,58 +93,65 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	while(!SSatoms.initialized)
 		sleep(1)
 
-	for(var/i in 1 to UNIT_TEST_BLOCK_POOL_SIZE)
-		var/datum/unit_test_block/block
-		// load_new_z()'s underlying map load (parsed_map/build_coordinate)
-		// intermittently places nothing at all -- every turf on the new z
-		// comes back a bare /turf/space with empty contents, no error
-		// surfaced to us, no landmark to find. Confirmed by dumping the new
-		// z's contents when this happens; not yet root-caused (a map-loader
-		// or GLOB.cached_maps-reuse issue under this specific "allocate a
-		// brand new z, back to back, several times" pattern -- load_new_z()
-		// is also SSexpedition's z-allocation path, so this may not be
-		// unique to tests). Retry a few fresh attempts per slot rather than
-		// let one bad load silently shrink the pool.
-		for(var/attempt in 1 to 3)
-			var/datum/map_template/unit_tests/template = new
-			var/new_z = template.load_new_z()
-			if(!new_z)
-				continue
-			var/datum/unit_test_block/candidate = new
-			candidate.z = new_z
-			// Don't rely on REGISTRY_MEMBERS(REGISTRY_LANDMARKS): atom Initialize() for a
-			// freshly loaded z can be queued rather than run synchronously
-			// inside load_new_z(), so the landmark may not be registered
-			// into that list yet. The atom instance itself is already in
-			// its turf's contents the moment load_map() places it, so
-			// locate it there directly. load_new_z() always places the
-			// template at (1,1) on its new z (centered = FALSE).
-			for(var/tx in 1 to template.width)
-				for(var/ty in 1 to template.height)
-					var/turf/T = locate(tx, ty, new_z)
-					if(!T)
-						continue
-					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
-						rel_set(candidate, nameof(candidate.bottom_left), T)
-					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
-						rel_set(candidate, nameof(candidate.top_right), T)
-			if(candidate.bottom_left && candidate.top_right)
-				block = candidate
-				break
-			log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
-
-		if(!block)
-			log_world("ensure_unit_test_block_pool: copy #[i] failed 3 attempts, the unit test block pool will be smaller than requested.")
-			continue
-
-		GLOB.unit_test_block_pool += block
-		// A block stands in for station floor: range-to-station checks (contact levels) pass on it
-		// as they did when tests ran on the map itself.
-		if(using_map)
-			using_map.contact_levels |= block.z
+	// A focused run starts with UNIT_TEST_BLOCK_POOL_FOCUSED blocks and grows on demand (acquire_unit_test_block()):
+	// each block is a new z-level, about 0.65 s to allocate, and a handful of tests rarely holds more than one.
+	var/initial_size = unit_test_is_focused_run() ? UNIT_TEST_BLOCK_POOL_FOCUSED : UNIT_TEST_BLOCK_POOL_SIZE
+	for(var/i in 1 to initial_size)
+		unit_test_block_load(i)
 
 	if(!length(GLOB.unit_test_block_pool))
 		CRASH("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
+
+/// Loads one more isolated block (copy #i) into the pool; logs and adds nothing when every attempt fails.
+/proc/unit_test_block_load(i)
+	var/datum/unit_test_block/block
+	// load_new_z()'s underlying map load (parsed_map/build_coordinate)
+	// intermittently places nothing at all -- every turf on the new z
+	// comes back a bare /turf/space with empty contents, no error
+	// surfaced to us, no landmark to find. Confirmed by dumping the new
+	// z's contents when this happens; not yet root-caused (a map-loader
+	// or GLOB.cached_maps-reuse issue under this specific "allocate a
+	// brand new z, back to back, several times" pattern -- load_new_z()
+	// is also SSexpedition's z-allocation path, so this may not be
+	// unique to tests). Retry a few fresh attempts per slot rather than
+	// let one bad load silently shrink the pool.
+	for(var/attempt in 1 to 3)
+		var/datum/map_template/unit_tests/template = new
+		var/new_z = template.load_new_z()
+		if(!new_z)
+			continue
+		var/datum/unit_test_block/candidate = new
+		candidate.z = new_z
+		// Don't rely on REGISTRY_MEMBERS(REGISTRY_LANDMARKS): atom Initialize() for a
+		// freshly loaded z can be queued rather than run synchronously
+		// inside load_new_z(), so the landmark may not be registered
+		// into that list yet. The atom instance itself is already in
+		// its turf's contents the moment load_map() places it, so
+		// locate it there directly. load_new_z() always places the
+		// template at (1,1) on its new z (centered = FALSE).
+		for(var/tx in 1 to template.width)
+			for(var/ty in 1 to template.height)
+				var/turf/T = locate(tx, ty, new_z)
+				if(!T)
+					continue
+				if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
+					rel_set(candidate, nameof(candidate.bottom_left), T)
+				if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
+					rel_set(candidate, nameof(candidate.top_right), T)
+		if(candidate.bottom_left && candidate.top_right)
+			block = candidate
+			break
+		log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
+
+	if(!block)
+		log_world("ensure_unit_test_block_pool: copy #[i] failed 3 attempts, the unit test block pool will be smaller than requested.")
+		return
+
+	GLOB.unit_test_block_pool += block
+	// A block stands in for station floor: range-to-station checks (contact levels) pass on it
+	// as they did when tests ran on the map itself.
+	if(using_map)
+		using_map.contact_levels |= block.z
 
 /// Checks out a free isolated test block, waiting for one to be returned if
 /// every block is currently in use (should be rare -- see the pool size
@@ -156,6 +167,12 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			if(!block.in_use)
 				block.in_use = TRUE
 				return block
+		// Every block is out: a focused run's small pool grows instead of waiting.
+		if(length(GLOB.unit_test_block_pool) < UNIT_TEST_BLOCK_POOL_SIZE && !GLOB.unit_test_block_pool_growing)
+			GLOB.unit_test_block_pool_growing = TRUE
+			unit_test_block_load(length(GLOB.unit_test_block_pool) + 1)
+			GLOB.unit_test_block_pool_growing = FALSE
+			continue
 		waited++
 		if(waited > 600) // ~60s of real time at 1 tick/sleep(1) each
 			CRASH("acquire_unit_test_block: every isolated test block is still in use after 60s -- likely a stuck async teardown.")

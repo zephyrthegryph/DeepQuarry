@@ -355,9 +355,55 @@ export const VerdigrisBindingsTarget = new Juke.Target({
   },
 });
 
+// The bindings check reads every Rust source and every DM file (15+ s on Windows). It is skipped when nothing it
+// reads has changed since it last passed here: the Rust sources and the generated files by content, the DM tree by
+// its file list (the DM side only checks that the types a component names exist; editing inside a file that removes
+// such a type is caught by CI, which always runs the full check, and by the next Rust or file-list change).
+// data/verdigris-bindings-check.json holds the key; DQ_FULL_CHECKS=1 forces the full check.
+const verdigrisBindingsCheckKey = (): string => {
+  const hash = createHash('sha256').update('vg-bindings-check-v1|');
+  const rs: string[] = [];
+  const walk = (dir: string, keep: (name: string) => boolean, out: string[]) => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'target' || entry.name.startsWith('target-') || entry.name === 'node_modules') continue;
+      const full = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(full, keep, out);
+      else if (keep(entry.name)) out.push(full);
+    }
+  };
+  walk('verdigris', (n) => n.endsWith('.rs') || n === 'Cargo.toml', rs);
+  walk('code/__defines/verdigris', (n) => n.endsWith('.dm'), rs);
+  for (const file of rs.sort()) {
+    hash.update(file);
+    hash.update(fs.readFileSync(file));
+  }
+  const dm: string[] = [];
+  walk('code', (n) => n.endsWith('.dm'), dm);
+  hash.update(dm.sort().join('\n'));
+  return hash.digest('hex');
+};
+const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
+
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
   executes: () => {
+    const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
+    const key = full ? null : verdigrisBindingsCheckKey();
+    if (key) {
+      try {
+        if (JSON.parse(fs.readFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, 'utf-8')).key === key) {
+          Juke.logger.info('verdigris bindings: inputs unchanged since the last passing check; skipped');
+          return;
+        }
+      } catch {
+        // no record yet
+      }
+    }
     const stale = generateVerdigrisBindings(process.cwd(), true);
+    if (key && !stale.length) {
+      fs.mkdirSync('data', { recursive: true });
+      fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
+    }
     if (stale.length) {
       Juke.logger.error(
         `verdigris bindings are stale (${stale.join(', ')}). `
@@ -682,6 +728,47 @@ export const GenTarget = new Juke.Target({
   },
 });
 
+// `tools/build/build.sh dmb-check`: the Codex native compiler's syntax check (tools/dmb, `dm-compile check`) over
+// deepquarry.dme, about 14 s instead of DreamMaker's 70-110 s. It only preprocesses and parses (no type or proc
+// resolution), so it catches a broken macro, bracket or include before the real compile, not a bad path. It is an
+// optional pre-check: `DQ_DMB_PRECHECK=1` runs it before dm-test's compile; DreamMaker stays the real build.
+// Known parser gaps (false positives on code DreamMaker accepts) are listed in tools/dmb/precheck_known.txt and
+// ignored. The binary is built into DQ_DMB_TARGET (default E:/dq-cache/dmb-target, else tools/dmb/target).
+const DMB_TARGET = process.env.DQ_DMB_TARGET || (process.platform === 'win32' && fs.existsSync('E:/') ? 'E:/dq-cache/dmb-target' : 'tools/dmb/target');
+const DMB_BIN = `${DMB_TARGET}/release/${process.platform === 'win32' ? 'dm-compile.exe' : 'dm-compile'}`;
+export const DmbCheckTarget = new Juke.Target({
+  dependsOn: () => [GenTarget],
+  executes: async () => {
+    if (!fs.existsSync(DMB_BIN)) {
+      Juke.logger.info(`dmb-check: building ${DMB_BIN} (once, about 2 minutes)`);
+      await Juke.exec('cargo', ['build', '--release', '-q', '--manifest-path', 'tools/dmb/Cargo.toml', '-p', 'dm-compile'], {
+        env: { ...process.env, CARGO_TARGET_DIR: DMB_TARGET },
+      });
+    }
+    const started = Date.now();
+    const result = spawnSync(DMB_BIN, ['check', `${DME_NAME}.dme`], {
+      encoding: 'utf-8',
+      maxBuffer: 64 * 1024 * 1024,
+      env: { ...process.env, DM_CHECK_MAX_SOURCE_BYTES: process.env.DM_CHECK_MAX_SOURCE_BYTES || '200000000' },
+    });
+    let known: string[] = [];
+    try {
+      known = fs.readFileSync('tools/dmb/precheck_known.txt', 'utf-8').split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+    } catch {
+      // no list
+    }
+    const diagnostics = `${result.stdout || ''}${result.stderr || ''}`.split(/\r?\n/).filter((l) => l.startsWith('Diagnostic'));
+    const fresh = diagnostics.filter((d) => !known.some((k) => d.includes(k)));
+    for (const d of diagnostics) console.log(fresh.includes(d) ? d : `${d} (known parser gap)`);
+    Juke.logger.info(`dmb-check: ${diagnostics.length} diagnostic(s), ${fresh.length} new, in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+    if (result.error) throw result.error;
+    if (fresh.length) {
+      Juke.logger.error('dmb-check: the native syntax check found errors (DreamMaker would likely fail too)');
+      throw new Juke.ExitCode(1);
+    }
+  },
+});
+
 // `tools/build/build.sh analyze` runs every engine lint (what tools/ci/check_ratchets.sh and
 // tools/ci/check_grep.sh wrap); extra arguments go to `analyze check` (e.g. --lint scheduler).
 export const AnalyzeTarget = new Juke.Target({
@@ -717,7 +804,7 @@ export const DmTarget = new Juke.Target({
     IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
     ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
     VerdigrisBindingsCheckTarget, // DQAdd — _bindings.dm must match the Rust binds
-    DreamCheckerTarget, // DQAdd — run SpacemanDMM lint before DM compile if available
+    GenTarget, // DreamChecker runs beside DreamMaker below (it used to run first, ~45 s on its own)
     MapBoundsTarget, // boot reads template sizes from data/map_template_bounds.json
   ],
   inputs: [
@@ -742,12 +829,27 @@ export const DmTarget = new Juke.Target({
   executes: async ({ get }) => {
     // Production build: no DEBUG (no runtime line numbers, ~56 MB less at world
     // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
-    await DreamMaker(`${DME_NAME}.dme`, {
-      defines: ['CBT', ...get(DefineParameter)],
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: get(DmVersionParameter),
-    });
+    // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
+    // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
+    const checker = findDreamChecker();
+    if (!checker) {
+      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+    }
+    const results = await Promise.allSettled([
+      checker ? runDreamChecker().then(() => Juke.logger.info('dream-checker: passed')) : Promise.resolve(),
+      DreamMaker(`${DME_NAME}.dme`, {
+        defines: ['CBT', ...get(DefineParameter)],
+        warningsAsErrors: get(WarningParameter).includes('error'),
+        ignoreWarningCodes: get(NoWarningParameter),
+        namedDmVersion: get(DmVersionParameter),
+      }),
+    ]);
+    if (results[0].status === 'rejected') {
+      fs.rmSync(`${DME_NAME}.dmb`, { force: true });
+      Juke.logger.error('dream-checker failed (see above); the .dmb was removed');
+      throw results[0].reason;
+    }
+    if (results[1].status === 'rejected') throw results[1].reason;
   },
 });
 
@@ -2080,6 +2182,7 @@ export const DmTestTarget = new Juke.Target({
     ValidateDmeTarget, // catch missing includes before compiling
     VerdigrisTarget, // tests boot the world, which loads the FFI lib
     MapBoundsTarget, // tests boot the world, which reads template bounds
+    process.env.DQ_DMB_PRECHECK === '1' && DmbCheckTarget, // optional 14 s syntax pre-check (tools/dmb)
   ],
   executes: async ({ get }) => {
     const focus = focusedTestNames(get);
@@ -2947,35 +3050,38 @@ export const DreamCheckerTarget = new Juke.Target({
     }
     return true;
   },
-  executes: async () => {
-    const dreamChecker = findDreamChecker();
-    if (!dreamChecker) {
-      throw new Error('DreamChecker disappeared after dependency detection.');
-    }
-    // DreamChecker 1.11 auto-selects a root-level DME when multiple manifests
-    // are present, even though SpacemanDMM.toml names deepquarry.dme. Local
-    // profiling creates audit*.dme copies concurrently, which previously made
-    // release builds lint a UNIT_TESTS manifest instead of production code.
-    const stashDirectory = 'data/.dreamchecker-dme-stash';
-    fs.mkdirSync(stashDirectory, { recursive: true });
-    const stashed = fs.readdirSync('.')
-      .filter((name) => name.endsWith('.dme') && name !== `${DME_NAME}.dme`)
-      .map((name) => {
-        const destination = `${stashDirectory}/${name}`;
-        fs.renameSync(name, destination);
-        return { destination, name };
-      });
-    try {
-      await Juke.exec(dreamChecker, []);
-    } finally {
-      for (const { destination, name } of stashed) {
-        if (fs.existsSync(destination) && !fs.existsSync(name)) {
-          fs.renameSync(destination, name);
-        }
+  executes: () => runDreamChecker(),
+});
+
+/** SpacemanDMM's DreamChecker over deepquarry.dme; throws on any diagnostic it fails on. */
+async function runDreamChecker(): Promise<void> {
+  const dreamChecker = findDreamChecker();
+  if (!dreamChecker) {
+    throw new Error('DreamChecker disappeared after dependency detection.');
+  }
+  // DreamChecker 1.11 auto-selects a root-level DME when multiple manifests
+  // are present, even though SpacemanDMM.toml names deepquarry.dme. Local
+  // profiling creates audit*.dme copies concurrently, which previously made
+  // release builds lint a UNIT_TESTS manifest instead of production code.
+  const stashDirectory = 'data/.dreamchecker-dme-stash';
+  fs.mkdirSync(stashDirectory, { recursive: true });
+  const stashed = fs.readdirSync('.')
+    .filter((name) => name.endsWith('.dme') && name !== `${DME_NAME}.dme`)
+    .map((name) => {
+      const destination = `${stashDirectory}/${name}`;
+      fs.renameSync(name, destination);
+      return { destination, name };
+    });
+  try {
+    await Juke.exec(dreamChecker, []);
+  } finally {
+    for (const { destination, name } of stashed) {
+      if (fs.existsSync(destination) && !fs.existsSync(name)) {
+        fs.renameSync(destination, name);
       }
     }
-  },
-});
+  }
+}
 // DQAdd End
 
 export const TguiDevTarget = new Juke.Target({
