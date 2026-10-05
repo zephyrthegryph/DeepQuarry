@@ -86,7 +86,6 @@
 		/obj/machinery/magnetic_controller,
 		/obj/machinery/magnetic_module,
 		/obj/machinery/mech_recharger,
-		/obj/machinery/mecha_part_fabricator_tg,
 		/obj/machinery/media/jukebox,
 		/obj/machinery/message_server,
 		/obj/machinery/mineral/processing_unit,

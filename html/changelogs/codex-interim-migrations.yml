@@ -72,3 +72,7 @@ changes:
   - code_imp: "Migrated helm limit and coordinate prompts to native requests."
   - code_imp: "Migrated player-notes filtering and Examine selection to native requests, removed unreachable spellbook power choices and cached Zorgoia overlays."
   - bugfix: "Changeling stings now resume their effects after target selection and recheck current eligibility before spending chemicals."
+  - code_imp: "Cached lion mane appearances while retaining existing colour and sex behavior."
+  - bugfix: "Silicon camera album choices now finish viewing and local deletion, and remote photos are refused truthfully."
+  - bugfix: "Silicons can finish printing a selected camera album photo at photocopiers."
+  - bugfix: "Grenade timer configuration uses native requests and safely refuses missing timers."
