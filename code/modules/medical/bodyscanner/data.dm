@@ -12,7 +12,7 @@
 
 /obj/machinery/bodyscanner/proc/dq_build_tgui_data()
 	var/list/data = list()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = occupant_of(src)
 	data["occupied"] = occupant ? TRUE : FALSE
 
 	if(!(occupant && ishuman(occupant)))
