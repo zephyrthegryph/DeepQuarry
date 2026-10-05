@@ -128,7 +128,7 @@ button does is that button with one more binding, `extend("breaker", binds(remot
 ```dm
 op("set_channel", ui_act("channel", arg("channel", int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), arg("mode", int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), then(PROC_REF(ui_set_channel))),
 op("breaker", ui_act(), toggles(nameof(operating)), then(PROC_REF(settings_applied)), logs(LOG_GAME)),
-extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_refusal)))),   // the old can_use(): the library's window access
+extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_allowed), remote_because = MSG(apc/ai_disabled)))),   // the old can_use(): the library's window access
 extend("breaker", binds(remote()), gesture(GESTURE_CTRL)),   // a silicon's ctrl-click throws the same breaker
 extend("nightshift", drop = "lock"),   // this one button works whatever the lock says: relax the lock's requirement by its id
 ```

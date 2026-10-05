@@ -2,10 +2,10 @@
 //
 // Two requirements every machine with a control window shares, so no machine writes its own "can this mob use me" proc:
 //
-//   req_window_usable(remote = PROC_REF(x))
+//   req_window_usable(remote = PROC_REF(x), remote_because = MSG(y))
 //        The actor can work the holder's window now. An admin ghost always can. Anyone else must be conscious, able to use tools, free and standing;
 //        by hand they must be beside the holder; over a silicon's link (AUTH_REMOTE_ACCESS) the distance does not matter and the holder's own
-//        `remote` proc decides instead: x(datum/act/op/A) returns null to let the link in or a /datum/msg reason (the AI-control wire, a hacker).
+//        `remote` condition decides instead: x(datum/act/op/A) answers TRUE or FALSE (the AI-control wire, a hacker), refused with `remote_because`.
 //   req_silicon_or_admin()
 //        The actor works the holder over a silicon's link the holder lets in (remote_link_allowed(): the AI, a cyborg with access on its own ID
 //        card) or is an admin ghost: the window an AI owns (an airlock's), the buttons only a silicon has (an APC's overload), and the lock's own
@@ -13,7 +13,7 @@
 //
 // Typical use, on a machine whose every window button answers the same people:
 //
-//   extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(ai_control_refusal))))
+//   extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(machine/ai_locked_out))))
 //   op("overload", ui_act(), needs(req_silicon_or_admin()), ...)
 
 MSG_DEF_SELF(window/cant_use, "You can't use that right now.")
@@ -53,10 +53,10 @@ MSG_DEF_SELF(window/silicons_only, "Only a silicon can do that.")
 
 // ---- req_window_usable ----
 
-/// req_window_usable(remote =, because =, id =): the actor can work the holder's window now (see the top of the file). `remote` names a proc of the
-/// holder deciding a remote user's access: x(datum/act/op/A) returns null to allow, or a /datum/msg reason.
-/proc/req_window_usable(remote = null, because = null, id = null)
-	return part_make(/datum/entry/part/req/window_usable, list("remote" = remote, "because" = because, "id" = id))
+/// req_window_usable(remote =, remote_because =, because =, id =): the actor can work the holder's window now (see the top of the file). `remote`
+/// names a condition of the holder deciding a remote user's access, x(datum/act/op/A) answering TRUE or FALSE; `remote_because` is its reason.
+/proc/req_window_usable(remote = null, remote_because = null, because = null, id = null)
+	return part_make(/datum/entry/part/req/window_usable, list("remote" = remote, "remote_because" = remote_because, "because" = because, "id" = id))
 
 /datum/entry/part/req/window_usable
 	part_name = "req_window_usable"
@@ -80,11 +80,13 @@ MSG_DEF_SELF(window/silicons_only, "Only a silicon can do that.")
 		return null
 	if(user.stat)
 		return /datum/msg/window/cant_use
-	if(!user.IsAdvancedToolUser() || user.restrained() || user.lying) // ALLOW(reads): a mob lying down is legacy mob state, tracked in the mob conversion; the check runs when a window button is pressed, never from a cached menu
+	if(!user.IsAdvancedToolUser() || user.restrained() || user.lying)
 		return /datum/msg/window/cant_use
 	if(A.authority & AUTH_REMOTE_ACCESS) // over a link: the holder decides, not the distance
 		var/remote = src.args["remote"]
-		return remote ? op_call(A, remote) : null
+		if(remote && !op_call(A, remote))
+			return src.args["remote_because"] || /datum/msg/window/cant_use
+		return null
 	var/atom/holder = A.holder
 	if(!istype(holder) || get_dist(holder, user) > 1)
 		return /datum/msg/window/cant_use

@@ -160,7 +160,8 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	weld_shut(offered = PROC_REF(weld_offered), starts = nameof(welded_at_start))
 	door_emergency()
 	owns_one(nameof(electronics), /obj/item/airlock_electronics)
-	links(/obj/machinery/door/airlock::close_others, /obj/machinery/door/airlock::close_others)   // symmetric: each end names the other
+	ref_many(nameof(close_others), /obj/machinery/door/airlock)
+	ref_one(nameof(hold_open), /mob)   // who holds the door open (the ctrl-click's grab)   // the paired doors: each end names the other (join_close_group())
 	on_change(nameof(bolted), ANY, then(PROC_REF(bolts_moved)))
 	on_change(nameof(main_power_out), ANY, then(PROC_REF(main_power_changed)))
 	on_change(nameof(backup_power_out), ANY, then(PROC_REF(power_changed)))
@@ -185,7 +186,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done)))
 	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
-		priority(above("deice")), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
+		priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	extend("panel.open", wait(0), needs(req(PROC_REF(panel_closable), because = MSG(airlock/panel_broken))), then(PROC_REF(panel_toggled)))
 	extend("weld_shut.toggle", priority(above("repair")), when(cond_any(cond_not(PROC_REF(damaged)), cond_not(req_stance(I_HELP)))))
 	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
@@ -195,17 +196,17 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 	section(ctrl_click, "The ctrl-click on the door: hammer on it (combat), hold it open (grab), ring the bell (anything else)")
 	// A silicon's ctrl-click is its bolt button over the link (below), never a hand on the door.
-	op("hammer", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_HURT), label("Hammer on the door"), priority(above("doorbell")),
+	op("hammer", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_HURT), label("Hammer on the door"), priority(OP_PRIORITY_ATTACK),
 		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), wait(0), then(PROC_REF(hammer_on_door)))
-	op("hold_open", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_GRAB), label("Hold the door open"), priority(above("hammer")),
+	op("hold_open", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_GRAB), label("Hold the door open"), priority(OP_PRIORITY_PART),
 		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), wait(0), then(PROC_REF(hold_door_open)))
-	op("doorbell", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), label("Ring the bell"),
+	op("doorbell", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), label("Ring the bell"), priority(OP_PRIORITY_NORMAL),
 		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), wait(0), then(PROC_REF(ring_doorbell)))
 
 	section(controls, "The remote control window (an AI's, a cyborg's, an admin ghost's) and a silicon's gestures over its link")
 	interface("AiAirlock")
 	extend("ui_open", inputs(remote())) // silicons only: remote() replaces the hand binding
-	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_refusal))))
+	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
 	op("disrupt_main", ui_act("disrupt-main"), needs(req_is(STAT_MAIN_POWER_OUT, FALSE, because = MSG(airlock/main_offline))), then(PROC_REF(lose_main_power)))
 	op("disrupt_backup", ui_act("disrupt-backup"), needs(req(PROC_REF(backup_carries), because = MSG(airlock/backup_offline))), then(PROC_REF(lose_backup_power)))
 	op("shock_restore", ui_act("shock-restore"), releases(STAT_ELECTRIFIED, source = ON_ACTOR), says(MSG(airlock/unelectrified)))
@@ -231,10 +232,10 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	extend("bolt_toggle", binds(remote()), gesture(GESTURE_CTRL))
 	op("remote_shock", remote(), gesture(GESTURE_ALT), label("Toggle electrification"), toggles_hold(STAT_ELECTRIFIED, TRUE, source = ON_ACTOR),
 		then(PROC_REF(remote_shock_marked)), logs(LOG_GAME))
-	extend("remote_shock", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_refusal))))
+	extend("remote_shock", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
 	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the bolt lights"),
 		needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
-	extend("remote_lights", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_refusal))))
+	extend("remote_lights", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
 
 
 // ---- power ----
@@ -356,7 +357,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /// thing a smaller one. A shock that does not land (no power source, insulated gloves) lets the touch go on.
 /obj/machinery/door/airlock/proc/shock_toucher(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!user || issilicon(user))
+	if(!user || (A.authority & AUTH_REMOTE_ACCESS)) // a silicon's link touches nothing
 		return HOOK_DECLINE
 	if(shock(user, A.held ? 75 : 100))
 		return OP_OK
@@ -364,11 +365,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 // ---- AI control ----
 
-/// Why a silicon cannot work the door over its link now, or null: its AI control is locked out, or no power line reaches it.
-/obj/machinery/door/airlock/proc/ai_control_refusal(datum/act/op/A)
-	if(aiControlDisabled || all_power_lost())
-		return /datum/msg/airlock/not_for_you
-	return null
+/// A silicon can work the door over its link: its AI control is not locked out and a power line reaches it.
+/obj/machinery/door/airlock/proc/ai_control_allowed(datum/act/op/A)
+	return !aiControlDisabled && !all_power_lost()
 
 // ---- bolts (the bolts() library's drop and raise, door_parts.dm) ----
 
@@ -428,7 +427,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /// Nobody but the actor holds the door open.
 /obj/machinery/door/airlock/proc/not_held_by_another(datum/act/op/A)
-	return density || !held_by_someone() || hold_open() == A.actor
+	return density || isnull(hold_open()) || hold_open() == A.actor
 
 /// The window's open-close button: the door swings, a holder's own press lets go of it first.
 /obj/machinery/door/airlock/proc/ui_open_close(datum/act/op/A)
@@ -529,6 +528,17 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/held_by_someone()
 	var/mob/holder = hold_open()
 	return holder && Adjacent(holder) && !holder.incapacitated()
+
+/// The holder moved: once they are no longer beside the door, they let go of it.
+/obj/machinery/door/airlock/proc/holder_moved(datum/act/A)
+	var/datum/act/action/N = A
+	var/mob/holder = N.target // the observed mob (the hook runs on this door)
+	if(holder != hold_open())
+		unobserve(holder, /datum/notice/moved, src)
+		return
+	if(!Adjacent(holder))
+		unobserve(holder, /datum/notice/moved, src)
+		rel_clear(src, nameof(hold_open))
 
 /// The holder walked off or fell: they no longer hold the door.
 /obj/machinery/door/airlock/proc/hold_lapsed()
@@ -695,6 +705,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	rel_set(src, nameof(hold_open), user)
+	observe(user, /datum/notice/moved, src, then(PROC_REF(holder_moved)))
 	act_message(user, src, others = span_info("%U% begins holding %T% open."), blind = span_info("Someone has started holding %T% open."))
 	hold_release(user)
 	toggle_by(user)
@@ -1041,7 +1052,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 			req_access = electronics.conf_access
 		name = assembly.created_name || "[istext(assembly.glass) ? "[assembly.glass] airlock" : assembly.base_name]"
 		set_dir(assembly.dir)
-	// A door on an admin level gets the secure wire set (wires_type()), made on first use.
+	// A door on an admin level gets the secure wires (wire_count(), wires_randomized()), made on first use.
 	var/turf/T = get_turf(src)
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
@@ -1053,14 +1064,15 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /// The airlocks of each closeOtherId, so a door joins its group at init without a scan of every machine (an airlock is keyed by its id_tag
 /// already, and a type has one key var: this index is the second key).
-GLOBAL_LIST_EMPTY(airlock_close_groups) // ALLOW(instance_list): closeOtherId -> the airlocks sharing it; each leaves it in on_destroy()
+GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing it; each leaves it in on_destroy()
 
 /// Links this airlock both ways with every airlock that shares its closeOtherId.
 /obj/machinery/door/airlock/proc/join_close_group()
 	if(isnull(closeOtherId))
 		return
 	for(var/obj/machinery/door/airlock/other as anything in LAZYACCESS(GLOB.airlock_close_groups, closeOtherId))
-		rel_add(src, nameof(close_others), other) // symmetric: the other names this one too
+		rel_add(src, nameof(close_others), other)
+		rel_add(other, nameof(close_others), src)
 	LAZYADDASSOCLIST(GLOB.airlock_close_groups, closeOtherId, src)
 
 /obj/machinery/door/airlock/on_destroy(force)

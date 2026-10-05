@@ -2916,7 +2916,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 		channels = list_of(row(name = text(24), mode = enum(POWERCHAN_MODES))))
 	op("breaker", ui_act(), toggles(nameof(operating)))   <span class="c">// no lock clause: lock() gates every TAG_UI op</span>
 	extend("breaker", binds(remote()), gesture(GESTURE_CTRL))   <span class="c">// a silicon's ctrl-click throws the same breaker</span>
-	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_refusal))))   <span class="c">// window access: the library's (section 11)</span>
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_allowed), remote_because = MSG(apc/ai_disabled))))   <span class="c">// window access: the library's (section 11)</span>
 	on_change(nameof(operating), ANY, then(PROC_REF(supply_changed)))   <span class="c">// the area follows the breaker, whoever throws it</span>
 	op("chargemode", ui_act(), toggles(nameof(chargemode)))
 	op("coverlock", ui_act(), toggles(nameof(coverlocked)))
@@ -3076,7 +3076,7 @@ CAPABILITIES(/obj/machinery/door/airlock)                <span class="c">// the 
 	interface("AiAirlock")
 	extend("ui_open", inputs(remote()))                   <span class="c">// silicons only: remote() replaces the hand binding</span>
 	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)),
-		req_window_usable(remote = PROC_REF(ai_control_refusal))))   <span class="c">// the library's window access (section 11)</span>
+		req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))   <span class="c">// the library's window access (section 11)</span>
 	op("bolt_toggle", ui_act("bolt-toggle"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
 		req(PROC_REF(actor_may_move_bolts), because = MSG(airlock/no_power_to_raise))),
 		toggles_hold(STAT_BOLTED, source = ON_ACTOR), says(PROC_REF(bolts_message)), logs(LOG_GAME))
@@ -3094,12 +3094,11 @@ CAPABILITIES(/obj/machinery/door/airlock)                <span class="c">// the 
 /obj/machinery/door/airlock/proc/power_systems_on(datum/act/A)
 	return operable() &amp;&amp; (!main_power_out || !backup_power_out)
 
-/obj/machinery/door/airlock/proc/ai_control_refusal(datum/act/op/A)   <span class="c">// req_window_usable()'s remote rule: null or a reason</span>
-	if(aiControlDisabled || all_power_lost())
-		return /datum/msg/airlock/not_for_you
+/obj/machinery/door/airlock/proc/ai_control_allowed(datum/act/op/A)   <span class="c">// req_window_usable()'s remote rule: a condition</span>
+	return !aiControlDisabled &amp;&amp; !all_power_lost()
 
 /obj/machinery/door/airlock/proc/shock_toucher(datum/act/op/A)   <span class="c">// a shock that does not land lets the touch go on</span>
-	if(issilicon(A.actor) || !shock(A.actor, A.held ? 75 : 100))
+	if((A.authority &amp; AUTH_REMOTE_ACCESS) || !shock(A.actor, A.held ? 75 : 100))
 		return HOOK_DECLINE
 	return OP_OK</code></pre>
   <div class="prose">

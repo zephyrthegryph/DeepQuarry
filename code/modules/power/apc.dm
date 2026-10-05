@@ -218,7 +218,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	op("lock", ui_act(), needs(req_silicon_or_admin(), req_not_subverted(), req_operable()),
 		toggles(LOCK_LOCKED), logs(LOG_GAME))
 	extend("ui_open", needs(req_operable()))
-	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_refusal))))
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_allowed), remote_because = MSG(apc/ai_disabled))))
 	extend("nightshift", drop = "lock")
 	// a silicon's ctrl-click throws the breaker over its link, under the same rules as the window's button
 	extend("breaker", binds(remote()), gesture(GESTURE_CTRL))
@@ -342,18 +342,16 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	overload_lighting()
 	return OP_OK
 
-/// A silicon working the window over its link: refused while the AI-control wire keeps silicons out, unless it is the AI that hacked the APC (or
-/// one of that AI's cyborgs). req_window_usable() asks it (code/library/access/window_access.dm).
-/obj/machinery/power/apc/proc/remote_control_refusal(datum/act/op/A)
+/// A silicon may work the window over its link: the AI-control wire lets silicons in, or it is the AI that hacked the APC (or one of that AI's
+/// cyborgs). req_window_usable() asks it (code/library/access/window_access.dm).
+/obj/machinery/power/apc/proc/remote_control_allowed(datum/act/op/A)
 	if(!aidisabled)
-		return null
+		return TRUE
 	var/mob/user = A.actor
 	if(hacker && user == hacker)
-		return null
+		return TRUE
 	var/mob/living/silicon/robot/robot = user
-	if(hacker && istype(robot) && robot.connected_ai == hacker) // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
-		return null
-	return /datum/msg/apc/ai_disabled
+	return hacker && istype(robot) && robot.connected_ai == hacker // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
 
 // ---- the emag and the subversion reset ----
 

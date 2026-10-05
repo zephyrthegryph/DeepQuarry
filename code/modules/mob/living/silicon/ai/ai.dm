@@ -973,7 +973,7 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	if(!door || !target)
 		return
 	if(A.answer.answer_value && !check_unable(AI_CHECK_WIRELESS))
-		perform_op(src, door, "remote_open", null, ORIGIN_MENU, AUTH_REMOTE_ACCESS)
+		perform_op(src, door, "open_close", null, ORIGIN_MENU, AUTH_REMOTE_ACCESS)
 		to_chat(src, span_notice("You open \the [door] for [target]."))
 	else
 		to_chat(src, span_warning("You deny the request."))

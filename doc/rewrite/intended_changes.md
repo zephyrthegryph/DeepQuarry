@@ -918,7 +918,7 @@ the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Ea
   breaker by ctrl-click as it already could through the window (it used to also need `remote_link_allowed()` for the ctrl-click alone).
 * **Window access is the library's** (`req_window_usable()`, `req_silicon_or_admin()`, `code/library/access/window_access.dm`): the refusal texts are
   the library's ("You can't use that right now.", "Only a silicon can do that."), the rules are unchanged; the APC keeps only its own remote rule
-  (`remote_control_refusal()`: the AI-control wire, the hacker and its cyborgs).
+  (`remote_control_allowed()`: the AI-control wire, the hacker and its cyborgs).
 * The window data loses `normallyLocked` (always equal to `locked`) and `totalCharging` (always 0); the TSX shows the total load alone.
 * Dead state is gone: `debug`, `chargecount`, `longtermpower` (Rust keeps its own), `report()`, the `area()` accessor (the `area` var is read directly).
 
