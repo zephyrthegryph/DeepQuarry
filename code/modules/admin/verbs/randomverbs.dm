@@ -27,7 +27,7 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 	if(!length(GLOB.prisonwarp))
 		return
 	if(ismob(target_mob))
-		if(isAI(target_mob))
+		if(isAI(target_mob)) // ALLOW(silicon_entry): selects AI target retirement and empty core creation after admin confirmation
 			tgui_alert_async(user, "The AI can't be sent to prison you jerk!")
 			return
 		//strip their stuff before they teleport into a cell :downs:
@@ -1228,7 +1228,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 		return
 	var/datum/prompt/choice/admin_cryo_review/ask = context.answer
 	var/mob/target_mob = ask.subject
-	var/list/pods = cryopods(issilicon(target_mob))
+	var/list/pods = cryopods(issilicon(target_mob)) // ALLOW(silicon_entry): classifies the cryo target to select compatible pods after admin authorization
 	var/obj/machinery/cryopod/selected_cryopod = pods[ask.answer_value]
 	if(!selected_cryopod)
 		return
@@ -1264,8 +1264,8 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 		open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryopod_chosen), answerer = admin, title = "Cryopod Choice", question = "Select a cryopod to use", choices = human_cryopods, subject = target_mob)
 		return
 
-	else if(issilicon(target_mob))
-		if(isAI(target_mob))
+	else if(issilicon(target_mob)) // ALLOW(silicon_entry): selects the cryo target retirement path after the admin confirmed it
+		if(isAI(target_mob)) // ALLOW(silicon_entry): selects AI target retirement and empty core creation after admin confirmation
 			var/mob/living/silicon/ai/ai = target_mob
 			registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(ai.loc))
 			GLOB.global_announcer.autosay("[ai] has been moved to intelligence storage.", "Artificial Intelligence Oversight")
