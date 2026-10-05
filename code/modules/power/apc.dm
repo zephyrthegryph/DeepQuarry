@@ -255,16 +255,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			ruined(TYPE_PROC_REF(/obj/machinery/power/apc, frame_ruined), becomes(/obj/item/stack/material/steel))),
 		at(SPACE_HATCH))
 
-/// The slot the board goes into: the build graph's own (SLOT_CONSTRUCTION). The ladder's put_in(SLOT_CONSTRUCTION) still finds its slot through
-/// the containment ledger's slot relation; the final slot() entry does not back a construction slot yet.
-/datum/om/relation/slot/apc_construction
-	holder = /obj/machinery/power/apc
-	slot_id = SLOT_CONSTRUCTION
-	name = "construction"
-	is_default = TRUE
-	capacity_model = SLOT_CAPACITY_COUNT
-	capacity = 1
-	drop_policy = SLOT_DROP_SPILL
 
 // ---- the hatch: the latch on the cover ----
 

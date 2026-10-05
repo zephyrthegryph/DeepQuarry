@@ -21582,18 +21582,20 @@
 	into += entry_line(163)
 	into += list(global.when(E0_DOOR_OPEN, global.contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)))
 
-/// CAPABILITIES(/obj/e0_fixture/door_assembly) at code/tests/engine/fixtures.dm:350
+/// CAPABILITIES(/obj/e0_fixture/door_assembly) at code/tests/engine/fixtures.dm:351
 /obj/e0_fixture/door_assembly/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 350, /obj/e0_fixture/door_assembly)
-	into += entry_line(351)
+	into += entry_block("code/tests/engine/fixtures.dm", 351, /obj/e0_fixture/door_assembly)
+	into += entry_line(352)
 	into += list(global.construction(GRAPH_DOOR_ASSEMBLY))
+	into += entry_line(353)
+	into += list(global.slot(SLOT_CONSTRUCTION, capacity = 4))
 
-/// CAPABILITIES(/obj/e0_fixture/door_assembly/finished) at code/tests/engine/fixtures.dm:367
+/// CAPABILITIES(/obj/e0_fixture/door_assembly/finished) at code/tests/engine/fixtures.dm:359
 /obj/e0_fixture/door_assembly/finished/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 367, /obj/e0_fixture/door_assembly/finished)
-	into += entry_line(368)
+	into += entry_block("code/tests/engine/fixtures.dm", 359, /obj/e0_fixture/door_assembly/finished)
+	into += entry_line(360)
 	into += list(global.configure(global.construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED))))
 
 /// CAPABILITIES(/obj/e0_fixture/hopper) at code/tests/engine/fixtures.dm:217
@@ -21646,15 +21648,15 @@
 	into += entry_line(76)
 	into += list(global.op("press", global.hand(), global.needs(global.req_is(nameof(ready), because = MSG(p1/not_ready))), global.wait(5 SECONDS), global.then(PROC_REF(done))))
 
-/// CAPABILITIES(/obj/e0_fixture/pump) at code/tests/engine/fixtures.dm:386
+/// CAPABILITIES(/obj/e0_fixture/pump) at code/tests/engine/fixtures.dm:378
 /obj/e0_fixture/pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 386, /obj/e0_fixture/pump)
-	into += entry_line(387)
+	into += entry_block("code/tests/engine/fixtures.dm", 378, /obj/e0_fixture/pump)
+	into += entry_line(379)
 	into += list(global.interface("E0Pump", title = "Gas Pump"))
-	into += entry_line(388)
+	into += entry_line(380)
 	into += list(ui_shape(target_pressure))
-	into += entry_line(389)
+	into += entry_line(381)
 	into += list(global.op("set_pressure", global.ui_act(global.arg("pressure", from = nameof(target_pressure))), global.then(PROC_REF(set_pressure))))
 
 /// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:216
