@@ -65,7 +65,8 @@
 			hands++
 			TEST_ASSERT_EQUAL(V.source, G, "the hand is the selected gripper")
 	TEST_ASSERT_EQUAL(hands, 1, "a selected gripper is a hand too")
-	TEST_ASSERT_EQUAL(reach_pick_provider(providers_for(R, null), null, R.held_carrier())?.source, G, "and the one that does the work")
+	var/datum/prov/picked = reach_pick_provider(providers_for(R, null), null, R.held_carrier())
+	TEST_ASSERT_EQUAL(picked?.source, G, "and the one that does the work")
 	for(var/datum/prov/V as anything in providers_for(H, null))
 		TEST_ASSERT(V.authority_mask() != AUTH_REMOTE_ACCESS, "a human has no remote interface")
 	TEST_ASSERT_EQUAL(actor_authority(AI), AUTH_REMOTE_ACCESS, "the AI's clicks carry remote access")
