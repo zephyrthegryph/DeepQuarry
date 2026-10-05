@@ -1088,14 +1088,41 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	if(user.incapacitated())
 		return
 	if(ishuman(user) || isrobot(user))
-		var/new_price = rerun_ask(user, "k915", PROC_REF(setprice), args, /datum/om/prompt/number, message = "Select the desired price (1-1000)", title = "Set Price", max = 1000, min = 1)
-		if(isnull(new_price))
-			return
-		if(!isnum(new_price) || new_price < 1 || new_price > 1000)
-			to_chat(user,span_notice("Invalid price."))
-			return
-		casinosentientprize_price = new_price
-		to_chat(user,span_notice("You set the price to [casinosentientprize_price]"))
+		open_request(src, /datum/prompt/number/casino_prize_price, PROC_REF(prize_price_answered), answerer = user)
+
+/datum/prompt/number/casino_prize_price
+	question = "Select the desired price (1-1000)"
+	title = "Set Price"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/casino_prize_price/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/mob/living/user = answerer
+	if(!istype(user) || QDELETED(user) || user.incapacitated() || !(ishuman(user) || isrobot(user)))
+		return "The operator cannot set the prize price."
+	if(!isnull(answer_value) && (!isnum(answer_value) || answer_value < 1 || answer_value > 1000))
+		return "The prize price is invalid."
+
+/datum/prompt/number/casino_prize_price/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, 1000, 1, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/obj/machinery/casinosentientprize_handler/proc/prize_price_answered(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	if(!A.answer)
+		if(!isnull(A.request.answer_value) && !QDELETED(user))
+			if(istype(user) && !user.incapacitated() && (ishuman(user) || isrobot(user)))
+				to_chat(user, span_notice("Invalid price."))
+			SStgui.update_uis(src)
+		return
+	casinosentientprize_price = A.answer.answer_value
+	to_chat(user, span_notice("You set the price to [casinosentientprize_price]"))
+	SStgui.update_uis(src)
 
 /obj/structure/casino_table/roulette_table/proc/roulette_stops(result, color)
 	icon_state = initial(icon_state)
