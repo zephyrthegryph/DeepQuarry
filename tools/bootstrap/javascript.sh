@@ -49,4 +49,6 @@ if ! command -v bun >/dev/null 2>&1; then
 fi
 
 echo "Using Bun $(bun --version)"
+# Shared transpiler cache can resolve across identical worktrees; keep it off.
+export BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
 exec bun "$@"

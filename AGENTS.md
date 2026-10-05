@@ -187,6 +187,9 @@ Windows is the supported dev OS. Entry points in `bin/`: `build.cmd` (DM + TGUI)
 `server.cmd` (build and host on 1337), `test.cmd` (unit-test world), `tgui-build.cmd`,
 `tgui-dev.cmd`, `tgui-fix.cmd`, `bench.cmd`, `clean.cmd`. `tools/build/build.ts` (Juke)
 orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
+Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their own checkout and set
+`BUN_RUNTIME_TRANSPILER_CACHE_PATH=0` (Bun's shared cache once built a sibling worktree);
+`build.ts` refuses to run if its root differs from the invoking worktree's toplevel.
 
 - **Icon repack** (`tools/dq_icons/`): `png` + `dmi.toml` into `icons/gen/`, dirty-checked.
   A fresh worktree seeds `icons/gen/` from the main checkout's copy (or `DQ_ICON_SEED`), so only
