@@ -1,40 +1,4 @@
 /**
- * Creates a TGUI window with a key input. Returns the user's response as a full key with modifiers, eg ShiftK.
- *
- * This proc should be used to create windows for key entry that the caller will wait for a response from.
- * If tgui fancy chat is turned off: Will return a normal input.
- *
- * Arguments:
- * * user - The user to show the number input to.
- * * message - The content of the number input, shown in the body of the TGUI window.
- * * title - The title of the number input modal, shown on the top of the TGUI window.
- * * default - The default (or current) key, shown as a placeholder.
- */
-/proc/tgui_input_keycombo(mob/user = usr, message, title = "Key Input", default = 0, timeout = 0, ui_state = GLOB.tgui_always_state)
-	if (!istype(user))
-		if (istype(user, /client))
-			var/client/client = user
-			user = client.mob
-		else
-			return null
-
-	if (isnull(user.client))
-		return null
-
-	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
-		if(!input_key)
-			return
-		return input_key[1]
-	var/datum/tgui_input_keycombo/key_input = new(user, message, title, default, timeout, ui_state)
-	key_input.tgui_interact(user)
-	key_input.wait()
-	if (key_input)
-		. = key_input.entry
-		qdel(key_input)
-
-/**
  * # tgui_input_keycombo
  *
  * Datum used for instantiating and using a TGUI-controlled key input that prompts the user with

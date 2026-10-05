@@ -89,11 +89,12 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 	alpha = 0
 	color = "#FFFFFF"
 
-	var/turfs_providing_spreads = list()
-	var/spreads = list()
+	var/turfs_providing_spreads
+	var/spreads
 
 /atom/movable/sun_visuals/Initialize(mapload)
 	. = ..()
+	LAZYINITLIST(spreads)
 	spreads["1"] = new /atom/movable/sun_visuals_overlap(src, NORTH, "white_gradient")
 	spreads["2"] = new /atom/movable/sun_visuals_overlap(src, SOUTH, "white_gradient")
 	spreads["4"] = new /atom/movable/sun_visuals_overlap(src, EAST, "white_gradient")
@@ -168,13 +169,13 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 			LAZYADD(localspreads[dirturf], OL)
 
 	if(LAZYLEN(localspreads))
-		turfs_providing_spreads[T] = localspreads
+		LAZYSET(turfs_providing_spreads, T, localspreads)
 
 /atom/movable/sun_visuals/proc/remove_from_turf(turf/T)
 	T.vis_contents -= src
 	T.dynamic_lumcount -= 0.5
 	T.set_luminosity(0, TRUE)
-	var/list/applied = turfs_providing_spreads[T]
+	var/list/applied = LAZYACCESS(turfs_providing_spreads, T)
 	if(LAZYLEN(applied))
 		for(var/turf/old as anything in applied)
 			old.vis_contents -= applied[old]
@@ -187,7 +188,7 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 					old.outdoors_adjacent = TRUE
 					old.set_luminosity(0)
 			applied -= old
-		turfs_providing_spreads -= T
+		LAZYREMOVE(turfs_providing_spreads, T)
 		applied.Cut()
 
 /atom/movable/sun_visuals_overlap
