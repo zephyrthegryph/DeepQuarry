@@ -37,3 +37,5 @@ changes:
   - code_imp: "Captured the initiating user once for atmos meter inspection."
   - code_imp: "Moved malfunctioning AI research selection to a native request."
   - code_imp: "Moved base-turf deletion and repeat candy-bowl confirmations to native requests."
+  - code_imp: "Retired medical stand masks through declared ownership and removed unused JSON export wrappers."
+  - code_imp: "Moved build-mode mob reference selection to a native request."

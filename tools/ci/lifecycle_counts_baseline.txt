@@ -307,8 +307,6 @@ qdel	code/game/objects/objs.dm	qdel(Obj)
 qdel	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	qdel(I)
 qdel	code/game/objects/structures/droppod.dm	qdel(O)
 qdel	code/game/objects/structures/kitchen_spike.dm	qdel(M)
-qdel	code/game/objects/structures/medical_stand.dm	qdel(contained)
-qdel	code/game/objects/structures/medical_stand.dm	qdel(contained)
 qdel	code/game/objects/structures/mirror.dm	qdel(user)
 qdel	code/game/objects/structures/props/puzzledoor.dm	qdel(Proj) //No piercing. No.
 qdel	code/game/objects/structures/reflectors.dm	qdel(P)

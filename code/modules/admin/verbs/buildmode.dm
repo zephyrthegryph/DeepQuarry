@@ -781,7 +781,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		if("number")
 			open_request(src, /datum/prompt/number/buildmode_edit, PROC_REF(edit_number_entered), answerer = user, title = "Value", question = "Enter variable value:", default = 123, edit_var = ask.step)
 		if("mob-reference")
-			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), step = ask.step)
+			var/list/mob_choices = REGISTRY_MEMBERS(REGISTRY_MOBS)
+			open_request(src, /datum/prompt/choice/buildmode_mob_reference, PROC_REF(edit_mob_ref_picked), answerer = user, choices = mob_choices?.Copy(), step = ask.step)
 		if("obj-reference", "turf-reference")
 			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = world, step = ask.step)
 
@@ -796,6 +797,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		return
 	var/datum/prompt/number/buildmode_edit/ask = context.answer
 	edit_answered(ask.answerer, ask.edit_var, ask.answer_value)
+
+/obj/effect/bmode/buildmode/proc/edit_mob_ref_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_mob_reference/ask = context.answer
+	edit_answered(ask.answerer, ask.step, ask.answer_value)
 
 /obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/om/prompt/choice/buildmode/ask)
 	edit_answered(ask.answerer, ask.step, ask.choice)
@@ -1166,3 +1173,23 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+
+/datum/prompt/choice/buildmode_mob_reference
+	title = "Value"
+	question = "Enter variable value:"
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/step
+
+/datum/prompt/choice/buildmode_mob_reference/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	if(!isnull(answer_value))
+		var/mob/picked = answer_value
+		if(!istype(picked) || QDELETED(picked))
+			return "gone"
+	return null

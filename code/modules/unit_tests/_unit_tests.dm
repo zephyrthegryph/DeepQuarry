@@ -1048,6 +1048,7 @@
 #include "round2_body_writing_native.dm"
 #include "round2_preference_slot_dialog_busy.dm"
 #include "round2_ghosttrap_native_name.dm"
+#include "round2_medical_stand_mask_retirement.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
