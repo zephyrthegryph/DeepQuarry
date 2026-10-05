@@ -301,7 +301,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
 
 			if(BUILDMODE_ROOM)
-				om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
+				open_request(src, /datum/prompt/choice/buildmode_room_setting, PROC_REF(ask_area_name), answerer = user, title = "Room Builder", question = "Would you like to generate a new area as well?", choices = list("No", "Yes"), buttons = TRUE)
 
 			if(BUILDMODE_LIGHTS)
 				om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
@@ -785,25 +785,34 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	master().buildmode.valueholder = value
 	log_admin("BUILDMODE: [key_name(user)] set var-edit: [valueholder].")
 
-/obj/effect/bmode/buildmode/proc/ask_area_name(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		om_ask(ask.answerer, /datum/om/prompt/text/buildmode, PROC_REF(area_name_entered), title = "Room Buildmode", message = "New area name", max_length = MAX_NAME_LEN)
+/obj/effect/bmode/buildmode/proc/ask_area_name(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_room_setting/ask = context.answer
+	if(ask.answer_value == "Yes")
+		open_request(src, /datum/prompt/text/buildmode_room_name, PROC_REF(area_name_entered), answerer = ask.answerer, title = "Room Buildmode", question = "New area name")
 		return
 	area_enabled = 0
 	ask_room_holder(ask.answerer)
 
-/obj/effect/bmode/buildmode/proc/area_name_entered(datum/om/prompt/text/buildmode/ask)
+/obj/effect/bmode/buildmode/proc/area_name_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/buildmode_room_name/ask = context.answer
 	area_enabled = 1
-	area_name = sanitize(ask.text, MAX_NAME_LEN)
+	area_name = sanitize(ask.answer_value, MAX_NAME_LEN)
 	log_admin("BUILDMODE ROOM: [key_name(ask.answerer)] area: [area_name].")
 	ask_room_holder(ask.answerer)
 
 /// Optional: a cancel keeps the holders.
 /obj/effect/bmode/buildmode/proc/ask_room_holder(mob/user)
-	om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(room_answered), title = "Room Builder", message = "Would you like to change the floor or wall holders?", choices = list("Floor", "Wall"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice/buildmode_room_setting, PROC_REF(room_answered), answerer = user, title = "Room Builder", question = "Would you like to change the floor or wall holders?", choices = list("Floor", "Wall"), buttons = TRUE)
 
-/obj/effect/bmode/buildmode/proc/room_answered(datum/om/prompt/choice/buildmode/ask)
-	switch(ask.choice)
+/obj/effect/bmode/buildmode/proc/room_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_room_setting/ask = context.answer
+	switch(ask.answer_value)
 		if("Floor")
 			ask_path(ask.answerer, "floor_holder", /turf/simulated/floor/plating)
 		if("Wall")
@@ -1063,3 +1072,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 /datum/prompt/choice/buildmode_path/recheck_extra()
 	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/buildmode_room_setting
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+
+/datum/prompt/choice/buildmode_room_setting/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/buildmode_room_name
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+
+/datum/prompt/text/buildmode_room_name/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/buildmode_room_name/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null

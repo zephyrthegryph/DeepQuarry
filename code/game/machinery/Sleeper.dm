@@ -352,7 +352,7 @@ UI_ACT_PROC(/obj/machinery/sleeper, ui_act_ejectify)
 UI_ACT(/obj/machinery/sleeper, "changestasis", ui_act_changestasis)
 UI_ACT_PROC(/obj/machinery/sleeper, ui_act_changestasis)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(stasis_level_chosen), title = "Stasis Level", message = "Levels deeper than 50% stasis level will render the patient unconscious.", choices = stasis_choices, requires = PROMPT_USABLE)
+	open_request(src, /datum/prompt/choice/sleeper_stasis_level, PROC_REF(stasis_level_chosen), answerer = ui.user, subject = src, title = "Stasis Level", question = "Levels deeper than 50% stasis level will render the patient unconscious.", choices = stasis_choices)
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/sleeper, "auto_eject_dead_on", ui_act_auto_eject_dead_on)
@@ -373,9 +373,11 @@ UI_ACT_PROC(/obj/machinery/sleeper, ui_act_auto_eject_dead_off)
 	var/env
 	var/setting
 
-/obj/machinery/sleeper/proc/stasis_level_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/new_stasis = ask.choice
+/obj/machinery/sleeper/proc/stasis_level_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	var/new_stasis = context.answer.answer_value
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(new_stasis in stasis_choices)
 		stasis_level = stasis_choices[new_stasis]
@@ -603,3 +605,8 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 /obj/machinery/sleeper/survival_pod/Initialize(mapload)
 	. = ..()
 	RefreshParts(1)
+
+/datum/prompt/choice/sleeper_stasis_level
+	timeout = 0
+	recheck_on_open = TRUE
+	usable_state = "default"
