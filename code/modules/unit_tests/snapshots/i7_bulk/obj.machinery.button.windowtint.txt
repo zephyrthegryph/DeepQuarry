@@ -1,0 +1,5 @@
+/obj/machinery/button/windowtint|human|none => windowtint_toggle,button_press|machine_panel:needs a screwdriver,button_press_item:needs an item
+/obj/machinery/button/windowtint|robot|none => windowtint_toggle,button_press|machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
+/obj/machinery/button/windowtint|ai|none => |
+/obj/machinery/button/windowtint|ghost|none => |
+/obj/machinery/button/windowtint|human|/obj/item => windowtint_toggle,button_press,button_press_item|machine_panel:needs a screwdriver

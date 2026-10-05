@@ -1,0 +1,4 @@
+/obj/structure/mopbucket|human|none => mopbucket_item|
+/obj/structure/mopbucket|robot|none => mopbucket_item|
+/obj/structure/mopbucket|ai|none => |
+/obj/structure/mopbucket|ghost|none => |

@@ -1,0 +1,4 @@
+/obj/structure/loot_pile|human|none => loot_pile_search|
+/obj/structure/loot_pile|robot|none => loot_pile_search|
+/obj/structure/loot_pile|ai|none => |
+/obj/structure/loot_pile|ghost|none => |

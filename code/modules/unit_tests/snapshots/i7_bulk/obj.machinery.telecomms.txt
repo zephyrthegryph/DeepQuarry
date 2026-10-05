@@ -1,0 +1,4 @@
+/obj/machinery/telecomms|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/telecomms|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/telecomms|ai|none => |
+/obj/machinery/telecomms|ghost|none => |

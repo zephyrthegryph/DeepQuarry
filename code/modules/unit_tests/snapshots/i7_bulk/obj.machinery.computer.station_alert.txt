@@ -1,0 +1,4 @@
+/obj/machinery/computer/station_alert|human|none => station_alert_open_ui|
+/obj/machinery/computer/station_alert|robot|none => station_alert_open_ui,gen_silicon_interaction_open_ui_impl|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/station_alert|ai|none => gen_silicon_interaction_open_ui_impl|
+/obj/machinery/computer/station_alert|ghost|none => |

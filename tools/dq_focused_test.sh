@@ -9,6 +9,7 @@
 #   bash tools/dq_focused_test.sh --some-flag=x name                       # any other --flag goes to dm-test
 #   bash tools/dq_focused_test.sh --profile-tests name                     # per-test proc profile (data/logs/runN/profile/)
 #   bash tools/dq_focused_test.sh --boot                                   # boot only: fails on any boot runtime or warning
+#   bash tools/dq_focused_test.sh --bless dq_conversion_pin                # snapshot tests rewrite their recorded rows (doc/rewrite/snapshot_pins.md)
 #
 # Every run fails when the world logged a runtime or a warning before its first test (the boot gate,
 # doc/rewrite/boot_gate.md); the build prints "BOOT GATE" with the first warnings when it trips.
@@ -64,6 +65,7 @@ for arg in "$@"; do
 			;;
 		--list) list_only=1 ;;
 		--boot) tests+=("dq_boot_gate") ;;
+		--bless) export DQ_SNAPSHOT_BLESS=1 ;;
 		-h|--help) usage ;;
 		--*) args+=("$arg") ;;
 		-*) echo "unknown argument: $arg" >&2; usage ;;

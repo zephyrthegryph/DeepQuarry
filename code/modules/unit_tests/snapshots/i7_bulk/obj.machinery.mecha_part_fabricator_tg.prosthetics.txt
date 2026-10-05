@@ -1,0 +1,4 @@
+/obj/machinery/mecha_part_fabricator_tg/prosthetics|human|none => |
+/obj/machinery/mecha_part_fabricator_tg/prosthetics|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/mecha_part_fabricator_tg/prosthetics|ai|none => |
+/obj/machinery/mecha_part_fabricator_tg/prosthetics|ghost|none => |

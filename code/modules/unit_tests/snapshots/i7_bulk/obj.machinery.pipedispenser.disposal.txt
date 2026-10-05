@@ -1,0 +1,5 @@
+/obj/machinery/pipedispenser/disposal|human|none => machine_open_ui|pipedispenser_disposal_return:needs a disposal pipe segment,pipedispenser_return:needs an item
+/obj/machinery/pipedispenser/disposal|robot|none => machine_open_ui|gen_robot_interaction_swallow:not possible right now,pipedispenser_disposal_return:needs a disposal pipe segment,pipedispenser_return:needs an item
+/obj/machinery/pipedispenser/disposal|ai|none => |
+/obj/machinery/pipedispenser/disposal|ghost|none => |
+/obj/machinery/pipedispenser/disposal|human|/obj/item => pipedispenser_return,machine_open_ui|pipedispenser_disposal_return:needs a disposal pipe segment

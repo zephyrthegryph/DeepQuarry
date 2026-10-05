@@ -257,13 +257,33 @@
 		return allocate(type, T, length(seeds) ? seeds[1] : null) // produce needs a plant name
 	return allocate(type, T)
 
-/// Abstract: one domain's recorded snapshot. Subtypes list `snapshot_types` and `expected`.
+/// Abstract: one domain's recorded snapshot. A subtype sets `snapshot_dir` (one rows file per type, dq_snapshot_files.dm),
+/// or, the older form, lists `snapshot_types` and `expected` inline.
 /datum/unit_test/dq_interaction_domain_snapshot
 	abstract_type = /datum/unit_test/dq_interaction_domain_snapshot
 	var/list/snapshot_types
 	var/list/expected
+	/// The directory of per-type rows files (code/modules/unit_tests/snapshots/<name>/); the types are its files.
+	var/snapshot_dir
+	/// type => its recorded rows (filled from snapshot_dir by load_snapshot()).
+	var/list/expected_by_type
+	/// Files under snapshot_dir that name no type.
+	var/list/bad_snapshot_files
+
+/// Reads snapshot_dir into snapshot_types, expected and expected_by_type (once).
+/datum/unit_test/dq_interaction_domain_snapshot/proc/load_snapshot()
+	if(!snapshot_dir || expected_by_type)
+		return
+	bad_snapshot_files = list()
+	expected_by_type = dq_snapshot_read_dir(snapshot_dir, bad_snapshot_files)
+	snapshot_types = list()
+	expected = list()
+	for(var/type in expected_by_type)
+		snapshot_types += type
+		expected += expected_by_type[type]
 
 /datum/unit_test/dq_interaction_domain_snapshot/Run()
+	load_snapshot()
 	var/turf/T = test_floor()
 	var/list/actors = list(
 		"human" = allocate(/mob/living/carbon/human, T),
@@ -271,6 +291,7 @@
 		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
+	var/list/actual_by_type = list()
 	var/list/actual = list()
 	for(var/type in snapshot_types)
 		var/atom/target = dq_snapshot_allocate(type, T)
@@ -278,11 +299,18 @@
 		// cabinet), or deletes itself (a lattice off open space), is gone before anyone can interact
 		// with it; nothing may link to it.
 		if(QDELETED(target))
-			actual += "[type] => deleted itself on creation"
+			actual_by_type[type] = list("[type] => deleted itself on creation")
+			actual += actual_by_type[type]
 			continue
-		actual += dq_snapshot_lines(target, T, actors)
+		actual_by_type[type] = dq_snapshot_lines(target, T, actors)
+		actual += actual_by_type[type]
 		qdel(target)
-	// On a mismatch, write the actual lines out so the snapshot can be reviewed
+	if(snapshot_dir)
+		var/snap_name = copytext("[type]", length("[/datum/unit_test/dq_interaction_domain_snapshot]") + 2)
+		var/report = dq_snapshot_compare(snapshot_dir, snap_name, actual_by_type, expected_by_type, bad_snapshot_files)
+		TEST_ASSERT(isnull(report), report)
+		return
+	// The inline form: on a mismatch, write the actual lines out so the snapshot can be reviewed
 	// and regenerated: data/test-snapshots/<test type>.txt.
 	if(length(actual ^ expected))
 		var/file_name = "data/test-snapshots/[replacetext("[type]", "/", "_")].txt"
@@ -309,6 +337,7 @@
 	covered = list()
 	for(var/datum/unit_test/dq_interaction_domain_snapshot/path as anything in subtypesof(/datum/unit_test/dq_interaction_domain_snapshot))
 		var/datum/unit_test/dq_interaction_domain_snapshot/test = new path
+		test.load_snapshot()
 		for(var/line in test.expected)
 			var/arrow = findtext(line, " => ")
 			if(!arrow)

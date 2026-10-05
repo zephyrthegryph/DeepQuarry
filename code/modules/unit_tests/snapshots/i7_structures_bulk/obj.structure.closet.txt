@@ -1,0 +1,4 @@
+/obj/structure/closet|human|none => |
+/obj/structure/closet|robot|none => |
+/obj/structure/closet|ai|none => |
+/obj/structure/closet|ghost|none => |

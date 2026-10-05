@@ -1,0 +1,4 @@
+/obj/structure/displaycase|human|none => displaycase_item,displaycase_hand|
+/obj/structure/displaycase|robot|none => displaycase_item,displaycase_hand|
+/obj/structure/displaycase|ai|none => |
+/obj/structure/displaycase|ghost|none => |

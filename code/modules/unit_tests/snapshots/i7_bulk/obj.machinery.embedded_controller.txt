@@ -1,0 +1,4 @@
+/obj/machinery/embedded_controller|human|none => |
+/obj/machinery/embedded_controller|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/embedded_controller|ai|none => |
+/obj/machinery/embedded_controller|ghost|none => |

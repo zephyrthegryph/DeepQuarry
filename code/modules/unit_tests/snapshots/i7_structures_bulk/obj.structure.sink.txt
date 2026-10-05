@@ -1,0 +1,4 @@
+/obj/structure/sink|human|none => gen_item_sink_wash_gurgled_item,sink_wash,sink_item,sink_empty|
+/obj/structure/sink|robot|none => gen_item_sink_wash_gurgled_item,sink_wash,sink_item,sink_empty|
+/obj/structure/sink|ai|none => |
+/obj/structure/sink|ghost|none => |

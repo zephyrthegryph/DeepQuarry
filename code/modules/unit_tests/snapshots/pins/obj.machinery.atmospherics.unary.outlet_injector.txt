@@ -1,0 +1,60 @@
+human|none menu: Fit engineered material (refused: needs an item)
+human|none menu: Paint (refused: needs a pipe painter)
+human|none menu: Toggle
+human|none click: Click: Toggle
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Fit engineered material (refused: needs an item)
+robot|none menu: Paint (refused: needs a pipe painter)
+robot|none menu: Toggle
+robot|none click: Click: Toggle
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Fit engineered material (refused: needs an item)
+human|/obj/item/tool/screwdriver menu: Paint (refused: needs a pipe painter)
+human|/obj/item/tool/screwdriver menu: Toggle
+human|/obj/item/tool/screwdriver click: Click: Toggle
+human|/obj/item/tool/crowbar menu: Fit engineered material (refused: needs an item)
+human|/obj/item/tool/crowbar menu: Paint (refused: needs a pipe painter)
+human|/obj/item/tool/crowbar menu: Toggle
+human|/obj/item/tool/crowbar click: Click: Toggle
+human|/obj/item/tool/wrench menu: Fit engineered material (refused: needs an item)
+human|/obj/item/tool/wrench menu: Paint (refused: needs a pipe painter)
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+human|/obj/item/tool/wirecutters menu: Fit engineered material (refused: needs an item)
+human|/obj/item/tool/wirecutters menu: Paint (refused: needs a pipe painter)
+human|/obj/item/tool/wirecutters menu: Toggle
+human|/obj/item/tool/wirecutters click: Click: Toggle
+human|/obj/item/multitool menu: Configure
+human|/obj/item/multitool menu: Fit engineered material (refused: needs an item)
+human|/obj/item/multitool menu: Paint (refused: needs a pipe painter)
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool click: Click: Configure
+human|/obj/item/weldingtool menu: Fit engineered material (refused: needs an item)
+human|/obj/item/weldingtool menu: Paint (refused: needs a pipe painter)
+human|/obj/item/weldingtool menu: Toggle
+human|/obj/item/weldingtool click: Click: Toggle
+human|/obj/item/stack/cable_coil menu: Fit engineered material (refused: needs an item)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Paint (refused: needs a pipe painter)
+human|/obj/item/stack/cable_coil menu: Toggle
+human|/obj/item/stack/cable_coil click: Click: Toggle
+human|/obj/item/stack/material/steel menu: Fit engineered material (refused: not possible right now)
+human|/obj/item/stack/material/steel menu: Paint (refused: needs a pipe painter)
+human|/obj/item/stack/material/steel menu: Toggle
+human|/obj/item/stack/material/steel click: Click: Toggle
+human|/obj/item/card/id menu: Fit engineered material (refused: needs an item)
+human|/obj/item/card/id menu: Paint (refused: needs a pipe painter)
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item/stack/material menu: Fit engineered material (refused: not possible right now)
+human|/obj/item/stack/material menu: Paint (refused: needs a pipe painter)
+human|/obj/item/stack/material menu: Toggle
+human|/obj/item/stack/material click: Click: Toggle
+human|/obj/item/pipe_painter menu: Fit engineered material (refused: needs an item)
+human|/obj/item/pipe_painter menu: Paint
+human|/obj/item/pipe_painter menu: Toggle
+human|/obj/item/pipe_painter click: Click: Toggle
+keys: atmospherics_fit_material, atmospherics_pipe_painter, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, multitool_settings.configure, multitool_settings.set_frequency, multitool_settings.set_id, power_toggle, reset_rate, toggle, unwrench
+

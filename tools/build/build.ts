@@ -1688,6 +1688,12 @@ function tierIncludes(tier: TestTier, exhaustive: boolean, e0 = false): boolean 
 function testWorldParams(get: any): Record<string, string> {
   const params: Record<string, string> = { 'test-tier': resolveTier(get) };
   if (get(ProfileTestsParameter)) params['test-profile'] = '1';
+  // `tools/dq_focused_test.sh --bless`: snapshot tests write their current rows over the recorded files
+  // (code/modules/unit_tests/dq_snapshot_files.dm) instead of failing.
+  if (process.env.DQ_SNAPSHOT_BLESS === '1') {
+    params['snapshot-bless'] = '1';
+    Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
+  }
   return params;
 }
 

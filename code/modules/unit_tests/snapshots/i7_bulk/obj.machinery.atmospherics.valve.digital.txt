@@ -1,0 +1,6 @@
+/obj/machinery/atmospherics/valve/digital|human|none => |atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/valve/digital|robot|none => |gen_robot_interaction_swallow:not possible right now,atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/valve/digital|ai|none => |
+/obj/machinery/atmospherics/valve/digital|ghost|none => |
+/obj/machinery/atmospherics/valve/digital|human|/obj/item/stack/material => |atmospherics_fit_material:not possible right now,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/valve/digital|human|/obj/item/pipe_painter => atmospherics_pipe_painter|atmospherics_fit_material:needs an item

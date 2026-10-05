@@ -1,0 +1,6 @@
+/obj/machinery/wheel_of_fortune|human|none => wheel_of_fortune_use,wheel_of_fortune_setinterval|wheel_of_fortune_id:needs an identification card or a PDA,wheel_of_fortune_cash:needs a broken casino chip
+/obj/machinery/wheel_of_fortune|robot|none => wheel_of_fortune_use,wheel_of_fortune_setinterval|gen_robot_interaction_swallow:not possible right now,wheel_of_fortune_id:needs an identification card or a PDA,wheel_of_fortune_cash:needs a broken casino chip
+/obj/machinery/wheel_of_fortune|ai|none => |
+/obj/machinery/wheel_of_fortune|ghost|none => |
+/obj/machinery/wheel_of_fortune|human|/obj/item/card/id => wheel_of_fortune_use,wheel_of_fortune_setinterval|wheel_of_fortune_id:access denied,wheel_of_fortune_cash:needs a broken casino chip
+/obj/machinery/wheel_of_fortune|human|/obj/item/spacecasinocash => wheel_of_fortune_use,wheel_of_fortune_setinterval|wheel_of_fortune_id:needs an identification card or a PDA,wheel_of_fortune_cash:lottery sales are currently disabled

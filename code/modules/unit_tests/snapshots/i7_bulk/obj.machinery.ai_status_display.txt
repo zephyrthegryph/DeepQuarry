@@ -1,0 +1,5 @@
+/obj/machinery/ai_status_display|human|none => |ai_status_display_touch:needs an item
+/obj/machinery/ai_status_display|robot|none => gen_silicon_ai_status_display_silicon_use|gen_robot_interaction_swallow:not possible right now,ai_status_display_touch:needs an item
+/obj/machinery/ai_status_display|ai|none => gen_silicon_ai_status_display_silicon_use|
+/obj/machinery/ai_status_display|ghost|none => |
+/obj/machinery/ai_status_display|human|/obj/item => ai_status_display_touch|
