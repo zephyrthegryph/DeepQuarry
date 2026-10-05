@@ -36,7 +36,13 @@
 	)
 	var/amount = 0
 	var/phase = MATERIAL_PHASE_SOLID
-	var/temperature = T20C
+	/// The batch's temperature while it holds no heat store (at rest, at its surroundings), K.
+	var/rest_temperature = T20C
+	/// The Rust heat store (code/domains/heat/heat_store.dm) holding the batch's heat while it differs from its surroundings, or null.
+	var/heat_store
+	/// The heat links its store makes to where it cools (edge ids), and the "x,y,z" of the turf they were made for.
+	var/list/heat_links
+	var/heat_linked_at
 	var/purity = 90
 	var/grain_size = 50
 	var/internal_stress = 15
@@ -123,7 +129,7 @@
 	var/old_yield = yield_fraction
 	switch(process)
 		if(MATERIAL_PROCESS_MELT)
-			if(temperature < melting_temperature())
+			if(temperature() < melting_temperature())
 				return FALSE
 			phase = MATERIAL_PHASE_MOLTEN
 			homogeneity = clamp(homogeneity + 18, 0, 100)
@@ -135,7 +141,7 @@
 			if(phase != MATERIAL_PHASE_MOLTEN)
 				return FALSE
 			phase = MATERIAL_PHASE_SOLID
-			temperature = T20C + 80
+			bring_to_temperature(T20C + 80, HEAT_SOURCE_MATERIAL) // the mould takes the casting's heat
 			grain_size = 72
 			internal_stress = 28
 			porosity = clamp(porosity + 8, 0, 100)
@@ -144,13 +150,13 @@
 			structure[MATERIAL_STRUCTURE_DEFECT] = 25
 			solution_treated = FALSE
 		if(MATERIAL_PROCESS_QUENCH)
-			if(phase != MATERIAL_PHASE_SOLID || !solution_treated || temperature < melting_temperature() * 0.62)
+			if(phase != MATERIAL_PHASE_SOLID || !solution_treated || temperature() < melting_temperature() * 0.62)
 				return FALSE
 			phase = MATERIAL_PHASE_SOLID
 			grain_size = clamp(grain_size - 28, 1, 100)
 			internal_stress = clamp(internal_stress + (option == "oil" ? 18 : 30), 0, 100)
 			porosity = clamp(porosity - 4, 0, 100)
-			temperature = T20C
+			bring_to_temperature(T20C, HEAT_SOURCE_MATERIAL) // the quench bath takes the heat
 			var/quench_strength = option == "oil" ? 45 : (option == "cryo" ? 75 : 60)
 			structure[MATERIAL_STRUCTURE_HARDENED] = clamp(structure[MATERIAL_STRUCTURE_HARDENED] + quench_strength, 0, 90)
 			structure[MATERIAL_STRUCTURE_SOFT] = clamp(structure[MATERIAL_STRUCTURE_SOFT] - quench_strength, 0, 100)
@@ -158,7 +164,7 @@
 			quench_medium = option || "water"
 			solution_treated = FALSE
 		if(MATERIAL_PROCESS_FORGE)
-			if(phase != MATERIAL_PHASE_SOLID || temperature < melting_temperature() * 0.45 || temperature > melting_temperature() * 0.9)
+			if(phase != MATERIAL_PHASE_SOLID || temperature() < melting_temperature() * 0.45 || temperature() > melting_temperature() * 0.9)
 				return FALSE
 			porosity = clamp(porosity - 22, 0, 100)
 			grain_size = clamp(grain_size - 8, 1, 100)
@@ -181,7 +187,7 @@
 			homogeneity = clamp(homogeneity + 28, 0, 100)
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 8, 0, 100)
 		if(MATERIAL_PROCESS_SOLUTION_TREAT)
-			if(phase != MATERIAL_PHASE_SOLID || temperature < melting_temperature() * 0.62 || temperature > melting_temperature() * 0.9)
+			if(phase != MATERIAL_PHASE_SOLID || temperature() < melting_temperature() * 0.62 || temperature() > melting_temperature() * 0.9)
 				return FALSE
 			solution_treated = TRUE
 			structure[MATERIAL_STRUCTURE_PRECIPITATE] = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] - 15, 0, 100)
@@ -240,17 +246,17 @@
 		return FALSE
 	switch(process)
 		if(MATERIAL_PROCESS_MELT)
-			return phase != MATERIAL_PHASE_MOLTEN && temperature >= melting_temperature()
+			return phase != MATERIAL_PHASE_MOLTEN && temperature() >= melting_temperature()
 		if(MATERIAL_PROCESS_CAST)
 			return phase == MATERIAL_PHASE_MOLTEN
 		if(MATERIAL_PROCESS_QUENCH)
-			return phase == MATERIAL_PHASE_SOLID && solution_treated && temperature >= melting_temperature() * 0.62
+			return phase == MATERIAL_PHASE_SOLID && solution_treated && temperature() >= melting_temperature() * 0.62
 		if(MATERIAL_PROCESS_FORGE)
-			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9 && (LAZYACCESS(process_counts, MATERIAL_PROCESS_FORGE) || 0) < 2
+			return phase == MATERIAL_PHASE_SOLID && temperature() >= melting_temperature() * 0.45 && temperature() <= melting_temperature() * 0.9 && (LAZYACCESS(process_counts, MATERIAL_PROCESS_FORGE) || 0) < 2
 		if(MATERIAL_PROCESS_HOMOGENIZE)
 			return phase == MATERIAL_PHASE_MOLTEN
 		if(MATERIAL_PROCESS_SOLUTION_TREAT)
-			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.62 && temperature <= melting_temperature() * 0.9
+			return phase == MATERIAL_PHASE_SOLID && temperature() >= melting_temperature() * 0.62 && temperature() <= melting_temperature() * 0.9
 		if(MATERIAL_PROCESS_PURIFY)
 			return TRUE
 	return FALSE
@@ -309,6 +315,7 @@
 	conductivity = clamp(round(base_conductivity * (0.55 + purity / 180) - effective_porosity * 0.12 + conductive_dopant * 3), 0, 100)
 	heat_resistance = clamp(round(base_heat * (0.65 + purity / 260) + stabilizer * 0.15 + silicon_window * 0.4 + thermal_catalyst * 2 + phoron_infusion * 0.25), 1, 100)
 	corrosion_resistance = clamp(round(base_corrosion * (0.6 + purity / 240) + stabilizer * 0.12 - oxidation * 0.25 + surface_protection + corrosion_inhibitor * 3 - oxygen_infusion * 0.12), 1, 100)
+	heat_capacity_changed()
 
 /datum/material_batch/proc/additive_units_matching(fragment)
 	var/total = 0
@@ -370,7 +377,7 @@
 		var/datum/material/material = get_material_by_name(material_name)
 		if(material)
 			reactivity += material.reactivity * LAZYACCESS(composition, material_name) / max(amount, 1)
-	var/thermal_fraction = temperature / max(melting_temperature(), 1)
+	var/thermal_fraction = temperature() / max(melting_temperature(), 1)
 	var/atmosphere_risk = atmosphere == MATERIAL_ATMOSPHERE_AIR ? 22 : (atmosphere == MATERIAL_ATMOSPHERE_REDUCING ? 10 : -10)
 	return clamp(round(reactivity * 0.45 + thermal_fraction * 35 + atmosphere_risk + oxidation * 0.3), 0, 100)
 
@@ -440,7 +447,9 @@
 	copy.structure = structure.Copy()
 	copy.amount = amount
 	copy.phase = phase
-	copy.temperature = temperature
+	copy.rest_temperature = temperature()
+	if(heat_store)
+		copy.heat_store = heat_store_create(copy.thermal_capacity(), copy.rest_temperature) // its share of the heat: the original is replaced by its copies
 	copy.purity = purity
 	copy.grain_size = grain_size
 	copy.internal_stress = internal_stress
@@ -477,6 +486,7 @@
 		copy.cost_ledger[category] *= ratio
 	copy.cost_basis *= ratio
 	copy.energy_spent *= ratio
+	copy.heat_capacity_changed()
 	return copy
 
 /datum/material_batch/proc/thermal_capacity()
@@ -487,9 +497,78 @@
 			weighted_specific_heat += max(material.specific_heat, 100) * LAZYACCESS(composition, material_name) / max(amount, 1)
 	return max(1, amount * weighted_specific_heat / 160)
 
-/datum/material_batch/proc/add_batch_heat(joules)
+/datum/material_batch/proc/add_batch_heat(joules, source = HEAT_SOURCE_MATERIAL)
 	if(!isnum(joules) || !joules)
 		return 0
-	var/old_temperature = temperature
-	temperature = max(2.7, temperature + joules / thermal_capacity())
-	return temperature - old_temperature
+	var/old_temperature = temperature()
+	heat_store_add(ensure_heat_store(), joules, source)
+	return temperature() - old_temperature
+
+/// A batch's temperature, K.
+/proc/material_batch_temperature(datum/material_batch/batch)
+	return batch.temperature()
+
+/// Sets a batch's temperature (a spawn, a test), booked as an authority write.
+/proc/material_batch_set_temperature(datum/material_batch/batch, kelvin)
+	batch.bring_to_temperature(kelvin)
+
+// ---- heat (doc/rewrite/temperature.md §7) ----
+// A batch away from its surroundings holds its heat in a Rust heat store (code/domains/heat/heat_store.dm); at rest it holds none and reads its
+// rest temperature. Processed stock lying in a room cools through a heat link to the room's air (processed_material.dm).
+
+/datum/material_batch/proc/temperature()
+	return heat_store ? heat_store_temperature(heat_store, rest_temperature) : rest_temperature
+
+/// Brings the batch to `kelvin`, booked under `source` (a process step's bath or mould takes the difference).
+/datum/material_batch/proc/bring_to_temperature(kelvin, source = HEAT_SOURCE_AUTHORITY)
+	if(!isnum(kelvin) || !heat_store && kelvin == rest_temperature)
+		return
+	heat_store_set_temperature(ensure_heat_store(), kelvin, source)
+
+/// The batch's heat store, made at its rest temperature on first use.
+/datum/material_batch/proc/ensure_heat_store()
+	if(!heat_store)
+		heat_store = heat_store_create(thermal_capacity(), rest_temperature)
+	return heat_store
+
+/// Keeps the store's capacity with the batch's quantity and composition (the temperature is kept, as it always was).
+/datum/material_batch/proc/heat_capacity_changed()
+	if(heat_store)
+		heat_store_set_capacity(heat_store, thermal_capacity())
+
+/// Cools into `air` (a turf's) through a heat link at `conductance` W/K, re-made when the turf changes.
+/datum/material_batch/proc/cool_into(turf/T, conductance)
+	var/key = T ? "[T.x],[T.y],[T.z]" : null
+	if(key == heat_linked_at && length(heat_links))
+		return
+	drop_heat_links()
+	if(!T || !ensure_heat_store())
+		return
+	heat_linked_at = key
+	var/id = heat_store_link(heat_store, T, conductance)
+	if(id)
+		LAZYADD(heat_links, id)
+
+/datum/material_batch/proc/drop_heat_links()
+	for(var/id in heat_links)
+		vg_heat_edge_remove(id)
+	heat_links = null
+	heat_linked_at = null
+
+/// At its surroundings' temperature: the batch gives what it still holds over `into`'s temperature to it and lets its store go.
+/datum/material_batch/proc/settle_heat(into)
+	if(!heat_store)
+		return
+	if(into)
+		heat_equalize(HEAT_STORE(heat_store), into)
+	rest_temperature = temperature()
+	drop_heat_links()
+	heat_store_release(heat_store)
+	heat_store = null
+
+/datum/material_batch/on_destroy(force)
+	drop_heat_links()
+	if(heat_store)
+		heat_store_release(heat_store)
+		heat_store = null
+	return ..()

@@ -225,7 +225,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 	var/old_fusion_strength = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0
 	batch.add_field_treatment(MATERIAL_FIELD_FUSION, field_work)
 	batch.homogeneity = clamp(batch.homogeneity + round(field_work / 6), 0, 100)
-	batch.add_batch_heat(max(100, owned_field.plasma_temperature * batch.amount * 0.04))
+	batch.add_batch_heat(max(100, owned_field.plasma_temperature * batch.amount * 0.04), HEAT_SOURCE_DEVICE)
 	batch.record_electricity(active_power_usage * 5)
 	var/phoron_key
 	var/hydrogen_key

@@ -106,3 +106,6 @@
 #define HEAT_PORT(i) "heat:port:[i]"
 /// An infinite reservoir at `kelvin` (the sky a radiator sees).
 #define HEAT_SKY(kelvin) "heat:sky:[kelvin]"
+
+/// A heat store's handle as a reservoir for heat_move(), heat_equalize(), heat_conduct() (code/domains/heat/heat_store.dm).
+#define HEAT_STORE(h) list(HEAT_TARGET_BODY, h)
