@@ -21,8 +21,8 @@
 
 /// The injector's own work happens once (what a gas tick of its flow does).
 /proc/ap_injector_tick(obj/machinery/atmospherics/unary/outlet_injector/I)
-	I.machine_step()
-	SSmachines.flush_pump_transfers()
+	I.push_to_rust()
+	SSair.rust_step_pipe_devices()
 	SSair.run_gas_frames(1)
 
 /// A radio command packet to a pipe device with radio tag `tag` (its `id`).

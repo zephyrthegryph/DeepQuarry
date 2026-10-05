@@ -1300,3 +1300,11 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
 - **The connector has no work of its own.** Its periodic step, its gas watch on the attached device and its MACHINE_WAKE/MACHINE_SLEEP from the
   portables are gone: the attached device's gas is a port in the network's Rust region, so nothing in DM needs to hear it change. Its wrench is
   `pipe_device_unwrench()`, refused while a device is attached or any portable stands on it (the latter used to fail silently).
+
+## The outlet injector (rewrite/pipenet-full)
+
+- **Its flow is a Rust device edge** (`push_to_rust()`, like the vent): `volume_rate` litres a second of its pipe's gas forced into its turf while
+  it is piped, powered and on. Its DM machine step, its pump queue and the unary gas wake are gone; power_rating is what it draws, not a cap.
+- **Controls are ops**: the hand toggle, the ctrl-click rate reset (only on a running injector away from its default), the multitool through
+  `multitool_settings()` (tag, frequency, buffer; the `atmos_config_review` prompt chain is deleted), the wrench (`pipe_device_unwrench()`).
+  A radio "inject" runs at once instead of in a `spawn`.
