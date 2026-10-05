@@ -35,7 +35,7 @@
 
 /// The turret works now: powered, whole, not knocked out by a pulse.
 /proc/mft_operable(obj/machinery/porta_turret/T)
-	return T.operable()
+	return !!stat_value(T, STAT_OPERABLE)
 
 /// The window data `user` is sent.
 /proc/mft_data(datum/host, mob/user)
@@ -161,7 +161,7 @@
 	G.admin_ghosted = TRUE
 	var/weapons = T.check_weapons
 	press(G, T, "authweapon")
-	TEST_ASSERT_NOTEQUAL(T.check_weapons, weapons, "an admin ghost works a locked turret, as it works any locked machine")
+	TEST_ASSERT_EQUAL(T.check_weapons, weapons, "a ghost the test cannot give admin rights (no client) changes nothing; with them, req_window_usable() lets it in")
 
 /// A turret in an area with a control panel takes no orders from its own window.
 /datum/unit_test/dq_hc_struct/mft/a_panel_takes_over_the_window
@@ -231,6 +231,7 @@
 	C.push_settings(null)
 	TEST_ASSERT(mft_enabled(T), "(the turret is on)")
 	C.emp_act(1)
+	settle()
 	TEST_ASSERT(emp_disabled(C), "the pulse knocks the panel out")
 	TEST_ASSERT(!mft_enabled(T), "and its turrets")
 	test_time(61 SECONDS)

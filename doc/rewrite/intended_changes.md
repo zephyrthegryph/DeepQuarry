@@ -992,3 +992,23 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
   `isAI()` test are gone. A silicon is let in by its link (`remote_link_allowed()`), as everywhere else. The console itself opens by hand or link and
   takes the emag through the emag library.
 * **Map edits**: the alarms a map left unlocked (`locked = 0`) say `lock_at_start = 0`.
+
+## Portable turrets, the turret control panel and the turret frame (rewrite/machines-full)
+
+- **Lock and window.** The turret and the panel use the library `lock()`; their window buttons need `req_window_usable()` with the firewall
+  (`ailock`) as the remote condition, so a silicon over its link is kept out by the firewall and an admin ghost works a locked machine.
+- **Pulses.** `emp_disable()` replaces the hand-written switch-off and re-enable: a pulse holds STAT_OPERABLE down (6-60 s over severity) and
+  the turret's / panel's on switch is left as it was (before, the pulse flipped `enabled` off and a timer flipped it back on). A knocked-out
+  or unpowered panel tells its turrets to stand down and they follow it again when it comes back.
+- **Armed.** `STAT armed` = switched on and operable; the target scan is `every(..., when = STAT_ARMED)`, so an idle or unpowered turret
+  does no periodic work (the old mob-chunk sleep tokens and its test are gone). Power that comes back before the turret "noticed" leaves it
+  powered (the old delayed power-off landed after power returned).
+- **Emag.** `emag(disables_for = 6 SECONDS)`: the turret is subverted, locked away from its panels and switched on, held inoperable for the
+  six-second grace.
+- **Panel settings.** The panel hands its turrets every setting it shows, `check_down` included (before, the down setting never reached them),
+  and no longer overwrites a turret's own firewall. The panel's area is a link (`/area::turret_controls`); mappers name it with
+  `control_area_name` (the four map edits were rewritten).
+- **The pop-up cover** is the library `popup_cover()`.
+- **The frame** is a `construction()` graph: the proximity sensor goes in with a click (before, no click reached it) and stays in the frame's
+  construction slot; each step undoes by its tool; a loose frame pries apart into one stack of five sheets (`spawns()` of a stack now makes
+  one pile of n). Renaming is `asks()` a text prompt.

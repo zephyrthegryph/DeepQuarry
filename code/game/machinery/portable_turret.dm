@@ -155,7 +155,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	section(window, "The turret's window, its buttons, and who may use them")
 	interface("PortableTurret")
 	extend("ui_open", needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_is(nameof(anchored), because = MSG(porta_turret/unsecured))))
-	extend(TAG_UI, needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req(PROC_REF(through_the_firewall), because = MSG(porta_turret/firewall))))
+	extend(TAG_UI, needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(porta_turret/firewall))))
 	op("power", ui_act(), toggles(nameof(enabled)))
 	op("lethal", ui_act(), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
 	op("authweapon", ui_act(), toggles(nameof(check_weapons), when = nameof(targetting_is_configurable)))
@@ -181,12 +181,12 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// The turret's area has a control panel.
 /obj/machinery/porta_turret/proc/has_controller()
-	var/area/here = isturf(loc) ? loc.loc : null
-	return !!length(here?.turret_controls) // ALLOW(reads): the panels of an area are a relation of the area, asked when a button is pressed
+	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
+	return !!length(here?.turret_controls)
 
-/// A silicon over its link is kept out by the firewall (ailock); someone at the turret is not.
-/obj/machinery/porta_turret/proc/through_the_firewall(datum/act/op/A)
-	return !ailock || !(A.authority & AUTH_REMOTE_ACCESS)
+/// The firewall (ailock) is down: a silicon over its link may work the window (req_window_usable() asks this only of a remote user).
+/obj/machinery/porta_turret/proc/firewall_open(datum/act/op/A)
+	return !ailock
 
 // ---- the window ----
 
@@ -253,7 +253,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// A loose turret cannot be bolted down in space.
 /obj/machinery/porta_turret/proc/not_anchoring_in_space(datum/act/op/A)
-	return anchored || !istype(loc, /turf/space)
+	return anchored || !istype(loc, /turf/space) // ALLOW(reads): the floor under it is asked when the wrench turns, never cached
 
 /// A wreck pried apart: with luck, its gun and parts come out.
 /obj/machinery/porta_turret/proc/salvaged(datum/act/op/A)
@@ -367,7 +367,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// The opening the turret sits in, drawn under it: one shared image per icon, turret type and layer.
 /proc/turret_opening_image(icon_file, turret_type, base_layer)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): one image per icon file, turret type and layer, made on first draw and never invalidated
 	var/key = "[icon_file]|[turret_type]|[base_layer]"
 	var/image/I = cache[key]
 	if(!I)
@@ -715,6 +715,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	if(faction && L.faction == faction)
 		return TURRET_NOT_TARGET
 
+	// ALLOW(silicon_entry): a target filter, not an op: a turret spares silicons unless told to shoot everything
 	if((!emag_emagged(src) && siliconaccess(L) && check_all == FALSE) || (issilicon(L) && !check_access && !check_all))	// Don't target silica, unless told to neutralize everything.
 		return TURRET_NOT_TARGET
 
@@ -898,7 +899,6 @@ MSG_DEF_SELF(stage/turret_frame/sensing, "Its internal access hatch is open.")
 MSG_DEF_SELF(stage/turret_frame/shut, "Its hatch is shut; it wants exterior armour.")
 MSG_DEF_SELF(stage/turret_frame/armoured, "Its exterior armour wants welding down.")
 MSG_DEF_SELF(stage/turret_frame/done, "It is finished.")
-MSG_DEF_SELF(turret_frame/bolted_down, "Unbolt it first.")
 MSG_DEF_SELF(turret_frame/stuck_gun, "It is stuck to your hand, you cannot put it in the frame.")
 
 /// The turret frame's ladder: bolted, plated inside, the plating bolted, a gun, a proximity sensor, the hatch shut, plated outside and welded into
@@ -914,9 +914,9 @@ MSG_DEF_SELF(turret_frame/stuck_gun, "It is stuck to your hand, you cannot put i
 		stage(STAGE_TURRET_FRAME_ARMED, item(/obj/item/gun/energy), put_in(SLOT_CONSTRUCTION)),
 		stage(STAGE_TURRET_FRAME_SENSING, item(/obj/item/assembly/prox_sensor), put_in(SLOT_CONSTRUCTION)),
 		stage(STAGE_TURRET_FRAME_SHUT, tool(TOOL_SCREWDRIVER), wait(0), undo = list(tool(TOOL_SCREWDRIVER), wait(0))),
-		stage(STAGE_TURRET_FRAME_ARMOURED, stack(/obj/item/stack/material/steel, 2), wait(0), undo = list(tool(TOOL_CROWBAR), wait(0))),
+		stage(STAGE_TURRET_FRAME_ARMOURED, stack(/obj/item/stack/material/steel, 2), wait(0), undo = list(tool(TOOL_CROWBAR), wait(0), when(nameof(/atom/movable::anchored)))),
 		stage(STAGE_TURRET_FRAME_DONE, tool(TOOL_WELDER), wait(3 SECONDS), then(TYPE_PROC_REF(/obj/machinery/porta_turret_construct, finished))),
-		dismantle(tool(TOOL_CROWBAR), wait(0), needs(req_is(nameof(/atom/movable::anchored), FALSE, because = MSG(turret_frame/bolted_down))),
+		dismantle(tool(TOOL_CROWBAR), wait(0), when(cond_not(nameof(/atom/movable::anchored))),
 			spawns(/obj/item/stack/material/steel, 5)))
 
 /obj/machinery/porta_turret_construct
@@ -1050,7 +1050,7 @@ CAPABILITIES(/obj/machinery/porta_turret/rcd)
 
 /obj/machinery/porta_turret/rcd/die()
 	fx_sparks(src, 5, FALSE)
-	qdel(src)
+	qdel(src) // ALLOW(lifecycle): an RCD-made turret leaves no wreck behind; it is destroyed outright
 
 #undef TURRET_PRIORITY_TARGET
 #undef TURRET_SECONDARY_TARGET

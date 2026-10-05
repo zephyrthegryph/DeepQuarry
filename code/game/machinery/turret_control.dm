@@ -67,7 +67,7 @@ TRACKED(/obj/machinery/turretid, ailock)
 
 CAPABILITIES(/obj/machinery/turretid)
 	machine_basics(repair = NONE)
-	links(/obj/machinery/turretid::control_area, /area::turret_controls)
+	links(/obj/machinery/turretid::control_area, /area::turret_controls, b_many = TRUE)
 	lock(starts_locked = TRUE, alt = FALSE)
 	emag(then(PROC_REF(on_emag)), say = MSG(turretid/shorted))
 	emp_disable(list(6 SECONDS, 60 SECONDS))
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/machinery/turretid)
 
 	section(window, "The panel's window and its buttons")
 	interface("PortableTurret")
-	extend(TAG_UI, needs(req(PROC_REF(through_the_firewall), because = MSG(turretid/firewall))))
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))))
 	extend(TAG_UI, then(PROC_REF(push_settings)))
 	op("power", ui_act(), toggles(nameof(enabled)))
 	op("lethal", ui_act(), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
@@ -92,8 +92,8 @@ CAPABILITIES(/obj/machinery/turretid)
 	// a silicon's ctrl-click switches the turrets, its alt-click their lethal mode, over its link and under the window's rules
 	op("remote_power", remote(), gesture(GESTURE_CTRL), label("Toggle the turrets"), toggles(nameof(enabled)))
 	op("remote_lethal", remote(), gesture(GESTURE_ALT), label("Toggle lethal mode"), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
-	extend("remote_power", needs(req(PROC_REF(remote_link_allowed), because = MSG(lock/engaged)), req_unlocked_for_actor(), req(PROC_REF(through_the_firewall), because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
-	extend("remote_lethal", needs(req(PROC_REF(remote_link_allowed), because = MSG(lock/engaged)), req_unlocked_for_actor(), req(PROC_REF(through_the_firewall), because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
+	extend("remote_power", needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
+	extend("remote_lethal", needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
 
 // ALLOW(init/INSTANCE_STATE): the area a mapper named (by path or by name) is found once, when the panel is placed, and linked
 /obj/machinery/turretid/Initialize(mapload)
@@ -110,14 +110,14 @@ CAPABILITIES(/obj/machinery/turretid)
 	var/static/list/by_name
 	if(!by_name)
 		by_name = list()
-		for(var/area/A in world) // ALLOW(spatial): the one walk of the map's areas, once, to index them by name
+		for(var/area/A in world) // the one walk of the map's areas, once, to index them by name
 			if(A.name && !by_name[A.name])
 				by_name[A.name] = A
 	return by_name[name]
 
-/// A silicon over its link is kept out by the firewall; someone at the panel is not.
-/obj/machinery/turretid/proc/through_the_firewall(datum/act/op/A)
-	return !ailock || !(A.authority & AUTH_REMOTE_ACCESS)
+/// The firewall (ailock) is down: a silicon over its link may work the window (req_window_usable() asks this only of a remote user).
+/obj/machinery/turretid/proc/firewall_open(datum/act/op/A)
+	return !ailock
 
 /// The emag: the ID lock and the firewall are gone (and the lock cannot be engaged again: the panel is subverted).
 /obj/machinery/turretid/proc/on_emag(datum/act/op/A)
@@ -150,7 +150,7 @@ CAPABILITIES(/obj/machinery/turretid)
 	if(!istype(control_area))
 		return OP_OK
 	var/datum/turret_checks/TC = new
-	TC.enabled = enabled && !emp_disabled(src)
+	TC.enabled = enabled && stat_value(src, STAT_OPERABLE) // a panel knocked out (a pulse) or unpowered tells its turrets to stand down
 	TC.lethal = lethal
 	TC.check_synth = check_synth
 	TC.check_access = check_access
