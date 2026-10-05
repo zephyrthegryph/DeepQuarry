@@ -4631,15 +4631,15 @@
 	into += entry_line(66)
 	into += list(global.ref_one(nameof(recipe), /datum/weaver_recipe/item))
 
-/// CAPABILITIES(/datum/prompt/choice/wheel_review) at code/modules/casino/casino.dm:1168
+/// CAPABILITIES(/datum/prompt/choice/wheel_review) at code/modules/casino/casino.dm:1195
 /datum/prompt/choice/wheel_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/casino/casino.dm", 1168, /datum/prompt/choice/wheel_review)
-	into += entry_line(1169)
+	into += entry_block("code/modules/casino/casino.dm", 1195, /datum/prompt/choice/wheel_review)
+	into += entry_line(1196)
 	into += list(global.ref_one(nameof(wheel_operator), /mob))
-	into += entry_line(1170)
+	into += entry_line(1197)
 	into += list(global.ref_one(nameof(wheel_held), /obj/item))
-	into += entry_line(1171)
+	into += entry_line(1198)
 	into += list(global.ref_one(nameof(wheel_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/color/paint_palette) at code/game/objects/structures/artstuff.dm:351
@@ -4815,15 +4815,15 @@
 	into += entry_line(58)
 	into += list(global.ref_one(nameof(subject), /atom))
 
-/// CAPABILITIES(/datum/prompt/number/wheel_review) at code/modules/casino/casino.dm:1209
+/// CAPABILITIES(/datum/prompt/number/wheel_review) at code/modules/casino/casino.dm:1236
 /datum/prompt/number/wheel_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/casino/casino.dm", 1209, /datum/prompt/number/wheel_review)
-	into += entry_line(1210)
+	into += entry_block("code/modules/casino/casino.dm", 1236, /datum/prompt/number/wheel_review)
+	into += entry_line(1237)
 	into += list(global.ref_one(nameof(wheel_operator), /mob))
-	into += entry_line(1211)
+	into += entry_line(1238)
 	into += list(global.ref_one(nameof(wheel_held), /obj/item))
-	into += entry_line(1212)
+	into += entry_line(1239)
 	into += list(global.ref_one(nameof(wheel_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/text/admin_narrate) at code/modules/admin/verbs/randomverbs.dm:100
