@@ -64,6 +64,7 @@
 		return 0
 
 	var/obj/item/spell/construct/S = new path(src)
+	var/hands_blocked = FALSE
 
 	//No hands needed for innate casts.
 	if(S.cast_methods & CAST_INNATE)
@@ -81,9 +82,9 @@
 				l_spell.on_combine_cast(S, src)
 		else //Welp
 			to_chat(src, span_warning("You require a free manipulator to use this power."))
-			return 0
+			hands_blocked = TRUE
 
-	if(S.run_checks())
+	if(!hands_blocked && S.run_checks())
 		put_in_hands(S)
 		return 1
 	else

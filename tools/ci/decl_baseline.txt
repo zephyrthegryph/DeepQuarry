@@ -341,7 +341,6 @@ init_new_child	code/game/machinery/fire_alarm.dm	rel_set(src, nameof(critalarm),
 init_new_child	code/game/machinery/fire_alarm.dm	rel_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 init_new_child	code/game/machinery/frame.dm	rel_set(src, nameof(circuit), new frame_type.circuit(src))
 init_new_child	code/game/machinery/gear_dispenser.dm	rel_set(src, nameof(one_setting), new one_setting)
-init_new_child	code/game/machinery/jukebox.dm	rel_set(src, nameof(wires), new/datum/wires/jukebox(src))
 init_new_child	code/game/machinery/pda_multicaster.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 init_new_child	code/game/machinery/requests_console.dm	rel_set(src, nameof(announcement), new /datum/announcement)
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	rel_set(src, nameof(Compiler), new /datum/TCS_Compiler())

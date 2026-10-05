@@ -921,11 +921,11 @@
 	into += entry_line(30)
 	into += list(global.ref_one(nameof(target_mob), /mob))
 
-/// CAPABILITIES(/datum/admin_ticket_panel_review) at code/modules/tickets/procs.dm:159
+/// CAPABILITIES(/datum/admin_ticket_panel_review) at code/modules/tickets/procs.dm:194
 /datum/admin_ticket_panel_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/tickets/procs.dm", 159, /datum/admin_ticket_panel_review)
-	into += entry_line(160)
+	into += entry_block("code/modules/tickets/procs.dm", 194, /datum/admin_ticket_panel_review)
+	into += entry_line(195)
 	into += list(global.ref_one(nameof(actor), /mob))
 
 /// CAPABILITIES(/datum/admin_trader_dispatch_review) at code/modules/admin/verbs/trader.dm:21
@@ -4707,13 +4707,13 @@
 	into += entry_line(80)
 	into += list(global.ref_one(nameof(id), /obj/item/card/id))
 
-/// CAPABILITIES(/datum/prompt/text/collar_tag) at code/modules/clothing/accessories/accessory.dm:1010
+/// CAPABILITIES(/datum/prompt/text/collar_tag) at code/modules/clothing/accessories/accessory.dm:1039
 /datum/prompt/text/collar_tag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1010, /datum/prompt/text/collar_tag)
-	into += entry_line(1011)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1039, /datum/prompt/text/collar_tag)
+	into += entry_line(1040)
 	into += list(global.ref_one(nameof(captured_item), /obj/item))
-	into += entry_line(1012)
+	into += entry_line(1041)
 	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
 
 /// CAPABILITIES(/datum/prompt/text/communicator_reply) at code/game/objects/items/devices/communicator/messaging.dm:109
@@ -9822,11 +9822,11 @@
 	into += entry_line(744)
 	into += list(global.op("controls", global.in_hand(), global.label("Open shock collar controls"), global.then(PROC_REF(shock_collar_controls_opened))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace) at code/modules/clothing/accessories/accessory.dm:1119
+/// CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace) at code/modules/clothing/accessories/accessory.dm:1148
 /obj/item/clothing/accessory/collar/shock/bluespace/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1119, /obj/item/clothing/accessory/collar/shock/bluespace)
-	into += entry_line(1120)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1148, /obj/item/clothing/accessory/collar/shock/bluespace)
+	into += entry_line(1149)
 	into += list(global.op("bluespace_collar_wire_signaler", global.item(/obj/item/assembly/signaler), global.label("Wire signaler"), global.then(PROC_REF(bluespace_collar_wire_signaler))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/dosimeter) at code/modules/clothing/accessories/badges.dm:307
@@ -9845,18 +9845,18 @@
 	into += entry_line(21)
 	into += list(global.emag(global.then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half) at code/modules/clothing/accessories/accessory.dm:1419
+/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half) at code/modules/clothing/accessories/accessory.dm:1448
 /obj/item/clothing/accessory/poncho/roles/cloak/half/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1419, /obj/item/clothing/accessory/poncho/roles/cloak/half)
-	into += entry_line(1420)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1448, /obj/item/clothing/accessory/poncho/roles/cloak/half)
+	into += entry_line(1449)
 	into += list(global.op("half_cloak_flip_self", global.in_hand(), global.label("Flip cloak"), global.then(PROC_REF(half_cloak_flip_self))))
 
-/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger) at code/modules/clothing/accessories/accessory.dm:1506
+/// CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger) at code/modules/clothing/accessories/accessory.dm:1535
 /obj/item/clothing/accessory/poncho/roles/neo_ranger/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1506, /obj/item/clothing/accessory/poncho/roles/neo_ranger)
-	into += entry_line(1507)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 1535, /obj/item/clothing/accessory/poncho/roles/neo_ranger)
+	into += entry_line(1536)
 	into += list(global.op("neo_ranger_adjust_self", global.in_hand(), global.label("Adjust"), global.then(PROC_REF(neo_ranger_adjust_self))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/ring/engagement) at code/modules/clothing/accessories/rings.dm:32

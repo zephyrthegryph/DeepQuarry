@@ -95,7 +95,6 @@ handler_actor_check	code/modules/tgui/modules/overmap.dm	if(user && !isAI(user))
 siliconaccess	code/game/machinery/air_alarm.dm	"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)),
 siliconaccess	code/game/machinery/air_alarm.dm	if(!locked || siliconaccess(user) || data["remoteUser"] || (isobserver(user) && is_admin(user)))
 siliconaccess	code/game/machinery/air_alarm.dm	if(locked && !(siliconaccess(user) || (isobserver(user) && is_admin(user))) && !istype(state, /datum/tgui_state/air_alarm_remote))
-siliconaccess	code/game/machinery/air_alarm.dm	if((siliconaccess(user) && !wires.is_cut(WIRE_IDSCAN)) || (isobserver(user) && is_admin(user)))
 siliconaccess	code/game/machinery/portable_turret.dm	if((!emagged && siliconaccess(L) && check_all == FALSE) || (issilicon(L) && !check_access && !check_all)) // Don't target silica, unless told to neutralize everything.
 siliconaccess	code/modules/power/apc.dm	"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),
 legacy_entry	code/ATMOSPHERICS/components/shutoff.dm	silicon_use = SILICON_USE_HAND

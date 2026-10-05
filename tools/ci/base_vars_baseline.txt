@@ -150,7 +150,6 @@ base_var	code/game/atom/_atom.dm	var/list/atom_colours
 base_var	code/game/atom/_atom.dm	var/rad_insulation = RAD_NO_INSULATION
 base_var	code/game/atom/_atom.dm	var/rad_shield_material
 base_var	code/game/atom/_atom.dm	var/rad_shield_thickness_mm = 0
-base_var	code/game/atom/_atom.dm	var/datum/wires/wires = null
 base_var	code/game/atom/_atom.dm	var/emp_protection_flags = NONE
 base_var	code/game/atom/armor.dm	var/armor_spec
 base_var	code/game/atom/armor.dm	var/tmp/datum/armor_override

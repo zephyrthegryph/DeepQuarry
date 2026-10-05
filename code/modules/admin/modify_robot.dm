@@ -265,7 +265,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_select_source(datum/act/op/A, new_source)
 	if(source)
-		qdel(source)
+		own_clear(src, nameof(source), OWN_DELETE)
 	var/module_type = GLOB.robot_modules[new_source]
 	if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
 		rel_set(src, nameof(source), new /mob/living/silicon/robot/syndicate(null))
