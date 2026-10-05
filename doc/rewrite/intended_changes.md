@@ -901,3 +901,23 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
   after init and the slogan delay is a time define (10 minutes, unchanged).
 - The cigarette machine's Mauser lives in its product table instead of an `Initialize()` override.
 - Library: `credits_resource.dm` (the RES_CREDITS adapter: the payer is the actor's credits source), `rotatable()`, `toggles(key, when =)`.
+## Airlock and APC, full conversion (rewrite/doors-full)
+
+Pinned by `code/modules/unit_tests/dq_doors_full_behaviour.dm` (written and green on the code before it, commit "Pin airlock and APC behaviour before
+the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Each row below edited the assertion that pinned the old behaviour.
+
+### APC
+
+* **A reboot forgets the power alarm it raised.** `reboot()` cleared the alarm on the alarm handler but left `power_alarm_raised` set, so the next poll
+  "cleared" it a second time and counted a power event. (bug; `reboot_clears_the_power_alarm`)
+* **The channel modes reach the power domain through `push_to_rust()` only.** `set_channel_mode()` and `reboot()` wrote `NATIVE_APC_CHANNELS` by hand;
+  the push now carries the three channels with the rest of the settings, once per frame after any of them changed. Same values, one path.
+* **One breaker path.** The window's `breaker` op also answers a silicon's ctrl-click (`extend("breaker", binds(remote()), gesture(GESTURE_CTRL))`);
+  `remote_breaker`, `set_breaker()` and `toggle_breaker()` are gone, and the area follows the breaker through `on_change(nameof(operating))` whoever
+  writes it (the AI restoring its own power, a break). The ctrl-click is under the window's rules: a cyborg without access works an *unlocked* APC's
+  breaker by ctrl-click as it already could through the window (it used to also need `remote_link_allowed()` for the ctrl-click alone).
+* **Window access is the library's** (`req_window_usable()`, `req_silicon_or_admin()`, `code/library/access/window_access.dm`): the refusal texts are
+  the library's ("You can't use that right now.", "Only a silicon can do that."), the rules are unchanged; the APC keeps only its own remote rule
+  (`remote_control_refusal()`: the AI-control wire, the hacker and its cyborgs).
+* The window data loses `normallyLocked` (always equal to `locked`) and `totalCharging` (always 0); the TSX shows the total load alone.
+* Dead state is gone: `debug`, `chargecount`, `longtermpower` (Rust keeps its own), `report()`, the `area()` accessor (the `area` var is read directly).

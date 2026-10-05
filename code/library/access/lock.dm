@@ -105,21 +105,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 /datum/entry/part/req/unlocked_for_actor/holds(datum/act/op/A)
 	if(!lock_locked(A.holder))
 		return TRUE
-	return lock_exempt(A)
+	return silicon_or_admin(A) // a silicon over a link the holder lets in, or an admin ghost (code/library/access/window_access.dm)
 
 /datum/entry/part/req/unlocked_for_actor/read_keys(datum/act/op/A)
 	return A.holder ? list(list(A.holder, "capkey:[LOCK_LOCKED]")) : list()
-
-/// Does the actor of `A` work a locked holder regardless: over a silicon's link the holder lets in (remote_link_allowed(): the AI, a cyborg with access
-/// on its own ID card), or as an admin ghost that may interact?
-/proc/lock_exempt(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!user)
-		return FALSE
-	var/obj/holder = A.holder
-	if(istype(holder) && holder.remote_link_allowed(A))
-		return TRUE
-	if(isobserver(user))
-		var/mob/observer/dead/D = user
-		return D.can_admin_interact()
-	return FALSE

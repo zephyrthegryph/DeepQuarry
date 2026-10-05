@@ -3,7 +3,7 @@
 //
 // All APC #defines live in code/__defines/apc.dm.
 //
-// M3: the distributor (channels, cell charging, load shedding) runs in Rust
+// The distributor (channels, cell charging, load shedding) runs in Rust
 // (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:
 // push_to_rust() sends its settings (generated: it runs once per frame after any state it
 // reads changed), and power_poll() applies what Rust reports (channels, charging, status,
@@ -83,8 +83,7 @@
 	var/coverlocked = 1
 	var/obj/machinery/power/terminal/terminal = null
 	var/mob/living/silicon/ai/hacker = null // Malf AI that has full control of this APC.
-	power_region = 0                 // set by connect_to_network() (the APC IS a network node now, step 3)
-	var/debug = 0
+	power_region = 0                 // set by connect_to_network() (the APC is a network node)
 	var/beenhit = 0                 // hit counter, used for Alien claws
 	/// Emergency lighting is switched off for the area (the UI toggle): the area's lights read it through their area.
 	var/emergency_lights = FALSE
@@ -108,8 +107,6 @@
 	var/operating = 1
 	var/charging    = 0
 	var/chargemode  = 1
-	var/chargecount = 0
-	var/longtermpower = 10
 	var/main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 	/// Monotonic revision for correction-aware contract power telemetry.
 	var/contract_power_revision = 0
@@ -153,9 +150,7 @@ MSG_DEF_SELF(apc/board_first, "Take the power control board out first.")
 MSG_DEF_SELF(apc/floor_blocks, "You must remove the floor plating in front of the APC first.")
 MSG_DEF_SELF(apc/cell_first, "Remove the power cell first.")
 MSG_DEF_SELF(apc/needs_electronics, "You need to install the wiring and electronics first.")
-MSG_DEF_SELF(apc/cant_use, "You can't use that right now.")
 MSG_DEF_SELF(apc/ai_disabled, "The AI control for this APC has been disabled!")
-MSG_DEF_SELF(apc/silicons_only, "Only a silicon can do that.")
 MSG_DEF_SELF(apc/unresponsive, "The panel is unresponsive.")
 MSG_DEF_SELF(apc/flashing_error, "The panel is flashing an error.")
 MSG_DEF_SELF(apc/power_failure, "Its output has failed and it is rebooting.")
@@ -170,6 +165,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	configure(construction_graph(start = STAGE_APC_SECURED))
 	maintenance_hatch(
 		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
+		// The panel opens only with the cover shut, but the cover can open over an open panel: `reach` keeps the wires out of reach then.
 		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = cond_not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
 		lock_wire = WIRE_IDSCAN,
 		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
@@ -190,6 +186,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	links(/obj/machinery/power/apc::area, /area::apc)
 	contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))
 	contributes_to(nameof(area), STAT_LIGHTS_EMERGENCY_OFF, nameof(emergency_lights))
+	// the same rule as the wires' reach above: an open cover over the open panel keeps the signaller off the wires
 	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), at(SPACE_PANEL), when(cond_not(COVER_OPEN)), wait(0),
 		then(PROC_REF(signaler_at_the_wires)))
 	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))
@@ -200,13 +197,14 @@ CAPABILITIES(/obj/machinery/power/apc)
 	on_notice(/datum/notice/slashed, then(PROC_REF(apc_slashed)))
 	on_change(nameof(cell), ANY, then(PROC_REF(cell_changed)))
 	on_change(nameof(supplying), ANY, then(PROC_REF(supply_changed)))
+	on_change(nameof(operating), ANY, then(PROC_REF(supply_changed)))
 	examine_line(PROC_REF(fault_lights_text))
 
 	/// The APC's window and the buttons in it. The ID lock and the overload are a silicon's; every button answers only while the window is usable
 	/// (ui_usable()), and the nightshift setting is the one a locked panel leaves to anyone.
 	section(controls, "The APC's window and the buttons in it")
 	interface("APC")
-	op("breaker", ui_act(), toggles(nameof(operating)), then(PROC_REF(settings_applied)), logs(LOG_GAME))
+	op("breaker", ui_act(), toggles(nameof(operating)), logs(LOG_GAME))
 	op("chargemode", ui_act("charge"), toggles(nameof(chargemode)), then(PROC_REF(chargemode_applied)), logs(LOG_GAME))
 	op("coverlock", ui_act("cover"), toggles(nameof(coverlocked)), logs(LOG_GAME))
 	op("set_channel", ui_act("channel", arg("channel", int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), arg("mode", int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))),
@@ -215,17 +213,15 @@ CAPABILITIES(/obj/machinery/power/apc)
 		then(PROC_REF(ui_set_nightshift)), logs(LOG_GAME))
 	op("emergency_lighting", ui_act(), toggles(nameof(emergency_lights)), logs(LOG_GAME))
 	op("reboot", ui_act(), then(PROC_REF(ui_reboot)), logs(LOG_GAME))
-	op("overload", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))),
+	op("overload", ui_act(), needs(req_silicon_or_admin()),
 		then(PROC_REF(ui_overload)), logs(LOG_GAME))
-	op("lock", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_operable()),
+	op("lock", ui_act(), needs(req_silicon_or_admin(), req_not_subverted(), req_operable()),
 		toggles(LOCK_LOCKED), logs(LOG_GAME))
 	extend("ui_open", needs(req_operable()))
-	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason))))
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_refusal))))
 	extend("nightshift", drop = "lock")
 	// a silicon's ctrl-click throws the breaker over its link, under the same rules as the window's button
-	op("remote_breaker", remote(), gesture(GESTURE_CTRL), label("Toggle the breaker"), toggles(nameof(operating)),
-		needs(req(PROC_REF(remote_link_allowed), because = MSG(apc/cant_use)), req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason))),
-		then(PROC_REF(settings_applied)), logs(LOG_GAME))
+	extend("breaker", binds(remote()), gesture(GESTURE_CTRL))
 
 	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
 	section(cover_rules, "The latch on the APC's cover")
@@ -246,11 +242,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_wired)),
 			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut)), protrudes(because = MSG(apc/board_first)),
 			undo = list(tool(TOOL_WIRECUTTER))),
+		// No cell can be in before this stage (SPACE_CELL exists from it): only the undo needs the bay empty.
 		stage(STAGE_APC_SECURED, tool(TOOL_SCREWDRIVER),
-			needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first))),
 			undo = list(tool(TOOL_SCREWDRIVER), needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first))))),
 		dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/apc),
-			needs(req_not(req_built(STAGE_APC_BOARD, because = MSG(apc/board_first)), because = MSG(apc/board_first))),
+			needs(req_not(req_built(STAGE_APC_BOARD), because = MSG(apc/board_first))),
 			ruined(TYPE_PROC_REF(/obj/machinery/power/apc, frame_ruined), becomes(/obj/item/stack/material/steel))),
 		at(SPACE_HATCH))
 
@@ -321,11 +317,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 // ---- the controls ----
 
-/// The breaker went over: the area follows.
-/obj/machinery/power/apc/proc/settings_applied(datum/act/op/A)
-	apply_area_power()
-	return OP_OK
-
 /// The charge switch went over: with charging off the charging flag drops at once.
 /obj/machinery/power/apc/proc/chargemode_applied(datum/act/op/A)
 	if(!chargemode)
@@ -351,44 +342,18 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	overload_lighting()
 	return OP_OK
 
-/// A silicon's link the APC lets in, and admin ghosts, work a locked APC (and its overload button): the lock library's own exemption.
-/obj/machinery/power/apc/proc/actor_works_locked(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!user)
-		return FALSE
-	if(remote_link_allowed(A))
-		return TRUE
-	var/mob/observer/dead/ghost = user
-	return istype(ghost) && ghost.can_admin_interact()
-
-/// Why this person can't use the window or its buttons now, or null: asleep, not able to use it, an AI that lost control, out of reach.
-/obj/machinery/power/apc/proc/ui_unusable_reason(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!user)
-		return /datum/msg/apc/cant_use
-	var/mob/observer/dead/ghost = user
-	if(istype(ghost) && ghost.can_admin_interact())
+/// A silicon working the window over its link: refused while the AI-control wire keeps silicons out, unless it is the AI that hacked the APC (or
+/// one of that AI's cyborgs). req_window_usable() asks it (code/library/access/window_access.dm).
+/obj/machinery/power/apc/proc/remote_control_refusal(datum/act/op/A)
+	if(!aidisabled)
 		return null
-	if(user.stat)
-		return /datum/msg/apc/cant_use
-	if(!user.IsAdvancedToolUser() || user.restrained() || user.lying) // ALLOW(reads): a mob lying down is legacy mob state, tracked in the mob conversion; the check runs when a window button is pressed, never from a cached menu
-		return /datum/msg/apc/cant_use
-	if(A.authority & AUTH_REMOTE_ACCESS) // over a link: the AI-control wire decides, not the distance
-		var/permit = FALSE
-		var/mob/living/silicon/robot/robot = user
-		if(hacker)
-			if(hacker == user)
-				permit = TRUE
-			else if(istype(robot) && robot.connected_ai && robot.connected_ai == hacker) // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
-				permit = TRUE
-		if(aidisabled && !permit)
-			return /datum/msg/apc/ai_disabled
-	else if(get_dist(src, user) > 1)
-		return /datum/msg/apc/cant_use
-	return null
-
-/obj/machinery/power/apc/proc/ui_usable(datum/act/op/A)
-	return isnull(ui_unusable_reason(A))
+	var/mob/user = A.actor
+	if(hacker && user == hacker)
+		return null
+	var/mob/living/silicon/robot/robot = user
+	if(hacker && istype(robot) && robot.connected_ai == hacker) // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
+		return null
+	return /datum/msg/apc/ai_disabled
 
 // ---- the emag and the subversion reset ----
 
@@ -458,8 +423,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/connect_to_network(bind_now = TRUE)
-	// Override: the APC's own vg_entity is the network node (rust_architecture.md
-	// step 3: ApcTick is a row law over Apc + InRegion<Cables>), placed at the
+	// Override: the APC's own vg_entity is the network node (rust_architecture.md:
+	// ApcTick is a row law over Apc + InRegion<Cables>), placed at the
 	// terminal's cell -- the terminal object itself is a construction/visual
 	// anchor only, not separately bound.
 	if(!terminal)
@@ -474,7 +439,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 				power_bind_now()
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 	seat_cell_charge(TRUE)
-	area()?.power_loads_changed() // the new node takes the area's static loads
+	area?.power_loads_changed() // the new node takes the area's static loads
 	return !!power_region
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
@@ -512,7 +477,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		cap_key_set(src, COVER_OPEN, TRUE, null)
 		graph_place(src, STAGE_APC_FRAME)
 		set_operating(0)
-		name = "[area().name] APC"
+		name = "[area.name] APC"
 		return
 
 	init()
@@ -531,7 +496,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/on_destroy(force)
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
-	var/area/served = area()
+	var/area/served = area
 	if(served)
 		rel_set(src, nameof(area), null) // paired: the area no longer names this APC
 		served.power_light  = 0
@@ -566,6 +531,9 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	native_write(src, NATIVE_APC_CHARGEMODE, chargemode)
 	native_write(src, NATIVE_APC_CHARGELEVEL, chargelevel)
 	native_write(src, NATIVE_APC_CAPACITY, cell ? cell.maxcharge : 0)
+	native_write(src, NATIVE_APC_CHANNELS, equipment, POWER_CHANNEL_EQUIPMENT)
+	native_write(src, NATIVE_APC_CHANNELS, lighting, POWER_CHANNEL_LIGHTING)
+	native_write(src, NATIVE_APC_CHANNELS, environ, POWER_CHANNEL_ENVIRON)
 
 /// A cell went in or out (the cell var changed): a newly seated cell's charge becomes Rust's.
 /obj/machinery/power/apc/proc/cell_changed(datum/act/A)
@@ -644,7 +612,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/lasts = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1 TICK)
 	if(lasts <= 0)
 		return
-	log_world("APC_POWER_FAILURE: [src] ([area()]) fails for [lasts / (1 SECOND)] s")
+	log_world("APC_POWER_FAILURE: [src] ([area]) fails for [lasts / (1 SECOND)] s")
 	hold(src, STAT_OPERABLE, FALSE, SRC_POWER_FAILURE, lasts, reason = /datum/msg/apc/power_failure)
 
 /// The failure ends now (the reboot button, a reboot): a pulse's outage and an event's power failure alike.
@@ -666,7 +634,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/proc/out_of_order()
 	return has_stat(BROKEN) || (!supplying && !power_failing())
 
-/// STAT_SUPPLYING changed (a failure began or ended, it broke or its build was finished or undone): the area follows.
+/// STAT_SUPPLYING or the breaker changed (a failure began or ended, it broke, its build was finished or undone, the breaker went over): the area
+/// follows.
 /obj/machinery/power/apc/proc/supply_changed(datum/act/A)
 	apply_area_power()
 
@@ -680,9 +649,9 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 	var/area/A = loc.loc
 	rel_set(src, nameof(area), (isarea(A) && !areastring) ? A : get_area_name(areastring)) // paired: the area's apc is this APC
-	name = "\improper [area().name] APC"
+	name = "\improper [area.name] APC"
 
-	if(istype(area(), /area/submap))
+	if(istype(area, /area/submap))
 		alarms_hidden = TRUE
 
 	make_terminal()
@@ -760,15 +729,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			set_environ(value)
 		else
 			return FALSE
-	if(vg_entity)
-		native_write(src, NATIVE_APC_CHANNELS, value, channel)
 	apply_area_power()
 	return TRUE
-
-/// The main breaker (a silicon's hotkey, the AI restoring its own power): the area follows.
-/obj/machinery/power/apc/proc/set_breaker(on)
-	set_operating(on ? 1 : 0)
-	apply_area_power()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The window (doc/rewrite/final_api.html section 13): ui_data() is its data; its buttons are the ops of the list above
@@ -791,14 +753,12 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		))
 	return list(
 		"locked" = lock_locked(src),
-		"normallyLocked" = lock_locked(src),
 		"emagged" = emag_emagged(src),
 		"externalPower" = main_status,
 		"powerCellStatus" = cell_charge_percent(src),
 		"chargeMode" = chargemode,
 		"chargingStatus" = charging,
 		"totalLoad" = round(channel_load_total()),
-		"totalCharging" = 0,
 		"failTime" = CEILING(failure_left() / (1 SECOND), 1),
 		"gridCheck" = grid_check,
 		"coverLocked" = coverlocked,
@@ -809,13 +769,10 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		"nightshiftLights" = area?.lights_nightshift,
 		"nightshiftSetting" = nightshift_setting)
 
-/obj/machinery/power/apc/proc/report()
-	return "[area().name] : [equipment]/[lighting]/[environ] ([channel_load_total()]) : [cell ? cell.percent() : "N/C"] ([charging])"
-
 /// Pushes the channel state to the area; fires area.power_change() (the machinery power signals) only when a channel changed. The push to
 /// Rust is push_to_rust()'s (generated: it follows the state it reads).
 /obj/machinery/power/apc/proc/apply_area_power()
-	if(!area())
+	if(!area)
 		return
 	var/new_power_light = FALSE
 	var/new_power_equip = FALSE
@@ -824,12 +781,12 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		new_power_light = (lighting >= POWERCHAN_ON)
 		new_power_equip = (equipment >= POWERCHAN_ON)
 		new_power_environ = (environ >= POWERCHAN_ON)
-	if(area().power_light == new_power_light && area().power_equip == new_power_equip && area().power_environ == new_power_environ)
+	if(area.power_light == new_power_light && area.power_equip == new_power_equip && area.power_environ == new_power_environ)
 		return
-	area().power_light = new_power_light
-	area().power_equip = new_power_equip
-	area().power_environ = new_power_environ
-	area().power_change()
+	area.power_light = new_power_light
+	area.power_equip = new_power_equip
+	area.power_environ = new_power_environ
+	area.power_change()
 	contract_power_revision++
 	var/powered_channels = new_power_light + new_power_equip + new_power_environ
 	if(SScontracts)
@@ -844,11 +801,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 				"cell_percent" = cell ? cell.percent() : 0,
 				"load" = channel_load_total(),
 			),
-			"detail" = "[area()] electrical service reports [powered_channels]/3 powered channels.",
+			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
 		), "power-service:[REF(src)]:[contract_power_revision]", src)
-
-/obj/machinery/power/apc/proc/toggle_breaker()
-	set_breaker(!operating)
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)
@@ -913,7 +867,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!.)
 		return
 	visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
-	set_breaker(FALSE)
+	set_operating(0)
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
@@ -951,13 +905,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	set_lighting(POWERCHAN_ON_AUTO)
 	set_equipment(POWERCHAN_ON_AUTO)
 	set_environ(POWERCHAN_ON_AUTO)
-	if(vg_entity)
-		native_write(src, NATIVE_APC_CHANNELS, equipment, 0)
-		native_write(src, NATIVE_APC_CHANNELS, lighting, 1)
-		native_write(src, NATIVE_APC_CHANNELS, environ, 2)
 	set_charging(0)
-	chargecount = 0
-	longtermpower = 10
 	set_main_status(APC_EXTERNAL_POWER_NOTCONNECTED)
 
 	// Breaker off; chargemode in default state; all channels on auto.
@@ -965,6 +913,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	set_chargemode(1)
 	end_power_failure()
 	GLOB.power_alarm.clearAlarm(loc, src)
+	power_alarm_raised = FALSE
 
 	// Clear malf AI ownership.
 	rel_clear(src, nameof(hacker)) // two-sided: leaves the AI's hacked_apcs
@@ -990,7 +939,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		if(cell)
 			cell.corrupt()
 	if(prob(10))
-		for(var/obj/machinery/computer/comp as anything in area_members(area(), POWER_ROLE_COMPUTER))
+		for(var/obj/machinery/computer/comp as anything in area_members(area, POWER_ROLE_COMPUTER))
 			comp.ex_act(3)
 	if(prob(5))
 		atom_break()
@@ -1019,9 +968,9 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// The blueprints redrew the areas: the APC serves the area it now stands in.
 /obj/machinery/power/apc/proc/update_area()
 	var/area/NA = get_area(src)
-	if(NA != area())
+	if(NA != area)
 		rel_set(src, nameof(area), NA) // paired: the old area lets go, the new one names this APC
-		name = "[area().name] APC"
+		name = "[area.name] APC"
 	apply_area_power()
 
 /obj/machinery/power/apc/get_cell()
@@ -1037,9 +986,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// The lights of the area this APC powers: its MEMBER relations of role POWER_ROLE_LIGHTING (a copy, the loops yield).
 /obj/machinery/power/apc/proc/area_lights()
-	var/list/found = area()?.lights
+	var/list/found = area?.lights
 	return found ? found.Copy() : list()
 
-/// The area this APC powers (a plain area var).
-/obj/machinery/power/apc/proc/area() as /area
-	return area

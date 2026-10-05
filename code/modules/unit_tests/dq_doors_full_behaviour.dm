@@ -370,7 +370,7 @@
 	TEST_ASSERT_NULL(A.cell, "the cell is out")
 	touch(H, A, allocate(/obj/item/multitool, run_loc_floor_bottom_left))
 	TEST_ASSERT(!p2_apc_emagged(A), "the reset rebooted it")
-	TEST_ASSERT(A.power_alarm_raised, "BUG pinned: the reboot clears the alarm but the APC still remembers it raised")
+	TEST_ASSERT(!A.power_alarm_raised, "the reboot cleared the alarm it remembered")
 
 /// A reboot puts every channel on auto, in the power domain too.
 /datum/unit_test/dq_p2_apc/full/reboot_puts_the_channels_on_auto

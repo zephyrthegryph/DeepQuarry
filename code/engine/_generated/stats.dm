@@ -165,21 +165,21 @@
 /datum/stat_decl/obj/machinery/light/__nightshift_enabled/spec()
 	return list(/obj/machinery/light, /obj/machinery/light/proc/__stat_nightshift_enabled)
 
-/// STAT(/obj/machinery/power/apc, aidisabled, ANY) at code/modules/power/apc.dm:135
+/// STAT(/obj/machinery/power/apc, aidisabled, ANY) at code/modules/power/apc.dm:132
 /obj/machinery/power/apc/var/aidisabled = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_aidisabled()
 	return list("aidisabled", "ANY", list(id = STAT_AIDISABLED))
 /datum/stat_decl/obj/machinery/power/apc/__aidisabled/spec()
 	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_aidisabled)
 
-/// STAT(/obj/machinery/power/apc, shorted, ANY) at code/modules/power/apc.dm:133
+/// STAT(/obj/machinery/power/apc, shorted, ANY) at code/modules/power/apc.dm:130
 /obj/machinery/power/apc/var/shorted = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_shorted()
 	return list("shorted", "ANY", list(id = STAT_SHORTED))
 /datum/stat_decl/obj/machinery/power/apc/__shorted/spec()
 	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_shorted)
 
-/// STAT(/obj/machinery/power/apc, supplying, ALL) at code/modules/power/apc.dm:131
+/// STAT(/obj/machinery/power/apc, supplying, ALL) at code/modules/power/apc.dm:128
 /obj/machinery/power/apc/var/supplying = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/machinery/power/apc/proc/__stat_supplying()
 	return list("supplying", "ALL", list(id = STAT_SUPPLYING))

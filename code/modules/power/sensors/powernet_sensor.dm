@@ -136,7 +136,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 					// APCs. A positional tuple avoids repeating seven JSON field names
 					// per row, cutting Power Monitor bridge traffic substantially.
 					data["areas"] += list(list(
-						A.area().name,
+						A.area.name,
 						cell_charge,
 						DisplayPower(A.channel_load_total()),
 						A.charging,
@@ -209,7 +209,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 
 		// Split to multiple lines to make it more readable
 		for(var/obj/machinery/power/apc/A in L)
-			out += "<tr><td>\The [A.area()]" 															// Add area name
+			out += "<tr><td>\The [A.area]" 															// Add area name
 			out += "<td>[S[A.equipment+1]]<td>[S[A.lighting+1]]<td>[S[A.environ+1]]" 				// Show status of channels
 			if(A.cell)
 				out += "<td>[round(A.cell.percent())]% - [chg[A.charging+1]]"
@@ -267,7 +267,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 			// Other info
 			APC_entry["total_load"] = reading_to_text(A.channel_load_total())
 			// Hopefully removes those goddamn \improper s which are screwing up the UI
-			var/N = A.area().name
+			var/N = A.area.name
 			if(findtext(N, "\improper"))
 				N = copytext(N, 3)
 			APC_entry["name"] = N

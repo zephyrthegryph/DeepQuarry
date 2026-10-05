@@ -19,14 +19,12 @@ type Data = {
   gridCheck: BooleanLike;
   failTime: number;
   locked: BooleanLike;
-  normallyLocked: BooleanLike;
   siliconUser: BooleanLike;
   externalPower;
   chargingStatus;
   powerCellStatus: number;
   emagged: BooleanLike;
   chargeMode: BooleanLike;
-  totalCharging: number;
   totalLoad: number;
   coverLocked: BooleanLike;
   emergencyLights: boolean;
@@ -127,7 +125,6 @@ const ApcContent = (props) => {
     powerCellStatus,
     emagged,
     chargeMode,
-    totalCharging,
     totalLoad,
     coverLocked,
     emergencyLights,
@@ -255,13 +252,7 @@ const ApcContent = (props) => {
             );
           })}
           <LabeledList.Item label="Total Load">
-            {totalCharging ? (
-              <b>
-                {totalLoad} W (+ {totalCharging} W charging)
-              </b>
-            ) : (
-              <b>{totalLoad} W</b>
-            )}
+            <b>{totalLoad} W</b>
           </LabeledList.Item>
         </LabeledList>
       </Section>
