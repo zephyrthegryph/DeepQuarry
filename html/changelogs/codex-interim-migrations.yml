@@ -61,3 +61,4 @@ changes:
   - code_imp: "Migrated the ore-processing setting prompt to a native request."
   - code_imp: "Migrated the admin material-treatment prompt chain to native requests."
   - code_imp: "Migrated conveyor ID prompts and cyborg-unlock confirmation to native requests."
+  - code_imp: "Migrated event queue selection to native requests and updated its regression tests."
