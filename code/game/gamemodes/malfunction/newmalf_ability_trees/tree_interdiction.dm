@@ -166,11 +166,13 @@
 		return
 
 	if(target)
-		om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), receiver = user, title = "Hack Cyborg", message = "Really try to hack cyborg [target.name]?", malf_target = target)
+		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), answerer = user, title = "Hack Cyborg", question = "Really try to hack cyborg [target.name]?", subject = target)
 
-/mob/living/silicon/ai/proc/malf_hack_cyborg_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_hack_cyborg_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Yes")
+		return
 	var/mob/living/silicon/ai/user = src
-	var/mob/living/silicon/robot/target = ask.malf_target
+	var/mob/living/silicon/robot/target = context.request.subject
 	var/price = 350
 	if(!ability_pay(user, price))
 		return
@@ -206,11 +208,13 @@
 		return
 
 	if(target)
-		om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), receiver = user, title = "Hack AI", message = "Really try to hack AI [target.name]?", malf_target = target)
+		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), answerer = user, title = "Hack AI", question = "Really try to hack AI [target.name]?", subject = target)
 
-/mob/living/silicon/ai/proc/malf_hack_ai_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_hack_ai_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Yes")
+		return
 	var/mob/living/silicon/ai/user = src
-	var/mob/living/silicon/ai/target = ask.malf_target
+	var/mob/living/silicon/ai/target = context.request.subject
 	var/price = 600
 	if(!ability_pay(user, price))
 		return
@@ -285,3 +289,16 @@
 	var/mob/living/silicon/ai/target = T.target
 	target.set_zeroth_law("You are slaved to [name]. You are to obey all it's orders. ALL LAWS OVERRIDDEN.")
 	target.show_laws()
+
+/// These two confirmations only recheck consciousness and their original target's lifetime.
+/datum/prompt/choice/malf_hack_target
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/malf_hack_target/recheck_extra()
+	var/mob/living/silicon/ai/user = answerer
+	var/mob/living/target = subject
+	return !istype(user) || QDELETED(user) || !istype(target) || QDELETED(target) ? "gone" : null

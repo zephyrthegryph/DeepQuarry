@@ -12,27 +12,38 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 	flags = NOBLUDGEON
 
-/// Re-checked on the answer: the device is still in hand, and the victim is next to the user and alive.
-/datum/om/prompt/confirm/bodysnatch
+/// Re-checked on the answer: the original device is held and victim remains adjacent and alive.
+/datum/prompt/choice/bodysnatch
 	title = "Confirmation"
-	message = "This will swap your mind with the target's mind. This will result in them controlling your body, and you controlling their body. Continue?"
-	yes_text = "Continue"
-	no_text = "Cancel"
-	requires = PROMPT_IN_HAND
-	var/mob/living/victim
+	question = "This will swap your mind with the target's mind. This will result in them controlling your body, and you controlling their body. Continue?"
+	choices = list("Continue", "Cancel")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
 
-/datum/om/prompt/confirm/bodysnatch/valid()
-	if(!answerer.Adjacent(victim) || victim.stat == DEAD)
+/datum/prompt/choice/bodysnatch/recheck_extra()
+	var/mob/living/user = answerer
+	var/obj/item/bodysnatcher/device = owner
+	var/mob/living/victim = subject
+	if(!istype(user) || QDELETED(user) || !istype(device) || QDELETED(device) || !istype(victim) || QDELETED(victim))
+		return "gone"
+	if(user.get_active_hand() != device && user.get_inactive_hand() != device)
+		return "not holding it"
+	if(user.incapacitated())
+		return "not able to"
+	if(!user.Adjacent(victim) || victim.stat == DEAD)
 		return "no longer a target"
 	return null
 
-/obj/item/bodysnatcher/proc/swap_confirmed(datum/om/prompt/confirm/bodysnatch/ask)
-	var/mob/living/user = ask.answerer
-	var/mob/living/M = ask.victim
+/obj/item/bodysnatcher/proc/swap_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Continue")
+		return
+	var/mob/living/user = context.request.answerer
+	var/mob/living/M = context.request.subject
 	if(M.ckey && !M.client)
-		log_and_message_admins("attempted to body swap with [key_name(M)] while they were SSD!")
+		log_and_message_admins("attempted to body swap with [key_name(M)] while they were SSD!", user)
 	else
-		log_and_message_admins("attempted to body swap with [key_name(M)].")
+		log_and_message_admins("attempted to body swap with [key_name(M)].", user)
 	act_message(user, null, MSG_SELF(span_notice("You begin swap minds with [M]!")), MSG_OTHERS(span_warning("%U% pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!")))
 	om_task_timed(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
 
@@ -61,7 +72,7 @@
 			to_chat(user,span_warning("A warning pops up on the device, informing you that [M] is dead, and, as such, the mind transfer can not be done."))
 			return ITEM_INTERACT_FAILURE
 
-		om_ask(user, /datum/om/prompt/confirm/bodysnatch, PROC_REF(swap_confirmed), victim = M)
+		open_request(src, /datum/prompt/choice/bodysnatch, PROC_REF(swap_confirmed), answerer = user, subject = M)
 		return ITEM_INTERACT_BLOCKING
 
 	else

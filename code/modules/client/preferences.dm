@@ -299,10 +299,17 @@ CAPABILITIES(/datum/preferences)
 		character.update_hair()
 
 /datum/preferences/proc/open_load_dialog(mob/user)
-	if(selecting_slots)
+	return slot_dialog_stage(user, FALSE)
+
+/datum/preferences/proc/open_copy_dialog(mob/user)
+	return slot_dialog_stage(user, TRUE)
+
+/datum/preferences/proc/slot_dialog_stage(mob/user, copying, selected = null, confirmation = null, continuing = FALSE)
+	if(!continuing && selecting_slots)
 		to_chat(user, span_warning("You already have a slot selection dialog open!"))
 		return
-	if(!savefile)
+	if(!savefile || !ismob(user) || QDELETED(user))
+		selecting_slots = FALSE
 		return
 
 	var/default
@@ -322,72 +329,43 @@ CAPABILITIES(/datum/preferences)
 			default = "[name][nickname ? " ([nickname])" : ""]"
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
-	selecting_slots = TRUE
-	var/choice = rerun_ask(user, "k375", PROC_REF(open_load_dialog), args, /datum/om/prompt/choice, message = "Select a character to load:", title = "Load Slot", choices = charlist, default = default)
-	if(isnull(choice))
+	if(isnull(selected))
+		selecting_slots = TRUE
+		var/datum/request/opened = open_request(src, /datum/prompt/choice/preferences_slot_dialog, PROC_REF(slot_dialog_answered), answerer = user, copying = copying, question = copying ? "Select a character to COPY TO:" : "Select a character to load:", title = copying ? "Copy Slot" : "Load Slot", choices = charlist, default = copying ? null : default)
+		if(!opened || !opened.is_open())
+			selecting_slots = FALSE
+		return
+	if(!selected)
+		selecting_slots = FALSE
+		return
+	var/slotnum = charlist[selected]
+	if(!slotnum)
+		selecting_slots = FALSE
+		log_world("## ERROR Player picked [selected] slot to [copying ? "copy to" : "load"], but that wasn't one we sent.")
+		return
+	if(copying && isnull(confirmation))
+		var/datum/request/opened_confirmation = open_request(src, /datum/prompt/choice/preferences_slot_confirmation, PROC_REF(slot_confirmation_answered), answerer = user, selected_label = selected, question = "Are you sure you want to override slot [slotnum], [selected]'s savedata?")
+		if(!opened_confirmation || !opened_confirmation.is_open())
+			selecting_slots = FALSE
 		return
 	selecting_slots = FALSE
-	if(!choice)
-		return
-
-	var/slotnum = charlist[choice]
-	if(!slotnum)
-		log_world("## ERROR Player picked [choice] slot to load, but that wasn't one we sent.")
-		return
-
-	load_preferences(TRUE)
-	load_character(slotnum)
-	user.client?.prefs_vr.load_vore()
-	sanitize_preferences()
-	save_preferences()
-	ShowChoices(user)
-
-/datum/preferences/proc/open_copy_dialog(mob/user)
-	if(selecting_slots)
-		to_chat(user, span_warning("You already have a slot selection dialog open!"))
-		return
-	if(!savefile)
-		return
-
-	var/list/charlist = list()
-
-	for(var/i in 1 to CONFIG_GET(number/character_slots))
-		var/list/save_data = savefile.get_entry("character[i]", list())
-		var/name = save_data["real_name"]
-		var/nickname = save_data["nickname"]
-
-		if(!name)
-			name = "[i] - \[Unused Slot\]"
-		else if(i == default_slot)
-			name = "►[i] - [name]"
-		else
-			name = "[i] - [name]"
-
-		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
-
-	selecting_slots = TRUE
-	var/choice = rerun_ask(user, "k416", PROC_REF(open_copy_dialog), args, /datum/om/prompt/choice, message = "Select a character to COPY TO:", title = "Copy Slot", choices = charlist)
-	if(isnull(choice))
-		return
-	selecting_slots = FALSE
-	if(!choice)
-		return
-
-	var/slotnum = charlist[choice]
-	if(!slotnum)
-		log_world("## ERROR Player picked [choice] slot to copy to, but that wasn't one we sent.")
-		return
-
-	var/_answer_k426 = rerun_ask(user, "k426", PROC_REF(open_copy_dialog), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to override slot [slotnum], [choice]'s savedata?", title = "Confirm Override", choices = list("No", "Yes"))
-	if(isnull(_answer_k426))
-		return
-	if(_answer_k426 == "Yes")
+	if(copying)
+		if(confirmation != "Yes")
+			return
 		overwrite_character(slotnum)
 		save_character(TRUE)
 		save_preferences()
 		load_preferences(TRUE)
 		load_character()
 		user.client?.prefs_vr.load_vore()
+		ShowChoices(user)
+
+	else
+		load_preferences(TRUE)
+		load_character(slotnum)
+		user.client?.prefs_vr.load_vore()
+		sanitize_preferences()
+		save_preferences()
 		ShowChoices(user)
 
 // vanity_copy_to rewritten to ride the same /datum/preference apply pipeline as
@@ -561,3 +539,42 @@ CAPABILITIES(/datum/preferences)
 /// The client this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/client() as /client
 	return client
+
+/datum/prompt/choice/preferences_slot_dialog
+	timeout = 0
+	recheck_on_open = TRUE
+	var/copying = FALSE
+
+/datum/prompt/choice/preferences_slot_dialog/recheck_extra()
+	var/datum/preferences/preferences = owner
+	var/mob/user = answerer
+	return !istype(preferences) || QDELETED(preferences) || !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/prompt/choice/preferences_slot_confirmation
+	title = "Confirm Override"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	var/selected_label
+
+/datum/prompt/choice/preferences_slot_confirmation/recheck_extra()
+	var/datum/preferences/preferences = owner
+	var/mob/user = answerer
+	return !istype(preferences) || QDELETED(preferences) || !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/preferences/proc/slot_dialog_answered(datum/act/request/context)
+	if(!context.answer)
+		selecting_slots = FALSE
+		return
+	var/datum/prompt/choice/preferences_slot_dialog/ask = context.answer
+	slot_dialog_stage(ask.answerer, ask.copying, ask.answer_value, continuing = TRUE)
+	SStgui.update_uis(src)
+
+/datum/preferences/proc/slot_confirmation_answered(datum/act/request/context)
+	if(!context.answer)
+		selecting_slots = FALSE
+		return
+	var/datum/prompt/choice/preferences_slot_confirmation/ask = context.answer
+	slot_dialog_stage(ask.answerer, TRUE, ask.selected_label, ask.answer_value, TRUE)
+	SStgui.update_uis(src)

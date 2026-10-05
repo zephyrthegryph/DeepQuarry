@@ -1041,6 +1041,7 @@
 #include "round2_sun_visual_lazy_lists.dm"
 #include "round2_suit_sensor_effect.dm"
 #include "round2_body_writing_native.dm"
+#include "round2_preference_slot_dialog_busy.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

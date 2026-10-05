@@ -269,10 +269,17 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	return new_character			// incase its ever needed
 
 /mob/living/proc/soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(soulcatcher_spawn_prompt), args, /datum/om/prompt/choice/alert, message = "[prey.name] wants to join into your Soulcatcher.", title = "Soulcatcher Request", choices = list("Deny", "Allow"), timeout = 1 MINUTES)
-	if(isnull(_answer_a1))
+	open_request(src, /datum/prompt/choice/soulcatcher_admission, PROC_REF(soulcatcher_spawn_prompt_answered), answerer = src, subject = prey, req_time = req_time, question = "[prey.name] wants to join into your Soulcatcher.")
+
+/mob/living/proc/soulcatcher_spawn_prompt_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(_answer_a1 != "Allow")
+	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
+	soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.answer_value)
+	SStgui.update_uis(src)
+
+/mob/living/proc/soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
+	if(selected != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
@@ -294,10 +301,17 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		soulgem.catch_mob(prey) //This will result in the prey being deleted so...
 
 /mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	var/_answer_a2 = rerun_ask(src, "a2", PROC_REF(nif_soulcatcher_spawn_prompt), args, /datum/om/prompt/choice/alert, message = "[prey.name] wants to join into your Soulcatcher.", title = "Soulcatcher Request", choices = list("Deny", "Allow"), timeout = 1 MINUTES)
-	if(isnull(_answer_a2))
+	open_request(src, /datum/prompt/choice/soulcatcher_admission, PROC_REF(nif_soulcatcher_spawn_prompt_answered), answerer = src, subject = prey, req_time = req_time, question = "[prey.name] wants to join into your Soulcatcher.")
+
+/mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(_answer_a2 != "Allow")
+	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
+	nif_soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.answer_value)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
+	if(selected != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
@@ -323,3 +337,16 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		prey.mind.active = TRUE
 
 		SC.catch_mob(prey) //This will result in the prey being deleted so...
+
+/datum/prompt/choice/soulcatcher_admission
+	title = "Soulcatcher Request"
+	choices = list("Deny", "Allow")
+	buttons = TRUE
+	timeout = 1 MINUTES
+	recheck_on_open = TRUE
+	var/req_time
+
+/datum/prompt/choice/soulcatcher_admission/recheck_extra()
+	var/mob/living/recipient = owner
+	var/mob/observer/dead/prey = subject
+	return !istype(recipient) || QDELETED(recipient) || !istype(prey) || QDELETED(prey) ? "gone" : null

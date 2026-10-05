@@ -422,25 +422,37 @@ DECLARE_INTERACTIONS(/turf, \
 		to_chat(vandal, span_warning("There's too much graffiti here to add more."))
 		return FALSE
 
-	om_ask(vandal, /datum/om/prompt/text/graffiti, PROC_REF(graffiti_entered), subject = tool, wall = src, click_parameters = click_parameters)
+	open_request(src, /datum/prompt/text/graffiti, PROC_REF(graffiti_entered), answerer = vandal, subject = tool, click_parameters = click_parameters)
 	return TRUE
 
 /// Engraving with a tool (the subject, held throughout) next to the turf.
-/datum/om/prompt/text/graffiti
+/datum/prompt/text/graffiti
 	title = "Graffiti"
-	message = "Enter a message to engrave."
+	question = "Enter a message to engrave."
 	default = ""
-	max_length = MAX_MESSAGE_LEN
+	max_len = MAX_MESSAGE_LEN
+	timeout = 0
+	recheck_on_open = TRUE
 	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/turf/wall
 	var/click_parameters
 
-/datum/om/prompt/text/graffiti/valid()
-	return wall.Adjacent(answerer) ? null : "too far away"
+/datum/prompt/text/graffiti/normalize(given)
+	return istext(given) ? given : null
 
-/turf/proc/graffiti_entered(datum/om/prompt/text/graffiti/ask)
+/datum/prompt/text/graffiti/recheck_extra()
+	var/mob/vandal = answerer
+	var/turf/wall = owner
+	var/obj/item/tool = subject
+	if(!istype(vandal) || QDELETED(vandal) || !istype(wall) || QDELETED(wall) || !istype(tool) || QDELETED(tool))
+		return "gone"
+	return wall.Adjacent(vandal) ? null : "too far away"
+
+/turf/proc/graffiti_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/graffiti/ask = context.answer
 	var/mob/vandal = ask.answerer
-	var/message = ask.text
+	var/message = ask.answer_value
 	act_message(vandal, src, others = span_warning("%U% begins carving something into %T%."))
 	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
 	return TRUE

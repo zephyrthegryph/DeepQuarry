@@ -818,23 +818,32 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	if (tomob.ckey)
 		question = "This mob already has a user ([tomob.key]) in control of it! "
 	question += "Are you sure you want to place [frommob.name]([frommob.key]) in control of [tomob.name]?"
-	om_ask(user, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
+	open_request(src, /datum/prompt/choice/ghost_drag, PROC_REF(ghost_drag_confirmed), answerer = user, question = question, asker = frommob, subject = tomob)
 	return 1
 
-/// Re-checked: the ghost still has a player.
-/datum/om/prompt/confirm/ghost_drag
+/// Re-checked: both original mobs exist and the ghost still has a player.
+/datum/prompt/choice/ghost_drag
 	title = "Place ghost in control of mob?"
-	requires = PROMPT_ADMIN(R_VAREDIT)
-	var/mob/observer/dead/frommob
-	var/mob/living/tomob
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	rights = R_VAREDIT
+	recheck_on_open = TRUE
 
-/datum/om/prompt/confirm/ghost_drag/valid()
+/datum/prompt/choice/ghost_drag/recheck_extra()
+	var/mob/admin = answerer
+	var/mob/observer/dead/frommob = asker
+	var/mob/living/tomob = subject
+	if(!istype(admin) || QDELETED(admin) || !istype(frommob) || QDELETED(frommob) || !istype(tomob) || QDELETED(tomob))
+		return "gone"
 	return frommob.ckey ? null : "no player"
 
-/datum/admins/proc/ghost_drag_confirmed(datum/om/prompt/confirm/ghost_drag/ask)
-	var/mob/admin = ask.answerer
-	var/mob/observer/dead/frommob = ask.frommob
-	var/mob/living/tomob = ask.tomob
+/datum/admins/proc/ghost_drag_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.answer_value != "Yes")
+		return
+	var/mob/admin = context.request.answerer
+	var/mob/observer/dead/frommob = context.request.asker
+	var/mob/living/tomob = context.request.subject
 	if(tomob.client) //No need to ghostize if there is no client
 		tomob.ghostize(0)
 	if(frommob.mind && frommob.mind.current) //Preserve teleop for original body when adminghosting.

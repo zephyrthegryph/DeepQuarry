@@ -108,10 +108,13 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 		to_chat(my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
 		return TRUE
 
-	var/_answer_k107 = act_ask(my_client(), action, params, ui, "k107", /datum/om/prompt/choice/alert, message = "Are you sure you want to submit your feedback?", title = "Confirm Submission", choices = list("No", "Yes"))
-	if(isnull(_answer_k107))
+	var/client/recipient = my_client()
+	if(!istype(ui) || QDELETED(ui) || !ismob(recipient?.mob) || QDELETED(recipient.mob))
 		return
-	if(_answer_k107 != "Yes")
+	open_request(ui, /datum/prompt/choice/feedback_submit, TYPE_PROC_REF(/datum/tgui, feedback_submit_answered), answerer = recipient.mob)
+
+/datum/managed_browser/feedback_form/proc/apply_feedback_submission(selected)
+	if(selected != "Yes")
 		return TRUE
 
 	var/author_text = my_client().ckey
@@ -184,3 +187,44 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 	if(!form.ui_act_allowed(original_ui.user, selected_action, original_ui, original_ui.state()))
 		return "the feedback action is unavailable"
 	return null
+
+/datum/prompt/choice/feedback_submit
+	question = "Are you sure you want to submit your feedback?"
+	title = "Confirm Submission"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/feedback_submit/recheck_extra()
+	var/reason = feedback_request_ui_reason(owner, answerer, "submit")
+	if(reason)
+		return reason
+	var/datum/tgui/original_ui = owner
+	var/datum/managed_browser/feedback_form/form = original_ui.src_object()
+	if(length(form.feedback_body) > MAX_FEEDBACK_LENGTH)
+		return "feedback is too long"
+	if(!sanitize(form.feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE))
+		return "feedback is empty or invalid"
+	return null
+
+/datum/tgui/proc/feedback_submit_answered(datum/act/request/context)
+	var/datum/managed_browser/feedback_form/form = src_object()
+	if(!istype(form) || QDELETED(form))
+		return
+	var/datum/request/request = context.request
+	if(!context.answer)
+		if(request.outcome != REQ_CANCELLED || isnull(request.answer_value))
+			return
+		switch(request.last_error)
+			if("feedback is too long")
+				to_chat(form.my_client(), span_warning("Your feedback is too long, at [length(form.feedback_body)] characters, where as the \
+					limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
+			if("feedback is empty or invalid")
+				to_chat(form.my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
+			else
+				return
+		SStgui.update_uis(form)
+		return
+	if(form.apply_feedback_submission(context.answer.answer_value) && !QDELETED(form))
+		SStgui.update_uis(form)

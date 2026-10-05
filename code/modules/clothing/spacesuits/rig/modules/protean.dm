@@ -86,12 +86,15 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee", "bullet", "laser", "energy", "bomb"))
 
 /obj/item/rig_module/protean/armor/engage(atom/target, notify_ai, mob/user)
-	var/armor_chosen = rerun_ask(user, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = TYPE_TABLE_GET(src, armor_types))
+	return armor_configuration_stage(target, notify_ai, user)
+
+/obj/item/rig_module/protean/armor/proc/armor_configuration_stage(atom/target, notify_ai, mob/user, armor_chosen = null, armorvalue = null)
 	if(isnull(armor_chosen))
+		open_request(src, /datum/prompt/choice/protean_armor_configuration, PROC_REF(armor_type_answered), answerer = user, subject = target, target_expected = !isnull(target), notify_ai = notify_ai, choices = TYPE_TABLE_GET(src, armor_types))
 		return
 	if(armor_chosen)
-		var/armorvalue = rerun_ask(user, "a2", PROC_REF(engage), args, /datum/om/prompt/number, message = "Set armour reduction value (Max of 60%)", title = "Protean Armor", default = 0, max = 60)
 		if(isnull(armorvalue))
+			open_request(src, /datum/prompt/number/protean_armor_configuration, PROC_REF(armor_value_answered), answerer = user, subject = target, target_expected = !isnull(target), notify_ai = notify_ai, armor_chosen = armor_chosen)
 			return
 		if(isnum(armorvalue))
 			LAZYSET(armor_settings, armor_chosen, armorvalue)
@@ -102,6 +105,20 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 				interface_desc += " [entry]: [value]"
 				slowdown += value*armor_weight_ratio
 			interface_desc += " Slowdown: [slowdown]"
+
+/obj/item/rig_module/protean/armor/proc/armor_type_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/protean_armor_configuration/ask = context.answer
+	armor_configuration_stage(ask.target_expected ? ask.subject : null, ask.notify_ai, ask.answerer, ask.answer_value)
+	SStgui.update_uis(src)
+
+/obj/item/rig_module/protean/armor/proc/armor_value_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/protean_armor_configuration/ask = context.answer
+	armor_configuration_stage(ask.target_expected ? ask.subject : null, ask.notify_ai, ask.answerer, ask.armor_chosen, ask.answer_value)
+	SStgui.update_uis(src)
 
 /obj/item/rig_module/protean/armor/activate(skip_engage = 0, mob/user)
 	var/obj/item/rig/protean/prig = holder
@@ -238,3 +255,47 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	return 0
 
 #undef PROTEAN_HOST_REPAIR_PER_TICK
+
+/datum/prompt/choice/protean_armor_configuration
+	title = "Protean Armor"
+	question = "Which armor to adjust?"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/target_expected = FALSE
+	var/notify_ai
+
+/datum/prompt/choice/protean_armor_configuration/recheck_extra()
+	var/obj/item/rig_module/protean/armor/module = owner
+	var/mob/user = answerer
+	var/atom/target = subject
+	if(!istype(module) || QDELETED(module) || !istype(user) || QDELETED(user))
+		return "gone"
+	if(target_expected && (!istype(target) || QDELETED(target)))
+		return "gone"
+	return null
+
+/datum/prompt/number/protean_armor_configuration
+	title = "Protean Armor"
+	question = "Set armour reduction value (Max of 60%)"
+	default = 0
+	timeout = 0
+	recheck_on_open = TRUE
+	var/target_expected = FALSE
+	var/notify_ai
+	var/armor_chosen
+
+/datum/prompt/number/protean_armor_configuration/recheck_extra()
+	var/obj/item/rig_module/protean/armor/module = owner
+	var/mob/user = answerer
+	var/atom/target = subject
+	if(!istype(module) || QDELETED(module) || !istype(user) || QDELETED(user))
+		return "gone"
+	if(target_expected && (!istype(target) || QDELETED(target)))
+		return "gone"
+	return null
+
+/datum/prompt/number/protean_armor_configuration/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, 60, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

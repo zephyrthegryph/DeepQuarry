@@ -30,13 +30,17 @@
 		pick_type(user)
 
 /obj/item/gun/energy/mouseray/proc/pick_type(mob/user)
-	var/choice = rerun_ask(user, "a1", PROC_REF(pick_type), args, /datum/om/prompt/choice, message = "Select a type to turn things into.", title = "[src.name]", choices = tf_possible_types)
-	if(isnull(choice))
+	open_request(src, /datum/prompt/choice/mouseray_type, PROC_REF(type_picked), answerer = user, title = name, choices = tf_possible_types?.Copy())
+
+/obj/item/gun/energy/mouseray/proc/type_picked(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(!choice)
-		return
-	tf_type = tf_possible_types[choice]
-	to_chat(user, span_notice("You selected [choice]."))
+	var/mob/user = context.request.answerer
+	var/choice = context.answer.answer_value
+	if(choice)
+		tf_type = tf_possible_types[choice]
+		to_chat(user, span_notice("You selected [choice]."))
+	SStgui.update_uis(src)
 
 /obj/item/gun/energy/mouseray/Fire(atom/target, mob/living/user, clickparams, pointblank, reflex)
 	if(!COOLDOWN_FINISHED(src, cooldown))
@@ -370,3 +374,12 @@ DECLARE_LOOT(/obj/random/mouseray, LOOT_TABLE(\
 	/obj/item/gun/energy/mouseray/teppi = 5, \
 	/obj/item/gun/energy/mouseray/metamorphosis = 1, \
 	/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1), LOOT_CHANCE(100))
+
+/datum/prompt/choice/mouseray_type
+	question = "Select a type to turn things into."
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/mouseray_type/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null

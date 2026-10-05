@@ -3841,11 +3841,11 @@
 	into += entry_line(1026)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1187
+/// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1196
 /datum/prompt/choice/admin_paralyze_confirm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 1187, /datum/prompt/choice/admin_paralyze_confirm)
-	into += entry_line(1188)
+	into += entry_block("code/modules/admin/admin.dm", 1196, /datum/prompt/choice/admin_paralyze_confirm)
+	into += entry_line(1197)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_sendmob) at code/modules/admin/verbs/adminjump.dm:230
@@ -4104,13 +4104,13 @@
 	into += entry_line(48)
 	into += list(global.ref_one(nameof(faction), /datum/antagonist))
 
-/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:1032
+/// CAPABILITIES(/datum/prompt/choice/fax_stamp) at code/modules/admin/admin.dm:1041
 /datum/prompt/choice/fax_stamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 1032, /datum/prompt/choice/fax_stamp)
-	into += entry_line(1033)
+	into += entry_block("code/modules/admin/admin.dm", 1041, /datum/prompt/choice/fax_stamp)
+	into += entry_line(1042)
 	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
-	into += entry_line(1034)
+	into += entry_line(1043)
 	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
 
 /// CAPABILITIES(/datum/prompt/choice/firework_setting_review) at code/modules/fireworks/firework_stars.dm:193
@@ -4572,11 +4572,11 @@
 	into += entry_line(410)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:1157
+/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:1166
 /datum/prompt/number/admin_telecrystals/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 1157, /datum/prompt/number/admin_telecrystals)
-	into += entry_line(1158)
+	into += entry_block("code/modules/admin/admin.dm", 1166, /datum/prompt/number/admin_telecrystals)
+	into += entry_line(1167)
 	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/number/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:355
@@ -4870,13 +4870,13 @@
 	into += entry_line(324)
 	into += list(global.ref_one(nameof(source), /mob))
 
-/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:1002
+/// CAPABILITIES(/datum/prompt/text/fax_title) at code/modules/admin/admin.dm:1011
 /datum/prompt/text/fax_title/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 1002, /datum/prompt/text/fax_title)
-	into += entry_line(1003)
+	into += entry_block("code/modules/admin/admin.dm", 1011, /datum/prompt/text/fax_title)
+	into += entry_line(1012)
 	into += list(global.ref_one(nameof(paper), /obj/item/paper/admin))
-	into += entry_line(1004)
+	into += entry_line(1013)
 	into += list(global.ref_one(nameof(destination), /obj/machinery/photocopier/faxmachine))
 
 /// CAPABILITIES(/datum/prompt/text/freight_certification) at code/modules/economy/sales_lots.dm:483
@@ -9550,11 +9550,11 @@
 	into += entry_line(19)
 	into += list(global.op("unfold", global.in_hand(), global.label("Unfold"), global.needs(global.req(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), global.then(PROC_REF(unfolded))))
 
-/// CAPABILITIES(/obj/item/bodysnatcher) at code/game/objects/items/devices/body_snatcher.dm:105
+/// CAPABILITIES(/obj/item/bodysnatcher) at code/game/objects/items/devices/body_snatcher.dm:116
 /obj/item/bodysnatcher/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/body_snatcher.dm", 105, /obj/item/bodysnatcher)
-	into += entry_line(106)
+	into += entry_block("code/game/objects/items/devices/body_snatcher.dm", 116, /obj/item/bodysnatcher)
+	into += entry_line(117)
 	into += list(global.op("activate", global.in_hand(), global.then(PROC_REF(activated))))
 
 /// CAPABILITIES(/obj/item/book/bundle) at code/modules/library/lib_items.dm:390

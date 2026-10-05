@@ -28,3 +28,6 @@ changes:
   - code_imp: "Moved suit-sensor selection, RIG self-destruct confirmation and fax title and department choices to native requests."
   - code_imp: "Moved beacon feeding, body writing, admin paper confirmation, ticket fallback and slot reset choices to native requests."
   - code_imp: "Passed the clicking user explicitly through storage HUD handling."
+  - code_imp: "Moved ghost control, graffiti, soulcatcher admission, body swapping, size selection and AI hack confirmations to native requests."
+  - bugfix: "Character slot dialogs release their busy state after cancellation and correctly proceed to copy confirmation."
+  - code_imp: "Moved feedback submission confirmation and Protean armor configuration to native requests."

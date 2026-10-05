@@ -53,9 +53,15 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
-	var/size_select = rerun_ask(user, "a1", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), (1-600%) in dormitory areas.", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-	if(isnull(size_select))
+	open_request(src, /datum/prompt/number/sizegun_size, PROC_REF(size_selected), answerer = user, question = "Put the desired size (25-200%), (1-600%) in dormitory areas.", default = size_set_to * 100)
+
+/obj/item/gun/energy/sizegun/proc/size_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	size_selected_apply(context.request.answerer, context.answer.answer_value)
+	SStgui.update_uis(src)
+
+/obj/item/gun/energy/sizegun/proc/size_selected_apply(mob/user, size_select)
 	if(!size_select)
 		return //cancelled
 	//We do valid resize testing in actual firings because people move after setting these things.
@@ -133,9 +139,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
-	var/size_select = rerun_ask(user, "a2", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (1-600%)", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-	if(isnull(size_select))
+	open_request(src, /datum/prompt/number/sizegun_size, PROC_REF(size_selected), answerer = user, question = "Put the desired size (1-600%)", default = size_set_to * 100)
+
+/obj/item/gun/energy/sizegun/admin/size_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	size_selected_apply(context.request.answerer, context.answer.answer_value)
+	SStgui.update_uis(src)
+
+/obj/item/gun/energy/sizegun/admin/size_selected_apply(mob/user, size_select)
 	if(!size_select)
 		return //cancelled
 	size_set_to = clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
@@ -257,3 +269,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatter
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
+
+/datum/prompt/number/sizegun_size
+	title = "Set Size"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/sizegun_size/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/prompt/number/sizegun_size/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, RESIZE_MAXIMUM_DORMS * 100, RESIZE_MINIMUM_DORMS * 100, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
