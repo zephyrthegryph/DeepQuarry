@@ -438,10 +438,16 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_setcategory)
 
 UI_ACT(/obj/machinery/librarycomp, "upload", ui_act_upload)
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_upload)
+	return library_upload_stage(ui)
+
+/obj/machinery/librarycomp/proc/library_upload_stage(datum/tgui/ui, choice, choice_ready = FALSE)
+	var/mob/user = ui.user
 	if(!scanner()?.cache())
 		return TRUE
-	var/choice = act_ask(user, action, params, ui, "k393", /datum/om/prompt/choice/alert, message = "Are you certain you wish to upload this title to the Archive?", title = "Confirmation", choices = list("Confirm", "Abort"))
-	if(isnull(choice))
+	if(!choice_ready)
+		if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
+			return
+		open_request(ui, /datum/prompt/choice/library_upload, TYPE_PROC_REF(/datum/tgui, library_upload_answered), answerer = ui.user)
 		return
 	if(choice != "Confirm")
 		return TRUE
@@ -460,7 +466,9 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_upload)
 
 UI_ACT(/obj/machinery/librarycomp, "targetid", ui_act_targetid, UI_ARG_NUM("id"))
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_targetid)
-	var/numeric_id = params["id"]
+	return order_library_id(user, params["id"])
+
+/obj/machinery/librarycomp/proc/order_library_id(mob/user, numeric_id)
 	// Validate that the id is a positive integer before querying.
 	if(!isnum(numeric_id) || numeric_id <= 0 || round(numeric_id) != numeric_id)
 		return TRUE
@@ -496,12 +504,9 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delid)
 
 UI_ACT(/obj/machinery/librarycomp, "orderbyid", ui_act_orderbyid)
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_orderbyid)
-	var/orderid = act_ask(user, action, params, ui, "k468", /datum/om/prompt/number, message = "Enter your order:")
-	if(isnull(orderid))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(orderid && isnum(orderid))
-		tgui_act("targetid", list("id" = "[orderid]"), ui, state)
-	return TRUE
+	open_request(ui, /datum/prompt/number/library_order_id, TYPE_PROC_REF(/datum/tgui, library_order_id_answered), answerer = ui.user)
 
 UI_ACT(/obj/machinery/librarycomp, "sort", ui_act_sort, UI_ARG_TEXT("field"))
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_sort)
@@ -842,4 +847,64 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		return "the original window is not interactive"
 	if(!computer.ui_act_allowed(original_ui.user, selected_action, original_ui, original_ui.state()))
 		return "the search action is unavailable"
+	return null
+
+/datum/tgui/proc/library_upload_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/librarycomp/computer = src_object()
+	if(computer.library_upload_stage(src, context.answer.answer_value, TRUE))
+		SStgui.update_uis(computer)
+
+/datum/prompt/choice/library_upload
+	question = "Are you certain you wish to upload this title to the Archive?"
+	title = "Confirmation"
+	choices = list("Confirm", "Abort")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/library_upload/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/librarycomp/computer = original_ui.src_object()
+	if(!istype(computer) || QDELETED(computer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!computer.ui_act_allowed(original_ui.user, "upload", original_ui, original_ui.state()))
+		return "the library upload action is unavailable"
+	return null
+
+/datum/tgui/proc/library_order_id_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/librarycomp/computer = src_object()
+	var/orderid = context.answer.answer_value
+	if(orderid && isnum(orderid))
+		var/datum/notice/ui_act/notice = notice_take(/datum/notice/ui_act)
+		notice.usr_ = user
+		notice.action = "targetid"
+		notice_publish(computer, notice)
+		if(status == STATUS_INTERACTIVE && computer.ui_act_allowed(user, "targetid", src, state()))
+			computer.order_library_id(user, text2num("[orderid]"))
+	SStgui.update_uis(computer)
+
+/datum/prompt/number/library_order_id
+	question = "Enter your order:"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/library_order_id/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/librarycomp/computer = original_ui.src_object()
+	if(!istype(computer) || QDELETED(computer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!computer.ui_act_allowed(original_ui.user, "orderbyid", original_ui, original_ui.state()))
+		return "the library order is unavailable"
 	return null

@@ -76,11 +76,10 @@ UI_DATA_REPLACE(/datum/managed_browser/feedback_form, "topic=feedback_topic", "h
 
 UI_ACT(/datum/managed_browser/feedback_form, "edit_body", ui_act_edit_body)
 UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_edit_body)
-	var/_answer_k80 = act_ask(my_client(), action, params, ui, "k80", /datum/om/prompt/text, message = "Please write your feedback here.", title = "Feedback Body", default = feedback_body, multiline = TRUE, max_length = MAX_TGUI_INPUT)
-	if(isnull(_answer_k80))
+	var/client/recipient = my_client()
+	if(!istype(ui) || QDELETED(ui) || !ismob(recipient?.mob) || QDELETED(recipient.mob))
 		return
-	feedback_body = _answer_k80
-	return TRUE
+	open_request(ui, /datum/prompt/text/feedback_body, TYPE_PROC_REF(/datum/tgui, feedback_body_answered), answerer = recipient.mob, default = feedback_body)
 
 UI_ACT(/datum/managed_browser/feedback_form, "set_hide_author", ui_act_set_hide_author, UI_ARG_BOOL("hide"))
 UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_set_hide_author)
@@ -92,12 +91,10 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_set_hide_author)
 
 UI_ACT(/datum/managed_browser/feedback_form, "choose_topic", ui_act_choose_topic)
 UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_choose_topic)
-	var/picked = act_ask(my_client(), action, params, ui, "k91", /datum/om/prompt/choice, message = "Choose the topic you want to submit your feedback under.", title = "Feedback Topic", choices = CONFIG_GET(str_list/sqlite_feedback_topics))
-	if(isnull(picked))
+	var/client/recipient = my_client()
+	if(!istype(ui) || QDELETED(ui) || !ismob(recipient?.mob) || QDELETED(recipient.mob))
 		return
-	if(picked)
-		feedback_topic = picked
-	return TRUE
+	open_request(ui, /datum/prompt/choice/feedback_topic, TYPE_PROC_REF(/datum/tgui, feedback_topic_answered), answerer = recipient.mob, choices = CONFIG_GET(str_list/sqlite_feedback_topics))
 
 UI_ACT(/datum/managed_browser/feedback_form, "submit", ui_act_submit)
 UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
@@ -131,3 +128,59 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 	qdel(src)
 	return TRUE
 
+
+/datum/managed_browser/feedback_form/proc/apply_feedback_body(value)
+	feedback_body = value
+
+/datum/managed_browser/feedback_form/proc/apply_feedback_topic(value)
+	if(value)
+		feedback_topic = value
+
+/datum/tgui/proc/feedback_body_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/managed_browser/feedback_form/form = src_object()
+	form.apply_feedback_body(context.answer.answer_value)
+	SStgui.update_uis(form)
+
+/datum/tgui/proc/feedback_topic_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/managed_browser/feedback_form/form = src_object()
+	form.apply_feedback_topic(context.answer.answer_value)
+	SStgui.update_uis(form)
+
+/datum/prompt/text/feedback_body
+	question = "Please write your feedback here."
+	title = "Feedback Body"
+	max_len = MAX_TGUI_INPUT
+	multiline = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/feedback_body/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/feedback_body/recheck_extra()
+	return feedback_request_ui_reason(owner, answerer, "edit_body")
+
+/datum/prompt/choice/feedback_topic
+	question = "Choose the topic you want to submit your feedback under."
+	title = "Feedback Topic"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/feedback_topic/recheck_extra()
+	return feedback_request_ui_reason(owner, answerer, "choose_topic")
+
+/proc/feedback_request_ui_reason(datum/tgui/original_ui, mob/original_actor, selected_action)
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(original_actor))
+		return "gone"
+	var/datum/managed_browser/feedback_form/form = original_ui.src_object()
+	if(!istype(form) || QDELETED(form))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!form.ui_act_allowed(original_ui.user, selected_action, original_ui, original_ui.state()))
+		return "the feedback action is unavailable"
+	return null

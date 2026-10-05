@@ -178,15 +178,9 @@ UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_choose)
 
 UI_ACT(/obj/machinery/computer/ship/disperser, "calibration", ui_act_calibration, UI_ARG_NUM("calibration"))
 UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_calibration)
-	var/input = act_ask(ui.user, action, params, ui, "k177", /datum/om/prompt/number, message = "0-9", title = "disperser calibration", default = 0, max = 9)
-	if(isnull(input))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(!isnull(input)) //can be zero so we explicitly check for null
-		var/calnum = sanitize_integer(params["calibration"], 0, caldigit)//sanitiiiiize
-		calibration[calnum + 1] = sanitize_integer(input, 0, 9, 0)//must add 1 because js indexes from 0
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	open_request(ui, /datum/prompt/number/disperser_setting/calibration, TYPE_PROC_REF(/datum/tgui, disperser_setting_answered), answerer = ui.user, calibration_index = params["calibration"])
 
 UI_ACT(/obj/machinery/computer/ship/disperser, "skill_calibration", ui_act_skill_calibration)
 UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_skill_calibration)
@@ -198,27 +192,15 @@ UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_skill_calibration)
 
 UI_ACT(/obj/machinery/computer/ship/disperser, "strength", ui_act_strength)
 UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_strength)
-	var/input = act_ask(ui.user, action, params, ui, "k189", /datum/om/prompt/number, message = "1-5", title = "disperser strength", default = 1, max = 5, min = 1)
-	if(isnull(input))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-		strength = sanitize_integer(input, 1, 5, 1)
-		middle().update_idle_power_usage(strength * range * 100)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	open_request(ui, /datum/prompt/number/disperser_setting/strength, TYPE_PROC_REF(/datum/tgui, disperser_setting_answered), answerer = ui.user)
 
 UI_ACT(/obj/machinery/computer/ship/disperser, "range", ui_act_range)
 UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_range)
-	var/input = act_ask(ui.user, action, params, ui, "k196", /datum/om/prompt/number, message = "1-5", title = "disperser radius", default = 1, max = 5, min = 1)
-	if(isnull(input))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-		range = sanitize_integer(input, 1, 5, 1)
-		middle().update_idle_power_usage(strength * range * 100)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	open_request(ui, /datum/prompt/number/disperser_setting/range, TYPE_PROC_REF(/datum/tgui, disperser_setting_answered), answerer = ui.user)
 
 UI_ACT(/obj/machinery/computer/ship/disperser, BURN, ui_act_burn)
 UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_burn)
@@ -238,3 +220,79 @@ UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_burn)
 /// Accessor for the front var.
 /obj/machinery/computer/ship/disperser/proc/front() as /obj/machinery/disperser/front
 	return front
+
+/datum/tgui/proc/disperser_setting_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/disperser_setting/ask = context.answer
+	var/obj/machinery/computer/ship/disperser/console = src_object()
+	console.apply_disperser_setting(user, state(), ask.setting_action, ask.answer_value, ask.calibration_index)
+	SStgui.update_uis(console)
+
+/obj/machinery/computer/ship/disperser/proc/apply_disperser_setting(mob/user, datum/tgui_state/state, setting_action, value, calibration_index)
+	switch(setting_action)
+		if("calibration")
+			var/calnum = sanitize_integer(calibration_index, 0, caldigit)
+			calibration[calnum + 1] = sanitize_integer(value, 0, 9, 0)
+		if("strength")
+			if(value && tgui_status(user, state) == STATUS_INTERACTIVE)
+				strength = sanitize_integer(value, 1, 5, 1)
+				middle().update_idle_power_usage(strength * range * 100)
+		if("range")
+			if(value && tgui_status(user, state) == STATUS_INTERACTIVE)
+				range = sanitize_integer(value, 1, 5, 1)
+				middle().update_idle_power_usage(strength * range * 100)
+	if(!issilicon(user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
+
+/datum/prompt/number/disperser_setting
+	timeout = 0
+	recheck_on_open = TRUE
+	var/setting_action
+	var/calibration_index
+	var/display_min = 0
+	var/display_max = 9
+
+/datum/prompt/number/disperser_setting/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/disperser_setting/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, display_max, display_min, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/disperser_setting/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/ship/disperser/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!console.ui_act_allowed(original_ui.user, setting_action, original_ui, original_ui.state()))
+		return "the disperser setting is unavailable"
+	return null
+
+/datum/prompt/number/disperser_setting/calibration
+	question = "0-9"
+	title = "disperser calibration"
+	default = 0
+	setting_action = "calibration"
+
+/datum/prompt/number/disperser_setting/strength
+	question = "1-5"
+	title = "disperser strength"
+	default = 1
+	display_min = 1
+	display_max = 5
+	setting_action = "strength"
+
+/datum/prompt/number/disperser_setting/range
+	question = "1-5"
+	title = "disperser radius"
+	default = 1
+	display_min = 1
+	display_max = 5
+	setting_action = "range"

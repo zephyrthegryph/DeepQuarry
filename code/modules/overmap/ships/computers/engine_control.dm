@@ -66,9 +66,11 @@ UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_global_toggle)
 
 UI_ACT(/obj/machinery/computer/ship/engines, "set_global_limit", ui_act_set_global_limit)
 UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_set_global_limit)
-	var/newlim = act_ask(ui.user, action, params, ui, "k65", /datum/om/prompt/number, message = "Input new thrust limit (0..100%)", title = "Thrust limit", default = linked().thrust_limit*100, max = 100, round_entry = FALSE)
-	if(isnull(newlim))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
+	open_request(ui, /datum/prompt/number/ship_console_global_limit, TYPE_PROC_REF(/datum/tgui, ship_console_global_limit_answered), answerer = ui.user, default = linked().thrust_limit*100)
+
+/obj/machinery/computer/ship/engines/proc/apply_global_limit_answer(datum/tgui/ui, datum/tgui_state/state, newlim)
 	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 		return FALSE
 	linked().thrust_limit = clamp(newlim/100, 0, 1)
@@ -120,3 +122,35 @@ UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_toggle_engine)
 	. = TRUE
 	if(. && !issilicon(ui.user))
 		play_sfx(src, SFX_TERMINAL_TYPE)
+
+/datum/tgui/proc/ship_console_global_limit_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/computer/ship/engines/computer = src_object()
+	if(computer.apply_global_limit_answer(src, state(), context.answer.answer_value))
+		SStgui.update_uis(computer)
+
+/datum/prompt/number/ship_console_global_limit
+	question = "Input new thrust limit (0..100%)"
+	title = "Thrust limit"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/ship_console_global_limit/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, 100, 0, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/ship_console_global_limit/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/ship/engines/computer = original_ui.src_object()
+	if(!istype(computer) || QDELETED(computer))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!computer.ui_act_allowed(original_ui.user, "set_global_limit", original_ui, original_ui.state()))
+		return "the engine console action is unavailable"
+	return null

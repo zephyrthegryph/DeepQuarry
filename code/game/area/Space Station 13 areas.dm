@@ -1800,8 +1800,8 @@ GLOBAL_LIST_INIT(the_station_areas, list(
 	power_light = 0
 	power_equip = 0
 	power_environ = 0
-	var/asteroid_spawns = list()
-	var/mob_spawns = list()
+	var/asteroid_spawns
+	var/mob_spawns
 	var/shuttle_area //It would be neat if this were more dynamic, but eh.
 
 

@@ -6,7 +6,7 @@
 	var/list/known_SMESs = null
 	var/list/known_breakers = null
 
-	var/filtered_smeslist = list()
+	var/filtered_smeslist
 
 	var/current_page = 1
 	var/number_pages = 0
@@ -18,10 +18,10 @@
 	var/lower_bound = page_index * SMES_PER_PAGE + 1
 	var/upper_bound = (page_index + 1) * SMES_PER_PAGE
 	upper_bound = min(upper_bound, length(known_SMESs))
-	filtered_smeslist = list()
+	filtered_smeslist = null
 
 	for(var/index = lower_bound, index <= upper_bound, index++)
-		filtered_smeslist += known_SMESs[index]
+		LAZYADD(filtered_smeslist, known_SMESs[index])
 
 CAPABILITIES(/datum/tgui_module/rcon)
 	interface("RCON")

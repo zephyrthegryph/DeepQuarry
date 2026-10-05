@@ -1,21 +1,13 @@
-/// Direct handlers exercise real typed actor prompts and server-side reentry arguments.
+/// Real filter transition effects only; no administrative UI or request acceptance claim.
 /datum/unit_test/om/interim_filter_editor_color_actor/run_om(list/made)
-	sched.test_prompts = list()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/pen/target = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	var/datum/filter_editor/editor = allocate(/datum/filter_editor, target)
 	target.add_filter("actor_color", 1, list("type" = "color", "color" = "#FFFFFF"))
-	editor.ui_act_modify_color_value(actor, list("name" = "actor_color"), null, null, "modify_color_value")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the actual color handler opens its typed color prompt")
-	var/datum/om/prompt/color/ask = sched.test_prompts[1]
-	made += ask
-	TEST_ASSERT_EQUAL(ask.peek("answerer"), actor, "the actual filter color prompt uses its explicit handler actor")
-	TEST_ASSERT_EQUAL(target.filter_data["actor_color"]["color"], "#FFFFFF", "opening the real prompt preserves the target's existing filter")
-	var/list/reentry = list("name" = "actor_color", "om_answer_color" = "#123456", "om_reentry" = TRUE)
-	TEST_ASSERT_EQUAL(editor.ui_act_modify_color_value(actor, reentry, null, null, "modify_color_value"), TRUE, "the actual handler consumes its trusted server answer arguments")
+	TEST_ASSERT_EQUAL(editor.apply_filter_colour("actor_color", "#123456"), TRUE, "the actual transition effect handles a nonblank answer")
 	TEST_ASSERT_EQUAL(target.filter_data["actor_color"]["color"], "#123456", "the actual filter transition stores the supplied answer color")
 	TEST_ASSERT_EQUAL(target.filter_data["actor_color"]["priority"], 1, "the actual color transition preserves filter priority")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the consumed trusted answer creates no redundant prompt")
+	TEST_ASSERT_NULL(editor.apply_filter_colour("actor_color", ""), "blank color has the original unhandled effect result")
+	TEST_ASSERT_EQUAL(target.filter_data["actor_color"]["color"], "#123456", "blank color leaves the actual filter unchanged")
 
 /datum/unit_test/interim_filter_editor_mass_apply_refusal/Run()
 	var/turf/T = run_loc_floor_bottom_left

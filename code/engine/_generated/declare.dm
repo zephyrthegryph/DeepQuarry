@@ -16128,11 +16128,11 @@
 	into += entry_line(42)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating)))))
 
-/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:661
+/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:666
 /obj/machinery/bookbinder/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 661, /obj/machinery/bookbinder)
-	into += entry_line(662)
+	into += entry_block("code/modules/library/lib_machines.dm", 666, /obj/machinery/bookbinder)
+	into += entry_line(667)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/botany) at code/modules/hydroponics/seed_machines.dm:78
@@ -17933,17 +17933,17 @@
 	into += entry_line(25)
 	into += list(global.op("back", global.ui_act(), global.then(PROC_REF(ui_act_back))))
 
-/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:612
+/// CAPABILITIES(/obj/machinery/libraryscanner) at code/modules/library/lib_machines.dm:617
 /obj/machinery/libraryscanner/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/library/lib_machines.dm", 612, /obj/machinery/libraryscanner)
-	into += entry_line(613)
+	into += entry_block("code/modules/library/lib_machines.dm", 617, /obj/machinery/libraryscanner)
+	into += entry_line(618)
 	into += list(global.interface("LibraryScanner", title = "Scanner"))
-	into += entry_line(614)
+	into += entry_line(619)
 	into += list(global.op("scan", global.ui_act("scan"), global.then(PROC_REF(ui_act_scan))))
-	into += entry_line(615)
+	into += entry_line(620)
 	into += list(global.op("clear", global.ui_act("clear"), global.then(PROC_REF(ui_act_clear))))
-	into += entry_line(616)
+	into += entry_line(621)
 	into += list(global.op("eject", global.ui_act("eject"), global.then(PROC_REF(ui_act_eject))))
 
 /// CAPABILITIES(/obj/machinery/light) at code/modules/power/lighting.dm:106

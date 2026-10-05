@@ -25,7 +25,7 @@ UI_ACT_PROC(/datum/lootpanel, ui_act_grab)
 		return FALSE
 
 	if(thing != source_turf() && !(locate_within(source_turf(), thing)))
-		qdel(index) // Item has moved
+		rel_remove(src, nameof(searchables), index) // Item has moved
 		return TRUE
 
 	var/modifiers = ""

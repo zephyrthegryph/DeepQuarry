@@ -55,7 +55,7 @@
 			wanted[filename] = TRUE
 	for(var/filename in wanted)
 		if(fexists("[asset_directory]/[filename]"))
-			assets[filename] = file("[asset_directory]/[filename]")
+			LAZYSET(assets, filename, file("[asset_directory]/[filename]"))
 		else
 			log_asset("ERROR: tgui chunk [filename] is in the manifest but missing from [asset_directory]")
 	return ..()
@@ -121,7 +121,7 @@
 	if(!asset_directory)
 		return
 	for(var/filename in allowed_assets)
-		assets[filename] = file("[asset_directory]/[filename]")
+		LAZYSET(assets, filename, file("[asset_directory]/[filename]"))
 	return ..()
 
 /datum/asset/simple/namespaced/tgui_live_generation_chunks/prehashed_asset_hash(asset_name)

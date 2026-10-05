@@ -232,10 +232,10 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_press)
 		if("max")
 			set_target_pressure(max_pressure_setting)
 		if("set")
-			var/new_pressure = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure Control", default = src.target_pressure, max = max_pressure_setting)
-			if(isnull(new_pressure))
+			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 				return
-			set_target_pressure(between(0, new_pressure, max_pressure_setting))
+			open_request(ui, /datum/prompt/number/atmos_scalar/gate_pressure, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure Control", default = src.target_pressure, display_max = max_pressure_setting)
+			return
 	update_icon()
 	add_fingerprint(ui.user)
 
@@ -248,10 +248,10 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rat
 		if("max")
 			set_set_flow_rate(air1.return_volume())
 		if("set")
-			var/new_flow_rate = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", title = "Flow Rate Control", default = src.set_flow_rate, max = air1.return_volume())
-			if(isnull(new_flow_rate))
+			if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 				return
-			set_set_flow_rate(between(0, new_flow_rate, air1.return_volume()))
+			open_request(ui, /datum/prompt/number/atmos_scalar/gate_flow, TYPE_PROC_REF(/datum/tgui, atmos_scalar_answered), answerer = ui.user, question = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", title = "Flow Rate Control", default = src.set_flow_rate, display_max = air1.return_volume())
+			return
 	update_icon()
 	add_fingerprint(ui.user)
 
@@ -290,3 +290,13 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode, 
 /obj/machinery/atmospherics/binary/passive_gate/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(unlocked), nameof(target_pressure), nameof(set_flow_rate), nameof(regulate_mode))
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/apply_gate_pressure_answer(mob/user, value)
+	set_target_pressure(between(0, value, max_pressure_setting))
+	update_icon()
+	add_fingerprint(user)
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/apply_gate_flow_answer(mob/user, value)
+	set_set_flow_rate(between(0, value, air1.return_volume()))
+	update_icon()
+	add_fingerprint(user)

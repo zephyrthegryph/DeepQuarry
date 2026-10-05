@@ -80,14 +80,9 @@ UI_DATA_REPLACE(/datum/eventkit/mob_spawner, "loc_lock:num", "use_custom_ai:num"
 
 UI_ACT(/datum/eventkit/mob_spawner, "select_path", ui_act_select_path)
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_select_path)
-	var/list/choices = typesof(/mob)
-	var/newPath = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Please select the new path of the mob you want to spawn.", choices = choices)
-	if(isnull(newPath))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-
-	path = newPath
-	new_path = TRUE
-	return TRUE
+	open_request(ui, /datum/prompt/choice/mob_spawner_setting/path, TYPE_PROC_REF(/datum/tgui, mob_spawner_setting_answered), answerer = ui.user, choices = typesof(/mob))
 
 UI_ACT(/datum/eventkit/mob_spawner, "toggle_custom_ai", ui_act_toggle_custom_ai)
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_toggle_custom_ai)
@@ -96,19 +91,15 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_toggle_custom_ai)
 
 UI_ACT(/datum/eventkit/mob_spawner, "set_faction", ui_act_set_faction)
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_set_faction)
-	var/_answer_a2 = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Please input your mobs' faction", title = "Faction", default = (faction ? faction : "neutral"))
-	if(isnull(_answer_a2))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	faction = _answer_a2
-	return TRUE
+	open_request(ui, /datum/prompt/text/mob_spawner_faction, TYPE_PROC_REF(/datum/tgui, mob_spawner_setting_answered), answerer = ui.user, default = (faction ? faction : "neutral"))
 
 UI_ACT(/datum/eventkit/mob_spawner, "set_intent", ui_act_set_intent)
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_set_intent)
-	var/_answer_a3 = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice, message = "Please select preferred intent", title = "Select Intent", choices = list(I_HELP, I_HURT), default = (intent ? intent : I_HELP))
-	if(isnull(_answer_a3))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	intent = _answer_a3
-	return TRUE
+	open_request(ui, /datum/prompt/choice/mob_spawner_setting/intent, TYPE_PROC_REF(/datum/tgui, mob_spawner_setting_answered), answerer = ui.user, default = (intent ? intent : I_HELP))
 
 UI_ACT(/datum/eventkit/mob_spawner, "set_ai_path", ui_act_set_ai_path)
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_set_ai_path)
@@ -203,3 +194,68 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an advanced version of the mob spawner.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/datum/eventkit/mob_spawner/spawner = new()
 	spawner.tgui_interact(user.mob)
+
+/datum/tgui/proc/mob_spawner_setting_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/eventkit/mob_spawner/spawner = src_object()
+	var/setting_action
+	if(istype(context.answer, /datum/prompt/choice/mob_spawner_setting))
+		var/datum/prompt/choice/mob_spawner_setting/ask = context.answer
+		setting_action = ask.setting_action
+	else
+		setting_action = "set_faction"
+	spawner.apply_spawner_setting(setting_action, context.answer.answer_value)
+	SStgui.update_uis(spawner)
+
+/datum/eventkit/mob_spawner/proc/apply_spawner_setting(setting_action, value)
+	switch(setting_action)
+		if("select_path")
+			path = value
+			new_path = TRUE
+		if("set_faction")
+			faction = value
+		if("set_intent")
+			intent = value
+
+/datum/prompt/choice/mob_spawner_setting
+	timeout = 0
+	recheck_on_open = TRUE
+	var/setting_action
+
+/datum/prompt/choice/mob_spawner_setting/recheck_extra()
+	return mob_spawner_setting_ui_reason(owner, answerer, setting_action)
+
+/datum/prompt/choice/mob_spawner_setting/path
+	question = "Please select the new path of the mob you want to spawn."
+	setting_action = "select_path"
+
+/datum/prompt/choice/mob_spawner_setting/intent
+	question = "Please select preferred intent"
+	title = "Select Intent"
+	choices = list(I_HELP, I_HURT)
+	setting_action = "set_intent"
+
+/datum/prompt/text/mob_spawner_faction
+	question = "Please input your mobs' faction"
+	title = "Faction"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/mob_spawner_faction/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/mob_spawner_faction/recheck_extra()
+	return mob_spawner_setting_ui_reason(owner, answerer, "set_faction")
+
+/proc/mob_spawner_setting_ui_reason(datum/tgui/original_ui, mob/original_actor, setting_action)
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(original_actor))
+		return "gone"
+	var/datum/eventkit/mob_spawner/spawner = original_ui.src_object()
+	if(!istype(spawner) || QDELETED(spawner))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!spawner.ui_act_allowed(original_ui.user, setting_action, original_ui, original_ui.state()))
+		return "the mob spawner setting is unavailable"
+	return null

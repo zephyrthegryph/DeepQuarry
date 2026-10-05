@@ -61,7 +61,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_ov
 		for(var/mark_name in markings)
 			var/mark_data = markings[mark_name]
 			var/datum/sprite_accessory/marking/mark = mark_data["datum"]
-			if(length(mark.body_parts & forbidden_parts))
+			if(mark.body_parts && length(mark.body_parts & forbidden_parts))
 				continue
 			ico = mark.icon
 			icostate = "[mark.icon_state]-[organ_tag]"

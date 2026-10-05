@@ -57,12 +57,9 @@ UI_DATA(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "species_types:list
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "species", ui_act_species)
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_species)
-	var/new_species = act_ask(ui.user, action, params, ui, "k65", /datum/om/prompt/choice, message = "Select a new species", title = "Prosfab Species Selection", choices = species_types)
-	if(isnull(new_species))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(new_species && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-		species = new_species
-	return TRUE
+	open_request(ui, /datum/prompt/choice/prosfab_setting, TYPE_PROC_REF(/datum/tgui, prosfab_setting_answered), answerer = ui.user, question = "Select a new species", title = "Prosfab Species Selection", choices = species_types, setting_action = "species")
 
 UI_ACT(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "manufacturer", ui_act_manufacturer)
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufacturer)
@@ -75,12 +72,9 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufact
 			continue
 		new_manufacturers += A
 
-	var/new_manufacturer = act_ask(ui.user, action, params, ui, "k79", /datum/om/prompt/choice, message = "Select a new manufacturer", title = "Prosfab Species Selection", choices = new_manufacturers)
-	if(isnull(new_manufacturer))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	if(new_manufacturer && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-		manufacturer = new_manufacturer
-	return TRUE
+	open_request(ui, /datum/prompt/choice/prosfab_setting, TYPE_PROC_REF(/datum/tgui, prosfab_setting_answered), answerer = ui.user, question = "Select a new manufacturer", title = "Prosfab Species Selection", choices = new_manufacturers, setting_action = "manufacturer")
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/declare_interactions(list/into)
 	into += list(
@@ -216,3 +210,37 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufact
 		return O
 	else
 		return new dispensed_design.build_path(src)
+
+/datum/tgui/proc/prosfab_setting_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/prosfab_setting/ask = context.answer
+	var/obj/machinery/mecha_part_fabricator_tg/prosthetics/fabricator = src_object()
+	fabricator.apply_prosfab_setting(user, state(), ask.setting_action, ask.answer_value)
+	SStgui.update_uis(fabricator)
+
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/apply_prosfab_setting(mob/user, datum/tgui_state/state, setting_action, value)
+	if(value && tgui_status(user, state) == STATUS_INTERACTIVE)
+		switch(setting_action)
+			if("species")
+				species = value
+			if("manufacturer")
+				manufacturer = value
+
+/datum/prompt/choice/prosfab_setting
+	timeout = 0
+	recheck_on_open = TRUE
+	var/setting_action
+
+/datum/prompt/choice/prosfab_setting/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/mecha_part_fabricator_tg/prosthetics/fabricator = original_ui.src_object()
+	if(!istype(fabricator) || QDELETED(fabricator))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!fabricator.ui_act_allowed(original_ui.user, setting_action, original_ui, original_ui.state()))
+		return "the fabricator setting is unavailable"
+	return null

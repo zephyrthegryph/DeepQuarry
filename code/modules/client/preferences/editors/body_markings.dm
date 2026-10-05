@@ -37,7 +37,7 @@
 			icon_state += "-[S.body_parts[1]]"
 		styles[path] = list(
 			"name" = S.name,
-			"body_parts" = S.body_parts,
+			"body_parts" = S.body_parts || list(),
 			"icon" = "[REF(S.icon)]",
 			"icon_state" = icon_state,
 		)

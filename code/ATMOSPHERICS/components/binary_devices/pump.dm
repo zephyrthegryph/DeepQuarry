@@ -362,3 +362,55 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appear
 /obj/machinery/atmospherics/binary/pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev))
+
+/datum/tgui/proc/atmos_scalar_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/atmos_scalar/ask = context.answer
+	switch(ask.setting_kind)
+		if("gate_pressure")
+			var/obj/machinery/atmospherics/binary/passive_gate/machine = src_object()
+			machine.apply_gate_pressure_answer(user, ask.answer_value)
+		if("gate_flow")
+			var/obj/machinery/atmospherics/binary/passive_gate/machine = src_object()
+			machine.apply_gate_flow_answer(user, ask.answer_value)
+	SStgui.update_uis(src_object())
+
+/datum/prompt/number/atmos_scalar
+	timeout = 0
+	recheck_on_open = TRUE
+	var/setting_kind
+	var/action_key = "set_press"
+	var/machine_type
+	var/display_max
+
+/datum/prompt/number/atmos_scalar/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/atmos_scalar/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, display_max, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/atmos_scalar/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/machine = original_ui.src_object()
+	if(!istype(machine, machine_type) || QDELETED(machine))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!machine.ui_act_allowed(original_ui.user, action_key, original_ui, original_ui.state()))
+		return "the atmos setting is unavailable"
+	return null
+
+/datum/prompt/number/atmos_scalar/gate_pressure
+	setting_kind = "gate_pressure"
+	machine_type = /obj/machinery/atmospherics/binary/passive_gate
+
+/datum/prompt/number/atmos_scalar/gate_flow
+	setting_kind = "gate_flow"
+	action_key = "set_flow_rate"
+	machine_type = /obj/machinery/atmospherics/binary/passive_gate

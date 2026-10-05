@@ -195,7 +195,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 		var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
 		if(SC)
 			output += "<br>"
-			output += span_bold("Soulcatcher detected ([SC.brainmobs.len] minds)") + "<br>"
+			output += span_bold("Soulcatcher detected ([LAZYLEN(SC.brainmobs)] minds)") + "<br>"
 			for(var/mob/living/carbon/brain/caught_soul/mind in SC.brainmobs)
 				output += "<i>[mind.name]: </i> [mind.transient == FALSE ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindrelease=[mind.name]'>Load</a>\]" : span_warning("Incompatible")]<br>"
 
@@ -349,7 +349,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	for(var/mob/living/carbon/brain/caught_soul/soul in SC.brainmobs)
 		if(soul.name == args["mindrelease"])
 			get_mind(soul)
-			qdel(soul)
+			rel_remove(SC, nameof(SC.brainmobs), soul)
 			to_chat(user,span_notice("Mind downloaded!"))
 			return
 	to_chat(user,span_notice("Unable to find that mind in Soulcatcher!"))
