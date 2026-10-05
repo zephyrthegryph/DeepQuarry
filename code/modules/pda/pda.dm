@@ -102,20 +102,44 @@ CAPABILITIES(/obj/item/pda)
 		O.show_message(text("[icon2html(src, O.client)] *[ttone]*"))
 
 /obj/item/pda/proc/set_ringtone(mob/user)
-	var/t = rerun_ask(user, "k99", PROC_REF(set_ringtone), args, /datum/om/prompt/text, message = "Please enter new ringtone", title = name, default = ttone)
-	if(isnull(t))
+	open_request(src, /datum/prompt/text/pda_ringtone, PROC_REF(ringtone_answered), answerer = user, title = name, default = ttone)
+
+/datum/prompt/text/pda_ringtone
+	question = "Please enter new ringtone"
+	max_len = MAX_MESSAGE_LEN
+	encode = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/pda_ringtone/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	if(in_range(src, user) && loc == user)
-		if(t)
-			if(item_hidden_uplink(src) && item_hidden_uplink(src).check_trigger(user, lowertext(t), lowertext(lock_code)))
-				to_chat(user, "The PDA softly beeps.")
-				close(user)
-			else
-				t = sanitize(copytext(t, 1, 20))
-				ttone = t
-			return 1
-	else
-		close(user)
+	var/obj/item/pda/device = owner
+	if(!istype(device) || QDELETED(device) || QDELETED(answerer))
+		return "The PDA or user is no longer available."
+	if(!isnull(answer_value) && (!in_range(device, answerer) || device.loc != answerer))
+		return "The PDA is not held by the user."
+
+/obj/item/pda/proc/ringtone_answered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(!A.answer)
+		if(!isnull(A.request.answer_value) && !QDELETED(user))
+			close(user)
+			SStgui.update_uis(src)
+		return
+	apply_ringtone(user, A.answer.answer_value)
+	SStgui.update_uis(src)
+
+/obj/item/pda/proc/apply_ringtone(mob/user, t)
+	if(t)
+		if(item_hidden_uplink(src) && item_hidden_uplink(src).check_trigger(user, lowertext(t), lowertext(lock_code)))
+			to_chat(user, "The PDA softly beeps.")
+			close(user)
+		else
+			t = sanitize(copytext(t, 1, 20))
+			ttone = t
+		return 1
 	return 0
 
 REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
