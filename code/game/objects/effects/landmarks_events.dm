@@ -59,7 +59,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	if(!A.answer)
 		discard_setup()
 		return
-	setup_step_checked(A.request.answerer, A.request.captured, A.answer.answer_value)
+	setup_step_checked(A.request.answerer, A.request.captured, A.answer.value)
 
 /obj/effect/landmark/event_trigger/proc/setup_step(mob/M, list/state, answer, opening)
 	if(opening)
