@@ -67,8 +67,9 @@ CAPABILITIES(/datum/pipeline)
 	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
 		after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure), key = "engineered_exposure_timer")
 
+/// The engineered pipes still had work: the network runs its engineered-material pass again.
 /datum/pipeline/proc/wake_engineered_exposure()
-	network?.mark_dirty()
+	network?.mark_topology_dirty()
 
 /datum/pipeline/proc/temporarily_store_air()
 	//Update individual gas_mixtures by volume ratio
@@ -116,6 +117,5 @@ CAPABILITIES(/datum/pipeline)
 	// Mark the turf so SSair re-equalises it with its neighbours next tick.
 	if(SSair?.initialized)
 		SSair.add_to_active(target)
-	if(network)
-		network.mark_dirty()
+	gas_touched(air)
 	return length(residual) && residual[1]

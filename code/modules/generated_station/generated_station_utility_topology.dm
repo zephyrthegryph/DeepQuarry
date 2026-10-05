@@ -791,7 +791,7 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 			heat_set(network_air, T20C)
 			var/supply_moles = MOLES_CELLSTANDARD * (network_air.return_volume() / CELL_VOLUME) * 50
 			network_air.adjust_multi(GAS_O2, supply_moles * O2STANDARD, GAS_N2, supply_moles * N2STANDARD)
-		network.mark_dirty()
+		gas_touched(network_air)
 		network.reconcile()
 
 /datum/expedition_site

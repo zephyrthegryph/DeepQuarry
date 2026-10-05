@@ -4054,13 +4054,13 @@
 	into += entry_line(213)
 	into += list(global.ref_one(nameof(interaction_context), /datum/interaction))
 
-/// CAPABILITIES(/datum/prompt/choice/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:291
+/// CAPABILITIES(/datum/prompt/choice/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:290
 /datum/prompt/choice/atmos_config_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 291, /datum/prompt/choice/atmos_config_review)
-	into += entry_line(292)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 290, /datum/prompt/choice/atmos_config_review)
+	into += entry_line(291)
 	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(293)
+	into += entry_line(292)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/choice/augment_location) at code/game/objects/items/weapons/implants/implantaugment.dm:77
@@ -4734,13 +4734,13 @@
 	into += entry_line(1167)
 	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
 
-/// CAPABILITIES(/datum/prompt/number/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:355
+/// CAPABILITIES(/datum/prompt/number/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:354
 /datum/prompt/number/atmos_config_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 355, /datum/prompt/number/atmos_config_review)
-	into += entry_line(356)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 354, /datum/prompt/number/atmos_config_review)
+	into += entry_line(355)
 	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(357)
+	into += entry_line(356)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:81
@@ -4918,13 +4918,13 @@
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
 
-/// CAPABILITIES(/datum/prompt/text/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:322
+/// CAPABILITIES(/datum/prompt/text/atmos_config_review) at code/ATMOSPHERICS/components/unary/outlet_injector.dm:321
 /datum/prompt/text/atmos_config_review/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 322, /datum/prompt/text/atmos_config_review)
-	into += entry_line(323)
+	into += entry_block("code/ATMOSPHERICS/components/unary/outlet_injector.dm", 321, /datum/prompt/text/atmos_config_review)
+	into += entry_line(322)
 	into += list(global.ref_one(nameof(config_operator), /mob))
-	into += entry_line(324)
+	into += entry_line(323)
 	into += list(global.ref_one(nameof(config_tool), /obj/item))
 
 /// CAPABILITIES(/datum/prompt/text/blueprint_area_name) at code/game/objects/items/blueprints.dm:1061
@@ -16296,6 +16296,13 @@
 	into += entry_line(33)
 	into += list(global.climb())
 
+/// CAPABILITIES(/obj/machinery/atmospherics/portables_connector) at code/ATMOSPHERICS/components/portables_connector.dm:28
+/obj/machinery/atmospherics/portables_connector/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/portables_connector.dm", 28, /obj/machinery/atmospherics/portables_connector)
+	into += entry_line(29)
+	into += list(pipe_device_unwrench())
+
 /// CAPABILITIES(/obj/machinery/atmospherics/trinary) at code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm:191
 /obj/machinery/atmospherics/trinary/declared_entries(list/into)
 	..(into)
@@ -19310,15 +19317,15 @@
 	into += entry_line(143)
 	into += list(global.owns_one(nameof(temp_chem_holder), /obj))
 
-/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered) at code/game/machinery/atmoalter/portable_atmospherics.dm:191
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered) at code/game/machinery/atmoalter/portable_atmospherics.dm:186
 /obj/machinery/portable_atmospherics/powered/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 191, /obj/machinery/portable_atmospherics/powered)
-	into += entry_line(192)
+	into += entry_block("code/game/machinery/atmoalter/portable_atmospherics.dm", 186, /obj/machinery/portable_atmospherics/powered)
+	into += entry_line(187)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell))
-	into += entry_line(193)
+	into += entry_line(188)
 	into += list(global.op("cell_in", global.item(/obj/item/cell), global.label("Insert power cell"), global.wait(0), global.when(nameof(use_cell)), global.needs(global.req_empty(nameof(cell), because = MSG(portable/cell_present))), global.put_in(nameof(cell)), global.says(MSG(portable/cell_in)), global.then(PROC_REF(cell_changed))))
-	into += entry_line(195)
+	into += entry_line(190)
 	into += list(global.op("cell_out", global.tool(TOOL_SCREWDRIVER), global.label("Remove power cell"), global.when(nameof(removeable_cell)), global.needs(global.req(PROC_REF(has_cell), because = MSG(portable/no_cell))), global.says(MSG(portable/cell_out)), global.then(PROC_REF(take_cell_out))))
 
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump) at code/game/machinery/atmoalter/pump.dm:23

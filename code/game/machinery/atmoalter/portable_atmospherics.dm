@@ -87,8 +87,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	//Perform the connection
 	rel_set(src, nameof(connected_port), new_port)
 	connected_port().connected_device = src
-	connected_port().on = 1 //Activate port updates
-	MACHINE_WAKE(connected_port())
+	connected_port().set_on(1)
 
 	set_anchored(TRUE) //Prevent movement
 
@@ -107,17 +106,13 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
 	rel_clear(old_port, nameof(old_port.connected_device))
 	old_port.set_on(0)
-	MACHINE_SLEEP(old_port)
 	rel_clear(src, nameof(connected_port))
 	return 1
 
+/// Its gas was changed in place (a pump or a scrubber at work): the pipe network it shares the gas with hears it.
 /obj/machinery/portable_atmospherics/proc/update_connected_network()
-	if(!connected_port())
-		return
-
-	var/datum/pipe_network/network = connected_port().return_network(src)
-	if (network)
-		network.mark_dirty()
+	if(connected_port())
+		gas_touched(air_contents)
 
 // ---- the port and the bay ----
 

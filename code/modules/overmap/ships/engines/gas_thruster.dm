@@ -152,8 +152,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
 		return 0
 	. = calculate_thrust(removed)
 	play_sfx(src, SFX_MACHINES_THRUSTER, volume = 100 * thrust_limit, extrarange = world.view * 4)
-	if(network)
-		network.mark_dirty()
+	gas_touched(air_contents)
 
 	var/exhaust_dir = reverse_direction(dir)
 	var/turf/T = get_step(src,exhaust_dir)

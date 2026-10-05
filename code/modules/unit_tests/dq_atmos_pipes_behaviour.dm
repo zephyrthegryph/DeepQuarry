@@ -316,8 +316,7 @@
 		V.req_access = access.Copy()
 	for(var/obj/machinery/atmospherics/M as anything in made)
 		M.atmos_init()
-	for(var/obj/machinery/atmospherics/M as anything in made)
-		M.rust_register_pipe_topology()
+	dq_atmos_test_publish_rust_pipenets(made)
 	LAZYADD(ap_lines, made)
 	am_settle()
 	return inner
@@ -512,3 +511,32 @@
 	ap_press(src, H, M, "configure")
 	ap_click(H, M, null, GESTURE_CTRL)
 	TEST_ASSERT(M.use_power, "the ctrl-click runs it")
+
+// =====================================================================================================================
+// The connector
+// =====================================================================================================================
+
+/// A canister on a connector shares its gas with the connector's pipe; the connector cannot be wrenched off while it holds one, and comes off
+/// once it is let go.
+/datum/unit_test/dq_atmos_m/pipes/connector_shares_gas
+/datum/unit_test/dq_atmos_m/pipes/connector_shares_gas/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/portables_connector)
+	var/obj/machinery/atmospherics/portables_connector/port = line[2]
+	var/obj/machinery/atmospherics/pipe/left = line[3] // the connector faces east: its one pipe
+	var/obj/machinery/portable_atmospherics/canister/nitrogen/C = allocate(/obj/machinery/portable_atmospherics/canister/nitrogen, tile(2, 3))
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 2))
+	if(!C.connected_port)
+		ap_click(H, C, W)
+	TEST_ASSERT_EQUAL(C.connected_port, port, "the canister is on the port")
+	SSair.run_gas_frames(2)
+	var/datum/gas_mixture/pipe_air = left.return_air()
+	TEST_ASSERT(pipe_air.total_moles() > 1, "its gas reaches the pipe ([pipe_air.total_moles()])")
+	ap_click(H, port, W)
+	TEST_ASSERT(!QDELETED(port), "the port holding a canister cannot be wrenched off")
+	ap_click(H, C, W)
+	TEST_ASSERT(isnull(C.connected_port), "the canister is let go")
+	var/canister_moles = C.air_contents.total_moles()
+	TEST_ASSERT(canister_moles > 1, "and keeps its share ([canister_moles])")
+	qdel(C)
+	take_down_lines()
