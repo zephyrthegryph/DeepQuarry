@@ -189,7 +189,7 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 	if(A.answer)
 		var/obj/item/pda/P = A.request.subject
 		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
-		send_message_answered(A.request.answerer, P, PM, readd_quotes(A.answer.value))
+		send_message_answered(A.request.answerer, P, PM, readd_quotes(A.answer.answer_value))
 
 /datum/data/pda/app/messenger/proc/send_message_answered(mob/living/U, obj/item/pda/P, datum/data/pda/app/messenger/PM, t)
 	COOLDOWN_START(src, text_cooldown, 0.5 SECONDS)
