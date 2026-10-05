@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 960ee0848a9be6f98e41e70ad9fb904999f3f42039e31d828cbd1e5b90a69619 # shrinks to (states, edges, dt) = ([State { temperature: 1.0, capacity: 1941536.0669065109 }, State { temperature: 1.0, capacity: 0.01 }], [Edge { a: 0, b: 1, kind: Pump(Regulator { target: 1.0, max_power: 22764.592, mode: Cool, carnot_fraction: 0.5, max_cop: 10.0, resistive_heating: false, deadband: 0.05 }) }, Edge { a: 0, b: 1, kind: Pump(Regulator { target: 1671.151, max_power: 9689.734, mode: Heat, carnot_fraction: 0.5, max_cop: 10.0, resistive_heating: false, deadband: 0.05 }) }], 0.5)

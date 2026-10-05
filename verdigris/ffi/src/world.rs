@@ -652,6 +652,14 @@ pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
         lap.lap("pace_apply");
         Ok(applied)
     })
+    .inspect(|_| {
+        if due {
+            // The heat network's edges, over the world time since their last step (exact for any interval).
+            if let Ok(now) = with_world(|w| Ok(w.now())) {
+                crate::heat_net::step(now);
+            }
+        }
+    })
 }
 
 /// Cumulative wall time of the parts of [`pace`] (`frame.us.pace_*`): the world's tick bookkeeping on frames that
