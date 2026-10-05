@@ -97,7 +97,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 /datum/material_response/proc/ambient_temperature()
 	var/datum/material_service/service = material_service_of(parent)
 	if(service)
-		return service.temperature
+		return service.temperature()
 	var/turf/turf = get_turf(parent)
 	var/datum/gas_mixture/air = turf?.return_air()
 	return air ? air.return_temperature() : T20C

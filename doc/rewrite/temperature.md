@@ -145,6 +145,14 @@ It replaces five copies of the coefficient-of-performance maths, the heat-deleti
 - Fixing the conductance scale (B8) makes wall materials matter.
 - `material_service`'s thermal state moves to Rust heat nodes (M4), and SSmaterial_services is deleted (S4). Its non-thermal state stays with material science.
 
+### Implementation (landed)
+
+A datum that is not an atom keeps a Rust heat body by handle: a heat store (`code/domains/heat/heat_store.dm`, `heat_store_*()`), with an
+optional phase plateau, power, heat links and heat engines; `HEAT_STORE(h)` names it to `heat_move()`, `heat_equalize()` and `heat_conduct()`.
+A material service's thermal stock is a store linked to its turf's air and to the gas it holds (a heat engine for a thermoelectric cell); a
+processed batch holds a store while it differs from its surroundings and cools through a link to its turf's air. Numbers: `intended_changes.md`
+("Material science heat").
+
 ## 8. Tests and lint
 
 **Tests**

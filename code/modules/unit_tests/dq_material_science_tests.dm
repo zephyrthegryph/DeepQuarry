@@ -411,12 +411,14 @@
 /datum/unit_test/dq_material_thermal_buffer_conserves_energy/Run()
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
 	var/datum/material_service/service = material_service_of(cell)
-	var/before = service.temperature * service.thermal_mass() + service.buffer_energy
+	// The heat lives in Rust (f64) and reaches DM as f32: compare to a millionth of the energy the assembly holds.
+	var/before = service.temperature() * service.thermal_mass() + service.buffer_energy()
+	var/tolerance = max(0.01, abs(before) * 0.000001)
 	service.add_heat(12000)
-	var/after = service.temperature * service.thermal_mass() + service.buffer_energy
-	TEST_ASSERT(abs(after - before - 12000) < 0.01, "Heating must add exactly the supplied energy")
+	var/after = service.temperature() * service.thermal_mass() + service.buffer_energy()
+	TEST_ASSERT(abs(after - before - 12000) < tolerance, "Heating must add exactly the supplied energy ([after - before] J)")
 	service.add_heat(-12000)
-	TEST_ASSERT(abs(service.temperature * service.thermal_mass() + service.buffer_energy - before) < 0.01, "Cooling must remove exactly the supplied energy")
+	TEST_ASSERT(abs(service.temperature() * service.thermal_mass() + service.buffer_energy() - before) < tolerance, "Cooling must remove exactly the supplied energy")
 	qdel(cell)
 
 /datum/unit_test/dq_material_pump_parts_change_operation
@@ -456,17 +458,18 @@
 	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
 	var/datum/material_service/service = material_service_of(cell)
-	TEST_ASSERT_EQUAL(service.buffer_energy, 50000, "Room-temperature cryogenic stock must require cooling, not arrive with free cold capacity")
-	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
-	TEST_ASSERT(abs(service.temperature - 240) < 0.01 && service.buffer_energy == 0, "Actual removed heat must cool and recharge the phase buffer")
-	var/cold = cell.construction_electrical_resistance(1, 1, service.temperature, 5)
-	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature, 50)
+	TEST_ASSERT_EQUAL(service.buffer_energy(), 50000, "Room-temperature cryogenic stock must require cooling, not arrive with free cold capacity")
+	service.add_heat(-(service.temperature() - 240) * service.thermal_mass() - service.buffer_energy())
+	TEST_ASSERT(abs(service.temperature() - 240) < 0.01 && service.buffer_energy() == 0, "Actual removed heat must cool and recharge the phase buffer")
+	var/cold = cell.construction_electrical_resistance(1, 1, service.temperature(), 5)
+	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature(), 50)
 	TEST_ASSERT(quenched > cold * 100, "Exceeding critical current must quench the conductor even while cold")
 	service.add_heat(10 * service.thermal_mass() + 25000)
-	TEST_ASSERT(abs(service.temperature - 250) < 0.01 && abs(service.buffer_energy - 25000) < 0.01, "The finite buffer must hold temperature while absorbing real operating heat")
-	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.temperature, 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
+	// The heat crosses from Rust as f32: a buffer within a tenth of a millikelvin's worth of the assembly's heat is exact.
+	TEST_ASSERT(abs(service.temperature() - 250) < 0.01 && abs(service.buffer_energy() - 25000) < max(0.01, service.thermal_mass() * 0.0001), "The finite buffer must hold temperature while absorbing real operating heat ([service.temperature()] K, [service.buffer_energy()] J buffered)")
+	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.temperature(), 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
 	service.add_heat(25000 + 20 * service.thermal_mass())
-	TEST_ASSERT(service.temperature > 260 && cell.construction_electrical_resistance(1, 1, service.temperature, 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
+	TEST_ASSERT(service.temperature() > 260 && cell.construction_electrical_resistance(1, 1, service.temperature(), 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
 	qdel(cell)
 
 /datum/unit_test/dq_superconducting_cell_automatic_envelope
@@ -477,14 +480,14 @@
 	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
 	var/datum/material_service/service = material_service_of(cell)
-	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
+	service.add_heat(-(service.temperature() - 240) * service.thermal_mass() - service.buffer_energy())
 	var/envelope = cell.material_output_envelope(10)
 	TEST_ASSERT(envelope > 1, "A physically cold superconductor must automatically expose enhanced output")
 	var/charge_before = cell.charge
 	TEST_ASSERT(cell.checked_use(10 * envelope), "The enhanced envelope must still debit real stored energy")
 	cell.material_record_enhanced_output(10, envelope)
 	TEST_ASSERT(cell.charge < charge_before - 10, "Enhanced output must cost more energy than an ordinary action")
-	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy, 0))
+	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature()) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy(), 0))
 	TEST_ASSERT_EQUAL(cell.material_output_envelope(10), 1, "A hot or quenched conductor must fall back to ordinary device output")
 	qdel(cell)
 
@@ -595,10 +598,10 @@
 	pump.enable_material_service()
 	pump.air1.adjust_moles(/datum/gas/nitrogen, 100)
 	pump.air2.adjust_moles(/datum/gas/nitrogen, 200)
-	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + material_service_of(pump).temperature * material_service_of(pump).thermal_mass() + material_service_of(pump).buffer_energy
+	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + material_service_of(pump).temperature() * material_service_of(pump).thermal_mass() + material_service_of(pump).buffer_energy()
 	var/input = pump_gas(pump, pump.air1, pump.air2, 1, 7500)
 	TEST_ASSERT(input > 0, "Pumping into higher pressure must require positive input energy")
-	var/after = pump.air1.thermal_energy() + pump.air2.thermal_energy() + material_service_of(pump).temperature * material_service_of(pump).thermal_mass() + material_service_of(pump).buffer_energy
+	var/after = pump.air1.thermal_energy() + pump.air2.thermal_energy() + material_service_of(pump).temperature() * material_service_of(pump).thermal_mass() + material_service_of(pump).buffer_energy()
 	TEST_ASSERT(abs(after - before - input) < max(1, input * 0.001), "Delivered compression work plus shell losses must equal paid pump energy")
 	TEST_ASSERT(abs(material_service_of(pump).input_joules - material_service_of(pump).output_joules - material_service_of(pump).loss_joules) < 0.01, "The pump operating ledger must close")
 	qdel(pump)
@@ -693,19 +696,19 @@
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/datum/material_batch/batch = new
 	batch.add_material(MAT_STEEL, 6)
-	batch.temperature = 900
+	material_batch_set_temperature(batch, 900)
 	var/obj/item/stack/material/processed_alloy/stock = processed_spawn_stack(test_turf, batch, 6)
 	var/material_name = stock.material.name
 	var/obj/item/stack/material/processed_alloy/split_stock = stock.split(2)
 	TEST_ASSERT(split_stock, "processed stock could not be split through ordinary stack handling")
 	TEST_ASSERT_EQUAL(split_stock.material.name, material_name, "split stock lost its processed alloy definition")
-	TEST_ASSERT_EQUAL(split_stock.physical_batch().temperature, 900, "split stock lost its physical temperature")
+	TEST_ASSERT(abs(material_batch_temperature(split_stock.physical_batch()) - 900) < 0.01, "split stock lost its physical temperature")
 	TEST_ASSERT_EQUAL(split_stock.physical_batch().amount, 2, "split stock retained the wrong quantity state")
 	TEST_ASSERT_EQUAL(stock.physical_batch().amount, 4, "source stock retained the wrong quantity state")
-	split_stock.physical_batch().temperature = 300
+	material_batch_set_temperature(split_stock.physical_batch(), 300)
 	TEST_ASSERT_EQUAL(split_stock.transfer_to(stock, 2), 2, "compatible processed stocks could not merge")
 	TEST_ASSERT_EQUAL(stock.physical_batch().amount, 6, "merged stock did not conserve quantity")
-	TEST_ASSERT(abs(stock.physical_batch().temperature - 700) < 0.1, "merged stock did not conserve thermal energy")
+	TEST_ASSERT(abs(material_batch_temperature(stock.physical_batch()) - 700) < 0.1, "merged stock did not conserve thermal energy")
 	qdel(stock)
 	qdel(batch)
 
@@ -773,7 +776,7 @@
 	var/datum/material_batch/forge_sample = output_batch.copy_batch()
 	TEST_ASSERT(forge_sample.apply_process(MATERIAL_PROCESS_FORGE), "hot furnace output could not be forged without fictitious anvil heating")
 	TEST_ASSERT(output_batch.apply_process(MATERIAL_PROCESS_QUENCH), "hot solution-treated furnace output could not be physically quenched")
-	TEST_ASSERT_EQUAL(output_batch.temperature, T20C, "quenching did not cool the workpiece")
+	TEST_ASSERT(abs(material_batch_temperature(output_batch) - T20C) < 0.01, "quenching did not cool the workpiece")
 	qdel(forge_sample)
 	qdel(batch)
 	qdel(furnace)
@@ -871,11 +874,11 @@
 	var/before = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
 		cable.enable_material_service()
-		before += material_service_of(cable).temperature * material_service_of(cable).thermal_mass() + material_service_of(cable).buffer_energy
+		before += material_service_of(cable).temperature() * material_service_of(cable).thermal_mass() + material_service_of(cable).buffer_energy()
 	graph.deposit_losses(12000)
 	var/after = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
-		after += material_service_of(cable).temperature * material_service_of(cable).thermal_mass() + material_service_of(cable).buffer_energy
+		after += material_service_of(cable).temperature() * material_service_of(cable).thermal_mass() + material_service_of(cable).buffer_energy()
 	TEST_ASSERT(abs(after - before - 12000) < 2, "Paid loss must become exactly that much heat across the real cable run")
 	TEST_ASSERT(!graph.resistance_dirty && length(graph.dirty_edges) == 1, "Heating a cable run must invalidate that run without requesting a full network resistance scan")
 	graph.resolve_loads(sources, alist())

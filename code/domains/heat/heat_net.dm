@@ -7,6 +7,7 @@
 //   a turf                            its air (its solid when it has none)
 //   an atom                           its heat body (made on first use and kept while an edge names it); a mob's body heat
 //   HEAT_SPACE                        outer space, an infinite reservoir at TCMB
+//   list(HEAT_TARGET_*, ref)          a reservoir already named: HEAT_STORE(h), a heat body a datum keeps (heat_store.dm)
 //
 // One-off events move heat with heat_move(); persistent flows are the declarative entries of heat_entries.dm (heat_link(), heat_pump(),
 // heat_engine()), which live while their scope does.
@@ -16,6 +17,7 @@
 //                                          them; `to` null: they leave it. Returns the joules moved. Rust wakes the gas it changed.
 //   heat_add(thing, joules, source)        heat_move(null, thing, joules, source)
 //   heat_equalize(a, b, fraction = 1)      moves `fraction` of the way to the pair's common temperature, conserved
+//   heat_conduct(a, b, conductance, s)     conducts for `s` seconds at `conductance` W/K (the exact pair solution), conserved
 //   heat_set(thing, kelvin, source)        an authority write (map load, admin, a test, a spawn-time temperature): the joules it takes, booked
 //   heat_set_energy(thing, joules, source)  a reaction's end energy (composition changed, `released` joules booked)
 //   heat_set_solid(turf, kelvin)           a turf's solid temperature (map load, holodeck, admin)
@@ -34,6 +36,8 @@
 		return list(HEAT_TARGET_SPACE, TCMB)
 	if(istype(thing, /datum/gas_mixture))
 		return list(HEAT_TARGET_MIXTURE, thing)
+	if(islist(thing))
+		return thing // already a reservoir: list(HEAT_TARGET_*, ref), such as HEAT_STORE(h)
 	if(isturf(thing))
 		var/turf/T = thing
 		return T.heat_has_air() ? list(HEAT_TARGET_TURF_AIR, T) : list(HEAT_TARGET_SOLID, T)
@@ -78,6 +82,16 @@
 	if(!ra || !rb)
 		return 0
 	. = vg_heat_equalize(ra[1], ra[2], rb[1], rb[2], fraction) || 0
+	heat_gas_touched(a, b)
+
+/// Conducts between two reservoirs for `seconds` at `conductance` W/K in one conserved operation (the exact pair solution, never past
+/// equilibrium): a sample that covers a stretch of time. Returns the joules moved from `a` to `b`.
+/proc/heat_conduct(a, b, conductance, seconds)
+	var/list/ra = heat_reservoir_of(a)
+	var/list/rb = heat_reservoir_of(b)
+	if(!ra || !rb || !(conductance > 0) || !(seconds > 0))
+		return 0
+	. = vg_heat_conduct(ra[1], ra[2], rb[1], rb[2], conductance, seconds) || 0
 	heat_gas_touched(a, b)
 
 /// One heat-engine pass between two reservoirs: the equalizing heat flows hot to cold and `efficiency` of it (capped at Carnot) leaves as

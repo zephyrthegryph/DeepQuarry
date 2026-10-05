@@ -3849,7 +3849,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/final_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/body = H.body_temperature()
 	test_driver_end()
-	dq_atmos_test_restore_state()
+	body_heat_room_restore()
 
 	TEST_ASSERT(final_thermal > initial_thermal, 		"human took no thermal injury in a 50 K room ([body] K): [initial_thermal] → [final_thermal]")
 
