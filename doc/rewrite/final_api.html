@@ -2250,7 +2250,7 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
     <thead><tr><th>Area</th><th>Capabilities</th></tr></thead>
     <tbody>
       <tr><td>Machine basics</td><td><code>powered(channel)</code> · <code>powered_by(system, role)</code> · <code>power_channels()</code> · <code>breakable(repair =)</code> · <code>anchor(tool =)</code> · <code>wall_mount(offset)</code> · <code>interface(window, title =, rights =, host =, input = hand())</code> (declaring it adds the open op) · <code>components(slots)</code> (stats derived from the installed components; replaces <code>RefreshParts</code>) · <code>emp_disable(lasts, resist)</code> · <code>reflects(kinds, chance)</code> · <code>subversion_reset(parts...)</code> · <code>popup_cover(raised_while =)</code> (a cover whose open state follows a condition, with timed transitions). The three machine bundles below are capabilities too. <code>powered()</code> and <code>powered_by()</code> are adapters: they name the power system, so they are defined in the power domain (<code>code/domains/power</code>), not in the library (<a href="#layout">section 22</a>)</td></tr>
-      <tr><td>Access and security</td><td><code>cover(open, remove, replace)</code> · <code>panel()</code> · <code>wires(type)</code> · <code>service_panel(wires)</code> · <code>lock(credentials)</code> (also gates <code>TAG_CONTROL | TAG_UI</code>) · <code>access(req_access)</code> · <code>emag(parts..., disables_for =, repeatable =, powered =)</code> · <code>space(SPACE_X, inside =, door =, ...)</code> · <code>latch()</code> · <code>protrudes()</code></td></tr>
+      <tr><td>Access and security</td><td><code>cover(open, remove, replace)</code> · <code>panel()</code> · <code>wires(name =, count =, ...)</code> (its wires come from the holder's capabilities, <a href="#wires">below</a>) · <code>service_panel(wires)</code> · <code>lock(credentials, wire =)</code> (also gates <code>TAG_CONTROL | TAG_UI</code>) · <code>access(req_access)</code> · <code>emag(parts..., disables_for =, repeatable =, powered =)</code> · <code>space(SPACE_X, inside =, door =, ...)</code> · <code>latch()</code> · <code>protrudes()</code></td></tr>
       <tr><td>Containers and slots</td><td><code>slot(...)</code> · <code>storage(accepts, capacity)</code> · <code>cell_bay(var, at =, starts =)</code> (ops <code>cell_bay.&lt;var&gt;.insert</code> and <code>.take</code>) · <code>cell_holder()</code> · <code>occupant(slot)</code> · <code>interior(escape_wait =, escape_chance =)</code> (a belly's <code>SLOT_BELLY_INTERIOR</code> and its <code>interior.escape</code> op: an <code>inside()</code> op, a hand from inside) · <code>gas_store(var, volume, temp, gases)</code></td></tr>
       <tr><td>Reagents and food</td><td><code>reagents(volume, starts =, add =, tint =, holder =)</code> · <code>reagent_container(volume, transfer, lid)</code> (ops <code>reagent_container.pour</code>, <code>.fill</code>, <code>.splash</code>, <code>.drink</code>, <code>.inject</code>, <code>.spray</code>, the transfer-amount prompt, the fill look) · <code>edible(bites)</code> · <code>drinkable()</code> · <code>smokable()</code></td></tr>
       <tr><td>Items</td><td><code>tool_quality(Q, speed =)</code> · <code>sharp()</code> · <code>embed()</code> · <code>two_handed()</code> · <code>blocks(chance)</code> · <code>writable()</code> · <code>labelable()</code> · <code>stamp_target()</code> · <code>signaler()</code> · <code>assembly()</code> · <code>toggle_state(nameof(v), name)</code> · <code>toggle_setting(nameof(v), name, parts...)</code>. An item that extends its wielder's reach is a provider: <code>provides(AFF_MANIPULATE, reach = n)</code></td></tr>
@@ -2276,6 +2276,40 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
       <tr><td><code>deployment</code></td><td><code>deployment.deploy:&lt;stage&gt;</code>, <code>deployment.undeploy:&lt;stage&gt;</code>, <code>deployment.dismantle</code></td><td>the current stage</td><td>the same graph as a build, with its own key <code>CAP_DEPLOYMENT</code> and no operability contribution</td></tr>
     </tbody>
   </table></div>
+  <h3 id="wires">Wires: composed from capabilities</h3>
+  <div class="prose">
+    <p>A holder's wires are not a list it keeps. <strong>Each wire is defined once</strong>, in the <code>WIRE_DEF</code> table of the wires library (<code>code/library/machine/wires.dm</code>), with what cutting, pulsing and mending it does, written as effects on <em>the capability that brings it</em>. <strong>A capability brings its wires</strong> (<code>brings_wires()</code>: the capability type's <code>TYPE_TABLE(..., brought_wires, ...)</code>, or its params), and <code>wires()</code> derives the holder's wire list from the capabilities it has. <code>wires()</code> keeps only what belongs to the wiring as a whole: the name (window title, blueprints, and the key of the round's shared layout), the count (the rest are duds), <code>randomize</code>, the space they sit in (<code>at =</code>), <code>reach =</code>, <code>emp =</code>, <code>tools =</code>, <code>by_hand =</code>, <code>status_lines =</code>, <code>starts_cut =</code>, and the window and record (<code>window =</code>, <code>record =</code>). <code>count</code> and <code>randomize</code> may name a holder proc (an airlock built with secure electronics).</p>
+    <p>A wire's effects run on each capability that brought it, then the wire's notice is published, so <code>on_notice</code> hooks see the state the wire left. The hold effects are <strong>keyed, sourced holds</strong>: each wire has one cut source and one pulse source (flyweights of its definition). A cut holds the capability's <code>stat</code> at <code>cut_value</code>, above any pulse; a pulse holds it at <code>pulse_value</code> for <code>pulse_lasts</code> (a second pulse refreshes the one hold; <code>WIRE_PULSE_TOGGLES</code> flips it instead; <code>0</code>, the pulse does nothing); a pulse running out never undoes a cut; mending releases both. A capability given no <code>stat</code> brings its wire with no state of its own.</p>
+    <p>A wire only one type has is that type's own capability: <code>on_wire(WIRE_X, cut = PROC_REF(a), pulse = PROC_REF(b))</code> brings <code>WIRE_X</code> and hooks it (<code>a</code> hears the cut and the mend, <code>N.mended</code>). On a wire a library capability also brings, an <code>on_wire()</code> adds to what the wire does there (the airlock's ID wire also flashes the deny light); it is for real deviations only.</p>
+  </div>
+  <pre><code>WIRE_DEF(WIRE_AI_CONTROL, "AI Control", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
+WIRE_DEF(WIRE_DOOR_BOLTS, "Door Bolts", cut = wire_calls(TYPE_PROC_REF(/datum/capability/lib/bolts, bolt_wire_cut)),
+	pulse = wire_calls(TYPE_PROC_REF(/datum/capability/lib/bolts, bolt_wire_pulsed)))
+
+CAPABILITY_TYPE(ai_control, CAP_AI_CONTROL, /datum/capability/lib/ai_control, key = NONE, stat = null, pulse_lasts = 1 SECOND)
+TYPE_TABLE(/datum/capability/lib/ai_control, brought_wires, list(WIRE_AI_CONTROL))
+
+STAT(/obj/machinery/alarm, aidisabled, ANY)
+CAPABILITIES(/obj/machinery/alarm)
+	wires(name = "Air alarm", count = 5, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	power_wires(stat = STAT_SHORTED, pulse_lasts = 20 MINUTES, shock = 50)   <span class="c">// brings WIRE_MAIN_POWER1</span>
+	ai_control(stat = STAT_AIDISABLED, pulse_lasts = 10 SECONDS)            <span class="c">// brings WIRE_AI_CONTROL</span>
+	on_wire(WIRE_SYPHON, cut = PROC_REF(syphon_wire_cut), pulse = PROC_REF(syphon_wire_pulsed))   <span class="c">// the alarm's own</span></code></pre>
+  <div class="tbl"><table>
+    <thead><tr><th>Capability</th><th>Wires it brings</th><th>What the wire does (WIRE_DEF)</th><th>Holders</th></tr></thead>
+    <tbody>
+      <tr><td><code>ai_control(stat =, pulse_lasts =)</code></td><td><code>WIRE_AI_CONTROL</code></td><td>cut holds <code>stat</code> (the AI locked out); pulse holds it for <code>pulse_lasts</code></td><td>APC (1 s), air alarm (10 s), airlock (1 s), shield generator (no pulse), p2 box (no stat)</td></tr>
+      <tr><td><code>power_wires(stat =, count =, pulse_lasts =, shock =)</code></td><td><code>WIRE_MAIN_POWER1</code> (and <code>2</code> with <code>count = 2</code>)</td><td>cut holds <code>stat</code> (shorted, input cut) and may shock the hand; pulse holds it for <code>pulse_lasts</code>; mending may shock when the power comes back</td><td>APC (2 min), air alarm (20 min), shield generator, the wires unit-test holder</td></tr>
+      <tr><td><code>shock_wire(wire =, stat = | counter =, cut_value =, pulse_value =, pulse_lasts =)</code></td><td><code>WIRE_ELECTRIFY</code> (or <code>WIRE_SHOCK</code>)</td><td>cut: live until mended; pulse: live a while. <code>stat</code>: holds; <code>counter</code>: sets a countdown the machine runs down itself (-1 cut, 30 pulsed, 0 mended)</td><td>autolathe (stat, 5 s); vendor, smartfridge, seed storage, suit cycler (counter); R&amp;D machines (<code>WIRE_SHOCK</code>, no state)</td></tr>
+      <tr><td><code>id_scan(stat =, cut_value =, pulse_value =, pulse_lasts =)</code></td><td><code>WIRE_IDSCAN</code></td><td>cut holds the scanner at <code>cut_value</code>; pulse flips it</td><td>vendor, smartfridge (scan_id), airlock (aiDisabledIdScanner, no pulse), p2 box (no stat)</td></tr>
+      <tr><td><code>lock(wire = WIRE_IDSCAN)</code></td><td>the wire it names</td><td>the lock works only while it is intact; a pulse opens the lock for 30 s</td><td>APC (through <code>maintenance_hatch(lock_wire =)</code>)</td></tr>
+      <tr><td><code>bolts(wire = WIRE_DOOR_BOLTS)</code></td><td>the wire it names</td><td>cut drops the bolts (mending does not raise them); pulse drops or raises them</td><td>airlock</td></tr>
+      <tr><td><code>item_throw(stat =)</code></td><td><code>WIRE_THROW_ITEM</code></td><td>cut holds <code>stat</code>; pulse flips it</td><td>vendor, smartfridge</td></tr>
+      <tr><td><code>safety_wire(stat =)</code></td><td><code>WIRE_SAFETY</code></td><td>cut holds the safeties off; pulse flips them</td><td>airlock, suit cycler</td></tr>
+      <tr><td><code>lathe_wires(hack_stat =, disable_stat =, pulse_lasts =)</code></td><td><code>WIRE_LATHE_HACK</code>, <code>WIRE_LATHE_DISABLE</code></td><td>cut holds <code>hacked</code> / <code>disabled</code>; pulse holds them for <code>pulse_lasts</code> or flips them</td><td>autolathe, protolathe, circuit imprinter (5 s), R&amp;D machines (flip)</td></tr>
+      <tr><td><code>on_wire(WIRE_X, cut =, pulse =)</code></td><td><code>WIRE_X</code></td><td>the type's own procs</td><td>everything type-specific: radio, mines, plastique, particle accelerator, SMES, RIG, cyborg, jukebox, camera, grid checker, tesla coil, sorting junction; the alarm's siphon and alarm wires; the airlock's power, backup, door, timing and bolt-light wires, and its electrify wire until its STAT_ELECTRIFIED migration</td></tr>
+    </tbody>
+  </table></div>
   <h3>Bundles and capabilities</h3>
   <div class="prose">
     <p>A <strong>bundle</strong> is any proc that returns entries or parts. Wrap it in a capability only when someone must address it: <code>configure</code>, <code>extend</code>, <code>without</code> or <code>grant</code> it as a unit. These three wire other capabilities together, and are capabilities, so <code>without(CAP_MACHINE_BASICS)</code> and <code>configure(machine_basics(frame = NONE))</code> work:</p>
@@ -2285,7 +2319,7 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
     <tbody>
       <tr><td><code>machine_basics(board, anchored_by =, repair =, frame =, powered =)</code></td><td><code>breakable</code>, <code>powered</code>, <code>anchor</code>, the construction ladder <code>frame</code> (default <code>machine_frame(board)</code>, <code>NONE</code> for no ladder), and <code>extend(TAG_CONTROL, needs(req_operable()))</code>. The panel comes from whatever owns maintenance access (<code>maintenance_hatch</code>, <code>service_panel(wires)</code> or <code>panel()</code>), so declaring both here and in a hatch can't clash; <code>machine_frame</code> needs a panel and says so at boot if there isn't one</td></tr>
       <tr><td><code>wall_machine(...)</code></td><td><code>machine_basics</code> without anchoring, plus <code>wall_mount</code></td></tr>
-      <tr><td><code>maintenance_hatch(cover =, wires =, emag =, lock = TRUE, lock_wire =, panel_needs_cover_closed = FALSE)</code></td><td><code>space(SPACE_HATCH, door = CAP_COVER)</code>, the <code>cover</code> you pass (default <code>cover()</code>), <code>panel</code> (with its <code>SPACE_PANEL</code>), <code>wires(wires)</code> when given, <code>lock</code> (needing <code>lock_wire</code> intact when given), <code>emag(emag)</code> when given, and the rules between them (the ID lock and the emag work only with the cover and panel closed, <code>req_closed()</code>; the panel is latched shut while the cover is open when <code>panel_needs_cover_closed</code>). A machine passes its wire set and its emag effect here instead of declaring <code>wires</code> and <code>emag</code> again</td></tr>
+      <tr><td><code>maintenance_hatch(cover =, wires =, emag =, lock = TRUE, lock_wire =, panel_needs_cover_closed = FALSE)</code></td><td><code>space(SPACE_HATCH, door = CAP_COVER)</code>, the <code>cover</code> you pass (default <code>cover()</code>), <code>panel</code> (with its <code>SPACE_PANEL</code>), the <code>wires(...)</code> entry when given, <code>lock(wire = lock_wire)</code> (the lock brings that wire and needs it intact), <code>emag(emag)</code> when given, and the rules between them (the ID lock and the emag work only with the cover and panel closed, <code>req_closed()</code>; the panel is latched shut while the cover is open when <code>panel_needs_cover_closed</code>). A machine passes its wires entry and its emag effect here instead of declaring <code>wires</code> and <code>emag</code> again</td></tr>
     </tbody>
   </table></div>
   <div class="prose">
@@ -2861,10 +2895,12 @@ CAPABILITIES(/obj/machinery/power/apc)
 	wall_machine(/obj/item/module/power_control, frame = apc_frame(), powered = FALSE)
 	maintenance_hatch(                                        <span class="c">// space SPACE_HATCH behind the cover, the panel and its SPACE_PANEL, wires, lock and emag</span>
 		cover = cover(remove = force_pry(), replace = component_swap(/obj/item/frame/apc), broken = PROC_REF(stat_is_broken)),
-		wires = wires(/datum/wire_set/apc, status_lines = PROC_REF(wire_lights)),
-		lock_wire = WIRE_IDSCAN,
+		wires = wires(name = "APC", count = 4, status_lines = PROC_REF(wire_lights)),
+		lock_wire = WIRE_IDSCAN,                              <span class="c">// lock(wire = WIRE_IDSCAN) brings the ID scan wire</span>
 		emag = list(wait(0.6 SECONDS), sets(LOCK_LOCKED, FALSE)),
 		panel_needs_cover_closed = TRUE)                     <span class="c">// latch(SPACE_PANEL, COVER_OPEN, ...)</span>
+	power_wires(stat = STAT_SHORTED, count = 2, pulse_lasts = 2 MINUTES, shock = 50)   <span class="c">// the two main power wires</span>
+	ai_control(stat = STAT_AIDISABLED, pulse_lasts = 1 SECOND)                       <span class="c">// the AI control wire</span>
 	space(SPACE_CELL, inside = SPACE_HATCH, from_stage = STAGE_APC_SECURED, missing = MSG(apc/needs_electronics))
 	cell_bay(nameof(cell), at = SPACE_CELL, starts = nameof(cell_type), fits = size_is(ITEMSIZE_NORMAL))
 	powered_by(/datum/system/power, role = POWER_ROLE_SOURCE)
@@ -3003,7 +3039,6 @@ CAPABILITIES(/obj/machinery/power/apc)
   <pre><code>TRACKED(/obj/machinery/door/airlock, welded, schema = bool, default = FALSE)
 STAT(/obj/machinery/door/airlock, bolted, ANY)          <span class="c">// the AI, a cut wire, a lockdown and an admin can each hold it</span>
 STAT(/obj/machinery/door/airlock, electrified, ANY)     <span class="c">// timed holds for "30 seconds", untimed for "until released"</span>
-SOURCE_DEF(shock_wire)                                   <span class="c">// the wires' shock pulse: hold(src, STAT_ELECTRIFIED, source = SRC_SHOCK_WIRE, lasts = 30 SECONDS)</span>
 SOURCE_DEF(lockdown)                                     <span class="c">// a security lockdown: hold(door, STAT_BOLTED, source = SRC_LOCKDOWN)</span>
 
 CAPABILITIES(/obj/machinery/door/airlock)
@@ -3012,10 +3047,12 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	access()
 	maintenance_hatch(
 		cover = cover(open = tool(TOOL_SCREWDRIVER)),
-		wires = /datum/wire_set/airlock,
+		wires = wires(name = "Airlock", count = PROC_REF(wire_count), randomize = PROC_REF(wires_randomized)),
 		emag = list(then(PROC_REF(emag_open))),
 		lock = FALSE)   <span class="c">// the door's ID check is access(), not a hatch lock</span>
-	contributes(STAT_BOLTED, req_wire_cut(WIRE_DOOR_BOLTS))   <span class="c">// a cut bolt wire bolts the door</span>
+	bolts(wire = WIRE_DOOR_BOLTS)                            <span class="c">// the bolt wire: a cut drops the bolts</span>
+	shock_wire(stat = STAT_ELECTRIFIED)                      <span class="c">// the shock wire: held while cut, 30 seconds a pulse</span>
+	ai_control(stat = STAT_AICONTROLDISABLED)                <span class="c">// the AI control wire</span>
 	extend("doors.open", needs(
 		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
 		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
@@ -3037,8 +3074,8 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("shock_30s", ui_act(), holds(STAT_ELECTRIFIED, lasts = 30 SECONDS, source = ON_ACTOR))
 	op("shock_on", ui_act(), holds(STAT_ELECTRIFIED, source = ON_ACTOR))
 	extend(TAG_UI, needs(req_wire(WIRE_AI_CONTROL)))
-	extend("shock_30s", needs(req_wire(WIRE_SHOCK)))
-	extend("shock_on", needs(req_wire(WIRE_SHOCK)))
+	extend("shock_30s", needs(req_wire(WIRE_ELECTRIFY)))
+	extend("shock_on", needs(req_wire(WIRE_ELECTRIFY)))
 
 	op("pry", label("Pry open"), force_pry(), wait(5 SECONDS), when(not(DOOR_OPEN)),
 		needs(req_is(STAT_OPERABLE, FALSE, because = MSG(door/powered_shut))),
@@ -3055,7 +3092,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/ui_data(datum/act/A)
 	return list("bolted" = bolted, "electrified" = electrified)</code></pre>
   <div class="prose">
-    <p><strong>What this shows.</strong> Two AIs bolt the door, and each one's hold has that AI as its source (<code>source = ON_ACTOR</code>), so one AI's "unbolt" releases only its own hold, and a deleted AI's bolts drop by themselves. An AI's "shock off" leaves a wire pulse (<code>SRC_SHOCK_WIRE</code>) running its 30 seconds. <code>toggles_hold</code> does the toggle that used to need a <code>held_by()</code> read. The door declares <code>bolted</code> and <code>electrified</code> itself, since <code>doors()</code> leaves bolts to the door type. The window buttons are <code>ui_act()</code> ops with no target binding, so <code>A.target</code> is the door and their holds land on it. One <code>extend(TAG_UI, ...)</code> puts the AI-control wire in front of every window button. The shock is a takeover of click ops only.</p>
+    <p><strong>What this shows.</strong> Two AIs bolt the door, and each one's hold has that AI as its source (<code>source = ON_ACTOR</code>), so one AI's "unbolt" releases only its own hold, and a deleted AI's bolts drop by themselves. An AI's "shock off" leaves a wire pulse (the shock wire's own pulse source) running its 30 seconds. The wires come from the capabilities: <code>bolts(wire =)</code>, <code>shock_wire()</code> and <code>ai_control()</code> each bring theirs, so the door lists no wires. <code>toggles_hold</code> does the toggle that used to need a <code>held_by()</code> read. The door declares <code>bolted</code> and <code>electrified</code> itself, since <code>doors()</code> leaves bolts to the door type. The window buttons are <code>ui_act()</code> ops with no target binding, so <code>A.target</code> is the door and their holds land on it. One <code>extend(TAG_UI, ...)</code> puts the AI-control wire in front of every window button. The shock is a takeover of click ops only.</p>
     <p><strong>What it replaces:</strong> string sources (<code>"ai"</code>, <code>"wire"</code>) and the one var that served every bolter; the <code>ai_toggle_bolts</code> and <code>ai_shock</code> handlers with their <code>A.args["mode"]</code> switch; separate <code>wires()</code> and <code>emag()</code> lines beside the hatch; <code>intercept()</code>; <code>req_stat</code>.</p>
   </div>
 

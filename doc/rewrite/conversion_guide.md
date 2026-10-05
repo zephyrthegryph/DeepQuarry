@@ -63,7 +63,8 @@ examples, section 17 and `doc/rewrite/api_mapping.tsv` map old forms to new ones
 |---|---|---|
 | `cover(open =, remove =, replace =)` | `code/library/machine/cover.dm` | ops `cover.open/remove/replace`, state keys `COVER_OPEN`, `COVER_REMOVED`, look layer, examine lines; `force_pry()` and `component_swap(T)` bundles |
 | `panel(tool =)` | `.../panel.dm` | `panel.open`, `PANEL_OPEN` |
-| `wires(WiresType)` | `.../wires.dm` | `wires.pulse/cut` behind the panel; `wire_set_of(E)`, `wire_is_cut(E, W)`; `req_wire()`, `req_wire_cut()`, `cuts_all_wires()` |
+| `wires(name =, count =, randomize =, ...)` | `.../wires.dm` | `wires.pulse/cut` behind the panel; the wire list comes from the holder's capabilities (`WIRE_DEF` table); `wire_is_cut(E, W)`; `req_wire()`, `req_wire_cut()`, `cuts_all_wires()` |
+| `ai_control()`, `power_wires()`, `shock_wire()`, `id_scan()`, `item_throw()`, `safety_wire()`, `lathe_wires()`; `lock(wire =)`, `bolts(wire =)`; `on_wire(W, cut =, pulse =)` | `.../wire_caps.dm`, `lock.dm`, `door_parts.dm`, `wires.dm` | the capabilities that bring wires: each brings its wire and the wire's effect (holds on the `stat =` it names); `on_wire()` is a type's own wire |
 | `lock(...)`, `emag(parts, say =, repeatable =)`, `subversion_reset(parts)` | `code/library/access/` | ID lock (gates every UI and `TAG_CONTROL` op), emag, reset |
 | `breakable`, `wall_mount`, `machine_basics`, `wall_machine`, `maintenance_hatch` | `code/library/machine/machine.dm` | the machine core bundles |
 | `space`, `latch`, `protrudes`, `req_closed`, `req_space_empty`, `size_is`, `cell_bay`, `telekinesis` | `code/engine/library/spaces.dm` | physical paths (spaces and doors, final_api section 8) and the cell slot |
@@ -84,7 +85,7 @@ The full list is the `CAPABILITIES(/obj/machinery/power/apc)` block in `code/mod
 ```dm
 maintenance_hatch(
 	cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), at(BAY_HATCH))),
-	wires = wires(/datum/wire_set/apc, status_lines = PROC_REF(wire_lights)),
+	wires = wires(name = "APC", count = 4, status_lines = PROC_REF(wire_lights)),
 	emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
 	emag_say = MSG(apc/emagged),
 	panel_needs_cover_closed = TRUE,
@@ -92,6 +93,23 @@ maintenance_hatch(
 extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_operable()))
 extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason))))   // one extend per key: a list target is not supported
 ```
+
+**The wires.** Before: a `/datum/wire_set/apc` listing `WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_MAIN_POWER2, WIRE_AI_CONTROL`, and an `on_wire()` per wire
+with its own procs (`power_wire_cut`, `power_wire_pulsed` and an unkeyed `after()` to end the pulse, `ai_wire_cut`, ...). After: no set and no hooks; the
+capabilities bring the wires and the wires' effects, on stats the APC declares:
+
+```dm
+STAT(/obj/machinery/power/apc, shorted, ANY)
+STAT(/obj/machinery/power/apc, aidisabled, ANY)
+maintenance_hatch(wires = wires(name = "APC", count = 4, ...), lock_wire = WIRE_IDSCAN, ...)   // lock(wire =) brings the ID scan wire
+power_wires(stat = STAT_SHORTED, count = 2, pulse_lasts = 2 MINUTES, shock = 50)
+ai_control(stat = STAT_AIDISABLED, pulse_lasts = 1 SECOND)
+```
+
+Converting a holder's wires: delete its `/datum/wire_set`; give `wires()` the set's name, count and randomize; for each wire a library capability
+brings (`WIRE_DEF` in `code/library/machine/wires.dm`), declare that capability with the holder's stat (turn the var the hooks wrote into a
+`STAT`, delete its `var/` and `TRACKED` lines, and turn its other writers into holds with a source of their own); keep `on_wire()` only for the
+type's own wires and for a real deviation on a shared one. Never write a timed pulse with `after()`: it is the capability's `pulse_lasts`.
 
 A condition is `x(datum/act/A)` (or `datum/act/op/A` when it reads `A.actor`/`A.held`), returns TRUE/FALSE, and **never writes, publishes or talks** (the
 purity guard fails a test build). A refusal reason is a `MSG_DEF` type, or a proc returning one for a reason that depends on state.
@@ -143,7 +161,7 @@ touches no APC. Registry membership is `membership(joins = REGISTRY_APCS)`.
 
 Grep the tree for the domain's accessors and fix every reader in the same change: `is_emagged(A)` and `is_broken(A)` now also look at converted holders (kept as
 shims for the legacy callers); `panel_is_open(A)` is `panel_open(A)`, `cover_is_open(A)` is `cover_open(A)`, `is_locked(A)` is `lock_locked(A)`, `wires_of(A)` is
-`wire_set_of(A)`. Map var edits of a deleted var are rewritten by a script over `maps/**/*.dmm` (match the `/type{...}` block, not the line), and the diff is
+`wiring_of(A)` (the record; `wires_all(A)` lists the wires). Map var edits of a deleted var are rewritten by a script over `maps/**/*.dmm` (match the `/type{...}` block, not the line), and the diff is
 reviewed (a changed count that is not the count you expected is a bug). Tests of the legacy forms are deleted with them: delete, do not skip.
 
 ## 6. Engine pieces this conversion added

@@ -587,6 +587,41 @@ conversion), with the holder tests that already drove wires (dq_p2_apc, dq_p2_do
   datum ANDed with a number: a runtime whenever a master was set, so the master never heard it. The dead branch is gone with the datum.
 
 
+## Wires composed from capabilities (no wire sets)
+
+Pinned by the same tests (`dq_wires_behaviour.dm`, `dq_wires_tests.dm`, dq_p2_apc, dq_p2_door, dq_p2_vending, dq_p2_smes, interim_*_wire_*), unchanged
+but for the fixtures that declared a `/datum/wire_set` (the unit-test holder and the p2 box now declare `wires(name =, count =)` and the
+capabilities that bring their two wires) and the p2 library assertion that named the set type (it reads the wiring's name now). Two tests are new:
+`dq_wires_capability_brings_its_wire` and `dq_wires_shared_wire_shares_its_effect`. Every holder keeps its wire count, its set of working wires and
+its randomize behaviour; the round's shared colour layout is keyed by the wiring's name (one per former set, the names did not collide).
+
+* **A pulse is a keyed timed hold; a cut wire outlives it.** The AI control, power, hack, disable and shock pulses hold a stat from the wire's own
+  pulse source for the pulse's length. A second pulse refreshes the one hold (it used to stack unkeyed timers, or be ignored while the first ran),
+  and a pulse running out no longer undoes a cut made meanwhile. Fixed: the airlock's AI-control pulse (an unkeyed one-second timer that restored
+  control even with the wire cut), the air alarm's ten-second AI pulse (the same), the autolathe's three five-second pulses (unkeyed timers; a
+  second pulse inside five seconds flipped the state back), the APC's short and AI-disable pulses (ignored while one ran, now refreshed).
+* **A pulse sets, it no longer flips, where it is timed.** The autolathe's and the protolathe's hack, disable and shock pulses flipped the state for
+  five seconds; they hold it on for five seconds. The R&D machines' untimed pulses still flip.
+* **Mending releases the pulse too.** Mending a wire releases what that wire's pulse held (a pulse then a cut then a mend leaves the stat at rest),
+  as each holder's mend already did by writing the resting value.
+* **APC power wires.** Mending a power wire shocks the hand only when the APC's power comes back (both wires whole), as before; a pulse on one wire
+  after mending the other is its own hold, so mending wire 1 does not end wire 2's pulse.
+* **The airlock's AI-control states are a stat.** `aiControlDisabled` is a boolean stat (the AI locked out); the unreachable -1/2 "AI bypassed
+  the lock" states are gone (nothing set them). The hostile runtime and electrified-door events hold it from `SRC_ROUND_EVENT`.
+* **The airlock's ID scanner and safeties are stats.** `aiDisabledIdScanner` (ANY) and `safe` (ALL): the AI's toggles hold and release from
+  `SRC_AI_CONTROL` (turning the safeties back on also ends a wire pulse's hold, as setting the var did), the turbolift's fire mode holds the
+  safeties off from the lift and lets go after, and the door-crush airlock failure holds them off for good (`SRC_ROUND_EVENT`).
+* **Wire-held state is a stat.** `aidisabled` and `shorted` (APC, air alarm), `ai_control_disabled` and `input_cut` (shield generator), `scan_id`
+  and `shoot_inventory` (vendor, smartfridge), `safeties` (suit cycler), `hacked`, `disabled` (autolathe, R&D machines) and `shocked`
+  (autolathe). The brand intelligence event's `set_shoot_inventory()` holds the vendor's throw from `SRC_ROUND_EVENT`; the suit cycler's emag
+  holds its safeties off for good. Electrification countdowns (`seconds_electrified`, the suit cycler's `electrified`) stay countdowns the
+  machine runs down a frame at a time, set by `shock_wire(counter =)`.
+* **A mapped hacked autolathe.** The 17 map edits `hacked = 1` on autolathes (and the ammolathe's own default) are `hacked_at_start = 1`: the hack
+  wire starts cut and holds `hacked`, so mending it unhacks the lathe as before. A protolathe or circuit imprinter no longer reads a starting
+  `hacked` (nothing set it).
+* **The blueprints' wire legend** is keyed by the wiring's name, not a set type; its links are URL-encoded.
+
+
 ## fw-gaps3 (input kinds)
 
 * **Telekinesis is a provider, and it does any hand op in sight.** `/mob` declares `telekinetic_reach()`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while the mob is `tk_ready()` (a TK mutation or powered kinesis gloves,
