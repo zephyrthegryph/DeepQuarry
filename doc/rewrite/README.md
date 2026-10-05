@@ -78,6 +78,7 @@ These stay where they are. Where a foundation chapter overrides part of one, the
 | [rust_architecture.md](rust_architecture.md), [rust_core.md](rust_core.md), [rust_bindings.md](rust_bindings.md) | The Rust library structure and bindings | Drivers, watches and mirrors overridden by [rust.md](rust.md) |
 | [kernel.md](kernel.md) | Detailed kernel design and measurements | Phases and work units overridden by [scheduling_and_kernel.md](scheduling_and_kernel.md) section 6 |
 | [init_and_turfs.md](init_and_turfs.md) | Boot and bulk-destroy speed | |
+| [agent_workflow.md](agent_workflow.md) | The build/test/merge loop: generated files, merging master | Read before your next merge |
 | `doc/body_architecture.md`, `doc/mob_life_architecture.md`, `doc/testing.md` | Body, mob Life, testing | Outside this folder |
 
 ### Archive

@@ -220,6 +220,8 @@ export const MapBoundsTarget = new Juke.Target({
 // deepquarry.dme. Runs before the DM compile so missing includes are caught
 // with a helpful error rather than silently-uncompiled code.
 export const ValidateDmeTarget = new Juke.Target({
+  // Generates code/engine/_generated first (GenTarget, defined below: hence the function form).
+  dependsOn: () => [GenTarget],
   inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
   executes: async () => {
     // A .dm file is "compiled" if it is reachable from the .dme through the
@@ -560,8 +562,58 @@ const ANALYZE_DIR = process.env.CARGO_TARGET_DIR
   : 'tools/analyze/target';
 const ANALYZE_BIN = `${ANALYZE_DIR}/release/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
 
+// The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_CACHE, default
+// E:/dq-cache/analyze-bin on Windows, else ~/.cache/dq/analyze-bin; `off` disables it), keyed by a
+// hash of the engine's sources, so a fresh worktree copies the binary instead of a 2 minute cargo
+// build. `<bin>.key` records which sources the binary in the target dir was built from.
+const analyzeCacheDir = (): string | null => {
+  const env = process.env.DQ_ANALYZE_CACHE;
+  if (env === 'off' || env === '0') return null;
+  if (env) return path.resolve(env);
+  if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-bin';
+  return path.join(os.homedir(), '.cache', 'dq', 'analyze-bin');
+};
+const analyzeSourceKey = (): string => {
+  const hash = createHash('sha256').update(`analyze-v1|${process.platform}|${process.arch}|`);
+  const files = [
+    'tools/analyze/Cargo.toml',
+    'tools/analyze/Cargo.lock',
+    'tools/analyze/build.rs',
+    ...Juke.glob('tools/analyze/src/**/*.rs'),
+  ]
+    .map((f) => f.replace(/\\/g, '/'))
+    .sort();
+  for (const file of files) {
+    hash.update(file);
+    hash.update('|');
+    try {
+      // CRLF and LF checkouts of the same source share a binary.
+      hash.update(fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n'));
+    } catch {
+      hash.update('<missing>');
+    }
+    hash.update('|');
+  }
+  return hash.digest('hex').slice(0, 32);
+};
+let analyzePendingKey: string | null = null;
+
 export const AnalyzeBuildTarget = new Juke.Target({
   onlyWhen: () => {
+    const key = analyzeSourceKey();
+    analyzePendingKey = key;
+    const keyFile = `${ANALYZE_BIN}.key`;
+    const current = fs.existsSync(ANALYZE_BIN) && fs.existsSync(keyFile) ? fs.readFileSync(keyFile, 'utf-8').trim() : null;
+    if (current === key) return false;
+    const cache = analyzeCacheDir();
+    const cached = cache ? `${cache}/${key}/${path.basename(ANALYZE_BIN)}` : null;
+    if (cached && fs.existsSync(cached)) {
+      fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
+      fs.copyFileSync(cached, ANALYZE_BIN);
+      fs.writeFileSync(keyFile, key);
+      Juke.logger.info(`analyze cache: hit ${key} (${cache})`);
+      return false;
+    }
     const probe = spawnSync('cargo', ['--version'], { stdio: 'ignore', shell: true });
     const cargoOk = !probe.error && probe.status === 0;
     if (!cargoOk) {
@@ -570,24 +622,70 @@ export const AnalyzeBuildTarget = new Juke.Target({
       }
       return false;
     }
+    if (cache) Juke.logger.info(`analyze cache: miss ${key}; building and storing`);
     return true;
   },
-  inputs: [
-    'tools/analyze/Cargo.toml',
-    'tools/analyze/Cargo.lock',
-    'tools/analyze/build.rs',
-    'tools/analyze/src/**/*.rs',
-  ],
-  outputs: [ANALYZE_BIN],
   executes: async () => {
     await Juke.exec('cargo', ['build', '--release', '--manifest-path', 'tools/analyze/Cargo.toml']);
+    const key = analyzePendingKey;
+    if (!key) return;
+    fs.writeFileSync(`${ANALYZE_BIN}.key`, key);
+    const cache = analyzeCacheDir();
+    if (!cache) return;
+    try {
+      const dir = `${cache}/${key}`;
+      fs.mkdirSync(dir, { recursive: true });
+      // Copy then rename, so a concurrent reader never sees a half-written binary.
+      const tmp = `${dir}/.${process.pid}.tmp`;
+      fs.copyFileSync(ANALYZE_BIN, tmp);
+      fs.renameSync(tmp, `${dir}/${path.basename(ANALYZE_BIN)}`);
+      Juke.logger.info(`analyze cache: stored ${key}`);
+    } catch (error) {
+      Juke.logger.warn(`analyze cache: store failed: ${error instanceof Error ? error.message : error}`);
+    }
+  },
+});
+
+// The generated DM and TypeScript (`analyze gen`: code/engine/_generated/*.dm, code/_generated/reads.dm,
+// tgui/packages/tgui/interfaces/generated/*.d.ts) are not committed; every target that compiles or
+// lints DM runs this first. `analyze gen` rewrites only the files whose text changed (so an unchanged
+// tree keeps its mtimes and the .dmb caches hold) and caches its parse per file in data/analyze-cache:
+// about 3 s warm, 18 s cold. It fails on a generator diagnostic (a bad declaration) or a generated
+// file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist).
+export const GenTarget = new Juke.Target({
+  dependsOn: [AnalyzeBuildTarget],
+  executes: async () => {
+    if (process.env.DQ_SKIP_GEN === '1') {
+      Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
+      return;
+    }
+    if (!fs.existsSync(ANALYZE_BIN)) {
+      if (fs.existsSync('code/engine/_generated/declare.dm')) {
+        Juke.logger.warn(`gen: no analyze binary (${ANALYZE_BIN}); compiling the generated files already on disk, which may be stale`);
+        return;
+      }
+      Juke.logger.error('gen: the generated DM is missing and the analyze engine cannot be built (install cargo, see verdigris/README.md)');
+      throw new Juke.ExitCode(1);
+    }
+    const started = Date.now();
+    const result = spawnSync(ANALYZE_BIN, ['gen'], { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
+    const lines = `${result.stdout || ''}${result.stderr || ''}`.split(/\r?\n/).filter((l) => l && !l.startsWith('fresh '));
+    const written = lines.filter((l) => l.startsWith('wrote '));
+    const other = lines.filter((l) => !l.startsWith('wrote '));
+    if (result.error || result.status !== 0) {
+      for (const line of lines) console.log(line);
+      Juke.logger.error('gen: `analyze gen` failed (see the diagnostics above)');
+      throw new Juke.ExitCode(1);
+    }
+    for (const line of other) console.log(line);
+    Juke.logger.info(`gen: ${written.length} generated file(s) rewritten in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   },
 });
 
 // `tools/build/build.sh analyze` runs every engine lint (what tools/ci/check_ratchets.sh and
 // tools/ci/check_grep.sh wrap); extra arguments go to `analyze check` (e.g. --lint scheduler).
 export const AnalyzeTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget],
+  dependsOn: [GenTarget], // some lints read the generated DM (sem/reads)
   executes: async ({ args }) => {
     if (!fs.existsSync(ANALYZE_BIN)) {
       Juke.logger.warn('analyze: no binary, skipping the engine lints');
@@ -2544,7 +2642,7 @@ export const AutowikiTarget = new Juke.Target({
 // writes data/ui_types.json and exits, then generate the tgui interface types from it.
 export const UiTypesTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter],
-  dependsOn: () => [IconRepackTarget, VerdigrisTarget],
+  dependsOn: () => [IconRepackTarget, VerdigrisTarget, GenTarget],
   outputs: [UI_TYPES_JSON],
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
@@ -2788,6 +2886,7 @@ export const TguiLintTarget = new Juke.Target({
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
 // local dev can skip it without consequence.
 export const DreamCheckerTarget = new Juke.Target({
+  dependsOn: [GenTarget], // it lints the generated DM too
   inputs: ['code/**/*.dm', 'deepquarry.dme'],
   onlyWhen: () => {
     if (!findDreamChecker()) {

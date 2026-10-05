@@ -170,40 +170,96 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_update_camera_view)
 
 UI_ACT(/obj/machinery/computer/ship/helm, "add", ui_act_add, UI_ARG_TEXT("add"))
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_add)
-	var/datum/computer_file/data/waypoint/R = new()
-	var/sec_name = act_ask(ui.user, action, params, ui, "k180", /datum/om/prompt/text, message = "Input navigation entry name", title = "New navigation entry", default = "Sector #[length(known_sectors)]", max_length = MAX_NAME_LEN)
-	if(isnull(sec_name))
+	return helm_navigation_entry_stage(ui, list("add" = params["add"]))
+
+/obj/machinery/computer/ship/helm/proc/helm_navigation_entry_stage(datum/tgui/ui, list/answers, datum/request/request)
+	if(!("name" in answers))
+		open_request(ui, /datum/prompt/text/helm_navigation_name, TYPE_PROC_REF(/datum/tgui, helm_navigation_entry_entered), answerer = ui.user, captured = answers.Copy(), step_name = "name", default = "Sector #[length(known_sectors)]")
 		return
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+	if(helm_coordinate_recheck(ui, request))
 		return FALSE
+	var/sec_name = answers["name"]
 	if(!sec_name)
 		sec_name = "Sector #[length(known_sectors)]"
-	R.fields["name"] = sec_name
 	if(sec_name in known_sectors)
 		to_chat(ui.user, span_warning("Sector with that name already exists, please input a different name."))
 		return TRUE
-	switch(params["add"])
+	var/entry_x
+	var/entry_y
+	switch(answers["add"])
 		if("current")
-			R.fields["x"] = linked().x
-			R.fields["y"] = linked().y
+			entry_x = linked().x
+			entry_y = linked().y
 		if("new")
-			var/newx = act_ask(ui.user, action, params, ui, "k194", /datum/om/prompt/number, message = "Input new entry x coordinate", title = "Coordinate input", default = linked().x, max = world.maxx, min = 1)
-			if(isnull(newx))
+			if(!("x" in answers))
+				open_request(ui, /datum/prompt/number/helm_navigation_coordinate, TYPE_PROC_REF(/datum/tgui, helm_navigation_entry_entered), answerer = ui.user, captured = answers.Copy(), step_name = "x", question = "Input new entry x coordinate", default = linked().x, max_value = world.maxx)
 				return
-			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+			if(helm_coordinate_recheck(ui, request))
 				return TRUE
-			var/newy = act_ask(ui.user, action, params, ui, "k197", /datum/om/prompt/number, message = "Input new entry y coordinate", title = "Coordinate input", default = linked().y, max = world.maxy, min = 1)
-			if(isnull(newy))
+			if(!("y" in answers))
+				open_request(ui, /datum/prompt/number/helm_navigation_coordinate, TYPE_PROC_REF(/datum/tgui, helm_navigation_entry_entered), answerer = ui.user, captured = answers.Copy(), step_name = "y", question = "Input new entry y coordinate", default = linked().y, max_value = world.maxy)
 				return
-			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+			if(helm_coordinate_recheck(ui, request))
 				return FALSE
-			R.fields["x"] = CLAMP(newx, 1, world.maxx)
-			R.fields["y"] = CLAMP(newy, 1, world.maxy)
+			entry_x = CLAMP(answers["x"], 1, world.maxx)
+			entry_y = CLAMP(answers["y"], 1, world.maxy)
+	// Provisional questions must not register abandoned waypoint records.
+	var/datum/computer_file/data/waypoint/R = new()
+	R.fields["name"] = sec_name
+	if(answers["add"] == "current" || answers["add"] == "new")
+		R.fields["x"] = entry_x
+		R.fields["y"] = entry_y
 	rel_add(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R, sec_name)
-	. = TRUE
-	add_fingerprint(ui.user)
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	helm_terminal_feedback(ui.user)
+	return TRUE
+
+/datum/tgui/proc/helm_navigation_entry_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/computer/ship/helm/helm = src_object()
+	var/list/answers = A.request.captured.Copy()
+	answers[A.request.step_name] = A.answer.answer_value
+	if(helm.helm_navigation_entry_stage(src, answers, A.request))
+		SStgui.update_uis(helm)
+
+/// Pure original-window/source lifetime and typed UI dispatch checks.
+/proc/helm_navigation_entry_refusal(datum/request/request)
+	var/datum/tgui/original_ui = request.owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(request.answerer))
+		return "gone"
+	var/obj/machinery/computer/ship/helm/helm = original_ui.src_object()
+	if(!istype(helm) || QDELETED(helm))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!helm.ui_act_allowed(original_ui.user, "add", original_ui, original_ui.state()))
+		return "the helm action is unavailable"
+	return request.captured?["late_refusal"]
+
+/datum/prompt/text/helm_navigation_name
+	question = "Input navigation entry name"
+	title = "New navigation entry"
+	max_len = MAX_NAME_LEN
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/helm_navigation_name/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/helm_navigation_name/recheck_extra()
+	return helm_navigation_entry_refusal(src)
+
+/datum/prompt/number/helm_navigation_coordinate
+	title = "Coordinate input"
+	min_value = 1
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/helm_navigation_coordinate/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/helm_navigation_coordinate/recheck_extra()
+	return helm_navigation_entry_refusal(src)
 
 UI_ACT(/obj/machinery/computer/ship/helm, "remove", ui_act_remove, UI_ARG_REF("remove", null, /datum/computer_file/data/waypoint))
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_remove)
