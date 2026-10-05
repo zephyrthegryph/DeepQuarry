@@ -101,3 +101,9 @@ conversions touch different files and a snapshot-only change needs no recompile.
 Before converting a type, `bash tools/dq_pin.sh /type/path` records a generated pin of its menu, refusals,
 clicks and wires; after, `bash tools/dq_focused_test.sh dq_conversion_pin` shows what changed.
 
+## 7. Order-dependent failures
+
+A test that fails in a long focused run but passes alone leaks or inherits shared state. Every run now logs
+`STATE LEAK` lines in `tests.log` (and prints them when the run fails) for each global flag a test left changed;
+the culprit is the leak before the failing test. Fix it with `set_global()`/`set_var()` in the leaking test.
+

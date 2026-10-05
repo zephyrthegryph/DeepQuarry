@@ -2107,6 +2107,17 @@ export const DmTestTarget = new Juke.Target({
     if (!run.clean) {
       printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
       reportBootGate(run.logDir);
+      // The state guard (unit_test_globals_guard()): globals an earlier test left changed, the usual cause of a
+      // failure that shows only in a long run.
+      try {
+        const leaks = fs.readFileSync(`${run.logDir}/tests.log`, 'utf-8').split(/\r?\n/).filter((l) => l.includes('STATE LEAK'));
+        if (leaks.length) {
+          Juke.logger.warn(`State guard: ${leaks.length} global(s) left changed by a test (suspects for an order-dependent failure):`);
+          console.error(leaks.slice(0, 30).join('\n'));
+        }
+      } catch {
+        // no tests.log
+      }
     }
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
     // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an

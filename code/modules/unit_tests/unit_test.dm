@@ -866,6 +866,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/tick_start_index = 0
 	var/runtimes_before = GLOB.total_runtimes
 	var/list/sites_before = SSexpedition?.sites?.Copy()
+	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -956,6 +957,7 @@ GLOBAL_VAR(dq_test_select_names)
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
+	unit_test_globals_guard(globals_before, test_path)
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
@@ -967,6 +969,53 @@ GLOBAL_VAR(dq_test_select_names)
 		log_test("\t[leak]")
 
 	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
+
+/// GLOB vars the state guard ignores: run bookkeeping and counters that move on their own.
+/proc/unit_test_globals_ignored()
+	var/static/list/ignored = list(
+		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
+		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
+		"act_last_reason" = TRUE, "act_last_outcome" = TRUE, "e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+	)
+	return ignored
+
+/// The scalar GLOB vars (numbers, text, paths, null) before a test: the state guard compares them after it.
+/proc/unit_test_globals_snapshot()
+	. = list()
+	var/list/ignored = unit_test_globals_ignored()
+	for(var/name in GLOB.vars)
+		if(ignored[name])
+			continue
+		var/value = GLOB.vars[name]
+		if(isnull(value) || isnum(value) || istext(value) || ispath(value))
+			.[name] = list(value)
+
+/**
+ * The state guard: a test that leaves a global flag changed poisons every later test in the run, a failure that
+ * shows only in a long focused run and never alone (dq_rule_thresholds, vent_internal_check). After each test, a
+ * scalar GLOB var that changed is logged in tests.log: "STATE LEAK" for a flag (null, 0 or 1 before and after, not
+ * a counter or a lazy-init marker), "STATE LEAK?" for text and paths; numbers that are not flags are ignored. It
+ * only flags, never restores: a lazy-init flag put back would rebuild what it guards. When a test fails only in a
+ * long run, grep the run's tests.log for STATE LEAK before it (tools/dq_focused_test.sh prints them on a failure). Change shared state with set_global()/set_var() (restored in teardown) and the guard stays quiet.
+ */
+/proc/unit_test_globals_guard(list/before, test_path)
+	var/list/ignored = unit_test_globals_ignored()
+	var/static/regex/counter = regex(@"(built|initialized|ready|done|loaded|roundstat|count|next|total|_id$|^id_|gen$|_gen|serial|tick|time|last|seq|index|builds|cursor|stamp)", "i")
+	for(var/name in GLOB.vars)
+		if(ignored[name])
+			continue
+		var/value = GLOB.vars[name]
+		var/list/box = before[name]
+		if(!box)
+			continue
+		var/was = box[1]
+		if(was == value)
+			continue
+		var/flag = (isnull(was) || was == 0 || was == 1) && (isnull(value) || value == 0 || value == 1)
+		if(flag && !counter.Find(name))
+			log_test("STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). If a later test fails only in a long run, this is a suspect: change it with set_global() in the test.")
+		else if(!(isnum(was) && isnum(value))) // a number that moved is a counter: quiet
+			log_test("STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)")
 
 /// Expedition sites are global (each holds a whole z-level) and outlive the test block, so a test
 /// that generates one must release it, through defer_cleanup() so a failing assert can't skip
