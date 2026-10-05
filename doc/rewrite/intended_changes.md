@@ -861,7 +861,7 @@ was marked LEGACY there and edited in the commit that changed it). The library p
   of `set_stat(UNCONSCIOUS)` and a direction write every tick; they face south once, on entry. The hold is there whatever the gas in the cell
   (the old write skipped a cell with under 10 moles).
 * **Any carbon can be dragged in** (a diona nymph): the menu's "Move Inside" already took any carbon, the drag took only humans.
-* **The cell trades heat with its occupant through the gas domain** (`gas_body_heat_exchange()`, code/domains/atmos/body_heat.dm) instead of
+* **The cell trades heat with its occupant through the gas domain** (`gas_body_heat_exchange()`, code/domains/atmos/gas.dm) instead of
   writing the gas temperature itself; it still settles its pipe network when the gas moved by more than a kelvin.
 * **The release sequence is an op wait** (two minutes, ending if the occupant dies or the cell goes) instead of a free-running timer that ejected
   whoever was inside when it fired.

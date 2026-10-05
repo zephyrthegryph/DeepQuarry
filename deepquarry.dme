@@ -5708,11 +5708,7 @@
 #include "code\library\access\lock.dm"
 #include "code\library\access\emag.dm"
 #include "code\library\access\subversion.dm"
-<<<<<<< HEAD
 #include "code\domains\atmos\gas.dm"
-=======
-#include "code\domains\atmos\body_heat.dm"
->>>>>>> d848db17f7 (Cryo cell onto the final forms; tests, intended changes, generated)
 #include "code\domains\power\powered.dm"
 #include "code\engine\stats\def.dm"
 #include "code\engine\stats\rules.dm"
