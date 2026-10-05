@@ -1277,3 +1277,15 @@ Pinned by `dq_atmos_m/pipes/*` in `code/modules/unit_tests/dq_atmos_pipes_behavi
   (every valve for new construction), not an OM sleeper behaviour watching CHANGE_PIPE_LEAKS. `close_on_leaks` is tracked. A hand switches the
   circuit; an alt-click turns it by hand only while the circuit is off (refused with a reason otherwise, where it used to say so and do nothing).
 - **Wrenches** of every converted device are ops with the 4 s wait (the three-way valve's and the manual valve's were 4 s through `use_tool`).
+
+## Filters and mixers: trinary and omni (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
+
+- **The wrench reaches them.** As with the pumps, the window's open op answered a wrench before the legacy `wrench_act()`: a filter or a mixer
+  (trinary or omni) can now be taken off (4 s), running or not, as the legacy wrench allowed.
+- **Windows and switches.** The trinary mixer's and omni mixer's windows are `interface()` + `ui_data()` + ops (no `DECLARE_UI`/`UI_ACT`); every
+  filter and mixer window now opens for someone the device's access lets in (the mixers' did not check; an unlocked device lets everyone in, as
+  before). The ctrl-click switch is the shared `pipe_device_switch()` op; on an omni device it still ends configuring.
+- **The omni mixer's share prompt** is an `asks()` number on the `switch_con` op (the `atmos_config_review` request and its callback are gone for
+  the mixer); it is not asked when no other input is free to take the rest (it used to do nothing).

@@ -458,8 +458,7 @@
 	TEST_ASSERT(F.use_power != was, "the technician's switches it")
 	F.set_use_power(USE_POWER_IDLE)
 	ap_click(tech, F, tool(/obj/item/tool/wrench, tile(2, 2)))
-	// BUG: the window's open op answers the wrench first.
-	TEST_ASSERT(!QDELETED(F), "BUG: the wrench opens the window")
+	TEST_ASSERT(QDELETED(F), "the wrench takes it off, running")
 	sweep_pipe_items()
 
 /// A trinary mixer's window: the switch, the rate and the two shares (each sets the other to the rest).
@@ -494,8 +493,7 @@
 	ap_click(H, F, null, GESTURE_CTRL)
 	TEST_ASSERT(F.use_power, "the ctrl-click runs it")
 	ap_click(H, F, tool(/obj/item/tool/wrench))
-	// BUG: the window's open op answers the wrench first.
-	TEST_ASSERT(!QDELETED(F), "BUG: the wrench opens the window")
+	TEST_ASSERT(QDELETED(F), "the wrench takes it off")
 	sweep_pipe_items()
 
 /// An omni mixer: the same switch and configuring, and the rate asked for while configuring.
