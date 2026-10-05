@@ -23050,6 +23050,34 @@
 	into += entry_line(24)
 	into += list(global.configure(global.occupant_pod(OCCUPANT_SLOT_TEST_FIXTURE, exit_to = SOUTH)))
 
+/// CAPABILITIES(/obj/machinery/heat_fixture/chiller) at code/tests/domains/heat_fixtures.dm:35
+/obj/machinery/heat_fixture/chiller/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 35, /obj/machinery/heat_fixture/chiller)
+	into += entry_line(36)
+	into += list(global.when(nameof(heat_on), heat_pump(nameof(cold), nameof(gas), 2000, 200, mode = HEAT_PUMP_COOL)))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/engine) at code/tests/domains/heat_fixtures.dm:41
+/obj/machinery/heat_fixture/engine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 41, /obj/machinery/heat_fixture/engine)
+	into += entry_line(42)
+	into += list(global.when(nameof(heat_on), heat_engine(nameof(gas), nameof(cold), 0.5, 100)))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/plate) at code/tests/domains/heat_fixtures.dm:23
+/obj/machinery/heat_fixture/plate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 23, /obj/machinery/heat_fixture/plate)
+	into += entry_line(24)
+	into += list(global.when(nameof(heat_on), heat_link(nameof(gas), HEAT_AIR, nameof(conductance))))
+
+/// CAPABILITIES(/obj/machinery/heat_fixture/pod) at code/tests/domains/heat_fixtures.dm:29
+/obj/machinery/heat_fixture/pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/domains/heat_fixtures.dm", 29, /obj/machinery/heat_fixture/pod)
+	into += entry_line(30)
+	into += list(global.when(nameof(heat_on), global.while_slotted("heat_pod", heat_link(HEAT_HOLDER, nameof(gas), nameof(conductance)), on = ON_CONTENTS)))
+
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:117
 /obj/machinery/p2_box/declared_entries(list/into)
 	..(into)

@@ -102,7 +102,12 @@ pub const HEAT_SOURCE_WEAPON: i32 = 7;
 /// @dm-define HEAT_SOURCE_OTHER
 #[allow(dead_code)]
 pub const HEAT_SOURCE_OTHER: i32 = 8;
-const SOURCES: usize = 9;
+/// A material's own heat model (material science's DM solid state) giving
+/// heat to or taking it from a gas.
+/// @dm-define HEAT_SOURCE_MATERIAL
+#[allow(dead_code)]
+pub const HEAT_SOURCE_MATERIAL: i32 = 9;
+const SOURCES: usize = 10;
 
 /// A reservoir.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -347,12 +352,12 @@ fn write_energy(r: Res, joules: f64) {
 
 /// Steps every edge over the world time since the last step. Called by the
 /// frame after the world paced (outside the world borrow: gas loads take it).
-pub(crate) fn step(now: f64) {
+pub(crate) fn step(now: f64, first_dt: f64) {
     let edges: Vec<(usize, Edge<Res>)> = NET.with_borrow(|n| {
         n.slots.iter().enumerate().filter_map(|(i, s)| s.as_ref().map(|s| (i, s.edge))).collect()
     });
     let dt = NET.with_borrow_mut(|n| {
-        let dt = n.last_now.map_or(0.0, |t| (now - t).max(0.0));
+        let dt = n.last_now.map_or(first_dt, |t| (now - t).max(0.0));
         n.last_now = Some(now);
         dt
     });
@@ -736,6 +741,27 @@ fn heat_move(
     Ok((applied as f32).into())
 }
 
+/// Moves `fraction` (0..1) of the way to the common temperature of two
+/// reservoirs in one conserved operation (1: both end at the mixed
+/// temperature, as if they were one body). Returns the joules moved from
+/// the first to the second.
+#[auxmacros::bind("/proc/heat_equalize")]
+fn heat_equalize(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_ref: ByondValue, fraction: ByondValue) -> Result<ByondValue> {
+    let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
+    let fraction = f(&fraction)?.clamp(0.0, 1.0);
+    let moved = one_off(&[a, b], |c, books| {
+        let (Some(sa), Some(sb)) = (c.state(a), c.state(b)) else { return 0.0 };
+        let inv = |s: State| if s.is_infinite() { 0.0 } else { 1.0 / s.capacity };
+        let k = inv(sa) + inv(sb);
+        if k <= 0.0 {
+            return 0.0;
+        }
+        transfer::transfer(c, books, a, b, fraction * (sa.temperature - sb.temperature) / k)
+    });
+    #[allow(clippy::cast_possible_truncation)]
+    Ok((moved as f32).into())
+}
+
 /// Brings a reservoir to `temperature` K by an external, booked source
 /// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
 /// temperature) expressed as the joules it takes. Returns the joules added.
@@ -744,6 +770,16 @@ fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondV
     let res = Res::from_dm(&kind, &r)?;
     let t = f(&temperature)?;
     let source = source_index(&source)?;
+    // An empty mixture holds no energy, but the temperature it keeps is what gas added to it later arrives at: set it directly.
+    if let Some(m) = empty_mixture(res) {
+        if let Some(before) = mix::load(m) {
+            let mut after = before.clone();
+            #[allow(clippy::cast_possible_truncation)]
+            after.set_temperature((t as f32).max(vg_heat::consts::TCMB));
+            mix::store(m, &before, &after);
+        }
+        return Ok(0.0f32.into());
+    }
     let applied = one_off(&[res], |c, b| {
         let Some(s) = c.state(res) else { return 0.0 };
         if s.is_infinite() {
@@ -754,6 +790,38 @@ fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondV
     book_source(source, applied);
     #[allow(clippy::cast_possible_truncation)]
     Ok((applied as f32).into())
+}
+
+/// Sets a reservoir's thermal energy to `joules` (its floor at least) by an
+/// external, booked source: a reaction that changed a gas's composition and
+/// released or consumed `joules - before` (`HEAT_SOURCE_REACTION`). Returns
+/// the joules added.
+#[auxmacros::bind("/proc/heat_set_energy")]
+fn heat_set_energy(kind: ByondValue, r: ByondValue, joules: ByondValue, source: ByondValue) -> Result<ByondValue> {
+    let res = Res::from_dm(&kind, &r)?;
+    let target = f(&joules)?;
+    let source = source_index(&source)?;
+    let applied = one_off(&[res], |c, b| {
+        let Some(s) = c.state(res) else { return 0.0 };
+        if s.is_infinite() {
+            return 0.0;
+        }
+        transfer::external(c, b, res, target - s.capacity * s.temperature)
+    });
+    book_source(source, applied);
+    #[allow(clippy::cast_possible_truncation)]
+    Ok((applied as f32).into())
+}
+
+/// The mixture behind a gas reservoir when it is empty (too little gas to hold heat).
+fn empty_mixture(r: Res) -> Option<MixRef> {
+    let m = match r {
+        Res::Mix(id) => MixRef::from_id(id)?,
+        Res::Port(bits) => port_mix(bits)?,
+        _ => return None,
+    };
+    let mix = mix::load(m)?;
+    (!mix.is_immutable() && f64::from(mix.heat_capacity()) < MIN_CAPACITY).then_some(m)
 }
 
 /// Reads a reservoir: `list(temperature K, heat capacity J/K (-1: infinite))`,
@@ -791,9 +859,8 @@ mod tests {
             s.capacity * s.temperature
         };
         let before = energy(a) + energy(b);
-        step(0.0);
         for k in 1..=200 {
-            step(f64::from(k) * 0.5);
+            step(f64::from(k) * 0.5, 0.5);
         }
         let (ta, tb) = (read_state(Res::Mix(a.id())).unwrap().temperature, read_state(Res::Mix(b.id())).unwrap().temperature);
         assert!((ta - tb).abs() < 0.5, "{ta} vs {tb}");

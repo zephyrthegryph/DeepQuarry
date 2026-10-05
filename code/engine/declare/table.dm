@@ -36,6 +36,8 @@
 	var/list/rel_grant_vars
 	/// TRUE when the type declares a while_slotted() entry: the ledger asks before it spends anything on a slot move (scopes.dm).
 	var/has_slotted = FALSE
+	/// TRUE when the type declares a type-level entry of a condition-scoped kind (cond_scope.dm).
+	var/has_cond_scoped = FALSE
 	/// ENGINE_HOOK_*: the lifecycle work an instance of the type needs.
 	var/hook_flags = 0
 
@@ -159,14 +161,19 @@ GLOBAL_VAR(declare_report_capture)
 	table_validate(T)
 	T.rel_grant_vars = null
 	T.has_slotted = FALSE
+	T.has_cond_scoped = FALSE
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
 		if(istype(E) && E.kind == ENTRY_REL_GRANTS)
 			LAZYOR(T.rel_grant_vars, E.args["var"])
 		else if(istype(E) && E.kind == ENTRY_WHILE_SLOTTED)
 			T.has_slotted = TRUE
+		else if(istype(E) && isnull(C.owner) && entry_engine_for(E.kind)?.cond_scoped)
+			T.has_cond_scoped = TRUE
 	if(T.has_slotted)
 		table_slot_gates(T) // a gated or reading while_slotted entry is re-applied when what it reads changes (scopes.dm)
+	if(T.has_cond_scoped)
+		table_cond_gates(T) // a condition-scoped entry is re-applied when its conditions or the vars it reads change (cond_scope.dm)
 	T.hook_flags = table_hook_flags(T)
 	return T
 
@@ -191,6 +198,8 @@ GLOBAL_VAR(declare_report_capture)
 				. |= ENGINE_HOOK_INIT | ENGINE_HOOK_SLOT_STARTS // a slot's starting contents are made when the holder initializes
 			else if(istype(E) && E.kind == ENTRY_AFTER_INIT)
 				. |= ENGINE_HOOK_INIT | ENGINE_HOOK_AFTER_INIT // armed when the instance's init is complete
+	if(T.has_cond_scoped)
+		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_COND_SCOPED
 	if(stat_table_needs_init(T))
 		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_STATS
 
