@@ -66,12 +66,17 @@
 	if(!body)
 		return
 	var/turf/T = isturf(loc) ? loc : null
-	if(T == body.surroundings_turf && near_enough(air_conductance, body.environment_conductance) && near_enough(surface_conductance, body.surface_conductance) 		&& near_enough(sky_area, body.sky_area))
+	if(body.surroundings_at == surroundings_key(T) && near_enough(air_conductance, body.environment_conductance) && near_enough(surface_conductance, body.surface_conductance) \
+		&& near_enough(sky_area, body.sky_area))
 		return
 	body.environment_conductance = air_conductance
 	body.surface_conductance = surface_conductance
 	body.sky_area = sky_area
 	rebuild_surroundings()
+
+/// The key set_surroundings() compares to tell whether the body is still where its links were made.
+/mob/living/proc/surroundings_key(turf/T)
+	return T ? "[T.x],[T.y],[T.z]" : ""
 
 /// Whether a coupling value is within 2 % (or 0.01) of what it is at: not worth re-making the links.
 /mob/living/proc/near_enough(value, current)
@@ -86,7 +91,7 @@
 	if(!h)
 		return
 	var/turf/T = isturf(loc) ? loc : null
-	body.surroundings_turf = T
+	body.surroundings_at = surroundings_key(T)
 	var/list/plume = T ? surroundings_plume(T) : list()
 	var/air = body.environment_conductance
 	var/list/coupling = heat_coupling()
@@ -127,7 +132,7 @@
 	for(var/id in body.surroundings_edges)
 		vg_heat_edge_remove(id)
 	body.surroundings_edges = null
-	body.surroundings_turf = null
+	body.surroundings_at = null
 
 /mob/living/release_heat_body()
 	drop_surroundings()
@@ -153,8 +158,8 @@
 	var/metabolic_power = 0
 	/// The heat link ids to the plume's air, the floor, the walls and the sky.
 	var/list/surroundings_edges
-	/// The turf those links were made for.
-	var/turf/surroundings_turf
+	/// Where those links were made for ("x,y,z" of the turf, "" off a turf; a key, not a reference to the turf).
+	var/surroundings_at
 
 /// A living body couples to its surroundings at the conductance Life sets, not the default object conductance; after a move its links are
 /// re-made for the new tile.

@@ -3831,51 +3831,27 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 
 
-/// Extreme cold environment burns a human (cold burn → fire damage).
+/// Extreme cold environment burns a human (cold burn → fire damage): a sealed room of 50 K nitrogen, air, floor and walls.
 /datum/unit_test/dq_extreme_cold_damages_human
 
 /datum/unit_test/dq_extreme_cold_damages_human/Run()
-	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor for cold-damage test")
-
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	test_driver_begin()
+	var/list/room = body_heat_room(4, 50)
+	TEST_ASSERT_NOTNULL(room, "no clear room for the cold-damage test")
+	for(var/turf/open/T as anything in room)
+		T.air.clear()
+		T.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+		heat_set(T.air, 50, HEAT_SOURCE_OTHER)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, room[1])
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
-
-	// Use a detached mixture: this test exercises human environmental response,
-	// not the concurrently running turf-diffusion worker. A mapped turf mixture
-	// can warm between these synchronous calls under full-suite load.
-	var/datum/gas_mixture/turf_air = new(CELL_VOLUME)
-	for(var/datum/gas/g as anything in turf_air.get_gases())
-		turf_air.set_moles(g, 0)
-	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	heat_set(turf_air, 50, HEAT_SOURCE_OTHER) // 50 K, ~-223°C
-
-	// Cold exposure → frostbite (thermal injury). Heat is conserved, so a body is chilled only by a cold mass large enough to take its heat
-	// (doc/rewrite/intended_changes.md, "Heat network"): a thousand cells of 50 K nitrogen, linked to the body, stand in for a frozen room.
-	var/datum/gas_mixture/cold_mass = new(CELL_VOLUME * 1000)
-	cold_mass.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD * 1000)
-	heat_set(cold_mass, 50)
-	var/edge = vg_heat_link_create(HEAT_TARGET_BODY, H.mob_heat_body(), HEAT_TARGET_MIXTURE, cold_mass, 1e5, 0, 0)
-	vg_heat_net_advance(60)
-	vg_heat_edge_remove(edge)
 	var/initial_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
-	for(var/i in 1 to 10)
-		life_test_environment(H, turf_air)
+	body_heat_frames(list(H), 20)
 	var/final_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
+	var/body = H.body_temperature()
+	test_driver_end()
+	dq_atmos_test_restore_state()
 
-	TEST_ASSERT(final_thermal > initial_thermal, \
-		"human took no thermal injury at 50K: [initial_thermal] → [final_thermal]")
-
-	for(var/datum/gas/g as anything in turf_air.get_gases())
-		turf_air.set_moles(g, 0)
-	turf_air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
-	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	heat_set(turf_air, T20C, HEAT_SOURCE_OTHER)
-	qdel(turf_air)
+	TEST_ASSERT(final_thermal > initial_thermal, 		"human took no thermal injury in a 50 K room ([body] K): [initial_thermal] → [final_thermal]")
 
 
 /// Tank pressure: a tank filled past its rupture threshold should report its

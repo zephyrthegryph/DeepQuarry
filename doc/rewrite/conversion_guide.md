@@ -297,3 +297,9 @@ lint is a hard ban). Converting a machine:
 4. **One-off events** are `heat_add(thing, joules, HEAT_SOURCE_*)`, `heat_set(thing, kelvin)` (an authority write), `heat_move()` between two
    reservoirs, `heat_equalize()` for "both end at the mixed temperature". Never `mark_dirty()` after heat: Rust wakes what it changed.
 5. **Record** every number that moved in `intended_changes.md` ("Heat network"), with before and after.
+6. **What the test clock moves.** `test_time()` advances the heat network's declared edges only. Couplings that live in the native world (a
+   body's slot coupling to its tile, turf gas diffusion, floor and wall solids) step with `SSair.run_gas_frames(seconds)`, which also steps
+   the edges: a pin that involves a room uses it (`dq_body_heat_behaviour.dm`).
+7. **Mob bodies** are not machines: Life's environment stage calls `set_surroundings(air, surface, sky_area)` (W/K, W/K, m²) and the body's
+   links to the plume of air, the floor, the walls and the sky follow it when it moves. Don't add a `heat_link()` to a mob for its
+   environment; add to `set_surroundings()`.
