@@ -126,8 +126,36 @@
 	/// Monotonic revision for correction-aware contract atmosphere telemetry.
 	var/contract_atmos_revision = 0
 
+TRACKED(/obj/machinery/alarm, aidisabled)
+
 CAPABILITIES(/obj/machinery/alarm)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm)
+	interface("AirAlarm")
+	// Every lockable control is refused, silently, to a person while the alarm is locked (not rcon or the thermostat).
+	op("rcon", ui_act("rcon", arg("rcon", enum(list(RCON_NO, RCON_AUTO, RCON_YES)))), then(PROC_REF(ui_act_rcon)))
+	op("temperature", ui_act("temperature"), then(PROC_REF(ui_act_temperature)))
+	op("lock", ui_act("lock"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_lock)))
+	op("power", ui_act("power", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("o2_scrub", ui_act("o2_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("n2_scrub", ui_act("n2_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("co2_scrub", ui_act("co2_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("tox_scrub", ui_act("tox_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("n2o_scrub", ui_act("n2o_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("fuel_scrub", ui_act("fuel_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("ch4_scrub", ui_act("ch4_scrub", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("panic_siphon", ui_act("panic_siphon", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("scrubbing", ui_act("scrubbing", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("direction", ui_act("direction", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("excheck", ui_act("excheck", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("incheck", ui_act("incheck", arg("id_tag", schema_text(64)), arg("val", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_device_setting)))
+	op("set_external_pressure", ui_act("set_external_pressure", arg("id_tag", schema_text(64)), arg("value", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_set_pressure)))
+	op("set_internal_pressure", ui_act("set_internal_pressure", arg("id_tag", schema_text(64)), arg("value", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_set_pressure)))
+	op("reset_external_pressure", ui_act("reset_external_pressure", arg("id_tag", schema_text(64))), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_reset_pressure)))
+	op("reset_internal_pressure", ui_act("reset_internal_pressure", arg("id_tag", schema_text(64))), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_reset_pressure)))
+	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", num())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_threshold)))
+	op("mode", ui_act("mode", arg("mode", int())), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_mode)))
+	op("alarm", ui_act("alarm"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_alarm)))
+	op("reset", ui_act("reset"), needs(req(PROC_REF(controls_usable_by), silent = TRUE)), then(PROC_REF(ui_act_reset)))
 
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
@@ -718,24 +746,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 		return ..()
 	return STATUS_CLOSE
 
-DECLARE_UI(/obj/machinery/alarm, "AirAlarm")
-
-UI_DATA_REPLACE(/obj/machinery/alarm, "merge:ui_data_obj_machinery_alarm{locked:num,siliconUser:bool,remoteUser:bool,danger_level:num,target_temperature:text,rcon:num,atmos_alarm:num,fire_alarm:unknown,environment_data:list,vents:list,scrubbers:list,mode:num,modes:list,thresholds:list}")
-
-/// The computed part of /obj/machinery/alarm's window data (declared on its UI_DATA row).
-/obj/machinery/alarm/proc/ui_data_obj_machinery_alarm(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/alarm/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
 	var/list/data = list(
 		"locked" = locked,
 		"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)),
-		"remoteUser" = !!ui.parent_ui(),
+		"remoteUser" = !!ui?.parent_ui(),
 		"danger_level" = danger_level,
 		"target_temperature" = "[target_temperature - T0C]C",
 		"rcon" = rcon_setting,
 	)
 
-	var/area/A = get_area(src)
-	data["atmos_alarm"] = A?.atmosalm
-	data["fire_alarm"] = A?.fire
+	var/area/alarm_area = get_area(src)
+	data["atmos_alarm"] = alarm_area?.atmosalm
+	data["fire_alarm"] = alarm_area?.fire
 
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/environment = T.return_air()
@@ -779,9 +805,9 @@ UI_DATA_REPLACE(/obj/machinery/alarm, "merge:ui_data_obj_machinery_alarm{locked:
 	if(!locked || siliconaccess(user) || data["remoteUser"] || (isobserver(user) && is_admin(user)))
 		var/list/list/vents = list()
 		data["vents"] = vents
-		for(var/id_tag in A.air_vent_names)
-			var/long_name = A.air_vent_names[id_tag]
-			var/list/info = LAZYACCESS(A.air_vent_info, id_tag)
+		for(var/id_tag in alarm_area.air_vent_names)
+			var/long_name = alarm_area.air_vent_names[id_tag]
+			var/list/info = LAZYACCESS(alarm_area.air_vent_info, id_tag)
 			if(!info)
 				continue
 			vents.Add(list(list(
@@ -857,26 +883,29 @@ UI_DATA_REPLACE(/obj/machinery/alarm, "merge:ui_data_obj_machinery_alarm{locked:
 		data["thresholds"] = thresholds
 	return data
 
-/obj/machinery/alarm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	invalidate_gas_dependencies()
-	return ..()
-
-UI_ACT(/obj/machinery/alarm, "rcon", ui_act_rcon, UI_ARG_CHOICE("rcon", list(RCON_NO, RCON_AUTO, RCON_YES)))
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_rcon)
-	if(isnull(params["rcon"]))
+/obj/machinery/alarm/proc/ui_act_rcon(datum/act/op/A, rcon)
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
+	if(isnull(rcon))
 		return TRUE
-	rcon_setting = params["rcon"]
+	rcon_setting = rcon
 	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.rcon_setting = rcon_setting
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "temperature", ui_act_temperature)
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_temperature)
+/obj/machinery/alarm/proc/ui_act_temperature(datum/act/op/A)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
 	var/list/selected = TLV["temperature"]
 	var/max_temperature = min(selected[3] - T0C, MAX_TEMPERATURE)
 	var/min_temperature = max(selected[2] - T0C, MIN_TEMPERATURE)
 	open_request(src, /datum/prompt/number, PROC_REF(thermostat_entered), answerer = user, timeout = 0, question = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", default = target_temperature - T0C, max_value = max_temperature, min_value = min_temperature, title = "Thermostat Controls", usable_state = "default")
 	return TRUE
+
+/// Requirement: the actor may use the lockable controls (every action but rcon and temperature). The state is the actor's open window's (a remote
+/// console's air alarm state bypasses the lock).
+/obj/machinery/alarm/proc/controls_usable_by(datum/act/op/A)
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
+	return controls_usable(A.actor, ui?.state())
 
 /// Whether `user` may use the lockable controls (every action but rcon and temperature).
 /// Remote users (the air alarm remote state) bypass the lock, as silicons and admin ghosts do.
@@ -892,94 +921,70 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_temperature)
 	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.update_icon()
 
-UI_ACT(/obj/machinery/alarm, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_lock)
-	if(!controls_usable(user, state))
-		return
+/obj/machinery/alarm/proc/ui_act_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
 	if((siliconaccess(user) && !wires.is_cut(WIRE_IDSCAN)) || (isobserver(user) && is_admin(user)))
 		set_locked(!locked)
 		. = TRUE
 	refresh_area_alarms()
 
-UI_ACT(/obj/machinery/alarm, "power", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "o2_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "n2_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "co2_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "tox_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "n2o_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "fuel_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "ch4_scrub", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "panic_siphon", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "scrubbing", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "direction", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "excheck", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT(/obj/machinery/alarm, "incheck", ui_act_device_setting, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_device_setting)
-	if(!controls_usable(user, state))
-		return
+/obj/machinery/alarm/proc/ui_act_device_setting(datum/act/op/A, id_tag, val)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
+	var/action = A.window_action()
 	switch(action)
 		if("excheck")
-			send_signal(params["id_tag"], list("checks" = params["val"]^1), user)
+			send_signal(id_tag, list("checks" = val^1), user)
 		if("incheck")
-			send_signal(params["id_tag"], list("checks" = params["val"]^2), user)
+			send_signal(id_tag, list("checks" = val^2), user)
 		else
-			send_signal(params["id_tag"], list("[action]" = params["val"]), user)
+			send_signal(id_tag, list("[action]" = val), user)
 	refresh_area_alarms()
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "set_external_pressure", ui_act_set_pressure, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("value"))
-UI_ACT(/obj/machinery/alarm, "set_internal_pressure", ui_act_set_pressure, UI_ARG_TEXT("id_tag", 64), UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_set_pressure)
-	if(!controls_usable(user, state))
-		return
-	if(!isnull(params["value"]))
-		send_signal(params["id_tag"], list("[action]" = params["value"]), user)
+/obj/machinery/alarm/proc/ui_act_set_pressure(datum/act/op/A, id_tag, value)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
+	if(!isnull(value))
+		send_signal(id_tag, list("[A.window_action()]" = value), user)
 		. = TRUE
 	refresh_area_alarms()
 
-UI_ACT(/obj/machinery/alarm, "reset_external_pressure", ui_act_reset_pressure, UI_ARG_TEXT("id_tag", 64))
-UI_ACT(/obj/machinery/alarm, "reset_internal_pressure", ui_act_reset_pressure, UI_ARG_TEXT("id_tag", 64))
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset_pressure)
-	if(!controls_usable(user, state))
-		return
-	send_signal(params["id_tag"], list(action), user)
+/obj/machinery/alarm/proc/ui_act_reset_pressure(datum/act/op/A, id_tag)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
+	send_signal(id_tag, list(A.window_action()), user)
 	refresh_area_alarms()
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "threshold", ui_act_threshold, UI_ARG_TEXT("env", 64), UI_ARG_NUM("var"))
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_threshold)
-	if(!controls_usable(user, state))
-		return
-	var/env = params["env"]
-	var/name = params["var"]
+/obj/machinery/alarm/proc/ui_act_threshold(datum/act/op/A, env, var_name)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
+	var/name = var_name
 	if(!(env in TLV))
 		return
 	open_request(src, /datum/prompt/number/air_alarm_threshold, PROC_REF(threshold_entered), answerer = user, title = name, question = "New [name] for [env]:", default = TLV[env][name], min_value = -1, env = env, setting = name)
 	refresh_area_alarms()
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "mode", ui_act_mode, UI_ARG_INT("mode"))
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_mode)
-	if(!controls_usable(user, state))
-		return
-	set_mode(params["mode"])
+/obj/machinery/alarm/proc/ui_act_mode(datum/act/op/A, mode)
+	var/mob/user = A.actor
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
+	set_mode(mode)
 	apply_mode(user)
 	refresh_area_alarms()
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "alarm", ui_act_alarm)
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_alarm)
-	if(!controls_usable(user, state))
-		return
+/obj/machinery/alarm/proc/ui_act_alarm(datum/act/op/A)
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
 	if(alarm_area_ref().atmosalert(2, src))
 		apply_danger_level(2)
 	refresh_area_alarms()
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "reset", ui_act_reset)
-UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
-	if(!controls_usable(user, state))
-		return
+/obj/machinery/alarm/proc/ui_act_reset(datum/act/op/A)
+	invalidate_gas_dependencies() // every button did (the old ui_act_allowed())
 	atmos_reset()
 	refresh_area_alarms()
 	return TRUE

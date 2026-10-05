@@ -98,12 +98,17 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate, CH
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
 
-DECLARE_UI(/obj/machinery/atmospherics/omni/atmos_filter, "OmniFilter")
+/// The window's data.
+/obj/machinery/atmospherics/omni/atmos_filter/ui_data(datum/act/eval/A)
+	. = list()
+	.["power"] = use_power
+	.["config"] = configuring
+	var/list/part = ui_data_part_atmos_filter(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/omni/atmos_filter, "power=use_power", "config=configuring:num", "merge:ui_data_obj_machinery_atmospherics_omni_atmos_filter{ports:unknown,set_flow_rate:num,last_flow_rate:num}")
-
-/// The computed part of /obj/machinery/atmospherics/omni/atmos_filter's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_data_obj_machinery_atmospherics_omni_atmos_filter(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_data_part_atmos_filter(datum/act/eval/A)
 	var/list/data = list()
 
 
@@ -157,14 +162,12 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/omni/atmos_filter, "power=use_power"
 		else
 			return null
 
-/obj/machinery/atmospherics/omni/atmos_filter/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	wake_for_state_change()
-	return TRUE
+/// Requirement: the ports and rates are changed only while configuring with the filter off (silent, as the old early returns were).
+/obj/machinery/atmospherics/omni/atmos_filter/proc/configurable(datum/act/op/A)
+	return configuring && !use_power
 
-UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_power)
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_power(datum/act/op/A)
+	wake_for_state_change()
 	if(!configuring)
 		set_use_power(!use_power)
 	else
@@ -173,46 +176,39 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_power)
 	wake_for_state_change()
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "configure", ui_act_configure)
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_configure)
-	configuring = !configuring
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_configure(datum/act/op/A)
+	wake_for_state_change()
+	set_configuring(!configuring)
 	if(configuring)
 		set_use_power(USE_POWER_OFF)
 	. = TRUE
 	wake_for_state_change()
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "set_flow_rate", ui_act_set_flow_rate)
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_set_flow_rate)
-	if(!configuring || use_power)
-		return
-	var/new_flow_rate = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
-	if(isnull(new_flow_rate))
-		return
+/obj/machinery/atmospherics/omni/atmos_filter/proc/set_flow_rate_question(datum/act/op/A)
+	return "Enter new flow rate limit (0-[max_flow_rate]L/s)"
+
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_set_flow_rate(datum/act/op/A)
+	wake_for_state_change()
+	var/new_flow_rate = A.step_value("k236")
 	set_set_flow_rate(between(0, new_flow_rate, max_flow_rate))
 	. = TRUE
 	wake_for_state_change()
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_TEXT("mode"))
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_mode)
-	if(!configuring || use_power)
-		return
-	switch_mode(dir_flag(params["dir"]), mode_return_switch(params["mode"]))
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_switch_mode(datum/act/op/A, dir, mode)
+	wake_for_state_change()
+	switch_mode(dir_flag(dir), mode_return_switch(mode))
 	. = TRUE
 	wake_for_state_change()
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "switch_filter", ui_act_switch_filter, UI_ARG_VALUE("dir"))
-UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_filter)
-	if(!configuring || use_power)
-		return
-	var/new_filter = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/choice, message = "Select filter mode:", title = "Change filter", choices = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4))
-	if(isnull(new_filter))
-		return
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_switch_filter(datum/act/op/A, dir)
+	wake_for_state_change()
+	var/new_filter = A.step_value("k247")
 	if(!new_filter)
 		return
-	switch_filter(dir_flag(params["dir"]), mode_return_switch(new_filter))
+	switch_filter(dir_flag(dir), mode_return_switch(new_filter))
 	. = TRUE
 	wake_for_state_change()
 	update_icon()
@@ -293,6 +289,16 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_filter)
 	P.update = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter)
+	interface("OmniFilter")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("configure", ui_act("configure"), then(PROC_REF(ui_act_configure)))
+	op("set_flow_rate", ui_act("set_flow_rate"), needs(req(PROC_REF(configurable), silent = TRUE)),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "k236"),
+		then(PROC_REF(ui_act_set_flow_rate)))
+	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(4096))), needs(req(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_act_switch_mode)))
+	op("switch_filter", ui_act("switch_filter", arg("dir")), needs(req(PROC_REF(configurable), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = "Select filter mode:", "title" = "Change filter", "choices" = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4), "timeout" = 0), step = "k247"),
+		then(PROC_REF(ui_act_switch_filter)))
 	ref_one(nameof(input))
 	ref_one(nameof(output))
 	ref_many(nameof(atmos_filters))

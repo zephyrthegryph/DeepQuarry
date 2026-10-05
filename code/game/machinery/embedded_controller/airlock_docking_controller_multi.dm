@@ -15,10 +15,8 @@
 		for (var/i = 1; i <= tags.len; i++)
 			LAZYSET(child_names, tags[i], names[i])
 
-UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/docking_port_multi, "merge:ui_data_obj_machinery_embedded_controller_radio_docking_port_multi{docking_status:unknown,airlocks:unknown,internalTemplateName:text}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/docking_port_multi's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/docking_port_multi/proc/ui_data_obj_machinery_embedded_controller_radio_docking_port_multi(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/embedded_controller/radio/docking_port_multi/ui_data(datum/act/eval/A)
 	var/datum/embedded_program/docking/multi/docking_program = program // Cast to proper type
 
 	var/list/airlocks[length(child_names)]
@@ -42,10 +40,8 @@ UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/docking_port_multi, "me
 	valid_actions = list("cycle_ext", "cycle_int", "force_ext", "force_int", "abort", "toggle_override")
 
 
-UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/airlock/docking_port_multi, "merge:ui_data_obj_machinery_embedded_controller_radio_airlock_docking_port_multi{chamber_pressure:num,exterior_status:unknown,interior_status:unknown,processing:unknown,docking_status:text,airlock_disabled:bool,override_enabled:num,internalTemplateName:text}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/airlock/docking_port_multi's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/airlock/docking_port_multi/proc/ui_data_obj_machinery_embedded_controller_radio_airlock_docking_port_multi(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/embedded_controller/radio/airlock/docking_port_multi/ui_data(datum/act/eval/A)
 	var/datum/embedded_program/airlock/multi_docking/airlock_program = program // Cast to proper type
 
 	. = list(

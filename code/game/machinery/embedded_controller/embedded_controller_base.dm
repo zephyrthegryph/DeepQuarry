@@ -10,6 +10,10 @@
 
 CAPABILITIES(/obj/machinery/embedded_controller)
 	owns_one(nameof(program), /datum/embedded_program)
+	interface("EmbeddedController")
+	// the window's buttons are its program's commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
+	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))
@@ -35,14 +39,14 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 
 
 /// The controller's actions are its program's commands, listed per type in valid_actions.
-UI_ACT_FALLBACK(/obj/machinery/embedded_controller, ui_act_program_command)
-UI_ACT_PROC(/obj/machinery/embedded_controller, ui_act_program_command)
-	if(user)
-		add_fingerprint(user)
-	if(!(action in valid_actions))
-		return FALSE
+/obj/machinery/embedded_controller/proc/command_listed(datum/act/op/A)
+	return (A.window_action() in valid_actions)
+
+/// A program command from the window.
+/obj/machinery/embedded_controller/proc/ui_act_program_command(datum/act/op/A)
+	add_fingerprint(A.actor)
 	MACHINE_WAKE(src)
-	program.receive_user_command(action)
+	program.receive_user_command(A.window_action())
 	return TRUE
 
 /obj/machinery/embedded_controller/machine_step()
@@ -60,25 +64,13 @@ UI_ACT_PROC(/obj/machinery/embedded_controller, ui_act_program_command)
 /obj/machinery/embedded_controller
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/embedded_controller/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/embedded_controller_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/embedded_controller_open_ui
-	id = "embedded_controller_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/embedded_controller/proc/interaction_open_ui_impl
-
-/obj/machinery/embedded_controller/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: a tool user opens the window.
+/obj/machinery/embedded_controller/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
-
-DECLARE_UI(/obj/machinery/embedded_controller, "EmbeddedController")
 
 //
 // Embedded controller with a radio! (Most things (All things?) use this)

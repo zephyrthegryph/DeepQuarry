@@ -47,6 +47,7 @@ impl Generator for UiTypes {
         for m in cx.markers("CAPABILITIES") {
             let Some(owner) = m.args.first() else { continue };
             let mut window_name: Option<String> = None;
+            let mut forwards = false;
             let mut fields: Vec<(String, Option<String>)> = Vec::new();
             let mut acts: Vec<Act> = Vec::new();
             let mut list: Vec<String> = Vec::new();
@@ -60,6 +61,7 @@ impl Generator for UiTypes {
                         if let Some(first) = parts.first() {
                             window_name = Some(first.trim().trim_matches('"').to_string());
                         }
+                        forwards = parts.iter().skip(1).any(|p| p.trim_start().starts_with("forwards"));
                     }
                     "ui_shape" => {
                         for part in split_top(body) {
@@ -84,6 +86,10 @@ impl Generator for UiTypes {
             }
             let Some(name) = window_name else { continue };
             if fields.is_empty() && acts.is_empty() {
+                // A window that forwards its buttons and declares nothing of its own (the sleeper console) shows its target's window, typed there.
+                if forwards {
+                    continue;
+                }
                 out.diag(&m.rel, m.line, format!("interface(\"{}\") of {} declares no ui_shape() and no ui_act() op: nothing to type", name, owner));
                 continue;
             }

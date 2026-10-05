@@ -90,6 +90,8 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "on_notice", ctx: Ctx::Notice, role: Role::Reaction },
     HookForm { kw: "on_op", ctx: Ctx::Notice, role: Role::Reaction },
     HookForm { kw: "on_change", ctx: Ctx::Notice, role: Role::Reaction },
+    // a computed() field of an asks() is called with the op's context when the question opens (op_request_fields())
+    HookForm { kw: "computed", ctx: Ctx::Op, role: Role::Work },
     HookForm { kw: "asks", ctx: Ctx::Request, role: Role::Work },
     HookForm { kw: "request", ctx: Ctx::Request, role: Role::Work },
 ];
@@ -237,10 +239,14 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                 best = Some(r);
             }
         }
-        let Some(&(idx, _, _)) = best else { continue };
+        let Some(&(idx, bs, be)) = best else { continue };
         let f = &HOOK_FORMS[idx];
+        // `asks(..., when = PROC_REF(x))`: the step's own condition, asked with the op's context when the step is reached (pending_op).
+        let in_asks_when = f.kw == "when"
+            && bs == be
+            && ranges.iter().any(|&(oidx, s, e)| HOOK_FORMS[oidx].kw == "asks" && s != e && start >= s && start < e);
         // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change) runs in that context.
-        let mut ctx = f.ctx;
+        let mut ctx = if in_asks_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();
         if matches!(f.kw, "then" | "when") {
             let mut outer: Option<&(usize, usize, usize)> = None;

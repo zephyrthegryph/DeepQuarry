@@ -25,6 +25,8 @@
 	/// The device's four ports, in GLOB.cardinal order (owned: rel_add in Initialize()).
 	var/list/datum/omni_port/ports
 
+TRACKED(/obj/machinery/atmospherics/omni, configuring)
+
 CAPABILITIES(/obj/machinery/atmospherics/omni)
 	owns_many(nameof(ports), /datum/omni_port)
 
@@ -287,7 +289,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 		update_icon()
 		add_fingerprint(user)
 		if(use_power)
-			configuring = 0
+			set_configuring(0)
 			to_chat(user, span_notice("You toggle the [name] on."))
 
 		else

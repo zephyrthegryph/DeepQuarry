@@ -9135,68 +9135,68 @@
 	into += entry_line(49)
 	into += list(global.op("honk", global.in_hand(), global.label("Honk"), global.when(global.cond_not(nameof(special_handling))), global.then(PROC_REF(honked))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/blue) at code/game/objects/structures/watercloset.dm:814
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/blue) at code/game/objects/structures/watercloset.dm:815
 /obj/item/bikehorn/rubberducky/blue/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 814, /obj/item/bikehorn/rubberducky/blue)
-	into += entry_line(815)
-	into += list(global.op("squeeze_blue", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_blue_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 815, /obj/item/bikehorn/rubberducky/blue)
+	into += entry_line(816)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_blue_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy) at code/game/objects/structures/watercloset.dm:1036
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy) at code/game/objects/structures/watercloset.dm:1037
 /obj/item/bikehorn/rubberducky/galaxy/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 1036, /obj/item/bikehorn/rubberducky/galaxy)
-	into += entry_line(1037)
-	into += list(global.op("squeeze_galaxy", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_galaxy_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 1037, /obj/item/bikehorn/rubberducky/galaxy)
+	into += entry_line(1038)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_galaxy_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/gold) at code/game/objects/structures/watercloset.dm:982
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/gold) at code/game/objects/structures/watercloset.dm:983
 /obj/item/bikehorn/rubberducky/gold/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 982, /obj/item/bikehorn/rubberducky/gold)
-	into += entry_line(983)
-	into += list(global.op("squeeze_gold", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_gold_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 983, /obj/item/bikehorn/rubberducky/gold)
+	into += entry_line(984)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_gold_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/green) at code/game/objects/structures/watercloset.dm:922
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/green) at code/game/objects/structures/watercloset.dm:923
 /obj/item/bikehorn/rubberducky/green/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 922, /obj/item/bikehorn/rubberducky/green)
-	into += entry_line(923)
-	into += list(global.op("squeeze_green", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_green_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 923, /obj/item/bikehorn/rubberducky/green)
+	into += entry_line(924)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_green_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/grey) at code/game/objects/structures/watercloset.dm:875
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/grey) at code/game/objects/structures/watercloset.dm:876
 /obj/item/bikehorn/rubberducky/grey/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 875, /obj/item/bikehorn/rubberducky/grey)
-	into += entry_line(876)
-	into += list(global.op("squeeze_grey", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_grey_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 876, /obj/item/bikehorn/rubberducky/grey)
+	into += entry_line(877)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_grey_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/pink) at code/game/objects/structures/watercloset.dm:839
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/pink) at code/game/objects/structures/watercloset.dm:840
 /obj/item/bikehorn/rubberducky/pink/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 839, /obj/item/bikehorn/rubberducky/pink)
-	into += entry_line(840)
-	into += list(global.op("squeeze_pink", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_pink_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 840, /obj/item/bikehorn/rubberducky/pink)
+	into += entry_line(841)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_pink_self))))
 
 /// CAPABILITIES(/obj/item/bikehorn/rubberducky/red) at code/game/objects/structures/watercloset.dm:785
 /obj/item/bikehorn/rubberducky/red/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/structures/watercloset.dm", 785, /obj/item/bikehorn/rubberducky/red)
-	into += entry_line(786)
-	into += list(global.op("squeeze_red", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_red_self))))
+	into += entry_line(787)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_red_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/viking) at code/game/objects/structures/watercloset.dm:1011
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/viking) at code/game/objects/structures/watercloset.dm:1012
 /obj/item/bikehorn/rubberducky/viking/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 1011, /obj/item/bikehorn/rubberducky/viking)
-	into += entry_line(1012)
-	into += list(global.op("squeeze_viking", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_viking_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 1012, /obj/item/bikehorn/rubberducky/viking)
+	into += entry_line(1013)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_viking_self))))
 
-/// CAPABILITIES(/obj/item/bikehorn/rubberducky/white) at code/game/objects/structures/watercloset.dm:948
+/// CAPABILITIES(/obj/item/bikehorn/rubberducky/white) at code/game/objects/structures/watercloset.dm:949
 /obj/item/bikehorn/rubberducky/white/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 948, /obj/item/bikehorn/rubberducky/white)
-	into += entry_line(949)
-	into += list(global.op("squeeze_white", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_white_self))))
+	into += entry_block("code/game/objects/structures/watercloset.dm", 949, /obj/item/bikehorn/rubberducky/white)
+	into += entry_line(950)
+	into += list(global.op("honk", global.in_hand(), global.label("Squeeze"), global.then(PROC_REF(duck_white_self))))
 
 /// CAPABILITIES(/obj/item/bikehorn/topturf_testing) at code/datums/topturfcrossed.dm:69
 /obj/item/bikehorn/topturf_testing/declared_entries(list/into)
@@ -15115,12 +15115,62 @@
 	into += entry_line(197)
 	into += list(global.op("cycle", global.hand(), global.label("Use"), global.wait(0), global.then(PROC_REF(cycle_asked))))
 
-/// CAPABILITIES(/obj/machinery/alarm) at code/game/machinery/air_alarm.dm:129
+/// CAPABILITIES(/obj/machinery/alarm) at code/game/machinery/air_alarm.dm:131
 /obj/machinery/alarm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/air_alarm.dm", 129, /obj/machinery/alarm)
-	into += entry_line(130)
+	into += entry_block("code/game/machinery/air_alarm.dm", 131, /obj/machinery/alarm)
+	into += entry_line(132)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm))
+	into += entry_line(133)
+	into += list(global.interface("AirAlarm"))
+	into += entry_line(135)
+	into += list(global.op("rcon", global.ui_act("rcon", global.arg("rcon", global.enum(list(RCON_NO, RCON_AUTO, RCON_YES)))), global.then(PROC_REF(ui_act_rcon))))
+	into += entry_line(136)
+	into += list(global.op("temperature", global.ui_act("temperature"), global.then(PROC_REF(ui_act_temperature))))
+	into += entry_line(137)
+	into += list(global.op("lock", global.ui_act("lock"), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_lock))))
+	into += entry_line(138)
+	into += list(global.op("power", global.ui_act("power", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(139)
+	into += list(global.op("o2_scrub", global.ui_act("o2_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(140)
+	into += list(global.op("n2_scrub", global.ui_act("n2_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(141)
+	into += list(global.op("co2_scrub", global.ui_act("co2_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(142)
+	into += list(global.op("tox_scrub", global.ui_act("tox_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(143)
+	into += list(global.op("n2o_scrub", global.ui_act("n2o_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(144)
+	into += list(global.op("fuel_scrub", global.ui_act("fuel_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(145)
+	into += list(global.op("ch4_scrub", global.ui_act("ch4_scrub", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(146)
+	into += list(global.op("panic_siphon", global.ui_act("panic_siphon", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(147)
+	into += list(global.op("scrubbing", global.ui_act("scrubbing", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(148)
+	into += list(global.op("direction", global.ui_act("direction", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(149)
+	into += list(global.op("excheck", global.ui_act("excheck", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(150)
+	into += list(global.op("incheck", global.ui_act("incheck", global.arg("id_tag", global.schema_text(64)), global.arg("val", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_device_setting))))
+	into += entry_line(151)
+	into += list(global.op("set_external_pressure", global.ui_act("set_external_pressure", global.arg("id_tag", global.schema_text(64)), global.arg("value", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_set_pressure))))
+	into += entry_line(152)
+	into += list(global.op("set_internal_pressure", global.ui_act("set_internal_pressure", global.arg("id_tag", global.schema_text(64)), global.arg("value", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_set_pressure))))
+	into += entry_line(153)
+	into += list(global.op("reset_external_pressure", global.ui_act("reset_external_pressure", global.arg("id_tag", global.schema_text(64))), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_reset_pressure))))
+	into += entry_line(154)
+	into += list(global.op("reset_internal_pressure", global.ui_act("reset_internal_pressure", global.arg("id_tag", global.schema_text(64))), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_reset_pressure))))
+	into += entry_line(155)
+	into += list(global.op("threshold", global.ui_act("threshold", global.arg("env", global.schema_text(64)), global.arg("var", global.num())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_threshold))))
+	into += entry_line(156)
+	into += list(global.op("mode", global.ui_act("mode", global.arg("mode", global.int())), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_mode))))
+	into += entry_line(157)
+	into += list(global.op("alarm", global.ui_act("alarm"), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_alarm))))
+	into += entry_line(158)
+	into += list(global.op("reset", global.ui_act("reset"), global.needs(global.req(PROC_REF(controls_usable_by), silent = TRUE)), global.then(PROC_REF(ui_act_reset))))
 
 /// CAPABILITIES(/obj/machinery/anomaly_harvester) at code/modules/anomalies/anomaly_harvester.dm:1
 /obj/machinery/anomaly_harvester/declared_entries(list/into)
@@ -15281,22 +15331,34 @@
 	into += entry_line(245)
 	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(power_switched))))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:28
+/// CAPABILITIES(/obj/machinery/atmospherics/omni) at code/ATMOSPHERICS/components/omni_devices/omni_base.dm:30
 /obj/machinery/atmospherics/omni/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/omni_base.dm", 28, /obj/machinery/atmospherics/omni)
-	into += entry_line(29)
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/omni_base.dm", 30, /obj/machinery/atmospherics/omni)
+	into += entry_line(31)
 	into += list(global.owns_many(nameof(ports), /datum/omni_port))
 
-/// CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter) at code/ATMOSPHERICS/components/omni_devices/filter.dm:295
+/// CAPABILITIES(/obj/machinery/atmospherics/omni/atmos_filter) at code/ATMOSPHERICS/components/omni_devices/filter.dm:291
 /obj/machinery/atmospherics/omni/atmos_filter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/ATMOSPHERICS/components/omni_devices/filter.dm", 295, /obj/machinery/atmospherics/omni/atmos_filter)
-	into += entry_line(296)
-	into += list(global.ref_one(nameof(input)))
-	into += entry_line(297)
-	into += list(global.ref_one(nameof(output)))
+	into += entry_block("code/ATMOSPHERICS/components/omni_devices/filter.dm", 291, /obj/machinery/atmospherics/omni/atmos_filter)
+	into += entry_line(292)
+	into += list(global.interface("OmniFilter"))
+	into += entry_line(293)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
+	into += entry_line(294)
+	into += list(global.op("configure", global.ui_act("configure"), global.then(PROC_REF(ui_act_configure))))
+	into += entry_line(295)
+	into += list(global.op("set_flow_rate", global.ui_act("set_flow_rate"), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "k236"), global.then(PROC_REF(ui_act_set_flow_rate))))
 	into += entry_line(298)
+	into += list(global.op("switch_mode", global.ui_act("switch_mode", global.arg("dir"), global.arg("mode", global.schema_text(4096))), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.then(PROC_REF(ui_act_switch_mode))))
+	into += entry_line(299)
+	into += list(global.op("switch_filter", global.ui_act("switch_filter", global.arg("dir")), global.needs(global.req(PROC_REF(configurable), silent = TRUE)), global.asks(/datum/prompt/choice, fields = list("question" = "Select filter mode:", "title" = "Change filter", "choices" = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4), "timeout" = 0), step = "k247"), global.then(PROC_REF(ui_act_switch_filter))))
+	into += entry_line(302)
+	into += list(global.ref_one(nameof(input)))
+	into += entry_line(303)
+	into += list(global.ref_one(nameof(output)))
+	into += entry_line(304)
 	into += list(global.ref_many(nameof(atmos_filters)))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/omni/mixer) at code/ATMOSPHERICS/components/omni_devices/mixer.dm:327
@@ -15339,6 +15401,19 @@
 	into += list(global.owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY))
 	into += entry_line(223)
 	into += list(global.owns_one(nameof(air3), on_destroy = ON_DESTROY_PRIVATE_COPY))
+
+/// CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter) at code/ATMOSPHERICS/components/trinary_devices/filter.dm:171
+/obj/machinery/atmospherics/trinary/atmos_filter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/trinary_devices/filter.dm", 171, /obj/machinery/atmospherics/trinary/atmos_filter)
+	into += entry_line(172)
+	into += list(global.interface("AtmosFilter"))
+	into += entry_line(173)
+	into += list(global.op("power", global.ui_act("power"), global.then(PROC_REF(ui_act_power))))
+	into += entry_line(174)
+	into += list(global.op("rate", global.ui_act("rate", global.arg("rate")), global.then(PROC_REF(ui_act_rate))))
+	into += entry_line(175)
+	into += list(global.op("filter", global.ui_act("filter", global.arg("filterset", global.num())), global.then(PROC_REF(ui_act_filter))))
 
 /// CAPABILITIES(/obj/machinery/atmospherics/unary) at code/ATMOSPHERICS/components/unary/unary_base.dm:172
 /obj/machinery/atmospherics/unary/declared_entries(list/into)
@@ -16887,6 +16962,23 @@
 	into += entry_block("code/game/machinery/embedded_controller/embedded_controller_base.dm", 11, /obj/machinery/embedded_controller)
 	into += entry_line(12)
 	into += list(global.owns_one(nameof(program), /datum/embedded_program))
+	into += entry_line(13)
+	into += list(global.interface("EmbeddedController"))
+	into += entry_line(15)
+	into += list(global.op("program_command", global.ui_act("*"), global.needs(global.req(PROC_REF(command_listed), silent = TRUE)), global.then(PROC_REF(ui_act_program_command))))
+	into += entry_line(16)
+	into += list(global.op("embedded_controller_open_ui", global.hand(), global.ungated(), global.then(PROC_REF(interaction_open_ui_impl))))
+
+/// CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock) at code/game/machinery/embedded_controller/airlock_controllers.dm:63
+/obj/machinery/embedded_controller/radio/airlock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/embedded_controller/airlock_controllers.dm", 63, /obj/machinery/embedded_controller/radio/airlock)
+	into += entry_line(64)
+	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
+	into += entry_line(65)
+	into += list(global.op("edit_tag", global.ui_act("edit_tag", global.arg("tag", global.schema_text(4096))), global.at(SPACE_PANEL), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(edit_tag_question)), "title" = global.computed(PROC_REF(edit_tag_title)), "default" = global.computed(PROC_REF(edit_tag_default)), "max_len" = 30, "name_text" = TRUE, "timeout" = 0), step = "tag"), global.then(PROC_REF(ui_act_edit_tag))))
+	into += entry_line(68)
+	into += list(global.op("set_frequency", global.ui_act("set_frequency", global.arg("freq", global.num())), global.at(SPACE_PANEL), global.then(PROC_REF(ui_act_set_frequency))))
 
 /// CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port) at code/game/machinery/embedded_controller/airlock_docking_controller.dm:18
 /obj/machinery/embedded_controller/radio/airlock/docking_port/declared_entries(list/into)
@@ -16894,6 +16986,15 @@
 	into += entry_block("code/game/machinery/embedded_controller/airlock_docking_controller.dm", 18, /obj/machinery/embedded_controller/radio/airlock/docking_port)
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking))
+
+/// CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod) at code/modules/shuttles/escape_pods.dm:72
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/shuttles/escape_pods.dm", 72, /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod)
+	into += entry_line(73)
+	into += list(global.op("manual_arm", global.ui_act("manual_arm"), global.then(PROC_REF(ui_act_manual_arm))))
+	into += entry_line(74)
+	into += list(global.op("force_launch", global.ui_act("force_launch"), global.then(PROC_REF(ui_act_force_launch))))
 
 /// CAPABILITIES(/obj/machinery/exonet_node) at code/game/machinery/exonet_node.dm:26
 /obj/machinery/exonet_node/declared_entries(list/into)
@@ -18332,19 +18433,43 @@
 	into += entry_block("code/game/machinery/Sleeper.dm", 22, /obj/machinery/sleep_console)
 	into += entry_line(23)
 	into += list(global.entry_link("/obj/machinery/sleep_console::sleeper", "/obj/machinery/sleeper::console"))
+	into += entry_line(25)
+	into += list(global.interface("Sleeper", title = "Sleeper", forwards = nameof(sleeper)))
 
-/// CAPABILITIES(/obj/machinery/sleeper) at code/game/machinery/Sleeper.dm:179
+/// CAPABILITIES(/obj/machinery/sleeper) at code/game/machinery/Sleeper.dm:170
 /obj/machinery/sleeper/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/Sleeper.dm", 179, /obj/machinery/sleeper)
-	into += entry_line(180)
+	into += entry_block("code/game/machinery/Sleeper.dm", 170, /obj/machinery/sleeper)
+	into += entry_line(171)
 	into += list(global.op("sleeper_interaction_hand", global.hand(), global.ungated(), global.then(PROC_REF(sleeper_interaction_hand))))
-	into += entry_line(181)
+	into += entry_line(172)
 	into += list(global.op("sleeper_interaction_item", global.item(/obj/item), global.then(PROC_REF(sleeper_interaction_item))))
-	into += entry_line(182)
+	into += entry_line(173)
 	into += list(global.op("sleeper_interaction_drag", global.item(/mob), global.gesture(GESTURE_DRAG), global.label("Put inside"), global.then(PROC_REF(sleeper_interaction_drag))))
-	into += entry_line(183)
+	into += entry_line(174)
 	into += list(global.op("sleeper_move_eject", global.menu(), global.label("Eject occupant"), global.then(PROC_REF(sleeper_move_eject))))
+	into += entry_line(175)
+	into += list(global.interface("Sleeper", title = "Sleeper"))
+	into += entry_line(176)
+	into += list(global.space(SPACE_PANEL, door = nameof(panel_open)))
+	into += entry_line(177)
+	into += list(global.op("chemical", global.ui_act("chemical", global.arg("amount", global.num()), global.arg("chemid")), global.then(PROC_REF(ui_act_chemical))))
+	into += entry_line(178)
+	into += list(global.op("removebeaker", global.ui_act("removebeaker"), global.then(PROC_REF(ui_act_removebeaker))))
+	into += entry_line(179)
+	into += list(global.op("togglefilter", global.ui_act("togglefilter"), global.then(PROC_REF(ui_act_togglefilter))))
+	into += entry_line(180)
+	into += list(global.op("togglepump", global.ui_act("togglepump"), global.then(PROC_REF(ui_act_togglepump))))
+	into += entry_line(181)
+	into += list(global.op("ejectify", global.ui_act("ejectify"), global.then(PROC_REF(ui_act_ejectify))))
+	into += entry_line(182)
+	into += list(global.op("changestasis", global.ui_act("changestasis"), global.asks(/datum/prompt/choice, fields = list("question" = "Levels deeper than 50% stasis level will render the patient unconscious.", "title" = "Stasis Level", "choices" = nameof(stasis_choices), "timeout" = 0), step = "stasis"), global.then(PROC_REF(ui_act_changestasis))))
+	into += entry_line(185)
+	into += list(global.op("auto_eject_dead_on", global.ui_act("auto_eject_dead_on"), global.then(PROC_REF(ui_act_auto_eject_dead_on))))
+	into += entry_line(186)
+	into += list(global.op("auto_eject_dead_off", global.ui_act("auto_eject_dead_off"), global.then(PROC_REF(ui_act_auto_eject_dead_off))))
+	into += entry_line(188)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(controls_reachable), silent = TRUE), global.req_closed(SPACE_PANEL))))
 
 /// CAPABILITIES(/obj/machinery/slot_machine) at code/modules/casino/slots.dm:34
 /obj/machinery/slot_machine/declared_entries(list/into)
@@ -18361,6 +18486,10 @@
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/fridge))
 	into += entry_line(36)
 	into += list(global.owns_many(nameof(item_records)))
+	into += entry_line(37)
+	into += list(global.interface("SmartVend"))
+	into += entry_line(39)
+	into += list(global.op("release", global.ui_act("Release", global.arg("amount", global.num(default = 0)), global.arg("index", global.num())), global.asks(/datum/prompt/number, fields = list("question" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "timeout" = 0), step = "amount", when = PROC_REF(release_asks_amount)), global.then(PROC_REF(ui_act_release))))
 
 /// CAPABILITIES(/obj/machinery/smartfridge/drying_rack) at code/modules/food/kitchen/smartfridge/drying_rack.dm:13
 /obj/machinery/smartfridge/drying_rack/declared_entries(list/into)
@@ -18368,6 +18497,13 @@
 	into += entry_block("code/modules/food/kitchen/smartfridge/drying_rack.dm", 13, /obj/machinery/smartfridge/drying_rack)
 	into += entry_line(14)
 	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/smartfridge/secure) at code/modules/food/kitchen/smartfridge/smartfridge.dm:342
+/obj/machinery/smartfridge/secure/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/kitchen/smartfridge/smartfridge.dm", 342, /obj/machinery/smartfridge/secure)
+	into += entry_line(343)
+	into += list(global.extend("release", global.needs(global.req(PROC_REF(ui_gate), silent = TRUE))))
 
 /// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:51
 /obj/machinery/space_heater/declared_entries(list/into)
@@ -18953,11 +19089,11 @@
 	into += entry_line(259)
 	into += list(global.op("take_sheet", global.tk(), global.label("Take sheet"), global.then(PROC_REF(interaction_tk))))
 
-/// CAPABILITIES(/obj/structure/biowaste_tank) at code/game/objects/structures/watercloset.dm:1377
+/// CAPABILITIES(/obj/structure/biowaste_tank) at code/game/objects/structures/watercloset.dm:1378
 /obj/structure/biowaste_tank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 1377, /obj/structure/biowaste_tank)
-	into += entry_line(1378)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 1378, /obj/structure/biowaste_tank)
+	into += entry_line(1379)
 	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
 
 /// CAPABILITIES(/obj/structure/blob/core) at code/modules/blob2/blobs/core.dm:23

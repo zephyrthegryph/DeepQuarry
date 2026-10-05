@@ -141,12 +141,17 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type, C
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-DECLARE_UI(/obj/machinery/atmospherics/trinary/atmos_filter, "AtmosFilter")
+/// The window's data.
+/obj/machinery/atmospherics/trinary/atmos_filter/ui_data(datum/act/eval/A)
+	. = list()
+	.["on"] = use_power
+	.["rate"] = set_flow_rate
+	var/list/part = ui_data_part_atmos_filter(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/atmos_filter, "on=use_power", "rate=set_flow_rate:num", "merge:ui_data_obj_machinery_atmospherics_trinary_atmos_filter{max_rate:unknown,last_flow_rate:num,filter_types:list}")
-
-/// The computed part of /obj/machinery/atmospherics/trinary/atmos_filter's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_data_obj_machinery_atmospherics_trinary_atmos_filter(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_data_part_atmos_filter(datum/act/eval/A)
 	var/list/data = list()
 
 	data["max_rate"] = air1.return_volume()
@@ -163,15 +168,17 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/atmos_filter, "on=use_power"
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_power)
-	set_use_power(!use_power)
-	add_fingerprint(ui.user)
-	update_icon()
+CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	interface("AtmosFilter")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("rate", ui_act("rate", arg("rate")), then(PROC_REF(ui_act_rate)))
+	op("filter", ui_act("filter", arg("filterset", num())), then(PROC_REF(ui_act_filter)))
 
-UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "rate", ui_act_rate, UI_ARG_VALUE("rate"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_rate)
-	var/rate = params["rate"]
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_power(datum/act/op/A)
+	set_use_power(!use_power)
+	add_fingerprint(A.actor)
+
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_rate(datum/act/op/A, rate)
 	if(rate == "max")
 		rate = air1.return_volume()
 		. = TRUE
@@ -179,14 +186,13 @@ UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_rate)
 		. = TRUE
 	if(.)
 		set_set_flow_rate(clamp(rate, 0, air1.return_volume()))
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "filter", ui_act_filter, UI_ARG_NUM("filterset"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_filter)
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_filter(datum/act/op/A, filterset)
 	. = TRUE
-	set_filter_type(params["filterset"])
-	add_fingerprint(ui.user)
+	set_filter_type(filterset)
+	add_fingerprint(A.actor)
 	update_icon()
 
 //
