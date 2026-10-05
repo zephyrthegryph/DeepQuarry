@@ -1470,13 +1470,13 @@
 	into += entry_line(61)
 	into += list(global.owns_many(nameof(absorbed_dna), /datum/absorbed_dna))
 
-/// CAPABILITIES(/datum/changeling_panel) at code/datums/entity_state/antags/changeling/changeling.dm:459
+/// CAPABILITIES(/datum/changeling_panel) at code/datums/entity_state/antags/changeling/changeling.dm:460
 /datum/changeling_panel/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 459, /datum/changeling_panel)
-	into += entry_line(460)
-	into += list(global.interface("ChangelingPanel", title = "Changeling Evolution Panel"))
+	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 460, /datum/changeling_panel)
 	into += entry_line(461)
+	into += list(global.interface("ChangelingPanel", title = "Changeling Evolution Panel"))
+	into += entry_line(462)
 	into += list(global.op("evolve_power", global.ui_act("evolve_power", global.arg("val", global.schema_text(4096))), global.then(PROC_REF(ui_act_evolve_power))))
 
 /// CAPABILITIES(/datum/cinematic) at code/datums/cinematics/_cinematic.dm:52
@@ -10030,11 +10030,11 @@
 	into += entry_line(23)
 	into += list(global.op("disguise", global.in_hand(), global.label("Toggle chameleon disguise"), global.then(PROC_REF(projector_activation_requested))))
 
-/// CAPABILITIES(/obj/item/changeling_debug) at code/datums/entity_state/antags/changeling/changeling.dm:439
+/// CAPABILITIES(/obj/item/changeling_debug) at code/datums/entity_state/antags/changeling/changeling.dm:440
 /obj/item/changeling_debug/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 439, /obj/item/changeling_debug)
-	into += entry_line(440)
+	into += entry_block("code/datums/entity_state/antags/changeling/changeling.dm", 440, /obj/item/changeling_debug)
+	into += entry_line(441)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
 /// CAPABILITIES(/obj/item/circuitboard/security) at code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm:23
