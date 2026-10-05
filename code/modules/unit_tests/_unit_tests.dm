@@ -1089,6 +1089,10 @@
 
 #include "round2_silicon_album_delete.dm"
 
+#include "round2_photocopier_ai_photo.dm"
+
+#include "round2_grenade_timer_configuration.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
