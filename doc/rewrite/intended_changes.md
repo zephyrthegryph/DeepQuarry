@@ -1308,3 +1308,14 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
 - **Controls are ops**: the hand toggle, the ctrl-click rate reset (only on a running injector away from its default), the multitool through
   `multitool_settings()` (tag, frequency, buffer; the `atmos_config_review` prompt chain is deleted), the wrench (`pipe_device_unwrench()`).
   A radio "inject" runs at once instead of in a `spawn`.
+
+## Heater and freezer; the unary base's wake machinery is gone (rewrite/pipenet-full)
+
+- **Heater and freezer work on `every(when = heating/cooling)`**, armed by their gas watch (`gas_watch()` on `air_contents`), their switch, their
+  thermostat (`set_temperature` is tracked) and power changes (`reconsider()`); nothing polls and nothing calls MACHINE_WAKE. The heat itself is
+  the thermal domain's `heat_pump` entry, as before. Their RPED is `part_replacement()`; the window opened by a hand is `interface()` alone (the
+  legacy ungated `open_ui` interaction is gone).
+- **The unary base** loses `register_gas_dependencies()`/`gas_wake_condition()`/`wake_from_gas()`/`invalidate_gas_dependencies()`, its
+  `set_use_power`/`Moved` overrides, `step_has_work()`/`arm_wakes()` and the OM_FIELD_VIEW on `node` (now a plain `ref_one` relation);
+  `piped()` is its one reader. No unary device is DM-stepped any more.
+- `dq_hc_struct/cryo_cell_is_switched_through_the_window` read the cryo cell's old `on` var; it reads `cooling` (the cryo migration's state).

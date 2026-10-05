@@ -198,16 +198,16 @@
 
 /obj/machinery/atmospherics/unary/outlet_injector/generated_reads()
 	. = ..()
-	. += rust_push(nameof(use_power), nameof(volume_rate))
+	. += rust_push(nameof(node), nameof(use_power), nameof(volume_rate))
 
 /obj/machinery/atmospherics/unary/vent_pump/generated_reads()
 	. = ..()
-	. += drawn_from(nameof(use_power))
-	. += rust_push(nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(pressure_checks), nameof(pump_direction), nameof(vent_volume))
+	. += drawn_from(nameof(node), nameof(use_power))
+	. += rust_push(nameof(external_pressure_bound), nameof(internal_pressure_bound), nameof(node), nameof(pressure_checks), nameof(pump_direction), nameof(vent_volume))
 
 /obj/machinery/atmospherics/unary/vent_scrubber/generated_reads()
 	. = ..()
-	. += rust_push(nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power))
+	. += rust_push(nameof(node), nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power))
 
 /obj/machinery/body_scanconsole/generated_reads()
 	. = ..()

@@ -4037,7 +4037,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	native_system().drain()
 	native_system().take_gas_changes()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
-	V.register_gas_dependencies()
 	var/vent_wakes = V.gas_dependency_wake_count
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
