@@ -1072,6 +1072,8 @@
 
 #include "round2_multi_shuttle_destination_clientless.dm"
 
+#include "round2_slime_docility_name_request.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

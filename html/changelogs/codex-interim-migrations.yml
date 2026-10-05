@@ -68,3 +68,4 @@ changes:
   - bugfix: "Continuing an oversized song import now reopens the editor instead of looping over cached answers."
   - code_imp: "Migrated shuttle docking-code prompts to native requests with current-console permission checks."
   - code_imp: "Migrated multi-shuttle and exploration destination selection to native requests with current destination and access checks."
+  - bugfix: "Docility potions now finish naming and consume after the naming answer instead of getting stuck behind the already-used guard."
