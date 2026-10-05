@@ -44,7 +44,7 @@ CAPABILITIES(/datum/seed_pile)
 	var/list/starting_seeds
 	var/list/contraband_seeds //Seeds we only show if we've been hacked.
 	var/list/scanner // What properties we can view
-	var/seconds_electrified = 0 //Shock users like an airlock.
+	var/seconds_electrified = 0 //Shock users like an airlock (frames left; shock_wire() sets it).
 	var/smart = 0 //Used for hacking. Overrides the scanner.
 	var/hacked = 0
 	var/lockdown = 0
@@ -56,18 +56,12 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
 	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/seedstorage, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Seed Storage", count = 4, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30)
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_moved), pulse = PROC_REF(shock_wire_moved)) // the countdown's step wakes and parks with it
 	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
-	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
 	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
-
-/// A seed storage's four wires, every one its own colours.
-/datum/wire_set/seedstorage
-	name = "Seed Storage"
-	count = 4
-	randomize = TRUE
-	wires = list(WIRE_SEED_SMART, WIRE_CONTRABAND, WIRE_ELECTRIFY, WIRE_SEED_LOCKDOWN)
 
 /obj/machinery/seed_storage/proc/wire_lights()
 	return list(
@@ -90,14 +84,12 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/proc/contraband_wire_pulsed(datum/act/A)
 	hacked = !hacked
 
-/obj/machinery/seed_storage/proc/shock_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	seconds_electrified = N.mended ? 0 : -1
-	MACHINE_SLEEP(src) // ALLOW(sys_periodic_toggle): the shock wire parks the step as the legacy wire datum did; the countdown is a plain var, not a tracked state to declare the work on
-
-/obj/machinery/seed_storage/proc/shock_wire_pulsed(datum/act/A)
-	seconds_electrified = 30
-	MACHINE_WAKE(src) // ALLOW(sys_periodic_toggle): the shock wire starts the countdown step as the legacy wire datum did; the countdown is a plain var, not a tracked state
+/// The shock wire moved (shock_wire() has set the countdown): a pulsed shock runs its countdown step, a cut or mended one parks it.
+/obj/machinery/seed_storage/proc/shock_wire_moved(datum/act/A)
+	if(seconds_electrified > 0)
+		MACHINE_WAKE(src)
+	else
+		MACHINE_SLEEP(src) // ALLOW(sys_periodic_toggle): the shock wire parks the step as the legacy wire datum did; the countdown is a plain var, not a tracked state to declare the work on
 
 /// The lockdown wire mended locks the keypad down and clears the access; cut, the access is back as built.
 /obj/machinery/seed_storage/proc/lockdown_wire_cut(datum/act/A)

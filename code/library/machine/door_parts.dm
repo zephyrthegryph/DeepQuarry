@@ -3,6 +3,7 @@
 //   bolts(drop = "lock", raise = "unlock", starts = nameof(bolted_at_start))
 //        State key BOLTS_BOLTED. The bolts are the door's own mechanism: `drop` and `raise` name procs of the holder taking (forced) that move them and
 //        answer TRUE when they did. A map says a door starts bolted with the holder var `starts` names. The look shows them as the layer "bolts".
+//        bolts(wire = WIRE_DOOR_BOLTS) brings the bolt wire: cut, the bolts drop (mending does not raise them); pulsed, they drop or rise.
 //   weld_shut(offered = PROC_REF(can_weld), starts = nameof(welded_at_start), tool = TOOL_WELDER)
 //        State key WELD_SHUT_WELDED and op weld_shut.toggle: a lit welder welds the closed door shut and frees it again where `offered` (a proc of the
 //        holder, x(datum/act/A)) says welding is on offer. Look layer and examine line. `tool` is the quality that seals it where it is not a welder
@@ -18,7 +19,7 @@
 MSG_DEF_SELF(bolts/bolted, "The bolts are down.")
 MSG_DEF_SELF(bolts/not_bolted, "The bolts are up.")
 
-CAPABILITY_TYPE(bolts, CAP_BOLTS, /datum/capability/lib/bolts, key = NONE, drop = "lock", raise = "unlock", starts = null)
+CAPABILITY_TYPE(bolts, CAP_BOLTS, /datum/capability/lib/bolts, key = NONE, drop = "lock", raise = "unlock", starts = null, wire = null)
 cap_keys(CAP_BOLTS, BOLTED = MSG(bolts/not_bolted))
 
 /datum/capability/lib/bolts
@@ -26,6 +27,17 @@ cap_keys(CAP_BOLTS, BOLTED = MSG(bolts/not_bolted))
 
 /datum/capability/lib/bolts/entries()
 	return list(look_layer(LOOK_BOLTS, when = BOLTS_BOLTED))
+
+/datum/capability/lib/bolts/brings_wires()
+	return wire ? list(wire) : null
+
+/// The bolt wire cut (WIRE_DEF in code/library/machine/wires.dm): the bolts drop, whatever holds them up.
+/datum/capability/lib/bolts/proc/bolt_wire_cut(datum/holder, cut_wire, mob/user)
+	set_bolted(holder, TRUE, TRUE)
+
+/// The bolt wire pulsed: raised bolts drop, dropped ones rise (through the holder's own mechanism, which may refuse).
+/datum/capability/lib/bolts/proc/bolt_wire_pulsed(datum/holder, pulsed_wire, mob/user)
+	set_bolted(holder, !is_bolted(holder))
 
 /datum/capability/lib/bolts/on_holder_init(datum/act/eval/A)
 	var/wanted = starts

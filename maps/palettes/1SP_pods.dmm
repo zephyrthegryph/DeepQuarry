@@ -1770,7 +1770,7 @@
 /area/survivalpod)
 "adO" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "military autolathe"
 	},
 /turf/simulated/shuttle/floor/black,
@@ -8948,7 +8948,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "eOx" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "military autolathe"
 	},
 /turf/simulated/shuttle/floor/voidcraft/dark,
@@ -21872,7 +21872,7 @@
 /obj/machinery/autolathe{
 	desc = "Your typical Autolathe. It appears to have much more options than your regular one, however...";
 	emagged = 1;
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "Unlocked Autolathe"
 	},
 /turf/simulated/shuttle/floor/black,
@@ -22118,7 +22118,7 @@
 	name = "durable grey railing"
 	},
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "unlocked autolathe"
 	},
 /turf/simulated/shuttle/floor/voidcraft,
@@ -27950,7 +27950,7 @@
 /area/survivalpod/superpose/OldHotel)
 "rdt" = (
 /obj/machinery/autolathe{
-	hacked = 1
+	hacked_at_start = 1
 	},
 /turf/simulated/shuttle/floor/purple,
 /area/survivalpod/superpose/ScienceShip)

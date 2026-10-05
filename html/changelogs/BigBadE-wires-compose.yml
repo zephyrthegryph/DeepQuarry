@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Wires are composed from what a machine has: the AI control, power, shock, ID scan, item throw, safety, lathe, lock and bolt wires are each defined once and brought by the capability they act on, so no machine lists or re-hooks them."
+  - bugfix: "A pulsed wire's effect now lasts its full time once, however often it is pulsed, and running out never undoes a wire cut in the meantime (airlock and air alarm AI control, autolathe and lathe hack, disable and shock pulses, APC short and AI lockout)."
+  - balance: "Pulsing an autolathe's or protolathe's hack, disable or shock wire turns it on for five seconds instead of flipping it."

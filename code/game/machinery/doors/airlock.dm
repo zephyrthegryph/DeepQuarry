@@ -18,7 +18,6 @@
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
-	var/aiControlDisabled = 0 //If 1, AI control is disabled until the AI hacks back in and disables the lock. If 2, the AI has bypassed the lock. If -1, the control is enabled but the AI had bypassed it earlier, so if it is disabled again the AI would have no trouble getting back in.
 	var/hackProof = 0 // if 1, this door can't be hacked by the AI
 	/// 0: not electrified. 1: electrified for a while (the keyed "electrified" timer reverts it). -1: until someone fixes it.
 	var/electrified_until = 0
@@ -28,7 +27,6 @@
 	var/backup_power_lost_until = -1
 	var/has_beeped = 0					//If 1, will not beep on failed closing attempt. Resets when door closes.
 	var/lights = 1 // bolt lights show by default
-	var/aiDisabledIdScanner = 0
 	var/aiHacking = FALSE
 	var/obj/machinery/door/airlock/closeOther
 	var/closeOtherId = null
@@ -38,7 +36,6 @@
 	var/mineral = null
 	/// A second between shocks from bumping it.
 	COOLDOWN_DECLARE(bump_zap_cooldown)
-	var/safe = 1
 	normalspeed = 1
 	silicon_use = SILICON_USE_UI
 	var/obj/item/airlock_electronics/electronics = null
@@ -233,10 +230,15 @@ About the new airlock wires panel:
 		return TRUE
 	return FALSE
 
+/// An airlock's wires: twelve, or fourteen with secure electronics.
+/obj/machinery/door/airlock/proc/wire_count()
+	return secured_wires ? 14 : 12
+
+/// Every airlock shares the round's colours, except one built with secure electronics.
+/obj/machinery/door/airlock/proc/wires_randomized()
+	return !!secured_wires
+
 /// Whether `wire` is cut. A door whose wires were never touched has none cut.
-/// The wire set an airlock is built with: secure electronics make it a randomized one.
-/obj/machinery/door/airlock/proc/wires_type()
-	return secured_wires ? /datum/wire_set/airlock/secure : /datum/wire_set/airlock
 
 /obj/machinery/door/airlock/proc/wire_cut(wire)
 	return wire_is_cut(src, wire)
@@ -371,10 +373,10 @@ About the new airlock wires panel:
 	if(wire_cut(WIRE_IDSCAN))
 		message = "The IdScan wire is cut - IdScan feature permanently disabled."
 	else if(activate && aiDisabledIdScanner)
-		set_aiDisabledIdScanner(0)
+		release(src, STAT_AIDISABLEDIDSCANNER, SRC_AI_CONTROL)
 		message = "IdScan feature has been enabled."
 	else if(!activate && !aiDisabledIdScanner)
-		set_aiDisabledIdScanner(1)
+		hold(src, STAT_AIDISABLEDIDSCANNER, null, SRC_AI_CONTROL)
 		message = "IdScan feature has been disabled."
 
 	if(feedback && message && user)
@@ -386,9 +388,10 @@ About the new airlock wires panel:
 	if (wire_cut(WIRE_SAFETY))
 		message = "The safety wire is cut - Cannot enable safeties."
 	else if (!activate && safe)
-		set_safe(0)
+		hold(src, STAT_SAFE, null, SRC_AI_CONTROL)
 	else if (activate && !safe)
-		set_safe(1)
+		release(src, STAT_SAFE, SRC_AI_CONTROL)
+		release(src, STAT_SAFE, wire_def(WIRE_SAFETY).pulse_source) // the AI turns them back on after a pulse turned them off
 
 	if(feedback && message && user)
 		to_chat(user, message)
@@ -423,10 +426,13 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 TRACKED(/obj/machinery/door/airlock, main_power_lost_until)
 TRACKED(/obj/machinery/door/airlock, backup_power_lost_until)
 TRACKED(/obj/machinery/door/airlock, electrified_until)
-TRACKED(/obj/machinery/door/airlock, aiControlDisabled)
-TRACKED(/obj/machinery/door/airlock, aiDisabledIdScanner)
+/// The AI is locked out of the door: the AI control wire cut, for a second after a pulse, or a round event (ai_control()).
+STAT(/obj/machinery/door/airlock, aiControlDisabled, ANY)
+/// The door lets anyone through without an ID: the ID scan wire cut, or the AI's word (id_scan()).
+STAT(/obj/machinery/door/airlock, aiDisabledIdScanner, ANY)
+/// The door will not close on someone: off while the safety wire is cut or after a pulse, or by the AI, a lift's fire mode, an event (safety_wire()).
+STAT(/obj/machinery/door/airlock, safe, ALL)
 TRACKED(/obj/machinery/door/airlock, lights)
-TRACKED(/obj/machinery/door/airlock, safe)
 TRACKED(/obj/machinery/door/airlock, frozen)
 
 MSG_DEF_SELF(airlock/panel_broken, "The panel is broken and cannot be closed.")
@@ -446,23 +452,25 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 
 CAPABILITIES(/obj/machinery/door/airlock)
 	panel()
-	wires(PROC_REF(wires_type), emp = FALSE, status_lines = PROC_REF(wire_lights))
+	// twelve wires (fourteen and their own colours with secure electronics), in the airlock's window with its radio
+	wires(name = "Airlock", count = PROC_REF(wire_count), randomize = PROC_REF(wires_randomized), window = "WiresAirlock", record = /datum/cap_data/wires/airlock, emp = FALSE, status_lines = PROC_REF(wire_lights))
+	ai_control(stat = STAT_AICONTROLDISABLED, pulse_lasts = 1 SECOND)
+	id_scan(stat = STAT_AIDISABLEDIDSCANNER, pulse_lasts = 0)
+	safety_wire(stat = STAT_SAFE)
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_changed_look)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_changed_look)))
-	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
+	on_wire(WIRE_IDSCAN, pulse = PROC_REF(idscan_wire_pulsed)) // and the deny light flashes
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
 	on_wire(WIRE_MAIN_POWER2, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
 	on_wire(WIRE_BACKUP_POWER1, cut = PROC_REF(backup_power_wire_cut), pulse = PROC_REF(backup_power_wire_pulsed))
 	on_wire(WIRE_BACKUP_POWER2, cut = PROC_REF(backup_power_wire_cut), pulse = PROC_REF(backup_power_wire_pulsed))
-	on_wire(WIRE_DOOR_BOLTS, cut = PROC_REF(bolt_wire_cut), pulse = PROC_REF(bolt_wire_pulsed))
-	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
 	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
 	on_wire(WIRE_OPEN_DOOR, pulse = PROC_REF(open_wire_pulsed))
-	on_wire(WIRE_SAFETY, cut = PROC_REF(safety_wire_cut), pulse = PROC_REF(safety_wire_pulsed))
+	on_wire(WIRE_SAFETY, pulse = PROC_REF(safety_wire_pulsed)) // and an open door shuts
 	on_wire(WIRE_SPEED, cut = PROC_REF(speed_wire_cut), pulse = PROC_REF(speed_wire_pulsed))
 	on_wire(WIRE_BOLT_LIGHT, cut = PROC_REF(bolt_light_wire_cut), pulse = PROC_REF(bolt_light_wire_pulsed))
-	bolts(starts = nameof(bolted_at_start))
+	bolts(starts = nameof(bolted_at_start), wire = WIRE_DOOR_BOLTS)
 	weld_shut(offered = PROC_REF(weld_offered), starts = nameof(welded_at_start))
 	door_emergency()
 	owns_one(nameof(electronics), /obj/item/airlock_electronics)
@@ -1513,21 +1521,6 @@ EXTEND_INTERACTIONS(/obj/machinery/turretid, INTERACT_ROBOT("Use", PROC_REF(turr
 
 // ---- the wires ----
 
-/// An airlock's twelve wires. Every airlock shares the round's layout; one built with secure electronics has fourteen, its own colours.
-/datum/wire_set/airlock
-	name = "Airlock"
-	count = 12
-	window = "WiresAirlock"
-	record = /datum/cap_data/wires/airlock
-	wires = list(
-		WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_MAIN_POWER2, WIRE_DOOR_BOLTS,
-		WIRE_BACKUP_POWER1, WIRE_BACKUP_POWER2, WIRE_OPEN_DOOR, WIRE_AI_CONTROL,
-		WIRE_ELECTRIFY, WIRE_SAFETY, WIRE_SPEED, WIRE_BOLT_LIGHT)
-
-/datum/wire_set/airlock/secure
-	count = 14
-	randomize = TRUE
-
 /// The airlock's wires window adds its radio: the ID tag and the frequency.
 /datum/cap_data/wires/airlock
 
@@ -1593,10 +1586,6 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 /obj/machinery/door/airlock/proc/wire_changed_look(datum/act/A)
 	changed(src)
 
-/obj/machinery/door/airlock/proc/idscan_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	set_aiDisabledIdScanner(!N.mended)
-
 /// The ID wire pulsed flashes the red light (with power, while shut).
 /obj/machinery/door/airlock/proc/idscan_wire_pulsed(datum/act/A)
 	if(arePowerSystemsOn() && density)
@@ -1627,47 +1616,6 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 /obj/machinery/door/airlock/proc/backup_power_wire_pulsed(datum/act/A)
 	loseBackupPower()
 
-/// The bolt wire cut drops the bolts; mending it does not raise them.
-/obj/machinery/door/airlock/proc/bolt_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	if(!N.mended)
-		lock(1)
-
-/// The bolt wire pulsed drops raised bolts, or raises dropped ones (with power).
-/obj/machinery/door/airlock/proc/bolt_wire_pulsed(datum/act/A)
-	if(!is_bolted(src))
-		lock()
-	else
-		unlock()
-
-/// The AI control wire cut locks the AI out (an AI that bypassed the lock before stays able to bypass it); mended, it lets it back.
-/obj/machinery/door/airlock/proc/ai_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	if(!N.mended)
-		if(aiControlDisabled == 0)
-			set_aiControlDisabled(1)
-		else if(aiControlDisabled == -1)
-			set_aiControlDisabled(2)
-	else
-		if(aiControlDisabled == 1)
-			set_aiControlDisabled(0)
-		else if(aiControlDisabled == 2)
-			set_aiControlDisabled(-1)
-
-/// The AI control wire pulsed locks the AI out for a second.
-/obj/machinery/door/airlock/proc/ai_wire_pulsed(datum/act/A)
-	if(aiControlDisabled == 0)
-		set_aiControlDisabled(1)
-	else if(aiControlDisabled == -1)
-		set_aiControlDisabled(2)
-	after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
-
-/obj/machinery/door/airlock/proc/ai_control_pulse_ends()
-	if(aiControlDisabled == 1)
-		set_aiControlDisabled(0)
-	else if(aiControlDisabled == 2)
-		set_aiControlDisabled(-1)
-
 /// The shock wire cut electrifies the door until it is mended.
 /obj/machinery/door/airlock/proc/shock_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
@@ -1688,13 +1636,8 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 		else
 			close()
 
-/obj/machinery/door/airlock/proc/safety_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	set_safe(N.mended)
-
-/// The safety wire pulsed flips the safeties (and an open door shuts).
+/// The safety wire pulsed (safety_wire() flipped the safeties): an open door shuts.
 /obj/machinery/door/airlock/proc/safety_wire_pulsed(datum/act/A)
-	set_safe(!safe)
 	if(!density)
 		close()
 

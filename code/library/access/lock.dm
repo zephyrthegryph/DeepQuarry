@@ -9,6 +9,8 @@
 //   lock()                                       cards and PDAs; starts open
 //   lock(starts_locked = nameof(lock_at_start))  starts locked while the holder's lock_at_start var says so (a map may clear it per instance)
 //   lock(id_types = list(/obj/item/card/id), alt = FALSE)   only an ID in hand works it, and an alt-click is left to the holder (a lockbox opens on one)
+//   lock(wire = WIRE_IDSCAN)                     brings the ID scan wire (on a holder with wires()): the lock works only while it is intact, and a
+//                                                pulse opens the lock for 30 seconds
 
 MSG_DEF(lock/locked, "You lock %T%.", "%U% locks %T%.")
 MSG_DEF(lock/unlocked, "You unlock %T%.", "%U% unlocks %T%.")
@@ -17,7 +19,7 @@ MSG_DEF_SELF(lock/is_unlocked, "It is unlocked.")
 MSG_DEF_SELF(lock/denied, "Access denied.")
 MSG_DEF_SELF(lock/engaged, "It is locked.")
 
-CAPABILITY_TYPE(lock, CAP_LOCK, /datum/capability/lib/lock, key = NONE, id_types = null, starts_locked = FALSE, alt = TRUE, powered = TRUE, guarded = TRUE)
+CAPABILITY_TYPE(lock, CAP_LOCK, /datum/capability/lib/lock, key = NONE, id_types = null, starts_locked = FALSE, alt = TRUE, powered = TRUE, guarded = TRUE, wire = null)
 cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 
 /datum/capability/lib/lock
@@ -30,7 +32,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 		swipe += item(card_type)
 	// The library default: an electronic lock works only on a holder that has power and nobody subverted (powered = FALSE, guarded = FALSE: a
 	// mechanical one, or one whose subversion leaves it working).
-	var/list/guards = list(powered ? req_operable() : null, guarded ? req_not_subverted() : null)
+	var/list/guards = list(powered ? req_operable() : null, guarded ? req_not_subverted() : null, wire ? req_wire(wire) : null)
 	return list(
 		// A card (or PDA) on the holder: the card in hand is the credential.
 		op("toggle", inputs(swipe), needs(guards, req_credential_in_hand(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
@@ -41,7 +43,18 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 		examine_line(MSG(lock/is_locked), when = LOCK_LOCKED),
 		examine_line(MSG(lock/is_unlocked), when = cond_not(LOCK_LOCKED)))
 
-/// What the lock toggle just did.
+/datum/capability/lib/lock/brings_wires()
+	return wire ? list(wire) : null
+
+/// The ID scan wire pulsed (WIRE_DEF in code/library/machine/wires.dm): the lock lets go, and locks again 30 seconds later.
+/datum/capability/lib/lock/proc/id_wire_pulsed(datum/holder, pulsed_wire, mob/user)
+	cap_key_set(holder, LOCK_LOCKED, FALSE, null)
+	after(holder, 30 SECONDS, GLOBAL_PROC_REF(lock_wire_relocks), key = "id_scan_relock", with = list(holder))
+
+/proc/lock_wire_relocks(datum/holder)
+	if(holder && !QDELETED(holder))
+		cap_key_set(holder, LOCK_LOCKED, TRUE, null)
+
 /// The empty hand's touch is the lock's only where what the actor carries opens it (anything else the touch means is left alone).
 /datum/capability/lib/lock/proc/worn_credential_offered(datum/act/op/A)
 	return isnull(A.held) && req_credential_worn(id_types || list(/obj/item/card/id, /obj/item/pda)).holds(A)

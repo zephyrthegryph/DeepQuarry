@@ -39,13 +39,10 @@
 CAPABILITIES(/obj/machinery/rnd/production)
 	owns_one(nameof(materials), /datum/remote_materials)
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
-	configure(wires(kind = PROC_REF(production_wire_set), starts_cut = PROC_REF(wires_cut_at_start)))
 
 /// One item every build_time_per_item while busy printing.
 DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_item, "busy")
 
-
-TYPE_TABLE_DECLARE(/obj/machinery/rnd/production, production_initial_wires, null)
 
 /obj/machinery/rnd/production/Initialize(mapload)
 	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
@@ -67,65 +64,9 @@ TYPE_TABLE_DECLARE(/obj/machinery/rnd/production, production_initial_wires, null
 
 // ---- the wires ----
 
-/// A protolathe's and a circuit imprinter's wires: the hack and the disable (and four duds). An unnamed production machine keeps the R&D set.
-/datum/wire_set/protolathe
-	name = "Protolathe"
-	count = 6
-	wires = list(WIRE_LATHE_HACK, WIRE_LATHE_DISABLE)
-
-/datum/wire_set/circuit_imprinter
-	name = "Circuit Imprinter"
-	count = 6
-	wires = list(WIRE_LATHE_HACK, WIRE_LATHE_DISABLE)
-
-/obj/machinery/rnd/production/proc/production_wire_set()
-	return TYPE_TABLE_GET(src, production_initial_wires) || /datum/wire_set/rnd
-
-/// A lathe mapped hacked starts with its hack wire cut.
-/obj/machinery/rnd/production/proc/wires_cut_at_start()
-	return (hacked && TYPE_TABLE_GET(src, production_initial_wires)) ? list(WIRE_LATHE_HACK) : null
-
-/// A lathe's wires answer as the R&D set's hooks (WIRE_LATHE_HACK is WIRE_HACK, WIRE_LATHE_DISABLE is WIRE_DISABLE) with the lathe's own effects:
-/// the window's designs refresh, and a pulse lasts five seconds. A production machine with no lathe set keeps the R&D effects.
-/obj/machinery/rnd/production/proc/has_lathe_wires()
-	return !!TYPE_TABLE_GET(src, production_initial_wires)
-
-/obj/machinery/rnd/production/hack_wire_cut(datum/act/A)
-	if(!has_lathe_wires())
-		return ..()
-	var/datum/notice/wire_cut/N = A
-	hacked = !N.mended
-	update_tgui_static_data(N.user)
-
-/// The hack wire pulsed flips the hack for five seconds.
-/obj/machinery/rnd/production/hack_wire_pulsed(datum/act/A)
-	if(!has_lathe_wires())
-		return ..()
-	var/datum/notice/wire_pulsed/N = A
-	hacked = !hacked
-	update_tgui_static_data(N.user)
-	after(src, 5 SECONDS, PROC_REF(lathe_hack_pulse_ends), with = list(N.user))
-
-/obj/machinery/rnd/production/proc/lathe_hack_pulse_ends(mob/user)
-	if(!wire_is_cut(src, WIRE_LATHE_HACK))
-		hacked = FALSE
-		update_tgui_static_data(user)
-
-/obj/machinery/rnd/production/disable_wire_cut(datum/act/A)
-	if(!has_lathe_wires())
-		return ..()
-	var/datum/notice/wire_cut/N = A
-	disabled = !N.mended
-
-/obj/machinery/rnd/production/disable_wire_pulsed(datum/act/A)
-	if(!has_lathe_wires())
-		return ..()
-	disabled = !disabled
-	after(src, 5 SECONDS, PROC_REF(lathe_disable_pulse_ends))
-
-/obj/machinery/rnd/production/proc/lathe_disable_pulse_ends()
-	if(!wire_is_cut(src, WIRE_LATHE_DISABLE))
-		disabled = FALSE
+/// A lathe's hacked designs went (a hack pulse ran out): the window of whoever pulsed the wire shows it.
+/obj/machinery/rnd/production/proc/lathe_hack_ran_out(datum/act/A)
+	update_tgui_static_data(wires_last_user(src))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appearance_overlays), list())

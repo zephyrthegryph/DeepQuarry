@@ -17,10 +17,9 @@
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
-	var/seconds_electrified = 0;
-	var/shoot_inventory = 0
+	/// Shocks the hand at it: frames left (-1 for good, from a cut wire; shock_wire() sets it, the fridge runs it down).
+	var/seconds_electrified = 0
 	locked = 0
-	var/scan_id = 1
 	var/is_secure = 0
 	var/wrenchable = 0
 	var/persistent = null // Path of persistence datum used to track contents
@@ -31,6 +30,11 @@
 	var/datum/looping_sound/fridge/soundloop
 	var/playing_sound = FALSE
 
+/// Throws its stock: the throw wire cut, or pulsed (item_throw()).
+STAT(/obj/machinery/smartfridge, shoot_inventory, ANY)
+/// Checks the ID for a secure stock (the ID wire pulsed stops it; cut, it scans for good: id_scan()).
+STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
+
 CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
@@ -40,26 +44,13 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		asks(/datum/prompt/number, fields = list("question" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "timeout" = 0), step = "amount", when = PROC_REF(release_asks_amount)),
 		then(PROC_REF(ui_act_release)))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(PROC_REF(wire_set_type), tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Smartfridge", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
-	on_wire(WIRE_THROW_ITEM, cut = PROC_REF(throw_wire_cut), pulse = PROC_REF(throw_wire_pulsed))
-	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
-	on_wire(WIRE_IDSCAN, cut = PROC_REF(idscan_wire_cut), pulse = PROC_REF(idscan_wire_pulsed))
+	shock_wire(counter = nameof(seconds_electrified), cut_value = -1, pulse_value = 30)
+	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
+	item_throw(stat = STAT_SHOOT_INVENTORY)
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wires_wake)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wires_wake)))
-
-/// A smartfridge's three wires; a secure one has a dud beside them and its own colours.
-/datum/wire_set/smartfridge
-	name = "Smartfridge"
-	count = 3
-	wires = list(WIRE_ELECTRIFY, WIRE_IDSCAN, WIRE_THROW_ITEM)
-
-/datum/wire_set/smartfridge/secure
-	count = 4
-	randomize = TRUE
-
-/obj/machinery/smartfridge/proc/wire_set_type()
-	return is_secure ? /datum/wire_set/smartfridge/secure : /datum/wire_set/smartfridge
 
 /obj/machinery/smartfridge/proc/wire_lights()
 	return list(
@@ -74,33 +65,12 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		return OP_REFUSED
 	return HOOK_DECLINE
 
-/obj/machinery/smartfridge/proc/throw_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	shoot_inventory = !N.mended
-
-/obj/machinery/smartfridge/proc/throw_wire_pulsed(datum/act/A)
-	shoot_inventory = !shoot_inventory
-
-/obj/machinery/smartfridge/proc/shock_wire_cut(datum/act/A)
-	var/datum/notice/wire_cut/N = A
-	seconds_electrified = N.mended ? 0 : -1
-
-/obj/machinery/smartfridge/proc/shock_wire_pulsed(datum/act/A)
-	seconds_electrified = 30
-
-/// The ID wire cut leaves the fridge scanning; pulsed, the scan flips.
-/obj/machinery/smartfridge/proc/idscan_wire_cut(datum/act/A)
-	scan_id = TRUE
-
-/obj/machinery/smartfridge/proc/idscan_wire_pulsed(datum/act/A)
-	scan_id = !scan_id
-
 /// After any wire moved: a fridge throwing or counting down a shock runs, else it sleeps.
 /obj/machinery/smartfridge/proc/wires_wake(datum/act/A)
 	if(shoot_inventory || seconds_electrified > 0)
 		MACHINE_WAKE(src)
 	else
-		MACHINE_SLEEP(src) // ALLOW(sys_periodic_toggle): the fridge's wire effects park its step as the legacy wire datum did; its throw and shock countdown are plain vars, not a tracked state to declare the work on
+		MACHINE_SLEEP(src) // ALLOW(sys_periodic_toggle): the fridge's wire effects park its step as the legacy wire datum did; its throw is a stat the wires hold and its shock a plain countdown, not a tracked state to declare the work on
 
 /obj/machinery/smartfridge/secure
 	is_secure = 1
@@ -398,6 +368,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
  */
 // A secure fridge's buttons do nothing while it does not work (the old ui_act_allowed()).
 CAPABILITIES(/obj/machinery/smartfridge/secure)
+	configure(wires(count = 4, randomize = TRUE)) // a dud beside the three, and each fridge its own colours
 	extend("release", needs(req(PROC_REF(ui_gate), silent = TRUE)))
 
 /obj/machinery/smartfridge/secure/proc/ui_gate(datum/act/op/A)

@@ -120,7 +120,7 @@ MSG_DEF_SELF(smes/coils_full, "You can't insert more coils into this SMES unit!"
 MSG_DEF_SELF(smes/tag_taken, "That RCON tag already exists.")
 
 CAPABILITIES(/obj/machinery/power/smes/buildable)
-	wires(/datum/wire_set/smes, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "SMES", count = 5, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_SMES_RCON, cut = PROC_REF(rcon_wire_cut), pulse = PROC_REF(rcon_wire_pulsed))
 	on_wire(WIRE_SMES_INPUT, cut = PROC_REF(input_wire_cut), pulse = PROC_REF(input_wire_pulsed))
 	on_wire(WIRE_SMES_OUTPUT, cut = PROC_REF(output_wire_cut), pulse = PROC_REF(output_wire_pulsed))
@@ -389,11 +389,6 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 
 // ---- the wires ----
 
-/// A buildable unit's five wires: remote control, input, output, grounding and the failsafes.
-/datum/wire_set/smes
-	name = "SMES"
-	count = 5
-	wires = list(WIRE_SMES_RCON, WIRE_SMES_INPUT, WIRE_SMES_OUTPUT, WIRE_SMES_GROUNDING, WIRE_SMES_FAILSAFES)
 
 /obj/machinery/power/smes/buildable/proc/wire_lights()
 	return list(

@@ -50,14 +50,9 @@
 
 CAPABILITIES(/obj/machinery/power/tesla_coil)
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/tesla_coil, tools = FALSE)
+	wires(name = "Tesla coil", count = 1, tools = FALSE)
 	on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed))
 
-/// A tesla coil's one wire: pulsed, it zaps.
-/datum/wire_set/tesla_coil
-	name = "Tesla coil"
-	count = 1
-	wires = list(WIRE_TESLACOIL_ZAP)
 
 /obj/machinery/power/tesla_coil/proc/zap_wire_pulsed(datum/act/A)
 	zap()

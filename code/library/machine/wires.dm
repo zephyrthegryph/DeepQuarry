@@ -1,32 +1,35 @@
-// The wires capability (doc/rewrite/final_api.html, section 11 "The library": wires(set); section 16.1, 16.2).
+// The wires capability (doc/rewrite/final_api.html, section 11 "The library": wires(); section 16.1, 16.2).
 //
-// A holder's wires are a WIRE SET, declared as data: a /datum/wire_set subtype with the wires that do something (WIRE_* ids), how many wires
-// there are in all (the rest are duds), whether each holder gets its own colours or the set keeps one layout for the round, and the window.
+// Wires are COMPOSED from capabilities. A wire is defined once, in the WIRE_DEF table below: its name and what cutting, pulsing and mending it
+// does, written as effects on the capability that brings it (holds on a stat the capability names, a proc of the capability). A capability brings
+// its wires (brings_wires()): ai_control() the AI control wire, power_wires() the power wires, shock_wire() the electrification wire, lock(wire =)
+// the ID scan wire, bolts(wire =) the bolt wire, ... (code/library/machine/wire_caps.dm). wires() derives the holder's wire list from the
+// capabilities it has, and keeps only what belongs to the wiring as a whole:
 //
-//   /datum/wire_set/apc
-//   	name = "APC"                                   the window title ("APC wires") and the blueprints' name
-//   	count = 4                                      every wire, duds included
-//   	wires = list(WIRE_IDSCAN, WIRE_MAIN_POWER1, WIRE_MAIN_POWER2, WIRE_AI_CONTROL)
-//   	randomize = FALSE                              TRUE: each holder its own colours, else one layout per set for the round
+//   wires(name = "APC", count = 4)                 the window title ("APC wires") and the blueprints' name; every wire, duds included
+//   wires(..., randomize = TRUE)                   each holder its own colours; else every holder of that name shares one layout for the round
+//   wires(..., count = PROC_REF(x), randomize = PROC_REF(y))     read from the holder at init (an airlock built with secure electronics)
+//   wires(..., at = SPACE_X)                       the space the wires sit in (default SPACE_PANEL); null: always in reach (an exposed assembly)
+//   wires(..., reach = cond)                       a further condition on the holder for working them (the APC's: the cover shut)
+//   wires(..., status_lines = PROC_REF(x))         the status lines under the wires in the window ("The red light is blinking.")
+//   wires(..., by_hand = TRUE)                     an empty hand opens the window too (op wires.open)
+//   wires(..., tools = FALSE)                      no multitool or wirecutter op opens the window (the holder's own ops answer those tools)
+//   wires(..., emp = FALSE)                        an EMP leaves the wires alone (by default it pulses up to three of them)
+//   wires(..., starts_cut = PROC_REF(x))           the wires the holder starts with cut (a lathe mapped hacked), read once at init
+//   wires(..., window = "WiresAirlock", record = /datum/cap_data/wires/airlock)   another window, a record with buttons of its own
 //
-// The holder declares the capability with its set, where the wires sit and what they do:
+// A wire only one type has is that type's own capability: on_wire(WIRE_X, cut = PROC_REF(a), pulse = PROC_REF(b)) brings WIRE_X to the type
+// and hooks it (a(datum/notice/wire_cut/N) hears it cut and mended (N.mended), b(datum/notice/wire_pulsed/N) pulsed; N.user did it). On a
+// wire a library capability brings, an on_wire() adds to what the wire does there (the airlock's ID wire also flashes the deny light).
 //
-//   wires(/datum/wire_set/apc)                     the set, behind the panel (space SPACE_PANEL, which panel() declares)
-//   wires(PROC_REF(wire_set))                      a proc of the holder returning the set (an airlock built with secure electronics)
-//   wires(set, at = SPACE_X)                       the space the wires sit in; null: always in reach (an exposed assembly)
-//   wires(set, reach = cond)                       a further condition on the holder for working them (the APC's: the cover shut)
-//   wires(set, status_lines = PROC_REF(x))         the status lines under the wires in the window ("The red light is blinking.")
-//   wires(set, by_hand = TRUE)                     an empty hand opens the window too (op wires.open)
-//   wires(set, tools = FALSE)                      no multitool or wirecutter op opens the window (the holder's own ops answer those tools)
-//   wires(set, emp = FALSE)                        an EMP leaves the wires alone (by default it pulses up to three of them)
-//   wires(set, starts_cut = PROC_REF(x))           the wires the holder starts with cut (a lathe mapped hacked), read once at init
-//
-//   on_wire(WIRE_X, cut = PROC_REF(a), pulse = PROC_REF(b))     what one wire does: a(datum/notice/wire_cut/N) hears it cut and mended
-//                                                                (N.mended), b(datum/notice/wire_pulsed/N) hears it pulsed; N.user did it
-//   on_notice(/datum/notice/wire_cut, then(...))                 any wire of the set (a sorter's lights, a fridge waking)
+//   on_notice(/datum/notice/wire_cut, then(...))                 any wire of the holder (a sorter's lights, a fridge waking)
 //   extend(/datum/act/touch_wires, instead(...))                 touching the wires: an electrified machine shocks the toucher instead
 //   contributes(STAT_X, req_wire_cut(WIRE_X)), extend(TAG_UI, needs(req_wire(WIRE_AI_CONTROL)))    rules that read the wires
 //   extend(/datum/act/hit/blob, instead(cuts_all_wires()))      a hit that tears them out
+//
+// A wire's effects run first, then its notice is published (so on_notice hooks see the state the wire left). Pulse effects are keyed, sourced
+// timed holds: each wire has one cut source and one pulse source, so a second pulse refreshes the one hold, a cut wire's hold outlasts any pulse,
+// and mending releases both.
 //
 // The per-holder state (the colour layout, the cut wires, the signalers on them) is the capability's record, /datum/cap_data/wires, made when
 // the holder initializes. It is also the wires window's host: interface("Wires") and the window's buttons are its ops, cut (cuts an intact
@@ -55,37 +58,239 @@ ACTION(pulse_wire, wire, mob/user, FIXED, notice = /datum/notice/wire_pulsed)
 /// Someone reaches into the wires (opens the window, presses a button in it): an instead() takes it over (a live machine shocks the toucher).
 ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 
-// ---- the wire set: data ----
+// ---- the wire definitions ----
 
-/// A wire set. Subtypes are pure data; one instance per type (wire_set_def()) is shared by every holder.
-/datum/wire_set
-	/// The window title's name ("APC" -> "APC wires") and the blueprints'.
-	var/name = "Unknown"
-	/// The wires that do something: WIRE_* ids.
-	var/list/wires
-	/// Every wire, duds included. Fewer than `wires` means none are duds.
-	var/count = 0
-	/// TRUE: each holder gets its own colours. FALSE: every holder of the set shares one layout for the round.
-	var/randomize = FALSE
-	/// The tgui interface of the window.
-	var/window = "Wires"
-	/// The record the holder's wires are kept in: a subtype adds window buttons of its own (the airlock's ID tag and frequency).
-	var/record = /datum/cap_data/wires
+/// One wire, defined once (WIRE_DEF): its name and what cutting, pulsing and mending it does on the capability that brings it.
+/datum/wire_def
+	var/id
+	var/name
+	/// /datum/wire_effect lists, run in order.
+	var/list/cut
+	var/list/pulse
+	var/list/mend
+	/// The flyweight sources of this wire's holds: one for its cut, one for its pulse (a second pulse refreshes the one hold).
+	var/datum/wire_hold_source/cut_source
+	var/datum/wire_hold_source/pulse_source
 
-/// The shared instance of a wire set type.
-/proc/wire_set_def(set_type)
-	RETURN_TYPE(/datum/wire_set)
-	var/static/list/defs = list()
-	if(!ispath(set_type, /datum/wire_set))
+/// The source of a wire's holds on a holder's stat ("the Primary Power wire, cut").
+/datum/wire_hold_source
+	var/wire
+	var/kind
+
+/proc/wire_def_make(wire, wire_name, cut = null, pulse = null, mend = null)
+	RETURN_TYPE(/datum/wire_def)
+	var/datum/wire_def/D = new
+	D.id = wire
+	D.name = wire_name
+	D.cut = wire_effect_list(cut)
+	D.pulse = wire_effect_list(pulse)
+	D.mend = wire_effect_list(mend)
+	D.cut_source = new // ALLOW(ownership): a flyweight source of holds, made once with its wire definition and kept for the round
+	D.cut_source.wire = wire
+	D.cut_source.kind = "cut"
+	D.pulse_source = new // ALLOW(ownership): a flyweight source of holds, made once with its wire definition and kept for the round
+	D.pulse_source.wire = wire
+	D.pulse_source.kind = "pulse"
+	return D
+
+/proc/wire_effect_list(effects)
+	if(isnull(effects))
+		return list()
+	return islist(effects) ? effects : list(effects)
+
+/// The definition of `wire`, or null for a wire no library capability defines (a type's own on_wire() wire).
+/proc/wire_def(wire)
+	RETURN_TYPE(/datum/wire_def)
+	READS_FROM()
+	var/static/list/defs
+	if(!defs)
+		defs = wire_defs_build()
+	return defs[wire]
+
+/// WIRE_DEF(WIRE_X, "name", cut = effects, pulse = effects, mend = effects): one line of the table below.
+#define WIRE_DEF(wire, wire_name, effects...) .[wire] = wire_def_make(wire, wire_name, ##effects)
+
+/// The library's wires, each defined once. Every effect acts on the capability that brings the wire: wire_cut_holds() holds the stat that
+/// capability's `stat` param names, wire_calls() runs a proc of it (and does nothing on a capability without that proc).
+/proc/wire_defs_build()
+	. = list()
+	// ai_control(stat =, pulse_lasts =): cut, the AI is locked out until mended; pulsed, for pulse_lasts.
+	WIRE_DEF(WIRE_AI_CONTROL, "AI Control", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
+	// id_scan(stat =): the wire overrides the scanner; lock(wire = WIRE_IDSCAN): a pulse opens the lock for a while.
+	WIRE_DEF(WIRE_IDSCAN, "ID Scan", cut = wire_cut_holds(), pulse = list(wire_pulse_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/lock, id_wire_pulsed))), mend = wire_mend_releases())
+	// power_wires(stat =, count =, pulse_lasts =, shock =): cut, the power is lost (and the hand may be shocked); pulsed, it trips for pulse_lasts.
+	WIRE_DEF(WIRE_MAIN_POWER1, "Primary Power", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))), pulse = wire_pulse_holds(), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))))
+	WIRE_DEF(WIRE_MAIN_POWER2, "Secondary Power", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))), pulse = wire_pulse_holds(), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/power_wires, power_wire_moved))))
+	// shock_wire(stat =, cut_value =, pulse_value =, pulse_lasts =): cut, live until mended; pulsed, live for pulse_lasts.
+	// shock_wire(counter =, ...): a countdown the machine runs down itself is set instead (cut_value while cut, pulse_value pulsed, 0 mended).
+	WIRE_DEF(WIRE_ELECTRIFY, "Electrification", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_cut))), pulse = list(wire_pulse_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_pulsed))), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_mended))))
+	WIRE_DEF(WIRE_SHOCK, "High Voltage Ground", cut = list(wire_cut_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_cut))), pulse = list(wire_pulse_holds(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_pulsed))), mend = list(wire_mend_releases(), wire_calls(TYPE_PROC_REF(/datum/capability/lib/shock_wire, counter_mended))))
+	// item_throw(stat =): cut, the machine throws its stock until mended; pulsed, the throwing flips.
+	WIRE_DEF(WIRE_THROW_ITEM, "Item Throw", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
+	// safety_wire(stat =): cut, the safeties are off until mended; pulsed, they flip.
+	WIRE_DEF(WIRE_SAFETY, "Safety", cut = wire_cut_holds(), pulse = wire_pulse_holds(), mend = wire_mend_releases())
+	// lathe_wires(hack_stat =, disable_stat =, pulse_lasts =): the hack wire unlocks the hacked designs, the disable wire stops the machine.
+	WIRE_DEF(WIRE_LATHE_HACK, "Hack", cut = list(wire_cut_holds("hack_stat"), wire_calls(TYPE_PROC_REF(/datum/capability/lib/lathe_wires, hack_wire_moved))), pulse = list(wire_pulse_holds("hack_stat"), wire_calls(TYPE_PROC_REF(/datum/capability/lib/lathe_wires, hack_wire_moved))), mend = list(wire_mend_releases("hack_stat"), wire_calls(TYPE_PROC_REF(/datum/capability/lib/lathe_wires, hack_wire_moved))))
+	WIRE_DEF(WIRE_LATHE_DISABLE, "Disable", cut = wire_cut_holds("disable_stat"), pulse = wire_pulse_holds("disable_stat"), mend = wire_mend_releases("disable_stat"))
+	// bolts(wire = WIRE_DOOR_BOLTS): cut, the bolts drop (mending does not raise them); pulsed, they drop or rise.
+	WIRE_DEF(WIRE_DOOR_BOLTS, "Door Bolts", cut = wire_calls(TYPE_PROC_REF(/datum/capability/lib/bolts, bolt_wire_cut)), pulse = wire_calls(TYPE_PROC_REF(/datum/capability/lib/bolts, bolt_wire_pulsed)))
+
+// ---- the effects ----
+
+/// One thing a wire does to the capability that brings it.
+/datum/wire_effect
+	/// The capability param naming the stat it holds ("stat"), for the hold effects.
+	var/stat_param
+
+/datum/wire_effect/proc/apply(datum/capability/C, datum/holder, datum/wire_def/D, mob/user)
+	return
+
+/// The stat the capability names, or null (a capability bringing the wire with no state of its own).
+/datum/wire_effect/proc/stat_of(datum/capability/C)
+	return stat_param ? cap_param(C, stat_param) : null
+
+/// wire_cut_holds(stat = "stat"): the cut wire holds the stat at the capability's cut_value (TRUE by default) until it is mended.
+/proc/wire_cut_holds(stat = "stat")
+	var/datum/wire_effect/cut_holds/E = new
+	E.stat_param = stat
+	return E
+
+/datum/wire_effect/cut_holds
+
+/datum/wire_effect/cut_holds/apply(datum/capability/C, datum/holder, datum/wire_def/D, mob/user)
+	var/stat = stat_of(C)
+	if(isnull(stat))
+		return
+	hold(holder, stat, wire_hold_value(stat, cap_param(C, "cut_value")), D.cut_source, null, WIRE_CUT_PRIORITY)
+
+/// wire_pulse_holds(stat = "stat"): the pulse holds the stat at the capability's pulse_value for its pulse_lasts (a second pulse refreshes the
+/// one hold); pulse_lasts = WIRE_PULSE_TOGGLES flips the hold; no pulse_lasts, the pulse does nothing.
+/proc/wire_pulse_holds(stat = "stat")
+	var/datum/wire_effect/pulse_holds/E = new
+	E.stat_param = stat
+	return E
+
+/datum/wire_effect/pulse_holds
+
+/datum/wire_effect/pulse_holds/apply(datum/capability/C, datum/holder, datum/wire_def/D, mob/user)
+	var/stat = stat_of(C)
+	var/lasts = cap_param(C, "pulse_lasts")
+	if(isnull(stat) || !lasts)
+		return
+	var/value = wire_hold_value(stat, cap_param(C, "pulse_value"))
+	if(lasts == WIRE_PULSE_TOGGLES)
+		if(D.pulse_source in held_by(holder, stat))
+			release(holder, stat, D.pulse_source)
+		else
+			hold(holder, stat, value, D.pulse_source)
+		return
+	hold(holder, stat, value, D.pulse_source, lasts)
+
+/// wire_mend_releases(stat = "stat"): mending the wire releases its cut hold and any pulse still running: the wire's resting state.
+/proc/wire_mend_releases(stat = "stat")
+	var/datum/wire_effect/mend_releases/E = new
+	E.stat_param = stat
+	return E
+
+/datum/wire_effect/mend_releases
+
+/datum/wire_effect/mend_releases/apply(datum/capability/C, datum/holder, datum/wire_def/D, mob/user)
+	var/stat = stat_of(C)
+	if(isnull(stat))
+		return
+	release(holder, stat, D.cut_source)
+	release(holder, stat, D.pulse_source)
+
+/// wire_calls(TYPE_PROC_REF(/datum/capability/x, y)): runs y(holder, wire, user) on the capability bringing the wire, when it has that proc.
+/proc/wire_calls(proc_name)
+	var/datum/wire_effect/calls/E = new
+	E.proc_name = proc_name
+	return E
+
+/datum/wire_effect/calls
+	var/proc_name
+
+/datum/wire_effect/calls/apply(datum/capability/C, datum/holder, datum/wire_def/D, mob/user)
+	if(hascall(C, proc_name))
+		call(C, proc_name)(holder, D.id, user)
+
+/// The value a wire holds a stat at: none on a boolean stat (its rule forces it), else the capability's value (TRUE when it gives none).
+/proc/wire_hold_value(stat, value)
+	var/datum/stat_def/def = stat_def_of(stat)
+	if(def?.boolean)
 		return null
-	var/datum/wire_set/S = defs[set_type]
-	if(!S)
-		S = new set_type
-		defs[set_type] = S
-	return S
+	return isnull(value) ? TRUE : value
 
-/// Every wire of the set, duds included (named WIRE_DUD_PREFIX + n, as the blueprints and the window expect).
-/datum/wire_set/proc/all_wires()
+// ---- capabilities bring wires ----
+
+/// The wires a capability type brings to its holder (WIRE_* ids): TYPE_TABLE(/datum/capability/lib/x, brought_wires, list(WIRE_X)). Most bring none.
+TYPE_TABLE_DECLARE(/datum/capability, brought_wires, null)
+
+/// The wires this capability brings to its holder: its type's brought_wires, or what its params say (lock(wire =), shock_wire(wire =)).
+/datum/capability/proc/brings_wires()
+	return TYPE_TABLE_GET(src, brought_wires)
+
+/// One of the wires this capability brought was cut (`event` "cut"), mended ("mend") or pulsed ("pulse"): the wire's definition says what that
+/// does to the capability.
+/datum/capability/proc/wire_event(datum/holder, wire, event, mob/user)
+	var/datum/wire_def/D = wire_def(wire)
+	if(!D)
+		return
+	var/list/effects
+	switch(event)
+		if("cut")
+			effects = D.cut
+		if("pulse")
+			effects = D.pulse
+		if("mend")
+			effects = D.mend
+	for(var/datum/wire_effect/E as anything in effects)
+		E.apply(src, holder, D, user)
+
+/// The capabilities of `holder` that bring wires: wire -> list of definitions, in declaration order.
+/proc/wire_bringers(datum/holder)
+	READS_FROM() // the type's compiled table and the holder's activations, not its state
+	. = list()
+	var/list/defs = list()
+	var/datum/type_table/T = table_of(holder)
+	for(var/key in T.caps)
+		defs |= T.caps[key]
+	for(var/datum/activation/A as anything in holder.rx?.activations)
+		if(!A.dead)
+			defs |= A.def
+	for(var/datum/capability/C as anything in defs)
+		for(var/wire in C.brings_wires())
+			if(isnull(wire))
+				continue
+			var/list/bringers = .[wire]
+			if(!bringers)
+				bringers = list()
+				.[wire] = bringers
+			bringers += C
+
+/// on_wire(WIRE_X, cut = PROC_REF(a), pulse = PROC_REF(b)): a type's own wire. It brings WIRE_X to the type and hooks it: a(datum/notice/wire_cut/N)
+/// runs when it is cut and when it is mended (N.mended), b(datum/notice/wire_pulsed/N) when it takes a pulse. On a wire a library capability
+/// brings too, it adds to what that wire does there.
+CAPABILITY_TYPE(on_wire, CAP_ON_WIRE, /datum/capability/lib/on_wire, key = wire, wire = null, cut = null, pulse = null)
+
+/datum/capability/lib/on_wire/entries()
+	. = list()
+	if(cut)
+		. += on_notice(/datum/notice/wire_cut, then(cut), op = wire)
+	if(pulse)
+		. += on_notice(/datum/notice/wire_pulsed, then(pulse), op = wire)
+
+/datum/capability/lib/on_wire/brings_wires()
+	return list(wire)
+
+/// The type's own hooks are its effects: the library definition of the wire (when there is one) is left to the capabilities that bring it.
+/datum/capability/lib/on_wire/wire_event(datum/holder, wire, event, mob/user)
+	return
+
+// ---- layouts ----
+
+/// Every wire of a holder, duds included (named WIRE_DUD_PREFIX + n, as the blueprints and the window expect).
+/proc/wires_with_duds(list/wires, count)
 	. = wires.Copy()
 	var/duds = count - length(wires)
 	while(duds > 0)
@@ -94,23 +299,23 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 			. += dud
 
 /// A fresh colour layout: colour -> wire, the wires shuffled over the palette.
-/datum/wire_set/proc/fresh_layout()
+/proc/wires_fresh_layout(list/all)
 	var/static/list/palette = list("red", "blue", "green", "darkmagenta", "orange", "brown", "gold", "grey", "cyan", "white", "purple", "pink", "darkslategrey", "yellow")
 	var/list/colors = palette.Copy()
 	. = list()
-	for(var/wire in shuffle(all_wires()))
+	for(var/wire in shuffle(all))
 		.[pick_n_take(colors)] = wire
 
-/// The layout a new holder of this set gets: its own when the set randomizes, else the round's (made by the first holder, kept in the
+/// The layout a new holder gets: its own when it randomizes, else the round's for its wiring's name (made by the first holder, kept in the
 /// blueprints' directory). The round's list is shared: never written.
-/datum/wire_set/proc/layout_for_holder()
+/proc/wires_layout_for(layout_key, list/all, randomize)
 	if(randomize)
-		return fresh_layout()
-	var/list/shared = GLOB.wire_color_directory[type]
+		return wires_fresh_layout(all)
+	var/list/shared = GLOB.wire_color_directory[layout_key]
 	if(!shared)
-		shared = fresh_layout()
-		GLOB.wire_color_directory[type] = shared
-		GLOB.wire_name_directory[type] = name
+		shared = wires_fresh_layout(all)
+		GLOB.wire_color_directory[layout_key] = shared
+		GLOB.wire_name_directory[layout_key] = layout_key
 	return shared
 
 /proc/wire_is_dud(wire)
@@ -118,7 +323,7 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 
 // ---- the capability ----
 
-CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind = null, tools = TRUE, by_hand = FALSE, at = SPACE_PANEL, reach = null, status_lines = null, starts_cut = null, emp = TRUE)
+CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name = "Unknown", count = 0, randomize = FALSE, window = "Wires", record = /datum/cap_data/wires, tools = TRUE, by_hand = FALSE, at = SPACE_PANEL, reach = null, status_lines = null, starts_cut = null, emp = TRUE)
 
 /datum/capability/lib/wires
 	holder_hooks = HOLDER_HOOK_INIT | HOLDER_HOOK_DESTROY
@@ -146,12 +351,9 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	wires_open(A.holder, A.actor)
 	return OP_OK
 
-/// The set `holder` is built with: `kind`, or what the holder's proc answers.
-/datum/capability/lib/wires/proc/set_type_for(datum/holder)
-	var/set_type = kind
-	if(istext(set_type))
-		set_type = call(holder, set_type)()
-	return ispath(set_type, /datum/wire_set) ? set_type : null
+/// A param that may be a proc of the holder (count = PROC_REF(x)): its value for `holder`.
+/datum/capability/lib/wires/proc/holder_value(datum/holder, value)
+	return istext(value) ? call(holder, value)() : value
 
 /// The record is made when the holder initializes: the round's layout is laid out by the first holder, and a holder that starts with a wire cut
 /// (a lathe mapped hacked) says so through `starts_cut` before anyone looks.
@@ -178,8 +380,8 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	var/datum/cap_data/wires/W = act?.data
 	return istype(W) ? W : null
 
-/// Makes the holder's wire record: the set its capability names, the colour layout (the round's, or its own when the set randomizes), the
-/// wires it starts with cut. Once, when the holder initializes.
+/// Makes the holder's wire record: the wires its capabilities bring, the duds up to the count, the colour layout (the round's for the wiring's
+/// name, or its own when it randomizes), the wires it starts with cut. Once, when the holder initializes.
 /proc/wiring_make(datum/holder)
 	RETURN_TYPE(/datum/cap_data/wires)
 	var/datum/cap_data/wires/W = wiring_of(holder)
@@ -188,21 +390,25 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	var/datum/capability/lib/wires/def = cap_of(holder, CAP_WIRES)
 	if(!def)
 		return null
-	var/set_type = def.set_type_for(holder)
-	var/datum/wire_set/S = wire_set_def(set_type)
-	if(!S)
-		return null
+	var/list/bringers = wire_bringers(holder)
+	var/list/real = list()
+	for(var/wire in bringers)
+		real += wire
+	var/count = def.holder_value(holder, def.count)
+	var/randomize = def.holder_value(holder, def.randomize)
 	var/datum/activation/act = cap_activation(holder, CAP_WIRES, null, TRUE)
-	var/record_type = S.record
+	var/record_type = def.record
 	W = new record_type
 	W.owner = holder // ALLOW(ownership): the record's back view of its holder, which owns the record through its wires activation
-	W.set_type = set_type
-	W.colors = S.layout_for_holder()
 	W.def = def
+	W.bringers = bringers
+	W.colors = wires_layout_for(def.name, wires_with_duds(real, count), randomize)
 	act.data = W // ALLOW(ownership): the capability's typed data, owned by the activation and dropped with it
 	if(def.starts_cut)
 		for(var/wire in call(holder, def.starts_cut)())
-			LAZYADD(W.cut, wire)
+			if(!W.is_cut(wire))
+				LAZYADD(W.cut, wire)
+				W.wire_effects(wire, "cut", null)
 	return W
 
 // ---- the record: the holder's wires, and the window ----
@@ -211,8 +417,8 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 /datum/cap_data/wires
 	/// The holder (a back view: the holder's wires activation owns this record).
 	var/datum/owner
-	/// The /datum/wire_set type.
-	var/set_type
+	/// wire -> the capabilities that brought it (their wire effects run when it is cut, mended or pulsed).
+	var/list/bringers
 	/// colour -> wire. A set that does not randomize shares the round's list: never written, replaced (wires_shuffle()).
 	var/list/colors
 	/// The cut wires (lazy).
@@ -221,6 +427,8 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	var/list/assemblies
 	/// Admin: hide what each wire is, even from those who could see it.
 	var/hide_wire_names = FALSE
+	/// REF() of the last mob that cut, mended or pulsed a wire (wires_last_user(): a lathe refreshes that hand's window when a pulse runs out).
+	var/last_user_ref
 	var/datum/capability/lib/wires/def
 
 CAPABILITIES(/datum/cap_data/wires)
@@ -232,10 +440,6 @@ CAPABILITIES(/datum/cap_data/wires)
 		req(PROC_REF(holds_multitool), because = MSG(wires/need_multitool))), then(PROC_REF(pulse_pressed)))
 	op("attach", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
 		req(PROC_REF(can_attach), because = MSG(wires/need_signaler))), then(PROC_REF(attach_pressed)))
-
-/datum/cap_data/wires/proc/wire_set()
-	RETURN_TYPE(/datum/wire_set)
-	return wire_set_def(set_type)
 
 /datum/cap_data/wires/proc/all_wires()
 	. = list()
@@ -259,11 +463,19 @@ CAPABILITIES(/datum/cap_data/wires)
 	if(owner && !QDELETED(owner))
 		changed(owner, 0, WIRES_KEY)
 
+/// Runs the wire's effects on each capability that brought it, for the event "cut", "mend" or "pulse".
+/datum/cap_data/wires/proc/wire_effects(wire, event, mob/user)
+	if(user)
+		last_user_ref = REF(user)
+	for(var/datum/capability/C as anything in bringers?[wire])
+		C.wire_event(owner, wire, event, user)
+
 /// Cuts an intact wire: TRUE when it changed.
 /datum/cap_data/wires/proc/cut_wire(wire, mob/user)
 	if(isnull(wire) || is_cut(wire))
 		return FALSE
 	LAZYADD(cut, wire)
+	wire_effects(wire, "cut", user)
 	wires_publish(owner, /datum/notice/wire_cut, wire, FALSE, user)
 	changed_wires()
 	return TRUE
@@ -273,6 +485,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	if(isnull(wire) || !is_cut(wire))
 		return FALSE
 	LAZYREMOVE(cut, wire)
+	wire_effects(wire, "mend", user)
 	wires_publish(owner, /datum/notice/wire_cut, wire, TRUE, user)
 	changed_wires()
 	return TRUE
@@ -281,6 +494,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /datum/cap_data/wires/proc/pulse_wire(wire, mob/user)
 	if(isnull(wire) || is_cut(wire))
 		return FALSE
+	wire_effects(wire, "pulse", user)
 	wires_publish(owner, /datum/notice/wire_pulsed, wire, FALSE, user)
 	return TRUE
 
@@ -318,10 +532,10 @@ CAPABILITIES(/datum/cap_data/wires)
 // ---- the window ----
 
 /datum/cap_data/wires/ui_interface(mob/user)
-	return wire_set()?.window || "Wires"
+	return def?.window || "Wires"
 
 /datum/cap_data/wires/ui_title(mob/user)
-	return "[wire_set()?.name] wires"
+	return "[def?.name] wires"
 
 /// The window follows the owner: its distance, its view.
 /datum/cap_data/wires/tgui_host()
@@ -519,14 +733,12 @@ CAPABILITIES(/datum/cap_data/wires)
 	P.op_key = wire
 	notice_publish(holder, P, ACT_COMMITTED)
 
-/// on_wire(WIRE_X, cut = PROC_REF(a), pulse = PROC_REF(b)): what one wire of the holder does. a(datum/notice/wire_cut/N) runs when it is cut
-/// and when it is mended (N.mended), b(datum/notice/wire_pulsed/N) when it takes a pulse.
-/proc/on_wire(wire, cut = null, pulse = null)
-	. = list()
-	if(cut)
-		. += on_notice(/datum/notice/wire_cut, then(cut), op = wire)
-	if(pulse)
-		. += on_notice(/datum/notice/wire_pulsed, then(pulse), op = wire)
+/// The last mob that worked a wire of `holder` (cut, mended or pulsed it), or null when it is gone.
+/proc/wires_last_user(datum/holder)
+	RETURN_TYPE(/mob)
+	var/datum/cap_data/wires/W = wiring_of(holder)
+	var/mob/user = W?.last_user_ref ? locate(W.last_user_ref) : null
+	return istype(user) && !QDELETED(user) ? user : null
 
 /// Is `wire` of `holder` cut?
 /proc/wire_is_cut(datum/holder, wire)
@@ -567,12 +779,16 @@ CAPABILITIES(/datum/cap_data/wires)
 	for(var/wire in W?.cut?.Copy())
 		. += W.mend_wire(wire)
 
-/// Every wire whole again at once, with nothing told (a malfunctioning AI's reset): the wires' effects are the caller's.
+/// Every wire whole again at once, with no notice published (a camera's reset): the capabilities that brought the wires release what the cut
+/// wires held; anything a type's own on_wire() hooks did is the caller's to undo.
 /proc/wires_repair(datum/holder)
 	var/datum/cap_data/wires/W = wiring_of(holder)
 	if(!W)
 		return
+	var/list/was_cut = W.cut
 	W.cut = null
+	for(var/wire in was_cut)
+		W.wire_effects(wire, "mend", null)
 	W.changed_wires()
 
 /// Cuts one intact wire at random: TRUE when there was one.

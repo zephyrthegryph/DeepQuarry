@@ -23,18 +23,12 @@
 CAPABILITIES(/obj/effect/mine)
 	owns_one(nameof(trap), starts = nameof(trap))
 	space(SPACE_PANEL, door = nameof(panel_open))
-	wires(/datum/wire_set/mines, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	wires(name = "Explosive Wires", count = 7, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(explode_wire_pulsed))
 	on_wire(WIRE_EXPLODE_DELAY, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(delay_wire_pulsed))
 	on_wire(WIRE_DISARM, cut = PROC_REF(disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
 	on_wire(WIRE_BADDISARM, cut = PROC_REF(bad_disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
 
-/// A mine's four working wires (and three duds), every mine its own colours: two set it off, one disarms it, one only seems to.
-/datum/wire_set/mines
-	name = "Explosive Wires"
-	count = 7
-	randomize = TRUE
-	wires = list(WIRE_EXPLODE, WIRE_EXPLODE_DELAY, WIRE_DISARM, WIRE_BADDISARM)
 
 /obj/effect/mine/proc/wire_lights()
 	return list("\[Warning: detonation may occur even with proper equipment.]")

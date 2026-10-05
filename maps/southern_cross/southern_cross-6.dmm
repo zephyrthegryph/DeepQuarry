@@ -4199,7 +4199,7 @@
 "iN" = (
 /obj/machinery/autolathe{
 	desc = "Your typical Autolathe. It appears to have much more options than your regular one, however...";
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "Unlocked Autolathe"
 	},
 /turf/unsimulated/floor{
@@ -7231,7 +7231,7 @@
 "qj" = (
 /obj/machinery/autolathe{
 	desc = "Your typical Autolathe. It appears to have much more options than your regular one, however...";
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "Thunderdome Autolathe"
 	},
 /turf/simulated/shuttle/floor/red,
@@ -11179,7 +11179,7 @@
 "zn" = (
 /obj/machinery/autolathe{
 	desc = "Your typical Autolathe. It appears to have much more options than your regular one, however...";
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "Unlocked Autolathe"
 	},
 /turf/simulated/shuttle/floor/black,
@@ -17020,7 +17020,7 @@
 /area/syndicate_station/start)
 "MC" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "hacked autolathe"
 	},
 /turf/simulated/shuttle/floor/voidcraft,
