@@ -105,7 +105,6 @@ initialize	code/game/machinery/Sleeper.dm	/obj/machinery/sleeper/survival_pod/In
 initialize	code/game/machinery/adv_med.dm	/obj/machinery/bodyscanner/Initialize(mapload)
 initialize	code/game/machinery/ai_slipper.dm	/obj/machinery/ai_slipper/Initialize(mapload)
 initialize	code/game/machinery/air_alarm.dm	/obj/machinery/alarm/Initialize(mapload)
-initialize	code/game/machinery/air_alarm.dm	/obj/machinery/alarm/server/Initialize(mapload)
 initialize	code/game/machinery/airconditioner.dm	/obj/machinery/power/thermoregulator/Initialize(mapload)
 initialize	code/game/machinery/atm_ret_field.dm	/obj/machinery/atmospheric_field_generator/perma/Initialize(mapload)
 initialize	code/game/machinery/atm_ret_field.dm	/obj/machinery/atmospheric_field_generator/Initialize(mapload)

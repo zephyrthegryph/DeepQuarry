@@ -86,9 +86,6 @@ handler_actor_check	code/modules/tgui/modules/crew_monitor.dm	data["isAI"] = isA
 handler_actor_check	code/modules/tgui/modules/law_manager.dm	if(isAI(owner()))
 handler_actor_check	code/modules/tgui/modules/law_manager.dm	data["isAI"] = isAI(owner())
 handler_actor_check	code/modules/tgui/modules/overmap.dm	if(user && !isAI(user))
-siliconaccess	code/game/machinery/air_alarm.dm	"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)),
-siliconaccess	code/game/machinery/air_alarm.dm	if(!locked || siliconaccess(user) || data["remoteUser"] || (isobserver(user) && is_admin(user)))
-siliconaccess	code/game/machinery/air_alarm.dm	if(locked && !(siliconaccess(user) || (isobserver(user) && is_admin(user))) && !istype(state, /datum/tgui_state/air_alarm_remote))
 siliconaccess	code/game/machinery/portable_turret.dm	if((!emagged && siliconaccess(L) && check_all == FALSE) || (issilicon(L) && !check_access && !check_all)) // Don't target silica, unless told to neutralize everything.
 siliconaccess	code/modules/power/apc.dm	"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),
 legacy_entry	code/ATMOSPHERICS/components/shutoff.dm	silicon_use = SILICON_USE_HAND
@@ -100,11 +97,9 @@ legacy_entry	code/ATMOSPHERICS/components/valve.dm	silicon_use = NONE
 legacy_entry	code/ATMOSPHERICS/components/valve.dm	silicon_use = SILICON_USE_HAND
 legacy_entry	code/game/dna/dna_modifier.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/gamemodes/endgame/supermatter_cascade/blob.dm	EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, INTERACT_ROBOT("Touch", PROC_REF(supermatter_wall_robot)), INTERACT_SILICON("Examine", PROC_REF(supermatter_wall_examine)), INTERACT_OBSERVER("Examine", PROC_REF(supermatter_wall_examine)), \
-legacy_entry	code/game/machinery/air_alarm.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/machinery/bluespace_denier.dm	EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", PROC_REF(bluespace_denier_silicon_trigger)))
 legacy_entry	code/game/machinery/camera/tracking.dm	EXTEND_INTERACTIONS(/obj/machinery/camera, INTERACT_SILICON("Look through", PROC_REF(camera_silicon_look)))
 legacy_entry	code/game/machinery/camera/tracking.dm	EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_SILICON("Camera list", PROC_REF(ai_silicon_camera_list)))
-legacy_entry	code/game/machinery/computer/atmos_control.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/machinery/computer/robot.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/game/machinery/computer/station_alert.dm	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(interaction_open_ui_impl)))
 legacy_entry	code/game/machinery/door_control.dm	DECLARE_INTERACTIONS(/obj/machinery/button/remote, INTERACT_SILICON("Toggle", PROC_REF(silicon_pressed)))
