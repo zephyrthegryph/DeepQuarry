@@ -48,7 +48,7 @@
 			var/static/list/acceptable_params = list("uspeech", "intelligible", "message", "name", "race", "job", "timecode")
 			var/list/parameters = list()
 			for(var/log_param in acceptable_params)
-				parameters["[log_param]"] = C.parameters["[log_param]"]
+				parameters["[log_param]"] = LAZYACCESS(C.parameters, "[log_param]")
 
 			logs.Add(list(list(
 				"name" = C.name,

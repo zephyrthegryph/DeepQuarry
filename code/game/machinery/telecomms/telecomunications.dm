@@ -584,7 +584,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 				var/mob/M = signal.data["mob"]
 
 				// Copy the signal.data entries we want
-				log.parameters["mobtype"] = signal.data["mobtype"]
+				LAZYSET(log.parameters, "mobtype", signal.data["mobtype"])
 				log.parameters["job"] = signal.data["job"]
 				log.parameters["key"] = signal.data["key"]
 				log.parameters["vmessage"] = multilingual_to_message(signal.data["message"])
@@ -675,7 +675,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 	var/identifier = num2text( rand(-1000,1000) + world.time )
 	log.name = "[input] ([md5(identifier)])"
 	log.input_type = input
-	log.parameters["message"] = content
+	LAZYSET(log.parameters, "message", content)
 	log.parameters["timecode"] = stationtime2text()
 	rel_add(src, nameof(log_entries), log)
 	update_logs()
@@ -683,7 +683,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 // Simple log entry datum
 
 /datum/comm_log_entry
-	var/parameters = list() // carbon-copy to signal.data[]
+	var/parameters // lazily populated carbon-copy to signal.data[]
 	var/name = "data packet (#)"
 	var/garbage_collector = 1 // if set to 0, will not be garbage collected
 	var/input_type = "Speech File"

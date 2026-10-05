@@ -10,7 +10,7 @@
 	var/can_login = TRUE
 	/// Whether the account is banned by the SA.
 	var/suspended = FALSE
-	var/connected_clients = list()
+	var/connected_clients
 
 	var/fullname	= "N/A"
 	var/assignment	= "N/A"

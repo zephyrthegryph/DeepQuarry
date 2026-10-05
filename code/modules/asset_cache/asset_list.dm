@@ -170,7 +170,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	/// list of assets for this datum in the form of:
 	/// asset_filename = asset_file. At runtime the asset_file will be
 	/// converted into a asset_cache datum.
-	var/assets = list()
+	var/assets
 	/// Set to true to have this asset also be sent via the legacy browse_rsc
 	/// system when cdn transports are enabled?
 	var/legacy = FALSE
@@ -190,7 +190,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		assets[asset_name] = ACI
 
 /datum/asset/simple/send(client)
-	. = SSassets.transport.send_assets(client, assets)
+	. = SSassets.transport.send_assets(client, assets || list())
 
 /datum/asset/simple/get_url_mappings()
 	. = list()
@@ -685,11 +685,11 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset/simple/namespaced/register()
 	if(legacy)
-		if(length(parents)) assets |= parents
+		if(length(parents)) LAZYOR(assets, parents)
 	var/list/hashlist = list()
 	var/list/created_items = list()
 
-	var/list/sorted_assets = sortList(assets)
+	var/list/sorted_assets = sortList(assets || list())
 	for(var/asset_name in sorted_assets)
 		var/datum/asset_cache_item/ACI = new(asset_name, sorted_assets[asset_name], prehashed_asset_hash(asset_name))
 		if (!istype(ACI) || !ACI.hash)

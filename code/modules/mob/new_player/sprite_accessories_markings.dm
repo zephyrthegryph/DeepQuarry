@@ -26,8 +26,13 @@ includes scars and tattoos
 	var/digitigrade_icon = 'icons/mob/human_races/markings_digi.dmi'
 
 	var/genetic = TRUE
-	var/body_parts = list() //A list of bodyparts this covers, in organ_tag defines
+	var/body_parts //Lazily allocated bodyparts this covers, in organ_tag defines
 	//Reminder: BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD
+
+/// Editing a marking retains its per-instance mutable zone table.
+/datum/sprite_accessory/marking/proc/body_parts_for_edit()
+	LAZYINITLIST(body_parts)
+	return body_parts
 
 //Tattoos
 

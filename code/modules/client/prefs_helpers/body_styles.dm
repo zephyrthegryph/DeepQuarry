@@ -60,7 +60,7 @@
 
 /datum/preferences/proc/mass_edit_marking_list(marking, change_on = TRUE, change_color = TRUE, marking_value = null, on = TRUE, color = "#000000")
 	var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[marking]
-	var/list/new_marking = marking_value||mark_datum.body_parts
+	var/list/new_marking = marking_value||mark_datum.body_parts_for_edit()
 	for (var/NM in new_marking)
 		if (marking_value && !islist(new_marking[NM])) continue
 		new_marking[NM] = list("on" = (!change_on && marking_value) ? marking_value[NM]["on"] : on, "color" = (!change_color && marking_value) ? marking_value[NM]["color"] : color)

@@ -15,7 +15,7 @@
 	. = ..()
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
 		var/area/asteroid/rogue/A = loc.loc
-		A.asteroid_spawns += src
+		LAZYADD(A.asteroid_spawns, src)
 
 /obj/rogue_mobspawner
 	name = "mob spawn"
@@ -29,7 +29,7 @@
 	. = ..()
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
 		var/area/asteroid/rogue/A = loc.loc
-		A.mob_spawns += src
+		LAZYADD(A.mob_spawns, src)
 
 /// Accessor for the myasteroid var.
 /obj/asteroid_spawner/proc/myasteroid() as /datum/rogue/asteroid

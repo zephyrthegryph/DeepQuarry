@@ -171,7 +171,7 @@
 			return FALSE
 		// When we are spawned from a deletion signal from our previous hotspot, this can happen
 		if(!QDELETED(location.active_hotspot))
-			qdel(location.active_hotspot)
+			own_clear(location, nameof(location.active_hotspot), OWN_DELETE)
 	rel_set(location, nameof(location.active_hotspot), src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
 
 	bypassing = !just_spawned && (volume > CELL_VOLUME*0.95)
