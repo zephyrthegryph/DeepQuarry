@@ -23,3 +23,4 @@ changes:
   - code_imp: "Retired owned soul links and downloaded Soulcatcher minds through their declared ownership."
   - code_imp: "Moved the ship engine-control thrust-limit prompt to a native request and retired replaced fires through turf ownership."
   - code_imp: "Allocated empty email, rogue-area, marking, telecom, RCON and asset lists only when needed."
+  - code_imp: "Allocated sun-visual and window asset lists at their use sites and retired unused blocking prompt wrappers."

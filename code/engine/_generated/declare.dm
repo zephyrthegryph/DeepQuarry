@@ -5723,15 +5723,15 @@
 	into += entry_line(7)
 	into += list(global.op("submit", global.ui_act("submit", global.arg("comment", global.schema_text(4096)), global.arg("rating", global.schema_text(4096))), global.then(PROC_REF(ui_act_submit))))
 
-/// CAPABILITIES(/datum/tgui_input_keycombo) at code/modules/tgui_input/keycombo.dm:79
+/// CAPABILITIES(/datum/tgui_input_keycombo) at code/modules/tgui_input/keycombo.dm:43
 /datum/tgui_input_keycombo/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/tgui_input/keycombo.dm", 79, /datum/tgui_input_keycombo)
-	into += entry_line(80)
+	into += entry_block("code/modules/tgui_input/keycombo.dm", 43, /datum/tgui_input_keycombo)
+	into += entry_line(44)
 	into += list(global.interface("KeyComboModal"))
-	into += entry_line(81)
+	into += entry_line(45)
 	into += list(global.op("submit", global.ui_act("submit", global.arg("entry", global.schema_text(4096))), global.then(PROC_REF(ui_act_submit))))
-	into += entry_line(82)
+	into += entry_line(46)
 	into += list(global.op("cancel", global.ui_act("cancel"), global.then(PROC_REF(ui_act_cancel))))
 
 /// CAPABILITIES(/datum/tgui_input_number) at code/modules/tgui_input/number.dm:101

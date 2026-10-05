@@ -44,7 +44,7 @@
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
 	var/message_queue
-	var/sent_assets = list()
+	var/sent_assets
 	// Vars passed to initialize proc (and saved for later)
 	var/initial_strict_mode
 	var/initial_fancy
@@ -295,7 +295,7 @@
 /datum/tgui_window/proc/release_lock()
 	// Clean up assets sent by tgui datum which requested the lock
 	if(locked)
-		sent_assets = list()
+		sent_assets = null
 	locked = FALSE
 	rel_clear(src, nameof(locked_by))
 
@@ -422,7 +422,7 @@
 /datum/tgui_window/proc/send_asset(datum/asset/asset)
 	if(!client() || !asset)
 		return
-	sent_assets |= list(asset)
+	LAZYOR(sent_assets, list(asset))
 	. = asset.send(client())
 	if(istype(asset, /datum/asset/spritesheet))
 		var/datum/asset/spritesheet/spritesheet = asset

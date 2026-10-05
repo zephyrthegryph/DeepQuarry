@@ -1,0 +1,37 @@
+/// Real sun constructors and isolated appearance cascades; no world lighting claim.
+/datum/unit_test/round2_sun_visual_lazy_lists/Run()
+	test_driver_begin()
+	exercise_visuals()
+	test_driver_end()
+
+/datum/unit_test/round2_sun_visual_lazy_lists/proc/exercise_visuals()
+	var/atom/movable/sun_visuals/sun = allocate(/atom/movable/sun_visuals)
+	var/atom/movable/sun_visuals/control = allocate(/atom/movable/sun_visuals)
+	var/list/keys = list("1", "2", "4", "8", "i5", "i6", "i9", "i10", "o5", "o6", "o9", "o10")
+	TEST_ASSERT(sun != control && !QDELETED(sun) && !QDELETED(control), "two actual constructors produce independent live suns")
+	TEST_ASSERT_EQUAL(LAZYLEN(sun.spreads), 12, "real initializer creates exactly twelve keyed overlays")
+	TEST_ASSERT_EQUAL(LAZYLEN(control.spreads), 12, "independent initializer also creates twelve keyed overlays")
+	TEST_ASSERT_EQUAL(length(contents_of(sun)), 12, "all twelve real overlays remain located inside their producing sun")
+	TEST_ASSERT_EQUAL(length(contents_of(control)), 12, "control has its own exact twelve real children")
+	TEST_ASSERT(isnull(sun.turfs_providing_spreads) && isnull(control.turfs_providing_spreads), "unused turf bookkeeping stays unallocated")
+	for(var/key in keys)
+		var/atom/movable/sun_visuals_overlap/overlay = sun.spreads[key]
+		var/atom/movable/sun_visuals_overlap/other = control.spreads[key]
+		TEST_ASSERT(istype(overlay) && istype(other) && overlay != other, "each expected key holds distinct actual overlap objects")
+		TEST_ASSERT_EQUAL(overlay.loc, sun, "each selected child retains actual sun location")
+		TEST_ASSERT_EQUAL(other.loc, control, "each control child retains actual control location")
+	control.set_color("#654321")
+	control.set_alpha(88)
+	sun.set_color("#123456")
+	sun.set_alpha(77)
+	TEST_ASSERT_EQUAL(sun.color, "#123456", "actual color setter updates producing sun")
+	TEST_ASSERT_EQUAL(sun.alpha, 77, "actual alpha setter updates producing sun")
+	TEST_ASSERT_EQUAL(control.color, "#654321", "control sun keeps its independently assigned color")
+	TEST_ASSERT_EQUAL(control.alpha, 88, "control sun keeps its independently assigned alpha")
+	for(var/key in keys)
+		var/atom/movable/sun_visuals_overlap/overlay = sun.spreads[key]
+		var/atom/movable/sun_visuals_overlap/other = control.spreads[key]
+		TEST_ASSERT_EQUAL(overlay.color, "#123456", "actual color cascade reaches each original keyed child")
+		TEST_ASSERT_EQUAL(overlay.alpha, 77, "actual alpha cascade reaches each original keyed child")
+		TEST_ASSERT_EQUAL(other.color, "#654321", "independent child color retains the control assignment")
+		TEST_ASSERT_EQUAL(other.alpha, 88, "independent child alpha retains the control assignment")

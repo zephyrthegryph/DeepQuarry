@@ -1036,6 +1036,7 @@
 #include "round2_mob_spawner_settings_effect.dm"
 #include "round2_owned_soul_link_retirement.dm"
 #include "round2_hotspot_replacement_retirement.dm"
+#include "round2_sun_visual_lazy_lists.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
