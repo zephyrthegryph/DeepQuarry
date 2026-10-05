@@ -116,7 +116,7 @@ fn register(b: &mut WorldBuilder) -> Fields {
     use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
     use vg_power::kind::Cables;
     use vg_power::laws::{
-        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInputApply, SmesInputPlan,
+        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan,
         SmesOutputApply, SmesOutputPlan,
     };
     b.add_component::<Producer>();
@@ -135,8 +135,9 @@ fn register(b: &mut WorldBuilder) -> Fields {
         .after::<ProducerCredit>()
         .after::<SmesOutputPlan>();
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
-    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
-    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
+    let _ = b.add_law::<SmesFlowReset>().after::<PowerReset>();
+    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
+    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
 
     // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
     // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). The devices

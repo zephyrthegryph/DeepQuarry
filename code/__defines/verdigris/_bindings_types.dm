@@ -1006,6 +1006,9 @@
 #define VG_SMES_FIELD_CAPACITY 4
 #define VG_SMES_FIELD_RATE 5
 #define VG_SMES_FIELD_CHARGE 6
+#define VG_SMES_FIELD_OUTPUT_USED 7
+#define VG_SMES_FIELD_INPUT_USED 8
+#define VG_SMES_FIELD_INPUT_AVAILABLE 9
 
 /obj/machinery/power/smes
 	vg_power = VG_POWER_SMES
@@ -1058,6 +1061,18 @@
 /// J, read-only (state).
 /obj/machinery/power/smes/proc/get_charge()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
+
+/// W, read-only (state).
+/obj/machinery/power/smes/proc/get_output_used()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_USED, 0) // W
+
+/// W, read-only (state).
+/obj/machinery/power/smes/proc/get_input_used()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_USED, 0) // W
+
+/// W, read-only (state).
+/obj/machinery/power/smes/proc/get_input_available()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_AVAILABLE, 0) // W
 
 /// Take reconciliation (power_smes_charge): adds `delta` to what Rust holds now;
 /// returns the part of a removal that was not there.
