@@ -184,7 +184,8 @@ GLOBAL_LIST_EMPTY(heat_edge_records_of)
 
 /// A movable moved: the edges that name its air or its hull are re-made on the new turf.
 /proc/heat_followers_moved(atom/movable/M)
-	for(var/datum/heat_edge_record/R as anything in GLOB.heat_followers_of[M]?.Copy())
+	var/list/records = GLOB.heat_followers_of[M]
+	for(var/datum/heat_edge_record/R as anything in records?.Copy())
 		heat_entry_unmake(R)
 		heat_entry_make(R)
 
