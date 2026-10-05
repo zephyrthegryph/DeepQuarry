@@ -1261,13 +1261,40 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		if(value == sensor_mode)
 			default_choice = key
 			break
-	var/switchMode = rerun_ask(user, "a1", PROC_REF(set_sensors), args, /datum/om/prompt/choice, message = "Select a sensor mode:", title = "Suit Sensor Mode", choices = modes, default = default_choice)
-	if(isnull(switchMode))
+	open_request(src, /datum/prompt/choice/suit_sensor_mode, PROC_REF(sensor_mode_answered), answerer = user, choices = modes, default = default_choice)
+
+/obj/item/clothing/under/proc/sensor_mode_refusal(mob/user, check_distance)
+	if(istype(user, /mob/observer) || user.stat || user.restrained())
+		return "sensor user unavailable"
+	if(has_sensor >= 2)
+		return "sensor controls locked"
+	if(has_sensor <= 0)
+		return "no suit sensors"
+	if(check_distance && get_dist(user, src) > 1)
+		return "too far from suit"
+	return null
+
+/obj/item/clothing/under/proc/sensor_mode_answered(datum/act/request/context)
+	var/datum/prompt/choice/suit_sensor_mode/ask = context.request
+	var/mob/user = ask.answerer
+	if(QDELETED(user))
 		return
-	if(get_dist(user, src) > 1)
-		to_chat(user, "You have moved too far away.")
+	if(!context.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.answer_value))
+			switch(ask.last_error)
+				if("sensor controls locked")
+					to_chat(user, "The controls are locked.")
+				if("no suit sensors")
+					to_chat(user, "This suit does not have any sensors.")
+				if("too far from suit")
+					to_chat(user, "You have moved too far away.")
+			SStgui.update_uis(src)
 		return
-	sensor_mode = modes[switchMode]
+	apply_sensor_mode(user, ask.choices[ask.answer_value])
+	SStgui.update_uis(src)
+
+/obj/item/clothing/under/proc/apply_sensor_mode(mob/user, new_mode)
+	sensor_mode = new_mode
 
 	if (src.loc == user)
 		switch(sensor_mode)
@@ -1283,6 +1310,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 	else if (istype(src.loc, /mob))
 		act_message(user, null, MSG_SELF("You adjust [src.loc]'s sensors."), MSG_OTHERS("%U% adjusts [src.loc]'s sensors."))
+
 
 /// Old verb "Toggle Suit Sensors".
 /obj/item/clothing/under/proc/under_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1578,3 +1606,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 
 /obj/item/clothing/shoes/muffles_death_of(mob/occupant)
 	return TRUE
+
+/datum/prompt/choice/suit_sensor_mode
+	question = "Select a sensor mode:"
+	title = "Suit Sensor Mode"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/suit_sensor_mode/recheck_extra()
+	var/obj/item/clothing/under/suit = owner
+	if(!istype(suit) || QDELETED(suit) || QDELETED(answerer))
+		return "gone"
+	return suit.sensor_mode_refusal(answerer, !isnull(answer_value))

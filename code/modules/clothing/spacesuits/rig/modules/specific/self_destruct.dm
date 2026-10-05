@@ -39,11 +39,40 @@ CAPABILITIES(/obj/item/rig_module/self_destruct)
 		engage(1)
 
 /obj/item/rig_module/self_destruct/engage(skip_check, notify_ai = FALSE, mob/user)
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(engage), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to push that button?", title = "Self-destruct", choices = list("No", "Yes"))
-	if(isnull(_answer_a1))
+	// The automatic no-user call could not open the old rerun question either.
+	if(!ismob(user))
 		return
-	if(!skip_check && user && _answer_a1 != "Yes")
+	var/atom/original_target = isatom(skip_check) ? skip_check : null
+	open_request(src, /datum/prompt/choice/rig_self_destruct, PROC_REF(self_destruct_answered), answerer = user, subject = original_target, original_target_expected = !isnull(original_target), skip_check = !!skip_check)
+
+/datum/prompt/choice/rig_self_destruct
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+	title = "Self-destruct"
+	question = "Are you sure you want to push that button?"
+	choices = list("No", "Yes")
+	var/original_target_expected = FALSE
+	var/skip_check = FALSE
+
+/datum/prompt/choice/rig_self_destruct/recheck_extra()
+	var/mob/user = answerer
+	if(!istype(user) || QDELETED(user))
+		return "gone"
+	var/atom/original_target = subject
+	if(original_target_expected && (!original_target || QDELETED(original_target)))
+		return "gone"
+	return null
+
+/obj/item/rig_module/self_destruct/proc/self_destruct_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/prompt/choice/rig_self_destruct/ask = A.request
+	if(ask.skip_check || ask.answer_value == "Yes")
+		self_destruct_detonate()
+	SStgui.update_uis(src)
+
+/obj/item/rig_module/self_destruct/proc/self_destruct_detonate()
 	if(holder && holder.wearer())
 		smoke.set_up(10, 0, holder.loc)
 		for(var/i = 1 to smoke_strength)

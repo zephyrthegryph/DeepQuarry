@@ -261,7 +261,16 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_rename)
 	if(!authenticated)
 		return
 	if(copyitem)
-		var/new_name = act_ask(ui.user, action, params, ui, "k258", /datum/om/prompt/text, message = "Enter new paper title", title = "This will show up in the preview for staff chat on discord when sending to central.", default = copyitem.name, max_length = MAX_NAME_LEN)
+		if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
+			return
+		open_request(ui, /datum/prompt/text/fax_paper_title, TYPE_PROC_REF(/datum/tgui, fax_paper_title_answered), answerer = ui.user, default = copyitem.name)
+		return
+	return TRUE
+
+/obj/machinery/photocopier/faxmachine/proc/apply_paper_title(new_name)
+	if(!authenticated)
+		return
+	if(copyitem)
 		if(isnull(new_name))
 			return
 		if(!new_name)
@@ -289,11 +298,15 @@ UI_ACT(/obj/machinery/photocopier/faxmachine, "dept", ui_act_dept)
 UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	if(!authenticated)
 		return
-	var/lastdestination = destination
-	var/_answer_k276 = act_ask(ui.user, action, params, ui, "k276", /datum/om/prompt/choice, message = "Which department?", title = "Choose a department", choices = (GLOB.alldepartments + GLOB.admin_departments))
-	if(isnull(_answer_k276))
+	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
 		return
-	destination = _answer_k276
+	open_request(ui, /datum/prompt/choice/fax_department, TYPE_PROC_REF(/datum/tgui, fax_department_answered), answerer = ui.user, choices = (GLOB.alldepartments + GLOB.admin_departments))
+
+/obj/machinery/photocopier/faxmachine/proc/apply_department_answer(selected_department)
+	if(!authenticated)
+		return
+	var/lastdestination = destination
+	destination = selected_department
 	if(!destination)
 		destination = lastdestination
 	return TRUE
@@ -664,3 +677,60 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 /obj/machinery/photocopier/faxmachine/ownership()
 	. = ..()
 	. += owns(nameof(scan), policy = OWN_CONTAINED)
+
+/datum/tgui/proc/fax_paper_title_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/photocopier/faxmachine/fax = src_object()
+	if(fax.apply_paper_title(context.answer.answer_value))
+		SStgui.update_uis(fax)
+
+/datum/prompt/text/fax_paper_title
+	question = "Enter new paper title"
+	title = "This will show up in the preview for staff chat on discord when sending to central."
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/fax_paper_title/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/fax_paper_title/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/photocopier/faxmachine/fax = original_ui.src_object()
+	if(!istype(fax) || QDELETED(fax))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!fax.ui_act_allowed(original_ui.user, "rename", original_ui, original_ui.state()))
+		return "the paper title action is unavailable"
+	return null
+
+/datum/tgui/proc/fax_department_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/obj/machinery/photocopier/faxmachine/fax = src_object()
+	if(fax.apply_department_answer(context.answer.answer_value))
+		SStgui.update_uis(fax)
+
+/datum/prompt/choice/fax_department
+	question = "Which department?"
+	title = "Choose a department"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/fax_department/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/photocopier/faxmachine/fax = original_ui.src_object()
+	if(!istype(fax) || QDELETED(fax))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!fax.ui_act_allowed(original_ui.user, "dept", original_ui, original_ui.state()))
+		return "the department action is unavailable"
+	return null
