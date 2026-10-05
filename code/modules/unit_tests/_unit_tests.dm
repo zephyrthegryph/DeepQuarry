@@ -1085,6 +1085,10 @@
 
 #include "round2_changeling_sting_continuation.dm"
 
+#include "round2_lion_cached_mane_parity.dm"
+
+#include "round2_silicon_album_delete.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

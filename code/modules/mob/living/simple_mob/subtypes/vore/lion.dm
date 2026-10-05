@@ -49,37 +49,58 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 	var/has_mane = TRUE
-	var/image/mane_overlay
+	var/mutable_appearance/mane_overlay
 	var/mane_living = "mane"
 	var/mane_dead = "mane-dead"
 	var/mane_rest = "mane_rest"
 	var/mane_color = "#FFFFFF"
 
+/// Cached immutable mane appearances; player recolours have a bounded shared store.
+DECLARE_SHARED_CACHE_EX(lion_mane, GLOBAL_PROC_REF(build_lion_mane), SC_NEVER, 1024, 0)
+
+/proc/cached_lion_mane(mane_icon, state, tint, flags)
+	if(!isfile(mane_icon))
+		return build_lion_mane(mane_icon, state, tint, flags)
+	var/key = json_encode(list("[mane_icon]", state, tint, flags))
+	return CACHED_KEY(lion_mane, key, mane_icon, state, tint, flags)
+
+/proc/build_lion_mane(mane_icon, state, tint, flags)
+	var/static/image/scratch = image(null)
+	scratch.icon = mane_icon
+	scratch.icon_state = state
+	scratch.color = tint
+	scratch.plane = PLANE_LIGHTING_ABOVE
+	scratch.appearance_flags = flags
+	return scratch.appearance
+
 /mob/living/simple_mob/vore/retaliate/lion/proc/add_mane()
+	var/mane_icon = icon
+	var/mane_state
 	if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)))
 		if(!vore_fullness || !(vore_icons & SA_ICON_LIVING))
-			mane_overlay = image(icon, "[mane_living]")
+			mane_state = "[mane_living]"
 		else
-			mane_overlay = image(icon, "[mane_living]-[vore_fullness]")
+			mane_state = "[mane_living]-[vore_fullness]"
 	else if(stat >= DEAD)
 		if(!vore_fullness || !(vore_icons & SA_ICON_DEAD))
-			mane_overlay = image(icon, "[mane_dead]")
+			mane_state = "[mane_dead]"
 		else
-			mane_overlay = image(icon, "[mane_dead]-[vore_fullness]")
+			mane_state = "[mane_dead]-[vore_fullness]"
 	else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest)
 		if(!vore_fullness || !(vore_icons & SA_ICON_REST))
-			mane_overlay = image(icon, "[mane_rest]")
+			mane_state = "[mane_rest]"
 		else
-			mane_overlay = image(icon, "[mane_rest]-[vore_fullness]")
-	mane_overlay.color = mane_color
-	mane_overlay.plane = PLANE_LIGHTING_ABOVE
-	mane_overlay.appearance_flags = appearance_flags | RESET_COLOR
+			mane_state = "[mane_rest]-[vore_fullness]"
+	else
+		// No state branch selected: retain the previous visual, then apply the current tint and flags.
+		mane_icon = mane_overlay.icon
+		mane_state = mane_overlay.icon_state
+	mane_overlay = cached_lion_mane(mane_icon, mane_state, mane_color, appearance_flags | RESET_COLOR)
 	add_overlay(mane_overlay)
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/remove_mane()
 	if(mane_overlay)
 		cut_overlay(mane_overlay)
-		qdel(mane_overlay)
 		mane_overlay = null
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_REF(/atom, appearance_overlays), list())

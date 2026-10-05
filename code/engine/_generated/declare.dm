@@ -8603,15 +8603,15 @@
 	into += entry_line(362)
 	into += list(global.verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE))
 
-/// CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion) at code/modules/mob/living/simple_mob/subtypes/vore/lion.dm:131
+/// CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion) at code/modules/mob/living/simple_mob/subtypes/vore/lion.dm:152
 /mob/living/simple_mob/vore/retaliate/lion/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/lion.dm", 131, /mob/living/simple_mob/vore/retaliate/lion)
-	into += entry_line(132)
+	into += entry_block("code/modules/mob/living/simple_mob/subtypes/vore/lion.dm", 152, /mob/living/simple_mob/vore/retaliate/lion)
+	into += entry_line(153)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE))
-	into += entry_line(133)
+	into += entry_line(154)
 	into += list(global.verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE))
-	into += entry_line(134)
+	into += entry_line(155)
 	into += list(global.verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color, login = TRUE))
 
 /// CAPABILITIES(/mob/living/simple_mob/vore/scel) at code/modules/mob/living/simple_mob/subtypes/vore/scel.dm:85
