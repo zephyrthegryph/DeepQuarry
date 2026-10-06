@@ -118,6 +118,12 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 /obj/machinery/gravity_generator/part
 	var/tmp/obj/machinery/gravity_generator/main/main_part
 
+/obj/machinery/gravity_generator/part
+	/// The charge overlay the main part shows on this, its middle part.
+	var/shown_overlay
+
+TRACKED(/obj/machinery/gravity_generator/part, shown_overlay)
+
 CAPABILITIES(/obj/machinery/gravity_generator/part)
 	ref_one(nameof(main_part), /obj/machinery/gravity_generator/main)
 	op("use", hand(), label("Use"), wait(0), when(req_empty_hand()), then(PROC_REF(forward_hand)))
@@ -134,15 +140,14 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 /// The middle part shows the generator's charge.
 /obj/machinery/gravity_generator/part/draw(datum/look/look)
 	..()
-	if(main_part && main_part.middle == src && main_part.current_overlay) // ALLOW(sys_dx_untracked_read): the main part redraws its middle when its charge overlay changes
-		look.overlay(main_part.current_overlay)
+	look.overlay(shown_overlay, when = shown_overlay)
 
 /obj/machinery/gravity_generator/part/get_status()
 	return main_part?.get_status()
 
 /obj/machinery/gravity_generator/part/atom_break(damage_flag)
 	. = ..()
-	if(main_part && !(main_part.stat & BROKEN))
+	if(main_part && !main_part.has_stat(BROKEN))
 		main_part.atom_break(damage_flag)
 
 //
@@ -155,7 +160,9 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 /obj/machinery/gravity_generator/main/station/Initialize(mapload)
 	. = ..()
 	setup_parts()
-	middle?.update_icon()
+	var/obj/machinery/gravity_generator/part/M = middle
+	if(istype(M))
+		M.set_shown_overlay(current_overlay)
 
 //
 // Generator an admin can spawn
@@ -190,6 +197,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 
 TRACKED(/obj/machinery/gravity_generator/main, charging_state)
 TRACKED(/obj/machinery/gravity_generator/main, broken_state)
+TRACKED(/obj/machinery/gravity_generator/main, current_overlay)
 
 // The main part: its window and breaker, its eight parts (owned), and its spin (spin_step(), every machine service interval while it spins
 // and is whole).
@@ -213,8 +221,10 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 /obj/machinery/gravity_generator/main/proc/set_charge_overlay(overlay_state)
 	if(overlay_state == current_overlay)
 		return
-	current_overlay = overlay_state
-	middle?.update_icon()
+	set_current_overlay(overlay_state)
+	var/obj/machinery/gravity_generator/part/M = middle
+	if(istype(M))
+		M.set_shown_overlay(overlay_state)
 
 /// Finds its levels and areas, once the overmap sectors exist.
 /obj/machinery/gravity_generator/main/proc/find_levels(datum/act/A) //Needs to happen after overmap sectors are initialized so we can figure out where we are
