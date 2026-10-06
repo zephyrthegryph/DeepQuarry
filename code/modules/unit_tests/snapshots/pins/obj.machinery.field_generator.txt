@@ -1,0 +1,40 @@
+human|none menu: Activate (refused: needs to be firmly secured to the floor first)
+human|none menu: Climb
+human|none click: nothing
+robot|none menu: Activate (refused: needs to be firmly secured to the floor first)
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Activate (refused: needs to be firmly secured to the floor first)
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id click: nothing
+keys: climb.climb, climb.climb_menu, field_generator_activate, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+
