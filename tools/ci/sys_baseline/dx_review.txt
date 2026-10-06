@@ -161,8 +161,6 @@ nameof_unrelated	code/game/machinery/computer/timeclock.dm	own_take(src, nameof(
 nameof_unrelated	code/game/machinery/jukebox.dm	rel_set(src, nameof(/obj/item/walkpod::current_track), T)
 nameof_unrelated	code/game/machinery/spaceheater.dm	own_take(src, nameof(/obj/mecha::cell))
 nameof_unrelated	code/game/machinery/suit_storage/suit_cycler.dm	own_take(src, nameof(/obj/item/rig::helmet))
-nameof_unrelated	code/modules/admin/modify_robot.dm	rel_set(src, nameof(/datum/accessory_stat_modifier::target), new_target_arg)
-nameof_unrelated	code/modules/admin/modify_robot.dm	own_clear(src, nameof(/datum/admin_rank::source), OWN_DELETE)
 nameof_unrelated	code/modules/economy/ATM.dm	rel_set(src, nameof(/obj/machinery/account_database::held_card), I)
 nameof_unrelated	code/modules/library/lib_machines.dm	rel_set(src, nameof(/datum/om/edge::cache), B)
 nameof_unrelated	code/modules/library/lib_machines.dm	rel_clear(src, nameof(/datum/om/edge::cache))
