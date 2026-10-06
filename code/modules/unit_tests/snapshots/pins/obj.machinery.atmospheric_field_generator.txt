@@ -4,14 +4,18 @@ robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_multitool, use_welder, use_wirecutter
 

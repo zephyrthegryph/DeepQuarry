@@ -20,21 +20,11 @@
 #define ORION_SCREEN_GAMEOVER   "gameover"
 
 
-/obj/machinery/computer/arcade/orion_trail/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/orion_trail_use,
-	)
-	..()
-
 // structured TGUI Orion Trail; the upstream attack_hand's
 // game-over side effects (death, ignite_mob etc. when emagged) still
 // run here, then the panel opens.
-/datum/interaction/machine_hand/orion_trail_use
-	id = "orion_trail_use"
-	name = "Use"
-	effect = /obj/machinery/computer/arcade/orion_trail/proc/interaction_use
-
-/obj/machinery/computer/arcade/orion_trail/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/arcade/orion_trail/proc/interaction_use(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(fuel <= 0 || food <= 0 || settlers.len == 0)
 		gameStatus = ORION_STATUS_GAMEOVER
 		event = null
@@ -105,6 +95,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
 	interface("OrionTrail", title = "The Orion Trail", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	ui_shape(screen = schema_text(), reasons = list_of(), event_html = any, turn = num(), stop_name = any, stop_blurb = any, crew = list_of(), food = num(), fuel = num(), engine = num(), hull = num(), electronics = num(), at_blackhole = bool())
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_menu(datum/act/op/A)
 	orion_menu(A.actor)

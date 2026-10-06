@@ -18,19 +18,11 @@
 	name = T_BOARD("slime processor")
 	build_path = /obj/machinery/processor
 
-/obj/machinery/processor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/processor_start,
-		/datum/interaction/machine_verb/processor_eject,
-		/datum/interaction/machine_drag/processor_insert,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/processor_start
-	id = "processor_start"
-	name = "Start"
-	effect = /obj/machinery/processor/proc/interaction_start
-	also_requires = list(REQ_FIELD_NOT("processing", "the processor is in the process of processing"))
+EXTEND_INTERACTIONS(/obj/machinery/processor, \
+	INTERACT_HAND_UNGATED("Start", PROC_REF(interaction_start), REQ_FIELD_NOT("processing", "the processor is in the process of processing")), \
+	INTERACT_VERB("Eject Processor", PROC_REF(interaction_eject), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
+	INTERACT_DRAG("Insert", PROC_REF(interaction_insert)), \
+)
 
 /obj/machinery/processor/proc/interaction_start(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(length(to_be_processed))
@@ -42,13 +34,6 @@
 	return TRUE
 
 // Verb to remove everything.
-/datum/interaction/machine_verb/processor_eject
-	id = "processor_eject"
-	name = "Eject Processor"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/processor/proc/interaction_eject
-
 /obj/machinery/processor/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !user.canmove || user.restrained())
 		return TRUE
@@ -135,11 +120,6 @@
 			return FALSE
 		return TRUE
 	return FALSE
-
-/datum/interaction/machine_drag/processor_insert
-	id = "processor_insert"
-	name = "Insert"
-	effect = /obj/machinery/processor/proc/interaction_insert
 
 /obj/machinery/processor/proc/interaction_insert(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
 	var/atom/movable/AM = dropping

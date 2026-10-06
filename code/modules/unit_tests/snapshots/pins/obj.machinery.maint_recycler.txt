@@ -12,7 +12,8 @@ human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Insert (refused: its door isn't open)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Insert (refused: its door isn't open)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: nothing
@@ -38,5 +39,5 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Insert (refused: its door isn't open)
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: close, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, maint_recycler_insert, maint_recycler_use, open, recycle
+keys: close, eject, gen_drag_interaction_drag_buckle, gen_hand_interaction_use, gen_insert_interaction_attackby, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open, recycle, use_crowbar
 

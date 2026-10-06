@@ -119,33 +119,10 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 /obj/machinery/computer/guestpass/proc/roll_uid(datum/roller/R)
 	return "[R.number(100, 999)]-G[R.number(10, 99)]"
 
-/obj/machinery/computer/guestpass/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/guestpass_reject_guest_card,
-		/datum/interaction/machine_item/guestpass_insert_id,
-		/datum/interaction/machine_verb/guestpass_eject_id,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// A guest pass itself is refused.
-/datum/interaction/machine_item/guestpass_reject_guest_card
-	id = "guestpass_reject_guest_card"
-	name = "Insert ID"
-	held_type = /obj/item/card/id/guest
-	effect = /obj/machinery/computer/guestpass/proc/interaction_reject_guest_card
-
-/obj/machinery/computer/guestpass/proc/interaction_reject_guest_card(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/guestpass/proc/interaction_reject_guest_card(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("The guest pass terminal denies to accept the guest pass."))
 	return TRUE
-
-/// Insert an ID card to use as the source of grantable accesses.
-/datum/interaction/machine_item/guestpass_insert_id
-	id = "guestpass_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/guestpass/proc/can_insert_id))
-	effect = /obj/machinery/computer/guestpass/proc/interaction_insert_id
 
 /// Requirement: checking for power here so crowbar and screwdriver and stuff still work.
 /obj/machinery/computer/guestpass/proc/can_insert_id(mob/user, atom/target, obj/item/held)
@@ -153,20 +130,37 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 		return "the terminal refuses your ID as it is unpowered"
 	return TRUE
 
-/obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_insert_id): the legacy check answers TRUE to pass.
+/obj/machinery/computer/guestpass/proc/can_insert_id_holds(datum/act/op/A)
+	var/answer = can_insert_id(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_insert_id_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/guestpass/proc/can_insert_id_refusal(datum/act/op/A)
+	var/answer = can_insert_id(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/computer/guestpass/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!giver && move_into(src, nameof(src.giver), held, user))
 		SStgui.update_uis(src)
 	else if(giver)
 		to_chat(user, span_warning("There is already ID card inside."))
 	return TRUE
 
-/datum/interaction/machine_verb/guestpass_eject_id
-	id = "guestpass_eject_id"
-	name = "Eject ID Card"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/computer/guestpass/proc/interaction_eject_id
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/computer/guestpass/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/computer/guestpass/proc/interaction_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/guestpass/proc/dq_actor_can_act_refusal(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return istext(answer) ? answer : "you can't do that right now"
+
+/obj/machinery/computer/guestpass/proc/interaction_eject_id(datum/act/op/A)
+	var/mob/user = A.actor
 	if(giver)
 		to_chat(user, span_notice("You remove \the [giver] from \the [src]."))
 		giver.forceMove(get_turf(src))
@@ -191,6 +185,9 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 	op("issue", ui_act("issue"), then(PROC_REF(ui_act_issue)))
 	rolls(nameof(uid), PROC_REF(roll_uid))
+	op("reject_guest_card", item(/obj/item/card/id/guest), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_reject_guest_card)))
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), needs(req(PROC_REF(can_insert_id_holds), because = PROC_REF(can_insert_id_refusal))), then(PROC_REF(interaction_insert_id)))
+	op("eject_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject ID Card"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_id)))
 
 /obj/machinery/computer/guestpass/ui_data(datum/act/eval/A)
 	var/list/data = list()

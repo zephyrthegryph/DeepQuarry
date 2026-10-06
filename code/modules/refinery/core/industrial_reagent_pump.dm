@@ -51,16 +51,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/ato
 		filling.color = reagents.get_color()
 		. += filling
 
-/obj/machinery/reagent_refinery/pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/reagent_pump_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/reagent_pump_use
-	id = "reagent_pump_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use
+EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/pump, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_reagent_pump_use)), \
+)
 
 /obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_set_transfer_amount(user, held, interaction)

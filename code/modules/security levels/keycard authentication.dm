@@ -27,9 +27,11 @@
 	to_chat(user, span_warning("A firewall prevents you from interfacing with this device!"))
 	return TRUE
 
-/obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/keycard_auth/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, "You remove the faceplate from the [src]")
@@ -122,6 +124,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
 	var/list/data = list()

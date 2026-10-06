@@ -17,6 +17,7 @@ human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Ui open
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
@@ -37,5 +38,5 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Ui open
-keys: add_cartridge, add_queue, add_recipe, bottle_product, change_bottle_style, change_patch_style, change_pill_style, clear_queue, drug_form, eject_catalyst, emergency_stop, exp_recipe, gen_drag_interaction_drag_buckle, gen_observer_chem_synthesizer_ghost_view, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, mode_toggle, panel_toggle, rem_queue, rem_recipe, set_catalyst, start_queue, toggle_catalyst, ui_open
+keys: add_cartridge, add_queue, add_recipe, bottle_product, change_bottle_style, change_patch_style, change_pill_style, clear_queue, drug_form, eject_catalyst, emergency_stop, exp_recipe, gen_drag_interaction_drag_buckle, gen_observer_chem_synthesizer_ghost_view, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, mode_toggle, panel_toggle, rem_queue, rem_recipe, set_catalyst, start_queue, toggle_catalyst, ui_open, use_wrench
 

@@ -50,6 +50,9 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 	op("take", hand(), when(req_empty_hand()), label("Take fuel rod"), ungated(), wait(0),
 		needs(req_is(nameof(injecting), FALSE, because = MSG(fuel_injector/running)), req_is(nameof(cur_assembly), TRUE, because = MSG(fuel_injector/no_rod))),
 		then(PROC_REF(rod_taken)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/fusion_fuel_injector/Initialize(mapload)
 	. = ..()
@@ -109,20 +112,23 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 	to_chat(user, span_warning("Shut \the [src] off first!"))
 	return FALSE
 
-/obj/machinery/fusion_fuel_injector/wrench_act(mob/user, obj/item/W)
+/obj/machinery/fusion_fuel_injector/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!maintenance_available(user))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/fusion_fuel_injector/screwdriver_act(mob/user, obj/item/W)
+/obj/machinery/fusion_fuel_injector/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!maintenance_available(user))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/fusion_fuel_injector/crowbar_act(mob/user, obj/item/W)
+/obj/machinery/fusion_fuel_injector/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!maintenance_available(user))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/fusion_fuel_injector/proc/BeginInjecting()
 	if(!injecting && cur_assembly)

@@ -35,31 +35,16 @@ CAPABILITIES(/obj/machinery/papershredder)
 	default_apply_parts()
 	update_icon()
 
-/obj/machinery/papershredder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/papershredder_empty_into,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/papershredder_shred,
-		/datum/interaction/machine_verb/papershredder_empty,
-	)
-	..()
-
-/datum/interaction/machine_item/papershredder_empty_into
-	id = "papershredder_empty_into"
-	name = "Empty into"
-	category = INTERACTION_CAT_EJECT
-	held_type = /obj/item/storage
-	effect = /obj/machinery/papershredder/proc/interaction_empty_into
+EXTEND_INTERACTIONS(/obj/machinery/papershredder, \
+	INTERACT_INSERT(/obj/item/storage, PROC_REF(interaction_empty_into), "Empty into"), \
+	INTERACT_INSERT(/obj/item/storage/part_replacer, TYPE_PROC_REF(/obj/machinery, interaction_part_replacement), "Replace parts"), \
+	INTERACT_INSERT(list(/obj/item/photo, /obj/item/shreddedp, /obj/item/paper, /obj/item/newspaper, /obj/item/card/id, /obj/item/paper_bundle), PROC_REF(interaction_shred), "Shred"), \
+	INTERACT_VERB("Empty bin", PROC_REF(interaction_empty), REQ_ON(PRED_ACTOR, /obj/machinery/papershredder/proc/actor_can_empty, "you can't do that right now"), REQ_ON(PRED_TARGET, /obj/machinery/papershredder/proc/has_paper, "it is empty")), \
+)
 
 /obj/machinery/papershredder/proc/interaction_empty_into(mob/living/user, obj/item/storage/W, datum/interaction/interaction)
 	empty_bin(user, W)
 	return TRUE
-
-/datum/interaction/machine_item/papershredder_shred
-	id = "papershredder_shred"
-	name = "Shred"
-	held_type = list(/obj/item/photo, /obj/item/shreddedp, /obj/item/paper, /obj/item/newspaper, /obj/item/card/id, /obj/item/paper_bundle)
-	effect = /obj/machinery/papershredder/proc/interaction_shred
 
 /obj/machinery/papershredder/proc/interaction_shred(mob/living/user, obj/item/W, datum/interaction/interaction)
 	var/paper_result
@@ -87,13 +72,6 @@ CAPABILITIES(/obj/machinery/papershredder)
 		update_icon()
 		return TRUE
 	return FALSE
-
-/datum/interaction/machine_verb/papershredder_empty
-	id = "papershredder_empty"
-	name = "Empty bin"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/papershredder/proc/actor_can_empty, "you can't do that right now"), REQ_ON(PRED_TARGET, /obj/machinery/papershredder/proc/has_paper, "it is empty"))
-	effect = /obj/machinery/papershredder/proc/interaction_empty
 
 /obj/machinery/papershredder/proc/actor_can_empty(mob/actor, atom/target, obj/item/held)
 	return !(actor.stat || actor.restrained() || actor.has_status(STAT_WEAKENED) || actor.has_status(STAT_PARALYZED) || actor.lying || actor.has_status(STAT_STUNNED))

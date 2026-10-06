@@ -20,7 +20,8 @@ human|/obj/item/tool/screwdriver menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/tool/screwdriver menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/tool/screwdriver menu: Slash (refused: not possible right now)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Attack (refused: not possible right now)
 human|/obj/item/tool/crowbar menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/tool/crowbar menu: Show to camera (refused: needs a sheet of paper or a PDA)
@@ -50,7 +51,8 @@ human|/obj/item/weldingtool menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/weldingtool menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/weldingtool menu: Slash (refused: not possible right now)
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Attack (refused: not possible right now)
 human|/obj/item/stack/cable_coil menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -89,5 +91,5 @@ human|/obj/item/camera_bug menu: Slash (refused: not possible right now)
 human|/obj/item/camera_bug menu: Use
 human|/obj/item/camera_bug click: nothing
 wires: Camera Alarm, Camera Light, Focus, Primary Power
-keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_update_coverage, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_camera_silicon_look, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_update_coverage, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_camera_silicon_look, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_screwdriver, use_welder
 

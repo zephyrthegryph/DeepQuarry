@@ -8,17 +8,9 @@
 	var/list/authorized = list(  ) // ALLOW(instance_list): d: per-console authorisation state
 
 
-/obj/machinery/computer/shuttle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shuttle_authorize,
-	)
-	..()
-
-/datum/interaction/machine_item/shuttle_authorize
-	id = "shuttle_authorize"
-	name = "Use"
-	held_type = /obj/item/card
-	effect = /obj/machinery/computer/shuttle/proc/interaction_authorize
+EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle, \
+	INTERACT_INSERT(/obj/item/card, PROC_REF(interaction_authorize), "Use"), \
+)
 
 /obj/machinery/computer/shuttle/proc/interaction_authorize(mob/user, obj/item/card/W, datum/interaction/interaction)
 	if(!operable())

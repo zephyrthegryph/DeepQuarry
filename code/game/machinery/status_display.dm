@@ -61,19 +61,8 @@
 	var/tmp/shuttle_key_token
 	var/tmp/shuttle_key_id = 0
 
-/obj/machinery/status_display/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/status_display_use,
-	)
-	..()
-
-/datum/interaction/machine_item/status_display_use
-	id = "status_display_use"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/status_display/proc/interaction_attackby
-
-/obj/machinery/status_display/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/status_display/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_hand(user)
 	return TRUE
 
@@ -181,6 +170,7 @@
 
 CAPABILITIES(/obj/machinery/status_display)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 
 /// An EMP blue-screens a working display.
 /obj/machinery/status_display/proc/status_display_emp(datum/act/hit/emp/A)

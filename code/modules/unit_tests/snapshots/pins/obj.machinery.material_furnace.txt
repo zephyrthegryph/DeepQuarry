@@ -107,5 +107,5 @@ human|/obj/item/reagent_containers menu: Pour
 human|/obj/item/reagent_containers menu: Transfer gas (refused: needs a tank)
 human|/obj/item/reagent_containers menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/reagent_containers click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, material_furnace_eject_contents, material_furnace_load_carbon, material_furnace_load_stock, material_furnace_transfer_gas, material_furnace_transfer_reagents, material_furnace_use
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_use, gen_insert_interaction_load_carbon, gen_insert_interaction_load_stock, gen_insert_interaction_transfer_gas, gen_insert_interaction_transfer_reagents, gen_robot_interaction_swallow, gen_verb_interaction_eject_contents, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

@@ -15,7 +15,8 @@ human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Insert cash
 human|/obj/item/tool/wrench menu: Unsecure
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Insert cash
 human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/wirecutters click: nothing
@@ -38,5 +39,5 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Insert cash
 human|/obj/item menu: Unsecure (refused: needs a wrench)
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, station_slot_machine_use
+keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_attackby, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_wrench
 

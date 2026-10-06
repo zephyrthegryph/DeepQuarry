@@ -38,5 +38,5 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Store
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, item_bank_store, item_bank_use, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_use, gen_insert_interaction_store, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

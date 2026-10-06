@@ -104,20 +104,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 	name = "\improper Master " + name
 	add_overlay("RD-server-objective-stripes")
 
-/obj/machinery/rnd/server/master/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rnd_server_master_block,
-	)
-	..()
+CAPABILITIES(/obj/machinery/rnd/server/master)
+	op("block", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_block)))
 
-/// Old attackby: never called ..(), so the whole thing (a deliberate no-op) stays in the effect.
-/datum/interaction/machine_item/rnd_server_master_block
-	id = "rnd_server_master_block"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/rnd/server/master/proc/interaction_block
-
-/obj/machinery/rnd/server/master/proc/interaction_block(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/rnd/server/master/proc/interaction_block(datum/act/op/A)
 	// No doing anything to the master server
 	return TRUE
 

@@ -28,7 +28,8 @@ human|/obj/item/tool/crowbar menu: Enter VR Capsule
 human|/obj/item/tool/crowbar menu: Insert (refused: needs a mob)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wrench menu: Eject VR Capsule
 human|/obj/item/tool/wrench menu: Enter VR Capsule
@@ -86,5 +87,5 @@ human|/obj/item menu: Insert (refused: needs a mob)
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
 

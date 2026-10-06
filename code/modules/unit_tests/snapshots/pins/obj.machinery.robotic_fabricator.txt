@@ -1,40 +1,29 @@
-human|none menu: Insert metal (refused: needs an item)
 human|none menu: Ui open
-human|none menu: Use (refused: needs an item)
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Insert metal (refused: needs an item)
 robot|none menu: Ui open
-robot|none menu: Use (refused: needs an item)
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Insert metal (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Ui open
-human|/obj/item/tool/crowbar menu: Insert metal (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Ui open
-human|/obj/item/tool/wrench menu: Insert metal (refused: needs an item)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Ui open
-human|/obj/item/tool/wirecutters menu: Insert metal (refused: needs an item)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Ui open
-human|/obj/item/multitool menu: Insert metal (refused: needs an item)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Ui open
-human|/obj/item/weldingtool menu: Insert metal (refused: needs an item)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Ui open
-human|/obj/item/stack/cable_coil menu: Insert metal (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil menu: Use
@@ -43,17 +32,8 @@ human|/obj/item/stack/material/steel menu: Insert metal
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Ui open
-human|/obj/item/card/id menu: Insert metal (refused: needs an item)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-human|/obj/item/stack/material menu: Insert metal
-human|/obj/item/stack/material menu: Ui open
-human|/obj/item/stack/material menu: Use
-human|/obj/item/stack/material click: Click: Ui open
-human|/obj/item menu: Insert metal (refused: needs an item)
-human|/obj/item menu: Ui open
-human|/obj/item menu: Use
-human|/obj/item click: Click: Ui open
-keys: build_chest, build_frame, build_head, build_l_arm, build_l_leg, build_r_arm, build_r_leg, fabricator_insert_steel, fabricator_reject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ui_open
+keys: build_chest, build_frame, build_head, build_l_arm, build_l_leg, build_r_arm, build_r_leg, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert_steel, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reject, ui_open
 

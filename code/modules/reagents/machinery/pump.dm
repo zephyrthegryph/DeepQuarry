@@ -29,6 +29,9 @@ CAPABILITIES(/obj/machinery/pump)
 	reagents(200)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
@@ -172,27 +175,30 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 	return TRUE
 
-/obj/machinery/pump/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/pump/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You [unlocked ? "screw" : "unscrew"] the battery panel."))
 	unlocked = !unlocked
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/pump/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/pump/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!unlocked)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, open ? span_notice("You crowbar the battery panel in place.") : span_notice("You remove the battery panel."))
 	open = !open
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/pump/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/pump/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(on)
 		to_chat(user, span_notice("\The [src] is active. Turn it off before trying to move it!"))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /turf/proc/pump_reagents()
 	return

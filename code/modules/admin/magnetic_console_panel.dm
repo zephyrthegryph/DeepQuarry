@@ -25,6 +25,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	op("speed_plus", ui_act("speed_plus"), then(PROC_REF(ui_act_speed_plus)))
 	op("set_path", ui_act("set_path"), then(PROC_REF(ui_act_set_path)))
 	op("toggle_moving", ui_act("toggle_moving"), then(PROC_REF(ui_act_toggle_moving)))
+	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 
 /obj/machinery/magnetic_controller/ui_data(datum/act/eval/A)
 	var/list/data = list()

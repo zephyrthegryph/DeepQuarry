@@ -10,7 +10,8 @@ ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Swipe
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Swipe
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: nothing
@@ -39,5 +40,5 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Swipe
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_keycard_auth_silicon_refuse, keycard_auth_open_ui, keycard_auth_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reset, triggerevent
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_keycard_auth_silicon_refuse, keycard_auth_open_ui, keycard_auth_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reset, triggerevent, use_screwdriver
 

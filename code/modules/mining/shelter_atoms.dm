@@ -688,17 +688,9 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 	var/tmp/obj/machinery/light/target_light
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
-/obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/survival_pod_light_switch,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/survival_pod_light_switch
-	id = "survival_pod_light_switch"
-	name = "Use"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl
+EXTEND_INTERACTIONS(/obj/machinery/light_switch/survival_pod, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_toggle_impl)), \
+)
 
 /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)

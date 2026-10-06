@@ -62,5 +62,5 @@ human|/obj/item/spacecasinocash menu: Change interval
 human|/obj/item/spacecasinocash menu: Management controls (refused: needs an identification card or a PDA)
 human|/obj/item/spacecasinocash menu: Use
 human|/obj/item/spacecasinocash click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, wheel_of_fortune_cash, wheel_of_fortune_id, wheel_of_fortune_setinterval, wheel_of_fortune_use
+keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_use, gen_insert_interaction_cash, gen_insert_interaction_id, gen_robot_interaction_swallow, gen_verb_interaction_setinterval_verb, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

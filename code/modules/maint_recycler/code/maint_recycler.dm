@@ -125,6 +125,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	op("recycle", ui_act("recycle"), then(PROC_REF(ui_act_recycle)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
@@ -176,31 +177,23 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
-/obj/machinery/maint_recycler/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/maint_recycler/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(door_open)
-		return ..()
+		return OP_DECLINE
 	if(operable())
 		to_chat(user, span_warning("\The [src]'s door won't budge!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_warning("You lever \the [src]'s door open!"))
 	open_door(user)
 	eject_item(user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.04, vary = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/maint_recycler/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/maint_recycler_insert,
-		/datum/interaction/machine_hand/maint_recycler_use,
-	)
-	..()
-
-/datum/interaction/machine_item/maint_recycler_insert
-	id = "maint_recycler_insert"
-	name = "Insert"
-	held_type = /obj/item
-	also_requires = list(REQ_FIELD("door_open", "its door isn't open"), REQ_FIELD_NOT("inserted_item"))
-	effect = /obj/machinery/maint_recycler/proc/interaction_attackby
+EXTEND_INTERACTIONS(/obj/machinery/maint_recycler, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Insert", REQ_FIELD("door_open", "its door isn't open"), REQ_FIELD_NOT("inserted_item")), \
+	INTERACT_HAND("Use", PROC_REF(interaction_use)), \
+)
 
 /obj/machinery/maint_recycler/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
 	switch(get_item_whitelist(O))
@@ -397,11 +390,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appe
 		item_overlay.underlays = null
 
 	. += ..()
-
-/datum/interaction/machine_hand/maint_recycler_use
-	id = "maint_recycler_use"
-	name = "Use"
-	effect = /obj/machinery/maint_recycler/proc/interaction_use
 
 /obj/machinery/maint_recycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)

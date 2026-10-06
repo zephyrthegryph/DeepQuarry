@@ -76,5 +76,5 @@ human|/obj/item/reagent_containers/glass menu: Set Mixer Rotation
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, mixer_set_rotation, mixer_use, reagent_refinery_drain
+keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_set_rotation, gen_robot_interaction_swallow, gen_verb_interaction_set_rotation, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_refinery_drain
 

@@ -4,16 +4,9 @@
 // is the source of truth for per-line diff context.
 
 //# define AMAP
-/obj/machinery/computer/security/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/security_station_map,
-	)
-	..()
-
-/datum/interaction/machine_verb/security_station_map
-	id = "security_station_map"
-	name = ".map"
-	effect = /obj/machinery/computer/security/proc/interaction_station_map
+EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
+	INTERACT_VERB(".map", PROC_REF(interaction_station_map), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
+)
 
 /obj/machinery/computer/security/proc/interaction_station_map(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!mapping)

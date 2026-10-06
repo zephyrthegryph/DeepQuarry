@@ -55,17 +55,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, TYPE_PROC_REF(/atom, appearance
 	icon = 'icons/obj/power.dmi'
 	icon_state = "crema_switch"
 
-/obj/machinery/button/neonsign/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/neonsign_button_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/neonsign_button_toggle
-	id = "neonsign_button_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/button/neonsign/proc/interaction_toggle
+CAPABILITIES(/obj/machinery/button/neonsign)
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Neon signs sharing our id (keyed).
 /obj/machinery/button/neonsign/var/list/obj/machinery/neonsign/controlled_signs
@@ -76,7 +67,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, TYPE_PROC_REF(/atom, appearance
 	. = ..()
 	. += rel_key(nameof(id))
 
-/obj/machinery/button/neonsign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/neonsign/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	use_power(5)

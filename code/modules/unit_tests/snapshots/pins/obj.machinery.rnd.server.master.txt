@@ -1,7 +1,5 @@
-human|none menu: Use (refused: needs an item)
 human|none click: Click: Open
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Use (refused: needs an item)
 robot|none click: Click: Open
 ai|none click: nothing
 ghost|none click: nothing
@@ -9,25 +7,23 @@ human|/obj/item/tool/screwdriver menu: Open
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Open
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Dismantle
+human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Toggle
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Toggle
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: Click: Pulse wires
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: Click: Open
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Open
+human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Open
+human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: Click: Open
-human|/obj/item menu: Use
-human|/obj/item click: Click: Open
+human|/obj/item/card/id click: Click: Use
 wires: Disable, Hack, High Voltage Ground
-keys: anchor.toggle, construction.dismantle, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, panel.open, part_replacement.replace, rnd_server_master_block, wires.cut, wires.open, wires.pulse
+keys: anchor.toggle, block, construction.dismantle, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, panel.open, part_replacement.replace, wires.cut, wires.open, wires.pulse
 

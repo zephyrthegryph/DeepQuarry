@@ -51,16 +51,19 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /obj/machinery/floor_light/prebuilt
 	anchored = TRUE
 
-/obj/machinery/floor_light/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/floor_light/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	act_message(user, src, others = span_notice("%U% has [anchored ? "attached" : "detached"] %T%."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
+/obj/machinery/floor_light/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!(damaged || (has_stat(BROKEN))))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/floor_light/proc/welder_act_tool_done(mob/user)
 	if(QDELETED(src))
@@ -180,6 +183,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appeara
 CAPABILITIES(/obj/machinery/floor_light)
 	started_work(step = PROC_REF(work_step))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// A lighter blast marks the light as (lightly) damaged.
 /obj/machinery/floor_light/proc/floor_light_blast(datum/act/hit/explosion/A)

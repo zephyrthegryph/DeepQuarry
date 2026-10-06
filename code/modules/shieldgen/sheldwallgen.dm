@@ -31,21 +31,13 @@ OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "
 CAPABILITIES(/obj/machinery/shieldwallgen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(wallgen_has_work), wakes_on = list(nameof(active), nameof(anchored)))
 	climb()
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
-/obj/machinery/shieldwallgen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shieldwallgen_id_swipe,
-		/datum/interaction/machine_item/shieldwallgen_hit,
-		/datum/interaction/machine_hand/ungated/shieldwallgen_toggle,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/shieldwallgen_toggle
-	id = "shieldwallgen_toggle"
-	name = "Toggle"
-	effect = /obj/machinery/shieldwallgen/proc/interaction_toggle
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/shieldwallgen/proc/can_toggle))
+EXTEND_INTERACTIONS(/obj/machinery/shieldwallgen, \
+	INTERACT_INSERT(list(/obj/item/card/id, /obj/item/pda), PROC_REF(interaction_id_swipe), "Swipe ID"), \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_hit), "Hit"), \
+	INTERACT_HAND_UNGATED("Toggle", PROC_REF(interaction_toggle), REQ_TARGET_STATE(/obj/machinery/shieldwallgen/proc/can_toggle)), \
+)
 
 /// Requirement: TRUE, or why the generator can't be switched.
 /obj/machinery/shieldwallgen/proc/can_toggle(mob/user, atom/target, obj/item/held)
@@ -177,13 +169,6 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/obj/machinery/shieldwall/CF = new/obj/machinery/shieldwall(T, src, G) //(ref to this gen, ref to connected gen)
 		CF.set_dir(field_dir)
 
-/// Old attackby: never called ..(), so both branches stay in their effects.
-/datum/interaction/machine_item/shieldwallgen_id_swipe
-	id = "shieldwallgen_id_swipe"
-	name = "Swipe ID"
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	effect = /obj/machinery/shieldwallgen/proc/interaction_id_swipe
-
 /obj/machinery/shieldwallgen/proc/interaction_id_swipe(mob/user, obj/item/W, datum/interaction/interaction)
 	if (src.allowed(user))
 		set_locked(!src.locked)
@@ -192,26 +177,22 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
-/datum/interaction/machine_item/shieldwallgen_hit
-	id = "shieldwallgen_hit"
-	name = "Hit"
-	held_type = /obj/item
-	effect = /obj/machinery/shieldwallgen/proc/interaction_hit
-
 /obj/machinery/shieldwallgen/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	act_message(src, user, others = span_red("%U% has been hit with %I% by %T%!"), item = W)
 	return TRUE
 
-/obj/machinery/shieldwallgen/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shieldwallgen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(active)
 		to_chat(user, "Turn off the field generator first.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_state(!state)
 	set_anchored(state)
 	playsound(src, W.usesound, 75, 1)
 	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/shieldwallgen/proc/cleanup(NSEW)
 	var/obj/machinery/shieldwall/F
@@ -282,17 +263,9 @@ CAPABILITIES(/obj/machinery/shieldwall)
 	else
 		spent(src)
 
-/obj/machinery/shieldwall/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/shieldwall_touch_block,
-	)
-	..()
-
-/// Old attack_hand did nothing at all and never called ..(); ungated so no gate side effects sneak in.
-/datum/interaction/machine_hand/ungated/shieldwall_touch_block
-	id = "shieldwall_touch_block"
-	name = "Touch"
-	effect = /atom/proc/interaction_swallow
+EXTEND_INTERACTIONS(/obj/machinery/shieldwall, \
+	INTERACT_HAND_UNGATED("Touch", TYPE_PROC_REF(/atom, interaction_swallow)), \
+)
 
 /obj/machinery/shieldwall/proc/work_step(datum/act/timer/A)
 	if(needs_power)

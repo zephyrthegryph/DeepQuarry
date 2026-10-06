@@ -47,19 +47,9 @@ OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
 		M.close()
 		return
 
-/obj/machinery/computer/pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/pod_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_hand/pod_open_ui
-	id = "pod_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/pod/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/pod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!Adjacent(user) && !issilicon(user))
+/obj/machinery/computer/pod/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS)) // out of reach, and not over a remote link
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -73,6 +63,7 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	op("test_drive", ui_act("test_drive"), then(PROC_REF(ui_act_test_drive)))
 	op("adjust_power", ui_act("adjust_power", arg("value", num())), then(PROC_REF(ui_act_adjust_power)))
 	op("adjust_time", ui_act("adjust_time", arg("value", num())), then(PROC_REF(ui_act_adjust_time)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/pod/ui_title(mob/user)
 	return title
@@ -139,17 +130,9 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	title = "External Airlock Controls"
 	req_access = list(ACCESS_SYNDICATE)
 
-/obj/machinery/computer/pod/old/syndicate/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/pod_syndicate_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_hand/pod_syndicate_open_ui
-	id = "pod_syndicate_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/pod/old/syndicate/proc/lets_in, "access denied"))
-	effect = /obj/machinery/computer/pod/proc/interaction_open_ui_impl
+EXTEND_INTERACTIONS(/obj/machinery/computer/pod/old/syndicate, \
+	INTERACT_HAND("Use", PROC_REF(interaction_open_ui_impl), REQ_ON(PRED_ACTOR, /obj/machinery/computer/pod/old/syndicate/proc/lets_in, "access denied")), \
+)
 
 /obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)

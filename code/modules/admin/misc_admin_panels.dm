@@ -608,6 +608,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	interface("SyndicateBeacon", title = "Ominous Beacon", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("transfer_supplies", ui_act("transfer_supplies", arg("mob_ref", schema_ref(/mob))), then(PROC_REF(ui_act_transfer_supplies)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/syndicate_beacon/virgo/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -655,18 +656,8 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 /obj/machinery/syndicate_beacon/virgo/proc/ui_source_registry_members_registry_mobs()
 	return REGISTRY_MEMBERS(REGISTRY_MOBS)
 
-/obj/machinery/syndicate_beacon/virgo/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/syndicate_beacon_virgo_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/syndicate_beacon_virgo_use
-	id = "syndicate_beacon_virgo_use"
-	name = "Use"
-	effect = /obj/machinery/syndicate_beacon/virgo/proc/interaction_use
-
-/obj/machinery/syndicate_beacon/virgo/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/syndicate_beacon/virgo/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

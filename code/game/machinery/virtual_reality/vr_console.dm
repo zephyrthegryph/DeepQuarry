@@ -38,6 +38,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -117,15 +118,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 		I.attack(occupant, user)
 	return TRUE
 
-/obj/machinery/vr_sleeper/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/vr_sleeper/proc/crowbar_used(datum/act/op/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(occupant && avatar())
 		avatar().exit_vr()
 		rel_clear(src, nameof(avatar))
 		perform_exit()
-	return ..()
+	return OP_DECLINE
 
 /datum/interaction/machine_drag/vr_sleeper_enter
 	id = "vr_sleeper_enter"

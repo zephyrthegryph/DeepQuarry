@@ -39,6 +39,8 @@ OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield_diffuser)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
 /obj/machinery/shield_diffuser/proc/work_step(datum/act/timer/A)
 	if(alarm)
@@ -70,21 +72,8 @@ DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1
 /obj/machinery/shield_diffuser/proc/appearance_alarmed()
 	return alarm ? 1 : 0
 
-/obj/machinery/shield_diffuser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/shield_diffuser_toggle,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
-
-/// Old attack_hand: silence the alarm, or toggle the diffuser.
-/datum/interaction/machine_hand/shield_diffuser_toggle
-	id = "shield_diffuser_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/shield_diffuser/proc/interaction_toggle
-
-/obj/machinery/shield_diffuser/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_diffuser/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(alarm)
 		to_chat(user, "You press an override button on \the [src], re-enabling it.")
 		set_alarm(0)

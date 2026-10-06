@@ -36,5 +36,5 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, maint_vendor_open_ui, purchase, ui_open
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, purchase, ui_open
 

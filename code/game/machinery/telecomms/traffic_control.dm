@@ -186,6 +186,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("edit_code", ui_act("edit_code"), then(PROC_REF(ui_act_edit_code)))
 	op("toggle_run", ui_act("toggle_run"), then(PROC_REF(ui_act_toggle_run)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/telecomms/traffic/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

@@ -49,6 +49,7 @@ TRACKED_BRIDGED(/obj/machinery/power/supply_beacon, expended, CHANGE_MACHINE_SET
 CAPABILITIES(/obj/machinery/power/supply_beacon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(use_power), cond_not(nameof(expended))), wakes_on = list(nameof(use_power), nameof(expended)))
 	rolls(nameof(drop_type), PROC_REF(roll_drop_type), when = cond_not(nameof(drop_type)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/machinery/power/supply_beacon/proc/roll_drop_type(datum/roller/R)
@@ -69,20 +70,8 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/supply_beacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/supply_beacon_use,
-	)
-	..()
-
-/// Old attack_hand, which never called ..() (ungated: no machinery hand gate).
-/datum/interaction/machine_hand/ungated/supply_beacon_use
-	id = "supply_beacon_use"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/power/supply_beacon/proc/interaction_use
-
-/obj/machinery/power/supply_beacon/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/supply_beacon/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(expended)
 		set_use_power(USE_POWER_OFF)
 		to_chat(user, span_warning("\The [src] has used up its charge."))

@@ -11,17 +11,9 @@
 	var/chargesa = 1
 	var/insistinga = 0
 
-/obj/machinery/wish_granter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/wish_granter_touch,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/wish_granter_touch
-	id = "wish_granter_touch"
-	name = "Touch"
-	effect = /obj/machinery/wish_granter/proc/interaction_touch
+EXTEND_INTERACTIONS(/obj/machinery/wish_granter, \
+	INTERACT_HAND_UNGATED("Touch", PROC_REF(interaction_touch)), \
+)
 
 /obj/machinery/wish_granter/proc/interaction_touch(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(chargesa <= 0)

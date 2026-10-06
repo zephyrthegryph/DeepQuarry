@@ -12,29 +12,20 @@
 	active_power_usage = 10000
 	var/inserting = FALSE
 
-/obj/machinery/robotic_fabricator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/fabricator_insert_steel,
-		/datum/interaction/machine_item/fabricator_reject,
-	)
-	..()
-
-/// Old attackby's only branch.
-/datum/interaction/machine_item/fabricator_insert_steel
-	id = "fabricator_insert_steel"
-	name = "Insert metal"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/robotic_fabricator/proc/wants_steel, null))
-	effect = /obj/machinery/robotic_fabricator/proc/interaction_insert_steel
-
 /// No side effects: whether this stack is steel and we're not already mid-insertion.
 /obj/machinery/robotic_fabricator/proc/wants_steel(mob/actor, atom/target, obj/item/stack/material/held)
 	if(inserting)
 		return FALSE
 	return istype(held) && held.get_material_name() == MAT_STEEL
 
-/obj/machinery/robotic_fabricator/proc/interaction_insert_steel(mob/user, obj/item/stack/supplied_stack, datum/interaction/interaction)
+/// Requirement (was REQ_* wants_steel): the legacy check answers TRUE to pass.
+/obj/machinery/robotic_fabricator/proc/wants_steel_holds(datum/act/op/A)
+	var/answer = wants_steel(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/obj/machinery/robotic_fabricator/proc/interaction_insert_steel(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/supplied_stack = A.held
 	if(metal_amount < 150000)
 		if(!supplied_stack.get_amount())
 			return TRUE
@@ -45,14 +36,7 @@
 	to_chat(user, "The robot part maker is full. Please remove metal from the robot part maker in order to insert more.")
 	return TRUE
 
-/// Old attackby: fell off the end for anything else, silently doing nothing (no ..() call).
-/datum/interaction/machine_item/fabricator_reject
-	id = "fabricator_reject"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/robotic_fabricator/proc/interaction_reject
-
-/obj/machinery/robotic_fabricator/proc/interaction_reject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/robotic_fabricator/proc/interaction_reject(datum/act/op/A)
 	return TRUE
 
 /obj/machinery/robotic_fabricator/proc/complete_insertion(mob/user, obj/item/stack/supplied_stack)
@@ -86,6 +70,8 @@ CAPABILITIES(/obj/machinery/robotic_fabricator)
 	op("build_chest", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 50000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_chest)))
 	op("build_head", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 50000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_head)))
 	op("build_frame", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 75000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_frame)))
+	op("insert_steel", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT - 1), label("Insert metal"), when(req(PROC_REF(wants_steel_holds))), then(PROC_REF(interaction_insert_steel)))
+	op("reject", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_reject)))
 
 /obj/machinery/robotic_fabricator/ui_data(datum/act/eval/A)
 	return list("operating" = operating, "metal_amount" = metal_amount)

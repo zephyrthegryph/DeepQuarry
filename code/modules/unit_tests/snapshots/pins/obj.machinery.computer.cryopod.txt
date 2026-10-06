@@ -58,5 +58,5 @@ human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-keys: climb.climb, climb.climb_menu, cryopod_console_open_ui, disconnect, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ui_open, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, ui_open, use_gripper, use_item
 

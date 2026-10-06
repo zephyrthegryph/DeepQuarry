@@ -48,6 +48,9 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
 // into the bin before a flush). Drop policy is left to this type's own
@@ -256,32 +259,37 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 	return TRUE
 
-/obj/machinery/disposal/multitool_act(mob/user, obj/item/I)
+/obj/machinery/disposal/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	wake_for_state_change()
 	if(mode > DISPOSALMODE_OFF)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	alter_bin_type(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/disposal/screwdriver_act(mob/user, obj/item/I)
+/obj/machinery/disposal/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	wake_for_state_change()
 	if(mode > DISPOSALMODE_OFF || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_mode(mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF)
 	playsound(src, I.usesound, 50, 1)
 	to_chat(user, "You [mode == DISPOSALMODE_EJECTONLY ? "remove" : "attach"] the screws around the power connection.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/disposal/welder_act(mob/user, obj/item/I)
+/obj/machinery/disposal/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	wake_for_state_change()
 	if(mode != DISPOSALMODE_EJECTONLY || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/disposal/proc/welder_act_tool_done(mob/user)
 	if(!src)

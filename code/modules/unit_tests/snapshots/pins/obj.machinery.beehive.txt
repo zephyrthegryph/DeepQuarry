@@ -22,21 +22,24 @@ human|/obj/item/tool/screwdriver menu: Load frame (refused: needs a beehive fram
 human|/obj/item/tool/screwdriver menu: Move bees (refused: needs a bee pack)
 human|/obj/item/tool/screwdriver menu: Scan (refused: needs a plant analyzer)
 human|/obj/item/tool/screwdriver menu: Smoke bees (refused: needs a bee smoker)
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Harvest honeycombs
 human|/obj/item/tool/crowbar menu: Load frame (refused: needs a beehive frame)
 human|/obj/item/tool/crowbar menu: Move bees (refused: needs a bee pack)
 human|/obj/item/tool/crowbar menu: Scan (refused: needs a plant analyzer)
 human|/obj/item/tool/crowbar menu: Smoke bees (refused: needs a bee smoker)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Harvest honeycombs
 human|/obj/item/tool/wrench menu: Load frame (refused: needs a beehive frame)
 human|/obj/item/tool/wrench menu: Move bees (refused: needs a bee pack)
 human|/obj/item/tool/wrench menu: Scan (refused: needs a plant analyzer)
 human|/obj/item/tool/wrench menu: Smoke bees (refused: needs a bee smoker)
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Harvest honeycombs
 human|/obj/item/tool/wirecutters menu: Load frame (refused: needs a beehive frame)
@@ -108,5 +111,5 @@ human|/obj/item/analyzer/plant_analyzer menu: Move bees (refused: needs a bee pa
 human|/obj/item/analyzer/plant_analyzer menu: Scan
 human|/obj/item/analyzer/plant_analyzer menu: Smoke bees (refused: needs a bee smoker)
 human|/obj/item/analyzer/plant_analyzer click: nothing
-keys: beehive_bee_pack, beehive_harvest, beehive_load_frame, beehive_scan, beehive_smoke, climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_beehive_harvest, gen_insert_interaction_beehive_bee_pack, gen_insert_interaction_beehive_load_frame, gen_insert_interaction_beehive_scan, gen_insert_interaction_beehive_smoke, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench
 

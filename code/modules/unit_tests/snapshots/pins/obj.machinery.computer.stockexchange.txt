@@ -52,5 +52,5 @@ human|/obj/item menu: Climb
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, stockexchange_attackby, stockexchange_use, stocks_archive, stocks_backbutton, stocks_buy, stocks_check, stocks_cycle_view, stocks_history, stocks_sell, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_hand_interaction_use, gen_insert_interaction_attackby, gen_robot_interaction_swallow, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, stocks_archive, stocks_backbutton, stocks_buy, stocks_check, stocks_cycle_view, stocks_history, stocks_sell, use_gripper, use_item
 

@@ -44,20 +44,10 @@
 	var/heat = 0
 
 
-/obj/machinery/radiocarbon_spectrometer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/radiocarbon_spectrometer_use_item,
-		/datum/interaction/machine_hand/ungated/radiocarbon_spectrometer_use,
-	)
-	..()
-
-/// The old attackby: never called ..(), handled reagent containers or loaded a scan sample.
-/datum/interaction/machine_item/radiocarbon_spectrometer_use_item
-	id = "radiocarbon_spectrometer_use_item"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item
-	also_requires = list(REQ_FIELD_NOT("scanning", "you can't do that while it's scanning"))
+EXTEND_INTERACTIONS(/obj/machinery/radiocarbon_spectrometer, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_use_item), "Use", REQ_FIELD_NOT("scanning", "you can't do that while it's scanning")), \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
+)
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/reagent_containers/glass))
@@ -93,12 +83,6 @@
 	rel_set(src, nameof(scanned_item), I)
 	to_chat(user, span_notice("You put [I] into [src]."))
 	return TRUE
-
-/// The old attack_hand: never called ..(), just opened the UI.
-/datum/interaction/machine_hand/ungated/radiocarbon_spectrometer_use
-	id = "radiocarbon_spectrometer_use"
-	name = "Use"
-	effect = /obj/machinery/radiocarbon_spectrometer/proc/interaction_use
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)

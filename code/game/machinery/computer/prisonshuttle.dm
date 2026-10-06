@@ -30,32 +30,32 @@ TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHIN
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
 // notification state; the chat notice already covers that flow.
-/obj/machinery/computer/prison_shuttle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/prison_shuttle_open_ui,
-	)
-	..()
 
 /**
  * Old attack_hand: access/hacked and prison_break checks ran BEFORE the `..()` gate call, so
  * they used to fire even when the console itself was unpowered/broken. The machinery hand gate
  * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
-/datum/interaction/machine_hand/prison_shuttle_open_ui
-	id = "prison_shuttle_open_ui"
-	name = "Use"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/prison_shuttle/proc/can_open_console))
-	effect = /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl
-
 /// Requirement: TRUE, or why the console can't be used.
 /obj/machinery/computer/prison_shuttle/proc/can_open_console(mob/user, atom/target, obj/item/held)
-	if(!allowed(user) && !hacked)
+	if(!allowed(user) && !hacked) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return "access denied"
-	if(prison_break)
+	if(prison_break) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return "unable to locate shuttle"
 	return TRUE
 
-/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_open_console): the legacy check answers TRUE to pass.
+/obj/machinery/computer/prison_shuttle/proc/can_open_console_holds(datum/act/op/A)
+	var/answer = can_open_console(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_open_console_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/prison_shuttle/proc/can_open_console_refusal(datum/act/op/A)
+	var/answer = can_open_console(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	post_signal("prison")
 	tgui_interact(user)
@@ -66,6 +66,7 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 	every(0.5 SECONDS, then(PROC_REF(prison_process)), when = nameof(in_flight))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_open_console_holds), because = PROC_REF(can_open_console_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()

@@ -28,7 +28,8 @@ human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/multitool menu: Touch
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/weldingtool menu: Touch
@@ -56,5 +57,5 @@ human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Touch
 human|/obj/item/storage/part_replacer click: nothing
-keys: doorbell_chime_fingerprint, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_part_replacement, machine_repair
+keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_fingerprint, gen_insert_interaction_part_replacement, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_multitool
 

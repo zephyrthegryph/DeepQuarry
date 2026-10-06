@@ -39,6 +39,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	op("strengthen_rate", ui_act("strengthen_rate", arg("val", num())), then(PROC_REF(ui_act_strengthen_rate)))
 	op("target_field_strength", ui_act("target_field_strength", arg("val", num())), then(PROC_REF(ui_act_target_field_strength)))
 	op("z_range", ui_act("z_range", arg("val", num(0, 10))), then(PROC_REF(ui_act_z_range)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -89,7 +90,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
-/obj/machinery/shield_gen/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shield_gen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored?"bolted to the floor":"unbolted from the floor"] by %U%."))
@@ -104,7 +107,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 				rel_set(cap, nameof(cap.owned_gen), src)
 	else
 		rel_clear(src, nameof(capacitors))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/shield_gen/declare_interactions(list/into)
 	into += list(

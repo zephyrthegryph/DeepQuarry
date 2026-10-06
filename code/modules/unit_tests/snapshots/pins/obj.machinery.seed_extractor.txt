@@ -149,5 +149,5 @@ human|/obj/item menu: Replace parts (refused: needs a rapid part exchange device
 human|/obj/item menu: Unsecure (refused: needs a wrench)
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_part_replacement, machine_repair, seed_extractor_fossil, seed_extractor_grass, seed_extractor_grown, seed_extractor_swallow
+keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_extract_grass, gen_insert_interaction_extract_grown, gen_insert_interaction_part_replacement, gen_insert_interaction_pulverize_fossil, gen_insert_interaction_swallow, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

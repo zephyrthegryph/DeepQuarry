@@ -17,19 +17,9 @@
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
 		stored_research_static = connected_web
 
-/obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rdservercontrol_connect_techweb,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
-/// The old attackby: never called ..(), connected a techweb via a multitool buffer.
-/datum/interaction/machine_item/rdservercontrol_connect_techweb
-	id = "rdservercontrol_connect_techweb"
-	name = "Connect techweb"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb
+EXTEND_INTERACTIONS(/obj/machinery/computer/rdservercontrol, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_connect_techweb), "Connect techweb"), \
+)
 
 /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/multitool/tool = I.get_multitool()
