@@ -8,7 +8,8 @@
 //!                  shut (an op of the outside that works while it is shut, `when(cond_not(nameof(opened)))`, is not a path and is not counted)
 //!   req_door       `req_is(COVER_OPEN, ...)`, `req_is(PANEL_OPEN, ...)`, `req_panel_closed()`: a door's state as a requirement
 //!                  (a cover's own `req_is(COVER_REMOVED, FALSE)` is its state, not a path, and is not counted)
-//!   req_built_put  `req_built(...)` on a line that puts something in (`insert`, `put_in`): a staged slot written by hand
+//!   req_built_put  `req_built(...)` on a line that puts something in (an `.insert` op key, `put_in`): a staged slot written by hand;
+//!                  the op key is a string, so this part reads the raw line
 //!
 //! Over the `code_only` view of every `.dm` under `code/`. A site kept by `// ALLOW(door_gates): <reason>` does not count.
 
@@ -72,7 +73,8 @@ impl Lint for DoorGates {
                 Some("when_door")
             } else if self.req_door.is_match(line) {
                 Some("req_door")
-            } else if self.req_built.is_match(line) && self.puts.is_match(line) {
+            } else if self.req_built.is_match(line) && self.puts.is_match(f.line(no)) {
+                // The put is named by the op key, a string (`"cell_bay.cell.insert"`), which the code view blanks: read it raw.
                 Some("req_built_put")
             } else {
                 None

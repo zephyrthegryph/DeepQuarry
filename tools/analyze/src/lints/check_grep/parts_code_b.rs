@@ -90,10 +90,10 @@ pub fn parts() -> Vec<Part> {
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
         ),
-        // Hard ban: DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
+        // Hard ban (temperature and energy writes outside code/domains): DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",
-            "heat: raw temperature and energy writes outside code/domains",
+            "heat: raw temperature writes",
             "set_temperature()/add_thermal_energy() outside code/domains/. Declare a heat_link()/heat_pump()/heat_engine() entry, or move heat with heat_move()/heat_add()/heat_set() (code/domains/heat/heat_net.dm).",
             Files::Code,
             line(r"\b(set_temperature|add_thermal_energy)\("),

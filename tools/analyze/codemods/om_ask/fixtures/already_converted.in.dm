@@ -4,4 +4,4 @@
 /datum/holder/proc/named(datum/act/request/A)
 	if(!A.answer)
 		return
-	return A.answer.answer_value
+	return A.answer.value
