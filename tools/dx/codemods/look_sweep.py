@@ -356,9 +356,81 @@ def run_audit(args):
     return 0
 
 
+def run_prune(args):
+    """The changed() redraw requests this branch added (since --base) whose receiver's draws now read only tracked state:
+    tracked writes redraw by themselves, so the request goes."""
+    import subprocess
+    import look_convert
+    added = collections.defaultdict(set)
+    diff = subprocess.check_output(["git", "diff", "-U0", args.base, "--", "code"]).decode("utf-8", "surrogateescape")
+    rel = None
+    for line in diff.split("\n"):
+        if line.startswith("+++ b/"):
+            rel = line[6:]
+            continue
+        m = re.match(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", line)
+        if m and rel:
+            start = int(m.group(1))
+            count = int(m.group(2)) if m.group(2) is not None else 1
+            for k in range(start, start + count):
+                added[rel].add(k - 1)
+    files = {rel: File(rel) for rel in code_files()}
+    ix = look_convert.Index(ROOT, list(files))
+    removed, residue, sites = collections.Counter(), collections.Counter(), []
+    for rel, f in files.items():
+        if rel not in added or rel.startswith(NO_EDIT):
+            continue
+        L = f.lines
+        ptype = None
+        params = ""
+        names = {}
+        drop = []
+        for i, l in enumerate(L):
+            if l and l[0] not in " \t":
+                hm = HDR.match(l)
+                ptype = hm.group(1) if hm else None
+                names = typed_names(strip_code(l), []) if hm else {}
+                continue
+            if i not in added[rel]:
+                continue
+            code = strip_code(l)
+            if code.rstrip() != l.rstrip():
+                continue  # a commented request stays (someone explained why it is there)
+            m = re.match(r"^\s*changed\((src|[A-Za-z_]\w*)\)\s*$", code)
+            if not m:
+                continue
+            for vm in re.finditer(r"\bvar/((?:[a-z_]\w*/)+)([A-Za-z_]\w*)", "\n".join(strip_code(x) for x in L[max(0, i - 60):i])):
+                names[vm.group(2)] = "/" + vm.group(1).rstrip("/")
+            t = ptype if m.group(1) == "src" else names.get(m.group(1))
+            if not t or not t.startswith(ATOM_ROOTS) or t.startswith("/proc"):
+                continue
+            has, covered, _u = look_convert.draw_coverage(ix, t)
+            if has and covered:
+                prev = next((x for x in range(i - 1, -1, -1) if strip_code(L[x]).strip()), None)
+                nxt = next((x for x in range(i + 1, len(L)) if strip_code(L[x]).strip()), None)
+                ind = len(l) - len(l.lstrip())
+                lone = prev is not None and (len(L[prev]) - len(L[prev].lstrip())) < ind and (nxt is None or (len(L[nxt]) - len(L[nxt].lstrip())) < ind)
+                if lone:
+                    residue["only_statement"] += 1
+                    continue
+                drop.append(i)
+                removed["/".join(rel.split("/")[:3])] += 1
+                sites.append("%s:%d %s" % (rel, i + 1, code.strip()))
+        if drop and args.apply:
+            for i in reversed(drop):
+                del L[i]
+            f.dirty = True
+            f.save()
+    report("prune", args, removed, residue, sites)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["dead", "convert", "calls", "audit"])
+    ap.add_argument("mode", choices=["dead", "convert", "calls", "audit", "track", "prune"])
+    ap.add_argument("--owned-ok", action="store_true", help="track: also rewrite writes in the folders other sessions own")
+    ap.add_argument("--vars", nargs="*", help="track: only these vars")
+    ap.add_argument("--base", default="origin/master", help="prune: the changed() calls added since this ref are the ones considered")
     ap.add_argument("--all", action="store_true", help="calls: every call whose receiver's chain has no legacy declaration, by the coverage of the chain's draw() procs")
     ap.add_argument("--with-ancestors", action="store_true", help="calls: also add changed() beside the calls of ancestor procs that reach an uncovered component")
     ap.add_argument("--types", nargs="*", help="convert: only the components holding these types (or their subtypes)")
@@ -375,6 +447,12 @@ def main():
         return run_calls(args)
     if args.mode == "audit":
         return run_audit(args)
+    if args.mode == "track":
+        import look_track
+        look_track.run(args, ROOT, code_files())
+        return 0
+    if args.mode == "prune":
+        return run_prune(args)
     if args.mode == "convert":
         import look_convert
         look_convert.run(args, ROOT, code_files(), None)
