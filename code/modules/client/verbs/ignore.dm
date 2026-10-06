@@ -26,12 +26,20 @@
 	set category = VERB_CAT_OOC_CHAT_SETTINGS
 	set desc = "Reverts your ignoring of a specific player."
 
+	var/datum/request/replayed
+	if(length(args) >= 1)
+		var/datum/request/resumed = args[1]
+		if(istype(resumed, /datum/prompt/choice/client_unignore) && resumed.owner == src && resumed.answerer == usr && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(unignore_answered))
+			replayed = resumed
 	var/list/ignored_players = prefs?.read_preference(/datum/preference/ignored_players)
 	if(!LAZYLEN(ignored_players))
 		to_chat(usr, span_warning("You aren't ignoring any players."))
 		return
 
-	var/key_to_unignore = client_ask("a1", VERB_REF(unignore), args, 0, /datum/om/prompt/choice, message = "Ignored players", title = "Unignore", choices = ignored_players)
+	if(!replayed)
+		open_request(src, /datum/prompt/choice/client_unignore, PROC_REF(unignore_answered), answerer = mob, question = "Ignored players", title = "Unignore", choices = ignored_players)
+		return
+	var/key_to_unignore = replayed.value
 	if(isnull(key_to_unignore))
 		return
 	if(!key_to_unignore)
@@ -57,3 +65,23 @@
 			return 0
 		return 1
 	return 0
+
+/datum/prompt/choice/client_unignore
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/client_unignore/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/choice/client_unignore/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/client_unignore/refusal(given)
+	return null
+
+/client/proc/unignore_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	world.push_usr(A.request.answerer, new /datum/callback(src, VERB_REF(unignore)), A.answer)
