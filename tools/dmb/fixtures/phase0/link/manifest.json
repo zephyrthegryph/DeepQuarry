@@ -404,10 +404,36 @@
         "creation_before_world_new",
         "placed_world_iteration"
       ],
-      "status": "source probe; compilation, decoded metadata and paired runtime receipts pending",
-      "expected_values": null,
-      "reference_receipt": null,
-      "paired_receipt": null
+      "status": "paired observations captured",
+      "expected_values": {
+        "creation_before_world_new": "area|turf(2,2,1)|turf(1,2,1)|turf(2,1,1)|turf(1,1,1)|a_item(1,1,1)|z_item(1,1,1)|z_item(2,1,1)|a_item(2,1,1)|z_item(1,2,1)|a_item(1,2,1)|a_item(2,2,1)|z_item(2,2,1)|",
+        "placed_world_iteration": [
+          "/obj/phase0_placed/a_item@1,1,1",
+          "/obj/phase0_placed/z_item@1,1,1",
+          "/obj/phase0_placed/z_item@2,1,1",
+          "/obj/phase0_placed/a_item@2,1,1",
+          "/obj/phase0_placed/z_item@1,2,1",
+          "/obj/phase0_placed/a_item@1,2,1",
+          "/obj/phase0_placed/a_item@2,2,1",
+          "/obj/phase0_placed/z_item@2,2,1"
+        ]
+      },
+      "reference_receipt": "E:\\dmb-native-v2-phase0\\link-final-1\\link-map_startup\\byond-observations.json",
+      "paired_receipt": "map_startup.paired.json",
+      "native_expected_values": {
+        "creation_before_world_new": "area|turf(2,2,1)|turf(1,2,1)|turf(2,1,1)|turf(1,1,1)|a_item(1,1,1)|z_item(1,1,1)|z_item(2,1,1)|a_item(2,1,1)|z_item(1,2,1)|a_item(1,2,1)|a_item(2,2,1)|z_item(2,2,1)|",
+        "placed_world_iteration": [
+          "/obj/phase0_placed/a_item@1,1,1",
+          "/obj/phase0_placed/z_item@1,1,1",
+          "/obj/phase0_placed/z_item@2,1,1",
+          "/obj/phase0_placed/a_item@2,1,1",
+          "/obj/phase0_placed/z_item@1,2,1",
+          "/obj/phase0_placed/a_item@1,2,1",
+          "/obj/phase0_placed/a_item@2,2,1",
+          "/obj/phase0_placed/z_item@2,2,1"
+        ]
+      },
+      "divergent_labels": []
     },
     {
       "manifest": "metadata_modes.dme",
@@ -415,10 +441,40 @@
         "metadata_verbs",
         "metadata_source_paths"
       ],
-      "status": "source probe; compilation, decoded metadata and paired runtime receipts pending",
-      "expected_values": null,
-      "reference_receipt": null,
-      "paired_receipt": null
+      "status": "paired observations captured",
+      "expected_values": {
+        "metadata_verbs": [
+          "/obj/phase0_metadata/verb/view_mode",
+          "/obj/phase0_metadata/verb/loc_mode",
+          "/obj/phase0_metadata/verb/usr_mode",
+          "/obj/phase0_metadata/verb/world_mode"
+        ],
+        "metadata_source_paths": [
+          "/obj/phase0_metadata/verb/world_mode",
+          "/obj/phase0_metadata/verb/usr_mode",
+          "/obj/phase0_metadata/verb/loc_mode",
+          "/obj/phase0_metadata/verb/view_mode"
+        ]
+      },
+      "reference_receipt": "E:\\dmb-native-v2-phase0\\link-final-3\\link-metadata_modes\\byond-observations.json",
+      "paired_receipt": "metadata_modes.paired.json",
+      "native_expected_values": {
+        "metadata_verbs": [
+          "/obj/phase0_metadata/verb/world_mode",
+          "/obj/phase0_metadata/verb/usr_mode",
+          "/obj/phase0_metadata/verb/loc_mode",
+          "/obj/phase0_metadata/verb/view_mode"
+        ],
+        "metadata_source_paths": [
+          "/obj/phase0_metadata/verb/world_mode",
+          "/obj/phase0_metadata/verb/usr_mode",
+          "/obj/phase0_metadata/verb/loc_mode",
+          "/obj/phase0_metadata/verb/view_mode"
+        ]
+      },
+      "divergent_labels": [
+        "metadata_verbs"
+      ]
     },
     {
       "manifest": "reopens_parent.dme",
@@ -428,10 +484,191 @@
         "reopen_vars",
         "reopen_override"
       ],
-      "status": "source probe; compilation, decoded metadata and paired runtime receipts pending",
-      "expected_values": null,
-      "reference_receipt": null,
-      "paired_receipt": null
+      "status": "paired observations captured",
+      "expected_values": {
+        "reopen_types": [
+          "/obj/phase0_reopen",
+          "/obj/phase0_reopen/base",
+          "/obj/phase0_reopen/a_child",
+          "/obj/phase0_reopen/z_child"
+        ],
+        "reopen_verbs": [
+          "/obj/phase0_reopen/base/verb/z_source",
+          "/obj/phase0_reopen/base/verb/a_source"
+        ],
+        "reopen_vars": [
+          "z_first",
+          "a_later",
+          "animate_movement",
+          "loc",
+          "x",
+          "y",
+          "z",
+          "screen_loc",
+          "pixel_step_size",
+          "bounds",
+          "locs",
+          "step_x",
+          "step_y",
+          "step_size",
+          "bound_x",
+          "bound_y",
+          "bound_width",
+          "bound_height",
+          "glide_size",
+          "vis_contents",
+          "vis_locs",
+          "vis_flags",
+          "particles",
+          "pixloc",
+          "type",
+          "parent_type",
+          "tag",
+          "name",
+          "desc",
+          "suffix",
+          "text",
+          "icon",
+          "icon_state",
+          "overlays",
+          "underlays",
+          "dir",
+          "visibility",
+          "luminosity",
+          "opacity",
+          "density",
+          "layer",
+          "gender",
+          "mouse_over_pointer",
+          "mouse_drag_pointer",
+          "mouse_drop_pointer",
+          "mouse_drop_zone",
+          "verbs",
+          "vars",
+          "contents",
+          "invisibility",
+          "infra_luminosity",
+          "pixel_x",
+          "pixel_y",
+          "mouse_opacity",
+          "pixel_z",
+          "override",
+          "maptext",
+          "maptext_width",
+          "maptext_height",
+          "transform",
+          "alpha",
+          "color",
+          "blend_mode",
+          "appearance",
+          "maptext_x",
+          "maptext_y",
+          "plane",
+          "appearance_flags",
+          "pixel_w",
+          "filters",
+          "render_source",
+          "render_target",
+          "icon_w",
+          "icon_z"
+        ],
+        "reopen_override": "child|base"
+      },
+      "reference_receipt": "E:\\dmb-native-v2-phase0\\link-final-2\\link-reopens_parent\\byond-observations.json",
+      "paired_receipt": "reopens_parent.paired.json",
+      "native_expected_values": {
+        "reopen_types": [
+          "/obj/phase0_reopen",
+          "/obj/phase0_reopen/base",
+          "/obj/phase0_reopen/z_child",
+          "/obj/phase0_reopen/a_child"
+        ],
+        "reopen_verbs": [
+          "/obj/phase0_reopen/base/verb/a_source",
+          "/obj/phase0_reopen/base/verb/z_source"
+        ],
+        "reopen_vars": [
+          "z_first",
+          "a_later",
+          "animate_movement",
+          "loc",
+          "x",
+          "y",
+          "z",
+          "screen_loc",
+          "pixel_step_size",
+          "bounds",
+          "locs",
+          "step_x",
+          "step_y",
+          "step_size",
+          "bound_x",
+          "bound_y",
+          "bound_width",
+          "bound_height",
+          "glide_size",
+          "vis_contents",
+          "vis_locs",
+          "vis_flags",
+          "particles",
+          "pixloc",
+          "type",
+          "parent_type",
+          "tag",
+          "name",
+          "desc",
+          "suffix",
+          "text",
+          "icon",
+          "icon_state",
+          "overlays",
+          "underlays",
+          "dir",
+          "visibility",
+          "luminosity",
+          "opacity",
+          "density",
+          "layer",
+          "gender",
+          "mouse_over_pointer",
+          "mouse_drag_pointer",
+          "mouse_drop_pointer",
+          "mouse_drop_zone",
+          "verbs",
+          "vars",
+          "contents",
+          "invisibility",
+          "infra_luminosity",
+          "pixel_x",
+          "pixel_y",
+          "mouse_opacity",
+          "pixel_z",
+          "override",
+          "maptext",
+          "maptext_width",
+          "maptext_height",
+          "transform",
+          "alpha",
+          "color",
+          "blend_mode",
+          "appearance",
+          "maptext_x",
+          "maptext_y",
+          "plane",
+          "appearance_flags",
+          "pixel_w",
+          "filters",
+          "render_source",
+          "render_target",
+          "icon_w",
+          "icon_z"
+        ],
+        "reopen_override": "child|base"
+      },
+      "divergent_labels": [
+        "reopen_types",
+        "reopen_verbs"
+      ]
     }
   ],
   "reference_results": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\results.json"

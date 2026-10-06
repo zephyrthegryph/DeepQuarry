@@ -1,8 +1,9 @@
 # Preprocessing contract — Phase 0
 
-Status: proposed architecture contract with eight captured DreamMaker runtime probes;
-native paired observations and human review remain pending. Reference
-producer: `ac1af55d1a`. This document specifies the replacement's requirements;
+Status: proposed architecture contract with 17 paired compile captures and 13
+DreamMaker runtime probes; 10 native runtime observations match and three legal
+DreamMaker inputs are rejected by the preserved native compiler. Human review
+remains pending. Reference producer: `ac1af55d1a`. This document specifies the replacement's requirements;
 it does not claim that the preserved producer already implements include regions.
 Fixtures live in `fixtures/phase0/preprocess/manifest.json`. The compact DreamMaker records are in
 `fixtures/phase0/preprocess/evidence/byond-runtime-observations.json`. Source
@@ -11,8 +12,12 @@ inspection and finite runtime observations are distinguished below.
 ## 1. Inputs and outputs
 
 Inputs are the captured DME/DM bytes, define set, target/compiler version, canonical
-project path mapping, and resource-search inventory. An include occurrence is not
-identified solely by its file: two occurrences may observe different macro state.
+project path mapping, and resource-search inventory. An include directive occurrence
+is separate from a file identity. The captured
+DreamMaker same-file probe suppresses its second expansion and its macro effects;
+its distinct-file counterpart expands both. Retain directive occurrences, but only
+accepted first visits produce child regions for this observed policy. Canonical
+alias spellings and cyclic include behavior remain unmeasured.
 Output is one ordered stream of expanded DM tokens and non-text items, complete
 diagnostics, current token origins, and the terminal macro/search state.
 
@@ -25,8 +30,10 @@ DreamMaker rules. The manifest distinguishes unsupported probes from those paths
 ## 2. Ordered items and directive state
 
 A text region is a maximal interval of one source file between include directives.
-An active include splits its parent interval; the child's items appear at that exact
-position before traversal resumes in the parent. Keep occurrence identity, canonical
+An active include splits its parent interval. A first accepted text-file visit
+places the child's items at that exact position before traversal resumes in the
+parent. A suppressed repeat retains an occurrence record but has no expansion
+or macro effects; do not blindly execute every include occurrence. Keep occurrence identity, canonical
 source path, source byte/line extent, include chain, and ordinal separately from the
 reusable region value. Inactive includes produce no child tokens or resource items.
 
@@ -65,6 +72,16 @@ expanded tokens and origins into the emission queue. Do not defer expansion itse
 or sort declarations by encounter ordinal afterward. The earlier ordinary-DM child
 interleaving rule applies to DM text; it must not erase this manifest exception.
 The exact scope of deferral for nested manifests requires the paired fixture below.
+
+The paths-origins fixture additionally establishes that a manifest `/datum/a`
+header supplies context to an included indented member file. Moving every manifest
+line after all included text loses that context and is the preserved native
+compiler's observed indentation failure. Grammar must therefore remain in joined
+encounter order; deferred declaration emission is a separate tree/link ordering
+projection. Preserve the region of each header/member instead of parsing included
+files independently or moving raw header text. Reordering standalone declarations
+and override chains requires the LINK contract; this observation is not permission
+to change their semantics.
 
 Non-text includes retain source ordinal and directive provenance. DMM and DMF bytes
 do not enter the DM token parser. Their content identity and existence are captured
@@ -132,18 +149,22 @@ actual resource-search queries. Neither may substitute the other's narrower proo
 ## 5. Paths and portability
 
 Use two representations: host access paths and semantic paths. Semantic paths use `/`
-separators and a stable project-relative form for in-project files. Normalize `.` and
-resolvable `..` lexically without discarding unresolved leading `..` or escaping the
-root silently. Preserve spelling/case unless target filesystem equivalence has been
+separators and a stable project-relative form for in-project files. Host access
+identities may normalize `.` and resolvable `..` lexically without discarding
+unresolved leading `..` or escaping the root silently. Emitted `__FILE__` must
+preserve include spelling: the captured `a/../a/body.dm` remains exactly that
+string in DreamMaker output, even though its access identity is `a/body.dm`.
+The paired slash fixture and separate backslash-input DreamMaker compile both
+emit `/` separators; see `evidence/path-separator-constants.json`. Preserve spelling/case unless target filesystem equivalence has been
 established; do not lowercase string literals or resource names globally. Host paths
 may retain drive/UNC prefixes; those prefixes are not silently inserted into reusable
 semantic values. External inputs need an explicit stable mount mapping or must decline
 cross-root sharing. Symlink/junction identity and case aliasing require captured policy.
 
 Text includes resolve relative to the containing file, as observed in the base source.
-FILE_DIR resource roots resolve against the project directory. Canonicalization is
-shared by fresh directive execution and cached effect replay. `__FILE__` uses the same
-semantic form as provenance. `__LINE__` is the current consuming line. These expansions
+FILE_DIR resource roots resolve against the project directory. Host canonicalization is shared by fresh directive execution and cached effect
+replay. Provenance retains both that access identity and include spelling.
+`__FILE__` uses the emitted spelling, not the normalized access identity. `__LINE__` is the current consuming line. These expansions
 are position dependencies; regions not observing them may share values across files.
 The base's simple `normalize` implementation drops parent components by popping; this
 document does not treat that implementation as proof for unresolved/external paths.
@@ -224,10 +245,9 @@ failed equality record. The wrapper now expects1 for this exact input. This
 observation cannot distinguish suppression of the second same-file include from
 first-initializer behavior on repeated declarations. The preserved native source
 expands repeated occurrences, but that implementation is not an oracle for
-DreamMaker declaration behavior. A distinct-file equivalent and two separately
-named occurrence values are needed before generalizing either explanation.
-Thus ordered include occurrences remain necessary architecture state; emitting
-all repeated tokens as a universal DreamMaker rule is not yet certified.
+DreamMaker declaration behavior. The corrected distinguishing captures below now separate these hypotheses.
+Ordered include directives remain necessary architecture state; expanding every
+repeated same-file directive conflicts with the captured DreamMaker behavior.
 
 ### FILE_DIR: archived payload versus search-state ambiguity
 
@@ -245,50 +265,82 @@ That explains native-source behavior but does not establish DreamMaker's
 encounter-time search rule.
 
 The updated wrapper reads five characters for both references and expects
-`early`; the old four-character mismatch remains immutable evidence. Its new
-wrapper hash/runtime capture is pending. The FILE_DIR stack description in §4
+`early`; the old four-character mismatch remains immutable evidence. The updated
+wrapper has now completed with equal observations under both producers. The FILE_DIR stack description in §4
 is preserved-source evidence and a proposed state representation, not a proven
 per-reference search/alias rule. Future disambiguation must use different archive
 names or independently inspect selected payload identities at each occurrence.
 
-### Distinguishing probes pending capture
+### Corrected paired captures
 
-- `repeat-same-include` versus `repeat-distinct-include`: identical body bytes
-  under VALUE1/2, but the latter uses a second filename. Unique first/second
-  declarations and SAW_ONE/SAW_TWO macro flags disclose whether the second
-  occurrence was interpreted. Shared result discloses duplicate initializer
-  precedence independently when both occurrence flags/declarations are present.
-- `file-dir-unique-pop`: separate before/during/after resource names exist in
-  both early and late roots with distinct payloads. Macro string values disclose
-  encounter state; payloads disclose whether resource resolution follows that
-  state or the final domain after pop. Different archive names prevent the
-  same-name explanation from masking the observation.
-- `file-dir-unique-retained`: keeps both roots active; separate payloads establish
-  search priority for this captured inventory, independently of a pop.
-- `file-dir-same-name`: explicit before/during/after shared.txt references retain
-  aliases, payloads and reference equality. Read its RSC beside the unique-name
-  results to distinguish archive convergence from search selection.
+`evidence/paired-final-capture.json` preserves all 17 capture receipts, the full
+compile/runtime logs with hashes, exact fixture inventories, binary hashes and
+builtins hash. Raw working directories remain at
+`E:/dmb-native-v2-phase0/preprocess-final-1`. All DreamMaker compile outcomes agree
+with the intended positive/negative case status. Thirteen positive wrappers
+complete their DreamMaker observation records and shutdown with exit zero.
+Ten preserved-native wrappers complete with equal JSON observations. Three legal
+DreamMaker inputs are rejected by native: `repeated`, `repeat-same-include`
+(duplicate global), and `paths-origins` (unexpected indentation). The diagnostics
+and distinct-file duplicate negative inputs are rejected by both; matching reject
+outcomes do not establish complete diagnostic parity. Both active and inactive
+non-text cases compile under both; downstream map/skin bytes are not compared by
+these compile-only receipts.
 
-These wrappers emit actual values without expected/equality fields until capture.
-The DME roots contain directives only; observation declarations live in included
-DM files, keeping manifest-text emission behavior separate from these questions.
-No fixture was launched while preparing these probes.
+#### Include suppression is distinguishable from initializer precedence
 
-### First distinguishing capture and repairs
+The corrected same-file input observes result=1, first_value=1, second_present=0,
+second_value=null, saw_one=1, saw_two=0. The separately named second-file input
+observes first_value=1, second_present=1, second_value=2, saw_one=1, saw_two=1.
+The second same-file include is suppressed even for preprocessor effects; a
+first-global-initializer rule cannot explain the missing SAW_TWO macro effect.
+The distinct-file duplicate-global input diagnoses duplicate result under both
+producers. The preserved native same-file expansion diverges from DreamMaker and
+fails on the duplicate global. Phase 1 must use the observed first-visit rule,
+while retaining a directive occurrence for diagnostics and traversal bookkeeping.
+This finite pair does not establish canonical-path alias or recursive-cycle rules.
 
-The initial run is retained in `evidence/distinguishing-first-capture.json`,
-including complete compile/runtime logs and hashes. Same-file inclusion observed
-result1, first1, second_present0, then the observer itself errored on an absent
-global. Dynamic global reads now explicitly check membership and return null
-when absent, allowing a complete record and shutdown. Distinct-file inclusion
-reported duplicate definition of result. That diagnostic is now isolated in
-`repeat-distinct-duplicate` (expected compile error); the positive distinct-file
-probe keeps unique declarations and macro flags without a duplicate result.
+#### Resource selection follows terminal roots in these probes
 
-The unique FILE_DIR cases failed because FILE_DIR expanded to an unquoted host
-path when used as a DM expression. Those invalid expression observations were
-removed; define/pop directives and unique resource payload checks remain. The
-same-name case ran successfully, yielding early-shared newline at all three
-references, shared.txt alias text and equal references. These observations remain
-finite evidence; repaired positive cases require fresh successful capture before
-assigning a general search/inclusion rule.
+Unique names eliminate same-archive-name convergence as an explanation. After a
+child pushes late and the parent pops it, before/during/after payloads are
+`early-before\n`, `early-during\n`, `early-after\n` under both producers. When the
+late push remains, all three payloads are `late-before\n`, `late-during\n`,
+`late-after\n`. Even the before token selects late in the retained case; token
+encounter state is not the resource search domain for these inputs. Resolve these
+resource literals against terminal FILE_DIR state in the resource consumer,
+separately from encounter-time macro expansion. Both roots contain all three
+unique names, establishing late-before-early priority for that inventory. Missing
+candidates, empty/function-like FILE_DIR and unmatched pops remain unmeasured.
+
+The same-name input also matches: all references read `early-shared\n`, stringify
+as shared.txt, and before/during compare equal. Its archived payload is consistent
+with the unique-name terminal-state findings. These observations do not establish
+all RSC alias/filename deduplication rules.
+
+### First failed capture retained
+
+The initial run remains in `evidence/distinguishing-first-capture.json`, including
+complete logs and hashes. Its same-file observer read an absent global without a
+membership guard; its distinct-file positive input accidentally duplicated result;
+its unique FILE_DIR wrappers attempted to evaluate an unquoted path macro as DM.
+Those fixture defects were repaired before the corrected capture. No original
+receipt has been overwritten or reclassified as a successful capture.
+
+## 9. Remaining contract review questions
+
+- Canonical alias and recursive include suppression; unknown extensions and
+  macro-computed include operands.
+- Unbalanced/cross-file conditional diagnostics and nested manifest deferral.
+- Empty/function-like FILE_DIR, unmatched pops, and missing earlier candidates.
+- Full external-path/case/junction policy and complete diagnostic provenance.
+  The existing fixture now pins full `__FILE__` constants in
+  `evidence/file-path-constants.json`. The separate backslash-input compile
+  in `evidence/path-separator-constants.json` emits the same slash strings;
+  include separators normalize to `/` in these captured cases.
+- Mutation/revert cache-oracle cases belong to later caching phases; this finite
+  cold fixture capture does not certify incremental behavior.
+
+The observed inclusion and terminal-resource rules above constrain Phase 1.
+Unmeasured cases remain explicit; the preserved compiler is evidence, not the
+DreamMaker oracle. Human contract review is still required.

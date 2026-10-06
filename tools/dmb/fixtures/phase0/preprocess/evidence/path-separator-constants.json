@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "tools": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe": "ae3659b4697f970e8d92a0d8556df3db1247fa4501851a833885de3e35608f45"
+  },
+  "input_hashes": {
+    "a\\body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+    "b\\body.dm": "e710252a6405157c536d86394b2776ac7c4c352091d8cbfc43df22af4560767a",
+    "phase0_preprocess.dme": "e6f234c2a217c91602d943cd4a5a90e50eca70b48b78de3427347aa2472f77d3",
+    "phase0_runtime.dme": "329b9916239e2764e940dde205a52ab4662015ba751b634fbf41efc2c6ff154f",
+    "runtime_observe.dm": "0bc518ec01311da22a296fa3edb560445c3669c77bc721ce5f3f7236d13738bb"
+  },
+  "world_path": "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+  "world_sha256": "6a01ac9703002562eed1f34141bcbbc66868c325421e1f247a47d58eb279ca01",
+  "records": [
+    {
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dme"
+      ],
+      "exit_code": 0,
+      "stdout": "DM compiler version 516.1687\nloading phase0_preprocess.dme\nsaving phase0_preprocess.dmb\nphase0_preprocess.dmb - 0 errors, 0 warnings (10/6/26 6:42 pm)\nTotal time: 0:00\n",
+      "stderr": "",
+      "seconds": 0.3604916000040248
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "class-path",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "/datum/a"
+      ],
+      "stdout": "class#0 Class { initial_ids: [579, 2, 247, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 247, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 65535, 0, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "class-path",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "/datum/b"
+      ],
+      "stdout": "class#1 Class { initial_ids: [580, 2, 248, 65535, 65535, 65535], direction: 2, interface: 1, extended_interface: None, text: 248, maptext: 65535, maptext_geometry: [32, 32, 0, 0], suffix: 65535, flags: 0, lists_and_procs: [65535, 65535, 65535, 65535, 1, 65535], layer_bits: 0, transform_flag: 0, transform: None, color_matrix_flag: 0, color_matrix: None, overrides: 65535 }\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "list",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "0"
+      ],
+      "stdout": "[67, 0, 68, 0]\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "list",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "1"
+      ],
+      "stdout": "[69, 0, 68, 0]\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "variable",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "67"
+      ],
+      "stdout": "Variable { kind: 6, value: 437, name: 438 } name=file_value\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "variable",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "69"
+      ],
+      "stdout": "Variable { kind: 6, value: 440, name: 438 } name=file_value\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "string",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "437"
+      ],
+      "stdout": "a/../a/body.dm\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "string",
+        "E:\\dmb-native-v2-phase0\\preprocess-path-spelling-1\\source\\phase0_preprocess.dmb",
+        "440"
+      ],
+      "stdout": "b/body.dm\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  ],
+  "root_manifest_text": "/datum/a\n#include \"a\\..\\a\\body.dm\"\n/datum/b\n#include \"b\\body.dm\"\n",
+  "finding": "BYOND normalizes backslash include separators to slash in __FILE__, while retaining a/../a/body.dm components."
+}

@@ -1,6 +1,6 @@
 /obj/phase0_reopen/z_child
     parent_type = /obj/phase0_reopen/base
-    proc/chain()
+    chain()
         return "child|" + ..()
 /obj/phase0_reopen/base
     var/z_first = 1

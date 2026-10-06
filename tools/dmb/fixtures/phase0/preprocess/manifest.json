@@ -1,15 +1,17 @@
 {
   "reference_commit": "ac1af55d1a",
-  "status": "eight DreamMaker runtime observations captured; native paired runtime pending; two source-derived predictions corrected with ambiguity documented",
+  "status": "17 paired compile captures complete; 10 of 13 runtime wrappers match; three legal BYOND inputs rejected by native; human review pending",
   "cases": [
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; runtime observations equal",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Child definition reaches subsequent parent tokens",
       "mutation": "Change child VALUE 2 to VALUE 3",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "child-effects/phase0_preprocess.dme",
       "id": "child-effects",
       "original_dreammaker_compile": "root-observed 516.1687 compile: zero errors/warnings; behavior not executed",
@@ -19,17 +21,20 @@
         "result": 2
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; runtime observations equal",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Recursive incoming read through local alias, negative tests, internal undef",
       "mutation": "Define MISSING; change EXTERNAL 7 to 8",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "incoming-internal/phase0_preprocess.dme",
       "id": "incoming-internal",
       "original_dreammaker_compile": "root-observed 516.1687 compile: zero errors/warnings; behavior not executed",
@@ -41,17 +46,20 @@
         "unexpected_present": 0
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; native rejects legal BYOND input",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Repeated occurrences preserve differing incoming macro states and declaration order",
       "mutation": "Swap incoming VALUE definitions",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 1",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "repeated/phase0_preprocess.dme",
       "id": "repeated",
       "original_dreammaker_compile": "root-observed 516.1687 compile: zero errors/warnings; behavior not executed",
@@ -62,17 +70,20 @@
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
       "runtime_coverage_note": "Final reopened global initializer checked; does not by itself prove complete occurrence/declaration ordering.",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; runtime observations equal",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Parent conditional frame survives child macro changes",
       "mutation": "Set initial ENABLE 0; child must not be read",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "conditional-boundary/phase0_preprocess.dme",
       "id": "conditional-boundary",
       "original_dreammaker_compile": "root-observed 516.1687 compile: zero errors/warnings; behavior not executed",
@@ -82,17 +93,20 @@
         "after": 2
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; runtime observations equal",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Includes inside expression and indented type block join one parser context",
       "mutation": "Change operand; move members include outside type block",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "pending-probe",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "joined-expression/phase0_preprocess.dme",
       "id": "joined-expression",
       "original_dreammaker_compile": "root-observed 516.1687 compile: zero errors/warnings; behavior not executed",
@@ -103,17 +117,20 @@
         "member": 3
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; runtime observations equal",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Child stack push persists; parent undef restores predecessor",
       "mutation": "Change lower early root while keeping late top identical",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "file-dir-stack/phase0_preprocess.dme",
       "id": "file-dir-stack",
       "original_dreammaker_compile": "unintended fixture error; repaired inputs require rerun",
@@ -124,18 +141,21 @@
         "after_text": "early"
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json",
-      "runtime_coverage_note": "Recaptured wrapper uses five-character prefix for during and after. Prior capture during earl (four characters) proves early payload, not resource search/stack phase; same archive name may alias both references."
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "runtime_coverage_note": "Current five-character wrapper captured for both producers; unique-name probes separately establish terminal-domain selection for their captured inventories.",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; native rejects legal BYOND input",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Equal bytes have occurrence-specific file/line values and origins",
       "mutation": "Insert blank lines; change include separator spelling",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 1",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "paths-origins/phase0_preprocess.dme",
       "id": "paths-origins",
       "original_dreammaker_compile": "unintended fixture error; repaired inputs require rerun",
@@ -149,56 +169,68 @@
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
       "runtime_coverage_note": "File paths reduced to final a/body.dm or b/body.dm suffix; line2 checked at original source token. Not complete provenance/path spelling proof.",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured compile outcomes; runtime not applicable",
       "expected": "No executed result asserted; PREPROCESS.md defines proposed contract",
       "purpose": "Macro provenance and error replay on repeated builds",
       "mutation": "Build twice unchanged, then remove error and define UNKNOWN_NAME",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 1",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "diagnostics/phase0_preprocess.dme",
       "id": "diagnostics",
-      "original_dreammaker_compile": "expected-error: #error phase0_expected_error"
+      "original_dreammaker_compile": "expected-error: #error phase0_expected_error",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured compile outcomes; runtime not applicable",
       "expected": "Compile-only: result global1; no map/skin entries selected when ENABLE_NON_TEXT absent",
       "purpose": "Inactive non-text includes route neither map nor skin and must not require inactive files",
       "mutation": "Toggle ENABLE_NON_TEXT; delete inactive files",
-      "preserved_execution": "pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "non-text/phase0_preprocess.dme",
       "id": "non-text",
-      "original_dreammaker_compile": "Inactive case only previously compiled; valid asset replacements require paired recapture"
+      "original_dreammaker_compile": "Inactive case only previously compiled; valid asset replacements require paired recapture",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured compile outcomes; runtime not applicable",
       "expected": "Compile-only: map includes map.dmm; skin includes skin.dmf; result global1; successful output has one turf cell and selected default macro skin",
       "purpose": "Active ordered non-text map and skin routing with valid downstream formats",
       "mutation": "Toggle ENABLE_NON_TEXT or reorder map/skin include occurrences",
-      "preserved_execution": "compile-only; pending",
+      "preserved_execution": "captured compile exit 0",
       "source_support": "base-supported",
-      "receipts": [],
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "non-text/phase0_preprocess_active.dme",
       "id": "non-text-active",
       "original_dreammaker_compile": "Pending paired enabled capture; no execution asserted",
       "defines_from_manifest": [
         "ENABLE_NON_TEXT=1"
-      ]
+      ],
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
       "mutation": "Change VALUE in body only; late should retain encounter value under inspected base assertion",
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured; runtime observations equal",
       "id": "deferred-manifest",
       "source_support": "base-supported: manifest_dm_is_deferred_but_macros_expand_at_encounter",
       "expected": "Inspected base assertion predicts ordinary body before deferred manifest text; paired result not asserted",
-      "preserved_execution": "pending",
-      "receipts": [],
+      "preserved_execution": "captured compile exit 0",
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "root": "deferred-manifest/phase0_preprocess.dme",
       "purpose": "DME text expands at encounter but emits after ordinary DM text",
       "runtime_manifest": "deferred-manifest/phase0_runtime.dme",
@@ -209,8 +241,9 @@
         "late": 2
       },
       "runtime_expectation_status": "DreamMaker-observed for exact captured input; no broader rule inferred",
-      "dreammaker_runtime": "observed 516.1687 compile/runtime exit0; captured prior expectation mismatch retained where present",
-      "runtime_receipt": "evidence/byond-runtime-observations.json"
+      "dreammaker_runtime": "captured current input, complete=True",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     },
     {
       "id": "repeat-same-include",
@@ -220,9 +253,11 @@
       "purpose": "Distinguish repeated-file directive suppression from duplicate-global initializer precedence using unique declarations and post-include macro flags",
       "source_support": "pending paired probe",
       "expected": "Competing hypotheses; capture actual values before assigning expectations",
-      "dreammaker_pair": "pending",
-      "preserved_execution": "pending",
-      "receipts": [],
+      "dreammaker_pair": "captured; native rejects legal BYOND input",
+      "preserved_execution": "captured compile exit 1",
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "runtime_observation_labels": [
         "result",
         "first_value",
@@ -232,7 +267,9 @@
         "saw_two"
       ],
       "expected_compile_error": false,
-      "capture_status": "first failed capture retained in evidence/distinguishing-first-capture.json; repaired input recapture pending"
+      "capture_status": "complete exact-input paired capture; finite observations only",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "dreammaker_runtime": "captured current input, complete=True"
     },
     {
       "id": "repeat-distinct-include",
@@ -242,9 +279,11 @@
       "purpose": "Distinguish repeated-file directive suppression from duplicate-global initializer precedence using unique declarations and post-include macro flags",
       "source_support": "pending paired probe",
       "expected": "Competing hypotheses; capture actual values before assigning expectations",
-      "dreammaker_pair": "pending",
-      "preserved_execution": "pending",
-      "receipts": [],
+      "dreammaker_pair": "captured; runtime observations equal",
+      "preserved_execution": "captured compile exit 0",
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "runtime_observation_labels": [
         "first_value",
         "second_present",
@@ -253,7 +292,9 @@
         "saw_two"
       ],
       "expected_compile_error": false,
-      "capture_status": "first failed capture retained in evidence/distinguishing-first-capture.json; repaired input recapture pending"
+      "capture_status": "complete exact-input paired capture; finite observations only",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "dreammaker_runtime": "captured current input, complete=True"
     },
     {
       "id": "file-dir-unique-pop",
@@ -263,16 +304,20 @@
       "purpose": "Unique archive names before/during/after stack mutation separate encounter macro values from resource domain timing and retained-root search priority",
       "source_support": "pending paired probe",
       "expected": "Competing hypotheses; capture actual values before assigning expectations",
-      "dreammaker_pair": "pending",
-      "preserved_execution": "pending",
-      "receipts": [],
+      "dreammaker_pair": "captured; runtime observations equal",
+      "preserved_execution": "captured compile exit 0",
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "runtime_observation_labels": [
         "before_payload",
         "during_payload",
         "after_payload"
       ],
       "expected_compile_error": false,
-      "capture_status": "first failed capture retained in evidence/distinguishing-first-capture.json; repaired input recapture pending"
+      "capture_status": "complete exact-input paired capture; finite observations only",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "dreammaker_runtime": "captured current input, complete=True"
     },
     {
       "id": "file-dir-unique-retained",
@@ -282,16 +327,20 @@
       "purpose": "Unique archive names before/during/after stack mutation separate encounter macro values from resource domain timing and retained-root search priority",
       "source_support": "pending paired probe",
       "expected": "Competing hypotheses; capture actual values before assigning expectations",
-      "dreammaker_pair": "pending",
-      "preserved_execution": "pending",
-      "receipts": [],
+      "dreammaker_pair": "captured; runtime observations equal",
+      "preserved_execution": "captured compile exit 0",
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "runtime_observation_labels": [
         "before_payload",
         "during_payload",
         "after_payload"
       ],
       "expected_compile_error": false,
-      "capture_status": "first failed capture retained in evidence/distinguishing-first-capture.json; repaired input recapture pending"
+      "capture_status": "complete exact-input paired capture; finite observations only",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "dreammaker_runtime": "captured current input, complete=True"
     },
     {
       "id": "file-dir-same-name",
@@ -301,9 +350,11 @@
       "purpose": "Explicit same archive-name comparison alongside unique-name probes; compare RSC named entries and payload identity, not only runtime filenames",
       "source_support": "pending paired probe",
       "expected": "Competing hypotheses; capture actual values before assigning expectations",
-      "dreammaker_pair": "pending",
-      "preserved_execution": "pending",
-      "receipts": [],
+      "dreammaker_pair": "captured; runtime observations equal",
+      "preserved_execution": "captured compile exit 0",
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
       "runtime_observation_labels": [
         "before_payload",
         "during_payload",
@@ -314,7 +365,9 @@
         "before_during_equal"
       ],
       "expected_compile_error": false,
-      "capture_status": "first failed capture retained in evidence/distinguishing-first-capture.json; repaired input recapture pending"
+      "capture_status": "complete exact-input paired capture; finite observations only",
+      "runtime_receipt": "evidence/paired-final-capture.json",
+      "dreammaker_runtime": "captured current input, complete=True"
     },
     {
       "id": "repeat-distinct-duplicate",
@@ -322,9 +375,13 @@
       "purpose": "Separate duplicate-global-definition diagnostic from distinct-file inclusion/macro traversal",
       "expected_compile_error": true,
       "expected": "BYOND516.1687 original distinct-file capture reported duplicate definition of result; dedicated negative input pending capture",
-      "dreammaker_pair": "pending",
+      "dreammaker_pair": "captured compile outcomes; runtime not applicable",
       "source_support": "diagnostic probe",
-      "receipts": []
+      "receipts": [
+        "evidence/paired-final-capture.json"
+      ],
+      "preserved_execution": "captured compile exit 1",
+      "capture_status": "complete exact-input paired capture; finite observations only"
     }
   ]
 }

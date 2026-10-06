@@ -80,9 +80,9 @@ are retained in `observable.paired.json` and the fixture manifest. This records
 the fixture's world-source setting without assigning an unverified meaning to
 the numeric kind/parameter or claiming broader metadata coverage.
 
-## Additional source probes (receipts pending)
+## Additional source probes (captured below)
 
-Three additional manifests are source-only probes until the coordinator captures fresh compilation, decoded metadata and paired runtime receipts. No expected order has been invented in their manifest entries.
+Three additional manifests have now been captured; the final section and paired receipts record their finite observations. Expected orders come from the captured reference, not inferred general rules.
 
 - `map_startup.dme` places opposite object orders on four coordinates, records area/turf/object `New` calls before `world.New`, and records world iteration with coordinates. It separates placement order from runtime traversal.
 - `metadata_modes.dme` covers both values of every listed boolean flag, null/non-null category, text/desc/invisibility/parameter annotation, and `src in world`, `usr`, `usr.loc`, and `view(1)`. Decode the complete procedure settings, not just verb visibility. These are representative legal source modes, not an exhaustive grammar claim.
@@ -92,7 +92,7 @@ The existing four paired cases retain their recorded outcomes. Generalization be
 
 ### Static fixture review and decoded receipt commands
 
-Static review: every new manifest includes `common.dm` before the case source; each case defines exactly one `world.New`, chains the engine implementation, emits all declared labels, and calls `phase0_finish`. No verb invocation requiring a client is needed. Map `New` hooks chain their parent and append only to the global trace; the map places four cells with two ordered objects each. Syntax legality and actual map initialization timing still require the pinned compiler run; this review is not a compile receipt. Metadata includes ordered `value as text, count = 3` parameters to cover annotation and default-source encoding in addition to flags.
+Static review: every new manifest includes `common.dm` before the case source; each case defines exactly one `world.New`, chains the engine implementation, emits all declared labels, and calls `phase0_finish`. No verb invocation requiring a client is needed. Map `New` hooks chain their parent and append only to the global trace; the map places four cells with two ordered objects each. Syntax legality and actual map initialization timing still require the pinned compiler run; this review is not a compile receipt. Metadata includes ordered `value as text, count = 3 as num` parameters to cover annotation and default-source encoding in addition to flags.
 
 Use the frozen inspector recorded by the coordinator. For captured directories `REFERENCE` and `NATIVE`, retain stdout, stderr and exit status from these commands (replace only the two directory tokens with the actual captured absolute paths):
 
@@ -109,3 +109,15 @@ Use the frozen inspector recorded by the coordinator. For captured directories `
 ```
 
 The scoped metadata comparison checks decoded display/description/category/source/effective flags/invisibility/ordered arguments and argument-source procedures. It also compares code and other selected records; classify differences by the reported field instead of treating a nonzero exit as a compiler invocation failure. The three audit commands are summaries, not complete per-procedure value dumps: `proc-flags-context` prints extended-flag records only. To freeze complete raw procedure fields, obtain each authored procedure's numeric ID separately in each DMB from the existing exporter, then run `dmb-inspect proc FILE.dmb PROC_ID`; follow its string IDs with `string FILE.dmb STRING_ID` and its argument-list ID with `list FILE.dmb LIST_ID`. Never reuse reference numeric IDs for the native file. Raw source kind/parameter values remain observations until their meaning is established. Map semantic comparison verifies placement data; runtime creation order remains the `phase0-link.json` oracle, not a map-comparator conclusion.
+
+## Additional paired captures — 6 October 2026
+
+The three source probes above now have legal-source receipts in `fixtures/phase0/link/{map_startup,metadata_modes,reopens_parent}.paired.json`. Their source hashes, actual commands/outcomes, tool hashes, complete reference/native arrays and decoded comparison logs are retained. Captures use the frozen ac1 release, not Build50. Earlier invalid fixture attempts remain at `E:/dmb-native-v2-phase0/link-final-{1,2}`: the metadata verb required `count = 3 as num`; a nonlexical child overriding an existing method required bare `chain()`, not a new `proc/chain()` declaration. Native accepted those rejected inputs, which is compile-error divergence evidence, not a legal runtime parity receipt.
+
+| Probe | Finite observation |
+| --- | --- |
+| Map/startup | Both outputs match exactly. Area New precedes turfs; these four turf calls run (2,2), (1,2), (2,1), (1,1). Object New and world enumeration run (1,1), (2,1), (1,2), (2,2), preserving each cell's authored object ordering. Decoded semantic map comparison reports no discrepancies. This does not certify arbitrary map sizes, z levels, overrides or initialization effects. |
+| Reopens/nonlexical parent | Reference types are root, base, a_child, z_child; native swaps the children. Reference verbs are z_source, a_source (display names A then Z), native a_source, z_source. Vars and child\|base override agree. Scoped decoded proc comparison reports no discrepancies. Display-name order is observable here; a universal comparator/tie-break rule remains uncertified. |
+| Metadata modes | Reference verb enumeration is view_mode, loc_mode, usr_mode, world_mode; native uses declaration order world_mode, usr_mode, loc_mode, view_mode. Source-path reflection agrees. Scoped decoded comparison finds three differences, all on world_mode: src reference Other { kind: 16, parameter: 127 } vs native Default; effective flags 1017 vs 985 (difference 0x20, not assigned a guessed meaning); count argument reference type_flags 136 vs native 0. Other selected metadata/procs compare equal in this fixture. |
+
+The metadata comparison is `E:/dmb-native-v2-phase0/link-final-3/link-metadata_modes/metadata-diff.log`; the map comparison is `E:/dmb-native-v2-phase0/link-final-1/link-map_startup/map-diff.log`; the reopen comparison is `E:/dmb-native-v2-phase0/link-final-2/link-reopens_parent/proc-diff.log`. Exact arrays and SHA256 identities are in the tracked paired receipts. The fixtures exercise both boolean flag values and representative argument/source modes; this finite coverage does not prove every metadata encoding or alias rule. These observations supersede the pending status of these three probes, while broader rule certification and full-game parity remain open.
