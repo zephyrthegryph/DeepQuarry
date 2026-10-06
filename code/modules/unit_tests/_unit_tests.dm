@@ -1149,6 +1149,8 @@
 
 #include "round2_circuit_jointext_empty_delimiter.dm"
 
+#include "round2_circuit_arithmetic_first_input_pull.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
