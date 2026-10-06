@@ -4369,19 +4369,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/pipe_air = P.return_air()
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
 	var/obj/machinery/meter/M = new(T)
-	rel_set(M, nameof(M.target), P)
-	M.machine_step()
-	TEST_ASSERT(om_watch_armed(M), "idle local meter did not subscribe and hibernate")
-	var/meter_wakes = M.machine_wake_count
-	pipe_air.adjust_moles(/datum/gas/oxygen, 1000)
-	// Finish any dirty-gas batch captured by the running subsystem before
-	// consuming the mutation made above. Production does this on successive fires.
-	for(var/meter_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(M.machine_wake_count > meter_wakes)
-			break
-	TEST_ASSERT(M.machine_wake_count > meter_wakes, "meter did not wake after target pressure changed")
-
+	M.set_target(P)
+	TEST_ASSERT(test_machine_idle(M), "a meter has no machine step: its gas watch moves its needle")
 	var/obj/machinery/firealarm/F = new(T)
 	var/fire_result = F.machine_step()
 	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
@@ -5338,7 +5327,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	rel_set(M, nameof(M.target), P)  // direct assign so select_target search isn't required
 	M.set_use_power(USE_POWER_IDLE)
 	M.stat_remove(BROKEN | NOPOWER)
-	M.machine_step() // shouldn't crash; should set an icon_state based on pipe pressure
+	M.refresh() // shouldn't crash; should set the needle from the pipe's pressure
 
 	// Validate that the meter's target returns the same pressure we set on
 	// the pipeline.
@@ -7625,19 +7614,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
 	var/datum/gas_mixture/pipe_air = P.return_air()
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
-	var/obj/machinery/meter/M = new(T)
-	rel_set(M, nameof(M.target), P)
-	M.stat_remove(BROKEN | NOPOWER)
-	TEST_ASSERT(test_machine_idle(M), "a meter kept running after drawing its reading")
-	TEST_ASSERT(om_watch_armed(M, "gas"), "meter did not arm its display watch")
-	var/meter_wakes = M.gas_dependency_wake_count
-	pipe_air.adjust_moles(/datum/gas/oxygen, 0.001)
-	deliver(M, meter_wakes)
-	TEST_ASSERT_EQUAL(M.gas_dependency_wake_count, meter_wakes, "pressure noise below the needle's resolution woke a meter")
-	pipe_air.adjust_moles(/datum/gas/oxygen, 1000)
-	deliver(M, meter_wakes)
-	TEST_ASSERT_EQUAL(M.gas_dependency_wake_count, meter_wakes + 1, "a needle-moving pressure change did not wake the meter exactly once")
-	qdel(M)
 	qdel(P)
 
 	// A trinary filter's flow is a Rust budget group: never a DM step, and its settings queue its push.

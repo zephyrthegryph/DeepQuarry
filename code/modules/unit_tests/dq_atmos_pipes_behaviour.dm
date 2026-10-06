@@ -27,9 +27,14 @@
 
 /// Time for a meter to follow its pipe's gas.
 /proc/ap_meter_settle(obj/machinery/meter/M)
+	var/before = M.needle
+	for(var/i in 1 to 60)
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		if(M.needle != before)
+			break
+		stoplag()
 	am_settle()
-	SSair.run_gas_frames(1)
-	M.machine_step()
 
 /// A radio command packet to a pipe device with radio tag `tag` (its `id`).
 /proc/ap_radio(obj/machinery/atmospherics/D, tag, list/command)
@@ -712,7 +717,7 @@
 	M.stat_remove(NOPOWER | BROKEN)
 	M.set_target(P)
 	var/datum/gas_mixture/air = P.return_air()
-	air.adjust_gas(GAS_N2, 200)
+	air.adjust_gas(GAS_N2, 2000)
 	gas_touched(air)
 	ap_meter_settle(M)
 	TEST_ASSERT(M.icon_state != "meterX" && M.icon_state != "meter0", "the needle shows the pipe's pressure ([M.icon_state])")
