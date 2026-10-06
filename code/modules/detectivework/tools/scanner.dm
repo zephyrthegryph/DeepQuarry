@@ -254,7 +254,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 	reveal_incompletes = TRUE
 
 /proc/detective_scanner_blood_report(mob/user, atom/target)
-	var/list/blooddna = target.forensic_data.get_blooddna()
+	var/list/blooddna = target?.forensic_data?.get_blooddna()
 	for(var/blood in blooddna)
 		to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))
 

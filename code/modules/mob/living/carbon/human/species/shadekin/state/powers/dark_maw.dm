@@ -166,7 +166,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 		//We got deleted probably, do nothing more
 		return
 
-	if(L.loc != get_turf(src))
+	if(!L || L.loc != get_turf(src))
 		visible_message(span_notice("The shadowy tendrils fail to catch anything and dissipate."))
 		spent(src, L)
 		return

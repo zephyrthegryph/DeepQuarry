@@ -58,6 +58,8 @@ CAPABILITIES(/obj/item/batterer)
 		icon_state = "battererburnt"
 
 /obj/item/batterer/proc/mind_batter_effect(mob/living/carbon/human/M)
+	if(!M)
+		return
 	if(prob(50))
 		M.status_at_least(STAT_WEAKENED, rand(10,20))
 		if(prob(25))
