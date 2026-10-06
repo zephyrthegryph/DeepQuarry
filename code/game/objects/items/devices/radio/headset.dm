@@ -223,7 +223,7 @@ CAPABILITIES(/obj/item/radio/headset)
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)
-			own_take(M, nameof(M.mob_radio))
+			rel_take(M, nameof(M.mob_radio))
 			return
 	..()
 

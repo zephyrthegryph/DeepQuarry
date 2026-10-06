@@ -331,14 +331,14 @@ CAPABILITIES(/obj/machinery/cryopod)
 	var/mob/living/silicon/robot/R = to_despawn
 	if(!istype(R)) return ..()
 
-	own_clear(R, nameof(R.mmi), OWN_DELETE)
+	rel_clear(R, nameof(R.mmi), OWN_DELETE)
 	for(var/obj/item/I in R.module) // the tools the borg has; metal, glass, guns etc
 		for(var/mob/M in I)
 			despawn_occupant(M)
 		for(var/obj/item/O in I) // the things inside the tools, if anything; mainly for janiborg trash bags
 			O.forceMove(R)
 		spent(I)
-	own_clear(R, nameof(R.module), OWN_DELETE)
+	rel_clear(R, nameof(R.module))
 
 	return ..()
 
@@ -460,7 +460,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 		to_despawn.mind.assigned_role = null
 
 		if(to_despawn.mind.objectives.len)
-			own_clear(to_despawn.mind, nameof(/datum/mind::objectives), OWN_DELETE)
+			rel_clear(to_despawn.mind, nameof(/datum/mind::objectives))
 			to_despawn.mind.special_role = null
 
 		// Delete them from datacore.

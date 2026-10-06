@@ -101,4 +101,4 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 
 /// Drops `holder`'s watches in its list var `watches_var`.
 /proc/gas_watch_many_clear(datum/holder, watches_var)
-	own_clear(holder, watches_var, OWN_DELETE)
+	rel_clear(holder, watches_var)

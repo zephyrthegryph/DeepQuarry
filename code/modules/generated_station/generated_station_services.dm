@@ -88,7 +88,7 @@ CAPABILITIES(/datum/generated_station_service_route)
 /datum/generated_station_service_route/New()
 	..()
 	path = list()
-	own_take_all(src, nameof(physical_markers))
+	rel_take_all(src, nameof(physical_markers))
 
 
 /obj/effect/landmark/generated_station_department_core

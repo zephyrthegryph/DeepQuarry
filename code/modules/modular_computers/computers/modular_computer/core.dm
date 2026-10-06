@@ -79,7 +79,6 @@
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		ended_with(CH, src)
-	rel_clear(src, nameof(paired_uavs))
 	..()
 
 DECLARE_EMAG_REPEATABLE(/obj/item/modular_computer, PROC_REF(on_emag), null)

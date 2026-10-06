@@ -737,7 +737,7 @@ VV_TOPIC_ACTION(/obj/structure/sign/painting, "removepainting", PROC_REF(vv_topi
 			fdel(png)
 	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
 		if(P.current_canvas && md5(P.current_canvas.get_data_string()) == md5)
-			own_clear(P, nameof(P.current_canvas), OWN_DELETE)
+			rel_clear(P, nameof(P.current_canvas), OWN_DELETE)
 			P.update_appearance()
 	loaded = FALSE
 	log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))

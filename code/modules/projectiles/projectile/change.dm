@@ -20,7 +20,7 @@
 		if(isrobot(M))
 			var/mob/living/silicon/robot/Robot = M
 			if(Robot.mmi)
-				own_clear(Robot, nameof(Robot.mmi), OWN_DELETE)
+				rel_clear(Robot, nameof(Robot.mmi), OWN_DELETE)
 		else
 			for(var/obj/item/W in contents_of(M))
 				if(istype(W, /obj/item/implant))	//TODO: Carn. give implants a dropped() or something

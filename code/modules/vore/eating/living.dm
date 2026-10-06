@@ -394,7 +394,7 @@
 
 		if(soulgem)
 			src.soulgem.release_mobs()
-			own_clear(src, nameof(soulgem), OWN_DELETE)
+			rel_clear(src, nameof(soulgem), OWN_DELETE)
 		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
 			rel_set(src, nameof(soulgem), state_materialize(P.soulcatcher_prefs, src, NONE, errors))

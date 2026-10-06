@@ -95,7 +95,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 	var/obj/item/stack/rods/rods = new(loc, 6)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, nameof(beaker))
+		rel_take(src, nameof(beaker))
 	replace_with(src, rods)
 
 /obj/machinery/iv_drip/proc/work_step(datum/act/timer/A)
@@ -169,7 +169,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 	if(!beaker)
 		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
-	own_take(src, nameof(beaker))
+	rel_take(src, nameof(beaker))
 	update_icon()
 	return OP_OK
 

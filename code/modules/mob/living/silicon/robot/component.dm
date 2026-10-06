@@ -386,8 +386,8 @@ CAPABILITIES(/obj/item)
 
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()
-	// own_take_all() empties `afflictions` in place: hand back the detached members it returns.
-	return own_take_all(src, nameof(afflictions)) || list()
+	// rel_take_all() empties `afflictions` in place: hand back the detached members it returns.
+	return rel_take_all(src, nameof(afflictions))
 
 /// Structural load the part carries (examine, installing checks).
 /datum/carried_afflictions/proc/carried_load()

@@ -98,7 +98,7 @@
 	return TRUE
 
 /proc/cap_assembly_detach(obj/holder, mob/user, obj/item/held)
-	var/obj/item/assembly/A = own_take(holder, nameof(/obj::attached_assembly))
+	var/obj/item/assembly/A = rel_take(holder, nameof(/obj::attached_assembly))
 	if(!A)
 		return refuse(user, "Nothing is attached to \the [holder].")
 	if(A.secured)

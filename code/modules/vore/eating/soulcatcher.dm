@@ -64,7 +64,7 @@ CAPABILITIES(/obj/soulgem)
 
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
-	own_clear(target, nameof(/mob::soulgem), OWN_DELETE)
+	rel_clear(target, nameof(/mob::soulgem), OWN_DELETE)
 	var/mob/living/old_owner = owner()
 	forceMove(target)
 	rel_set(src, nameof(owner), target)

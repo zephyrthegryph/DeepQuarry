@@ -60,7 +60,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
 	rel_set(src, nameof(owner), H)
-	own_take_all(src, nameof(forms))
+	rel_take_all(src, nameof(forms))
 	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
 		rel_add(src, nameof(forms), new form_type(), form_type)
