@@ -2,6 +2,14 @@
 	set name = "Smite"
 	set desc = "Abuse a player with various 'special treatments' from a list."
 	set category = VERB_CAT_FUN_DO_NOT
+	// Only this client's actual ended request carries the original target and answers.
+	var/list/smite_answers = list()
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/client_smite) && resumed.owner == src && resumed.subject == target && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(smite_answered))
+			var/list/previous = resumed.captured["answers"]
+			smite_answers = previous.Copy()
+			smite_answers[resumed.step_name] = resumed.value
 	if(!check_rights(R_FUN))
 		return
 
@@ -12,13 +20,17 @@
 								SMITE_SHADEKIN_ATTACK,SMITE_SHADEKIN_NOMF,SMITE_AD_SPAM,SMITE_REDSPACE_ABDUCT,SMITE_AUTOSAVE,SMITE_AUTOSAVE_WIDE,SMITE_SPICEREQUEST,SMITE_PEPPERNADE,SMITE_TERROR,
 								SMITE_PIE, SMITE_SPICE, SMITE_HOTDOG) //pie, spicy air and hot dog
 
-	var/smite_choice = client_ask("a1", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice, message = "Select the type of SMITE for [target]", title = "SMITE Type Choice", choices = smite_types)
+	var/question_a1 = "Select the type of SMITE for [target]"
+	if(!("a1" in smite_answers))
+		open_request(src, /datum/prompt/choice/client_smite, PROC_REF(smite_answered), answerer = mob, subject = target, captured = list("answers" = smite_answers.Copy()), step_name = "a1", question = question_a1, title = "SMITE Type Choice", choices = smite_types)
+		return
+	var/smite_choice = smite_answers["a1"]
 	if(isnull(smite_choice))
 		return
 	if(!smite_choice)
 		return
 
-	if(length(om_answers) <= 1) // Once: later questions of a smite re-run this.
+	if(length(smite_answers) <= 1) // Once: later questions of a smite re-run this.
 		log_and_message_admins("has used SMITE ([smite_choice]) on [key_name(target)].", src)
 		feedback_add_details("admin_verb","SMITE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -99,7 +111,11 @@
 				"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 				"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
 				"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-			var/kin_type = client_ask("a2", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice, message = "Select the type of shadekin for [target] nomf", title = "Shadekin Type Choice", choices = kin_types)
+			var/question_a2 = "Select the type of shadekin for [target] nomf"
+			if(!("a2" in smite_answers))
+				open_request(src, /datum/prompt/choice/client_smite, PROC_REF(smite_answered), answerer = mob, subject = target, captured = list("answers" = smite_answers.Copy()), step_name = "a2", question = question_a2, title = "Shadekin Type Choice", choices = kin_types)
+				return
+			var/kin_type = smite_answers["a2"]
 			if(isnull(kin_type))
 				return
 			if(!kin_type || !target)
@@ -108,7 +124,11 @@
 
 			kin_type = kin_types[kin_type]
 
-			var/myself = client_ask("a3", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice/alert, message = "Control the shadekin yourself or delete pred and prey after?", title = "Control Shadekin?", choices = list("Control","Cancel","Delete"))
+			var/question_a3 = "Control the shadekin yourself or delete pred and prey after?"
+			if(!("a3" in smite_answers))
+				open_request(src, /datum/prompt/choice/client_smite, PROC_REF(smite_answered), answerer = mob, subject = target, captured = list("answers" = smite_answers.Copy()), step_name = "a3", question = question_a3, title = "Control Shadekin?", choices = list("Control","Cancel","Delete"), buttons = TRUE)
+				return
+			var/myself = smite_answers["a3"]
 			if(isnull(myself))
 				return
 			if(!myself || myself == "Cancel" || !target)
@@ -403,3 +423,27 @@ GLOBAL_VAR(redspace_abduction_z)
 	H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD, 0, 0, 1)
 	om_qdel_after(suit, 5 SECONDS)
 	om_qdel_after(hood, 5 SECONDS)
+
+/datum/prompt/choice/client_smite
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/client_smite/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	var/mob/living/carbon/human/original_target = subject
+	if(!istype(original_target) || QDELETED(original_target))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/client_smite/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/client_smite/refusal(given)
+	return null
+
+/client/proc/smite_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	world.push_usr(A.request.answerer, new /datum/callback(src, PROC_REF(smite)), A.request.subject, A.answer)
