@@ -292,7 +292,7 @@ TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("
 CAPABILITIES(/obj/structure/flora/pottedplant)
 	owns_one(nameof(stored_item), /obj/item)
 	without("item")
-	op("hide", item(/obj/item), label("Hide item"), when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))),
+	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
 		needs(req(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), then(PROC_REF(interaction_hide_item)))
 	op("search", hand(), label("Search"), then(PROC_REF(interaction_hand)))
 

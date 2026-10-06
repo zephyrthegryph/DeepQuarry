@@ -200,11 +200,11 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	section(ctrl_click, "The ctrl-click on the door: hammer on it (combat), hold it open (grab), ring the bell (anything else)")
 	// A silicon's ctrl-click is its bolt button over the link (below), never a hand on the door.
 	op("hammer", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_HURT), label("Hammer on the door"), priority(OP_PRIORITY_ATTACK),
-		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), wait(0), then(PROC_REF(hammer_on_door)))
+		when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(req_adjacent()), wait(0), then(PROC_REF(hammer_on_door)))
 	op("hold_open", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_GRAB), label("Hold the door open"), priority(OP_PRIORITY_PART),
-		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), wait(0), then(PROC_REF(hold_door_open)))
+		when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(req_adjacent()), wait(0), then(PROC_REF(hold_door_open)))
 	op("doorbell", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), label("Ring the bell"), priority(OP_PRIORITY_NORMAL),
-		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), wait(0), then(PROC_REF(ring_doorbell)))
+		when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(req_adjacent()), wait(0), then(PROC_REF(ring_doorbell)))
 
 	section(controls, "The remote control window (an AI's, a cyborg's, an admin ghost's) and a silicon's gestures over its link")
 	interface("AiAirlock")
@@ -236,7 +236,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("remote_shock", remote(), gesture(GESTURE_ALT), label("Toggle electrification"), toggles_hold(STAT_ELECTRIFIED, TRUE, source = ON_ACTOR),
 		then(PROC_REF(remote_shock_marked)), logs(LOG_GAME))
 	extend("remote_shock", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
-	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the bolt lights"),
+	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the bolt lights"),
 		needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	extend("remote_lights", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
 	param(nameof(assembly_at_make), pos = 1, apply = PROC_REF(build_from_assembly), keep = FALSE)

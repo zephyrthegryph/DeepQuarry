@@ -38,8 +38,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 	param(nameof(can_revert), pos = 6)
 	param(nameof(discard_clothes), pos = 7)
 	op("anchor", tool(TOOL_WRENCH), wait(0), label("Use"), then(PROC_REF(gargoyle_wrenched)))
-	op("item", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
-	op("item_cyborg", item(/obj/item), label("Use"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(interaction_item_cyborg)))
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
 
 /// The human petrified, and what the statue overrides of their look (its constructor params).
 /obj/structure/gargoyle/var/tmp/mob/living/carbon/human/petrified

@@ -152,23 +152,21 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	op("use_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("tend", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
+	// a ghost may become the living plant product of a ripe tray (the old attack_ghost: never fell through to the default)
+	op("ghost_harvest", observer(), label("Harvest"), needs(req(PROC_REF(can_ghost_harvest), because = PROC_REF(ghost_harvest_refusal))),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Living plant request", "question" = computed(PROC_REF(ghost_harvest_question)), "timeout" = 0), keeps = TARGET_PRESENT),
+		then(PROC_REF(ghost_harvested)))
 	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(req(PROC_REF(can_toggle_lid))), then(PROC_REF(interaction_close_lid)))
-	op("remove_label", menu(), label("Remove Label"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_remove_label)))
-	op("set_light", menu(), label("Set Light"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))),
+	op("remove_label", menu(), label("Remove Label"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_remove_label)))
+	op("set_light", menu(), label("Set Light"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))),
 		asks(/datum/prompt/choice, fields = list("question" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10), "buttons" = FALSE, "timeout" = 0), step = "light"),
 		then(PROC_REF(interaction_set_light)))
-	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
+	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
 	op("sample", tool(TOOL_WIRECUTTER), label("Take a sample"), wait(0), then(PROC_REF(sample_cut)))
 	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(boltable))), then(PROC_REF(bolted)))
 	op("freezer", tool(TOOL_MULTITOOL), label("Toggle cryogenic freezing"), wait(0),
 		needs(req(PROC_REF(is_anchored), because = MSG(hydroponics/anchor_first)), req(PROC_REF(can_freeze), because = MSG(hydroponics/no_freezer))),
 		then(PROC_REF(freezer_toggled)))
-
-// A ghost's harvest (becoming the living plant product) stays a legacy observer interaction: an op has no observer binding yet.
-/obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
-	var/static/list/ghost_harvest = INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest))
-	into += dq_interaction_from_spec(type, ghost_harvest)
-	..()
 
 /// Only a mechanical tray has a lid (the hand binding brings the reach and the actor's state).
 /obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid(datum/act/op/A)
@@ -181,26 +179,29 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /obj/machinery/portable_atmospherics/hydroponics/proc/actor_can_act(datum/act/op/A)
 	return dq_actor_can_act(A.actor, src, A.held)
 
-/// Old attack_ghost: a ghost may become a living plant product. Never fell through to the default.
-/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_ghost_harvest(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	return botany_ghost_harvest_stage(user, held, interaction)
+/// A ghost may become the living plant product of a ripe tray (the old attack_ghost). Silent unless the ghost itself may not.
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_ghost_harvest(datum/act/op/A)
+	return isnull(ghost_harvest_refusal(A))
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_stage(mob/observer/dead/user, obj/item/held, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
-	if(!(harvest && seed && seed.has_mob_product))
-		return TRUE
-
+/// Why a ghost may not harvest this tray, or null: nothing living to harvest (silent) or the ghost trap's own candidate checks.
+/obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvest_refusal(datum/act/op/A)
+	READS_FROM() // the ripeness and the candidate's bans are read when the ghost clicks, never cached
+	if(!(harvest && seed && seed.has_mob_product)) // ALLOW(reads): ripeness and the plant's kind are read when the ghost clicks, never cached
+		return /datum/msg/req_silent
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
-	if(!G.assess_candidate(user))
-		return TRUE
-	if(!botany_answer_ready)
-		open_request(src, /datum/prompt/choice/botany_ghost_harvest, PROC_REF(botany_ghost_harvest_answered), answerer = user, botany_operator = user, botany_held = held, botany_interaction = interaction, question = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"), buttons = TRUE)
-		return TRUE
-	var/response = botany_answer
-	if(isnull(response))
-		return TRUE
-	if(response == "Yes")
+	return G?.candidate_refusal(A.actor)
+
+/// The question the ghost is asked, naming the planted line.
+/obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvest_question(datum/act/A)
+	return "Are you sure you want to harvest this [seed?.display_name]?"
+
+/// The yes: the tray is harvested and the ghost goes into the plant (the ghost trap's candidate checks are asked again with the answer).
+/obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvested(datum/act/op/A)
+	var/datum/prompt/answer = A.answer
+	if(answer?.value)
 		harvest()
-	return TRUE
+		SStgui.update_uis(src)
+	return OP_OK
 
 /obj/machinery/portable_atmospherics/hydroponics/attack_generic(mob/user)
 
@@ -784,51 +785,4 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 	update_icon()
 
 #undef AGE_MOD_MAX
-
-/// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
-/obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = botany_ghost_harvest_apply(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/botany_ghost_harvest_apply(datum/act/request/A)
-	var/datum/prompt/choice/botany_ghost_harvest/ask = A.answer
-	return botany_ghost_harvest_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
-
-/datum/prompt/choice/botany_ghost_harvest
-	timeout = 0
-	var/mob/botany_operator
-	var/obj/item/botany_held
-	var/datum/interaction/botany_interaction
-	var/botany_operator_expected = FALSE
-	var/botany_held_expected = FALSE
-	var/botany_interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest)
-	ref_one(nameof(botany_operator), /mob)
-	ref_one(nameof(botany_held), /obj/item)
-	ref_one(nameof(botany_interaction), /datum/interaction)
-
-/datum/prompt/choice/botany_ghost_harvest/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_operator = botany_operator
-	var/obj/item/captured_held = botany_held
-	var/datum/interaction/captured_interaction = botany_interaction
-	botany_operator_expected = !isnull(captured_operator)
-	botany_held_expected = !isnull(captured_held)
-	botany_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(botany_operator))
-	rel_clear(src, nameof(botany_held))
-	rel_clear(src, nameof(botany_interaction))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(botany_operator), captured_operator)
-	if(captured_held && !QDELETED(captured_held))
-		rel_set(src, nameof(botany_held), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(botany_interaction), captured_interaction)
-
-/datum/prompt/choice/botany_ghost_harvest/recheck_extra()
-	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
-		return "gone"
 

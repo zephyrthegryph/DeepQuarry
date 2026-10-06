@@ -4,6 +4,9 @@
 
 	var/tmp/obj/soulgem/gem
 
+CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
+	ref_one(nameof(gem), /obj/soulgem) // the gem that holds this soul: a view, cleared with the mob
+
 // Cleaning up the refs during deletion
 // its gem is told the mind unloaded.
 /mob/living/carbon/brain/caught_soul/vore/on_destroy(force)
@@ -14,9 +17,7 @@
 	if(gem())
 		gem().notify_holder("Mind unloaded: [name]")
 		gem().brainmobs -= src
-		rel_clear(src, nameof(gem))
-	rel_clear(src, nameof(container))
-	..()
+	..() // the gem and container views are cleared with the mob (CAPABILITIES)
 
 // Handling the automatic transcore backups in a set interval
 /mob/living/carbon/brain/caught_soul/vore/life_type_post_due()

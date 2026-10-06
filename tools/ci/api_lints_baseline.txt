@@ -1,4 +1,2 @@
 # api lint legacy sites (tools/ci/api_lints.py). rule<TAB>file<TAB>normalized line.
 # A site not listed here fails. Shrink-only: after a sweep, `python tools/ci/api_lints.py --update`.
-vars_write	code/datums/om/flow.dm	vars[key] = value
-vars_write	code/datums/om/prompt_helpers.dm	vars[ask.var_name] = value

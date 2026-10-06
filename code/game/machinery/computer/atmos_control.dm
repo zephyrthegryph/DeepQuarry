@@ -22,7 +22,7 @@ CAPABILITIES(/obj/machinery/computer/atmoscontrol)
 	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control)
 	op("use", inputs(hand(), remote()), label("Use"), wait(0), needs(req(PROC_REF(console_works), because = MSG(machine/inoperable))), then(PROC_REF(open_console)))
 	emag(then(PROC_REF(emag_screen)), say = MSG(atmoscontrol/emagged), powered = FALSE)
-	op("atmoscontrol_robot_use", remote(), priority(OP_PRIORITY_NORMAL + 1), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Use"), then(PROC_REF(atmoscontrol_robot_use)))
+	op("atmoscontrol_robot_use", remote(), priority(OP_PRIORITY_NORMAL + 1), when(req_actor_kind(/mob/living/silicon/robot)), label("Use"), then(PROC_REF(atmoscontrol_robot_use)))
 
 /obj/machinery/computer/atmoscontrol/laptop //[TO DO] Change name to PCU and update mapdata to include replacement computers
 	name = "\improper Atmospherics PCU"

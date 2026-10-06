@@ -19,7 +19,7 @@ CAPABILITIES(/obj/machinery/computer/security)
 	owns_one(nameof(camera), /datum/tgui_module/camera)
 	op("station_map", menu(), label(".map"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_station_map)))
 	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
-	op("security_robot_use", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(security_robot_use)))
+	op("security_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(security_robot_use)))
 
 // ALLOW(init/INSTANCE_STATE): its camera view is built for the networks the map gave it
 /obj/machinery/computer/security/Initialize(mapload)

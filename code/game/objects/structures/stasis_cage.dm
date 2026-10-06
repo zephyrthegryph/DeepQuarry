@@ -17,7 +17,7 @@
 
 CAPABILITIES(/obj/structure/stasis_cage)
 	op("release", hand(), label("Release"), then(PROC_REF(interaction_release)))
-	op("stasis_cage_robot_release", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Release"), then(PROC_REF(stasis_cage_robot_release)))
+	op("stasis_cage_robot_release", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Release"), then(PROC_REF(stasis_cage_robot_release)))
 
 /obj/structure/stasis_cage/proc/interaction_release(datum/act/op/A)
 	release()

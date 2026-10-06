@@ -1,5 +1,5 @@
 /obj/machinery/chemical_dispenser|human|none => |
 /obj/machinery/chemical_dispenser|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chemical_dispenser|ai|none => |
-/obj/machinery/chemical_dispenser|ghost|none => gen_observer_chemical_dispenser_ghost_view|
+/obj/machinery/chemical_dispenser|ghost|none => |
 

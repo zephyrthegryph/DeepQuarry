@@ -92,7 +92,8 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	op("set_catalyst", item(/obj/item/reagent_containers/glass), label("Set catalyst"),
 		needs(req(PROC_REF(no_catalyst), silent = TRUE), req(PROC_REF(clamp_works), because = MSG(chemical_synthesizer/machine_down)), req(PROC_REF(can_extract_from), because = MSG(chemical_synthesizer/not_open))),
 		then(PROC_REF(catalyst_set)))
-	interface("ChemSynthesizer")
+	interface("ChemSynthesizer", observe = TRUE)
+	extend("ui_observe", needs(req_operable()))
 	op("start_queue", ui_act("start_queue"), then(PROC_REF(ui_act_start_queue)))
 	op("rem_queue", ui_act("rem_queue", arg("q_index", num())), then(PROC_REF(ui_act_rem_queue)))
 	op("clear_queue", ui_act("clear_queue"),
@@ -238,14 +239,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
 	. = rel_take(src, nameof(cartridges), key = label)
 	SStgui.update_uis(src)
-
-/obj/machinery/chemical_synthesizer/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("View", PROC_REF(chem_synthesizer_ghost_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	..()
 
 /// The old attackby: a cartridge goes into a free slot under its label.
 /obj/machinery/chemical_synthesizer/proc/cartridge_added(datum/act/op/A)
@@ -568,12 +561,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 
 /obj/machinery/chemical_synthesizer/proc/is_idle(datum/act/op/A)
 	return !busy // ALLOW(reads): asked when the button is pressed and again when its question is answered, never cached
-/// Old attack_ghost: view the interface while it works. Never fell through.
-/obj/machinery/chemical_synthesizer/proc/chem_synthesizer_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(operable())
-		tgui_interact(user)
-	return TRUE
-
 /obj/machinery/chemical_synthesizer/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet/chem_master),

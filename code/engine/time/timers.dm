@@ -1,35 +1,18 @@
-// Object-model core: one scheduler for deferred work (doc/rewrite/object_model_core.md §4.11).
+// Timers: the owner's timer store and the deadline that fires it (doc/rewrite/framework_gaps.md C1; doc/rewrite/final_api.html section 3).
 //
-// om_after(E, delay, proc, args...) is a one-shot call on the OM deadline wheel:
+// om_after(E, delay, proc, args...) is a one-shot call on the deadline wheel (after(), after_if_alive() and the keyed forms are in after.dm):
 //   - owned by E: cancelled when E is deleted (om_teardown_rest drops rec.timers);
-//   - on E's clock: E's timer clock (om_timer_clock(), bio for living mobs, machine for
-//     machinery) scales it, and suspension or stasis pauses it;
-//   - weak: every datum argument is captured as an OM handle and resolved when the timer
-//     fires. A gone argument arrives as null and the call still runs (SStimer's semantics:
-//     cleanup such as vend_ready = TRUE always happens; counted in sched.timers_nulled and
-//     logged). after_if_alive() opts a pure effect out: its call is dropped instead (counted
-//     in sched.timers_dropped).
-// No datum per timer: a timer is five slots in the owner's record, and the owner has one
-// deadline on the wheel (the soonest of its timers), as tasks do.
+//   - on E's clock: E's timer clock (om_timer_clock(), bio for living mobs, machine for machinery) scales it, and suspension or stasis
+//     pauses it;
+//   - weak: every datum argument is captured as a handle (handles.dm) and resolved when the timer fires. A gone argument arrives as null and
+//     the call still runs (cleanup such as vend_ready = TRUE always happens; counted in sched.timers_nulled and logged). after_if_alive()
+//     opts a pure effect out: its call is dropped instead (counted in sched.timers_dropped).
+// No datum per timer: a timer is six slots in the owner's record (OM_TIMER_STRIDE, code/__defines/engine/time.dm) and the owner has one
+// deadline on the wheel (the soonest of its timers), as tasks do. The list is sorted by id (binary search finds a timer); a per-owner
+// min-heap of (due, id) pairs, rec.timer_heap, finds the next due timer in O(log n) with lazy deletion (cancelled timers leave stale heap
+// entries that are skipped when they surface and compacted when they outnumber the live ones).
 //
-// The behaviour-keyed deadline underneath is om_deadline() (deadline.dm).
-//
-// OM handles: om_handle(D) -> "id:gen", om_resolve(h) -> D or null. The same model as the
-// Rust core's handles: a slot table with a generation per slot, no per-target datum. A
-// deleted datum's slot is freed and its generation bumped, so a stale handle never
-// resolves to whatever reuses the id.
-
-/// Stride of rec.timers: id, due (timer-clock ds), proc, args, handle positions, is-global-proc.
-/// Ids only grow and entries are only appended or cut, so the list is sorted by id
-/// (om_timer_index() binary-searches it).
-#define OM_TIMER_STRIDE 6
-/// Timer flags (the record's 6th field): the proc is a global proc.
-#define OM_TIMER_GLOBAL (1<<0)
-/// A deleted captured argument is passed as null (after()) instead of dropping the call.
-#define OM_TIMER_NULLS_FOR_GONE (1<<1)
-/// A global proc that takes the timer's owner as its first argument (the keyed after() trampoline): the owner is
-/// prepended when it fires, so it is never captured (and resolved) as one of its own timer's arguments.
-#define OM_TIMER_OWNER_FIRST (1<<2)
+// The behaviour-keyed deadline underneath is om_deadline() (code/datums/om/deadline.dm).
 
 /datum/om/rec/var/list/timers
 /// The soonest due time in rec.timers (timer-clock ds), or null with no timers. Kept in step by
@@ -37,6 +20,9 @@
 /datum/om/rec/var/timer_soonest
 /// Timer ids, per record.
 /datum/om/rec/var/timer_seq = 0
+/// A binary min-heap of (due, id) pairs over rec.timers (OM_TIMER_HEAP_STRIDE numbers per entry): the next due timer is its root. Entries are
+/// deleted lazily: one whose id is no longer in rec.timers is stale and dropped when it reaches the root. Null with no timers.
+/datum/om/rec/var/list/timer_heap
 /// The record's timer clock: list(local ds, settled at (sched ds), rate). Null until a timer.
 /datum/om/rec/var/list/tclock
 
@@ -67,199 +53,6 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 		sched.global_owner = new
 		om_rec_of(sched.global_owner)
 	return sched.global_owner
-
-// ---------------------------------------------------------------- handles
-//
-// A slot table: slot id -> the datum's weak key (own_key(): not its ref text, because retained
-// ref strings slow BYOND down), plus a generation per slot.
-// The table holds text, never the datum, so a handle doesn't keep its target
-// alive: a datum BYOND collects without qdel() (a dropped species, a stack
-// canary) simply stops resolving, like one that was qdel()ed.
-
-GLOBAL_LIST_EMPTY(om_handle_slots)
-GLOBAL_LIST_EMPTY(om_handle_gens)
-/// Per handle slot: the type of the datum it names (for the collected-without-qdel report).
-GLOBAL_LIST_EMPTY(om_handle_types)
-GLOBAL_LIST_EMPTY(om_handle_free)
-
-/// The datum's handle slot, 0 until om_handle() is first called on it.
-/datum/var/tmp/om_hid = 0
-
-/// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
-/// A turf's handle is its ref text ("[0x...]"): turfs are never deleted and a turf's
-/// ref is its position, so it survives ChangeTurf() (which resets the turf's vars).
-/// A client's is "@ckey", resolved through GLOB.directory.
-/proc/om_handle(datum/D)
-	if(isturf(D))
-		var/turf/T = D
-		return "[REF(T)]#[om_z_generation(T.z)]"
-	if(isclient(D))
-		var/client/C = D
-		return "@[C.ckey]" // a client is its ckey: it reads null while that player is disconnected
-	if(!isdatum(D) || QDELETED(D))
-		return null
-	var/list/slots = GLOB.om_handle_slots
-	var/list/gens = GLOB.om_handle_gens
-	var/id = D.om_hid
-	if(!id)
-		var/list/free = GLOB.om_handle_free
-		if(length(free))
-			id = free[length(free)]
-			free.len--
-		else
-			slots.len++
-			gens.len++
-			id = length(slots)
-			gens[id] = 0
-		slots[id] = own_key(D)
-		var/list/types = GLOB.om_handle_types
-		if(length(types) < id)
-			types.len = id
-		types[id] = D.type
-		D.om_hid = id
-	return "[id]:[gens[id]]"
-
-/// The handle `D` already has, even while `D` is being deleted (until phase 5 releases it), or null
-/// if it never had one. Never allocates. For taking a dying datum out of a handle-keyed list.
-/proc/om_handle_of(datum/D)
-	if(isturf(D) || isclient(D))
-		return om_handle(D)
-	if(!isdatum(D))
-		return null
-	var/id = D.om_hid
-	return id ? "[id]:[GLOB.om_handle_gens[id]]" : null
-
-/// TRUE if handle `h` names `D`, even while `D` is being deleted (until phase 5
-/// releases its slot). A handle accessor (`owner()` = om_resolve(owner_handle))
-/// reads null once its target is QDELETED, so `owner() == src` is FALSE inside
-/// src's own teardown: compare with om_handle_is(owner_handle, src) there.
-/proc/om_handle_is(h, datum/D)
-	if(!h || !D)
-		return FALSE
-	return h == om_handle_of(D)
-
-/// A handle slot parked for a thing that collapsed into latent data (containment.md sec 4.5): it
-/// resolves to null until the entry re-materializes into the same slot (om_handle_unpark()).
-#define OM_HANDLE_PARKED "\[latent]"
-
-/// Collapse into latent data keeps the identity: `D`'s handle slot is parked (not freed, generation
-/// unchanged) and every relation view naming D goes dormant under it (rel_go_dormant()). Returns the
-/// slot id to keep on the latent entry, or 0 when D never had a handle.
-/proc/om_handle_park(datum/D)
-	var/id = D.om_hid
-	if(!id)
-		return 0
-	rel_go_dormant(D)
-	var/list/slots = GLOB.om_handle_slots
-	if(id <= length(slots) && slots[id] == own_key(D))
-		slots[id] = OM_HANDLE_PARKED
-	D.om_hid = 0
-	return id
-
-/// The re-materialized `D` takes over parked slot `id`: every old handle to the collapsed thing
-/// resolves to D again, and its dormant relation views re-link (rel_wake()).
-/proc/om_handle_unpark(datum/D, id)
-	var/list/slots = GLOB.om_handle_slots
-	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
-		return FALSE
-	if(D.om_hid)
-		om_handle_release(D)
-	slots[id] = own_key(D)
-	var/list/types = GLOB.om_handle_types
-	if(length(types) >= id)
-		types[id] = D.type
-	D.om_hid = id
-	rel_wake(D, id)
-	return TRUE
-
-/// A parked slot whose latent thing is gone for good (discarded, deleted as data): the slot is
-/// freed and its generation bumped, and its dormant views are dropped.
-/proc/om_handle_release_parked(id)
-	var/list/slots = GLOB.om_handle_slots
-	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
-		return
-	slots[id] = null
-	GLOB.om_handle_gens[id]++
-	GLOB.om_handle_free += id
-	GLOB.rel_dormant -= "[id]"
-
-/// The datum a handle names, or null if it has been deleted (whatever now uses its id).
-/proc/om_resolve(h)
-	if(!istext(h))
-		return null
-	switch(text2ascii(h))
-		if(91) // "[": a turf's ref and its z-level's generation (om_handle())
-			var/hash = findtext(h, "#")
-			var/turf/T = locate(hash ? copytext(h, 1, hash) : h)
-			if(!isturf(T))
-				return null
-			// A released and recycled z-level bumps its generation: an old turf handle stops
-			// resolving instead of naming a turf of whatever site reuses the level.
-			if(hash && text2num(copytext(h, hash + 1)) != om_z_generation(T.z))
-				return null
-			return T
-		if(64) // "@": a client's ckey
-			return GLOB.directory[copytext(h, 2)]
-	var/sep = findtext(h, ":")
-	if(!sep)
-		return null
-	var/id = text2num(copytext(h, 1, sep))
-	var/list/slots = GLOB.om_handle_slots
-	if(!id || id > length(slots))
-		return null
-	if(GLOB.om_handle_gens[id] != text2num(copytext(h, sep + 1)))
-		return null
-	var/ref = slots[id]
-	if(!ref || ref == OM_HANDLE_PARKED)
-		return null
-	var/datum/D = own_locate(ref)
-	if(!isdatum(D) || D.om_hid != id)
-		// Collected without qdel(); a new datum may even have the ref now. Free the slot.
-		// A handle is not a reference: when it was the only thing naming its
-		// target, BYOND freed the target at once (a nullspace holder turned into
-		// a handle by the LC-refs sweep). That var owns what it names.
-		var/list/types = GLOB.om_handle_types
-		om_handle_collected_report(id <= length(types) ? types[id] : null)
-		slots[id] = null
-		GLOB.om_handle_gens[id]++
-		GLOB.om_handle_free += id
-		return null
-	if(QDELETED(D))
-		return null
-	return D
-
-/// Lifecycle phase 5: frees `D`'s handle slot. Every handle to it stops resolving.
-/// A handle's target was freed by BYOND without going through qdel() (a
-/// qdel'd datum releases its slot in phase 5, so it never gets here): the var
-/// holding the handle was its only owner. Reported once per type, with a stack
-/// trace naming the reader; a runtime, so a test run fails.
-/proc/om_handle_collected_report(target_type)
-	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be DECLARE_REF(..., OWNED)/DECLARE_REF(..., HELD), not a handle (see the stack for the reader)")
-
-/proc/om_handle_release(datum/D)
-	var/id = D.om_hid
-	if(!id)
-		return
-	D.om_hid = 0
-	var/list/slots = GLOB.om_handle_slots
-	if(id > length(slots) || slots[id] != own_key(D))
-		return
-	slots[id] = null
-	GLOB.om_handle_gens[id]++
-	GLOB.om_handle_free += id
-
-/// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
-/// whether it still resolves.
-/proc/om_is_handle(h)
-	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
-	return istext(h) && shape.Find(h)
-
-/// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).
-/proc/qdel_handle(h)
-	var/datum/D = om_resolve(h)
-	if(D)
-		spent(D)
-
 // ---------------------------------------------------------------- timers
 
 /// Runs `proc` after `delay` deciseconds of E's timer clock. A
@@ -292,6 +85,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/id = ++rec.timer_seq
 	var/due = local + max(delay, 0)
 	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, (om_proc_is_global(proc_ref) ? OM_TIMER_GLOBAL : 0) | (nulls_for_gone ? OM_TIMER_NULLS_FOR_GONE : 0) | (owner_first ? OM_TIMER_OWNER_FIRST : 0)))
+	om_timer_heap_push(rec, due, id)
 	if(isnull(rec.timer_soonest) || due < rec.timer_soonest)
 		rec.timer_soonest = due
 		om_timers_arm(rec)
@@ -364,21 +158,121 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/due = T[at + 1]
 	T.Cut(at, at + OM_TIMER_STRIDE)
 	if(!length(T))
-		rec.timers = null
-		rec.timer_soonest = null
+		om_timers_clear(rec)
 		return TRUE
 	if(due <= rec.timer_soonest)
 		om_timers_recompute_soonest(rec)
 		return TRUE
 	return FALSE
 
+/// The soonest due time of rec.timers, read from the heap root (stale entries above it are dropped). O(log n) amortized, never a scan.
 /proc/om_timers_recompute_soonest(datum/om/rec/rec)
+	om_timer_heap_clean_top(rec)
+	var/list/H = rec.timer_heap
+	rec.timer_soonest = length(H) ? H[1] : null
+
+/// Drops every timer of the record (its owner's teardown, or its last timer leaving).
+/proc/om_timers_clear(datum/om/rec/rec)
+	rec.timers = null
+	rec.timer_heap = null
+	rec.timer_soonest = null
+
+// ---- the due-order heap (rec.timer_heap) ----
+
+/// Adds timer `id` due at `due` to the heap. A heap that has grown past the live timers (cancellations leave stale entries) is rebuilt first.
+/proc/om_timer_heap_push(datum/om/rec/rec, due, id)
+	var/list/H = rec.timer_heap
+	if(!H)
+		rec.timer_heap = H = list()
+	else if(length(H) / OM_TIMER_HEAP_STRIDE > 2 * (length(rec.timers) / OM_TIMER_STRIDE) + OM_TIMER_HEAP_SLACK)
+		om_timer_heap_rebuild(rec)
+		H = rec.timer_heap
+	H += due
+	H += id
+	var/child = length(H) / OM_TIMER_HEAP_STRIDE
+	while(child > 1)
+		var/parent = round(child / 2)
+		var/c = (child - 1) * OM_TIMER_HEAP_STRIDE + 1
+		var/p = (parent - 1) * OM_TIMER_HEAP_STRIDE + 1
+		if(H[c] > H[p] || (H[c] == H[p] && H[c + 1] > H[p + 1]))
+			break
+		var/due_c = H[c]
+		var/id_c = H[c + 1]
+		H[c] = H[p]
+		H[c + 1] = H[p + 1]
+		H[p] = due_c
+		H[p + 1] = id_c
+		child = parent
+
+/// Removes the root of the heap (the earliest (due, id) pair).
+/proc/om_timer_heap_pop(datum/om/rec/rec)
+	var/list/H = rec.timer_heap
+	var/count = length(H) / OM_TIMER_HEAP_STRIDE
+	if(count <= 1)
+		rec.timer_heap = null
+		return
+	var/last = (count - 1) * OM_TIMER_HEAP_STRIDE + 1
+	H[1] = H[last]
+	H[2] = H[last + 1]
+	H.Cut(last, last + OM_TIMER_HEAP_STRIDE)
+	count--
+	var/parent = 1
+	while(TRUE)
+		var/left = parent * 2
+		if(left > count)
+			break
+		var/best = left
+		var/b = (best - 1) * OM_TIMER_HEAP_STRIDE + 1
+		var/right = left + 1
+		if(right <= count)
+			var/r = (right - 1) * OM_TIMER_HEAP_STRIDE + 1
+			if(H[r] < H[b] || (H[r] == H[b] && H[r + 1] < H[b + 1]))
+				best = right
+				b = r
+		var/p = (parent - 1) * OM_TIMER_HEAP_STRIDE + 1
+		if(H[p] < H[b] || (H[p] == H[b] && H[p + 1] < H[b + 1]))
+			break
+		var/due_p = H[p]
+		var/id_p = H[p + 1]
+		H[p] = H[b]
+		H[p + 1] = H[b + 1]
+		H[b] = due_p
+		H[b + 1] = id_p
+		parent = best
+
+/// Drops stale entries (timers cancelled or fired since they were pushed) from the root until it names a live timer.
+/proc/om_timer_heap_clean_top(datum/om/rec/rec)
+	var/list/H = rec.timer_heap
+	while(length(H))
+		if(rec.timers && om_timer_index(rec, H[2]))
+			return
+		om_timer_heap_pop(rec)
+		H = rec.timer_heap
+
+/// Rebuilds the heap from the live timers (a heap that outgrew them through cancellations, or one lost to a bad write).
+/proc/om_timer_heap_rebuild(datum/om/rec/rec)
+	rec.timer_heap = null
 	var/list/T = rec.timers
-	var/soonest = null
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
-		if(isnull(soonest) || T[i + 1] < soonest)
-			soonest = T[i + 1]
-	rec.timer_soonest = soonest
+		var/list/H = rec.timer_heap
+		if(!H)
+			rec.timer_heap = H = list()
+		H += T[i + 1]
+		H += T[i]
+		var/child = length(H) / OM_TIMER_HEAP_STRIDE
+		while(child > 1)
+			var/parent = round(child / 2)
+			var/c = (child - 1) * OM_TIMER_HEAP_STRIDE + 1
+			var/p = (parent - 1) * OM_TIMER_HEAP_STRIDE + 1
+			if(H[c] > H[p] || (H[c] == H[p] && H[c + 1] > H[p + 1]))
+				break
+			var/due_c = H[c]
+			var/id_c = H[c + 1]
+			H[c] = H[p]
+			H[c + 1] = H[p + 1]
+			H[p] = due_c
+			H[p + 1] = id_c
+			child = parent
 
 /// Cancels timer `id` on E. Always safe: nothing is suspended inside a timer.
 /proc/om_cancel_timer(datum/E, id)
@@ -519,159 +413,6 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	state[1] = FALSE
 
 
-// ---------------------------------------------------------------- weak arguments
-//
-// Every deferred record in the OM (timers and their keyed/real-time forms, I/O
-// callbacks, timed actions) holds its datum arguments as OM handles, never as
-// references: a record can outlive what it names without keeping it alive (a
-// strong ref in a pending timer was a hard delete). capture_args() converts
-// at record time, resolve_captured() at fire time; a deleted argument drops
-// the call with a log_qdel() line. Synchronous paths never capture.
-//
-// Captured deeply: every datum anywhere in the arguments -- an argument, a list member, an assoc
-// value, at any depth -- becomes a handle marker, list(OM_CAPTURED_MARK, handle), in a copy of the
-// list that held it. A datum used as an assoc *key* can't be re-keyed without losing its value,
-// so capture refuses it (reported): pass the pair as a value instead. A list holding no datum is
-// kept as is (not copied).
-
-#define OM_CAPTURED_MARK "\[om-handle]"
-#define OM_CAPTURE_MAX_DEPTH 8
-
-/// Captures `call_args`' datums as handles, deeply. Returns list(captured, positions): positions
-/// are the argument indexes holding a handle or a list with handles in it. Null when an argument
-/// is already deleted or can't be captured (a datum assoc key).
-/proc/capture_args(list/call_args, nulls_for_gone = FALSE)
-	var/list/captured = call_args ? call_args.Copy() : null
-	var/list/positions = null
-	for(var/i in 1 to length(captured))
-		var/list/result = om_capture_value(captured[i], 0, nulls_for_gone)
-		if(!result)
-			return null
-		if(result[2])
-			captured[i] = result[1]
-			LAZYADD(positions, i)
-	return list(captured, positions)
-
-/// list(captured value, changed) for one value, or null when it can't be captured.
-/proc/om_capture_value(value, depth, nulls_for_gone = FALSE)
-	if(isdatum(value))
-		var/h = om_handle(value)
-		if(isnull(h))
-			if(nulls_for_gone)
-				return list(null, FALSE) // already deleted: passed as null, like one deleted later
-			return null
-		return list(list(OM_CAPTURED_MARK, h), TRUE)
-	if(!islist(value))
-		return list(value, FALSE)
-	if(depth >= OM_CAPTURE_MAX_DEPTH)
-		OWN_REPORT("om_capture_args: an argument nests lists deeper than [OM_CAPTURE_MAX_DEPTH]")
-		return null
-	var/list/L = value
-	var/list/copy = null
-	for(var/j in 1 to length(L))
-		var/key = L[j]
-		if(isdatum(key) && !isnull(L[key]))
-			var/datum/K = key
-			OWN_REPORT("om_capture_args: a deferred call's argument uses [K.type] as an assoc key; pass it as a value")
-			return null
-		var/list/key_result = om_capture_value(key, depth + 1, nulls_for_gone)
-		if(!key_result)
-			return null
-		var/assoc = (istext(key) || isdatum(key)) ? L[key] : null
-		var/list/value_result = isnull(assoc) ? null : om_capture_value(assoc, depth + 1, nulls_for_gone)
-		if(!isnull(assoc) && !value_result)
-			return null
-		if(key_result[2] || value_result?[2])
-			if(!copy)
-				copy = L.Copy()
-			if(key_result[2])
-				copy[j] = key_result[1]
-			else if(value_result?[2])
-				copy[key] = value_result[1]
-	if(copy)
-		return list(copy, TRUE)
-	return list(L, FALSE)
-
-/// A deferred call as data: the callee and every datum argument held as handles (deeply), so a
-/// stored call never keeps what it names alive -- the replacement for CALLBACK / /datum/callback,
-/// whose strong references were invisible to ownership. Returns list(callee handle or null for a
-/// global proc, proc ref, captured args, positions), or null when an argument is already gone.
-/// Store it in any var; run it with om_run().
-/proc/om_callable(datum/target, proc_ref, ...)
-	var/list/call_args = length(args) > 2 ? args.Copy(3) : null
-	var/list/capture = call_args ? capture_args(call_args) : list(null, null)
-	if(!capture)
-		return null
-	var/callee_handle = null
-	if(target)
-		callee_handle = om_handle(target)
-		if(isnull(callee_handle))
-			return null
-	return list(callee_handle, proc_ref, capture[1], capture[2])
-
-/// Runs an om_callable() spec with its stored arguments followed by `...`. Returns what the proc
-/// returned, or null when the target or a captured argument no longer exists (the call is dropped).
-/proc/om_run(list/spec, ...)
-	if(!islist(spec) || length(spec) != 4)
-		return null
-	var/datum/target = null
-	if(spec[1])
-		target = om_resolve(spec[1])
-		if(!target)
-			return null
-	var/list/stored = spec[3]
-	var/list/call_args = stored ? stored.Copy() : list()
-	if(spec[4] && !resolve_captured(call_args, spec[4]))
-		return null
-	if(length(args) > 1)
-		call_args += args.Copy(2)
-	if(target)
-		return call(target, spec[2])(arglist(call_args))
-	return call(spec[2])(arglist(call_args))
-
-/// om_run() without waiting: the call runs in its own stack (INVOKE_ASYNC for a stored spec).
-/proc/om_run_async(list/spec, ...)
-	set waitfor = FALSE // ALLOW(scheduler): the async half of a stored call spec, as /datum/callback/InvokeAsync() was
-	return om_run(arglist(args))
-
-/// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
-/// null for it instead: cleanup that must still run). The record keeps its own copy.
-/proc/resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)
-	for(var/i in positions)
-		var/list/result = om_resolve_value(captured[i], nulls_for_gone)
-		if(!result)
-			return FALSE
-		captured[i] = result[1]
-	return TRUE
-
-/// list(resolved value) for one captured value, or null when a handle no longer resolves.
-/proc/om_resolve_value(value, nulls_for_gone)
-	if(!islist(value))
-		return list(value)
-	var/list/L = value
-	if(length(L) == 2 && L[1] == OM_CAPTURED_MARK)
-		var/datum/D = om_resolve(L[2])
-		if(!D)
-			if(!nulls_for_gone)
-				return null
-			GLOB.om_resolve_nulled++
-		return list(D)
-	var/list/out = L.Copy()
-	for(var/j in 1 to length(out))
-		var/key = out[j]
-		var/assoc = istext(key) ? out[key] : null
-		if(islist(key))
-			var/list/key_result = om_resolve_value(key, nulls_for_gone)
-			if(!key_result)
-				return null
-			out[j] = key_result[1]
-		else if(islist(assoc))
-			var/list/value_result = om_resolve_value(assoc, nulls_for_gone)
-			if(!value_result)
-				return null
-			out[key] = value_result[1]
-	return list(out)
-
 /datum/om/behaviour/internal/timers
 	name = "om: timers"
 	lane = LANE_URGENT
@@ -684,13 +425,22 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	// Due timers leave the list before they run, soonest first: a timer that cancels
 	// another, or schedules a new one, sees a consistent list.
 	while(rec.timers && !rec.torn_down)
-		var/list/T = rec.timers
-		var/best = 0
-		for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
-			if(T[i + 1] <= local && (!best || T[i + 1] < T[best + 1]))
-				best = i
-		if(!best)
+		// The next due timer is the heap root: O(log n), not a scan of the owner's whole list per pop.
+		om_timer_heap_clean_top(rec)
+		var/list/H = rec.timer_heap
+		if(!length(H))
+			if(rec.timers) // timers with no heap: it was lost, so it is rebuilt once and the pass goes on
+				om_timer_heap_rebuild(rec)
+				H = rec.timer_heap
+			if(!length(H))
+				break
+		if(H[1] > local)
 			break
+		var/list/T = rec.timers
+		var/best = om_timer_index(rec, H[2])
+		om_timer_heap_pop(rec)
+		if(!best)
+			continue
 		var/proc_ref = T[best + 2]
 		var/list/captured = T[best + 3]
 		var/list/positions = T[best + 4]
@@ -698,7 +448,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/is_global = !!(timer_flags & OM_TIMER_GLOBAL)
 		T.Cut(best, best + OM_TIMER_STRIDE)
 		if(!length(T))
-			rec.timers = null
+			om_timers_clear(rec)
 		GLOB.om_resolve_nulled = 0
 		if(!resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE)))
 			rec.sched.timers_dropped++
@@ -791,7 +541,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			.++
 	if(.)
 		if(!length(T))
-			rec.timers = null
+			om_timers_clear(rec)
 		om_timers_reschedule(rec)
 
 // ---------------------------------------------------------------- real time
@@ -821,3 +571,4 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/target = call_args[1]
 		if(target) // a client that has disconnected is null
 			call(target, proc_ref)(arglist(call_args.Copy(2)))
+

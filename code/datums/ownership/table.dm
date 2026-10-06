@@ -33,6 +33,10 @@
 	RETURN_TYPE(/list)
 	return list()
 
+/// The (successor var, successor's var) of an OWN_HAND_OVER entry, or null: only an entry that declares one carries the tenth slot.
+/proc/own_entry_successor(list/entry)
+	return length(entry) >= OWNE_TO ? entry[OWNE_TO] : null
+
 /// One declaration entry, made by owns()/shares()/proto()/rel_one()/rel_many()/rel_key(). Shared
 /// per type (never write one after it is returned).
 /datum/own_entry
@@ -90,6 +94,9 @@
  *   at teardown (instead of `policy`).
  * - `if_var` / `else_policy`: `policy` while the holder's var `if_var` (a nameof()) is true, else
  *   `else_policy`.
+ * - `successor` / `successor_var`: where OWN_HAND_OVER sends the value: `successor` (a nameof()) is the holder's var that names the successor, `successor_var` (a nameof()) the
+ *   successor's var that takes it. `owns(nameof(cell), policy = OWN_HAND_OVER, successor = nameof(wreck), successor_var = nameof(wreck.crowbar_salvage))`; with if_var the hand-over
+ *   is conditional (`if_var = nameof(wrecked)`, `else_policy = OWN_DELETE`). A successor that was never made (the var is empty) means the value is deleted.
  * - Annotations: `keep_after_destroy` (the leak check skips the var), `pool_reset`
  *   (pool_release() resets it to its initial value), `forward` (replace_with() carries it to the
  *   successor: an owned value moves, a relation re-links, anything else is copied).
@@ -100,7 +107,7 @@
  *   is made instead, an instance in it makes nothing. A PROC_REF decides everything: it is called with the var's current value and
  *   returns what the var starts with (a type, a list of types, instances it made, or key = instance for an associative owns_many).
  */
-/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE)
+/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE, successor = null, successor_var = null)
 	if(policy == OWN_PRIVATE_COPY)
 		if(!isnull(starts))
 			CRASH("owns([var_name]): OWN_PRIVATE_COPY holds a prototype or a private copy of one; it has no starting occupant")
@@ -116,6 +123,11 @@
 		entry = list(OWNK_OWN, policy, null, null, FALSE, null, CLEAR, null, null)
 	if(entry && type)
 		entry[OWNE_TYPE] = type
+	if(entry && (successor || successor_var))
+		if(!successor || !successor_var)
+			CRASH("owns([var_name]): successor = and successor_var = go together (the holder's var naming the successor, and the successor's var that takes the value)")
+		entry.len = OWNE_TO // the tenth slot is only there for an entry that hands over (own_entry_successor())
+		entry[OWNE_TO] = list(successor, successor_var)
 	if(entry && is_list) // owns_many: own_move()/own_transfer() add to a list that is still null instead of storing the value as a scalar
 		entry[OWNE_LIST] = TRUE
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
@@ -373,8 +385,13 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			if(OWNK_OWN)
 				var/policy = entry[OWNE_ARG]
 				var/by_proc = istext(policy) || ispath(policy)
-				if(!by_proc && !(policy in list(OWN_DELETE, OWN_SPILL, OWN_CONTAINED, OWN_KEEP)))
+				if(!by_proc && !(policy in list(OWN_DELETE, OWN_SPILL, OWN_CONTAINED, OWN_KEEP, OWN_HAND_OVER)))
 					OWN_REPORT("[D.type].[var_name]: unknown teardown policy [policy]")
+				var/list/hand_to = own_entry_successor(entry)
+				if(hand_to && !(hand_to[1] in D.vars))
+					OWN_REPORT("[D.type].[var_name]: owns() to [hand_to[1]] is not a var")
+				if(!hand_to && (policy == OWN_HAND_OVER || entry[OWNE_EXTRA] == OWN_HAND_OVER))
+					OWN_REPORT("[D.type].[var_name]: OWN_HAND_OVER needs successor = and successor_var =")
 				if(by_proc && !hascall(D, own_proc_name(policy)))
 					OWN_REPORT("[D.type].[var_name]: policy proc [policy] is not a proc of [D.type]")
 				if(policy == OWN_CONTAINED && !ismovable(D) && !isturf(D))

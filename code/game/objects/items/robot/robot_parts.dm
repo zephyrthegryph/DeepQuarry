@@ -252,8 +252,8 @@ CAPABILITIES(/obj/item/robot_parts/chest)
 CAPABILITIES(/obj/item/robot_parts/head)
 	// an infrared sensor starts a TV camera (tvcamera.dm); a flash goes into an eye socket (a cyborg's flash is its own module)
 	op("tv_sensor", item(/obj/item/assembly/infra), label("Add sensor"), then(PROC_REF(interaction_item)))
-	op("insert_flash", item(/obj/item/flash), label("Insert flash"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(head_insert_flash)))
-	op("insert_own_flash", item(/obj/item/flash), label("Insert flash"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(own_flash_refused)))
+	op("insert_flash", item(/obj/item/flash), label("Insert flash"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(head_insert_flash)))
+	op("insert_own_flash", item(/obj/item/flash), label("Insert flash"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(own_flash_refused)))
 
 /// A cyborg's flash is its own module.
 /obj/item/robot_parts/head/proc/own_flash_refused(datum/act/op/A)

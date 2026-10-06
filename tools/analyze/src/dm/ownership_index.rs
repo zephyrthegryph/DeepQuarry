@@ -38,6 +38,7 @@ macro_rules! re_m {
 pub const CORE_DIRS: &[&str] = &[
     "code/datums/ownership/",
     "code/datums/om/",
+    "code/engine/time/",
     "code/datums/lifecycle/",
     "code/datums/state/",
     "code/__defines/",
@@ -47,6 +48,7 @@ pub const CORE_DIRS: &[&str] = &[
 ];
 pub const CALLBACK_OK: &[&str] = &[
     "code/datums/om/",
+    "code/engine/time/",
     "code/controllers/",
     "code/__defines/",
     "code/datums/ownership/",
@@ -55,6 +57,7 @@ pub const CALLBACK_OK: &[&str] = &[
 ];
 pub const HANDLE_OK: &[&str] = &[
     "code/datums/om/",
+    "code/engine/time/",
     "code/datums/ownership/",
     "code/datums/state/",
     "code/datums/lifecycle/",

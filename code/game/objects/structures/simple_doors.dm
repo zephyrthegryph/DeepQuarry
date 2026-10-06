@@ -72,7 +72,7 @@ CAPABILITIES(/obj/structure/simple_door)
 	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	// those aren't machinery, they're slabs of a mineral: a cyborg beside it opens it, the AI can't
-	op("silicon_open", remote(), label("Open"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), needs(req_adjacent()), then(PROC_REF(interaction_hand)))
+	op("silicon_open", remote(), label("Open"), when(req_actor_kind(/mob/living/silicon/robot)), needs(req_adjacent()), then(PROC_REF(interaction_hand)))
 	param(nameof(material_name), pos = 1, apply = PROC_REF(make_of))
 
 /// Something walked into it (the bump action's notice).

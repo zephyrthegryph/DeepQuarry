@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/light)
 	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb)))
 	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by)))
 	op("toggle_emergency", remote(), label("Toggle emergency lights"), wait(0), then(PROC_REF(toggle_emergency_lights)))
-	op("remote_flicker", remote(), gesture(GESTURE_ALT), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Flicker"), wait(0),
+	op("remote_flicker", remote(), gesture(GESTURE_ALT), when(req_actor_kind(/mob/living/silicon/ai)), label("Flicker"), wait(0),
 		then(PROC_REF(remote_flicker)))
 	op("open_casing", tool(TOOL_SCREWDRIVER), when(PROC_REF(socket_empty)), wait(0), then(PROC_REF(open_casing)))
 	op("tune", tool(TOOL_MULTITOOL), when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), then(PROC_REF(tuned)))

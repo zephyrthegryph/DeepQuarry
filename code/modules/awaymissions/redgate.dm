@@ -19,12 +19,11 @@
 		/mob/living/simple_mob/vore/bigdragon
 		)	//There are some things we don't want to come through no matter what.
 
-// its paired gate closes.
+// its paired gate closes (the link to it is undone with this gate, on both sides: the declared pair).
 /obj/structure/redgate/on_destroy(force)
 	var/obj/structure/redgate/other = target()
 	if(other)
-		rel_clear(src, nameof(target)) // the pair: other's target clears too
-		other.toggle_portal()
+		other.toggle_portal(closing = TRUE)
 	..()
 
 /obj/structure/redgate/proc/teleport(mob/M as mob)
@@ -85,8 +84,9 @@
 
 	return temptarg
 
-/obj/structure/redgate/proc/toggle_portal()
-	if(target())
+/// Opens or closes the portal to match its link; `closing` says the partner is going and the link is not yet undone.
+/obj/structure/redgate/proc/toggle_portal(closing = FALSE)
+	if(target() && !closing)
 		icon_state = "on"
 		set_density(TRUE)
 		plane = ABOVE_MOB_PLANE

@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/particle_smasher)
 		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
 	op("swipe_id", item(/obj/item/card/id), label("Swipe"), then(PROC_REF(interaction_swipe_id)))
 	op("store", item(/obj/item), label("Store"), when(req(PROC_REF(can_store_item))), then(PROC_REF(interaction_store)))
-	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req(/mob/living, of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
+	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req_actor_kind(/mob/living)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
 	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
 
 MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
