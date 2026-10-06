@@ -1440,6 +1440,9 @@ focused tests of the touched windows (the tests that called a handler with its o
   department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
   admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
   1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
+* **Plushie editor, shock collar tag, account terminal funds, shadekin flicker colour, particle editor type, filter editor colour,
+  ColorMate colour.** Asked with `asks()` on the button's op; the filter editor's icon questions run as their own flow from the handler.
+  The account terminal asks the amount only of a central command card, as before.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it

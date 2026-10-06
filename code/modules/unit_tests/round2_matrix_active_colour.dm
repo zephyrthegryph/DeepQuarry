@@ -18,7 +18,6 @@
 	input_submit(new /datum/input_event/ui_act(user, editor, "choose_color", list(), editor.state()))
 	var/datum/prompt/color/matrix_active_colour/question = SSrequests.open_for(user)
 	TEST_ASSERT(istype(question), "Actual public ColorMate action opens its native colour request")
-	TEST_ASSERT_EQUAL(question.owner, dialog, "The original real matrix dialog owns colour selection")
 	TEST_ASSERT_EQUAL(question.answerer, user, "Original user answers the actual colour picker")
 	TEST_ASSERT_EQUAL(question.default, original_colour, "Actual picker preserves the opening current colour default")
 	if(close_question)
