@@ -21,10 +21,15 @@
 	anchored = TRUE
 	var/generation_rate = 350000
 
-/obj/machinery/power/generator/generated_station/machine_step()
-	if(has_stat(BROKEN))
-		return
-	add_avail(generation_rate)
+/// A compact station turbine has no circulators or loops: it supplies its rate steadily while it is not broken.
+/obj/machinery/power/generator/generated_station/reconsider(datum/act/A)
+	own_clear(src, nameof(loop_watches), OWN_DELETE)
+	set_generating(FALSE)
+	set_power_supply(has_stat(BROKEN) ? 0 : generation_rate)
+
+/// Breaking or mending it changes what it supplies.
+CAPABILITIES(/obj/machinery/power/generator/generated_station)
+	on_change(nameof(stat), ANY, then(PROC_REF(reconsider)))
 
 /obj/machinery/atmospherics/pipe/tank/air/full/generated_station
 	dir = EAST
@@ -815,10 +820,6 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 	rel_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
 	qdel(builder)
 	return !!station_utilities
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/generator/generated_station/step_start_condition()
-	return !has_stat(BROKEN)
 
 
 
