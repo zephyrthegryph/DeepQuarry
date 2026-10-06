@@ -23,10 +23,11 @@ human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screw
 human|/obj/item/tool/wrench menu: Press
 human|/obj/item/tool/wrench menu: Toggle
 human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Cut the wires
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Press
 human|/obj/item/tool/wirecutters menu: Toggle
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Cut the wires
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool menu: Press
 human|/obj/item/multitool menu: Toggle
@@ -52,5 +53,5 @@ human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Press
 human|/obj/item menu: Toggle
 human|/obj/item click: nothing
-keys: button_press, button_press_item, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, windowtint_toggle
+keys: button_press, button_press_item, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_wirecutter, windowtint_toggle
 

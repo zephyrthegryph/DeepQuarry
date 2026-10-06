@@ -22,6 +22,7 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 
 CAPABILITIES(/obj/item/taperecorder)
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()
@@ -182,16 +183,17 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(mytape && recording)
 		mytape.record_noise("[strip_html_properly(recordedtext)]")
 
-DECLARE_EMAG_REPEATABLE(/obj/item/taperecorder, PROC_REF(on_emag), null)
-/obj/item/taperecorder/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/taperecorder/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged == 0)
 		emagged = 1
 		set_recording(0)
 		to_chat(user, span_warning("PZZTTPFFFT"))
 		update_icon()
-		return 1
+		return OP_OK
 	else
 		to_chat(user, span_warning("It is already emagged!"))
+	return OP_DECLINE
 
 /obj/item/taperecorder/proc/explode()
 	var/turf/T = get_turf(loc)

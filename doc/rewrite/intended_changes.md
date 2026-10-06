@@ -1529,3 +1529,10 @@ Codemods `tools/codemods/` (tool_act, interaction_datums, damage_reaction; `run_
 - **EMP reactions that never blocked run after the hit** (`on_notice(/datum/notice/hit/emp)`), as the consoles' did; blocking ones are
   `extend(/datum/act/hit/<x>, instead(then()))`.
 - Types left for a hand conversion, and why, are listed in `tools/codemods/exclusions.txt`.
+- **Emags on items are the emag library** (`emag(then(PROC_REF(on_emag)), repeatable =, powered = FALSE)`): a sequencer that
+  works now also says the library's "You subvert X with Y" line, and pays one use (the legacy handlers' counts were 0 or 1).
+  A handler that did nothing declines: the card goes on to its other uses. The defib kit works its paddles' emag by key.
+- **Timed tool uses are op waits**: the vehicle cage (wrench 6 s, cutters 7 s) and salvageable wrecks (crowbar 17 s) say a
+  begin line to the user as well as onlookers, and the wait scales by the tool's speed as every tool op does.
+- **The window tint button's cutters**: with the panel shut they go on to the legacy tool handling instead of being swallowed.
+- **The portable sign asks its direction as an op step** (`asks()`), so the question is the op's and the answer is re-checked.

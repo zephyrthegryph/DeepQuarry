@@ -43,6 +43,7 @@
 	var/selected_system = "pAI"
 
 CAPABILITIES(/obj/item/paicard)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	blast_contents()
 	owns_one(nameof(multitool), /obj/item/multitool)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
@@ -828,13 +829,12 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		return TRUE
 	return FALSE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
-/obj/item/paicard/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	. = EMAG_DECLINED
+/obj/item/paicard/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!pai)
 		if(!emagged)
 			to_chat(user, span_warning("Without a pAI inhabiting \the [src] nothing happens."))
-		return
+		return OP_DECLINE
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("\The [src] buzzes and beeps."))
@@ -844,7 +844,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		if(has_emag_toolkit)
 			rel_set(src, nameof(multitool), new /obj/item/multitool(src))
 			rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 ///////////////////////////////
 //////////pAI Parts  //////////
