@@ -42,5 +42,5 @@ human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, set_tag, use, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, set_tag, use, use_gripper, use_item
 

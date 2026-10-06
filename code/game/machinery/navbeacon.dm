@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	op("trans_edit_code", ui_act("trans_edit_code", arg("code", schema_text(4096)), arg("new_val", schema_text(4096))), then(PROC_REF(ui_act_trans_edit_code)))
 	op("trans_add_code", ui_act("trans_add_code", arg("new_key", schema_text(4096)), arg("new_val", schema_text(4096))), then(PROC_REF(ui_act_trans_add_code)))
 	op("trans_del", ui_act("trans_del", arg("code", schema_text(4096))), then(PROC_REF(ui_act_trans_del)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
 
 /obj/machinery/navbeacon/ui_prepare(mob/user, datum/tgui/ui)

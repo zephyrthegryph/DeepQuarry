@@ -56,5 +56,5 @@ human|/obj/item/disk menu: Insert disk
 human|/obj/item/disk menu: Use
 human|/obj/item/disk menu: Use item
 human|/obj/item/disk click: Click: Use item
-keys: climb.climb, climb.climb_menu, dequeueNode, disconnect, drag_buckle, ejectDisk, enqueueNode, gen_robot_interaction_swallow, insert_disk, loadTech, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, researchNode, toggleLock, uploadDisk, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, dequeueNode, disconnect, drag_buckle, ejectDisk, enqueueNode, gen_robot_interaction_swallow, insert_disk, loadTech, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_impl, researchNode, toggleLock, uploadDisk, use_gripper, use_item
 

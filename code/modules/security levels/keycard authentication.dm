@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
 	var/list/data = list()

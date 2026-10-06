@@ -113,11 +113,14 @@ DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full",
 
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
 	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Remove component"),
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove component"),
 		needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy)), req(PROC_REF(has_components), because = MSG(protean_reconstitutor/no_components))),
 		asks(/datum/prompt/choice, fields = list("title" = "Remove Component", "question" = "What component would you like to remove?", "choices" = computed(PROC_REF(component_choices)), "timeout" = 0)),
 		then(PROC_REF(component_chosen)))
 	op("reconstitutor_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/processing_revive))), then(PROC_REF(reconstitutor_interaction_hand)))
+	extend("machine_panel", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
+	extend("machine_panel_close", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
+	extend("machine_deconstruct", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
 
 MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle currently in progress, please wait")
 
@@ -196,18 +199,6 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	else if(choice == protean_orchestrator)
 		own_take(src, nameof(protean_orchestrator))
 	return OP_OK
-
-/obj/machinery/protean_reconstitutor/screwdriver_act(mob/user, obj/item/tool)
-	if(processing_revive)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
-
-/obj/machinery/protean_reconstitutor/crowbar_act(mob/user, obj/item/tool)
-	if(processing_revive)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
 
 /// Refactory materials cached across the revive (it wipes them), or null.
 /obj/machinery/protean_reconstitutor/var/tmp/list/materials_cache

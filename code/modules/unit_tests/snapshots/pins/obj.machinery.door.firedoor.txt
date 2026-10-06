@@ -52,5 +52,5 @@ human|/obj/item/taperoll menu: Close (refused: Access denied.)
 human|/obj/item/taperoll menu: Tape
 human|/obj/item/taperoll menu: Use
 human|/obj/item/taperoll click: Click: Tape
-keys: busy, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, force_claws, force_generic, gen_robot_interaction_swallow, gen_silicon_silicon_use, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, strike, tape, unreinforce, use, weld, welded, weld_plasteel
+keys: busy, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, force_claws, force_generic, gen_robot_interaction_swallow, gen_silicon_silicon_use, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, strike, tape, unreinforce, use, weld, welded, weld_plasteel
 

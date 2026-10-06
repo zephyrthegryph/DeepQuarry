@@ -1,5 +1,5 @@
-/obj/machinery/bomb_tester|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/bomb_tester|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/bomb_tester|human|none => |
+/obj/machinery/bomb_tester|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/bomb_tester|ai|none => |
 /obj/machinery/bomb_tester|ghost|none => |
 

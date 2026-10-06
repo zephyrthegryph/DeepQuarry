@@ -50,5 +50,5 @@ human|/obj/item menu: Hit
 human|/obj/item menu: Smash
 human|/obj/item menu: Use (refused: it must be screwed down first)
 human|/obj/item click: Click: Use
-keys: drag_buckle, floor_light_harm, floor_light_smash, floor_light_use, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_screwdriver, use_welder
+keys: drag_buckle, floor_light_harm, floor_light_smash, floor_light_use, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_screwdriver, use_welder
 

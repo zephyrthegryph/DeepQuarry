@@ -7,13 +7,13 @@ ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Choose tile type
 human|/obj/item/tool/screwdriver menu: Toggle
-human|/obj/item/tool/screwdriver click: Click: Toggle
+human|/obj/item/tool/screwdriver click: Click: Choose tile type
 human|/obj/item/tool/crowbar menu: Remove tiles
 human|/obj/item/tool/crowbar menu: Toggle
-human|/obj/item/tool/crowbar click: Click: Toggle
+human|/obj/item/tool/crowbar click: Click: Remove tiles
 human|/obj/item/tool/wrench menu: Set work mode
 human|/obj/item/tool/wrench menu: Toggle
-human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wrench click: Click: Set work mode
 human|/obj/item/tool/wirecutters menu: Toggle
 human|/obj/item/tool/wirecutters click: Click: Toggle
 human|/obj/item/multitool menu: Toggle
@@ -30,5 +30,5 @@ human|/obj/item/card/id click: Click: Toggle
 human|/obj/item/stack/tile menu: Load tile
 human|/obj/item/stack/tile menu: Toggle
 human|/obj/item/stack/tile click: Click: Toggle
-keys: drag_buckle, floorlayer_load_tile, floorlayer_toggle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench
+keys: drag_buckle, floorlayer_load_tile, floorlayer_toggle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_crowbar, use_screwdriver, use_wrench
 

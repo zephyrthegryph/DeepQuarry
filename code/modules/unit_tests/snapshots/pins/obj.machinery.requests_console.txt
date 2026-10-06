@@ -30,5 +30,5 @@ human|/obj/item/card/id click: Click: Ui open
 human|/obj/item/stamp menu: Stamp
 human|/obj/item/stamp menu: Ui open
 human|/obj/item/stamp click: Click: Ui open
-keys: department, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print, requests_console_id, requests_console_stamp, sendAnnouncement, setScreen, toggleSilent, ui_open, use_multitool, write, writeAnnouncement
+keys: department, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, print, requests_console_id, requests_console_stamp, sendAnnouncement, setScreen, toggleSilent, ui_open, use_multitool, write, writeAnnouncement
 

@@ -33,6 +33,11 @@
 CAPABILITIES(/obj/machinery/washing_machine)
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
+	extend("machine_panel", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_anchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_unanchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/washing_machine/Initialize(mapload)
@@ -215,14 +220,9 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	else
 		to_chat(user, "You can't shove [G?.grab_target()] in unless the washer is empty and open!")
 
-/obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/washing_machine/crowbar_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/washing_machine/wrench_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
+/// Maintenance only on an empty, shut machine (otherwise the tool's click is taken and nothing happens).
+/obj/machinery/washing_machine/proc/idle_and_empty(datum/act/op/A)
+	return state == EMPTY_CLOSED && !LAZYLEN(washing)
 
 /datum/interaction/machine_hand/ungated/washing_machine_use
 	id = "washing_machine_use"

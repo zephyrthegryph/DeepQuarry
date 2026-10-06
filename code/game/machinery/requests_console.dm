@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/requests_console)
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	op("requests_console_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id)))
 	op("requests_console_stamp", item(/obj/item/stamp), priority(OP_PRIORITY_DEFAULT - 1), label("Stamp"), then(PROC_REF(interaction_stamp)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Set department"),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set department"),
 		asks(/datum/prompt/text, fields = list("title" = "Multitool-Request Console Interface", "question" = "What Department ID would you like to give this request console?", "default" = nameof(department), "timeout" = 0)),
 		then(PROC_REF(department_entered)))
 

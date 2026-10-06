@@ -39,13 +39,15 @@ human|/obj/item/tool/wirecutters menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/tool/wirecutters menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/tool/wirecutters menu: Slash (refused: not possible right now)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Wires
+human|/obj/item/tool/wirecutters click: Click: Wires
 human|/obj/item/multitool menu: Attack (refused: not possible right now)
 human|/obj/item/multitool menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/multitool menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/multitool menu: Slash (refused: not possible right now)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool menu: Wires
+human|/obj/item/multitool click: Click: Wires
 human|/obj/item/weldingtool menu: Attack (refused: not possible right now)
 human|/obj/item/weldingtool menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/weldingtool menu: Show to camera (refused: needs a sheet of paper or a PDA)
@@ -91,5 +93,5 @@ human|/obj/item/camera_bug menu: Slash (refused: not possible right now)
 human|/obj/item/camera_bug menu: Use
 human|/obj/item/camera_bug click: nothing
 wires: Camera Alarm, Camera Light, Focus, Primary Power
-keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_update_coverage, drag_buckle, gen_robot_interaction_swallow, gen_silicon_camera_silicon_look, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_screwdriver, use_welder
+keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_update_coverage, drag_buckle, gen_robot_interaction_swallow, gen_silicon_camera_silicon_look, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_screwdriver, use_welder, use_wire_tools
 

@@ -1,160 +1,78 @@
 /**
- * The Maintainable behaviour (doc/rewrite/interactions.md §6): open the
- * maintenance panel, secure or unsecure, deconstruct and weld-repair.
+ * The Maintainable behaviour (doc/rewrite/interactions.md §6): open the maintenance panel, secure or unsecure, deconstruct and weld-repair.
  *
- * Every machine declares these four interactions; `maintenance_flags`
- * (MACHINE_MAINT_*) says which of them a machine type offers. They replace the
- * generic screwdriver/crowbar/wrench/welder *_act procs that used to live on
- * /obj/machinery. Subtype *_act overrides that call ..() still reach them,
- * through the atom-level *_act procs (see interaction_tool_act()).
+ * Ops of every machine (the `maintenance` section of CAPABILITIES(/obj/machinery), machinery.dm); `maintenance_flags` (MACHINE_MAINT_*) says
+ * which of them a machine type offers. They answer after a type's own tool ops (OP_PRIORITY_DEFAULT: what a subtype's *_act override did before
+ * its ..()) and before its catch-alls for any item (the same tier as those, OP_PRIORITY_DEFAULT - 1, where a tool binding is the more specific).
+ * A type's tool op that hands the click on (OP_DECLINE) lets these answer, as its old *_act's ..() did.
  */
-/obj/machinery/declare_interactions(list/into)
-	..()
-	into += list(
-		/datum/interaction/maintainable/panel,
-		/datum/interaction/maintainable/deconstruct,
-		/datum/interaction/maintainable/anchor,
-		/datum/interaction/maintainable/repair,
-	)
-
-/// Abstract: an interaction offered when the machine has `maintenance_flag`.
-/datum/interaction/maintainable
-	category = INTERACTION_CAT_MAINTAIN
-	default_action = INPUT_ACTION_USE
-	tags = list(INTERACTION_TAG_MAINTENANCE)
-	/// The MACHINE_MAINT_* flag that offers this interaction.
-	var/maintenance_flag = NONE
-
-/datum/interaction/maintainable/applies_to(atom/target)
-	if(!istype(target, /obj/machinery))
-		return FALSE
-	var/obj/machinery/machine = target
-	return (machine.maintenance_flags & maintenance_flag) ? TRUE : FALSE
-
-// ---- Open or close the maintenance panel ----
-
-/datum/interaction/maintainable/panel
-	id = "machine_panel"
-	name = "Open maintenance panel"
-	priority = 20
-	tool = TOOL_SCREWDRIVER
-	maintenance_flag = MACHINE_MAINT_PANEL
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/machinery/proc/toggle_maintenance_panel
-
-/datum/interaction/maintainable/panel/display_name(mob/actor, atom/target)
-	var/obj/machinery/machine = target
-	return machine.panel_open ? "Close maintenance panel" : "Open maintenance panel"
-
-/datum/interaction/maintainable/panel/feedback_for(mob/actor, atom/target, obj/item/held)
-	var/obj/machinery/machine = target
-	return machine.panel_open ? /datum/msg/interaction/maintenance_panel/close : /datum/msg/interaction/maintenance_panel/open
 
 MSG_DEF_SELF(interaction/maintenance_panel/open, "You open the maintenance hatch of %T%.")
 MSG_DEF_SELF(interaction/maintenance_panel/close, "You close the maintenance hatch of %T%.")
-
-/obj/machinery/proc/toggle_maintenance_panel(mob/actor, obj/item/held, datum/interaction/interaction)
-	set_panel_open(!panel_open)
-	update_icon()
-	return TRUE
-
-// ---- Deconstruct ----
-
-/datum/interaction/maintainable/deconstruct
-	id = "machine_deconstruct"
-	name = "Deconstruct"
-	priority = 15
-	tool = TOOL_CROWBAR
-	maintenance_flag = MACHINE_MAINT_FRAME
-	requires = list(
-		REQ_REACH_ADJACENT,
-		REQ_ON(PRED_TARGET, /obj/machinery/proc/maintenance_panel_is_open, "the maintenance panel is closed"),
-	)
-	effect = /obj/machinery/proc/maintenance_deconstruct
-
-/obj/machinery/proc/maintenance_deconstruct(mob/actor, obj/item/held, datum/interaction/interaction)
-	return dismantle() ? TRUE : FALSE
-
-// ---- Secure or unsecure ----
-
-/datum/interaction/maintainable/anchor
-	id = "machine_anchor"
-	name = "Secure"
-	priority = 10
-	tool = TOOL_WRENCH
-	maintenance_flag = MACHINE_MAINT_WRENCH
-	requires = list(
-		REQ_REACH_ADJACENT,
-		REQ_ON(PRED_TARGET, /obj/machinery/proc/maintenance_panel_is_closed, "the maintenance panel is open"),
-	)
-	effect = /obj/machinery/proc/toggle_maintenance_anchor
-
-/datum/interaction/maintainable/anchor/display_name(mob/actor, atom/target)
-	var/obj/machinery/machine = target
-	return machine.anchored ? "Unsecure" : "Secure"
-
-/datum/interaction/maintainable/anchor/duration_for(mob/actor, atom/target, obj/item/held)
-	var/obj/machinery/machine = target
-	return tool_delay(actor, held, machine.maintenance_wrench_time, tool)
-
-/datum/interaction/maintainable/anchor/start_feedback_for(mob/actor, atom/target, obj/item/held)
-	var/obj/machinery/machine = target
-	return machine.anchored ? /datum/msg/start/interaction/machine_anchor/unsecure : /datum/msg/start/interaction/machine_anchor/secure
-
-/datum/interaction/maintainable/anchor/feedback_for(mob/actor, atom/target, obj/item/held)
-	var/obj/machinery/machine = target
-	return machine.anchored ? /datum/msg/interaction/machine_anchor/unsecure : /datum/msg/interaction/machine_anchor/secure
-
+MSG_DEF_SELF(interaction/maintenance_panel/closed, "the maintenance panel is closed")
+MSG_DEF_SELF(interaction/maintenance_panel/opened, "the maintenance panel is open")
 MSG_DEF(start/interaction/machine_anchor/secure, "You start securing %T%.", "%U% begins securing %T%.")
 MSG_DEF(start/interaction/machine_anchor/unsecure, "You start unsecuring %T%.", "%U% begins unsecuring %T%.")
 MSG_DEF(interaction/machine_anchor/secure, "You secure %T%.", "%U% has secured %T%.")
 MSG_DEF(interaction/machine_anchor/unsecure, "You unsecure %T%.", "%U% has unsecured %T%.")
+MSG_DEF(interaction/machine_repair, "You repair %T%.", "%U% repairs %T%.")
+MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 
-/obj/machinery/proc/toggle_maintenance_anchor(mob/actor, obj/item/held, datum/interaction/interaction)
+// ---- which of them the machine offers ----
+
+/obj/machinery/proc/maint_offers_panel(datum/act/op/A)
+	return !!(maintenance_flags & MACHINE_MAINT_PANEL)
+
+/obj/machinery/proc/maint_offers_frame(datum/act/op/A)
+	return !!(maintenance_flags & MACHINE_MAINT_FRAME)
+
+/obj/machinery/proc/maint_offers_wrench(datum/act/op/A)
+	return !!(maintenance_flags & MACHINE_MAINT_WRENCH)
+
+/obj/machinery/proc/maint_offers_repair(datum/act/op/A)
+	return !!(maintenance_flags & MACHINE_MAINT_WELDER_REPAIR)
+
+// ---- the panel ----
+
+/// Opens or closes the maintenance panel (the panel's two ops, one per state).
+/obj/machinery/proc/toggle_maintenance_panel(datum/act/op/A)
+	set_panel_open(!panel_open)
+	update_icon()
+	return OP_OK
+
+// ---- deconstruct ----
+
+/// Takes the machine apart; a machine that would not come apart hands the click on.
+/obj/machinery/proc/maintenance_deconstruct(datum/act/op/A)
+	return dismantle() ? OP_OK : OP_DECLINE
+
+// ---- secure or unsecure ----
+
+/// The wrench's wait: the machine's own time (the op scales it by the tool's speed).
+/obj/machinery/proc/maintenance_wrench_wait(datum/act/op/A)
+	return maintenance_wrench_time
+
+/obj/machinery/proc/toggle_maintenance_anchor(datum/act/op/A)
 	set_anchored(!anchored)
 	power_change()
 	update_icon()
-	return TRUE
+	return OP_OK
 
-// ---- Weld repair ----
+// ---- weld repair ----
 
-/datum/interaction/maintainable/repair
-	id = "machine_repair"
-	name = "Repair"
-	category = INTERACTION_CAT_REPAIR
-	priority = 10
-	tool = TOOL_WELDER
-	maintenance_flag = MACHINE_MAINT_WELDER_REPAIR
-	requires = list(
-		REQ_REACH_ADJACENT,
-		REQ_ON(PRED_TARGET, /obj/machinery/proc/maintenance_is_damaged, "it isn't damaged"),
-		REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"),
-	)
-	effect = /obj/machinery/proc/maintenance_repair
-	feedback = /datum/msg/interaction/machine_repair
+/// The welder's wait: the machine's own time (the op scales it by the tool's speed).
+/obj/machinery/proc/maintenance_weld_wait(datum/act/op/A)
+	return maintenance_weld_time
 
-/datum/interaction/maintainable/repair/duration_for(mob/actor, atom/target, obj/item/held)
-	var/obj/machinery/machine = target
-	return tool_delay(actor, held, machine.maintenance_weld_time, tool)
+/// Requirement of the repair: the machine is damaged.
+/obj/machinery/proc/maintenance_is_damaged(datum/act/op/A)
+	return uses_integrity && get_integrity_damage() > 0
 
-MSG_DEF(interaction/machine_repair, "You repair %T%.", "%U% repairs %T%.")
-
-/obj/machinery/proc/maintenance_repair(mob/actor, obj/item/held, datum/interaction/interaction)
+/obj/machinery/proc/maintenance_repair(datum/act/op/A)
 	repair_damage(max_integrity)
-	return TRUE
+	return OP_OK
 
-// ---- Target state ----
-
-/obj/machinery/proc/maintenance_panel_is_open(mob/actor, atom/target, obj/item/held)
-	return panel_open ? TRUE : FALSE
-
-/obj/machinery/proc/maintenance_panel_is_closed(mob/actor, atom/target, obj/item/held)
-	return panel_open ? FALSE : TRUE
-
-/obj/machinery/proc/maintenance_is_damaged(mob/actor, atom/target, obj/item/held)
-	return uses_integrity && get_integrity() < max_integrity
-
-/// Predicate clause: the held item is (or contains) a lit welding tool.
+/// Predicate clause: the held item is (or contains) a lit welding tool (the legacy REQ_PROC form, for the interactions that still use it).
 /proc/dq_held_welder_lit(mob/actor, atom/target, obj/item/held)
 	var/obj/item/weldingtool/welder = held?.get_welder()
 	return welder?.isOn() ? TRUE : FALSE

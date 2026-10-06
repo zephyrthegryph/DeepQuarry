@@ -57,7 +57,7 @@
 CAPABILITIES(/obj/machinery/bluespace_denier)
 	after_init(10 SECONDS, then(PROC_REF(start_up)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(denier_emp))))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("bluespace_denier_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Pulse"), then(PROC_REF(bluespace_denier_silicon_trigger)))
 
 /// An EMP may set off a pulse.

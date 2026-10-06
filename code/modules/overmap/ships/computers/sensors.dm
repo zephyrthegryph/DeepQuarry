@@ -251,7 +251,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shipsensors)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
 	if(use_power) //can't run in non-vacuum

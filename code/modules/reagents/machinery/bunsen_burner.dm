@@ -38,16 +38,6 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 		update_icon()
 	return TRUE
 
-/obj/machinery/bunsen_burner/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. != ITEM_INTERACT_SUCCESS)
-		return .
-	if(!anchored)
-		drop_held_container()
-		if(heating)
-			end_boil()
-	return .
-
 /obj/machinery/bunsen_burner/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
@@ -110,7 +100,9 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
 	reagents(1, holder = /datum/reagents/distilling)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	extend("machine_anchor", then(PROC_REF(rewrenched)))
+	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 
 /obj/machinery/bunsen_burner/proc/work_step(datum/act/timer/A)
 	if(held_container && !anchored)
@@ -189,3 +181,9 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
 
+/// After the base wrench: an unsecured burner lets go of its container and stops boiling.
+/obj/machinery/bunsen_burner/proc/rewrenched(datum/act/op/A)
+	if(!anchored)
+		drop_held_container()
+		if(heating)
+			end_boil()

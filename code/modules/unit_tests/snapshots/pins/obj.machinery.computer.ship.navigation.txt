@@ -83,5 +83,5 @@ human|/obj/item menu: Emote Beyond
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag, gen_observer_ship_ghost_view, gen_robot_interaction_swallow, gen_silicon_ship_silicon_use, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ship_console_use, ship_emote_beyond, sync, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag, gen_observer_ship_ghost_view, gen_robot_interaction_swallow, gen_silicon_ship_silicon_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, ship_console_use, ship_emote_beyond, sync, use_gripper, use_item
 

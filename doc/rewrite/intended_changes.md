@@ -2342,3 +2342,17 @@ input takes the next tier down, so the legacy declaration order still decides.
 - **The fax machine's staff request form is one op**, the window's button and the menu's verb, with four questions (confirm, job, reason,
   confirm) as `asks()` steps whose later steps read the earlier answers (`step_value()`); a "No" or a closed question ends it with
   nothing sent. It needs a human or silicon actor, beside the fax from the menu. A silicon's touch logs it in by its own op.
+- **Machine maintenance is ops** (the `maintenance` section of `CAPABILITIES(/obj/machinery)`): the panel (an open and a close op), deconstruct
+  behind the open panel, secure and unsecure with the panel shut (the machine's wrench time, begin and end messages) and the lit welder's
+  repair, each offered by the type's `maintenance_flags`. They answer after a type's own tool ops (moved to `OP_PRIORITY_DEFAULT`, as a
+  subtype's `*_act` ran before its `..()`) and ahead of its catch-alls for any item (same tier, the tool binding is the more specific),
+  which is the legacy order: the first sweep's catch-alls had come to answer screwdrivers and crowbars before the panel (a grill, a
+  station map, a grinder, a firework launcher...); they no longer do. The legacy datums survive only as the interaction engine's own test
+  fixture (`/obj/dq_maint_probe`); the machine behaviour is pinned by `dq_machine_maintenance/*`.
+- **Every machine tool proc is an op.** Guards that swallowed the tool are needs on the base ops (`extend("machine_panel", needs(...))`:
+  the airlock controller that isn't deconstructable, an occupied recharge station, a busy washing machine or protean reconstitutor, a hot
+  or running shield generator); reactions after the base op are appended handlers (`extend("machine_anchor", then(...))`: power machines
+  join or leave the network, turbines and compressors find each other, a bunsen burner drops its container, a quantum pad re-finds its
+  power region, the grid checker's flag, the firework launcher's redraw, the anomaly harvester lets go). The six wall displays share
+  `display_disconnect_op()` (2 s, needs a board). The chemical dispenser's and synthesizer's cartridge removal ask on the op. The drill's
+  label op asks instead of opening its prompt from the effect.

@@ -112,7 +112,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 
 CAPABILITIES(/obj/machinery/holoposter)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("question" = "Available Posters", "title" = "Holographic Poster", "choices" = computed(PROC_REF(poster_choices)), "timeout" = 0)),
 		then(PROC_REF(poster_chosen)))
 

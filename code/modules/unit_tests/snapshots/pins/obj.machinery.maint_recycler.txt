@@ -37,5 +37,5 @@ human|/obj/item/card/id click: Click: Insert
 human|/obj/item menu: Insert (refused: its door isn't open)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Insert
-keys: attackby, close, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open, recycle, use, use_crowbar
+keys: attackby, close, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open, recycle, use, use_crowbar
 

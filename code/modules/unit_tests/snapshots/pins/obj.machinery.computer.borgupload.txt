@@ -69,5 +69,5 @@ human|/obj/item menu: Install module (refused: needs a AI module)
 human|/obj/item menu: Select cyborg (refused: no free cyborgs detected)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_hand_ungated_interaction_select_borg, gen_insert_interaction_install, gen_observer_interaction_swallow, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_hand_ungated_interaction_select_borg, gen_insert_interaction_install, gen_observer_interaction_swallow, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_gripper, use_item
 

@@ -91,5 +91,5 @@ human|/obj/item menu: Pay / scan
 human|/obj/item menu: Put on the register
 human|/obj/item menu: Use
 human|/obj/item click: Click: Pay / scan
-keys: add, cash_register_drop, cash_register_open_box_alt, cash_register_open_box_verb, cash_register_pay, cash_register_use, clear, clear_entry, custom_order, drag_buckle, emag_gated, gen_robot_interaction_swallow, link_account, machine_anchor, machine_deconstruct, machine_panel, machine_repair, refund_transaction, reset_log, set_amount, subtract, toggle_cash_lock, toggle_lock, use_wrench
+keys: add, cash_register_drop, cash_register_open_box_alt, cash_register_open_box_verb, cash_register_pay, cash_register_use, clear, clear_entry, custom_order, drag_buckle, emag_gated, gen_robot_interaction_swallow, link_account, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, refund_transaction, reset_log, set_amount, subtract, toggle_cash_lock, toggle_lock, use_wrench
 

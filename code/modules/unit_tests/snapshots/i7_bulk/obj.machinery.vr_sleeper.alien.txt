@@ -1,5 +1,5 @@
-/obj/machinery/vr_sleeper/alien|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/vr_sleeper/alien|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/vr_sleeper/alien|human|none => |
+/obj/machinery/vr_sleeper/alien|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/vr_sleeper/alien|ai|none => |
 /obj/machinery/vr_sleeper/alien|ghost|none => |
 

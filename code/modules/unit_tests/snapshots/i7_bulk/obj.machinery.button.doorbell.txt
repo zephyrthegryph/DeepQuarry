@@ -1,6 +1,6 @@
-/obj/machinery/button/doorbell|human|none => gen_hand_interaction_press_impl,button_press|machine_panel:needs a screwdriver,gen_insert_interaction_rename:needs an item,button_press_item:needs an item
-/obj/machinery/button/doorbell|robot|none => gen_hand_interaction_press_impl,button_press|machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_rename:needs an item,button_press_item:needs an item
+/obj/machinery/button/doorbell|human|none => gen_hand_interaction_press_impl,button_press|gen_insert_interaction_rename:needs an item,button_press_item:needs an item
+/obj/machinery/button/doorbell|robot|none => gen_hand_interaction_press_impl,button_press|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_rename:needs an item,button_press_item:needs an item
 /obj/machinery/button/doorbell|ai|none => |
 /obj/machinery/button/doorbell|ghost|none => |
-/obj/machinery/button/doorbell|human|/obj/item => gen_hand_interaction_press_impl,gen_insert_interaction_rename,button_press,button_press_item|machine_panel:needs a screwdriver
+/obj/machinery/button/doorbell|human|/obj/item => gen_hand_interaction_press_impl,gen_insert_interaction_rename,button_press,button_press_item|
 

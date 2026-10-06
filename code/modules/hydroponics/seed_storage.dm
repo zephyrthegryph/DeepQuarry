@@ -64,11 +64,12 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_seeds", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Insert seeds"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_seeds)))
 	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_bag)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
 
 /obj/machinery/seed_storage/proc/wire_lights()
 	return list(
@@ -509,14 +510,10 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		add_overlay("[initial(icon_state)]-panel")
 	return OP_OK
 
-/obj/machinery/seed_storage/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/seed_storage/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
+/// The wirecutters or a multitool behind the open panel: the wires.
+/obj/machinery/seed_storage/proc/wire_tool_used(datum/act/op/A)
+	wires_open(src, A.actor)
+	return OP_OK
 
 DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 /obj/machinery/seed_storage/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)

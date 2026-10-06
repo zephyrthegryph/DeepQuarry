@@ -53,5 +53,5 @@ human|/obj/item/reagent_containers menu: Eject contents (refused: the furnace is
 human|/obj/item/reagent_containers menu: Pour
 human|/obj/item/reagent_containers menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/reagent_containers click: Click: Pour
-keys: drag_buckle, eject_contents, gen_robot_interaction_swallow, load_carbon, load_stock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, transfer_gas, transfer_reagents, use
+keys: drag_buckle, eject_contents, gen_robot_interaction_swallow, load_carbon, load_stock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, transfer_gas, transfer_reagents, use
 

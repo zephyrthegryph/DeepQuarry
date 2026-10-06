@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
 	ref_many(nameof(targets))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Set ident tag"),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
 		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
 		then(PROC_REF(ident_entered)))
 
@@ -206,7 +206,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/pointdefense)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), nameof(stat)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Set ident tag"),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
 		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "timeout" = 0)),
 		then(PROC_REF(ident_entered)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

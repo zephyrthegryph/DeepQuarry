@@ -75,5 +75,5 @@ human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: You don't have
 human|/obj/item/stack/arcadeticket menu: Ui open
 human|/obj/item/stack/arcadeticket menu: Use item
 human|/obj/item/stack/arcadeticket click: Click: Use item
-keys: attack, charge, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, heal, machine_anchor, machine_deconstruct, machine_panel, machine_repair, newgame, redeem_tickets, ui_open, use_gripper, use_item
+keys: attack, charge, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, heal, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, newgame, redeem_tickets, ui_open, use_gripper, use_item
 

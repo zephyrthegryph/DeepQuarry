@@ -35,6 +35,10 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 	op("load_star", item(/obj/item/firework_star), priority(OP_PRIORITY_DEFAULT - 1), label("Insert firework star"), needs(req(PROC_REF(can_load_star_holds), because = PROC_REF(can_load_star_refusal))), then(PROC_REF(interaction_load_star)))
 	op("eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Firework Star"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject)))
 	op("launch", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Launch"), needs(req(PROC_REF(can_launch_holds), because = PROC_REF(can_launch_refusal))), then(PROC_REF(interaction_launch)))
+	extend("machine_panel", then(PROC_REF(maintained)))
+	extend("machine_panel_close", then(PROC_REF(maintained)))
+	extend("machine_anchor", then(PROC_REF(maintained)))
+	extend("machine_unanchor", then(PROC_REF(maintained)))
 
 /// Requirement: the launcher is empty.
 /obj/machinery/firework_launcher/proc/can_load_star(mob/user, atom/target, obj/item/held)
@@ -63,16 +67,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		update_icon()
 		return TRUE
 	return TRUE
-
-/obj/machinery/firework_launcher/screwdriver_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
-
-/obj/machinery/firework_launcher/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
 
 /// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
 /obj/machinery/firework_launcher/proc/dq_actor_can_act_holds(datum/act/op/A)
@@ -156,3 +150,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 /// the loaded_star this refers to (a relation view: null once it is deleted).
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
 	return loaded_star // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+
+/// After the base screwdriver or wrench: the launcher redraws.
+/obj/machinery/firework_launcher/proc/maintained(datum/act/op/A)
+	update_icon()

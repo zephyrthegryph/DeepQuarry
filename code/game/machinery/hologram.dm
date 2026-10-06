@@ -50,6 +50,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(masters))
 	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
+	display_disconnect_op()
 
 /obj/machinery/hologram/holopad/declare_interactions(list/into)
 	into += list(
@@ -69,9 +70,6 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 	id = "holopad_request_hand"
 	name = "Request AI presence"
 	effect = /obj/machinery/hologram/holopad/proc/interaction_request
-
-/obj/machinery/hologram/holopad/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
 
 /obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
 	if(!istype(user))

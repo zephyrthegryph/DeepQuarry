@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("dept", ui_act("dept"), asks(/datum/prompt/choice/fax_department, fields = list("choices" = computed(PROC_REF(department_choices))), step = "department", when = PROC_REF(fax_logged_in)),
 		then(PROC_REF(ui_act_dept)))
 	// behind the open service panel the multitool sets the department; with the panel shut it takes the click and does nothing
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Set department"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set department"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
 		asks(/datum/prompt/text/fax_department_id, fields = list("default" = nameof(department))),
 		then(PROC_REF(fax_department_id_answered)))
 	op("faxmachine_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req(PROC_REF(no_id_inserted_holds))), then(PROC_REF(interaction_insert_id)))

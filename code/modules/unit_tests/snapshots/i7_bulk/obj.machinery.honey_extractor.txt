@@ -1,5 +1,5 @@
-/obj/machinery/honey_extractor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/honey_extractor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/honey_extractor|human|none => |
+/obj/machinery/honey_extractor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/honey_extractor|ai|none => |
 /obj/machinery/honey_extractor|ghost|none => |
 

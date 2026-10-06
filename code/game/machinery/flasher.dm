@@ -27,7 +27,7 @@
 
 CAPABILITIES(/obj/machinery/flasher/portable)
 	after_init(0, then(PROC_REF(arm_proximity)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 
 /// An anchored flasher senses proximity from the start.
 /obj/machinery/flasher/portable/proc/arm_proximity(datum/act/timer/A)
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/machinery/flasher/portable)
 
 CAPABILITIES(/obj/machinery/flasher)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(flasher_emp))))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
 	op("flasher_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Flash"), then(PROC_REF(flasher_silicon_trigger)))
 
 /// An EMP may set the flasher off.

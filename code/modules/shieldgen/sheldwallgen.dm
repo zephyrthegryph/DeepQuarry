@@ -33,7 +33,7 @@ OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "
 CAPABILITIES(/obj/machinery/shieldwallgen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(wallgen_has_work), wakes_on = list(nameof(active), nameof(anchored)))
 	climb()
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("id_swipe", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(can_toggle_holds), because = PROC_REF(can_toggle_refusal))), then(PROC_REF(interaction_toggle)))

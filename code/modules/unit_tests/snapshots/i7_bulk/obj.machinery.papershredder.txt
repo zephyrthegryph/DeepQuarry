@@ -1,5 +1,5 @@
-/obj/machinery/papershredder|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
-/obj/machinery/papershredder|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/papershredder|human|none => |
+/obj/machinery/papershredder|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/papershredder|ai|none => |
 /obj/machinery/papershredder|ghost|none => |
 

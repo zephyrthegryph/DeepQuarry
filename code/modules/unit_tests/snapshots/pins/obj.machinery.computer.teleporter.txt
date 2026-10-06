@@ -83,5 +83,5 @@ human|/obj/item menu: Set teleporter ID
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, gen_silicon_teleporter_computer_silicon_use, machine_anchor, machine_deconstruct, machine_panel, machine_repair, teleporter_computer_insert_card, teleporter_computer_set_id, teleporter_computer_use, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, gen_silicon_teleporter_computer_silicon_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, teleporter_computer_insert_card, teleporter_computer_set_id, teleporter_computer_use, use_gripper, use_item
 

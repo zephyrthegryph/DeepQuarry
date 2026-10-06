@@ -26,13 +26,13 @@
 CAPABILITIES(/obj/machinery/floorlayer)
 	op("floorlayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("floorlayer_load_tile", item(/obj/item/stack/tile), priority(OP_PRIORITY_DEFAULT - 1), label("Load tile"), then(PROC_REF(interaction_load_tile)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Set work mode"),
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set work mode"),
 		asks(/datum/prompt/choice, fields = list("title" = "Mode", "question" = "Choose work mode", "choices" = nameof(work_modes), "timeout" = 0)),
 		then(PROC_REF(work_mode_chosen)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Remove tiles"),
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove tiles"),
 		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose remove tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
 		then(PROC_REF(tile_removal_chosen)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Choose tile type"),
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose tile type"),
 		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
 		then(PROC_REF(tile_type_chosen)))
 
