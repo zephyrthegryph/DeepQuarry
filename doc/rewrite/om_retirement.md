@@ -112,9 +112,9 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | L1 perf | landed | one rewake timer per member; typed step dispatch (`typed_dispatch`, `run_step()`/`ask_step()`) |
 | L2 gate | landed | `life_sequence` pinned against a reference runner; `life_sweep` at or under the pipeline (life_sequences.md section 9) |
 | F2 `EVENT_HANDLER` | landed | `tools/dx/codemods/event_handler_attr.py` |
-| F3 `om_after` | landed | `tools/dx/codemods/om_after_to_after.py`; `_drift`/`_stagger` remain with the timed actions |
-| L3 statuses | this branch | status stats in `code/library/mob/statuses.dm`; godmode a stat; type immunities `immune_to()`; Life runs under the kernel test clock |
-| F1 `OM_FIELD` | after M | its channels feed the machine pipeline; plain `TRACKED` (or `derives()`) once that is gone |
+| F3 `om_after` | landed | `tools/dx/codemods/om_after_to_after.py`; drift is `/atom/movable/proc/drift()` on `after()`, staggers are self-rearming `after()` steps |
+| L3 statuses | landed | status stats in `code/library/mob/statuses.dm`; godmode a stat; type immunities `immune_to()`; Life runs under the kernel test clock |
+| F1 `OM_FIELD` | started | `tools/dx/codemods/om_field_to_tracked.py`: a field nothing names by string becomes a var + `TRACKED_BRIDGED` (same channel); fields named by a periodic gate, `OM_DERIVE_FIELD` input or stage `reads` wait for those to move |
 | F4 `om_ask` | with the flows | all 32 sites are flow-bound or prompt subtypes (`analyze codemod om_ask` leaves them as residue) |
 | M machine pipeline | owned by `rewrite/machines-full` and `rewrite/pipenet-full` | they move machines off `machine_step()`; the pipeline goes with their last wave |
 | `OM_EMIT` / `om_hook` | Phase C codemod track | needs `ACTION()` declarations for `publish_<x>()` |

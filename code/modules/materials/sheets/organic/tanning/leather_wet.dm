@@ -17,7 +17,8 @@
 
 /// Reduced when exposed to high temperatures; 0 is dry. A tanning rack reads it through its
 /// "drying.wetness" derived input.
-OM_FIELD(/obj/item/stack/wetleather, wetness, 30, CHANGE_EXPLICIT)
+/obj/item/stack/wetleather/var/wetness = 30
+TRACKED_BRIDGED(/obj/item/stack/wetleather, wetness, CHANGE_EXPLICIT)
 
 /obj/item/stack/wetleather/examine(mob/user)
 	. = ..()

@@ -43,7 +43,8 @@ CAPABILITIES(/obj/item/supply_beacon)
 	var/drop_type
 
 /// Spent: the drop was sent, the beacon never works again.
-OM_FIELD(/obj/machinery/power/supply_beacon, expended, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/power/supply_beacon/var/expended = FALSE
+TRACKED_BRIDGED(/obj/machinery/power/supply_beacon, expended, CHANGE_MACHINE_SETTINGS)
 /// Draws power (and arms the drop) while switched on and not yet spent.
 CAPABILITIES(/obj/machinery/power/supply_beacon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(use_power), cond_not(nameof(expended))), wakes_on = list(nameof(use_power), nameof(expended)))
