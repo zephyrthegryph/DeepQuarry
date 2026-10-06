@@ -257,7 +257,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 		own_transfer(src, nameof(integrated_object), src, nameof(integrated_tools), null, integrated_object.type)
 	own_transfer(src, nameof(integrated_tools), src, nameof(integrated_object), tool_key)
 
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/handle_organ_proc_special()
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/handle_organ_proc_special(cycles)
 	..()
 
 	if(!owner || is_bruised() || !synths)

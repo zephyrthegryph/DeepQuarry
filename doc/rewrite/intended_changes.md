@@ -1729,3 +1729,30 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - A look has no underlays: manifolds and universal adapters build their pipe stubs in `update_underlays()` (also when a floor tile over them
   changes, through `hide()`), and the omni devices set theirs when their port icons change. No appearance proc writes `icon_state`, `dir` or
   `underlays` as a side effect any more.
+## Body migration, slice 3: internal organs on the organ clock (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`liver_toxin_overload`, `kidneys_clear_toxin`, `healthy_organs_idle`; green on the old code first).
+Every organ's `periodic_step()` is `organ_tick(cycles)`, run by one `every(LIFE_CYCLE)` per human gated by `STAT_ORGANS_ACTIVE` (held while an
+organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURACY` are gone. Loose organs keep one cycle per periodic step.
+
+* **Burst work became per-cycle rates with the same mean.** The liver's every-tenth-cycle strain (x10) runs every cycle (x1); the spleen's
+  every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
+  horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
+  (`ORGAN_LEGACY_BURST`).
+* **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
+  falls to below 8 within thirty cycles (old run 8 -> 6.6).
+* "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
+
+## Body migration, slice 4: germs as rates; pain messages on the body (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`antibiotics_clear_germs`, `necrosis_kills_limb`, `hurt_limb_pain`; green on the old code first).
+Germ procs take `cycles` (`handle_germ_effects`, `handle_antibiotics`, `handle_rejection`, `update_germs`, `handle_germ_sync`); the Life `pain` stage
+is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while the body carries afflictions).
+
+* **Germ growth is exponential by rate**: germ_level / 600 a cycle above half of level one without antibiotics (was prob(germ_level / 6) of +1,
+  the same mean); level-three growth 7.5 a cycle (was rand(5, 10)); antibiotic clearance and every spread step scale by the elapsed cycles.
+* **Transplant rejection** grows `rejecting` by elapsed cycles and spreads its every-tenth-cycle germ and toxin bursts over each cycle at the same mean.
+* **Chemical traces** on limbs fade 0.1 a cycle (was 1 every tenth Life tick).
+* **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
+  first-step overshoot found while pinning).
+* `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
