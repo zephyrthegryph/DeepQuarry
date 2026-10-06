@@ -124,6 +124,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	op("change_bottle_style", ui_act("modal:change_bottle_style", arg("arguments")),
 		asks(/datum/prompt/choice, fields = list("question" = "Please select the new style for bottles:", "choices" = computed(PROC_REF(bottle_style_choices)), "default" = computed(PROC_REF(bottle_style_current)), "bento" = "spritesheet", "inline" = TRUE, "timeout" = 0), step = "style"),
 		then(PROC_REF(modal_change_bottle_style)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/machinery/chemical_synthesizer/Initialize(mapload)
 	. = ..()
@@ -275,10 +276,10 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	update_icon()
 	return OP_OK
 
-/obj/machinery/chemical_synthesizer/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/chemical_synthesizer/proc/wrench_used(datum/act/op/A)
 	if(busy)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/chemical_synthesizer/screwdriver_act(mob/user, obj/item/tool)
 	if(!panel_open)

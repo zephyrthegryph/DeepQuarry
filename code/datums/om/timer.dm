@@ -47,9 +47,6 @@
 /mob/living/om_timer_clock()
 	return CLOCK_BIO
 
-/obj/machinery/om_timer_clock()
-	return CLOCK_MACHINE
-
 // ---------------------------------------------------------------- global owner
 
 /// The owner of timers that belong to no entity (round events, client real time). One per
@@ -520,15 +517,6 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		else
 			state[3] = e
 	state[1] = FALSE
-
-/// The live datums a list of OM handles names, in order, skipping any that have been deleted.
-/// For an instance list keyed by om_handle() (LC-refs: lists, lifecycle.md sec 4) that is iterated.
-/proc/om_resolve_all(list/handles)
-	. = list()
-	for(var/h in handles)
-		var/datum/D = om_resolve(h)
-		if(D)
-			. += D
 
 
 // ---------------------------------------------------------------- weak arguments

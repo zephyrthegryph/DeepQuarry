@@ -10,20 +10,8 @@
 	var/tmp/obj/item/sample
 	var/report_num = 0
 
-/obj/machinery/microscope/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/microscope_insert_sample,
-		/datum/interaction/machine_hand/ungated/microscope_examine,
-		/datum/interaction/machine_alt/microscope_remove_sample,
-	)
-	..()
-
-/datum/interaction/machine_item/microscope_insert_sample
-	id = "microscope_insert_sample"
-	name = "Insert sample"
-	held_type = /obj/item
-	also_requires = list(REQ_FIELD_NOT("sample", "there is already a slide in the microscope"), REQ_TARGET_STATE(/obj/machinery/microscope/proc/can_insert_sample))
-	effect = /obj/machinery/microscope/proc/interaction_attackby
+MSG_DEF_SELF(microscope/sample, "there is already a slide in the microscope")
+MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 
 /// A microscope sample must be releasable from its current holder before insertion.
 /obj/machinery/microscope/proc/can_insert_sample(mob/user, atom/target, obj/item/held)
@@ -32,40 +20,33 @@
 		return reason
 	return TRUE
 
-/obj/machinery/microscope/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microscope/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!istype(held, /obj/item/forensics/swab) && !istype(held, /obj/item/sample/fibers) && !istype(held, /obj/item/sample/print))
-		return FALSE
+		return OP_DECLINE
 
 	if(can_insert_sample(user, src, held) != TRUE)
-		return FALSE
+		return OP_DECLINE
 	if(!held.loc.release_to(held, src, null, user))
-		return FALSE
+		return OP_DECLINE
 	rel_set(src, nameof(sample), held)
 	to_chat(user, span_notice("You insert \the [held] into the microscope."))
-	return TRUE
+	update_icon()
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/microscope_examine
-	id = "microscope_examine"
-	name = "Examine sample"
-	also_requires = list(REQ_FIELD("sample", "the microscope has no sample to examine"))
-	effect = /obj/machinery/microscope/proc/interaction_examine
-
-/datum/interaction/machine_alt/microscope_remove_sample
-	id = "microscope_remove_sample"
-	name = "Remove sample"
-	consumes_input = FALSE
-	effect = /obj/machinery/microscope/proc/interaction_remove_sample
-
-/obj/machinery/microscope/proc/interaction_remove_sample(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microscope/proc/interaction_remove_sample(datum/act/op/A)
+	var/mob/user = A.actor
 	remove_sample(user)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/microscope/proc/interaction_examine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microscope/proc/interaction_examine(datum/act/op/A)
+	var/mob/user = A.actor
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample()]."))
 
 	om_task_start(/datum/om/task/timed/microscope_examine, user, sample())
-	return TRUE
+	return OP_OK
 
 /obj/machinery/microscope/proc/examine_stopped(datum/om/task/timed/microscope_examine/task)
 	var/mob/user = task.actor
@@ -143,6 +124,9 @@
 
 CAPABILITIES(/obj/machinery/microscope)
 	drag_onto(PROC_REF(mousedrop_input))
+	op("microscope_insert_sample", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert sample"), needs(req_is(nameof(sample), FALSE, because = MSG(microscope/sample)), req_held_releasable()), then(PROC_REF(interaction_attackby)))
+	op("microscope_examine", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Examine sample"), needs(req_is(nameof(sample), TRUE, because = MSG(microscope/no_sample))), then(PROC_REF(interaction_examine)))
+	op("microscope_remove_sample", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove sample"), passes(), then(PROC_REF(interaction_remove_sample)))
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/machinery/microscope/proc/mousedrop_input(datum/act/input/A)

@@ -39,34 +39,24 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 		. = TRUE
 	return .
 
-// Trees harvest through flora's own interaction_item() (called directly, by inheritance)
-// when the item qualifies; otherwise the tree fully replaces it with its own hit/dig logic.
-/obj/structure/flora/tree/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/tree_item,
-		/datum/interaction/entry_hand/ungated/tree_hand,
-	)
+// Trees harvest through flora's own interaction_item() when the item qualifies; otherwise the tree replaces it with its own hit and dig.
+CAPABILITIES(/obj/structure/flora/tree)
+	without("item")
+	op("tree_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_hit)))
+	op("search_sticks", hand(), ungated(), label("Search for sticks"), then(PROC_REF(interaction_search_sticks)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
 
-/// Old attack_hand: search the tree for loose sticks (survival_action.dm).
-/datum/interaction/entry_hand/ungated/tree_hand
-	id = "tree_hand"
-	name = "Search for sticks"
-	effect = /obj/structure/flora/tree/proc/interaction_search_sticks
-
-/// Old attackby: harvest (delegates to flora's own harvest logic), dig up a stump, or take a hit.
-/datum/interaction/entry_item/tree_item
-	id = "tree_item"
-	name = "Use"
-	effect = /obj/structure/flora/tree/proc/interaction_hit
-
-/obj/structure/flora/tree/proc/interaction_hit(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: harvest (flora's own harvest), dig up a stump, or take a hit.
+/obj/structure/flora/tree/proc/interaction_hit(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(can_harvest(W))
-		return interaction_item(user, W, interaction)
+		return interaction_item(A)
 
 	if(is_stump)
 		if(istype(W,/obj/item/shovel))
 			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
-		return TRUE
+		return OP_OK
 
 	act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)
 
@@ -86,7 +76,7 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 	hit_animation()
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
-	return TRUE
+	return OP_OK
 
 /obj/structure/flora/tree/proc/chop_done(obj/item/W, mob/living/user)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = W)
@@ -144,8 +134,6 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 	cut_overlays() // For the Sif tree and other future glowy trees.
 	set_light(0)
 
-CAPABILITIES(/obj/structure/flora/tree)
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
 
 /// A blast tears into the tree through its own health, ruining some of the wood.
 /obj/structure/flora/tree/proc/tree_blast(datum/act/hit/explosion/A)
@@ -200,37 +188,38 @@ CAPABILITIES(/obj/structure/flora/tree)
 	var/gift_type = /obj/item/a_gift
 	var/list/ckeys_that_took
 
+TRACKED(/obj/structure/flora/tree/pine/xmas/presents, ckeys_that_took)
+
+CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
+	op("take_present", hand(), label("Take a present"), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(can_take_present), because = MSG(xmas_presents/none_left))), then(PROC_REF(interaction_hand)))
+
 /obj/structure/flora/tree/pine/xmas/presents/choose_icon_state()
 	return "pinepresents"
 
-/obj/structure/flora/tree/pine/xmas/presents/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/xmas_presents_hand,
-	)
-	..()
+/// Requirement: one present per player.
+/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(datum/act/op/A)
+	return !present_taken(ckeys_that_took, A.actor)
+
+/// Has `user`'s player already taken a present from the tree whose takers are `takers`?
+/proc/present_taken(list/takers, mob/user)
+	READS_FROM() // the actor's key is fixed while it plays; the takers come in as the argument
+	return user.ckey && LAZYACCESS(takers, user.ckey)
+
+MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on.")
 
 /// Old attack_hand: take a present, once per ckey.
-/datum/interaction/entry_hand/xmas_presents_hand
-	id = "xmas_presents_hand"
-	name = "Take a present"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present))
-	effect = /obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand
-
-/// Requirement: one present per player.
-/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(mob/living/user, atom/target, obj/item/held)
-	if(user.ckey && LAZYACCESS(ckeys_that_took, user.ckey))
-		return "there are no presents with your name on"
-	return TRUE
-
-/obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!user.ckey)
-		return TRUE
+		return OP_OK
 
 	to_chat(user, span_notice("After a bit of rummaging, you locate a gift with your name on it!"))
-	LAZYSET(ckeys_that_took, user.ckey, TRUE)
+	var/list/takers = ckeys_that_took ? ckeys_that_took.Copy() : list()
+	takers[user.ckey] = TRUE
+	set_ckeys_that_took(takers)
 	var/obj/item/G = new gift_type(src)
 	user.put_in_hands(G)
-	return TRUE
+	return OP_OK
 
 // Palm trees
 

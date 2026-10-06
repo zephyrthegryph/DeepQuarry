@@ -1,5 +1,6 @@
-/obj/machinery/telepad|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,telepad_part_replacement:needs an item
-/obj/machinery/telepad|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,telepad_part_replacement:needs an item
+/obj/machinery/telepad|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_part_replacement_impl:needs an item
+/obj/machinery/telepad|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_part_replacement_impl:needs an item
 /obj/machinery/telepad|ai|none => |
 /obj/machinery/telepad|ghost|none => |
-/obj/machinery/telepad|human|/obj/item => telepad_part_replacement|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/telepad|human|/obj/item => gen_insert_interaction_part_replacement_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

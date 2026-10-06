@@ -57,40 +57,28 @@
 		if("5")
 			look.overlay("phoron-5")
 
-/obj/structure/dispenser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/dispenser_open_ui,
-		/datum/interaction/entry_item/dispenser_item/harm,
-		/datum/interaction/entry_item/dispenser_item,
-	)
-	..()
-
-/datum/interaction/entry_hand/dispenser_open_ui
-	id = "dispenser_open_ui"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui
-
 CAPABILITIES(/obj/structure/dispenser)
 	interface("TankDispenser", state = nameof(GLOB.tgui_physical_state))
 	op("phoron", ui_act("phoron"), then(PROC_REF(ui_act_phoron)))
 	op("oxygen", ui_act("oxygen"), then(PROC_REF(ui_act_oxygen)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("store", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
+	op("store_harm", item(/obj/item), stance(I_HURT), label("Use"), then(PROC_REF(interaction_item_harm)))
 
 /obj/structure/dispenser/ui_data(datum/act/eval/A)
 	return list("oxygen" = oxygentanks, "phoron" = phorontanks)
 
-/// Old attackby: store a tank, or take a hit on harm intent.
-/datum/interaction/entry_item/dispenser_item
-	id = "dispenser_item"
-	name = "Use"
-	effect = /obj/structure/dispenser/proc/interaction_item
+/// Old attackby: store a tank; anything else does not fit.
+/obj/structure/dispenser/proc/interaction_item(datum/act/op/A)
+	return tank_offered(A, FALSE)
 
 /// Combat mode: tanks still go in; anything else is refused without a word.
-/datum/interaction/entry_item/dispenser_item/harm
-	id = "dispenser_item_harm"
-	stance = I_HURT
+/obj/structure/dispenser/proc/interaction_item_harm(datum/act/op/A)
+	return tank_offered(A, TRUE)
 
-/obj/structure/dispenser/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/dispenser/proc/tank_offered(datum/act/op/A, harm)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/full
 	if(istype(I, /obj/item/tank/oxygen) || istype(I, /obj/item/tank/air) || istype(I, /obj/item/tank/anesthetic))
 		if(oxygentanks < TANK_DISPENSER_CAPACITY)
@@ -102,21 +90,21 @@ CAPABILITIES(/obj/structure/dispenser)
 			phorontanks++
 		else
 			full = TRUE
-	else if(interaction.stance != I_HURT)
+	else if(!harm)
 		to_chat(user, span_notice("[I] does not fit into [src]."))
-		return TRUE
+		return OP_OK
 	else
-		return TRUE
+		return OP_OK
 
 	if(full)
 		to_chat(user, span_notice("[src] can't hold any more of [I]."))
-		return TRUE
+		return OP_OK
 
 	if(!user.unEquip(I, target = src))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You put [I] in [src]."))
-	changed(src)
-	return TRUE
+	update_icon()
+	return OP_OK
 
 /obj/structure/dispenser/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

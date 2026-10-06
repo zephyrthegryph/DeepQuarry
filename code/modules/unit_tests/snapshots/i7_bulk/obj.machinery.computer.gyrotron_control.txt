@@ -1,4 +1,5 @@
-/obj/machinery/computer/gyrotron_control|human|none => gyrotron_control_use|gyrotron_control_set_ident:needs a multitool
-/obj/machinery/computer/gyrotron_control|robot|none => gyrotron_control_use|gen_robot_interaction_swallow:not possible right now,gyrotron_control_set_ident:needs a multitool
+/obj/machinery/computer/gyrotron_control|human|none => |
+/obj/machinery/computer/gyrotron_control|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/gyrotron_control|ai|none => |
 /obj/machinery/computer/gyrotron_control|ghost|none => |
+

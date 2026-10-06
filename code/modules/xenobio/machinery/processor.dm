@@ -18,38 +18,26 @@
 	name = T_BOARD("slime processor")
 	build_path = /obj/machinery/processor
 
-/obj/machinery/processor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/processor_start,
-		/datum/interaction/machine_verb/processor_eject,
-		/datum/interaction/machine_drag/processor_insert,
-	)
-	..()
+CAPABILITIES(/obj/machinery/processor)
+	op("start", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), needs(req_is(nameof(processing), FALSE, because = MSG(processor/processing))), then(PROC_REF(interaction_start)))
+	op("eject", menu(), label("Eject Processor"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
 
-/datum/interaction/machine_hand/ungated/processor_start
-	id = "processor_start"
-	name = "Start"
-	effect = /obj/machinery/processor/proc/interaction_start
-	also_requires = list(REQ_FIELD_NOT("processing", "the processor is in the process of processing"))
+MSG_DEF_SELF(processor/processing, "the processor is in the process of processing")
 
-/obj/machinery/processor/proc/interaction_start(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/processor/proc/interaction_start(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(length(to_be_processed))
 		after(src, 0.1 SECONDS, PROC_REF(begin_processing))
 	else
 		to_chat(user, span_warning("The processor is empty."))
 		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
-		return TRUE
-	return TRUE
+		return OP_OK
+	return OP_OK
 
 // Verb to remove everything.
-/datum/interaction/machine_verb/processor_eject
-	id = "processor_eject"
-	name = "Eject Processor"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/processor/proc/interaction_eject
-
-/obj/machinery/processor/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/processor/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || !user.canmove || user.restrained())
 		return TRUE
 	empty()
@@ -136,14 +124,11 @@
 		return TRUE
 	return FALSE
 
-/datum/interaction/machine_drag/processor_insert
-	id = "processor_insert"
-	name = "Insert"
-	effect = /obj/machinery/processor/proc/interaction_insert
-
-/obj/machinery/processor/proc/interaction_insert(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/processor/proc/interaction_insert(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/movable/dropping = A.held
 	var/atom/movable/AM = dropping
 	if(user.stat || user.incapacitated(INCAPACITATION_DISABLED) || !istype(user))
-		return TRUE
+		return OP_OK
 	insert(AM, user)
-	return TRUE
+	return OP_OK

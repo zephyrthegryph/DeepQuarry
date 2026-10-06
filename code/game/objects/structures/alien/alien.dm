@@ -13,6 +13,9 @@
 
 CAPABILITIES(/obj/structure/alien)
 	extend(/datum/act/hit, instead(then(PROC_REF(alien_thrown_at))))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("melt", hand(), stance(I_HURT), label("Melt"), then(PROC_REF(interaction_melt)))
+	op("hand", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// A throw squelches into the resin before it lands. A thrown thing is the generic hit, so the squelch checks the entry; the hit goes on either way.
 /obj/structure/alien/proc/alien_thrown_at(datum/act/hit/A)
@@ -29,40 +32,25 @@ CAPABILITIES(/obj/structure/alien)
 	receive_generic_attack(user, damage)
 	return
 
-/obj/structure/alien/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/alien_item,
-		/datum/interaction/entry_hand/alien_hand/harm,
-		/datum/interaction/entry_hand/alien_hand,
-	)
-	..()
-
-/// Old attackby: hit the alien structure.
-/datum/interaction/entry_item/alien_item
-	id = "alien_item"
-	name = "Use"
-	effect = /obj/structure/alien/proc/interaction_item
-
-/obj/structure/alien/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/alien/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	act_message(user, src, others = span_danger("%U% attacks %T%!"))
 	receive_weapon_hit(W, user)
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand: a Hulk destroys it, or a xenomorph melts through it.
-/datum/interaction/entry_hand/alien_hand
-	id = "alien_hand"
-	name = "Use"
-	effect = /obj/structure/alien/proc/interaction_hand
+/// Old attack_hand: a Hulk destroys it, or a xenomorph claws at it.
+/obj/structure/alien/proc/interaction_hand(datum/act/op/A)
+	return alien_hand_used(A, FALSE)
 
 /// Combat mode: hivenode carriers melt it away, replicant resin spinners dissolve it.
-/datum/interaction/entry_hand/alien_hand/harm
-	id = "alien_hand_harm"
-	name = "Melt"
-	stance = I_HURT
+/obj/structure/alien/proc/interaction_melt(datum/act/op/A)
+	return alien_hand_used(A, TRUE)
 
-/obj/structure/alien/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/alien/proc/alien_hand_used(datum/act/op/A, harm)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
 		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
@@ -71,18 +59,18 @@ CAPABILITIES(/obj/structure/alien)
 
 		// Aliens can get straight through these.
 		if(istype(user,/mob/living/carbon))
-			if(interaction.stance == I_HURT)
+			if(harm)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
 					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return TRUE
+					return OP_OK
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
 					om_task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-					return TRUE
+					return OP_OK
 			act_message(user, null, others = span_warning("%U% claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)
-	return TRUE
+	return OP_OK
 
 /obj/structure/alien/proc/attack_hand_timed_done(mob/usr_mob)
 	visible_message (span_warning("[usr_mob] strokes the [name] and it melts away!"), 1)

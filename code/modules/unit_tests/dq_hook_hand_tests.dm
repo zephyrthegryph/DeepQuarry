@@ -48,7 +48,7 @@
 	pulse.threshold = 0.2
 	pulse.max_range = 3
 	pulse.chance = 100
-	OM_EMIT(counter, /datum/om/event/before/in_range_of_irradiation, pulse, 0.5)
+	PUBLISH_LEGACY(counter, /datum/notice/in_range_of_irradiation, pulse, 0.5)
 	TEST_ASSERT_EQUAL(counter.last_radiation_strength, 40, "the in_range_of_irradiation notice twin reached the geiger's handler")
 	TEST_ASSERT_EQUAL(counter.insulation_deficit, 0.3, "with the insulation it was told")
 	qdel(pulse)
@@ -78,5 +78,5 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	container.materials[steel] = 2000
 	var/list/texts = list()
-	OM_EMIT(silo, /datum/om/event/examine, null, texts)
+	PUBLISH_LEGACY(silo, /datum/notice/examine, null, texts)
 	TEST_ASSERT(length(texts) > 0, "the examine notice reached the container's observer, which listed what it holds")

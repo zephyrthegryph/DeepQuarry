@@ -33,29 +33,22 @@
 	if(panel_open == 1)
 		look.overlay("dbchime-open")
 
-/obj/machinery/doorbell_chime/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/doorbell_chime_fingerprint,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
+CAPABILITIES(/obj/machinery/doorbell_chime)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
-/// Old attackby: added a fingerprint for any item before trying the part replacer.
-/datum/interaction/machine_item/doorbell_chime_fingerprint
-	id = "doorbell_chime_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
-
-/obj/machinery/doorbell_chime/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/doorbell_chime/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	if(multitool.connectable() && istype(multitool.connectable(), /obj/machinery/button/doorbell))
 		var/obj/machinery/button/doorbell/button = multitool.connectable()
 		keyed_set_id(src, nameof(id_tag), button.id) // joins the button's keyed chimes
 		to_chat(user, span_notice("You upload the data from \the [tool]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 ////////////////////DOORBELL CHIME CONSTRUCTION///////////////////////////////////////
 // We want these to be constructable so more chimes can be added in departments.
@@ -92,6 +85,8 @@
 CAPABILITIES(/obj/machinery/button/doorbell)
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 /// A doorbell built on a wall (its constructor param).
 /obj/machinery/button/doorbell/var/building = FALSE
@@ -104,25 +99,18 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	if (!id)
 		assign_uid()
-		id = num2text(uid)
+		set_id(num2text(uid))
+	update_icon()
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/button/doorbell/draw(datum/look/look)
 	..()
 	look.state("doorbell-[operable() ? "standby" : "off"]")
 
-/obj/machinery/button/doorbell/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/doorbell_press,
-		/datum/interaction/machine_item/doorbell_rename,
-	)
-	..()
-
-/// Old attack_hand: press the button, chime the linked chimes.
-/datum/interaction/machine_hand/doorbell_press
-	id = "doorbell_press"
-	name = "Press"
-	effect = /obj/machinery/button/doorbell/proc/interaction_press_impl
+EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
+	INTERACT_HAND("Press", PROC_REF(interaction_press_impl)), \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_rename), "Touch"), \
+)
 
 /// Chimes whose id_tag matches our id (keyed).
 /obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
@@ -142,13 +130,6 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 		M.chime()
 	return TRUE
 
-/// Old attackby: fingerprint any item, and rename with a pen when the panel is open.
-/datum/interaction/machine_item/doorbell_rename
-	id = "doorbell_rename"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /obj/machinery/button/doorbell/proc/interaction_rename
-
 /obj/machinery/button/doorbell/proc/interaction_rename(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(panel_open && istype(held, /obj/item/pen))
@@ -163,19 +144,22 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	if(t && panel_open)
 		name = t
 
-/obj/machinery/button/doorbell/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/button/doorbell/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/M = tool
 	rel_set(M, nameof(M.connectable), src)
 	to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/button/doorbell/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
 	play_sfx(src, SFX_ITEMS_RATCHET)
 	om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/button/doorbell/proc/wrench_act_timed_done(mob/user)
 	if(QDELETED(src))

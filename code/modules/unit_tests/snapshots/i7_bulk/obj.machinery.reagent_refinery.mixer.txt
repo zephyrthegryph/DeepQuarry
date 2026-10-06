@@ -1,5 +1,5 @@
-/obj/machinery/reagent_refinery/mixer|human|none => mixer_use,mixer_set_rotation|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,reagent_refinery_drain:needs a  , a glass, or a shaker
-/obj/machinery/reagent_refinery/mixer|robot|none => mixer_use,mixer_set_rotation|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,reagent_refinery_drain:needs a  , a glass, or a shaker
+/obj/machinery/reagent_refinery/mixer|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/reagent_refinery/mixer|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/reagent_refinery/mixer|ai|none => |
 /obj/machinery/reagent_refinery/mixer|ghost|none => |
-/obj/machinery/reagent_refinery/mixer|human|/obj/item/reagent_containers/glass => mixer_use,mixer_set_rotation|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,reagent_refinery_drain:it's empty; there is nothing to drain
+

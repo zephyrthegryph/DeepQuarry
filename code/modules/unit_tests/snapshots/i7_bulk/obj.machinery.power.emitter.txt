@@ -1,9 +1,5 @@
-/obj/machinery/power/emitter|human|none => emitter_use|emag_gated:needs a cryptographic sequencer,emitter_repair:needs an item,emitter_toggle_lock:needs an identification card or a PDA,emitter_toggle_anomalous:needs an anomaly scanner,power_cable_place:needs a cable coil
-/obj/machinery/power/emitter|robot|none => emitter_use|emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,emitter_repair:needs an item,emitter_toggle_lock:needs an identification card or a PDA,emitter_toggle_anomalous:needs an anomaly scanner,power_cable_place:needs a cable coil
+/obj/machinery/power/emitter|human|none => |
+/obj/machinery/power/emitter|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/emitter|ai|none => |
 /obj/machinery/power/emitter|ghost|none => |
-/obj/machinery/power/emitter|human|/obj/item/stack/material => emitter_use|emag_gated:needs a cryptographic sequencer,emitter_repair:it's already fully repaired,emitter_toggle_lock:needs an identification card or a PDA,emitter_toggle_anomalous:needs an anomaly scanner,power_cable_place:needs a cable coil
-/obj/machinery/power/emitter|human|/obj/item/card/id => emitter_toggle_lock,emitter_use|emag_gated:needs a cryptographic sequencer,emitter_repair:needs an item,emitter_toggle_anomalous:needs an anomaly scanner,power_cable_place:needs a cable coil
-/obj/machinery/power/emitter|human|/obj/item/anomaly_scanner => emitter_toggle_anomalous,emitter_use|emag_gated:needs a cryptographic sequencer,emitter_repair:needs an item,emitter_toggle_lock:needs an identification card or a PDA,power_cable_place:needs a cable coil
-/obj/machinery/power/emitter|human|/obj/item/stack/cable_coil => emitter_use,power_cable_place|emag_gated:needs a cryptographic sequencer,emitter_repair:needs an item,emitter_toggle_lock:needs an identification card or a PDA,emitter_toggle_anomalous:needs an anomaly scanner
-/obj/machinery/power/emitter|human|/obj/item/card/emag => emag_gated,emitter_use|emitter_repair:needs an item,emitter_toggle_lock:needs an identification card or a PDA,emitter_toggle_anomalous:needs an anomaly scanner,power_cable_place:needs a cable coil
+

@@ -37,6 +37,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 	param(nameof(tint_ovr), pos = 5)
 	param(nameof(can_revert), pos = 6)
 	param(nameof(discard_clothes), pos = 7)
+	op("anchor", tool(TOOL_WRENCH), wait(0), label("Use"), then(PROC_REF(gargoyle_wrenched)))
+	op("item", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
+	op("item_cyborg", item(/obj/item), label("Use"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(interaction_item_cyborg)))
 
 /// The human petrified, and what the statue overrides of their look (its constructor params).
 /obj/structure/gargoyle/var/tmp/mob/living/carbon/human/petrified
@@ -262,43 +265,47 @@ CAPABILITIES(/obj/structure/gargoyle)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	damage(damage)
 
-/obj/structure/gargoyle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/gargoyle_item,
-	)
-	..()
+/// Old attackby with a wrench: anchor or free the statue (not over open space).
+/obj/structure/gargoyle/proc/gargoyle_wrenched(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
+	if(isspace(loc) || isopenspace(loc))
+		to_chat(user, span_warning("You can't anchor that here!"))
+		set_anchored(FALSE)
+		return OP_OK
+	var/was_anchored = anchored
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
+	return OP_OK
 
-/// Old attackby: anchor with a wrench, feed the gargoyle's vore mode, or take a hit.
-/datum/interaction/entry_item/gargoyle_item
-	id = "gargoyle_item"
-	name = "Use"
-	effect = /obj/structure/gargoyle/proc/interaction_item
+/// Old attackby: feed the petrified gargoyle's catch, or hit the statue.
+/obj/structure/gargoyle/proc/interaction_item(datum/act/op/A)
+	return gargoyle_item_used(A, TRUE)
 
-/obj/structure/gargoyle/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// A cyborg's module only hits the statue (it never fed the gargoyle).
+/obj/structure/gargoyle/proc/interaction_item_cyborg(datum/act/op/A)
+	return gargoyle_item_used(A, FALSE)
+
+/obj/structure/gargoyle/proc/gargoyle_item_used(datum/act/op/A, may_feed)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(isspace(loc) || isopenspace(loc))
-			to_chat(user, span_warning("You can't anchor that here!"))
-			set_anchored(FALSE)
-			return TRUE
-		var/was_anchored = anchored
-		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
-	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
+	if(may_feed && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
-			return TRUE
+			return OP_OK
 		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(gargoyle.vore_selected.name)] ."))
 			user.drop_item()
 			gargoyle.vore_selected.nom_atom(W)
-			return TRUE
-	else if(!(W.flags & NOBLUDGEON))
+			return OP_OK
+		return OP_OK
+	if(!(W.flags & NOBLUDGEON))
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			playsound(src, W.hitsound, 50, 1)
 			damage(W.force)
-	return TRUE
+	return OP_OK
 
 /obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
 	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))

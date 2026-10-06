@@ -3,3 +3,4 @@
 /obj/machinery/ai_status_display|ai|none => gen_silicon_ai_status_display_silicon_use|
 /obj/machinery/ai_status_display|ghost|none => |
 /obj/machinery/ai_status_display|human|/obj/item => ai_status_display_touch|
+

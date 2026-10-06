@@ -118,13 +118,13 @@ CAPABILITIES(/obj/item/beartrap)
 
 	//trap the victim in place
 	set_dir(L.dir)
-	can_buckle = TRUE
+	set_can_buckle(TRUE)
 	buckle_mob(L)
 	L.status_at_least(STAT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
 	deployed = 0
 	set_anchored(FALSE)
-	can_buckle = initial(can_buckle)
+	set_can_buckle(initial(can_buckle))
 
 /obj/item/beartrap/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -198,22 +198,20 @@ CAPABILITIES(/obj/item/beartrap)
 /obj/item/material/barbedwire/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-// EXTEND: /obj/item/material's repair interaction still applies, after this type's own.
-EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(barbedwire_interaction_item)), \
-)
-
 CAPABILITIES(/obj/item/material/barbedwire)
 	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("collect", hand(), then(PROC_REF(interaction_hand)))
+	// a hit wears the coil, then the material's own repair still has its turn
+	op("barbedwire_hit", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(barbedwire_interaction_item)))
 
 /obj/item/material/barbedwire/proc/deploy_trap_input(datum/act/op/A)
 	interaction_self(A.actor, A.held, null)
 	return OP_OK
 
-/// Old attack_hand.
-/obj/item/material/barbedwire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: collect a deployed coil (anything else is the pick up).
+/obj/item/material/barbedwire/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(anchored && can_use(user))
 		act_message(user, src, MSG_SELF(span_notice("You begin collecting %T%!")), \
 			MSG_OTHERS(span_danger("%U% starts to collect %T%.")), \
@@ -222,8 +220,8 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You have collected %T%!")), \
@@ -251,9 +249,11 @@ CAPABILITIES(/obj/item/material/barbedwire)
 	set_anchored(TRUE)
 
 /// Old attackby: wear from being hit, then falls through as its ..() did.
-/obj/item/material/barbedwire/proc/barbedwire_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/material/barbedwire/proc/barbedwire_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if((W.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(W))
@@ -267,7 +267,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/material/barbedwire/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor

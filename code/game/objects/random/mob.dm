@@ -63,7 +63,7 @@ DECLARE_LOOT(/obj/random/mob, LOOT_TABLE(\
 		M.faction = faction
 	var/ghostjoin = MAP_VAR(P, varedits, mob_ghostjoin)
 	if(ghostjoin && rng.chance(ghostjoin))
-		M.ghostjoin = 1
+		M.set_ghostjoin(1)
 
 /obj/random/mob/sif
 	name = "Random Sif Animal"

@@ -1,5 +1,5 @@
-/obj/machinery/maint_recycler|human|none => maint_recycler_use|maint_recycler_insert:needs an item
-/obj/machinery/maint_recycler|robot|none => maint_recycler_use|gen_robot_interaction_swallow:not possible right now,maint_recycler_insert:needs an item
+/obj/machinery/maint_recycler|human|none => |
+/obj/machinery/maint_recycler|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/maint_recycler|ai|none => |
 /obj/machinery/maint_recycler|ghost|none => |
-/obj/machinery/maint_recycler|human|/obj/item => maint_recycler_use|maint_recycler_insert:its door isn't open
+

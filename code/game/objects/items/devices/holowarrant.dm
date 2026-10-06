@@ -22,75 +22,60 @@
 	else
 		. += span_notice("You have to go closer if you want to read it.")
 
-//hit yourself with it
-DECLARE_INTERACTIONS(/obj/item/holowarrant, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// The names on the warrants on file.
+/obj/item/holowarrant/proc/warrant_names(datum/act/A)
+	return warrants_on_file()
 
-/obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_clear(src, nameof(active))
-	var/list/warrants = list()
+/proc/warrants_on_file()
+	READS_FROM() // the records are read when the projector asks
+	. = list()
 	if(!isnull(GLOB.data_core.general))
 		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-			warrants += W.fields["namewarrant"]
-	if(warrants.len == 0)
-		to_chat(user,span_notice("There are no warrants available"))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(warrant_chosen), answerer = user, title = "Warrant Selection", question = "Which warrant would you like to load?", choices = warrants, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+			. += W.fields["namewarrant"]
 
-/// Swiping an ID (the subject, still in hand) to authorize the loaded warrant.
-/datum/prompt/yes_no/holowarrant_authorize
-	title = "Warrant authorization"
-	question = "Would you like to authorize this warrant?"
-	timeout = 0
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/card/id/card
-	var/datum/data/record/warrant/warrant
+/obj/item/holowarrant/proc/warrants_exist(datum/act/op/A)
+	return length(warrants_on_file()) > 0
 
-CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize)
-	ref_one(nameof(card), /obj/item/card/id)
-	ref_one(nameof(warrant), /datum/data/record/warrant)
+/// The held thing carries the Head of Security's access: the authorization is asked.
+/obj/item/holowarrant/proc/authorizing_card(datum/act/op/A)
+	return carries_access(A.held, ACCESS_HOS)
 
-/datum/prompt/yes_no/holowarrant_authorize/prepare(datum/act/A)
-	..()
-	var/obj/item/card/id/captured_card = card
-	var/datum/data/record/warrant/captured_warrant = warrant
-	rel_clear(src, nameof(card))
-	rel_set(src, nameof(card), captured_card)
-	rel_clear(src, nameof(warrant))
-	rel_set(src, nameof(warrant), captured_warrant)
+/// Does `thing` carry an ID with `access`?
+/proc/carries_access(obj/item/thing, access)
+	READS_FROM() // an ID's access is asked when it is swiped
+	var/obj/item/card/id/I = thing?.GetIdCard()
+	return I && (access in I.GetAccess())
 
-/datum/prompt/yes_no/holowarrant_authorize/recheck_extra()
-	return QDELETED(card) || QDELETED(warrant) ? "gone" : null
-
-/obj/item/holowarrant/proc/warrant_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
+/// The warrant picked is loaded (none on file: say so).
+/obj/item/holowarrant/proc/warrant_chosen(datum/act/op/A)
+	rel_clear(src, nameof(active))
+	var/datum/prompt/R = A.answer
+	if(!R)
+		if(!length(warrants_on_file()))
+			to_chat(A.actor, span_notice("There are no warrants available"))
+		update_icon()
+		return OP_OK
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-		if(W.fields["namewarrant"] == A.answer.value)
+		if(W.fields["namewarrant"] == R.value)
 			rel_set(src, nameof(active), W)
+	update_icon()
+	return OP_OK
 
-/obj/item/holowarrant/proc/authorize_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/yes_no/holowarrant_authorize/ask = A.answer
-	var/mob/user = ask.answerer
-	var/obj/item/card/id/I = ask.card
-	if(ask.value && active() == ask.warrant)
+/// An ID swiped through it: authorized after a yes; without the access it says so; anything else goes on.
+/obj/item/holowarrant/proc/authorize_answered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = A.held?.GetIdCard()
+	if(!I)
+		return OP_DECLINE
+	if(!carries_access(A.held, ACCESS_HOS))
+		to_chat(user, span_warning("You don't have the access to do this!"))
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(R?.value && active())
 		active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 	act_message(user, src, MSG_SELF(span_notice("You swipe \the [I] through %T%.")), \
 		MSG_OTHERS(span_notice("%U% swipes \the [I] through %T%.")))
-
-/obj/item/holowarrant/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(active())
-		var/obj/item/card/id/I = W.GetIdCard()
-		if(I && (ACCESS_HOS in I.GetAccess()))
-			open_request(src, /datum/prompt/yes_no/holowarrant_authorize, PROC_REF(authorize_answered), answerer = user, subject = W, card = I, warrant = active())
-			return TRUE
-		to_chat(user, span_warning("You don't have the access to do this!"))
-		return TRUE
-	return FALSE
+	return OP_OK
 
 //hit other people with it
 /obj/item/holowarrant/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

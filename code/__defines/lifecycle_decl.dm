@@ -15,7 +15,7 @@
 //                  4. registries       DECLARE_REGISTRY (conditional ones are joined here)
 //                  5. service members  DECLARE_SERVICE_MEMBER
 //                  6. binds            DECLARE_BIND (batched per SSatoms batch)
-//                  7. behaviours       DECLARE_BEHAVIOUR, DECLARE_PERIODIC (a timer at init is after_init(), code/engine/actions/after_init.dm)
+//                  7. periodic         DECLARE_PERIODIC (a timer at init is after_init(), code/engine/actions/after_init.dm)
 //   dematerialize (/atom/on_dematerialize()): 7..4 in reverse (periodic stop, service leave;
 //                registries, behaviours and timers are already left by the core).
 //   destroy      phase 1 (unbind): DECLARE_BIND release. Phase 4 deletes the children
@@ -76,8 +76,6 @@
 
 /// 8a. LEGACY: per behaviour, cap_trait() (a trait + examine line), on_notice (an after-fact) or before_op on a
 /// guard key (a veto): the audit is in doc/rewrite/lifecycle.md section 9.
-/// An OM behaviour attached at materialize (om_attach). The OM teardown detaches it.
-#define DECLARE_BEHAVIOUR(PATH, BEHAVIOUR) _LIFECYCLE_DECL(PATH, add_behaviour(BEHAVIOUR))
 /// 8b. Periodic work (om_task_periodic(src, PIPELINE)) started at materialize, stopped at
 /// dematerialize. The type implements periodic_step().
 #define DECLARE_PERIODIC(PATH, PIPELINE) _LIFECYCLE_DECL(PATH, set_periodic(PIPELINE))

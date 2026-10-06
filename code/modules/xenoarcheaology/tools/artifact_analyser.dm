@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	interface("XenoarchArtifactAnalyzer")
 	without("ui_open")
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("artifact_analyser_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_artifact_analyser_use)))
 
 /obj/machinery/artifact_analyser/Initialize(mapload)
 	. = ..()
@@ -40,24 +41,13 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	if(!owned_scanner())
 		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 
-/obj/machinery/artifact_analyser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/artifact_analyser_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/artifact_analyser_use
-	id = "artifact_analyser_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use
-
-/obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable() || get_dist(src, user) > 1)
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/artifact_analyser/ui_prepare(mob/user, datum/tgui/ui)
 	if(!owned_scanner())

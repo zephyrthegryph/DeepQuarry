@@ -1,5 +1,5 @@
-/obj/machinery/vr_sleeper/alien|human|none => vr_sleeper_alien_eject,vr_sleeper_eject,vr_sleeper_climb_in|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,vr_sleeper_alien_scan:needs an item,vr_sleeper_scan:needs an item,vr_sleeper_enter:needs a mob
-/obj/machinery/vr_sleeper/alien|robot|none => vr_sleeper_alien_eject,vr_sleeper_eject,vr_sleeper_climb_in|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,vr_sleeper_alien_scan:needs an item,vr_sleeper_scan:needs an item,vr_sleeper_enter:needs a mob
+/obj/machinery/vr_sleeper/alien|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/vr_sleeper/alien|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/vr_sleeper/alien|ai|none => |
 /obj/machinery/vr_sleeper/alien|ghost|none => |
-/obj/machinery/vr_sleeper/alien|human|/obj/item => vr_sleeper_alien_scan,vr_sleeper_alien_eject,vr_sleeper_scan,vr_sleeper_eject,vr_sleeper_climb_in|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,vr_sleeper_enter:needs a mob
+

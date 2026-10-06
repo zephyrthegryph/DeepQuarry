@@ -21,6 +21,7 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	emp_disable(300 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/pda_multicaster/Initialize(mapload)
 	. = ..()
@@ -57,20 +58,8 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 	..()
 	look.state("[initial(icon_state)][on ? "" : "_off"]")
 
-/obj/machinery/pda_multicaster/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/pda_multicaster_toggle,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): toggle the multicaster.
-/datum/interaction/machine_hand/ungated/pda_multicaster_toggle
-	id = "pda_multicaster_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/pda_multicaster/proc/interaction_toggle
-
-/obj/machinery/pda_multicaster/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/pda_multicaster/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_power(user)
 	return TRUE
 

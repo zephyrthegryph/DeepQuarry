@@ -17,6 +17,9 @@
 
 CAPABILITIES(/obj/machinery/computer/security)
 	owns_one(nameof(camera), /datum/tgui_module/camera)
+	op("station_map", menu(), label(".map"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_station_map)))
+	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	op("security_robot_use", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(security_robot_use)))
 
 // ALLOW(init/INSTANCE_STATE): its camera view is built for the networks the map gave it
 /obj/machinery/computer/security/Initialize(mapload)
@@ -28,38 +31,24 @@ CAPABILITIES(/obj/machinery/computer/security)
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
 
-
 /obj/machinery/computer/security/ui_redirect(mob/user)
 	return camera
 
-/obj/machinery/computer/security/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/security_open_ui,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Use", PROC_REF(security_robot_use)))
-	..()
-
-/// The old attack_hand: never called ..(), so it stays ungated.
-/datum/interaction/machine_hand/ungated/security_open_ui
-	id = "security_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/security/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/security/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/security/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_robot: a cyborg that isn't an AI shell uses it by hand; a shell interfaces as the AI.
-/obj/machinery/computer/security/proc/security_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		var/mob/living/silicon/robot/R = user
-		if(!R.shell)
-			attack_hand(user)
-			return TRUE
-	return FALSE
+/obj/machinery/computer/security/proc/security_robot_use(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.actor // the op's when() admits cyborgs only
+	if(R.shell)
+		return OP_DECLINE
+	attack_hand(R)
+	return OP_OK
 
 /obj/machinery/computer/security/proc/set_network(list/new_network)
 	network = new_network
@@ -133,7 +122,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	radio.set_frequency(ENT_FREQ)
 	radio.canhear_range = world.view // Same as default sight range.
 	power_change()
-
 
 // stops showing its feed.
 /obj/machinery/computer/security/telescreen/entertainment/on_destroy(force)

@@ -1,5 +1,5 @@
-/obj/machinery/particle_accelerator|human|none => |particle_accelerator_use:needs a cable coil
-/obj/machinery/particle_accelerator|robot|none => |gen_robot_interaction_swallow:not possible right now,particle_accelerator_use:needs a cable coil
+/obj/machinery/particle_accelerator|human|none => |
+/obj/machinery/particle_accelerator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/particle_accelerator|ai|none => |
 /obj/machinery/particle_accelerator|ghost|none => |
-/obj/machinery/particle_accelerator|human|/obj/item/stack/cable_coil => particle_accelerator_use|
+

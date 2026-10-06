@@ -29,7 +29,6 @@ run_gen() { # <name> <script> <flag>
 }
 run_gen gen_capability_varmap_check tools/dx/gen_capability_varmap.py --check
 run_gen gen_capability_varmap_selftest tools/dx/gen_capability_varmap.py --selftest
-run_gen gen_om_notices_check tools/dx/gen_om_notices.py --check
 
 # The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
 # every build writes it, and so does this, before the lints that read it. It fails on what still matters:
@@ -48,7 +47,7 @@ if ! "$bin" check --ci --lint -check_grep "$@"; then
 fi
 
 wait
-for name in gen_capability_varmap_check gen_capability_varmap_selftest gen_om_notices_check; do
+for name in gen_capability_varmap_check gen_capability_varmap_selftest; do
 	echo "::group::$name"
 	cat "$gen_dir/$name.out"
 	if [ "$(cat "$gen_dir/$name.rc" 2>/dev/null || echo 1)" != "0" ]; then

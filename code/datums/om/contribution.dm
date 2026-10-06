@@ -81,28 +81,6 @@
 	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
 	return i ? rec.contribs[i + OM_C_EXPIRES] : null
 
-/// Value of `source`'s contribution to effect idx `eidx`, or null when none.
-/proc/om_contrib_value(datum/om/rec/rec, eidx, datum/source, key)
-	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
-	return i ? rec.contribs[i + OM_C_VALUE] : null
-
-/// Latest expiry among the timed contributions to effect idx `eidx` (0 when none).
-/proc/om_contrib_latest_expiry(datum/om/rec/rec, eidx)
-	. = 0
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_EXPIRES] > .)
-			. = C[i + OM_C_EXPIRES]
-
-/// Releases `source`'s contribution to `eff` on `rec`. TRUE when there was one.
-/proc/om_contrib_release(datum/om/rec/rec, datum/om/effect/eff, datum/source, key)
-	var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
-	if(!i)
-		return FALSE
-	om_contrib_remove(rec, eff, i)
-	om_expiry_reschedule(rec)
-	return TRUE
-
 /// Releases every timed contribution to `eff` on `rec` (holds stay).
 /proc/om_contrib_release_timed(datum/om/rec/rec, datum/om/effect/eff)
 	var/i = 1

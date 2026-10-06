@@ -6,11 +6,9 @@
 
 /// Every declared cache, in declaration (global init) order.
 SHARED_CACHE_GLOBAL(list/shared_cache_registry)
-/// Event type (subtypes flattened) -> list of caches it clears. Null until a cache with an
-/// SC_ON_EVENT policy builds its first entry.
-SHARED_CACHE_GLOBAL(list/shared_cache_event_types)
-/// Channel bits some active cache clears on when raised on GLOB.om_world.
-SHARED_CACHE_GLOBAL(shared_cache_change_mask = 0)
+/// Notice type (subtypes flattened) -> list of caches it clears. Null until a cache with an
+/// SC_ON_NOTICE policy builds its first entry.
+SHARED_CACHE_GLOBAL(list/shared_cache_notice_types)
 /// Counter behind SHARED_CACHE_UID(): ids are never reused, so a key built from one can never
 /// name a different (recycled) datum.
 SHARED_CACHE_GLOBAL(shared_cache_uid_counter = 0)
@@ -80,15 +78,11 @@ SHARED_CACHE_GLOBAL(shared_cache_uid_counter = 0)
 	if(!length(policy))
 		return
 	switch(policy[1])
-		if("event")
-			if(!shared_cache_event_types)
-				shared_cache_event_types = list()
+		if("notice")
+			if(!shared_cache_notice_types)
+				shared_cache_notice_types = list()
 			for(var/path in typesof(policy[2]))
-				LAZYADD(shared_cache_event_types[path], src)
-		if("change")
-			shared_cache_change_mask |= policy[2]
-			var/datum/W = GLOB.om_world
-			W?.om_listen |= policy[2]
+				LAZYADD(shared_cache_notice_types[path], src)
 
 /// Builds and stores the value for `key`. Extra arguments go to the builder instead of the key.
 /datum/shared_cache/proc/miss(key, ...)
@@ -358,14 +352,12 @@ SHARED_CACHE_GLOBAL(shared_cache_uid_counter = 0)
 
 // ---- OM hooks (called from om_wants/om_emit/om_dispatch_change) ----
 
-/proc/shared_cache_on_event(etype)
-	for(var/datum/shared_cache/C as anything in shared_cache_event_types[etype])
+/// The world notice `notice_type` is about to be published: every cache whose SC_ON_NOTICE names it (or a parent) clears.
+/proc/shared_cache_notice(notice_type)
+	if(!shared_cache_notice_types)
+		return
+	for(var/datum/shared_cache/C as anything in shared_cache_notice_types[notice_type])
 		C.invalidate()
-
-/proc/shared_cache_on_world_change(bits)
-	for(var/datum/shared_cache/C as anything in shared_cache_registry)
-		if(C.active && length(C.policy) && C.policy[1] == "change" && (C.policy[2] & bits))
-			C.invalidate()
 
 /// Rows for the OM profiler panel.
 /proc/shared_cache_stats()

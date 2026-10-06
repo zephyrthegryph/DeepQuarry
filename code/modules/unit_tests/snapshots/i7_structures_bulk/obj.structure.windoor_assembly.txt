@@ -2,3 +2,4 @@
 /obj/structure/windoor_assembly|robot|none => |
 /obj/structure/windoor_assembly|ai|none => |
 /obj/structure/windoor_assembly|ghost|none => |
+

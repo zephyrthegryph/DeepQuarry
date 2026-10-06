@@ -48,6 +48,9 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
 // into the bin before a flush). Drop policy is left to this type's own
@@ -84,7 +87,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	add_disposal_connection()
 	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
-		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
+		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 
 	// air_contents is declared (DECLARE_GAS). Map-loaded bins are installed infrastructure, not freshly constructed
 	// empty vessels. Prime their tiny reservoir from the mapped room atmosphere
@@ -105,7 +108,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // it unlinks and ejects its contents.
 /obj/machinery/disposal/on_destroy(force)
 	clear_gas_dependency()
-	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
+	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	eject()
 	..()
 
@@ -255,32 +258,37 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 	return TRUE
 
-/obj/machinery/disposal/multitool_act(mob/user, obj/item/I)
+/obj/machinery/disposal/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	wake_for_state_change()
 	if(mode > DISPOSALMODE_OFF)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	alter_bin_type(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/disposal/screwdriver_act(mob/user, obj/item/I)
+/obj/machinery/disposal/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	wake_for_state_change()
 	if(mode > DISPOSALMODE_OFF || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_mode(mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF)
 	playsound(src, I.usesound, 50, 1)
 	to_chat(user, "You [mode == DISPOSALMODE_EJECTONLY ? "remove" : "attach"] the screws around the power connection.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/disposal/welder_act(mob/user, obj/item/I)
+/obj/machinery/disposal/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	wake_for_state_change()
 	if(mode != DISPOSALMODE_EJECTONLY || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/disposal/proc/welder_act_tool_done(mob/user)
 	if(!src)
@@ -711,7 +719,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	if(.)
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
-		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !om_timer_slot_pending(src, "power_retry_timer"))
+		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !after_pending(src, "power_retry_timer"))
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
@@ -787,7 +795,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(T)
 	//..() //*cough
-	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
+	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	destroyed(src, null, "deconstructed") //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()

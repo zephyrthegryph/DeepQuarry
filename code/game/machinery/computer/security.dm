@@ -51,22 +51,8 @@
 		"criminal" = list("*Arrest*", "Incarcerated", "Parolled", "Released", "None"),
 	)
 
-/obj/machinery/computer/secure_data/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/secure_data_eject_id,
-		/datum/interaction/machine_item/secure_data_insert_id,
-		/datum/interaction/machine_hand/secure_data_use,
-	)
-	..()
-
-/datum/interaction/machine_verb/secure_data_eject_id
-	id = "secure_data_eject_id"
-	name = "Eject ID Card"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(datum/act/op/A)
+	var/mob/user = A.actor
 	if(scan)
 		to_chat(user, "You remove \the [scan] from \the [src].")
 		scan.forceMove(get_turf(src))
@@ -77,30 +63,16 @@
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
 
-/// The old attackby: insert an ID card into the free slot.
-/datum/interaction/machine_item/secure_data_insert_id
-	id = "secure_data_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/secure_data/proc/has_free_slot, null))
-	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id
-
-/obj/machinery/computer/secure_data/proc/has_free_slot(mob/actor, atom/target, obj/item/held)
-	return !scan
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!move_into(src, nameof(src.scan), held, user))
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
-/datum/interaction/machine_hand/secure_data_use
-	id = "secure_data_use"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui_fingerprint
-
 CAPABILITIES(/obj/machinery/computer/secure_data)
 	interface("SecurityRecords", title = "Security Records")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
@@ -127,6 +99,9 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
+	op("secure_data_eject_id", menu(), label("Eject ID Card"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_secure_data_eject_id)))
+	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
+	op("open_ui_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui_fingerprint)))
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

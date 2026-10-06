@@ -1,4 +1,5 @@
-/obj/machinery/field_generator|human|none => |field_generator_activate:needs to be firmly secured to the floor first
-/obj/machinery/field_generator|robot|none => |gen_robot_interaction_swallow:not possible right now,field_generator_activate:needs to be firmly secured to the floor first
+/obj/machinery/field_generator|human|none => |
+/obj/machinery/field_generator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/field_generator|ai|none => |
 /obj/machinery/field_generator|ghost|none => |
+

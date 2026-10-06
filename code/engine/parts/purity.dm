@@ -46,5 +46,10 @@ GLOBAL_VAR_INIT(op_pure_expected, FALSE)
 /// outside an op context.
 /proc/op_pure_call(datum/holder, proc_name, datum/act/A)
 	op_pure_begin()
-	. = isnull(A) ? call(holder, proc_name)() : call(holder, proc_name)(A)
+	// A condition that throws must not leave the purity guard up: every write after it would be reported.
+	try
+		. = isnull(A) ? call(holder, proc_name)() : call(holder, proc_name)(A)
+	catch(var/exception/fault)
+		op_pure_end()
+		throw fault
 	op_pure_end()

@@ -5,12 +5,6 @@
 /atom/proc/material_reaction_rate_multiplier()
 	return 1
 
-/// Emitted on GLOB.om_world when a material's physical vars change after facts were read from
-/// it (material_facts_changed()). Shared caches of material-derived facts clear on it. A state-invalidation
-/// signal ("recompute"), emitted in bursts: only the latest matters, so it coalesces.
-/datum/om/event/material_facts_changed
-	coalesce = TRUE
-
 /// A material's stable cache identity (MATERIAL_CACHE_ID()): its registry id when it is the
 /// registered material of that name (every static material, and processed alloys, whose
 /// registry id is a hash of their defining batch), otherwise a never-reused SHARED_CACHE_UID.
@@ -22,11 +16,12 @@
 	return shared_cache_assign_uid(M)
 
 /// A material's physical vars changed after facts were read from it: every shared cache of
-/// material-derived facts clears (SC_ON_EVENT; changes are rare). A material that was not yet
+/// material-derived facts clears (SC_ON_NOTICE; changes are rare). A material that was not yet
 /// registered when it got its cache id takes its registry id from now on.
 /datum/material/proc/material_facts_changed()
 	shared_cache_uid = null
-	OM_EMIT_WORLD(/datum/om/event/material_facts_changed)
+	shared_cache_notice(/datum/notice/material_facts_changed)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/material_facts_changed)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

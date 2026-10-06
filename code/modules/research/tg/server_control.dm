@@ -17,27 +17,15 @@
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
 		stored_research_static = connected_web
 
-/obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rdservercontrol_connect_techweb,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
-/// The old attackby: never called ..(), connected a techweb via a multitool buffer.
-/datum/interaction/machine_item/rdservercontrol_connect_techweb
-	id = "rdservercontrol_connect_techweb"
-	name = "Connect techweb"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb
-
-/obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
 		if(!QDELETED(tool.buffer()) && istype(tool.buffer(), /datum/techweb))
 			stored_research_static = tool.buffer()
 			balloon_alert(user, "techweb connected")
-	return TRUE
+	return OP_OK
 
 DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null, null)
 /obj/machinery/computer/rdservercontrol/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -51,6 +39,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	without("ui_open")
 	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_ref(/obj/machinery/rnd/server))), then(PROC_REF(ui_act_lockdown_server)))
 	op("lock_console", ui_act("lock_console", arg("selected_console", schema_ref(/obj/machinery/computer/rdconsole_tg))), then(PROC_REF(ui_act_lock_console)))
+	op("connect_techweb", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Connect techweb"), then(PROC_REF(interaction_connect_techweb)))
 
 /// /obj/machinery/computer/rdservercontrol's window data.
 /obj/machinery/computer/rdservercontrol/ui_data(datum/act/eval/A)

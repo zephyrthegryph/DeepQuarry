@@ -2,3 +2,4 @@
 /obj/structure/bedsheetbin|robot|none => |
 /obj/structure/bedsheetbin|ai|none => |
 /obj/structure/bedsheetbin|ghost|none => |
+

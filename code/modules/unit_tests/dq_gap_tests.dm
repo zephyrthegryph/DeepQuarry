@@ -273,6 +273,45 @@
 	test_click(H, far, null)
 	TEST_ASSERT(!length(far.ran), "an unconscious actor reaches with nothing")
 
+/// observer(): a ghost's click reaches the observer() op from anywhere and never a hand op; a living actor never reaches the observer() op.
+/datum/unit_test/dq_gap/input_observe_is_the_ghosts_only
+/datum/unit_test/dq_gap/input_observe_is_the_ghosts_only/run_gap()
+	var/turf/home = run_loc_floor_bottom_left
+	var/turf/away = locate(home.x + 4, home.y, home.z)
+	TEST_ASSERT_NOTNULL(away, "a turf four tiles away")
+	var/mob/living/carbon/human/H = person(home)
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, away)
+	var/obj/gap_observe/target = allocate(/obj/gap_observe, home)
+	var/datum/op_result/R = test_click(ghost, target, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the ghost's click committed")
+	TEST_ASSERT_EQUAL(target.ran_text(), "haunt", "from four tiles away, the observer() op and not the hand op")
+	target.ran = null
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(target.ran_text(), "touch", "a living actor's click is the hand op")
+	target.ran = null
+	R = test_menu(H, target, "haunt")
+	TEST_ASSERT(!test_op_committed(R), "a living actor cannot pick the observer() op from the menu")
+	TEST_ASSERT(!length(target.ran), "and nothing ran")
+	var/obj/gap_touch/plain = allocate(/obj/gap_touch, away)
+	test_click(ghost, plain, null)
+	TEST_ASSERT(!length(plain.ran), "a ghost next to a hand-only target touches nothing")
+
+/// req_mutation(): the actor's mutation picks the op; it comes and goes with add_mutation()/remove_mutation().
+/datum/unit_test/dq_gap/req_mutation_reads_the_actor
+/datum/unit_test/dq_gap/req_mutation_reads_the_actor/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/obj/gap_hulk/target = allocate(/obj/gap_hulk, run_loc_floor_bottom_left)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(target.ran_text(), "touch", "without the mutation, the plain touch")
+	target.ran = null
+	H.add_mutation(HULK)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(target.ran_text(), "smash", "a hulk smashes")
+	target.ran = null
+	H.remove_mutation(HULK)
+	test_click(H, target, null)
+	TEST_ASSERT_EQUAL(target.ran_text(), "touch", "and not once the mutation is gone")
+
 /// OP_PASS: handled, the input not used up: the op commits and the next candidate answers too; a handler that does not pass ends the click.
 /datum/unit_test/dq_gap/op_pass_hands_the_click_on
 /datum/unit_test/dq_gap/op_pass_hands_the_click_on/run_gap()

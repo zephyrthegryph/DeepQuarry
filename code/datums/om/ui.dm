@@ -218,6 +218,3 @@
 	if(abs(target - x) <= delta)
 		return target
 	return x + (target > x ? delta : -delta)
-
-/proc/clamp01(x)
-	return clamp(x, 0, 1)

@@ -1,5 +1,5 @@
-/obj/structure/prop/desert_rock/rock|human|none => |prop_hand:not possible right now
-/obj/structure/prop/desert_rock/rock|robot|none => |prop_hand:not possible right now
+/obj/structure/prop/desert_rock/rock|human|none => |
+/obj/structure/prop/desert_rock/rock|robot|none => |
 /obj/structure/prop/desert_rock/rock|ai|none => |
 /obj/structure/prop/desert_rock/rock|ghost|none => |
 

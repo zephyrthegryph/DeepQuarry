@@ -12,13 +12,19 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
  * The ignition rule (code/datums/rules/declarations.dm) starts it.
  * Mobs use the fire stacks status effect; their body side is H2's.
  *
- * A shared OM behaviour ticking once a second; the burning state lives on the
+ * A capability the object grants itself, ticking once a second; the burning state lives on the
  * object. Start with O.start_burning(); extinguish() ends it.
  * Can only be used on objects that use the integrity system.
  */
-/datum/om/behaviour/burning
-	every = 1 SECONDS
-	handles = list(/datum/om/event/before/attack_hand, /datum/om/event/examine)
+CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
+/datum/capability/burning
+
+/datum/capability/burning/entries()
+	return list(
+		every(1 SECONDS, then(CAP_PROC(burn_tick))),
+		extend(/datum/act/attack_hand, instead(then(CAP_PROC(burn_touched)))),
+		on_notice(/datum/notice/examine, then(CAP_PROC(burn_examined))),
+	)
 
 /obj
 	/// Fire overlay appearance applied while burning.
@@ -42,7 +48,7 @@ CAPABILITIES(/obj)
 
 /// TRUE while this object burns.
 /obj/proc/is_burning()
-	return om_attached(src, /datum/om/behaviour/burning)
+	return granted(src, /datum/capability/burning)
 
 /// Catches fire. Refused (FALSE) unless the object uses integrity and is flammable.
 /obj/proc/start_burning(fire_overlay = GLOB.fire_overlay, fire_particles = /particles/smoke/burning)
@@ -61,17 +67,19 @@ CAPABILITIES(/obj)
 		add_shared_particles(fire_particles, "[fire_particles]_[isitem(src)]", isitem(src) ? NONE : PARTICLE_ATTACH_MOB)
 		burn_particle_type = fire_particles
 	burn_fuel = max_integrity * BURN_ENERGY_PER_INTEGRITY
-	om_attach(src, /datum/om/behaviour/burning)
+	grant(src, /datum/capability/burning, src)
 	return TRUE
 
-/datum/om/behaviour/burning/on_start(obj/O)
+/datum/capability/burning/on_activate(datum/activation/A)
+	var/obj/O = A.holder
 	O.burning_start_heat()
 	O.resistance_flags |= ON_FIRE
 	if(O.burn_overlay)
 		O.add_overlay(O.burn_overlay)
 	O.update_icon()
 
-/datum/om/behaviour/burning/on_stop(obj/O)
+/datum/capability/burning/on_deactivate(datum/activation/A)
+	var/obj/O = A.holder
 	O.burning_stop_heat()
 	if(O.burn_particle_type)
 		O.remove_shared_particles("[O.burn_particle_type]_[isitem(O)]")
@@ -124,11 +132,11 @@ CAPABILITIES(/obj)
 /obj/extinguish()
 	. = ..()
 	if(is_burning())
-		om_detach(src, /datum/om/behaviour/burning)
+		revoke(src, /datum/capability/burning, src)
 
-/datum/om/behaviour/burning/tick(obj/O, dt)
-	// dt is in seconds.
-	O.burning_step(dt)
+/datum/capability/burning/proc/burn_tick(datum/act/timer/A)
+	var/obj/O = A.holder
+	O.burning_step(A.dt / (1 SECONDS))
 
 /// One step of burning, `seconds_per_tick` long.
 /obj/proc/burning_step(seconds_per_tick)
@@ -161,22 +169,24 @@ CAPABILITIES(/obj)
 		burning_end(BURN_ENDED_FUEL)
 
 /// Alerts any examiners that the object is on fire (even though it should be rather obvious)
-/datum/om/behaviour/burning/on_examine(obj/O, datum/om/event/examine/event)
-	event.texts += span_danger("[O.p_Theyre()] burning!")
+/datum/capability/burning/proc/burn_examined(datum/notice/examine/A)
+	var/obj/O = A.holder
+	A.texts += span_danger("[O.p_Theyre()] burning!")
 
 /// Handles searing the hand of anyone who tries to touch the object without protection.
-/datum/om/behaviour/burning/on_before_attack_hand(obj/O, datum/om/event/before/attack_hand/event)
-	var/mob/living/carbon/user = event.user
+/datum/capability/burning/proc/burn_touched(datum/act/attack_hand/A)
+	var/obj/O = A.holder
+	var/mob/living/carbon/user = A.user
 	if(!iscarbon(user) || user.can_touch_burning(O))
 		to_chat(user, span_notice("You put out the fire on [O]."))
 		O.extinguish()
-		return EVENT_VETO
+		return TRUE
 
 	user.injure(INJURY_BURN, 5, user.hand ? BP_L_HAND : BP_R_HAND, O)
 	to_chat(user, span_userdanger("You burn your hand on [O]!"))
 	user.emote("scream")
 	play_sfx(O, SFX_ITEMS_WEAPONS_SEAR)
-	return EVENT_VETO
+	return TRUE
 
 /**
  * The gas side of a fire releasing `joules` on `location`, shared by burning

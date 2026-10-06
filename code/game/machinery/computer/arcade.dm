@@ -28,6 +28,7 @@
 CAPABILITIES(/obj/machinery/computer/arcade)
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
+	op("redeem_tickets", stack(/obj/item/stack/arcadeticket, ARCADE_TICKETS_PER_PRIZE), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), then(PROC_REF(interaction_redeem_tickets)))
 
 /// A generic cabinet (no circuit) rolls which arcade it is, then becomes that machine once its init is over.
 /obj/machinery/computer/arcade/var/rolled_board
@@ -43,7 +44,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	replace_with(src, CB.build_path, CB)
 
 /obj/machinery/computer/arcade/proc/prizevend(mob/user)
-	OM_EMIT(src, /datum/om/event/arcade_prizevend, user)
+	PUBLISH_LEGACY(src, /datum/notice/arcade_prizevend, user)
 
 	if(LAZYLEN(special_prizes)) // Downstream wanted the 'win things inside contents sans circuitboard' feature kept.
 		var/atom/movable/AM = pick_n_take(special_prizes)
@@ -59,30 +60,9 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 		if(istype(prizeselect, /obj/item/clothing/suit/syndicatefake)) //Helmet is part of the suit
 			new	/obj/item/clothing/head/syndicatefake(src.loc)
 
-/obj/machinery/computer/arcade/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/arcade_ticket_redeem,
-	)
-	..()
-
-/// Turn in 2 arcade tickets for a prize.
-/datum/interaction/machine_item/arcade_ticket_redeem
-	id = "arcade_ticket_redeem"
-	name = "Redeem tickets"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/arcadeticket
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/arcade/proc/can_redeem_tickets))
-	effect = /obj/machinery/computer/arcade/proc/interaction_redeem_tickets
-
-/// Requirement: a prize costs two tickets.
-/obj/machinery/computer/arcade/proc/can_redeem_tickets(mob/user, atom/target, obj/item/stack/arcadeticket/T)
-	if(istype(T) && T.get_amount() < ARCADE_TICKETS_PER_PRIZE)
-		return "you need [ARCADE_TICKETS_PER_PRIZE] tickets to claim a prize"
-	return TRUE
-
-/obj/machinery/computer/arcade/proc/interaction_redeem_tickets(mob/user, obj/item/stack/arcadeticket/T, datum/interaction/interaction)
-	prizevend(user)
-	T.pay_tickets()
+/obj/machinery/computer/arcade/proc/interaction_redeem_tickets(datum/act/op/A)
+	var/mob/user = A.actor
+	prizevend(user) // the stack() binding takes the tickets
 	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
 	return TRUE
 
@@ -144,12 +124,6 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 
 	enemy_name = replacetext((name_part1 + name_part2), "the ", "")
 	name = (name_action + name_part1 + name_part2)
-
-/obj/machinery/computer/arcade/battle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
 
 CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	interface("ArcadeBattle")
@@ -298,7 +272,6 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 
 	blocked = 0
 	return
-
 
 DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, null)
 /obj/machinery/computer/arcade/battle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -702,7 +675,6 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 						else
 							C.throw_at(user,16,3,src)
 
-
 			fuel += FU
 			food += FO
 			event()
@@ -887,7 +859,6 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 			eventdat += "<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"
 			canContinueEvent = 1
 
-
 		if(ORION_TRAIL_SPACEPORT)
 			gameStatus = ORION_STATUS_MARKET
 			if(spaceport_raided)
@@ -906,7 +877,6 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 				eventdat += english_list(settlers)
 				eventdat += "<br><b>Food: </b>[food] | <b>Fuel: </b>[fuel]"
 				eventdat += "<br><b>Engine Parts: </b>[engine] | <b>Hull Panels: </b>[hull] | <b>Electronics: </b>[electronics]"
-
 
 				//If your crew is pathetic you can get freebies (provided you haven't already gotten one from this port)
 				if(!spaceport_freebie && (fuel < 20 || food < 20))
@@ -1121,32 +1091,24 @@ CAPABILITIES(/obj/item/orion_ship)
 	var/gameprice = 1
 	var/winscreen = ""
 
+TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
+
 /// Payment and Use. The old attackby tested the base arcade's own interactions
 /// (ticket redemption) first via `if(..()) return`, so our own payment
 /// interaction is declared after ..() rather than before it; attack_hand's
 /// `if(..()) return; tgui_interact(user)` is the shared open_ui interaction.
-/obj/machinery/computer/arcade/clawmachine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-	into += list(
-		/datum/interaction/machine_item/clawmachine_pay,
-	)
-
-/// Pay for a game of claw machine with an ID, ewallet or cash.
-/datum/interaction/machine_item/clawmachine_pay
-	id = "clawmachine_pay"
-	name = "Pay"
-	category = INTERACTION_CAT_INSERT
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/arcade/clawmachine/proc/wants_payment, null))
-	effect = /obj/machinery/computer/arcade/clawmachine/proc/interaction_pay
+/// Requirement (was REQ_* wants_payment): the legacy check answers TRUE to pass.
+/obj/machinery/computer/arcade/clawmachine/proc/wants_payment_holds(datum/act/op/A)
+	var/answer = wants_payment(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
 /// Whether the claw machine still needs payment and can take it right now.
 /obj/machinery/computer/arcade/clawmachine/proc/wants_payment(mob/actor, atom/target, obj/item/held)
 	return gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended
 
-/obj/machinery/computer/arcade/clawmachine/proc/interaction_pay(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/computer/arcade/clawmachine/proc/interaction_pay(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/paid = 0
 	var/obj/item/card/id/W = I.GetID()
 	if(W) //for IDs and PDAs and wallets with IDs
@@ -1158,9 +1120,9 @@ CAPABILITIES(/obj/item/orion_ship)
 		var/obj/item/spacecash/C = I
 		paid = pay_with_cash(C, user)
 	if(paid)
-		gamepaid = 1
+		set_gamepaid(1)
 		instructions = "Hit start to play!"
-	return TRUE
+	return OP_OK
 
 ////// Cash
 /obj/machinery/computer/arcade/clawmachine/proc/pay_with_cash(obj/item/spacecash/cashmoney, mob/user)
@@ -1244,7 +1206,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		visible_message(span_info("Unable to access account: incorrect credentials."))
 		return
 	if(!gamepaid && charge_account(customer_account))
-		gamepaid = 1
+		set_gamepaid(1)
 		instructions = "Hit start to play!"
 
 /obj/machinery/computer/arcade/clawmachine/proc/charge_account(datum/money_account/customer_account)
@@ -1278,6 +1240,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))
+	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment_holds))), then(PROC_REF(interaction_pay)))
 
 /obj/machinery/computer/arcade/clawmachine/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -1334,7 +1297,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
 		winscreen = "Aw, shucks. Try again!"
 	wintick = 0
-	gamepaid = 0
+	set_gamepaid(0)
 	icon_state = "clawmachine_new"
 	gameStatus = "CLAWMACHINE_END"
 
@@ -1345,7 +1308,7 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null
 	desc = "Get some goodies, all for you!"
 	instructions = "Swipe a card to play!"
 	winprob = 100
-	gamepaid = 0
+	set_gamepaid(0)
 	wintick = 0
 	gameStatus = "CLAWMACHINE_NEW"
 	set_emagged(1)

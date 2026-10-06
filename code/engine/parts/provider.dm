@@ -371,6 +371,8 @@
 			return ORIGIN_CLICK | ORIGIN_MENU | ORIGIN_AI
 		if(BIND_REMOTE)
 			return ORIGIN_CLICK | ORIGIN_MENU | ORIGIN_UI
+		if(BIND_OBSERVE)
+			return ORIGIN_CLICK | ORIGIN_MENU
 		if(BIND_MENU)
 			return ORIGIN_VERB | ORIGIN_HOTKEY | ORIGIN_MENU
 		if(BIND_UI, BIND_TOPIC)
@@ -387,7 +389,7 @@
 			return REACH_INSIDE
 		if(BIND_REMOTE)
 			return REACH_VIEW
-		if(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI)
+		if(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI, BIND_OBSERVE)
 			return REACH_ANY
 	return REACH_ADJACENT
 
@@ -402,6 +404,8 @@
 			return AFF_INTERFACE
 		if(BIND_TK)
 			return AFF_TELEKINESIS
+		if(BIND_OBSERVE)
+			return AFF_OBSERVE
 	return 0
 
 /datum/entry/part/bind/proc/authority_mask()

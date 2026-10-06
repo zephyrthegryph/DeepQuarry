@@ -251,11 +251,11 @@
 /datum/system/proc/park_periodic()
 	periodic_parked = TRUE
 	om_task_periodic_stop(src) // ALLOW(sys_periodic_toggle): the kernel parks its own system cadence and its member driver's together: this is the park/wake pair itself, not content toggling work beside a state write
-	om_cancel_timer_slot(src, "step_yield")
+	cancel_after(src, "step_yield")
 	if(member_driver)
 		member_driver.periodic_parked = TRUE
 		om_task_periodic_stop(member_driver)
-		om_cancel_timer_slot(member_driver, "step_yield")
+		cancel_after(member_driver, "step_yield")
 
 /// Deciseconds between this system's periodic steps: its own periodic_interval, else its cadence's step
 /// (0 for a purely reactive system).

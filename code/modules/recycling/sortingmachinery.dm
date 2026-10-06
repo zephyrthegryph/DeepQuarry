@@ -11,17 +11,8 @@
 
 APPEARANCE_NONE(/obj/machinery/disposal/deliveryChute)
 
-/obj/machinery/disposal/deliveryChute/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_alt/delivery_chute_no_flush,
-	)
-	..()
-
-/// Old click_alt: never called ..(), so alt-clicking never flushes the chute.
-/datum/interaction/machine_alt/delivery_chute_no_flush
-	id = "delivery_chute_no_flush"
-	name = "Alt-click"
-	effect = /atom/proc/interaction_swallow
+CAPABILITIES(/obj/machinery/disposal/deliveryChute)
+	op("swallow", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Alt-click"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /obj/machinery/disposal/deliveryChute/Bumped(atom/movable/AM) //Go straight into the chute
 	if(QDELETED(AM) || istype(AM, /obj/item/projectile) || istype(AM, /obj/effect) || istype(AM, /obj/mecha))	return
@@ -53,17 +44,21 @@ APPEARANCE_NONE(/obj/machinery/disposal/deliveryChute)
 		source.forceMove(src)
 		flush()
 
-/obj/machinery/disposal/deliveryChute/screwdriver_act(mob/user, obj/item/I)
+/obj/machinery/disposal/deliveryChute/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	c_mode = !c_mode
 	playsound(src, I.usesound, 50, 1)
 	to_chat(user, "You [c_mode ? "remove" : "attach"] the screws around the power connection.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/disposal/deliveryChute/welder_act(mob/user, obj/item/I)
+/obj/machinery/disposal/deliveryChute/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!c_mode)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start slicing the floorweld off the delivery chute.", receiver = src, on_done = PROC_REF(welder_act_tool_done_sorter), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/disposal/deliveryChute/proc/welder_act_tool_done_sorter(mob/user)
 	if(!src)

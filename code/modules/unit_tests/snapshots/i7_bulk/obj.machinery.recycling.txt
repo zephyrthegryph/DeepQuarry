@@ -1,5 +1,5 @@
-/obj/machinery/recycling|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,recycling_feed:needs an item
-/obj/machinery/recycling|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,recycling_feed:needs an item
+/obj/machinery/recycling|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/recycling|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/recycling|ai|none => |
 /obj/machinery/recycling|ghost|none => |
-/obj/machinery/recycling|human|/obj/item => recycling_feed|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

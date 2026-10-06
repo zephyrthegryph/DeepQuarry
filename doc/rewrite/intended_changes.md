@@ -1906,6 +1906,12 @@ Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscure
   empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
   `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).
 
+## Power plants: the power monitoring console (rewrite/power-plants, b266f960a0)
+
+- Its legacy "Use" hand interaction (`power_monitor_use`) is the `use` op: an empty hand on an operable console opens its monitor window, as
+  before (the i7 interaction snapshot lost the legacy row; recorded here after the fact). It checks its sensors on `every(MACHINE_SERVICE_INTERVAL)`
+  instead of sleeping on their grid keys.
+
 ## Power plants: the gas turbine (rewrite/power-plants)
 
 Pinned by `dq_pp/turbine_output_curve` and `compressor_spin_up` (((rpm / 100000) ^ 0.8) * 100000 * productivity W; a tenth of the way to the
@@ -2155,18 +2161,174 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
   out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
   door's catch-all for held items.
+
+## Chemical dispenser refill and closets made in play (rewrite/watch-fixes)
+
+- **A chemical canister refills the dispenser's matching cartridge through the dispenser's `refill_cartridge` op.** It was the canister's
+  `afterattack()`, which the dispenser's ops (486461023f) now answer first, so the click set nothing; the pin gains the `refill_cartridge` key.
+- **A body bag unfolded in play leaves what lies on the floor alone** (`collects_in_play = FALSE`); every other closet made closed still takes
+  in the loose items on its turf, and a mapped bag still holds what was mapped into it.
+- **The toilet's conversion pin is recorded with a fixed random seed per type**, so its random lid (and its Flush row) no longer flips between
+  recordings; the pin's human is kept awake (godmode) for the same reason.
+
 - **DECLARE_EMAG is gone from code/game/objects and code/game/turfs** (ceiling 0). The sleevemate's sequencer asks what to make of it as
   an op step and spends a card use only when a hack is picked (the legacy one spent it when it asked). Pinned by `dq_items_emag_ops`.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
   shuts a full cabinet and unwrenches an empty one after 1.5 s. **The holoplant** goes out when its anchoring changes (`on_change`),
   where its wrench proc switched it off after the machine's anchor.
 
+## Items and structures, second pass: interactions are ops (rewrite/items-structures-2)
+
+- **A ghost's click is `observer()`** (the old `INTERACT_OBSERVER`): an op binding that needs `AFF_OBSERVE`, which only `/mob/observer/dead`
+  provides (`provides(AFF_OBSERVE)`), reach `REACH_ANY`. A living actor never reaches such an op (the reach gate now checks the provider of a
+  `REACH_ANY` op whose binding names an affordance). Trash piles (become a mouse) and ghost pods (inhabit) use it; their refusals are
+  requirements with the old texts, and the yes/no that followed is the op's `asks()` step (a ghost keeps only `TARGET_PRESENT`).
+- **A manual ghost pod no longer goes busy while a ghost is asked**: several ghosts may be asked at once; the first yes takes it and the
+  rest are told another spirit got there first (re-checked on the answer).
+- **Every movable's default drag buckle is the op `drag_buckle`** on `/atom/movable` (default tier, offered while `can_buckle` and
+  `drag_buckle`, both `TRACKED` now). The legacy entry showed as a greyed "Buckle" in the menu of everything; a drag is no menu entry. A
+  type whose old interactions replaced every inherited one (the nest, the pillow piles) says `without("drag_buckle")`.
+- **A stance op is picked from the menu whatever the stance** (the engine's rule for `stance()`): the snowman's Crush, the alien resin's
+  and nest's Melt, the railing's Slam, the toilet's Yank no longer show "combat mode is off" in the menu.
+- **The prism's and the dial's rotation are op steps**: yes/no, then the bearing or the compass point (and the dial's last yes); the
+  prop's message no longer shows before the question. A locked or externally controlled prism refuses with its reason.
+- **The puzzle door answers only to its locks**: its own touch and item use replace the blast door's open, close, pry and swallow (a
+  click with an item now runs the old attackby: pry against the locks, a plastique turns to ash).
+- **The cutout's painting takes a paint can or a floor painter** (its own ops); anything else is the barricade's repair or hit, as the
+  decline used to fall through to.
+- **Toilets roll their lid at init** (`rolls(nameof(open), range_of(0, 1))`, was `rand` in `Initialize()`). Taking the teleplumbing crystal
+  is the hand op's question step, asked only when the cistern is open, empty and the actor is a person. A cyborg's module never goes in a
+  cistern (a cyborg's own item op). The shower's temperature valve asks as an op step and the alt-click still goes on (`passes()`).
+- **The sink**: a silicon is not offered the wash (it did nothing); emptying a container is a drag of a reagent container (an empty one
+  says so instead of greying the entry out).
+- **The low wall**: a cyborg is not offered placing or dragging things onto it (it did nothing), and so no longer hoists windows up.
+- **The potted plant** refuses with the slot's size message ("That is too large to fit.") instead of naming the item.
+- **The window tint button's multitool** asks for an id as an op step when it has none and stores it otherwise (the button's `id` is
+  `TRACKED`). **The crematorium button** needs crematorium access through `req_access()`.
+- **`req_mutation(M, of = ON_ACTOR)`**: an engine requirement on the actor's mutations (reads `MOB_KEY_CONDITIONS`); the girder's hulk
+  smash is `when(req_mutation(HULK))`.
+- **Devices**: the emergency beacon's pick-up refusal and wrench appear only once it is active (an inactive beacon is picked up as any
+  item); the flashlight takes only a cell (`item(/obj/item/cell)`, only while it uses power); the transfer valve takes only a tank or an
+  assembly; the intercom no longer has a catch-all item op that only fingerprinted it; the plant analyzer drops the gas scan it never ran.
+  The uplink multitool opens its uplink through its own in-hand op. The pAI's radio inherits the ordinary item ops it once replaced (it
+  lives inside the card, out of reach).
+- **A ghost joining a simple mob** is the observer op `ghost_join` with a yes/no step (re-checked on the answer); `ghostjoin` is `TRACKED`.
+
+## Leftovers: the machinery sweep (rewrite/leftovers)
+
+Every machine still on datum interactions or tool procs was pinned first (`code/modules/unit_tests/snapshots/pins/`, recorded on the legacy
+code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs to `tool(Q)` ops with `wait(0)`), `tools/codemods/interaction_datums.py`
+(now also lowers the machinery bases `machine_hand`/`machine_item`/`machine_alt`/`machine_drag`/`machine_verb` and the shared `open_ui` and
+`part_replacement` datums) and `tools/dx/codemods/interact_declare.py` (compact specs to ops; the shared effects are the shared op handlers
+`op_open_ui`, `op_swallow`, `op_part_replacement`, ... in `code/datums/interactions/shared_effects.dm`). All three take `--prefix /type` now.
+
+- **A converted op answers after the ops the type already had** (`priority(OP_PRIORITY_DEFAULT - 1)`): the legacy interaction or tool proc it
+  replaces ran only when no op answered, so a click an existing op took (the window's `ui_open`, a library panel or wire op) still goes there.
+  Where no op answered, the click now resolves to the converted op by label instead of reaching the legacy attack chain ("nothing" in the old
+  pins); the effect is the same proc.
+- **The master R&D server's "no doing anything to it" op takes every item**, its library tool ops included (the legacy handler's comment was
+  the intent; the pin showed the library ops answering first).
+- **The pandemic's screwdriver ejection is gone**: the computer's own screwdriver op (disconnect) always answered first, so it was unreachable.
+- **The DNA scanner's and the suit storage unit's "climb in" checks run in the op's effect**, with their legacy refusal text: they read the
+  occupant slot, which the generated reads cannot follow.
+- **Left on the legacy forms** (residue of the codemods, not converted here): 58 types with `declare_interactions()`, 93 compact
+  `EXTEND_INTERACTIONS` sites (the lowered form the op codemod could not finish: silicon and observer specs, questions opened from the handler,
+  shared handlers, key clashes), 55 tool procs (handlers that open a request, call `..()` or return an expression), and the ten machines whose
+  conversion would have opened a request from an op effect (cable layer, floor layer, holoposter, mass driver, point defence, protean
+  reconstitutor, requests console, fax machine, conveyor and its switch).
 ## Life's OM events are actions (rewrite/om-life)
 
 - The status increase events (stun, weaken, paralyze, sleep, blind) were refusable OM events no handler ever refused;
   they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
   (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
   listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).
+
+## The machine and chem clock domains are gone (rewrite/om-life)
+
+- `CLOCK_MACHINE` and `CLOCK_CHEM` had no effect held on them anywhere, so they always ran at world speed. They are
+  deleted: a machine's timers run on its own clock (suspension still pauses them), and the reflector lane measures its
+  dt on world time. The final API's clocks are CLOCK_WORLD, CLOCK_OWN and CLOCK_BIO. No behaviour change intended.
+
+- **More structures and toys are ops**: the catwalk (welder slice by stance, plating), window (bang/knock/item/tk, the weld repair op
+  with its 4 s wait and 1 fuel, the polarized window's multitool id as an op step), micro tunnel (one hand op asks enter-or-reach,
+  one from inside asks the action, then where to or whom; a simple mob's click runs the same op), bonfire (rods ask stake or grill),
+  tank dispenser, weightlifter (a person on the machine; the refusals are the old texts), gargoyle statue (a cyborg's module only hits it),
+  underwear dresser (the window's open needs a species that wears underwear), canvas and palette (fills and colours are op steps),
+  toy and energy swords (alt-click recolour as two op steps), plushies (the squeezes by stance; naming is the menu op with a question;
+  the dragon's own squeeze replaces them), balloons, the acorn staff.
+- **A weld repair waits before it mends**: the window's repair is a 4 s wait, then the repair (the legacy tool step did both at once in
+  the test's fast tool path).
+- **The energy sword's cell insert answers the click** once the cell is in (the legacy handler let the hit follow).
+- **A menu entry with no name of its own is named after its op** ("Take cell", "Baton item") where the legacy entry derived "Use".
+- **Items with their own uses are ops**: the sharpening kit, snowball (compact or smash by stance), armour plates and inserts, the
+  butterfly knife grip (an ingredient that cannot be let go says why, from the handler), smoke bomb (a multitool asks the colour), chem
+  grenade (its self-use replaces the grenade's prime), stun baton (the cattleprod keeps its own item use), police tape (lift or break by
+  stance), teleportation scroll (uses, then the area, as op steps; `uses` is tracked), hand teleporter, ore satchel (`current_capacity` and
+  `max_storage_space` tracked), service fabricator (a radial step), barbed wire, the electric welder's cell. The material subtypes' own
+  item uses come before the material's repair, as their EXTEND did.
+
+## The OM framework retired (rewrite/om-retire-2)
+
+Pinned by `code/modules/unit_tests/dq_retired_behaviour_pins.dm` and the existing AI, tether, burning, vore and property tests.
+
+- **The AI brain loops run on the mob's own clock** (CLOCK_OWN), as final_api.html section 14 specifies: suspension pauses them,
+  stasis (CLOCK_BIO) no longer does. Out of relevance (RELEVANCE_NONE) or outside RUNLEVEL_GAME/POSTGAME a loop's timer still fires and
+  skips its run; the OM ring parked it instead. A calm brain still hibernates on its chunk watches.
+- **The material service and a belly's digestion cycle are keyed `after()` timers** on their own clock, not OM deadlines on the
+  background lane. The cadence and the per-entity cancel are unchanged.
+- **The turf_prepare_step_sound veto is gone**: nothing handled it, so a footstep on a turf without a footstep sound stays silent as before.
+- **The dqai_target_changed / dqai_target_lost events are gone**: nothing listened to them.
+- **The before/catch_throw and before/dice_roll events are direct calls** (`omen_blocks_catch()`, `omen_roll_override()`): the omen was
+  their only handler.
+- **attack_self is an action** (`ACTION(attack_self, ...)`): the tether host takes it over with an `instead()`; everything else that used
+  the OM veto event is gone with it.
+
+## Machinery, round 2: the residue onto ops (rewrite/machinery-2)
+
+`tools/codemods/machine_ops.py` converts what the first sweep left on machine types in one step: a `declare_interactions()` override listing
+machine datum interactions or compact specs, or an `EXTEND_INTERACTIONS` row, becomes ops of the type's `CAPABILITIES` block (the same table as
+`interact_declare.py`, plus the datum fields `held_type`, `requires`, `also_requires`, `offered_when`, `stance` and `consumes_input`). Converted
+ops answer after the ops the type already had (`priority(OP_PRIORITY_DEFAULT - 1)`, as in the first sweep); a second op of the type on the same
+input takes the next tier down, so the legacy declaration order still decides.
+
+- **A type whose legacy override dropped `..()` (a replacement) gets `without()`** for each parent op it never had: the ghost jukebox takes no
+  touch or item, the refinery's furnace, grinder, mixer, pipe, splitter, vat and waste drop the parent's transfer-amount verb (`into -=`).
+- **A held list of item types is one op with `inputs(item(A), item(B))`** (`held_type = list(...)`): the menu lists it only for those items.
+- **The alien VR pod's own scan answers before the VR pod's** (`vr_sleeper_scan` is a tier lower), and the microwave's grab-stance pAI eject
+  before its plain touch, as the legacy order had them.
+- **Verbs (`menu()`) need `req_adjacent()` and `req_capable()`** in place of the per-type `dq_actor_can_act` wrappers: a living actor who is
+  not incapacitated, beside the machine.
+- **Requirements read tracked state**: the claw machine's `gamepaid`, the item bank's `busy_bank`, the emergency shield generator's
+  `is_open` and `malfunction`, the shield wall generator's `power` and the storefront's `department_id` are `TRACKED`; the records console's
+  ID slot is `req_empty(nameof(scan))`; the DNA analyzer's sample is a `ref_one()` relation and its slot `req_empty(nameof(bloodsamp))`, its
+  busy check `req_is(nameof(scanning), FALSE)`; the holomap's watcher check is `req_is(nameof(watching_mob), FALSE)` (a watcher touching it
+  again is told someone is watching, where it did nothing) and "stand in front" is the new library `req_on_holder_turf()`; the refinery drain
+  is `req_reagents(0, more = TRUE)`; the cryopod's occupied checks read `slot_occupant()`, which follows `OCCUPANT_KEY`.
+- **A held item that can't be let go** (a sticky trait, a slot that refuses) is refused by the new library `req_held_releasable()` with the
+  release refusal as the reason: the DNA analyzer refuses a stuck swab, used or not (an unused stuck swab was taken and then rejected).
+- **The centrifuge's trolley drop** checks its silent guard (the actor can reach both, is free and able) in the effect and declines, as the
+  old `MouseDrop_T` did, instead of a cached condition on the actor's position.
+- **The security camera console's cyborg use** declines for an AI shell (it interfaces as the AI) from the op instead of asking `isrobot()`;
+  the robotics console's cyborg use declines when the cyborg has access (the window answers), as before.
+- **Conversion pins probe each item an op binds** (`item(T)`), not only the items legacy interactions named, so a converted type keeps the
+  rows its legacy interactions had; pins of types converted earlier gained those rows.
+- **Second pass (30 more machines).** Legacy requirement forms translate: `REQ_FIELD`/`REQ_FIELD_NOT` are `req_is(nameof(v), ...)` with the
+  legacy text, `REQ_ANCHORED` and `REQ_PANEL` read `anchored`/`panel_open`, `REQ_TYPE(PRED_ACTOR, T)` is `req(T, of = ON_ACTOR)`.
+  `REQ_ON(PRED_ACTOR, /machine/proc/x)` asked a machine proc of the actor, which never has it, so it always refused (the specops shuttle
+  console's access check, the paper shredder's "empty bin"): it is asked of the machine, as meant.
+- **The reads analysis knows legacy `ownership()` declarations**: a var listed with `owns(nameof(v))` is written only through the ownership
+  accessors, whose `own_field_changed()` publishes the var's name, so a requirement may read it (the grinder's held items, the cable
+  layer's reel). A `var/const` is a constant. Sixteen `ALLOW(reads)` annotations that this made unnecessary are gone; the windoor's claw
+  check is the library's `req_can_shred(15)`.
+- **Requirements on tracked state**: the beehive's `closed`, the honey extractor's `processing` and `honey`, the material furnace's
+  `firing`, the paper shredder's `paperamount`, a honey frame's `honey` and a bee pack's `full` are `TRACKED`; the beehive's frames
+  (`ref_many`) and the furnace's output (`ref_one`) are declared relations. The shredder's "empty bin" needs `req_capable()` and paper in
+  the bin; its separate posture check (lying, restrained) is gone.
+- **Arcade tickets are a `stack()` binding** that takes the two tickets itself; a short stack is refused with the binding's "You don't have
+  enough for that." (was "you need 2 tickets to claim a prize").
+- **The waste processor's drops** check their silent guard in the effect and decline, like the centrifuge; **the resleever's drag** is
+  offered to humans and cyborgs only (a `when()` on the actor) and needs the machine panel shut (`maintenance_panel_shut()`); **a
+  cyborg's item click on a conveyor** is its own op that takes the click and does nothing (the module never drops), ahead of the drop.
 
 ## The draw sweep: legacy appearance declarations become draw(look) (rewrite/draw-sweep)
 

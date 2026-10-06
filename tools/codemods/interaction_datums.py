@@ -3,6 +3,13 @@ r"""Lowers datum interactions to the compact spec form, so tools/dx/codemods/int
 
     python tools/codemods/interaction_datums.py [--check] [--sites] [--dirs code/game/objects ...]
 
+The machinery bases (code/game/machinery/machinery_interactions.dm) lower too: machine_hand -> INTERACT_HAND (the compact hand is behind the
+machine's hand gate, so the base's can_operate_by_hand() clause goes), machine_hand/ungated -> INTERACT_HAND_UNGATED, machine_item -> ITEM /
+INSERT, machine_alt -> ALT, machine_drag -> DRAG, machine_verb -> VERB with the base's dq_actor_can_act() clause. A datum's `category` steered
+only the legacy menu and is dropped. The shared machine datums lower by name: machine_hand/open_ui and its ungated twin open the window
+(dropped on a type whose own or inherited CAPABILITIES block declares interface(): its ui_open op already does), machine_item/part_replacement
+swaps parts; their shared effects (code/datums/interactions/shared_effects.dm) become the shared op handlers in interact_declare.py.
+
 The unit is one `T/declare_interactions(list/into)` override that ends in `..()` (an extension: what EXTEND_INTERACTIONS
 expands to) and whose statements are only
 
@@ -46,7 +53,28 @@ BASES = {
     "entry_alt": "ALT",
     "entry_drag": "DRAG",
 }
-FIELDS = {"id", "name", "effect", "held_type", "stance", "requires", "also_requires", "offered_when"}
+BASES.update({
+    "machine_hand": "HAND",
+    "machine_hand/ungated": "HAND_UNGATED",
+    "machine_item": "ITEM",
+    "machine_alt": "ALT",
+    "machine_drag": "DRAG",
+    "machine_verb": "VERB",
+})
+# a base's own requirement the compact spec must carry (the compact builder adds only the reach)
+BASE_REQS = {"machine_verb": ["REQ_PROC(/proc/dq_actor_can_act, \"you can't do that right now\")"]}
+# a requirement clause the compact form already applies (the machine hand gate is the compact hand's)
+REDUNDANT_REQS = {"REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null)"}
+# the shared machine datums (machinery_interactions.dm): their spec, or None to drop it on a type with an interface()
+SHARED = {
+    "/datum/interaction/machine_hand/open_ui": 'INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui))',
+    "/datum/interaction/machine_hand/ungated/open_ui": 'INTERACT_HAND_UNGATED("Use", TYPE_PROC_REF(/atom, interaction_open_ui))',
+    "/datum/interaction/machine_item/part_replacement": 'INTERACT_INSERT(/obj/item/storage/part_replacer, TYPE_PROC_REF(/obj/machinery, interaction_part_replacement), "Replace parts")',
+}
+OPEN_UI = {"/datum/interaction/machine_hand/open_ui", "/datum/interaction/machine_hand/ungated/open_ui"}
+# shared effects a datum may name (code/datums/interactions/shared_effects.dm): an owner the datum's type descends from
+SHARED_EFFECT_OWNERS = {"/atom", "/obj/machinery"}
+FIELDS = {"id", "name", "effect", "held_type", "stance", "requires", "also_requires", "offered_when", "category"}
 
 
 def rel(p):
@@ -125,6 +153,8 @@ def main(argv):
     dirs = []
     if "--dirs" in argv:
         dirs = [d.rstrip("/") + "/" for d in argv[argv.index("--dirs") + 1:] if not d.startswith("--")]
+    # --prefix /type: only declarations of that type or below it
+    prefix = argv[argv.index("--prefix") + 1] if "--prefix" in argv else None
     files = {}
     for base, _d, fs in os.walk(os.path.join(ROOT, "code")):
         _d[:] = [d for d in _d if d != "_generated"]  # build output (analyze gen), not source
@@ -139,7 +169,7 @@ def main(argv):
     for p, t in files.items():
         lines = t.splitlines()
         for i, l in enumerate(lines):
-            m = re.match(r"^/datum/interaction/((?:entry_hand/ungated|entry_\w+|\w+))/(\w+)\s*(//.*)?$", l)
+            m = re.match(r"^/datum/interaction/((?:entry_hand/ungated|machine_hand/ungated|entry_\w+|\w+))/(\w+)\s*(//.*)?$", l)
             if not m:
                 continue
             end = block_end(lines, i)
@@ -165,6 +195,16 @@ def main(argv):
             path = "/datum/interaction/%s/%s" % (m.group(1), m.group(2))
             datums[path] = (p, i, end, m.group(1), fields if ok else None)
 
+    # types whose own CAPABILITIES block declares interface(): a type below one of them has its window op already
+    with_interface = set()
+    for _p, _t in files.items():
+        for cm in re.finditer(r"^CAPABILITIES\((/[\w/]+)\)\n((?:[\t ].*\n|\n)*)", _t, re.M):
+            if re.search(r"(?<![\w.])interface\(", cm.group(2)):
+                with_interface.add(cm.group(1))
+
+    def has_interface(T):
+        return any(T == u or T.startswith(u + "/") for u in with_interface)
+
     results = []
     for p, t in files.items():
         if dirs and not any(rel(p).startswith(d) for d in dirs):
@@ -175,6 +215,8 @@ def main(argv):
             if not m:
                 continue
             T = m.group(1)
+            if prefix and not (T == prefix or T.startswith(prefix + "/")):
+                continue
             end = block_end(lines, i)
             body = []
             k = i + 1
@@ -211,6 +253,11 @@ def main(argv):
                     why = "statement"
                     break
                 for it in items:
+                    if it in SHARED:
+                        if it in OPEN_UI and has_interface(T):
+                            continue
+                        specs.append(SHARED[it])
+                        continue
                     d = datums.get(it)
                     if not d:
                         why = "statement"
@@ -226,16 +273,19 @@ def main(argv):
                         why = "datum_used"
                         break
                     em = re.match(r"^(/[\w/]+?)/proc/(\w+)$", fields.get("effect", ""))
-                    if not em or not (em.group(1) == T or T.startswith(em.group(1) + "/")):
+                    if not em or not (em.group(1) == T or T.startswith(em.group(1) + "/") or em.group(1) in SHARED_EFFECT_OWNERS):
                         why = "effect_owner"
                         break
+                    shared_effect = em.group(1) in SHARED_EFFECT_OWNERS
                     reqs = []
                     if "requires" in fields:
                         rl = list_items(fields["requires"])
                         if rl is None or "REQ_INTERACTION_REACH" not in rl:
                             why = "requires_reach"
                             break
-                        reqs += [r for r in rl if r != "REQ_INTERACTION_REACH"]
+                        reqs += [r for r in rl if r != "REQ_INTERACTION_REACH" and r not in REDUNDANT_REQS]
+                    else:
+                        reqs += BASE_REQS.get(base, [])
                     if "also_requires" in fields:
                         rl = list_items(fields["also_requires"])
                         if rl is None:
@@ -251,7 +301,7 @@ def main(argv):
                         reqs += ["OFFERED_WHEN(%s)" % r for r in rl]
                     kind = BASES[base]
                     name = fields.get("name", "null")
-                    eff = "PROC_REF(%s)" % em.group(2)
+                    eff = ("TYPE_PROC_REF(%s, %s)" % (em.group(1), em.group(2))) if shared_effect else ("PROC_REF(%s)" % em.group(2))
                     stance = fields.get("stance")
                     held = fields.get("held_type")
                     if held and kind != "ITEM":

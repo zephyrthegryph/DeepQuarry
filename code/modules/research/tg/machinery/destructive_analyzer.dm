@@ -286,7 +286,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 
 	//Perform experiment
 	techweb_item_generate_points(thing, stored_research)
-	OM_EMIT(src, /datum/om/event/machinery_destructive_scan, thing)
+	PUBLISH_LEGACY(src, /datum/notice/machinery_destructive_scan, thing)
 
 	//Finally, let's add it to the material silo, if applicable.
 	var/datum/material_container/materials = get_silo_material_container_datum(FALSE)

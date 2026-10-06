@@ -1,0 +1,68 @@
+human|none menu: Climb
+human|none menu: Ui open
+human|none menu: Use
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none menu: Ui open
+robot|none menu: Use
+robot|none click: Click: Ui open
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Disconnect
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use item
+human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use item
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use item
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use item
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use item
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use item
+human|/obj/item/weldingtool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Use item
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Use item
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Use item
+human|/obj/item/card/id click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, recall_shuttle, scan_for_new, ui_open, use, use_gripper, use_item
+

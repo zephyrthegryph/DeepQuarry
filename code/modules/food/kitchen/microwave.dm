@@ -50,6 +50,13 @@ CAPABILITIES(/obj/machinery/microwave)
 	without("ui_open")
 	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
 	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("microwave_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(microwave_interaction_item)))
+	op("microwave_interaction_eject_pai", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Eject pAI"), then(PROC_REF(microwave_interaction_eject_pai)))
+	op("microwave_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(microwave_interaction_hand)))
+	op("microwave_verb_eject", menu(), label("Eject content"), needs(req_adjacent(), req_capable()), then(PROC_REF(microwave_verb_eject)))
 
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
@@ -95,7 +102,6 @@ CAPABILITIES(/obj/machinery/microwave)
 
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
 
-
 // its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/on_destroy(force)
 	dispose(FALSE)
@@ -138,35 +144,30 @@ CAPABILITIES(/obj/machinery/microwave)
 	changed(src)
 	SStgui.update_uis(src)
 
-EXTEND_INTERACTIONS(/obj/machinery/microwave, \
-	INTERACT_ITEM(null, PROC_REF(microwave_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Eject pAI", PROC_REF(microwave_interaction_eject_pai)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(microwave_interaction_hand)), \
-	INTERACT_VERB("Eject content", PROC_REF(microwave_verb_eject)), \
-)
-
 /// Old attackby.
-/obj/machinery/microwave/proc/microwave_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(handle_broken(O, user)) return TRUE
-	if(handle_dirty(O, user)) return TRUE
-	if(default_part_replacement(user, O)) return TRUE
-	if(try_insert_item(O, user)) return TRUE
-	if(try_insert_reagent(O, user)) return INTERACTION_HANDLED_PASS // the container's afterattack pours
+/obj/machinery/microwave/proc/microwave_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(handle_broken(O, user)) return OP_OK
+	if(handle_dirty(O, user)) return OP_OK
+	if(default_part_replacement(user, O)) return OP_OK
+	if(try_insert_item(O, user)) return OP_OK
+	if(try_insert_reagent(O, user)) return OP_PASS // the container's afterattack pours
 	if(istype(O,/obj/item/grab))
 		var/obj/item/grab/G = O
 		to_chat(user, span_warning("Unfortunately, the laws of physics prevent you from inserting \the [G?.grab_target()] into \the [src]."))
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/paicard))
 		if(!paicard)
 			insertpai(user, O)
-			return TRUE
+			return OP_OK
 		to_chat(user, span_warning("There is already a pAI inserted, and you don't feel like cooking \the [O]."))
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/gripper)) //Grippers count as 'attacking' before the thing they're holding. Don't send a message.
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_warning("You have no idea what you can cook with \the [O]."))
 	post_state_change()
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/microwave/proc/handle_broken(obj/item/O, mob/user)
 	if(src.broken <= NOT_BROKEN)
@@ -261,25 +262,31 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		return TRUE
 	return FALSE
 
-/obj/machinery/microwave/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/microwave/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(broken == REALLY_BROKEN)
 		do_repair_step(user, tool, FALSE)
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/microwave/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/microwave/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(broken == KINDA_BROKEN)
 		do_repair_step(user, tool, TRUE)
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/microwave/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/microwave/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(panel_open)
-		return ..()
+		return OP_DECLINE
 	act_message(user, src, MSG_SELF(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%.")))
 	om_task_start(/datum/om/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /datum/om/task/timed/microwave_secure
 	complete_proc = /obj/machinery/microwave/proc/secure_done
@@ -297,16 +304,18 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	. = ..()
 
 /// Old attack_hand with Grab held: pull the pAI out. Without one, the ordinary touch.
-/obj/machinery/microwave/proc/microwave_interaction_eject_pai(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_interaction_eject_pai(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!paicard)
-		return FALSE
+		return OP_DECLINE
 	ejectpai(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand.
-/obj/machinery/microwave/proc/microwave_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /*******************
 *   Microwave Menu
@@ -597,7 +606,8 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	return ffuu
 
 /// Old Eject content verb.
-/obj/machinery/microwave/proc/microwave_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_verb_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You try to open %T% and remove its contents.")), \
 		MSG_OTHERS(span_notice("%U% tries to open %T% and remove its contents.")))
 

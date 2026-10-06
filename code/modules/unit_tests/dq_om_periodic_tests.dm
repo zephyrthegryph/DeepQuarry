@@ -211,7 +211,7 @@
 	igniter.set_on(FALSE)
 	TEST_ASSERT(!test_work_allowed(igniter), "a switched-off igniter may still step")
 	MACHINE_SLEEP(igniter)
-	igniter.interaction_toggle(null, null, null)
+	test_op_handler(igniter, "interaction_toggle", null)
 	kernel_drain_now() // the switch's change reaches its work at the drain
 	TEST_ASSERT(igniter.on && test_work_allowed(igniter), "switching an igniter on did not wake it")
 	igniter.set_on(FALSE)
@@ -320,7 +320,7 @@
 	for(var/datum/om/stage/T as anything in missed)
 		names |= "[T.type]"
 	TEST_ASSERT(!length(missed), "the pipeline audit found missed wakes: [jointext(names, ", ")]")
-	var/list/woken = om_sleeper_audit(100000, FALSE)
+	var/list/woken = sleep_audit(100000, FALSE)
 	TEST_ASSERT(!length(woken), "the timer/key audit found sleepers with work: [jointext(woken, "; ")]")
 
 /// Tanning racks and modular computers sleep when idle and wake on their producer.

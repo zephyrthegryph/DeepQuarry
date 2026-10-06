@@ -148,22 +148,16 @@ CAPABILITIES(/obj/structure/inflatable)
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 
-/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. Cyborgs next to it open it; the AI can't.
-/obj/structure/inflatable/door/proc/inflatable_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isAI(user)) //so the AI can't open it
-		return TRUE
-	if(isrobot(user) && get_dist(user,src) <= 1) //but cyborgs can, not remotely though
-		TryToSwitchState(user)
-	return TRUE
+/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. A cyborg next to it opens it; the AI can't (the op is a cyborg's).
+/obj/structure/inflatable/door/proc/inflatable_door_silicon_use(datum/act/op/A)
+	TryToSwitchState(A.actor)
+	return OP_OK
 
 // The door's Use replaces the base inflatable's fingerprint-only one, and it has no item use of its own (the old door's list left it out).
 CAPABILITIES(/obj/structure/inflatable/door)
 	op("use_hand", hand(), then(PROC_REF(interaction_door_hand)))
 	without("use_item")
-
-// The silicon's remote open stays a legacy entry until silicon entry points are ops.
-/obj/structure/inflatable/door/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(inflatable_door_silicon_use)))
+	op("silicon_open", remote(), label("Open"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), needs(req_adjacent()), then(PROC_REF(inflatable_door_silicon_use)))
 
 /// Old attack_hand: open/close the door.
 /obj/structure/inflatable/door/proc/interaction_door_hand(datum/act/op/A)

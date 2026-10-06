@@ -44,11 +44,11 @@ CAPABILITIES(/obj/machinery/button/remote)
 	on_op("press_hand", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 	on_op("press_item", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 	on_op("press_silicon", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
-
-DECLARE_INTERACTIONS(/obj/machinery/button/remote, INTERACT_SILICON("Toggle", PROC_REF(silicon_pressed)))
+	op("silicon_pressed", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(silicon_pressed)))
 
 /// A silicon presses it from wherever it can see it (the same press as a hand's).
-/obj/machinery/button/remote/proc/silicon_pressed(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/remote/proc/silicon_pressed(datum/act/op/A)
+	var/mob/user = A.actor
 	perform_op(user, src, "press_silicon", origin = ORIGIN_SYSTEM)
 	return TRUE
 

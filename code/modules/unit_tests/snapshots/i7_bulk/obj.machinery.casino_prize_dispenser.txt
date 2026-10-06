@@ -1,5 +1,5 @@
-/obj/machinery/casino_prize_dispenser|human|none => casino_prize_dispenser_use|casino_prize_dispenser_attackby:needs an item
-/obj/machinery/casino_prize_dispenser|robot|none => casino_prize_dispenser_use|gen_robot_interaction_swallow:not possible right now,casino_prize_dispenser_attackby:needs an item
+/obj/machinery/casino_prize_dispenser|human|none => |
+/obj/machinery/casino_prize_dispenser|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/casino_prize_dispenser|ai|none => |
 /obj/machinery/casino_prize_dispenser|ghost|none => |
-/obj/machinery/casino_prize_dispenser|human|/obj/item => casino_prize_dispenser_attackby,casino_prize_dispenser_use|
+

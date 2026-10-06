@@ -15,12 +15,6 @@
 	. = ..()
 	GLOB.atmosphere_alarm.unregister_alarm(src)
 
-/obj/machinery/computer/atmos_alert/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
 /obj/machinery/computer/atmos_alert/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 

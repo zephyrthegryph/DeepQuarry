@@ -96,7 +96,7 @@
 /datum/ai_behavior/charge_slam/stop(datum/ai_brain/brain, atom/target, atom/source, reason)
 	// Cancel any pending dash so a cancelled telegraph can't still land.
 	if(!QDELETED(brain))
-		om_cancel_timer_slot(src, "dash:[om_handle(brain)]")
+		cancel_after(src, "dash:[om_handle(brain)]")
 	return ..()
 
 /datum/ai_behavior/charge_slam/proc/execute_dash(datum/ai_brain/brain, atom/target)

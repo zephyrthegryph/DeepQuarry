@@ -1,6 +1,5 @@
-/obj/machinery/power/generator|human|none => |power_cable_place:needs a cable coil
-/obj/machinery/power/generator|robot|none => |gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/generator|human|none => |
+/obj/machinery/power/generator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/generator|ai|none => |
 /obj/machinery/power/generator|ghost|none => |
-/obj/machinery/power/generator|human|/obj/item/stack/cable_coil => power_cable_place|
 

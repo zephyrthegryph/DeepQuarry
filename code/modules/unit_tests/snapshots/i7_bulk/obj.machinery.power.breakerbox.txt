@@ -1,6 +1,6 @@
-/obj/machinery/power/breakerbox|human|none => breakerbox_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,breakerbox_use:needs an item,power_cable_place:needs a cable coil
-/obj/machinery/power/breakerbox|robot|none => gen_silicon_breakerbox_silicon_toggle,breakerbox_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,breakerbox_use:needs an item,power_cable_place:needs a cable coil
+/obj/machinery/power/breakerbox|human|none => breakerbox_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,breakerbox_use:needs an item
+/obj/machinery/power/breakerbox|robot|none => gen_silicon_breakerbox_silicon_toggle,breakerbox_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,breakerbox_use:needs an item
 /obj/machinery/power/breakerbox|ai|none => gen_silicon_breakerbox_silicon_toggle|
 /obj/machinery/power/breakerbox|ghost|none => |
-/obj/machinery/power/breakerbox|human|/obj/item => breakerbox_toggle,breakerbox_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,power_cable_place:needs a cable coil
-/obj/machinery/power/breakerbox|human|/obj/item/stack/cable_coil => breakerbox_toggle,breakerbox_use,power_cable_place|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/power/breakerbox|human|/obj/item => breakerbox_toggle,breakerbox_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

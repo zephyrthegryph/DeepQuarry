@@ -63,16 +63,8 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "crema_switch"
 
-/obj/machinery/button/holosign/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/holosign_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/holosign_toggle
-	id = "holosign_toggle"
-	name = "Toggle"
-	effect = /obj/machinery/button/holosign/proc/interaction_toggle
+CAPABILITIES(/obj/machinery/button/holosign)
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Holosigns sharing our id (keyed).
 /obj/machinery/button/holosign/var/list/obj/machinery/holosign/controlled_signs
@@ -83,7 +75,8 @@
 	. = ..()
 	. += rel_key(nameof(id))
 
-/obj/machinery/button/holosign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/holosign/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	use_power(5)

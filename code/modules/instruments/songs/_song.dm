@@ -194,7 +194,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	//we can not afford to runtime, since we are going to be doing sound channel reservations and if we runtime it means we have a channel allocation leak.
 	//wrap the rest of the stuff to ensure stop_playing() is called.
 	do_hearcheck()
-	OM_EMIT(parent(), /datum/om/event/instrument_start, src, user)
+	PUBLISH_LEGACY(parent(), /datum/notice/instrument_start, src, user)
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
@@ -240,7 +240,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	set_playing(FALSE)
 	if(!debug_mode)
 		compiled_chords = null
-	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
+	PUBLISH_LEGACY(parent(), /datum/notice/instrument_end, finished)
 	terminate_all_sounds(TRUE)
 	rel_clear(src, nameof(hearing_mobs))
 	rel_clear(src, nameof(music_player))

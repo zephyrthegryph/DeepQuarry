@@ -1,7 +1,5 @@
-/obj/machinery/power/turbine|human|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,turbine_fingerprint:needs an item,machine_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
-/obj/machinery/power/turbine|robot|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,turbine_fingerprint:needs an item,machine_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
+/obj/machinery/power/turbine|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/power/turbine|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/turbine|ai|none => |
 /obj/machinery/power/turbine|ghost|none => |
-/obj/machinery/power/turbine|human|/obj/item => turbine_fingerprint,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
-/obj/machinery/power/turbine|human|/obj/item/storage/part_replacer => turbine_fingerprint,machine_part_replacement,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,power_cable_place:needs a cable coil
-/obj/machinery/power/turbine|human|/obj/item/stack/cable_coil => turbine_fingerprint,machine_open_ui,power_cable_place|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_part_replacement:needs a rapid part exchange device
+

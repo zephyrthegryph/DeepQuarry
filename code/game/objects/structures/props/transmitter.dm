@@ -15,7 +15,7 @@ CAPABILITIES(/obj/structure/prop/transmitter)
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/sequence/morse(list(src), FALSE))
 	set_new_message(message_to_play)
 	soundloop.start()
-	interaction_message = "On the monitor it displays '[uppertext(message_to_play)]'."
+	set_interaction_message("On the monitor it displays '[uppertext(message_to_play)]'.")
 	return ..()
 
 
@@ -26,4 +26,4 @@ CAPABILITIES(/obj/structure/prop/transmitter)
 
 /obj/structure/prop/transmitter/proc/set_new_message(new_message)
 	soundloop.set_new_sequence(new_message)
-	interaction_message = "On the monitor it displays '[uppertext(new_message)]'."
+	set_interaction_message("On the monitor it displays '[uppertext(new_message)]'.")

@@ -37,47 +37,31 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	..()
 	look.state("navbeacon[open][invisibility ? "-f" : ""]")
 
-/obj/machinery/navbeacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/navbeacon_toggle_lock,
-		/datum/interaction/machine_hand/ungated/navbeacon_use,
-	)
-	..()
-
-/// Old attackby: swipe an ID to toggle the lock. Never fell through to ..(), so the whole thing stays inside the effect.
-/datum/interaction/machine_item/navbeacon_toggle_lock
-	id = "navbeacon_toggle_lock"
-	name = "Swipe ID"
-	effect = /obj/machinery/navbeacon/proc/interaction_toggle_lock
-
-/obj/machinery/navbeacon/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/navbeacon/proc/interaction_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/turf/T = loc
 	if(!T.is_plating())
-		return TRUE		// prevent intraction when T-scanner revealed
+		return OP_OK		// prevent intraction when T-scanner revealed
 	if(held.GetID())
 		togglelock(user)
-	return TRUE
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/navbeacon_use
-	id = "navbeacon_use"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/navbeacon/proc/actor_has_dexterity, "you don't have the dexterity"))
-	effect = /atom/proc/interaction_open_ui
+	return OP_OK
 
 /obj/machinery/navbeacon/proc/actor_has_dexterity(mob/actor, atom/target, obj/item/held)
 	return actor.IsAdvancedToolUser()
 
-/obj/machinery/navbeacon/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/navbeacon/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/turf/floor = loc
 	if(!floor.is_plating())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	open = !open
 	playsound(src, tool.usesound, 50, TRUE)
 	act_message(user, null, MSG_SELF(span_infoplain("You [open ? "open" : "close"] the beacon's cover.")), \
 		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
-	changed(src)
-	return ITEM_INTERACT_SUCCESS
+	update_icon()
+	return OP_OK
 
 /obj/machinery/navbeacon
 	silicon_use = SILICON_USE_UI
@@ -103,6 +87,8 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	op("trans_edit_code", ui_act("trans_edit_code", arg("code", schema_text(4096)), arg("new_val", schema_text(4096))), then(PROC_REF(ui_act_trans_edit_code)))
 	op("trans_add_code", ui_act("trans_add_code", arg("new_key", schema_text(4096)), arg("new_val", schema_text(4096))), then(PROC_REF(ui_act_trans_add_code)))
 	op("trans_del", ui_act("trans_del", arg("code", schema_text(4096))), then(PROC_REF(ui_act_trans_del)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
 
 /obj/machinery/navbeacon/ui_prepare(mob/user, datum/tgui/ui)
 	var/turf/T = loc
@@ -193,7 +179,6 @@ CAPABILITIES(/obj/machinery/navbeacon)
 		return FALSE
 	LAZYREMOVE(codes, codekey)
 	return TRUE
-
 
 //
 // Nav Beacon Mapping

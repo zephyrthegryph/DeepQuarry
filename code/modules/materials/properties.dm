@@ -44,4 +44,4 @@
 	var/attenuation = max(0, M.radiation_resistance + M.density / 8) * max(thickness_mm, 0) / 100
 	return clamp(2.718281828 ** (-attenuation), 0, 1)
 
-DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
+DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)

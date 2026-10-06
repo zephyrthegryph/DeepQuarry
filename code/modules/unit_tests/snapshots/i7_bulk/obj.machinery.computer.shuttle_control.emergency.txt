@@ -1,6 +1,6 @@
-/obj/machinery/computer/shuttle_control/emergency|human|none => |emag:needs a cryptographic sequencer,shuttle_control_emergency_scan_id:needs an item,shuttle_control_open_ui:access denied
-/obj/machinery/computer/shuttle_control/emergency|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,shuttle_control_emergency_scan_id:needs an item,shuttle_control_open_ui:access denied
+/obj/machinery/computer/shuttle_control/emergency|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/computer/shuttle_control/emergency|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/shuttle_control/emergency|ai|none => |
 /obj/machinery/computer/shuttle_control/emergency|ghost|none => |
-/obj/machinery/computer/shuttle_control/emergency|human|/obj/item => shuttle_control_emergency_scan_id|emag:needs a cryptographic sequencer,shuttle_control_open_ui:access denied
-/obj/machinery/computer/shuttle_control/emergency|human|/obj/item/card/emag => emag,shuttle_control_emergency_scan_id|shuttle_control_open_ui:access denied
+/obj/machinery/computer/shuttle_control/emergency|human|/obj/item/card/emag => emag|
+

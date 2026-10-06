@@ -458,6 +458,11 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		event_subscriptions -= event_type
 
 /datum/system/contracts/proc/publish_event(datum/contract_event/event)
+	// Systems that boot first (atoms, the machine service's power poll) publish while booting: before initialize() made the tables no
+	// contract exists to hear it, and its dedup and history tables are not there yet.
+	if(!initialized)
+		spent(event)
+		return FALSE
 	if(!event?.is_valid())
 		events_rejected++
 		spent(event)

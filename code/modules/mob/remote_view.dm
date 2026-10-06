@@ -531,9 +531,9 @@ CAPABILITIES(/datum/remote_view)
 		// Yes, two loops is faster. Because we skip typechecking byondcode side and instead do it engine side when getting the contents of the mob,
 		// we also skip typechecking every /obj in the mob on the byondcode side... Evil wizard knowledge.
 		for(var/obj/belly/check_belly in contents_of(cache_mob))
-			OM_EMIT(check_belly, /datum/om/event/remote_view_clear)
+			PUBLISH_LEGACY(check_belly, /datum/notice/remote_view_clear)
 		for(var/obj/item/dogborg/sleeper/check_sleeper in contents_of(cache_mob))
-			OM_EMIT(check_sleeper, /datum/om/event/remote_view_clear)
+			PUBLISH_LEGACY(check_sleeper, /datum/notice/remote_view_clear)
 	spent(src)
 
 /// We were forcibly disconnected, this situation is probably a recursive hellscape, so just decouple entirely and fix it when someone moves.

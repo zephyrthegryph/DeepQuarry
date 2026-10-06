@@ -1,176 +1,132 @@
 human|none menu: Alternate use
 human|none menu: Collect (refused: needs a storage)
 human|none menu: Customise (refused: needs an item)
-human|none menu: Hug (refused: not in your hand)
 human|none menu: Move To Top
-human|none menu: Name Plushie (refused: you need to be carrying it)
+human|none menu: Name Plushie (refused: You can't do that.)
 human|none menu: Pick up
-human|none menu: Poke (refused: hold Disarm)
-human|none menu: Punch (refused: combat mode is off)
-human|none menu: Strangle (refused: hold Grab)
 human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none menu: Use
 human|none click: nothing
 robot|none menu: Alternate use
 robot|none menu: Collect (refused: needs a storage)
 robot|none menu: Customise (refused: needs an item)
 robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Hug (refused: not in your hand)
 robot|none menu: Move To Top
-robot|none menu: Name Plushie (refused: you need to be carrying it)
+robot|none menu: Name Plushie (refused: You can't do that.)
 robot|none menu: Pick up
-robot|none menu: Poke (refused: hold Disarm)
-robot|none menu: Punch (refused: combat mode is off)
-robot|none menu: Strangle (refused: hold Grab)
 robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none menu: Use
 robot|none click: nothing
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: Name Plushie (refused: You can't do that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Alternate use
 human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
-human|/obj/item/tool/screwdriver menu: Hug (refused: not in your hand)
+human|/obj/item/tool/screwdriver menu: Item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Pick up
-human|/obj/item/tool/screwdriver menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/screwdriver menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/screwdriver menu: Strangle (refused: hold Grab)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Item
 human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
-human|/obj/item/tool/crowbar menu: Hug (refused: not in your hand)
+human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Pick up
-human|/obj/item/tool/crowbar menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/crowbar menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/crowbar menu: Strangle (refused: hold Grab)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Item
 human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
-human|/obj/item/tool/wrench menu: Hug (refused: not in your hand)
+human|/obj/item/tool/wrench menu: Item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Pick up
-human|/obj/item/tool/wrench menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/wrench menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/wrench menu: Strangle (refused: hold Grab)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Item
 human|/obj/item/tool/wirecutters menu: Alternate use
 human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
-human|/obj/item/tool/wirecutters menu: Hug (refused: not in your hand)
+human|/obj/item/tool/wirecutters menu: Item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Pick up
-human|/obj/item/tool/wirecutters menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/wirecutters menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/wirecutters menu: Strangle (refused: hold Grab)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Item
 human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
 human|/obj/item/multitool menu: Customise (refused: needs an item)
-human|/obj/item/multitool menu: Hug (refused: not in your hand)
+human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/multitool menu: Pick up
-human|/obj/item/multitool menu: Poke (refused: hold Disarm)
-human|/obj/item/multitool menu: Punch (refused: combat mode is off)
-human|/obj/item/multitool menu: Strangle (refused: hold Grab)
 human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Item
 human|/obj/item/weldingtool menu: Alternate use
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
-human|/obj/item/weldingtool menu: Hug (refused: not in your hand)
+human|/obj/item/weldingtool menu: Item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Pick up
-human|/obj/item/weldingtool menu: Poke (refused: hold Disarm)
-human|/obj/item/weldingtool menu: Punch (refused: combat mode is off)
-human|/obj/item/weldingtool menu: Strangle (refused: hold Grab)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Item
 human|/obj/item/stack/cable_coil menu: Alternate use
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
-human|/obj/item/stack/cable_coil menu: Hug (refused: not in your hand)
+human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Pick up
-human|/obj/item/stack/cable_coil menu: Poke (refused: hold Disarm)
-human|/obj/item/stack/cable_coil menu: Punch (refused: combat mode is off)
-human|/obj/item/stack/cable_coil menu: Strangle (refused: hold Grab)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Item
 human|/obj/item/stack/material/steel menu: Alternate use
 human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
 human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
-human|/obj/item/stack/material/steel menu: Hug (refused: not in your hand)
+human|/obj/item/stack/material/steel menu: Item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Pick up
-human|/obj/item/stack/material/steel menu: Poke (refused: hold Disarm)
-human|/obj/item/stack/material/steel menu: Punch (refused: combat mode is off)
-human|/obj/item/stack/material/steel menu: Strangle (refused: hold Grab)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Item
 human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Collect (refused: needs a storage)
 human|/obj/item/card/id menu: Customise (refused: needs an item)
-human|/obj/item/card/id menu: Hug (refused: not in your hand)
+human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/card/id menu: Pick up
-human|/obj/item/card/id menu: Poke (refused: hold Disarm)
-human|/obj/item/card/id menu: Punch (refused: combat mode is off)
-human|/obj/item/card/id menu: Strangle (refused: hold Grab)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
+human|/obj/item/card/id click: Click: Item
 human|/obj/item/kit menu: Alternate use
 human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Hug (refused: not in your hand)
+human|/obj/item/kit menu: Item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/kit menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/kit menu: Pick up
-human|/obj/item/kit menu: Poke (refused: hold Disarm)
-human|/obj/item/kit menu: Punch (refused: combat mode is off)
-human|/obj/item/kit menu: Strangle (refused: hold Grab)
 human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit menu: Use
-human|/obj/item/kit click: nothing
+human|/obj/item/kit click: Click: Item
 human|/obj/item/storage menu: Alternate use
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Customise (refused: needs an item)
-human|/obj/item/storage menu: Hug (refused: not in your hand)
+human|/obj/item/storage menu: Item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Name Plushie (refused: you need to be carrying it)
+human|/obj/item/storage menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/storage menu: Pick up
-human|/obj/item/storage menu: Poke (refused: hold Disarm)
-human|/obj/item/storage menu: Punch (refused: combat mode is off)
-human|/obj/item/storage menu: Strangle (refused: hold Grab)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage menu: Use
-human|/obj/item/storage click: nothing
-keys: alt, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_use_interaction_squeeze, gen_verb_move_to_top_effect, gen_verb_rename_plushie_effect, gen_verb_toggle_digestable_effect
+human|/obj/item/storage click: Click: Item
+human|/obj/item menu: Alternate use
+human|/obj/item menu: Collect (refused: needs a storage)
+human|/obj/item menu: Customise (refused: needs an item)
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Name Plushie (refused: You can't do that.)
+human|/obj/item menu: Pick up
+human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item click: Click: Item
+keys: alt, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hug, item, poke, punch, rename, strangle
 

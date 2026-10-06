@@ -29,6 +29,10 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	op("drainbattery", ui_act("drainbattery"),
 		asks(/datum/prompt/choice, fields = list("question" = "This action will dump all charge, safety gear is recommended before proceeding", "title" = "Warning", "choices" = list("Continue", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k162", when = PROC_REF(battery_has_charge)),
 		then(PROC_REF(ui_act_drainbattery)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("artifact_harvester_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_artifact_harvester_use_item)))
+	op("open_ui_powered_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/obj/machinery, op_open_ui_powered_fingerprint)))
 
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
@@ -58,19 +62,9 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		if(5)
 			harvesting_speed += 100
 
-/obj/machinery/artifact_harvester/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/artifact_harvester_use_item,
-		/datum/interaction/machine_hand/artifact_harvester_use,
-	)
-	..()
-
-/datum/interaction/machine_item/artifact_harvester_use_item
-	id = "artifact_harvester_use_item"
-	name = "Use"
-	effect = /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item
-
-/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(istype(held,/obj/item/anobattery))
 		if(!inserted_battery())
 			if(!own_bring_in(src, nameof(inserted_battery), held, null, user, TRUE, null, FALSE))
@@ -83,23 +77,18 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	if(default_part_replacement(user, held))
 		return TRUE
 	if(inserted_battery())
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
-/obj/machinery/artifact_harvester/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/artifact_harvester/proc/screwdriver_used(datum/act/op/A)
 	if(inserted_battery())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/artifact_harvester/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/artifact_harvester/proc/crowbar_used(datum/act/op/A)
 	if(inserted_battery())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
-
-/datum/interaction/machine_hand/artifact_harvester_use
-	id = "artifact_harvester_use"
-	name = "Use"
-	effect = /obj/machinery/proc/interaction_open_ui_powered_fingerprint
+		return OP_OK
+	return OP_DECLINE
 
 /// The window's data.
 /obj/machinery/artifact_harvester/ui_data(datum/act/eval/A)

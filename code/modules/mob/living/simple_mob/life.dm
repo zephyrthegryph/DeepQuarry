@@ -230,7 +230,7 @@
 
 	after(src, 0.3 SECONDS, PROC_REF(callback_update_icon), key = "update_icon_timer")
 
-	ghostjoin = 0
+	set_ghostjoin(0)
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	ghostjoin_icon()
 

@@ -1,5 +1,6 @@
-/obj/machinery/doppler_array|human|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,doppler_part_replacement:needs a rapid part exchange device
-/obj/machinery/doppler_array|robot|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,doppler_part_replacement:needs a rapid part exchange device
+/obj/machinery/doppler_array|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device
+/obj/machinery/doppler_array|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device
 /obj/machinery/doppler_array|ai|none => |
 /obj/machinery/doppler_array|ghost|none => |
-/obj/machinery/doppler_array|human|/obj/item/storage/part_replacer => doppler_part_replacement,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/doppler_array|human|/obj/item/storage/part_replacer => gen_insert_interaction_part_replacement_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

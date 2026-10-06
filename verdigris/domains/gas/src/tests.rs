@@ -353,3 +353,41 @@ fn dm_deltas_conserve() {
 	r.run(3);
 	close(&expected, &r.totals(), 1e-4).unwrap();
 }
+
+/// A closed room cooled at one cell (a cold machine or pipe loop on its floor) drifts toward the cold cell without ringing: the pressure
+/// differences stay small, so the bulk flow below the stiffness threshold must stay stable at the sub-steps diffusion alone chooses. It once
+/// overshot, grew until a difference crossed the threshold, then snapped back: every few frames a reading swung 20% around the room's
+/// pressure (dq_station_alarm_component_is_sealed's Telecomms Control Room read 93 kPa of a 101 kPa room).
+#[test]
+fn a_slowly_cooled_room_does_not_ring() {
+	const SIZE: u32 = 8;
+	let mut r = Rig::new(SIZE, SIZE);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	for y in 0..SIZE {
+		for x in 0..SIZE {
+			let edge = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
+			r.register(idx(x, y), air(1.0, 293.15), false, if edge { 0b1111 } else { 0 });
+		}
+	}
+	r.run(4);
+	let p = |r: &Rig, c: u32| {
+		let cell = r.read(c).unwrap();
+		cell.pressure_in(2500.0)
+	};
+	let room = p(&r, idx(4, 4));
+	for frame in 0..60 {
+		let mut d = [0.0; Q];
+		d[N] = -4000.0; // about 0.04 K per frame out of one cell
+		let _ = r.w.submit_cell(r.key, idx(2, 2), GasCmd::Delta(d));
+		r.run(1);
+		for y in 1..SIZE - 1 {
+			for x in 1..SIZE - 1 {
+				let now = p(&r, idx(x, y));
+				assert!(
+					(now - room).abs() < 2.0,
+					"frame {frame}: cell ({x},{y}) reads {now} kPa in a {room} kPa room being cooled by a fraction of a kelvin"
+				);
+			}
+		}
+	}
+}

@@ -15,6 +15,7 @@ human|/obj/item/tool/screwdriver menu: Oxygen pump hand
 human|/obj/item/tool/screwdriver menu: Oxygen pump item
 human|/obj/item/tool/screwdriver menu: Show Tank Settings
 human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Oxygen pump item
 human|/obj/item/tool/crowbar menu: Oxygen pump hand
 human|/obj/item/tool/crowbar menu: Oxygen pump item
@@ -57,5 +58,10 @@ human|/obj/item/card/id menu: Oxygen pump item
 human|/obj/item/card/id menu: Show Tank Settings
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Oxygen pump item
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, oxygen_pump_hand, oxygen_pump_item, oxygen_pump_settings, pressure, ui_open
+human|/obj/item menu: Oxygen pump hand
+human|/obj/item menu: Oxygen pump item
+human|/obj/item menu: Show Tank Settings
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Oxygen pump item
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, oxygen_pump_hand, oxygen_pump_item, oxygen_pump_settings, pressure, ui_open, use_screwdriver
 

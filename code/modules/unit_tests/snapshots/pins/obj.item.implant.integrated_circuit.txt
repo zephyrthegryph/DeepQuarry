@@ -83,5 +83,34 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
-keys: add_cell, add_circuit, add_electronics, assembly_tool, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, load_implanter, use
+human|/obj/item/implanter menu: Collect (refused: needs a storage)
+human|/obj/item/implanter menu: Customise (refused: needs an item)
+human|/obj/item/implanter menu: Load implanter
+human|/obj/item/implanter menu: Move To Top
+human|/obj/item/implanter menu: Pick up
+human|/obj/item/implanter menu: Remove Implant (refused: You can't do that.)
+human|/obj/item/implanter menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/implanter click: Click: Load implanter
+human|/obj/item/integrated_electronics menu: Add
+human|/obj/item/integrated_electronics menu: Collect (refused: needs a storage)
+human|/obj/item/integrated_electronics menu: Customise (refused: needs an item)
+human|/obj/item/integrated_electronics menu: Move To Top
+human|/obj/item/integrated_electronics menu: Pick up
+human|/obj/item/integrated_electronics menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/integrated_electronics click: Click: Add
+human|/obj/item/integrated_circuit menu: Add
+human|/obj/item/integrated_circuit menu: Collect (refused: needs a storage)
+human|/obj/item/integrated_circuit menu: Customise (refused: needs an item)
+human|/obj/item/integrated_circuit menu: Move To Top
+human|/obj/item/integrated_circuit menu: Pick up
+human|/obj/item/integrated_circuit menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/integrated_circuit click: Click: Add
+human|/obj/item/cell/device menu: Add
+human|/obj/item/cell/device menu: Collect (refused: needs a storage)
+human|/obj/item/cell/device menu: Customise (refused: needs an item)
+human|/obj/item/cell/device menu: Move To Top
+human|/obj/item/cell/device menu: Pick up
+human|/obj/item/cell/device menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/cell/device click: Click: Add
+keys: add_cell, add_circuit, add_electronics, assembly_tool, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, load_implanter, use
 

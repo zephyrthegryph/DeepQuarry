@@ -58,9 +58,9 @@
 /datum/looping_sound/sequence/sound_loop()
 	if(QDELETED(src) || !running)
 		return
-	INVOKE_ASYNC(src, PROC_REF(sequence_step)) // ALLOW(scheduler): sequence process_data may sleep (om_sleep_violation exemption)
+	INVOKE_ASYNC(src, PROC_REF(sequence_step)) // ALLOW(scheduler): sequence process_data may sleep (sleep_violation exemption)
 
-/datum/looping_sound/sequence/om_sleep_violation()
+/datum/looping_sound/sequence/sleep_violation()
 	if(stepping)
 		return null
 	return ..()

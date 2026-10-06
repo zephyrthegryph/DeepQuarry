@@ -171,4 +171,4 @@
 	clear_map("[window_id]_map")
 	// Clients cannot be hooked: the event is emitted on the client's mob.
 	if(mob)
-		OM_EMIT(mob, /datum/om/event/popup_cleared, window_id)
+		PUBLISH_LEGACY(mob, /datum/notice/popup_cleared, window_id)

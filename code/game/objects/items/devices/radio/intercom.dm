@@ -55,6 +55,7 @@ CAPABILITIES(/obj/item/radio/intercom)
 	op("remote_channel", remote(), gesture(GESTURE_ALT), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the AI channel"),
 		wait(0), then(PROC_REF(remote_channel)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use", inputs(hand(), remote()), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"
@@ -136,22 +137,12 @@ TYPE_TABLE(/obj/item/radio/intercom/syndicate, intercom_channel_setup, /obj/item
 
 TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/radio/intercom/raider)
 
-// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SILICON("Use", PROC_REF(interaction_hand)), \
-)
-
 /// Old attack_hand, and old attack_ai (the same body).
-/obj/item/radio/intercom/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/intercom/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	src.add_fingerprint(user)
 	attack_self(user)
-	return TRUE
-
-/obj/item/radio/intercom/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
+	return OP_OK
 
 /obj/item/radio/intercom/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

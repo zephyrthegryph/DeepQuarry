@@ -120,7 +120,6 @@
 	move_direction = SOUTH
 	docking_controller_tag = "escape_shuttle"
 
-
 /obj/machinery/computer/shuttle_control/emergency
 	shuttle_tag = "Escape"
 	var/debug = 0
@@ -185,22 +184,14 @@
 		set_emagged(1)
 		return 1
 
-/obj/machinery/computer/shuttle_control/emergency/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shuttle_control_emergency_scan_id,
-	)
-	..()
+CAPABILITIES(/obj/machinery/computer/shuttle_control/emergency)
+	op("scan_id", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Scan ID"), then(PROC_REF(interaction_scan_id)))
 
-/// Old attackby: always called ..() regardless of the item.
-/datum/interaction/machine_item/shuttle_control_emergency_scan_id
-	id = "shuttle_control_emergency_scan_id"
-	name = "Scan ID"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id
-
-/obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	read_authorization(W, user)
-	return FALSE
+	return OP_DECLINE
 
 /// Accessor for the radio_connection var.
 /datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency

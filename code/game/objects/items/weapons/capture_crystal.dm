@@ -185,7 +185,7 @@
 		return		//Need to type cast the mob so it can detect ghostjoin
 	var/mob/living/simple_mob/M = bound_mob
 	if(M.ghostjoin)
-		M.ghostjoin = FALSE
+		M.set_ghostjoin(FALSE)
 		to_chat(U, span_notice("\The [bound_mob] is no longer eligable to be joined by ghosts."))
 	else
 		open_request(src, /datum/prompt/choice/crystal_ghost_invite, PROC_REF(ghost_invite_answered), answerer = U, question = "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", bound = M)
@@ -227,7 +227,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_ghost_invite)
 	if(ask.value == "No")
 		to_chat(U, span_notice("You decided against it."))
 		return
-	M.ghostjoin = TRUE
+	M.set_ghostjoin(TRUE)
 	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 
 /obj/item/capture_crystal/draw(datum/look/look)

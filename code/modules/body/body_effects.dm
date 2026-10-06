@@ -225,13 +225,13 @@
 	return after_slot(src, body_effect_slot(def, name), delay, proc_ref, path)
 
 /mob/living/proc/body_effect_cancel(datum/body_effect/def, name)
-	om_cancel_timer_slot(def.world_clock ? null : src, body_effect_slot(def, name))
+	cancel_after(def.world_clock ? null : src, body_effect_slot(def, name))
 
 /mob/living/proc/body_effect_pending(datum/body_effect/def, name)
-	return om_timer_slot_pending(def.world_clock ? null : src, body_effect_slot(def, name))
+	return after_pending(def.world_clock ? null : src, body_effect_slot(def, name))
 
 /mob/living/proc/body_effect_timer_left(datum/body_effect/def, name)
-	return om_timer_slot_left(def.world_clock ? null : src, body_effect_slot(def, name)) || 0
+	return after_left(def.world_clock ? null : src, body_effect_slot(def, name)) || 0
 
 /// A new timed stack of `path`: its name, scheduled to expire after `duration`.
 /mob/living/proc/body_effect_new_stack(datum/body_effect/def, path, duration)

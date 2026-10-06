@@ -80,6 +80,8 @@ CAPABILITIES(/obj/machinery/message_server)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
+	op("upgrade", item(/obj/item/circuitboard/message_monitor), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle PDA relay"), then(PROC_REF(interaction_toggle)))
 
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
@@ -161,39 +163,24 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 					LAZYADD(Console.message_log, list(list("Message from [sender]", "[authmsg]")))
 			Console.set_light(2)
 
-/obj/machinery/message_server/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/message_server_upgrade,
-		/datum/interaction/machine_hand/ungated/message_server_toggle,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so it works even unpowered/broken.
-/datum/interaction/machine_hand/ungated/message_server_toggle
-	id = "message_server_toggle"
-	name = "Toggle PDA relay"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/message_server/proc/interaction_toggle
-
-/obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/message_server/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	set_active(!active)
 	return TRUE
 
-/// Old attackby: the message-monitor upgrade branch. offered_when falls through to the base attackby otherwise.
-/datum/interaction/machine_item/message_server_upgrade
-	id = "message_server_upgrade"
-	name = "Install memory upgrade"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/circuitboard/message_monitor
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/message_server/proc/can_upgrade, null))
-	effect = /obj/machinery/message_server/proc/interaction_upgrade
-
 /// No side effects: whether this server can currently take the upgrade board.
 /obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
-	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
+	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
+/// Requirement (was REQ_* can_upgrade): the legacy check answers TRUE to pass.
+/obj/machinery/message_server/proc/can_upgrade_holds(datum/act/op/A)
+	var/answer = can_upgrade(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/obj/machinery/message_server/proc/interaction_upgrade(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!consume(O, user))
 		return TRUE
 	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)

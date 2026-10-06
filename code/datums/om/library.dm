@@ -21,16 +21,6 @@
 
 // ---------------------------------------------------------------- relations
 
-/// item -> the container it is in.
-/datum/om/relation/contained_in
-	name = "container"
-	source_single = TRUE
-
-/// item -> the mob wearing it.
-/datum/om/relation/worn_by
-	name = "wearer"
-	source_single = TRUE
-
 // A machine's occupant is a slot (/datum/om/relation/slot/occupant,
 // containment.md §10), not a relation declared here: read it with SLOT_ITEM().
 
@@ -186,11 +176,6 @@
 /datum/om/relation/uav_master
 	name = "UAV control"
 
-/// consumer -> power source.
-/datum/om/relation/powered_by
-	name = "power source"
-	source_single = TRUE
-
 /// A ghost -> the movable it is following. FOLLOWING(ghost) and
 /// FOLLOWERS(target) (om.dm) read the edge; the ghost also orbits the target
 /// (code/game/orbit.dm), which is what moves it along.
@@ -221,26 +206,4 @@
 			LAZYREMOVE(head.implants, source)
 
 // ---------------------------------------------------------------- bundles
-
-/datum/om/bundle/powered_machine
-	derived = list(
-		DERIVE("powered_ok", ALL_OF(/datum/om/check/powered, /datum/om/check/not_broken), CHANGE_MACHINE_POWERED_OK),
-	)
-	checks = list(
-		"machine_usable" = ALL_OF(/datum/om/check/powered, /datum/om/check/not_broken, /datum/om/check/anchored),
-	)
-
-/datum/om/bundle/storage
-	derived = list(
-		DERIVE_COUNT("contents_count", /datum/om/relation/contained_in, CHANGE_CONTENTS),
-		DERIVE_SUM("contents_weight", /datum/om/relation/contained_in, FROM_VAR("w_class"), CHANGE_ITEM_TOTAL_MASS),
-	)
-
-/datum/om/bundle/powered_vehicle
-	include = list(/datum/om/bundle/powered_machine)
-
-/datum/om/bundle/ui_live
-	ui = list(
-		list("watch" = 0xFFFFFF),
-	)
 

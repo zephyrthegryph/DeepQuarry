@@ -105,6 +105,10 @@ CAPABILITIES(/datum/dna2/record)
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
 	blast_contents()
+	op("dna_scanner_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(dna_scanner_interaction_item)))
+	op("dna_scanner_interaction_drag", item(/atom/movable), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(dna_scanner_interaction_drag)))
+	op("dna_scannernew_eject_effect", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject DNA Scanner"), needs(req_adjacent(), req_capable()), then(PROC_REF(dna_scannernew_eject_effect)))
+	op("dna_scannernew_move_inside_effect", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Enter DNA Scanner"), needs(req_adjacent(), req_capable()), then(PROC_REF(dna_scannernew_move_inside_effect)))
 
 /obj/machinery/dna_scannernew/on_destroy(force)
 	eject_occupant()
@@ -136,7 +140,8 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	src.go_out()
 	return
 
-/obj/machinery/dna_scannernew/proc/dna_scannernew_eject_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scannernew_eject_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(user.stat != 0)
 		return
@@ -157,22 +162,23 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
 			M.forceMove(get_turf(src))
 
-EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
-	INTERACT_ITEM(null, PROC_REF(dna_scanner_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(dna_scanner_interaction_drag), REQ_TARGET_STATE(/obj/machinery/dna_scannernew/proc/can_drag_inside)), \
-	INTERACT_VERB("Eject DNA Scanner", PROC_REF(dna_scannernew_eject_effect)), \
-	INTERACT_VERB("Enter DNA Scanner", PROC_REF(dna_scannernew_move_inside_effect), REQ_TARGET_STATE(/obj/machinery/dna_scannernew/proc/can_move_inside)), \
-)
-
 /// Old MouseDrop_T: allows borgs to clone people without external assistance.
-/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_drag(mob/user, atom/movable/dropped, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_drag(datum/act/op/A)
+	// the legacy check, read when the op runs: its text is the refusal
+	var/allowed = can_drag_inside(A.actor, src, A.held)
+	if(allowed != TRUE)
+		if(istext(allowed))
+			to_chat(A.actor, span_warning(allowed))
+		return
+	var/mob/user = A.actor
+	var/atom/movable/dropped = A.held
 	var/mob/target = dropped
 	var/mob/living/carbon/WC = get_occupant()
 	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target) || WC)
-		return FALSE
+		return OP_DECLINE
 	// Traitgenes Do not allow buckled or ridden mobs
 	if(target.buckled_to())
-		return FALSE
+		return OP_DECLINE
 	put_in(target)
 	return TRUE
 
@@ -197,7 +203,14 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		return "the subject cannot have abiotic items on"
 	return TRUE
 
-/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(datum/act/op/A)
+	// the legacy check, read when the op runs: its text is the refusal
+	var/allowed = can_move_inside(A.actor, src, A.held)
+	if(allowed != TRUE)
+		if(istext(allowed))
+			to_chat(A.actor, span_warning(allowed))
+		return
+	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)
 		return
 	user.stop_pulling()
@@ -210,7 +223,9 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	SStgui.update_uis(src)
 
 /// Old attackby.
-/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(istype(item, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
@@ -241,11 +256,11 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		return TRUE
 
 	else if(!istype(item, /obj/item/grab))
-		return FALSE
+		return OP_DECLINE
 	var/obj/item/grab/G = item
 	var/mob/living/grabbed = G?.grab_target()
 	if(!ismob(grabbed))
-		return FALSE
+		return OP_DECLINE
 	if(get_occupant())
 		to_chat(user, span_warning("The scanner is already occupied!"))
 		return TRUE
@@ -340,10 +355,6 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	idle_power_usage = 10
 	active_power_usage = 400
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
-	INTERACT_ITEM(null, PROC_REF(dna_console_interaction_item)), \
-)
-
 /// Old attackby.
 TRACKED(/obj/machinery/computer/scan_consolenew, irradiating)
 TRACKED(/obj/machinery/computer/scan_consolenew, injector_ready)
@@ -380,21 +391,23 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		then(PROC_REF(ui_act_bufferoption)))
 	op("wipeDisk", ui_act("wipeDisk"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_wipedisk)))
 	op("ejectDisk", ui_act("ejectDisk"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectdisk)))
+	op("dna_console_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(dna_console_interaction_item)))
 
-/obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	// Traitgenes body record disks are used instead of a unique disk
 	if(!istype(I, /obj/item/disk/body_record)) //INSERT SOME diskS
-		return FALSE
+		return OP_DECLINE
 	if(connected())
 		if(!disk)
 			if(!move_into(src, nameof(src.disk), I, user))
-				return FALSE
+				return OP_DECLINE
 			to_chat(user, "You insert [I].")
 			changed(src) // the window shows the disk
 	else
 		to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
-	return TRUE
-
+	return OP_OK
 
 /obj/machinery/computer/scan_consolenew/Initialize(mapload)
 	. = ..()
@@ -495,7 +508,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	data["locked"] = src.connected().locked
 	data["hasOccupant"] = connected().get_occupant() ? 1 : 0
 
-
 	data["hasDisk"] = disk ? 1 : 0
 
 	var/list/diskData = list()
@@ -518,7 +530,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		else
 			new_buffers[i]=list("data" = list(), "owner" = null, "label" = null, "type" = DNA2_BUF_SE, "ue" = 0)
 	data["buffers"]=new_buffers
-
 
 	data["dnaBlockSize"] = DNA_BLOCK_SIZE
 
@@ -793,7 +804,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
  */
 /obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish(datum/act/A)
 	set_injector_ready(TRUE)
-
 
 /**
  * Triggers sleeve growing in a clonepod within the area

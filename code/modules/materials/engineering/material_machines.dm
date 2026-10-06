@@ -59,6 +59,8 @@
 	var/firing = FALSE
 	var/datum/gas_mixture/chamber_air
 
+TRACKED(/obj/machinery/material_furnace, firing)
+
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
 /obj/machinery/material_furnace/ownership()
 	. = ..()
@@ -66,8 +68,15 @@
 	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED, is_list = TRUE)
 
 CAPABILITIES(/obj/machinery/material_furnace)
+	ref_one(nameof(output_stock), /obj/item/stack/material/processed_alloy)
 	reagents(120)
 	owns_one(nameof(chamber_air), /datum/gas_mixture)
+	op("load_stock", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT - 1), label("Load material"), needs(req(PROC_REF(can_load_stock_holds), because = PROC_REF(can_load_stock_refusal))), then(PROC_REF(interaction_load_stock)))
+	op("load_carbon", item(/obj/item/ore/coal), priority(OP_PRIORITY_DEFAULT - 1), label("Add carbon"), then(PROC_REF(interaction_load_carbon)))
+	op("transfer_gas", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Transfer gas"), then(PROC_REF(interaction_transfer_gas)))
+	op("transfer_reagents", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Pour"), then(PROC_REF(interaction_transfer_reagents)))
+	op("eject_contents", menu(), label("Eject contents"), needs(req_adjacent(), req_capable(), req_is(nameof(firing), FALSE, because = MSG(material_furnace/firing)), req(PROC_REF(can_eject_contents_holds), because = PROC_REF(can_eject_contents_refusal))), then(PROC_REF(interaction_eject_contents)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_use_furnace_holds), because = PROC_REF(can_use_furnace_refusal))), then(PROC_REF(interaction_use)))
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 
@@ -79,7 +88,6 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	if(environment)
 		chamber_air.copy_from(environment)
 
-
 /obj/machinery/material_furnace/examine(mob/user)
 	. = ..()
 	. += span_notice("Loaded stock: [LAZYLEN(feedstock)] stack(s); chemical medium: [round(reagents?.total_volume || 0, 0.1)]u.")
@@ -90,66 +98,71 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	if(chamber_air)
 		. += span_notice("Chamber: [round(chamber_air.return_pressure(), 0.1)] kPa at [round(chamber_air.return_temperature(), 0.1)] K.")
 
-/obj/machinery/material_furnace/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/material_furnace_load_stock,
-		/datum/interaction/machine_item/material_furnace_load_carbon,
-		/datum/interaction/machine_item/material_furnace_transfer_gas,
-		/datum/interaction/machine_item/material_furnace_transfer_reagents,
-		/datum/interaction/machine_verb/material_furnace_eject_contents,
-		/datum/interaction/machine_hand/material_furnace_use,
-	)
-	..()
+/// Requirement (was REQ_* can_load_stock): the legacy check answers TRUE to pass.
+/obj/machinery/material_furnace/proc/can_load_stock_holds(datum/act/op/A)
+	var/obj/item/stack/material/typed_held = A.held
+	var/answer = can_load_stock(A.actor, src, typed_held)
+	return !istext(answer) && !!answer
 
-/// The old attackby's first branch: loads a material stack.
-/datum/interaction/machine_item/material_furnace_load_stock
-	id = "material_furnace_load_stock"
-	name = "Load material"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	effect = /obj/machinery/material_furnace/proc/interaction_load_stock
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_load_stock))
+/// Why can_load_stock_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/material_furnace/proc/can_load_stock_refusal(datum/act/op/A)
+	var/obj/item/stack/material/typed_held = A.held
+	var/answer = can_load_stock(A.actor, src, typed_held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while firing")
+
+/// Requirement (was REQ_* can_eject_contents): the legacy check answers TRUE to pass.
+/obj/machinery/material_furnace/proc/can_eject_contents_holds(datum/act/op/A)
+	var/answer = can_eject_contents(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_eject_contents_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/material_furnace/proc/can_eject_contents_refusal(datum/act/op/A)
+	var/answer = can_eject_contents(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// Requirement (was REQ_* can_use_furnace): the legacy check answers TRUE to pass.
+/obj/machinery/material_furnace/proc/can_use_furnace_holds(datum/act/op/A)
+	var/answer = can_use_furnace(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_use_furnace_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/material_furnace/proc/can_use_furnace_refusal(datum/act/op/A)
+	var/answer = can_use_furnace(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Requirement: TRUE, or why this stack can't be loaded now.
 /obj/machinery/material_furnace/proc/can_load_stock(mob/user, atom/target, obj/item/stack/material/held)
 	if(firing || output_stock())
 		return "the furnace must be idle and its output removed first"
-	if(istype(held) && held.uses_charge)
+	if(istype(held) && held.uses_charge) // ALLOW(reads): a stack's synthesiser link is set when its module builds it and never changes after
 		return "[held] is drawn from a matter synthesiser and can't be charged into the furnace as physical stock"
 	return TRUE
 
-/obj/machinery/material_furnace/proc/interaction_load_stock(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
+/obj/machinery/material_furnace/proc/interaction_load_stock(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/stock = A.held
 	if(!move_into(src, nameof(src.feedstock), stock, user)) // the user is told why
-		return TRUE
+		return OP_OK
 	act_message(user, src, others = span_notice("%U% loads [stock] into %T%."))
-	return TRUE
+	return OP_OK
 
-/// The old attackby's second branch: adds carbon (coal ore) to the charge.
-/datum/interaction/machine_item/material_furnace_load_carbon
-	id = "material_furnace_load_carbon"
-	name = "Add carbon"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/ore/coal
-	effect = /obj/machinery/material_furnace/proc/interaction_load_carbon
-
-/obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/machinery/material_furnace/proc/interaction_load_carbon(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(firing || output_stock())
-		return TRUE
+		return OP_OK
 	if(!move_into(src, nameof(src.carbon_feed), item, user)) // the user is told why
-		return TRUE
+		return OP_OK
 	act_message(user, src, others = span_notice("%U% adds carbon to %T%'s charge."))
-	return TRUE
+	return OP_OK
 
-/// The old attackby's third branch: transfers gas between a tank and the furnace chamber.
-/datum/interaction/machine_item/material_furnace_transfer_gas
-	id = "material_furnace_transfer_gas"
-	name = "Transfer gas"
-	held_type = /obj/item/tank
-	effect = /obj/machinery/material_furnace/proc/interaction_transfer_gas
-
-/obj/machinery/material_furnace/proc/interaction_transfer_gas(mob/user, obj/item/tank/tank, datum/interaction/interaction)
+/obj/machinery/material_furnace/proc/interaction_transfer_gas(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tank/tank = A.held
 	if(firing)
-		return TRUE
+		return OP_OK
 	var/from_tank = tank.air_contents?.return_pressure() > chamber_air.return_pressure()
 	var/datum/gas_mixture/charge = from_tank ? tank.air_contents?.remove(5) : chamber_air.remove(5)
 	if(charge)
@@ -159,29 +172,17 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 			tank.air_contents.merge(charge)
 		consumed(charge, src)
 		act_message(user, src, others = span_notice("%U% transfers gas [from_tank ? "from [tank] into" : "from %T% into"] the furnace chamber."))
-	return TRUE
+	return OP_OK
 
-/// The old attackby's fourth branch: pours reagents into the chamber, else falls through to ..().
-/datum/interaction/machine_item/material_furnace_transfer_reagents
-	id = "material_furnace_transfer_reagents"
-	name = "Pour"
-	held_type = /obj/item/reagent_containers
-	effect = /obj/machinery/material_furnace/proc/interaction_transfer_reagents
-
-/obj/machinery/material_furnace/proc/interaction_transfer_reagents(mob/user, obj/item/reagent_containers/container, datum/interaction/interaction)
+/obj/machinery/material_furnace/proc/interaction_transfer_reagents(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/container = A.held
 	if(container.reagents?.total_volume)
 		var/transferred = container.reagents.trans_to(src, min(10, container.reagents.total_volume))
 		if(transferred)
 			to_chat(user, span_notice("You pour [round(transferred, 0.1)] units from [container] into the furnace chamber."))
-			return TRUE
-	return FALSE
-
-/// The old attack_hand: called ..() first, then collected output or fired the charge.
-/datum/interaction/machine_hand/material_furnace_use
-	id = "material_furnace_use"
-	name = "Use"
-	effect = /obj/machinery/material_furnace/proc/interaction_use
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_use_furnace))
+			return OP_OK
+	return OP_DECLINE
 
 /// Requirement: TRUE when there is output to take or a charge that can be fired, else why not.
 /obj/machinery/material_furnace/proc/can_use_furnace(mob/user, atom/target, obj/item/held)
@@ -195,15 +196,16 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 		return "the furnace has no power or requires repairs"
 	return TRUE
 
-/obj/machinery/material_furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/material_furnace/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(output_stock() && !firing)
 		var/obj/item/stack/material/processed_alloy/finished = output_stock()
 		rel_clear(src, nameof(output_stock))
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
 		act_message(user, src, others = span_notice("%U% removes [finished] from %T%'s output tray."))
-		return TRUE
-	firing = TRUE
+		return OP_OK
+	set_firing(TRUE)
 	icon_state = "nt_cruciforge_work"
 	var/ignition_energy = use_power_oneoff(active_power_usage * 6)
 	heat_add(chamber_air, ignition_energy, HEAT_SOURCE_DEVICE)
@@ -212,19 +214,7 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	set_light(3, 3, "#ff7b22")
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
 	after(src, 6 SECONDS, PROC_REF(finish_firing), key = "firing_timer")
-	return TRUE
-
-/// The old "Eject contents" object verb.
-/datum/interaction/machine_verb/material_furnace_eject_contents
-	id = "material_furnace_eject_contents"
-	name = "Eject contents"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/material_furnace/proc/interaction_eject_contents
-	also_requires = list(
-		REQ_FIELD_NOT("firing", "the sealed furnace can't be opened while firing"),
-		REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_eject_contents),
-	)
+	return OP_OK
 
 /// Requirement: TRUE, or why there is nothing to eject.
 /obj/machinery/material_furnace/proc/can_eject_contents(mob/user, atom/target, obj/item/held)
@@ -232,7 +222,8 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 		return "the furnace is empty"
 	return TRUE
 
-/obj/machinery/material_furnace/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/material_furnace/proc/interaction_eject_contents(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You begin opening %T%.")), MSG_OTHERS(span_notice("%U% begins opening %T%.")))
 	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
 	return TRUE
@@ -251,7 +242,7 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 		unload_charge(user)
 
 /obj/machinery/material_furnace/proc/finish_firing()
-	firing = FALSE
+	set_firing(FALSE)
 	icon_state = "nt_cruciforge"
 	set_light(0)
 	var/datum/material_batch/batch

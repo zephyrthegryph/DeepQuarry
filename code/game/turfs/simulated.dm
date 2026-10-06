@@ -36,8 +36,8 @@
 		cut_overlay(wet_overlay)
 	wet_overlay = image('icons/effects/water.dmi', icon_state = "wet_floor")
 	add_overlay(wet_overlay)
-	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
-		om_cancel_timer_slot(src, "wet_cleanup_timer")
+	if(after_pending(src, "wet_cleanup_timer"))
+		cancel_after(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
 		after(src, 160 SECONDS, PROC_REF(wet_floor_finish), key = "wet_cleanup_timer")
 	else
@@ -45,8 +45,8 @@
 
 /turf/simulated/proc/wet_floor_finish()
 	wet = TURFSLIP_DRY
-	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
-		om_cancel_timer_slot(src, "wet_cleanup_timer")
+	if(after_pending(src, "wet_cleanup_timer"))
+		cancel_after(src, "wet_cleanup_timer")
 	if(wet_overlay)
 		cut_overlay(wet_overlay)
 		wet_overlay = null

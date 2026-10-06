@@ -20,7 +20,7 @@
 		return FALSE
 	. = ..()
 	if(stat != old_stat)
-		OM_EMIT(src, /datum/om/event/mob_statchange, new_stat, old_stat)
+		PUBLISH_LEGACY(src, /datum/notice/mob_statchange, new_stat, old_stat)
 
 		if(isbelly(src.loc))
 			var/obj/belly/ourbelly = src.loc

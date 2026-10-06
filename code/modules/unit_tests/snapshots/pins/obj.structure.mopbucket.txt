@@ -33,5 +33,8 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, item
+human|/obj/item menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+keys: climb.climb, climb.climb_menu, drag_buckle, item
 

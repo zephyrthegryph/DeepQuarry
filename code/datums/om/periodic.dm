@@ -85,7 +85,7 @@
 	var/lane = LANE_SIMULATION
 	/// RUNLEVEL_* bits the cadence sweeps in.
 	var/runlevels = RUNLEVELS_DEFAULT
-	/// CLOCK_WORLD, or CLOCK_MACHINE (a stasis or machine-clock effect pauses the member's steps).
+	/// CLOCK_WORLD, or CLOCK_BIO (stasis slows or stops the member's steps).
 	var/clock = CLOCK_WORLD
 	/// Continuous lanes only: why this work has to tick at (near) frame rate.
 	var/continuous_why
@@ -113,13 +113,11 @@
 	delta = 75
 
 /// Reflectors (was SSreflector, 0.5 s): a reflector re-fires the beams it caught. It starts when
-/// it catches one (redirect_projectile()) and stops once it has fired. Clocked, so stasis and
-/// machine-clock effects pause it.
+/// it catches one (redirect_projectile()) and stops once it has fired.
 /datum/cadence/reflectors
 	name = "periodic (reflectors, 0.5 s)"
 	every = 0.5 SECONDS
 	delta = 5
-	clock = CLOCK_MACHINE
 
 /// Loot panel icon generation (was SSlooting, 0.5 s): a panel with icons left to draw starts here and
 /// stops when its queue is empty. Lobby included, like the subsystem.
@@ -253,10 +251,6 @@
 	W.perform(W, E, W.def.delta)
 	return TRUE
 
-/// TRUE while `E` is started on cadence `P`.
-/proc/periodic_running_on(datum/E, P)
-	return E.periodic_pipe == P
-
 /// Profiler counts: members on each periodic cadence.
 /proc/periodic_diagnostics()
 	. = list()
@@ -267,3 +261,11 @@
 /// A timer target that restarts periodic work on the slow lane (om_after(src, delay, /datum/proc/periodic_resume)).
 /datum/proc/periodic_resume()
 	om_task_periodic(src, PERIODIC_SLOW)
+
+/// A mob moved into a chunk a proximity-gated sleeper watches (sleep_until_mob_near(), code/modules/mob/mob_chunks.dm): its
+/// periodic work restarts on its lane.
+/atom/movable/proc/proximity_woke(datum/mob_chunk/C, bits)
+	if(QDELETED(src) || !proximity_chunks)
+		return
+	proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask)
+	om_task_periodic(src, proximity_lane)

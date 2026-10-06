@@ -41,6 +41,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 
 CAPABILITIES(/obj/structure/fitness/weightlifter)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("lift", hand(), label("Lift"), when(req(/mob/living/carbon/human, of = ON_ACTOR)), needs(req(PROC_REF(can_lift), because = PROC_REF(lift_refusal))), then(PROC_REF(interaction_hand)))
 
 /obj/structure/fitness/weightlifter/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -49,42 +50,34 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 	to_chat(user, "You set the machine's weight level to [weight].")
 	return OP_OK
 
-/obj/structure/fitness/weightlifter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/weightlifter_hand,
-	)
-	..()
+/// Requirement: the person can lift right now.
+/obj/structure/fitness/weightlifter/proc/can_lift(datum/act/op/A)
+	return isnull(weightlift_refusal(A.actor, src))
 
-/// Old attack_hand: use the weightlifting machine.
-/datum/interaction/entry_hand/weightlifter_hand
-	id = "weightlifter_hand"
-	name = "Lift"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/fitness/weightlifter/proc/can_lift))
-	effect = /obj/structure/fitness/weightlifter/proc/interaction_hand
+/obj/structure/fitness/weightlifter/proc/lift_refusal(datum/act/op/A)
+	return weightlift_refusal(A.actor, src)
 
-/// Requirement: TRUE, or why the user can't lift right now.
-/obj/structure/fitness/weightlifter/proc/can_lift(mob/living/carbon/human/user, atom/target, obj/item/held)
-	if(!istype(user))
-		return TRUE // the effect declines silently
-	if(user.loc != loc)
-		return "you must be on the weight machine to use it"
+/// Why `user` can't use the weight machine `machine` now, or null: on it, fed, heavy enough, and nobody else on it.
+/proc/weightlift_refusal(mob/living/carbon/human/user, obj/structure/fitness/weightlifter/machine)
+	READS_FROM() // a body's place, nutrition and weight are asked when the lift starts; the lift itself claims the machine
+	if(user.loc != machine.loc)
+		return "You must be on the weight machine to use it."
 	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
-		return "you need more energy to lift weights, go eat something"
+		return "You need more energy to lift weights, go eat something."
 	if(user.weight < 70) // Add weight loss to old fitness equipment
-		return "you're too skinny to risk losing any more weight"
-	if(om_busy(src))
-		return "the weight machine is already in use by somebody else"
-	return TRUE
+		return "You're too skinny to risk losing any more weight."
+	if(om_busy(machine))
+		return "The weight machine is already in use by somebody else."
+	return null
 
-/obj/structure/fitness/weightlifter/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(user))
-		return TRUE
-	else
-		play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
-		user.set_dir(SOUTH)
-		flick("[icon_state]_[weight]", src)
-		om_task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
-	return TRUE
+/// Old attack_hand: a person on the machine lifts its weights.
+/obj/structure/fitness/weightlifter/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
+	user.set_dir(SOUTH)
+	flick("[icon_state]_[weight]", src)
+	om_task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
+	return OP_OK
 
 /obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
 	play_sfx(src, SFX_EFFECTS_WEIGHTDROP)

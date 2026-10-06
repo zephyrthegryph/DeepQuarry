@@ -1348,7 +1348,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 /// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
 /mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
 	var/list/fullness_ref = list(vore_fullness_ex[belly_class] || 0)
-	OM_EMIT(src, /datum/om/event/robot_belly_fullness, belly_class, fullness_ref)
+	PUBLISH_LEGACY(src, /datum/notice/robot_belly_fullness, belly_class, fullness_ref)
 	return fullness_ref[1]
 
 /mob/living/silicon/robot/proc/add_belly_overlays()

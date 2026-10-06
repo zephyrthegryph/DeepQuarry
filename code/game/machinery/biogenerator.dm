@@ -138,6 +138,9 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	op("activate", ui_act("activate"), then(PROC_REF(ui_act_activate)))
 	op("detach", ui_act("detach"), then(PROC_REF(ui_act_detach)))
 	op("purchase", ui_act("purchase", arg("amount", num()), arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/biogenerator/proc/ui_act_activate(datum/act/op/A)
 	var/mob/user = A.actor
@@ -216,22 +219,9 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	..()
 	look.state("biogen-[appearance_state()]")
 
-/obj/machinery/biogenerator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/biogenerator_insert,
-		/datum/interaction/machine_hand/ungated/biogenerator_use,
-	)
-	..()
-
-/// The old attackby: insert a beaker, bulk-insert a plant bag, or insert one grown item.
-/datum/interaction/machine_item/biogenerator_insert
-	id = "biogenerator_insert"
-	name = "Insert"
-	held_type = /obj/item
-	effect = /obj/machinery/biogenerator/proc/interaction_insert
-
-/obj/machinery/biogenerator/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/biogenerator/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_notice("\The [src] is already loaded."))
@@ -274,13 +264,8 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	changed(src)
 	return TRUE
 
-/// The old attack_hand: never called ..(), just checked BROKEN then opened the UI.
-/datum/interaction/machine_hand/ungated/biogenerator_use
-	id = "biogenerator_use"
-	name = "Use"
-	effect = /obj/machinery/biogenerator/proc/interaction_use
-
-/obj/machinery/biogenerator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/biogenerator/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_stat(BROKEN))
 		return TRUE
 	tgui_interact(user)

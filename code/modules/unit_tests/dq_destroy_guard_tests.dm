@@ -109,7 +109,7 @@ CAPABILITIES(/datum/guard_test_holder)
 				done = !!after(H, 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
 			if("after_slot")
 				after_slot(H, "guard_slot", 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
-				done = om_timer_slot_pending(H, "guard_slot")
+				done = after_pending(H, "guard_slot")
 			if("observe")
 				done = observe(C, /datum/notice/qdeleting, H, then(TYPE_PROC_REF(/datum/guard_test_holder, on_event))) ? TRUE : FALSE
 			if("om_link")

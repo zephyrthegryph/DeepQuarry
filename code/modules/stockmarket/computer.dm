@@ -14,37 +14,16 @@
 
 	light_color = LIGHT_COLOR_GREEN
 
-/obj/machinery/computer/stockexchange/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/stockexchange_attackby,
-		/datum/interaction/machine_hand/stockexchange_use,
-	)
-	..()
-
-/// Approximation: the old attackby unconditionally called ..() then always refreshed the UIs.
-/// The ancestor call can't be replayed from here, so this declines (FALSE) to let the entry
-/// fall through to the base attackby; the UI refresh now happens before that fallback rather
-/// than after, an order approximation - see report.
-/datum/interaction/machine_item/stockexchange_attackby
-	id = "stockexchange_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/stockexchange/proc/interaction_attackby
-
-/obj/machinery/computer/stockexchange/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/stockexchange/proc/interaction_attackby(datum/act/op/A)
 	SStgui.update_uis(src)
-	return FALSE
+	return OP_DECLINE
 
-/datum/interaction/machine_hand/stockexchange_use
-	id = "stockexchange_use"
-	name = "Use"
-	effect = /obj/machinery/computer/stockexchange/proc/interaction_use
-
-/obj/machinery/computer/stockexchange/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/stockexchange/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/computer/stockexchange/proc/balance()
 	if (!logged_in)
@@ -297,6 +276,8 @@ CAPABILITIES(/obj/machinery/computer/stockexchange)
 	op("stocks_history", ui_act("stocks_history", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_history)))
 	op("stocks_backbutton", ui_act("stocks_backbutton"), then(PROC_REF(ui_act_stocks_backbutton)))
 	op("stocks_cycle_view", ui_act("stocks_cycle_view"), then(PROC_REF(ui_act_stocks_cycle_view)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 ///// PROCS /////
 

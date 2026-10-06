@@ -1,5 +1,5 @@
-/obj/machinery/item_bank|human|none => item_bank_use|item_bank_store:needs an item
-/obj/machinery/item_bank|robot|none => item_bank_use|gen_robot_interaction_swallow:not possible right now,item_bank_store:needs an item
+/obj/machinery/item_bank|human|none => |
+/obj/machinery/item_bank|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/item_bank|ai|none => |
 /obj/machinery/item_bank|ghost|none => |
-/obj/machinery/item_bank|human|/obj/item => item_bank_use,item_bank_store|
+

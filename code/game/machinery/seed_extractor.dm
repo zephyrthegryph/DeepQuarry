@@ -19,24 +19,16 @@
 	..()
 */
 
-/obj/machinery/seed_extractor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/seed_extractor_grown,
-		/datum/interaction/machine_item/seed_extractor_grass,
-		/datum/interaction/machine_item/seed_extractor_fossil,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/seed_extractor_swallow,
-	)
-	..()
+CAPABILITIES(/obj/machinery/seed_extractor)
+	op("extract_grown", inputs(item(/obj/item/reagent_containers/food/snacks/grown), item(/obj/item/grown)), priority(OP_PRIORITY_DEFAULT - 1), label("Extract seeds"), then(PROC_REF(interaction_extract_grown)))
+	op("extract_grass", item(/obj/item/stack/tile/grass), priority(OP_PRIORITY_DEFAULT - 1), label("Extract seeds"), then(PROC_REF(interaction_extract_grass)))
+	op("pulverize_fossil", item(/obj/item/fossil/plant), priority(OP_PRIORITY_DEFAULT - 1), label("Pulverize"), then(PROC_REF(interaction_pulverize_fossil)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
-/// Fruits and vegetables.
-/datum/interaction/machine_item/seed_extractor_grown
-	id = "seed_extractor_grown"
-	name = "Extract seeds"
-	held_type = list(/obj/item/reagent_containers/food/snacks/grown, /obj/item/grown)
-	effect = /obj/machinery/seed_extractor/proc/interaction_extract_grown
-
-/obj/machinery/seed_extractor/proc/interaction_extract_grown(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/seed_extractor/proc/interaction_extract_grown(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/datum/seed/new_seed_type
 	if(istype(O, /obj/item/grown))
 		var/obj/item/grown/F = O
@@ -47,7 +39,7 @@
 
 	var/produce_name = "[O]"
 	if(!consume(O, user))
-		return TRUE
+		return OP_OK
 	if(new_seed_type)
 		to_chat(user, span_notice("You extract some seeds from [produce_name]."))
 		var/produce = rand(1,4)
@@ -57,41 +49,23 @@
 			seeds.update_seed()
 	else
 		to_chat(user, "[produce_name] doesn't seem to have any usable seeds inside it.")
-	return TRUE
+	return OP_OK
 
-/// Grass.
-/datum/interaction/machine_item/seed_extractor_grass
-	id = "seed_extractor_grass"
-	name = "Extract seeds"
-	held_type = /obj/item/stack/tile/grass
-	effect = /obj/machinery/seed_extractor/proc/interaction_extract_grass
-
-/obj/machinery/seed_extractor/proc/interaction_extract_grass(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/seed_extractor/proc/interaction_extract_grass(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/obj/item/stack/tile/grass/S = O
 	if(S.use(1))
 		to_chat(user, span_notice("You extract some seeds from the grass tile."))
 		new /obj/item/seeds/grassseed(loc)
-	return TRUE
+	return OP_OK
 
-/// Fossils.
-/datum/interaction/machine_item/seed_extractor_fossil
-	id = "seed_extractor_fossil"
-	name = "Pulverize"
-	held_type = /obj/item/fossil/plant
-	effect = /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil
-
-/obj/machinery/seed_extractor/proc/interaction_pulverize_fossil(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/seed_extractor/proc/interaction_pulverize_fossil(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/fossil_name = "\the [O]"
 	if(!consume(O, user))
-		return TRUE
+		return OP_OK
 	var/obj/item/seeds/random/R = new(get_turf(src))
 	to_chat(user, "\The [src] pulverizes [fossil_name] and spits out \the [R].")
-	return TRUE
-
-/// Anything else: the old attackby never chained to ..(), so it silently swallowed the hit.
-/datum/interaction/machine_item/seed_extractor_swallow
-	id = "seed_extractor_swallow"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
-
+	return OP_OK

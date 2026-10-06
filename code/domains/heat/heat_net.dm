@@ -69,7 +69,6 @@
 	if(!isnull(source_thing) && !a || !isnull(into) && !b)
 		return 0
 	. = vg_heat_move(a ? a[1] : HEAT_TARGET_NONE, a ? a[2] : null, b ? b[1] : HEAT_TARGET_NONE, b ? b[2] : null, joules, source) || 0
-	heat_gas_touched(source_thing, into)
 
 /// Adds `joules` (negative removes) to a reservoir from outside the simulation, booked under `source`.
 /proc/heat_add(thing, joules, source = HEAT_SOURCE_OTHER)
@@ -83,7 +82,6 @@
 	if(!ra || !rb)
 		return 0
 	. = vg_heat_equalize(ra[1], ra[2], rb[1], rb[2], fraction) || 0
-	heat_gas_touched(a, b)
 
 /// Conducts between two reservoirs for `seconds` at `conductance` W/K in one conserved operation (the exact pair solution, never past
 /// equilibrium): a sample that covers a stretch of time. Returns the joules moved from `a` to `b`.
@@ -93,7 +91,6 @@
 	if(!ra || !rb || !(conductance > 0) || !(seconds > 0))
 		return 0
 	. = vg_heat_conduct(ra[1], ra[2], rb[1], rb[2], conductance, seconds) || 0
-	heat_gas_touched(a, b)
 
 /// One heat-engine pass between two reservoirs: the equalizing heat flows hot to cold and `efficiency` of it (capped at Carnot) leaves as
 /// electricity. Returns the electrical work, J.
@@ -103,7 +100,6 @@
 	if(!ra || !rb)
 		return 0
 	. = vg_heat_engine_once(ra[1], ra[2], rb[1], rb[2], efficiency) || 0
-	heat_gas_touched(a, b)
 
 /// Brings a reservoir to `kelvin` by a booked external source (an authority write). Returns the joules it took.
 /proc/heat_set(thing, kelvin, source = HEAT_SOURCE_AUTHORITY)
@@ -113,7 +109,6 @@
 	if(!r)
 		return 0
 	. = vg_heat_move_to_temperature(r[1], r[2], kelvin, source) || 0
-	heat_gas_touched(thing)
 
 /// Sets a reservoir's thermal energy to `joules` (never below its floor) by a booked external source: a gas reaction that changed
 /// the mixture's composition reports the energy it ends with, `temperature * old_heat_capacity + released`. Returns the joules added.
@@ -124,7 +119,6 @@
 	if(!r)
 		return 0
 	. = vg_heat_set_energy(r[1], r[2], joules, source) || 0
-	heat_gas_touched(thing)
 
 /// Applies a gas reaction in one step: `deltas` (gas type path = moles, signed) change the mixture, and Rust computes what the reaction of
 /// `kind` (GAS_REACTION_*) releases for its `extent` (with `aux`, the value a kind names: BZ formation's decomposed fraction, noblium's BZ)
@@ -137,14 +131,6 @@
 		flat += deltas[gas]
 	. = vg_gas_reaction_apply(air, kind, extent, aux, flat) || 0
 	gas_touched(air)
-
-/// A one-off heat write changed these gases: the pipe network that owns one (a device's port naming the network's mixture) hears it, as it
-/// hears a step's flows from Rust. The caller never marks anything.
-/proc/heat_gas_touched(a, b)
-	if(istype(a, /datum/gas_mixture))
-		gas_touched(a)
-	if(istype(b, /datum/gas_mixture))
-		gas_touched(b)
 
 /// Sets a turf's solid temperature (DM authority: map load, holodeck programs, admin). The seed follows, so a turf registered after this starts
 /// there.

@@ -82,12 +82,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 	data["dos_crashed"] = dos_failure
 	return data
 
-/obj/machinery/ntnet_relay/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
 /obj/machinery/ntnet_relay/proc/ui_act_restart(datum/act/op/A)
 	dos_overload = 0
 	dos_failure = 0
@@ -144,7 +138,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ntnet_relay/step_start_condition()
 	return TRUE // sets its power draw
-
 
 /// A shared (registered) definition/flyweight: never cleared.
 /obj/machinery/ntnet_relay/proc/NTNet() as /datum/ntnet

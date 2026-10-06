@@ -1,5 +1,6 @@
-/obj/machinery/computer/aiupload|human|none => aiupload_access_internals,aiupload_select_ai|aiupload_install:needs an item
-/obj/machinery/computer/aiupload|robot|none => aiupload_access_internals,aiupload_select_ai|gen_robot_interaction_swallow:not possible right now,aiupload_install:needs an item
+/obj/machinery/computer/aiupload|human|none => gen_verb_interaction_access_internals,gen_hand_ungated_interaction_select_ai|gen_insert_interaction_install:needs an item
+/obj/machinery/computer/aiupload|robot|none => gen_verb_interaction_access_internals,gen_hand_ungated_interaction_select_ai|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_install:needs an item
 /obj/machinery/computer/aiupload|ai|none => |
 /obj/machinery/computer/aiupload|ghost|none => gen_observer_interaction_swallow|
-/obj/machinery/computer/aiupload|human|/obj/item => aiupload_access_internals,aiupload_install,aiupload_select_ai|
+/obj/machinery/computer/aiupload|human|/obj/item => gen_verb_interaction_access_internals,gen_insert_interaction_install,gen_hand_ungated_interaction_select_ai|
+

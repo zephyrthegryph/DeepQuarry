@@ -1,4 +1,5 @@
-/obj/machinery/syndicate_beacon/virgo|human|none => syndicate_beacon_virgo_use,syndicate_beacon_talk|
-/obj/machinery/syndicate_beacon/virgo|robot|none => syndicate_beacon_virgo_use,syndicate_beacon_talk|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/syndicate_beacon/virgo|human|none => gen_hand_ungated_interaction_talk|
+/obj/machinery/syndicate_beacon/virgo|robot|none => gen_hand_ungated_interaction_talk|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/syndicate_beacon/virgo|ai|none => |
 /obj/machinery/syndicate_beacon/virgo|ghost|none => |
+

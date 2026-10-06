@@ -22,27 +22,18 @@
 	var/interaction_message = null
 	var/state
 
+TRACKED(/obj/structure/prop, interaction_message)
+
+CAPABILITIES(/obj/structure/prop)
+	op("message", hand(), label("Use"), priority(OP_PRIORITY_DEFAULT), when(nameof(interaction_message)), then(PROC_REF(interaction_hand)))   // under whatever else a prop does with a hand
+
 /// Used to tell the player that this isn't useful for anything.
-/obj/structure/prop/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/prop_hand,
-	)
-	..()
-
-/datum/interaction/entry_hand/prop_hand
-	id = "prop_hand"
-	name = "Use"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/prop/proc/prop_has_message, null))
-	effect = /obj/structure/prop/proc/interaction_hand
-
-/obj/structure/prop/proc/prop_has_message(mob/actor, atom/target, obj/item/held)
-	return !!interaction_message
-
-/obj/structure/prop/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/prop/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!istype(user))
-		return TRUE
+		return OP_OK
 	to_chat(user, interaction_message)
-	return TRUE
+	return OP_OK
 
 /obj/structure/prop/proc/change_state(state)
 	SHOULD_CALL_PARENT(TRUE)

@@ -12,10 +12,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 				return
 
 			if(var_value)
-				ghostjoin = TRUE
+				set_ghostjoin(TRUE)
 				registry_join(REGISTRY_GHOST_PODS, src)
 			else
-				ghostjoin = FALSE
+				set_ghostjoin(FALSE)
 				registry_leave(REGISTRY_GHOST_PODS, src)
 
 			ghostjoin_icon()
@@ -41,33 +41,40 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 /mob/living/simple_mob/animal/giant_spider/carrier //or the ones who fart babies when they die
 	ic_revivable = FALSE
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_REF(simple_mob_observer_join), REQ_TARGET_STATE(/mob/living/simple_mob/proc/can_ghost_join)))
+TRACKED(/mob/living/simple_mob, ghostjoin)
 
-/// Requirement: TRUE, or why this ghost can't inhabit us.
-/mob/living/simple_mob/proc/can_ghost_join(mob/observer/dead/user, atom/target, obj/item/held)
-	if(ghostjoin && jobban_isbanned(user, JOB_GHOSTROLES))
-		return "you cannot inhabit this creature because you are banned from playing ghost roles"
-	return TRUE
+/// Requirement: this ghost may inhabit us (not banned, nobody in us yet, preferences that allow a captured mob).
+/mob/living/simple_mob/proc/can_ghost_join(datum/act/op/A)
+	return isnull(ghost_join_refusal(src, A.actor))
 
-/// A ghost has clicked us (old attack_ghost). FALSE falls to the ghost's default (examine).
-/mob/living/simple_mob/proc/simple_mob_observer_join(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(!ghostjoin)
-		return FALSE
-	if(!evaluate_ghost_join(user))
-		return FALSE
+/mob/living/simple_mob/proc/ghost_join_reason(datum/act/op/A)
+	return ghost_join_refusal(src, A.actor)
 
-	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), om_callable(src, PROC_REF(reply_ghost_join), user), 20 SECONDS)
-	return TRUE
+/// Why the ghost `D` may not take `M` over, or null.
+/proc/ghost_join_refusal(mob/living/simple_mob/M, mob/observer/dead/D)
+	READS_FROM() // bans, a player's presence and preferences are asked when the ghost clicks
+	if(jobban_isbanned(D, JOB_GHOSTROLES))
+		return "You cannot inhabit this creature because you are banned from playing ghost roles."
+	if(M.ckey)
+		return "Sorry, someone else has already inhabited [M]."
+	if(M.capture_caught && !D.client?.prefs?.read_preference(/datum/preference/toggle/human/capture_crystal))
+		return "Sorry, [M] is participating in capture mechanics, and your preferences do not allow for that."
+	return null
 
-/// A reply to an async alert request was received
-/mob/living/simple_mob/proc/reply_ghost_join(mob/observer/dead/user, response)
-	if(response != "Yes")
-		return // ok
+/mob/living/simple_mob/proc/ghost_join_question(datum/act/A)
+	return "Would you like to become [src]? It is bound to [revivedby]."
 
-	if(!ghostjoin || !user?.client || can_ghost_join(user, src, null) != TRUE)
-		return
+/// Old attack_ghost: a ghost said yes to becoming us (re-checked on the answer).
+/mob/living/simple_mob/proc/reply_ghost_join(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/observer/dead/user = A.actor
+	if(!R?.value)
+		return OP_OK
+	if(!ghostjoin || !user?.client || ghost_join_refusal(src, user))
+		return OP_OK
 	if(evaluate_ghost_join(user))
 		ghost_join(user)
+	return OP_OK
 
 /// Inject a ghost into this mob. Assumes you've done all sanity before this point.
 /mob/living/simple_mob/proc/ghost_join(mob/observer/dead/D)
@@ -83,7 +90,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	spent(D)
 
 	// Clean up the simplemob
-	ghostjoin = FALSE
+	set_ghostjoin(FALSE)
 	ghostjoin_icon()
 	if(capture_caught)
 		to_chat(src, span_notice("You are bound to [revivedby], follow their commands within reason and to the best of your abilities, and avoid betraying or abandoning them.") + " " + span_warning("You are allied with [revivedby]. Do not attack anyone for no reason. Of course, you may do scenes as you like, but you must still respect preferences."))
@@ -178,7 +185,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 /obj/item/denecrotizer/proc/check_target_timed_done(mob/living/simple_mob/target, mob/living/user)
 	target.faction = user.faction
 	target.revivedby = user.name
-	target.ghostjoin = 1
+	target.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, target)
 	target.ghostjoin_icon()
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
@@ -201,7 +208,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
 	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
-		target.ghostjoin = 1
+		target.set_ghostjoin(1)
 		registry_join(REGISTRY_GHOST_PODS, target)
 		target.ghostjoin_icon()
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)

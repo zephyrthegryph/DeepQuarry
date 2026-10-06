@@ -1,6 +1,6 @@
 // S3 wake tests: every sleeper on after() timers and om_watch()ed change channels wakes
 // when its input changes and stays asleep while the input is held steady, and its
-// om_sleep_violation() holds while it sleeps.
+// sleep_violation() holds while it sleeps.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -91,12 +91,12 @@
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
 	A.set_autoclose(TRUE)
 	TEST_ASSERT(!A.autoclose_pending(), "a fresh airlock has an autoclose pending")
-	TEST_ASSERT_NULL(A.om_sleep_violation(), "a fresh airlock is not asleep")
+	TEST_ASSERT_NULL(A.sleep_violation(), "a fresh airlock is not asleep")
 
 	// Electrification and power loss are timed holds: each runs out on its own, with no process() poll and no door deadline.
 	hold(A, STAT_ELECTRIFIED, TRUE, SRC_LOCKDOWN, 0.1 SECONDS)
 	TEST_ASSERT(A.electrified, "the hold electrified the airlock")
-	TEST_ASSERT_NULL(A.om_sleep_violation(), "an electrified airlock's audit failed")
+	TEST_ASSERT_NULL(A.sleep_violation(), "an electrified airlock's audit failed")
 	// A due timer still in flight (a busy world: GC reference searches stall the MC) is given
 	// time to land; a timer that was never set, or never comes due, still fails.
 	for(var/i in 1 to 200)
@@ -130,8 +130,8 @@
 
 /datum/unit_test/dq_om_wake_camera_timers/Run()
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
-	TEST_ASSERT(!om_timer_slot_pending(C, "camera_timer_token"), "an idle camera has a timer")
-	TEST_ASSERT_NULL(C.om_sleep_violation(), "an idle camera is not asleep")
+	TEST_ASSERT(!after_pending(C, "camera_timer_token"), "an idle camera has a timer")
+	TEST_ASSERT_NULL(C.sleep_violation(), "an idle camera is not asleep")
 	var/failure = om_wake_test(C, om_callable(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
 	OM_TEST_WAIT_UNTIL(!C.has_stat(EMPED), 80)
@@ -143,8 +143,8 @@
 	C.alarm_delay = 1
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(C))
 	C.newTarget(H)
-	TEST_ASSERT(om_timer_slot_pending(C, "camera_timer_token"), "a motion target did not schedule the alarm")
-	TEST_ASSERT_NULL(C.om_sleep_violation(), "a tracking camera's audit failed")
+	TEST_ASSERT(after_pending(C, "camera_timer_token"), "a motion target did not schedule the alarm")
+	TEST_ASSERT_NULL(C.sleep_violation(), "a tracking camera's audit failed")
 	OM_TEST_WAIT_UNTIL(C.detectTime == -1, 120)
 	TEST_ASSERT_EQUAL(C.detectTime, -1, "the motion alarm did not fire at its deadline")
 	H.set_stat(DEAD)
@@ -165,32 +165,32 @@
 	var/datum/signal/S = new
 	S.data["command"] = "blank"
 	D.receive_signal(S)
-	TEST_ASSERT(!om_timer_slot_pending(D, "refresh_token"), "a blank display kept a timer")
-	TEST_ASSERT_NULL(D.om_sleep_violation(), "a blank display is not asleep")
+	TEST_ASSERT(!after_pending(D, "refresh_token"), "a blank display kept a timer")
+	TEST_ASSERT_NULL(D.sleep_violation(), "a blank display is not asleep")
 
 	S = new
 	S.data["command"] = "time"
 	D.receive_signal(S)
-	TEST_ASSERT(om_timer_slot_pending(D, "refresh_token"), "the clock did not schedule its next minute")
+	TEST_ASSERT(after_pending(D, "refresh_token"), "the clock did not schedule its next minute")
 	TEST_ASSERT(D.refresh_at <= world.time + 1 MINUTE, "the clock's next redraw is more than a minute away")
 
 	S = new
 	S.data["command"] = "message"
 	S.data["msg1"] = "SHORT"
 	D.receive_signal(S)
-	TEST_ASSERT(!om_timer_slot_pending(D, "refresh_token"), "a message that fits kept a timer")
+	TEST_ASSERT(!after_pending(D, "refresh_token"), "a message that fits kept a timer")
 	S = new
 	S.data["command"] = "message"
 	S.data["msg1"] = "A MESSAGE TOO LONG TO FIT"
 	D.receive_signal(S)
-	TEST_ASSERT(om_timer_slot_pending(D, "refresh_token"), "a scrolling message has no timer")
+	TEST_ASSERT(after_pending(D, "refresh_token"), "a scrolling message has no timer")
 
 	S = new
 	S.data["command"] = "shuttle"
 	D.receive_signal(S)
 	TEST_ASSERT_EQUAL(D.shuttle_key_id, SHUTTLE_SCHEDULE_EVAC, "shuttle mode is not watching the evac shuttle")
-	TEST_ASSERT_NULL(D.om_sleep_violation(), "a shuttle display's audit failed")
-	if(!om_timer_slot_pending(D, "refresh_token")) // No evac under way: only the key wakes it.
+	TEST_ASSERT_NULL(D.sleep_violation(), "a shuttle display's audit failed")
+	if(!after_pending(D, "refresh_token")) // No evac under way: only the key wakes it.
 		var/failure = om_wake_test(D, om_callable(src, PROC_REF(publish_evac)))
 		TEST_ASSERT(!failure, failure)
 
@@ -218,12 +218,12 @@
 		return // A player is in range on this map; dormancy cannot be tested here.
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a loop nobody can hear did not go dormant")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a dormant loop left no chunk subscriptions")
-	TEST_ASSERT_NULL(loop.om_sleep_violation(), "a dormant loop's audit failed")
+	TEST_ASSERT_NULL(loop.sleep_violation(), "a dormant loop's audit failed")
 	var/failure = om_wake_test(loop, om_callable(null, GLOBAL_PROC_REF(publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
-	TEST_ASSERT(!loop.dormant_chunk_tokens && !om_timer_slot_pending(loop, "loop_token"), "stop() left the loop subscribed")
+	TEST_ASSERT(!loop.dormant_chunk_tokens && !after_pending(loop, "loop_token"), "stop() left the loop subscribed")
 	qdel(loop)
 
 /// Player chunk keys: a player's chunk wakes subscribers; a mob without a client does not.

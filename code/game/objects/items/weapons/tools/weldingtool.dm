@@ -604,13 +604,13 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 		update_icon()
 		return 0
 
-EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(electric_interaction_item)), \
-)
+CAPABILITIES(/obj/item/weldingtool/electric)
+	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
+	op("insert_cell", item(/obj/item/cell), then(PROC_REF(electric_interaction_item)))
 
-/// Old attack_hand.
-/obj/item/weldingtool/electric/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: the hand on one held in the other hand takes its cell out (anything else is the pick up).
+/obj/item/weldingtool/electric/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(power_supply)
 			power_supply.update_icon()
@@ -619,18 +619,20 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
 			update_icon()
-			return TRUE
-		return FALSE
+			return OP_OK
+		return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
-/// Old attackby.
-/obj/item/weldingtool/electric/proc/electric_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a device cell goes in (the click goes on).
+/obj/item/weldingtool/electric/proc/electric_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!power_supply)
 				if(!move_into(src, nameof(src.power_supply), W, user))
-					return FALSE
+					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_icon()
 			else
@@ -638,8 +640,8 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 		else
 			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/weldingtool/electric/proc/get_external_power_supply()
 	if(isrobotmultibelt(src.loc)) //We are in a multibelt

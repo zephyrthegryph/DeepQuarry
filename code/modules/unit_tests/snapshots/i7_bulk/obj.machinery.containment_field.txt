@@ -1,4 +1,5 @@
-/obj/machinery/containment_field|human|none => containment_field_shock|
-/obj/machinery/containment_field|robot|none => containment_field_shock|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/containment_field|human|none => |
+/obj/machinery/containment_field|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/containment_field|ai|none => |
 /obj/machinery/containment_field|ghost|none => |
+

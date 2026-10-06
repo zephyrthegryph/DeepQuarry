@@ -515,7 +515,7 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 	if(A.contract_eligibility_qualifying || A.contract_rare_eligibility_qualifying)
 		A.contract_eligibility_qualifying = FALSE
 		A.contract_rare_eligibility_qualifying = FALSE
-		OM_EMIT(patient, /datum/om/event/mob_medical_issues_changed)
+		PUBLISH_LEGACY(patient, /datum/notice/mob_medical_issues_changed)
 
 /datum/affliction/proc/update_contract_eligibility()
 	var/family = medical_trial_condition_family(src)
@@ -527,7 +527,7 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 	contract_eligibility_qualifying = qualifying
 	contract_rare_eligibility_qualifying = rare_qualifying
 	if(owner)
-		OM_EMIT(owner, /datum/om/event/mob_medical_issues_changed)
+		PUBLISH_LEGACY(owner, /datum/notice/mob_medical_issues_changed)
 
 /mob/living/carbon/human
 	var/list/contract_medical_indications

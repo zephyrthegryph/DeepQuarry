@@ -4198,10 +4198,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.detectTime = 0
 	C.stat_remove(NOPOWER)
 	C.schedule_camera_timer()
-	TEST_ASSERT(!om_timer_slot_pending(C, "camera_timer_token"), "idle motion camera kept a timer")
+	TEST_ASSERT(!after_pending(C, "camera_timer_token"), "idle motion camera kept a timer")
 	var/mob/living/carbon/human/H = new(test_turf)
 	C.newTarget(H)
-	TEST_ASSERT(om_timer_slot_pending(C, "camera_timer_token"), "motion target did not schedule its camera's alarm timer")
+	TEST_ASSERT(after_pending(C, "camera_timer_token"), "motion target did not schedule its camera's alarm timer")
 	qdel(H)
 	qdel(C)
 
@@ -4407,10 +4407,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!canister.working, "closed inert canister remained scheduled")
 	TEST_ASSERT_NOTNULL(gas_watch_data(canister)?.watch, "closed canister did not subscribe to its gas mixture")
 	TEST_ASSERT(canister.connected_port(), "canister did not connect to the port it spawned on")
-	canister.contents_changed(dq_atmos_test_observation(canister.air_contents), 2)
+	// Its watch hears its gas from Rust: nobody calls its handler.
+	SSmachines.wake_dirty_gas_subscribers()
+	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
+	SSmachines.wake_dirty_gas_subscribers()
 	TEST_ASSERT(!canister.working, "a gas change woke a closed connected canister")
 	canister.air_contents.clear()
-	canister.contents_changed(dq_atmos_test_observation(canister.air_contents), 2)
+	SSmachines.wake_dirty_gas_subscribers()
 	TEST_ASSERT_EQUAL(canister.gauge_band, 1, "the gauge followed the emptied canister")
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1000)
 	canister.connect(C)
@@ -4420,11 +4423,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
 	D.receive_signal(blank)
-	TEST_ASSERT(!om_timer_slot_pending(D, "refresh_token"), "blank status display kept a refresh timer")
+	TEST_ASSERT(!after_pending(D, "refresh_token"), "blank status display kept a refresh timer")
 	var/datum/signal/time_signal = new
 	time_signal.data["command"] = "time"
 	D.receive_signal(time_signal)
-	TEST_ASSERT(om_timer_slot_pending(D, "refresh_token") || D.has_stat(NOPOWER), "time signal did not schedule the clock's next redraw")
+	TEST_ASSERT(after_pending(D, "refresh_token") || D.has_stat(NOPOWER), "time signal did not schedule the clock's next redraw")
 	qdel(D)
 	qdel(canister)
 	qdel(C)
@@ -5734,25 +5737,21 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	P.set_leaking(TRUE)
 	var/pipe_ref = om_handle(P)
 	TEST_ASSERT_NOTNULL(pipe_ref, "open pipe could not create a weak reference")
-	var/process_result
+	// A settled network takes itself off SSair's pipenet queue (reconcile(), a5b6bb01d5); it no longer answers PROCESS_KILL.
+	var/datum/pipe_network/N = P.parent.network
+	var/settled = FALSE
 	for(var/cycle in 1 to 100)
-		process_result = P.parent.network.reconcile()
-		if(process_result == PROCESS_KILL)
+		N.reconcile()
+		if(!(N in SSair.networks))
+			settled = TRUE
 			break
-	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, "open pipe leak did not converge and hibernate within 100 cycles")
-	TEST_ASSERT(om_watch_armed(P), "equilibrated open pipe did not subscribe before sleeping")
-	var/leak_wakes = P.gas_dependency_wake_count
+	TEST_ASSERT(settled, "open pipe leak did not converge and hibernate within 100 cycles")
+	// A sleeping leak watches both faces with gas_watch_many() (hibernate_stable_leak(), pipe_base.dm), not an OM watch.
+	TEST_ASSERT(length(P.leak_watches), "equilibrated open pipe did not subscribe before sleeping")
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
-	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(P.gas_dependency_wake_count > leak_wakes)
-			break
-		if(!(i % 256))
-			stoplag()
-	// A leaking pipe batches its wake into its network's own dirty transaction
-	// (wake_from_leak(), pipe_base.dm), which the live SSair may already have run
-	// and settled by now; the wake itself is what this checks.
-	TEST_ASSERT(P.gas_dependency_wake_count > leak_wakes, "changed turf gas did not wake an open pipe leak")
+	SSmachines.wake_dirty_gas_subscribers()
+	// The woken leak (leak_heard() -> wake_from_leak()) drops its watches and queues its network's leak transaction.
+	TEST_ASSERT(!length(P.leak_watches) && (N in SSair.networks), "changed turf gas did not wake an open pipe leak")
 	qdel(P)
 	qdel(P2)
 

@@ -1,5 +1,6 @@
-/obj/machinery/button/garbosystem|human|none => garbosystem_button_press,button_press|button_press_item:needs an item
-/obj/machinery/button/garbosystem|robot|none => garbosystem_button_press,button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
+/obj/machinery/button/garbosystem|human|none => button_press|button_press_item:needs an item
+/obj/machinery/button/garbosystem|robot|none => button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
 /obj/machinery/button/garbosystem|ai|none => |
 /obj/machinery/button/garbosystem|ghost|none => |
-/obj/machinery/button/garbosystem|human|/obj/item => garbosystem_button_press,button_press,button_press_item|
+/obj/machinery/button/garbosystem|human|/obj/item => button_press,button_press_item|
+

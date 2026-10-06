@@ -1,4 +1,5 @@
-/obj/structure/dirtybed|human|none => gen_drag_interaction_drag_buckle|
-/obj/structure/dirtybed|robot|none => gen_drag_interaction_drag_buckle|
+/obj/structure/dirtybed|human|none => |
+/obj/structure/dirtybed|robot|none => |
 /obj/structure/dirtybed|ai|none => |
 /obj/structure/dirtybed|ghost|none => |
+

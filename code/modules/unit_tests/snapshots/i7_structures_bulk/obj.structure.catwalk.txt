@@ -1,6 +1,5 @@
-/obj/structure/catwalk|human|none => |catwalk_slice_help:needs a welder,catwalk_slice_grab:hold Grab,catwalk_plate:needs a floor tile,catwalk_slice_disarm:hold Disarm,catwalk_slice_harm:combat mode is off
-/obj/structure/catwalk|robot|none => |catwalk_slice_help:needs a welder,catwalk_slice_grab:hold Grab,catwalk_plate:needs a floor tile,catwalk_slice_disarm:hold Disarm,catwalk_slice_harm:combat mode is off
+/obj/structure/catwalk|human|none => |
+/obj/structure/catwalk|robot|none => |
 /obj/structure/catwalk|ai|none => |
 /obj/structure/catwalk|ghost|none => |
-/obj/structure/catwalk|human|/obj/item/stack/tile/floor => catwalk_plate|catwalk_slice_help:needs a welder,catwalk_slice_grab:hold Grab,catwalk_slice_disarm:hold Disarm,catwalk_slice_harm:combat mode is off
 

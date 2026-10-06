@@ -1,5 +1,5 @@
-/obj/machinery/rnd/server/master|human|none => |rnd_server_master_block:needs an item
-/obj/machinery/rnd/server/master|robot|none => |gen_robot_interaction_swallow:not possible right now,rnd_server_master_block:needs an item
+/obj/machinery/rnd/server/master|human|none => |
+/obj/machinery/rnd/server/master|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/rnd/server/master|ai|none => |
 /obj/machinery/rnd/server/master|ghost|none => |
-/obj/machinery/rnd/server/master|human|/obj/item => rnd_server_master_block|
+

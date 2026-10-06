@@ -1,18 +1,7 @@
 // Telecommunication Traffic Control — structured TGUI.
 
-/obj/machinery/computer/telecomms/traffic/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/traffic_control_open_ui,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/traffic_control_open_ui
-	id = "traffic_control_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/telecomms/traffic/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	user.set_machine(src)

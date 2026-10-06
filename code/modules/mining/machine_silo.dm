@@ -22,6 +22,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	op("remove", ui_act("remove", arg("id", num())), then(PROC_REF(ui_act_remove)))
 	op("hold", ui_act("hold", arg("id", num())), then(PROC_REF(ui_act_hold)))
 	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
@@ -77,23 +80,19 @@ CAPABILITIES(/obj/machinery/ore_silo)
 
 	silo_log(context, "ejected", -sheets.amount, "[sheets.singular_name]", list(GET_MATERIAL_REF(sheets.default_type) = sheets.amount * SHEET_MATERIAL_AMOUNT))
 
-/obj/machinery/ore_silo/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/ore_silo/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/ore_silo/crowbar_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/ore_silo/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/ore_silo/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/ore_silo/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.buffer), src)
 	balloon_alert(user, "saved to multitool buffer")
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/ore_silo/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
+	return OP_OK
 
 /obj/machinery/ore_silo/ui_assets(mob/user)
 	return list(

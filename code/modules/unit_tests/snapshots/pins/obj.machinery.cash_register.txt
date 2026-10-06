@@ -1,97 +1,95 @@
 human|none menu: Emag (refused: needs a cryptographic sequencer)
-human|none menu: Open cash box
 human|none menu: Open Cash Box
-human|none menu: Pay / scan (refused: needs an item)
-human|none menu: Put on the register (refused: needs an obj)
+human|none menu: Open cash box
 human|none menu: Use
-human|none click: nothing
+human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Emag (refused: needs a cryptographic sequencer)
-robot|none menu: Open cash box
 robot|none menu: Open Cash Box
-robot|none menu: Pay / scan (refused: needs an item)
-robot|none menu: Put on the register (refused: needs an obj)
+robot|none menu: Open cash box
 robot|none menu: Use
-robot|none click: nothing
+robot|none click: Click: Use
 ai|none click: nothing
+ghost|none menu: Open Cash Box (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/screwdriver menu: Open cash box
 human|/obj/item/tool/screwdriver menu: Open Cash Box
+human|/obj/item/tool/screwdriver menu: Open cash box
 human|/obj/item/tool/screwdriver menu: Pay / scan
 human|/obj/item/tool/screwdriver menu: Put on the register
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Pay / scan
 human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/crowbar menu: Open cash box
 human|/obj/item/tool/crowbar menu: Open Cash Box
+human|/obj/item/tool/crowbar menu: Open cash box
 human|/obj/item/tool/crowbar menu: Pay / scan
 human|/obj/item/tool/crowbar menu: Put on the register
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Pay / scan
 human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/wrench menu: Open cash box
 human|/obj/item/tool/wrench menu: Open Cash Box
+human|/obj/item/tool/wrench menu: Open cash box
 human|/obj/item/tool/wrench menu: Pay / scan
 human|/obj/item/tool/wrench menu: Put on the register
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/wirecutters menu: Open cash box
 human|/obj/item/tool/wirecutters menu: Open Cash Box
+human|/obj/item/tool/wirecutters menu: Open cash box
 human|/obj/item/tool/wirecutters menu: Pay / scan
 human|/obj/item/tool/wirecutters menu: Put on the register
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Pay / scan
 human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/multitool menu: Open cash box
 human|/obj/item/multitool menu: Open Cash Box
+human|/obj/item/multitool menu: Open cash box
 human|/obj/item/multitool menu: Pay / scan
 human|/obj/item/multitool menu: Put on the register
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Pay / scan
 human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/weldingtool menu: Open cash box
 human|/obj/item/weldingtool menu: Open Cash Box
+human|/obj/item/weldingtool menu: Open cash box
 human|/obj/item/weldingtool menu: Pay / scan
 human|/obj/item/weldingtool menu: Put on the register
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Pay / scan
 human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Open cash box
 human|/obj/item/stack/cable_coil menu: Open Cash Box
+human|/obj/item/stack/cable_coil menu: Open cash box
 human|/obj/item/stack/cable_coil menu: Pay / scan
 human|/obj/item/stack/cable_coil menu: Put on the register
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Pay / scan
 human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/stack/material/steel menu: Open cash box
 human|/obj/item/stack/material/steel menu: Open Cash Box
+human|/obj/item/stack/material/steel menu: Open cash box
 human|/obj/item/stack/material/steel menu: Pay / scan
 human|/obj/item/stack/material/steel menu: Put on the register
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Pay / scan
 human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/card/id menu: Open cash box
 human|/obj/item/card/id menu: Open Cash Box
+human|/obj/item/card/id menu: Open cash box
 human|/obj/item/card/id menu: Pay / scan
 human|/obj/item/card/id menu: Put on the register
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item menu: Open cash box
-human|/obj/item menu: Open Cash Box
-human|/obj/item menu: Pay / scan
-human|/obj/item menu: Put on the register
-human|/obj/item menu: Use
-human|/obj/item click: nothing
+human|/obj/item/card/id click: Click: Pay / scan
 human|/obj/item/card/emag menu: Emag
-human|/obj/item/card/emag menu: Open cash box
 human|/obj/item/card/emag menu: Open Cash Box
+human|/obj/item/card/emag menu: Open cash box
 human|/obj/item/card/emag menu: Pay / scan
 human|/obj/item/card/emag menu: Put on the register
 human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag click: nothing
-keys: add, cash_register_drop, cash_register_open_box_alt, cash_register_open_box_verb, cash_register_pay, cash_register_use, clear, clear_entry, custom_order, emag_gated, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, link_account, machine_anchor, machine_deconstruct, machine_panel, machine_repair, refund_transaction, reset_log, set_amount, subtract, toggle_cash_lock, toggle_lock
+human|/obj/item/card/emag click: Click: Pay / scan
+human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item menu: Open Cash Box
+human|/obj/item menu: Open cash box
+human|/obj/item menu: Pay / scan
+human|/obj/item menu: Put on the register
+human|/obj/item menu: Use
+human|/obj/item click: Click: Pay / scan
+keys: add, cash_register_drop, cash_register_open_box_alt, cash_register_open_box_verb, cash_register_pay, cash_register_use, clear, clear_entry, custom_order, drag_buckle, emag_gated, gen_robot_interaction_swallow, link_account, machine_anchor, machine_deconstruct, machine_panel, machine_repair, refund_transaction, reset_log, set_amount, subtract, toggle_cash_lock, toggle_lock, use_wrench
 

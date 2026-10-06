@@ -101,6 +101,11 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	climb()
 	op("label", tool(TOOL_MULTITOOL), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), then(PROC_REF(label_tool_used)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_unload)))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
@@ -233,26 +238,14 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		set_need_player_check(1)
 		system_error("Resources depleted.")
 
-/obj/machinery/mining/drill/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/drill_attackby,
-		/datum/interaction/machine_hand/ungated/drill_use,
-		/datum/interaction/machine_verb/drill_unload,
-	)
-	..()
-
-/datum/interaction/machine_item/drill_attackby
-	id = "drill_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/mining/drill/proc/interaction_attackby
-
-/obj/machinery/mining/drill/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/mining/drill/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!active)
 		if(default_part_replacement(user, O))
 			return TRUE
 	if(!panel_open || active)
-		return FALSE
+		return OP_DECLINE
 
 	if(istype(O, /obj/item/cell))
 		if(cell)
@@ -264,7 +257,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 			// The cell var owns it; it is not also a component part (one owner per entity).
 			balloon_alert(user, "you install \the [O]")
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
 	if(active)
@@ -350,22 +343,18 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 		return "the drill is active"
 	return null
 
-/obj/machinery/mining/drill/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/mining/drill/proc/screwdriver_used(datum/act/op/A)
 	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/mining/drill/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/mining/drill/proc/crowbar_used(datum/act/op/A)
 	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/datum/interaction/machine_hand/ungated/drill_use
-	id = "drill_use"
-	name = "Use"
-	effect = /obj/machinery/mining/drill/proc/interaction_use
-
-/obj/machinery/mining/drill/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/mining/drill/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	check_supports()
 	RefreshParts()
 
@@ -512,13 +501,18 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 	if(!cell) return 0
 	return cell.checked_use(charge_use)
 
-/datum/interaction/machine_verb/drill_unload
-	id = "drill_unload"
-	name = "Unload Drill"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/mining/drill/proc/interaction_unload
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/mining/drill/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/mining/drill/proc/interaction_unload(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/mining/drill/proc/dq_actor_can_act_refusal(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return istext(answer) ? answer : "you can't do that right now"
+
+/obj/machinery/mining/drill/proc/interaction_unload(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/structure/ore_box/B = locate_in_list(orange(1), /obj/structure/ore_box)
 	if(B)
 		for(var/ore in stored_ore)
@@ -549,6 +543,10 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 CAPABILITIES(/obj/machinery/mining/brace)
 	links(/obj/machinery/mining/brace::connected, /obj/machinery/mining/drill::supports, b_many = TRUE)
 	climb()
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_work_on_holds), because = PROC_REF(can_work_on_refusal))), then(PROC_REF(interaction_attackby)))
 
 /obj/machinery/mining/brace/Initialize(mapload)
 	. = ..()
@@ -559,47 +557,48 @@ CAPABILITIES(/obj/machinery/mining/brace)
 	..()
 	brace_tier = get_part_rating(/obj/item/stock_parts/manipulator)
 
-/obj/machinery/mining/brace/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/brace_attackby,
-	)
-	..()
-
-/datum/interaction/machine_item/brace_attackby
-	id = "brace_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/mining/brace/proc/interaction_attackby
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/mining/brace/proc/can_work_on))
-
 /// Requirement: the brace of a running drill can't be worked on.
 /obj/machinery/mining/brace/proc/can_work_on(mob/user, atom/target, obj/item/held)
 	if(connected() && connected().active)
 		return "you can't work with the brace of a running drill"
 	return TRUE
 
-/obj/machinery/mining/brace/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement (was REQ_* can_work_on): the legacy check answers TRUE to pass.
+/obj/machinery/mining/brace/proc/can_work_on_holds(datum/act/op/A)
+	var/answer = can_work_on(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_work_on_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/mining/brace/proc/can_work_on_refusal(datum/act/op/A)
+	var/answer = can_work_on(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/mining/brace/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(default_part_replacement(user,W))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/machinery/mining/brace/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/mining/brace/proc/screwdriver_used(datum/act/op/A)
 	if(connected()?.active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/mining/brace/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/mining/brace/proc/crowbar_used(datum/act/op/A)
 	if(connected()?.active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/mining/brace/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/mining/brace/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(connected()?.active)
 		balloon_alert(user, "you can't work with the brace of a running drill.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(istype(get_turf(src), /turf/space))
 		balloon_alert(user, "you can't anchor something to empty space. Idiot.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	playsound(src, tool.usesound, 100, TRUE)
 	balloon_alert(user, "[anchored ? "una" : "a"]nchored the brace")
 	set_anchored(!anchored)
@@ -607,7 +606,7 @@ CAPABILITIES(/obj/machinery/mining/brace)
 		connect()
 	else
 		disconnect()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/mining/brace/proc/connect()
 

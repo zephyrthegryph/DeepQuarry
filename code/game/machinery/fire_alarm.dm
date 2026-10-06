@@ -42,6 +42,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(firealarm_shot))))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -72,7 +74,6 @@ CAPABILITIES(/obj/machinery/firealarm)
 	rel_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
 	rel_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
 	rel_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
-
 
 // a sounding alarm is reset for its area.
 /obj/machinery/firealarm/on_destroy(force)
@@ -125,7 +126,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		. += mutable_appearance(icon, "overlay_[seclevel]")
 		. += emissive_appearance(icon, "overlay_[seclevel]")
 
-
 /// Heat behaviour rule: the detector trips above 200 C.
 /obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)
 	if(detecting)
@@ -160,12 +160,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	alarm()
 	return TRUE
 
-/obj/machinery/firealarm/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/firealarm/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/firealarm/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
@@ -175,13 +177,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
-/obj/machinery/firealarm/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/firealarm/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	detecting = !detecting
 	act_message(user, src, MSG_SELF(span_notice("You have [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit.")), \
 		MSG_OTHERS(span_notice("%U% has [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit!")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Machine pipeline (doc/rewrite/machine_pipeline.dm, code/game/machinery/machine_pipeline.dm):
 // `polls = FALSE` below opts this type out of SSmachines' process() roster onto
@@ -196,7 +199,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 /obj/machinery/firealarm/power_change()
 	. = ..()
 	// A burst of power changes (every grid binding at boot) shares one pending settle.
-	if(!om_timer_slot_pending(src, "power_settle"))
+	if(!after_pending(src, "power_settle"))
 		after(src, rand(0 SECONDS,1.5 SECONDS), PROC_REF(power_change_settle), key = "power_settle")
 
 /datum/interaction/machine_hand/ungated/firealarm_use
@@ -266,24 +269,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 
 // TGUI migration. PartyAlarm.tsx handles both clear-text
 // (humans/AI) and scrambled (everyone else) display via a data flag.
-/obj/machinery/partyalarm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/partyalarm_use,
-	)
-	..()
 
-/datum/interaction/machine_hand/ungated/partyalarm_use
-	id = "partyalarm_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/partyalarm/proc/interaction_partyalarm_use
-
-/obj/machinery/partyalarm/proc/interaction_partyalarm_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/partyalarm/proc/interaction_partyalarm_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || !operable())
-		return TRUE
+		return OP_OK
 	user.set_machine(src)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/partyalarm)
 	interface("PartyAlarm", title = "Party Button")
@@ -292,6 +285,7 @@ CAPABILITIES(/obj/machinery/partyalarm)
 	op("time", ui_act("time", arg("value", num())), then(PROC_REF(ui_act_time)))
 	op("tp", ui_act("tp", arg("value", num())), then(PROC_REF(ui_act_tp)))
 	extend(TAG_UI, needs(req(PROC_REF(button_usable), because = MSG(partyalarm/unusable))))
+	op("partyalarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_partyalarm_use)))
 
 MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 
@@ -325,7 +319,6 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	ASSERT(isarea(A))
 	A.partyalert()
 	return
-
 
 /obj/machinery/partyalarm/proc/ui_act_reset(datum/act/op/A)
 	reset()

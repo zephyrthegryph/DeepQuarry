@@ -21,5 +21,7 @@ human|/obj/item/stack/material/steel menu: Hang coat
 human|/obj/item/stack/material/steel click: Click: Hang coat
 human|/obj/item/card/id menu: Hang coat
 human|/obj/item/card/id click: Click: Hang coat
-keys: gen_drag_interaction_drag_buckle, hang_coat, take_coat
+human|/obj/item menu: Hang coat
+human|/obj/item click: Click: Hang coat
+keys: drag_buckle, hang_coat, take_coat
 

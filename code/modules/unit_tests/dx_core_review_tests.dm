@@ -261,11 +261,11 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	var/obj/cap_fixture/dx_review_interval/F = new
 	made += F
 	refresh_flush()
-	TEST_ASSERT(!om_timer_slot_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
+	TEST_ASSERT(!after_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
 	F.running = TRUE
 	changed(F)
 	refresh_flush()
-	TEST_ASSERT(om_timer_slot_pending(F, "periodic_interval"), "armed once should_run() holds")
+	TEST_ASSERT(after_pending(F, "periodic_interval"), "armed once should_run() holds")
 	scheduler_advance(2.5)
 	TEST_ASSERT(F.steps >= 2, "stepped every interval ([F.steps])")
 	F.running = FALSE

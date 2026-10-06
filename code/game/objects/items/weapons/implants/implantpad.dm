@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/implantpad)
 
 /// An empty hand takes the case out of a pad it carries; a pad that is not carried, or holds none, is picked up as any item.
 /obj/item/implantpad/proc/has_case(datum/act/A)
-	return !!case // ALLOW(reads): what the pad holds is read when the hand is used, never from a cached menu
+	return !!case
 
 /obj/item/implantpad/proc/case_taken(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/implantpad)
 
 /// The pad takes one case.
 /obj/item/implantpad/proc/has_no_case(datum/act/op/A)
-	return !case // ALLOW(reads): what the pad holds is read when the case is offered, never from a cached menu
+	return !case
 
 /obj/item/implantpad/proc/case_inserted(datum/act/op/A)
 	move_into(src, nameof(src.case), A.held, A.actor)

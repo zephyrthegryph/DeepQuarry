@@ -6,7 +6,7 @@
 //	/datum/om/decl/recharger
 //		of = /obj/machinery/recharger
 //		include = list(/datum/om/bundle/powered_machine)
-//		ticks = list(/obj/machinery/recharger/proc/charge = list(every = 2 SECONDS, clock = CLOCK_MACHINE))
+//		ticks = list(/obj/machinery/recharger/proc/charge = list(every = 2 SECONDS))
 //		reacts = list(/obj/machinery/recharger/proc/power_changed = CHANGE_MACHINE_POWER)
 //
 // A decl applies to `of` and every subtype, so base-type families supply

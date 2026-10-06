@@ -72,19 +72,8 @@
 	storage_name = "Travel Oversight Control"
 	allow_items = 1
 
-/obj/machinery/computer/cryopod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/cryopod_console_open_ui,
-	)
-	..()
-
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/cryopod_console_open_ui
-	id = "cryopod_console_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
@@ -93,6 +82,7 @@
 CAPABILITIES(/obj/machinery/computer/cryopod)
 	interface("CryoStorage")
 	ui_shape(allow_items = bool(), real_name = schema_text(), crew = list_of(schema_text()), items = list_of(schema_text()))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/cryopod/ui_title(mob/user)
 	return storage_name
@@ -313,6 +303,10 @@ OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_A
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/cryopod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
+	op("cryopod_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant_holds), because = PROC_REF(can_take_occupant_refusal))), then(PROC_REF(interaction_insert_grab)))
+	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_enter_holds), because = PROC_REF(can_enter_refusal))), then(PROC_REF(interaction_enter)))
+	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), then(PROC_REF(interaction_drag_in)))
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
@@ -469,7 +463,6 @@ CAPABILITIES(/obj/machinery/cryopod)
 			own_clear(to_despawn.mind, nameof(/datum/mind::objectives), OWN_DELETE)
 			to_despawn.mind.special_role = null
 
-
 		// Delete them from datacore.
 
 		if(GLOB.PDA_Manifest.len)
@@ -533,26 +526,29 @@ CAPABILITIES(/obj/machinery/cryopod)
 	spent(to_despawn)
 	set_occupant(null)
 
-/obj/machinery/cryopod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/cryopod_insert_grab,
-		/datum/interaction/machine_verb/cryopod_eject,
-		/datum/interaction/machine_verb/cryopod_enter,
-		/datum/interaction/machine_drag/cryopod_drag_in,
-	)
-	..()
+/// Requirement (was REQ_* can_take_occupant): the legacy check answers TRUE to pass.
+/obj/machinery/cryopod/proc/can_take_occupant_holds(datum/act/op/A)
+	var/answer = can_take_occupant(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/// Old attackby: only a grab was ever handled (no `..()` fallback for anything else).
-/datum/interaction/machine_item/cryopod_insert_grab
-	id = "cryopod_insert_grab"
-	name = "Put grabbed victim in"
-	held_type = /obj/item/grab
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/cryopod/proc/can_take_occupant))
-	effect = /obj/machinery/cryopod/proc/interaction_insert_grab
+/// Why can_take_occupant_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/cryopod/proc/can_take_occupant_refusal(datum/act/op/A)
+	var/answer = can_take_occupant(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// Requirement (was REQ_* can_enter): the legacy check answers TRUE to pass.
+/obj/machinery/cryopod/proc/can_enter_holds(datum/act/op/A)
+	var/answer = can_enter(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_enter_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/cryopod/proc/can_enter_refusal(datum/act/op/A)
+	var/answer = can_enter(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Requirement: the pod must be empty.
 /obj/machinery/cryopod/proc/can_take_occupant(mob/user, atom/target, obj/item/held)
-	if(slot_item(OCCUPANT_SLOT_CRYOPOD))
+	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
 	return TRUE
 
@@ -560,7 +556,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 /obj/machinery/cryopod/proc/can_enter(mob/user, atom/target, obj/item/held)
 	if(!check_occupant_allowed(user))
 		return TRUE // the effect declines silently
-	if(slot_item(OCCUPANT_SLOT_CRYOPOD))
+	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
 	if(isliving(user))
 		var/mob/living/L = user
@@ -568,20 +564,16 @@ CAPABILITIES(/obj/machinery/cryopod)
 			return "you have other entities attached to yourself, remove them first"
 	return TRUE
 
-/obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
+/obj/machinery/cryopod/proc/interaction_insert_grab(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grab/grab = A.held
 	if(!ismob(grab?.grab_target()))
-		return TRUE
+		return OP_OK
 	go_in(grab?.grab_target(), user)
-	return TRUE
+	return OP_OK
 
-/// Old object verb.
-/datum/interaction/machine_verb/cryopod_eject
-	id = "cryopod_eject"
-	name = "Eject Pod"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/cryopod/proc/interaction_eject
-
-/obj/machinery/cryopod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cryopod/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	icon_state = base_icon_state
 
@@ -602,15 +594,8 @@ CAPABILITIES(/obj/machinery/cryopod)
 	name = initial(name)
 	return TRUE
 
-/// Old object verb. A disallowed occupant type is still declined silently in the effect;
-/// the occupied/buckled refusals are can_enter().
-/datum/interaction/machine_verb/cryopod_enter
-	id = "cryopod_enter"
-	name = "Enter Pod"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/cryopod/proc/can_enter))
-	effect = /obj/machinery/cryopod/proc/interaction_enter
-
-/obj/machinery/cryopod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cryopod/proc/interaction_enter(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_occupant_allowed(user))
 		return TRUE
 
@@ -649,20 +634,15 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 	add_fingerprint(user)
 
-/// Old MouseDrop_T: silent guard clauses (no message), so kept inside the effect.
-/datum/interaction/machine_drag/cryopod_drag_in
-	id = "cryopod_drag_in"
-	name = "Put in pod"
-	held_type = /mob
-	effect = /obj/machinery/cryopod/proc/interaction_drag_in
-
-/obj/machinery/cryopod/proc/interaction_drag_in(mob/user, mob/target, datum/interaction/interaction)
+/obj/machinery/cryopod/proc/interaction_drag_in(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/target = A.held
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
-		return TRUE
+		return OP_OK
 	go_in(target, user)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/cryopod/robot/door/gateway/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cryopod/robot/door/gateway/interaction_enter(datum/act/op/A)
 	. = ..()
 	for(var/obj/machinery/gateway/G in range(1,src))
 		G.icon_state = "on"

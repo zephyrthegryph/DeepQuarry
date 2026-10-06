@@ -78,34 +78,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
 	. += arm
 
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/mixer_use,
-		/datum/interaction/machine_verb/mixer_set_rotation,
-	)
-	..()
-
-/// Old attack_hand: dispatched straight to the set_rotation verb, never called ..().
-/datum/interaction/machine_hand/ungated/mixer_use
-	id = "mixer_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
-
-/// Old object verb: `set src in view(1)`.
-/datum/interaction/machine_verb/mixer_set_rotation
-	id = "mixer_set_rotation"
-	name = "Set Mixer Rotation"
-	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
-
-/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(datum/act/op/A)
+	var/mob/user = A.actor
 	if(mixer_rotation_rate > 0)
 		mixer_rotation_rate = -45
 		to_chat(user,span_notice("You set \the [src] to rotate counter clockwise."))
 	else
 		mixer_rotation_rate = 45
 		to_chat(user,span_notice("You set \the [src] to rotate clockwise."))
-	return TRUE
-
+	return OP_OK
 
 /obj/machinery/reagent_refinery/mixer/examine(mob/user, infix, suffix)
 	. = ..()
@@ -130,10 +111,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 		set_got_input(TRUE)
 		update_icon()
 
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
-
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()
 	if(mixer_angle == dir2angle(dir))
@@ -143,3 +120,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	if(!(locate_within(get_step(src, angle2dir(mixer_angle)), /obj/machinery/reagent_refinery)))
 		return TRUE
 	return got_input
+
+CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	without("reagent_refinery_set_transfer_amount")
+	op("set_rotation", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_set_rotation)))
+	op("set_rotation_2", menu(), label("Set Mixer Rotation"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_rotation)))

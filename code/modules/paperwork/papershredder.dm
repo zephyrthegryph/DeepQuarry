@@ -27,54 +27,43 @@
 		)
 TRACKED(/obj/machinery/papershredder, paperamount)
 
+
 CAPABILITIES(/obj/machinery/papershredder)
 	climb()
+	op("empty_into", item(/obj/item/storage), priority(OP_PRIORITY_DEFAULT - 1), label("Empty into"), then(PROC_REF(interaction_empty_into)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("shred", inputs(item(/obj/item/photo), item(/obj/item/shreddedp), item(/obj/item/paper), item(/obj/item/newspaper), item(/obj/item/card/id), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Shred"), then(PROC_REF(interaction_shred)))
+	op("empty", menu(), label("Empty bin"), needs(req_adjacent(), req_capable(), req_is(nameof(paperamount), TRUE, because = MSG(papershredder/empty))), then(PROC_REF(interaction_empty)))
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/papershredder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/papershredder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/papershredder_empty_into,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/papershredder_shred,
-		/datum/interaction/machine_verb/papershredder_empty,
-	)
-	..()
+MSG_DEF_SELF(papershredder/empty, "it is empty")
 
-/datum/interaction/machine_item/papershredder_empty_into
-	id = "papershredder_empty_into"
-	name = "Empty into"
-	category = INTERACTION_CAT_EJECT
-	held_type = /obj/item/storage
-	effect = /obj/machinery/papershredder/proc/interaction_empty_into
-
-/obj/machinery/papershredder/proc/interaction_empty_into(mob/living/user, obj/item/storage/W, datum/interaction/interaction)
+/obj/machinery/papershredder/proc/interaction_empty_into(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/storage/W = A.held
 	empty_bin(user, W)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/papershredder_shred
-	id = "papershredder_shred"
-	name = "Shred"
-	held_type = list(/obj/item/photo, /obj/item/shreddedp, /obj/item/paper, /obj/item/newspaper, /obj/item/card/id, /obj/item/paper_bundle)
-	effect = /obj/machinery/papershredder/proc/interaction_shred
-
-/obj/machinery/papershredder/proc/interaction_shred(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/papershredder/proc/interaction_shred(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	var/paper_result
 	for(var/shred_type in shred_amounts)
 		if(istype(W, shred_type))
 			paper_result = shred_amounts[shred_type]
 	if(paper_result)
 		if(!operable())
-			return TRUE // Need powah!
+			return OP_OK // Need powah!
 		if(paperamount == max_paper)
 			to_chat(user, span_warning("\The [src] is full; please empty it before you continue."))
-			return TRUE
+			return OP_OK
 		if(!consume(W, user))
-			return TRUE
-		set_paperamount(paperamount + (paper_result))
+			return OP_OK
+		set_paperamount(paperamount + paper_result)
 		play_sfx(src, SFX_ITEMS_PSHRED)
 		flick(shred_anim, src)
 		if(paperamount > max_paper)
@@ -84,23 +73,12 @@ CAPABILITIES(/obj/machinery/papershredder)
 				SP.forceMove(get_turf(src))
 				SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
 			set_paperamount(max_paper)
-		return TRUE
-	return FALSE
+		update_icon()
+		return OP_OK
+	return OP_DECLINE
 
-/datum/interaction/machine_verb/papershredder_empty
-	id = "papershredder_empty"
-	name = "Empty bin"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/papershredder/proc/actor_can_empty, "you can't do that right now"), REQ_ON(PRED_TARGET, /obj/machinery/papershredder/proc/has_paper, "it is empty"))
-	effect = /obj/machinery/papershredder/proc/interaction_empty
-
-/obj/machinery/papershredder/proc/actor_can_empty(mob/actor, atom/target, obj/item/held)
-	return !(actor.stat || actor.restrained() || actor.has_status(STAT_WEAKENED) || actor.has_status(STAT_PARALYZED) || actor.lying || actor.has_status(STAT_STUNNED))
-
-/obj/machinery/papershredder/proc/has_paper(mob/actor, atom/target, obj/item/held)
-	return paperamount > 0
-
-/obj/machinery/papershredder/proc/interaction_empty(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/papershredder/proc/interaction_empty(datum/act/op/A)
+	var/mob/user = A.actor
 	empty_bin(user)
 	return TRUE
 

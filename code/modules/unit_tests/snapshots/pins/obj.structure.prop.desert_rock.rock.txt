@@ -1,38 +1,27 @@
 human|none menu: Push
-human|none menu: Use (refused: not possible right now)
 human|none click: Click: Push
 robot|none menu: Push
-robot|none menu: Use (refused: not possible right now)
 robot|none click: Click: Push
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Push
-human|/obj/item/tool/screwdriver menu: Use (refused: not possible right now)
 human|/obj/item/tool/screwdriver click: Click: Push
 human|/obj/item/tool/crowbar menu: Push
-human|/obj/item/tool/crowbar menu: Use (refused: not possible right now)
 human|/obj/item/tool/crowbar click: Click: Push
 human|/obj/item/tool/wrench menu: Push
-human|/obj/item/tool/wrench menu: Use (refused: not possible right now)
 human|/obj/item/tool/wrench click: Click: Push
 human|/obj/item/tool/wirecutters menu: Push
-human|/obj/item/tool/wirecutters menu: Use (refused: not possible right now)
 human|/obj/item/tool/wirecutters click: Click: Push
 human|/obj/item/multitool menu: Push
-human|/obj/item/multitool menu: Use (refused: not possible right now)
 human|/obj/item/multitool click: Click: Push
 human|/obj/item/weldingtool menu: Push
-human|/obj/item/weldingtool menu: Use (refused: not possible right now)
 human|/obj/item/weldingtool click: Click: Push
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Push
-human|/obj/item/stack/cable_coil menu: Use (refused: not possible right now)
 human|/obj/item/stack/cable_coil click: Click: Push
 human|/obj/item/stack/material/steel menu: Push
-human|/obj/item/stack/material/steel menu: Use (refused: not possible right now)
 human|/obj/item/stack/material/steel click: Click: Push
 human|/obj/item/card/id menu: Push
-human|/obj/item/card/id menu: Use (refused: not possible right now)
 human|/obj/item/card/id click: Click: Push
-keys: gen_drag_interaction_drag_buckle, prop_hand, push
+keys: drag_buckle, message, push
 

@@ -3,3 +3,4 @@
 /obj/machinery/computer/ship|ai|none => gen_silicon_ship_silicon_use|
 /obj/machinery/computer/ship|ghost|none => gen_observer_ship_ghost_view|
 /obj/machinery/computer/ship|human|/obj/item/card/emag => emag,ship_console_use|
+

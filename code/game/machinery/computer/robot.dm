@@ -14,22 +14,12 @@
 MSG_DEF_SELF(robotics/access_denied, "Access denied.")
 MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
 
-/obj/machinery/computer/robotics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/robotics_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/robotics_use
-	id = "robotics_use"
-	name = "Use"
-	effect = /obj/machinery/computer/robotics/proc/interaction_use
-
-/obj/machinery/computer/robotics/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/robotics/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/computer/robotics/proc/is_authenticated(mob/user)
 	if(!istype(user))
@@ -128,7 +118,6 @@ MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
 		return FALSE
 	return TRUE
 
-
 CAPABILITIES(/obj/machinery/computer/robotics)
 	interface("RoboticsControlConsole")
 	op("arm", ui_act("arm"), then(PROC_REF(ui_act_arm)))
@@ -137,6 +126,8 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	op("stopbot", ui_act("stopbot", arg("ref")), then(PROC_REF(ui_act_stopbot)))
 	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied))))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("robotics_console_robot_use", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(robotics_console_robot_use)))
 
 /obj/machinery/computer/robotics/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -256,11 +247,11 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	return OP_OK
 
 // A cyborg with access interfaces remotely as the AI does (FALSE: the robot adapter's default); without it, only by hand from next to it.
-EXTEND_INTERACTIONS(/obj/machinery/computer/robotics, INTERACT_ROBOT("Use", PROC_REF(robotics_console_robot_use)))
 
-/obj/machinery/computer/robotics/proc/robotics_console_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/robotics/proc/robotics_console_robot_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(allowed(user))
-		return FALSE
+		return OP_DECLINE
 	if(Adjacent(user))
 		attack_hand(user)
-	return TRUE
+	return OP_OK

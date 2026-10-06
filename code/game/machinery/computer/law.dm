@@ -10,21 +10,12 @@
 	var/opened = 0
 
 
-/obj/machinery/computer/aiupload/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/aiupload_access_internals,
-		/datum/interaction/machine_item/aiupload_install,
-		/datum/interaction/machine_hand/ungated/aiupload_select_ai,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
-	..()
-
-/// The old "Access Computer's Internals" object verb.
-/datum/interaction/machine_verb/aiupload_access_internals
-	id = "aiupload_access_internals"
-	name = "Access Computer's Internals"
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/computer/aiupload/proc/interaction_access_internals
+EXTEND_INTERACTIONS(/obj/machinery/computer/aiupload, \
+	INTERACT_VERB("Access Computer's Internals", PROC_REF(interaction_access_internals)), \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_install), "Install module", REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_connect)), \
+	INTERACT_HAND_UNGATED("Select AI", PROC_REF(interaction_select_ai), REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_select_ai)), \
+	INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)), \
+)
 
 /obj/machinery/computer/aiupload/proc/interaction_access_internals(mob/user, obj/item/held, datum/interaction/interaction)
 	if(get_dist(src, user) > 1 || user.restrained() || user.lying || user.stat || istype(user, /mob/living/silicon))
@@ -36,14 +27,6 @@
 	else
 		to_chat(user, span_notice("The access panel is now closed."))
 	return TRUE
-
-/// The old attackby: installs an AI module, else falls through to the base behaviour.
-/datum/interaction/machine_item/aiupload_install
-	id = "aiupload_install"
-	name = "Install module"
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_connect))
-	effect = /obj/machinery/computer/aiupload/proc/interaction_install
 
 /// Requirement: the console only reaches the station's contact levels.
 /obj/machinery/computer/aiupload/proc/can_connect(mob/user, atom/target, obj/item/held)
@@ -68,13 +51,6 @@
 		return TRUE
 	return FALSE
 
-/// The old attack_hand: never called ..(), selected an active AI for law changes.
-/datum/interaction/machine_hand/ungated/aiupload_select_ai
-	id = "aiupload_select_ai"
-	name = "Select AI"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_select_ai))
-	effect = /obj/machinery/computer/aiupload/proc/interaction_select_ai
-
 /obj/machinery/computer/aiupload/proc/interaction_select_ai(mob/user, obj/item/held, datum/interaction/interaction)
 	// Also the selection prompt's callback: re-check quietly (can_select_ai() told the user up front).
 	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(active_ais()))
@@ -94,31 +70,15 @@
 	var/mob/living/silicon/robot/current
 
 
-/obj/machinery/computer/borgupload/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/borgupload_install,
-		/datum/interaction/machine_hand/ungated/borgupload_select_borg,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
-	..()
-
-/// The old attackby: installs an AI module, else falls through to the base behaviour.
-/datum/interaction/machine_item/borgupload_install
-	id = "borgupload_install"
-	name = "Install module"
-	held_type = /obj/item/aiModule
-	effect = /obj/machinery/computer/borgupload/proc/interaction_install
+EXTEND_INTERACTIONS(/obj/machinery/computer/borgupload, \
+	INTERACT_INSERT(/obj/item/aiModule, PROC_REF(interaction_install), "Install module"), \
+	INTERACT_HAND_UNGATED("Select cyborg", PROC_REF(interaction_select_borg), REQ_TARGET_STATE(/obj/machinery/computer/borgupload/proc/can_select_borg)), \
+	INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)), \
+)
 
 /obj/machinery/computer/borgupload/proc/interaction_install(mob/user, obj/item/aiModule/module, datum/interaction/interaction)
 	module.install(src, user)
 	return TRUE
-
-/// The old attack_hand: never called ..(), selected a free cyborg for law changes.
-/datum/interaction/machine_hand/ungated/borgupload_select_borg
-	id = "borgupload_select_borg"
-	name = "Select cyborg"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/borgupload/proc/can_select_borg))
-	effect = /obj/machinery/computer/borgupload/proc/interaction_select_borg
 
 /// Requirement: TRUE, or why no cyborg can be selected.
 /obj/machinery/computer/borgupload/proc/can_select_borg(mob/user, atom/target, obj/item/held)

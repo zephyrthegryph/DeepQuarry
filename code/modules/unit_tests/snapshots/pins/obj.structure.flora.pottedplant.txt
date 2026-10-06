@@ -1,38 +1,39 @@
-human|none menu: Hide item
 human|none menu: Search
-human|none click: nothing
-robot|none menu: Hide item
+human|none click: Click: Search
 robot|none menu: Search
-robot|none click: nothing
+robot|none click: Click: Search
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Hide item
 human|/obj/item/tool/screwdriver menu: Search
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Hide item (refused: The crowbar is too big to fit inside it)
+human|/obj/item/tool/screwdriver click: Click: Hide item
+human|/obj/item/tool/crowbar menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/tool/crowbar menu: Search
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Hide item (refused: The wrench is too big to fit inside it)
+human|/obj/item/tool/crowbar click: Click: Hide item
+human|/obj/item/tool/wrench menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/tool/wrench menu: Search
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Hide item (refused: The wirecutters is too big to fit inside it)
+human|/obj/item/tool/wrench click: Click: Hide item
+human|/obj/item/tool/wirecutters menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/tool/wirecutters menu: Search
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Hide item (refused: The multitool is too big to fit inside it)
+human|/obj/item/tool/wirecutters click: Click: Hide item
+human|/obj/item/multitool menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/multitool menu: Search
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Hide item (refused: The welding tool is too big to fit inside it)
+human|/obj/item/multitool click: Click: Hide item
+human|/obj/item/weldingtool menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/weldingtool menu: Search
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Hide item (refused: The cable coil is too big to fit inside it)
+human|/obj/item/weldingtool click: Click: Hide item
+human|/obj/item/stack/cable_coil menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Search
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Hide item (refused: The steel sheet is too big to fit inside it)
+human|/obj/item/stack/cable_coil click: Click: Hide item
+human|/obj/item/stack/material/steel menu: Hide item (refused: That is too large to fit.)
 human|/obj/item/stack/material/steel menu: Search
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Hide item
 human|/obj/item/card/id menu: Hide item
 human|/obj/item/card/id menu: Search
-human|/obj/item/card/id click: nothing
-keys: pottedplant_hand, pottedplant_item
+human|/obj/item/card/id click: Click: Hide item
+human|/obj/item menu: Hide item (refused: That is too large to fit.)
+human|/obj/item menu: Search
+human|/obj/item click: Click: Hide item
+keys: drag_buckle, hide, search
 

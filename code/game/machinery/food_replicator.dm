@@ -48,23 +48,8 @@
 	QDEL_NULL_LIST(products)
 	return ..()
 
-/obj/machinery/food_replicator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/food_replicator_scan,
-		/datum/interaction/machine_item/food_replicator_insert_container,
-		/datum/interaction/machine_hand/ungated/food_replicator_use,
-		/datum/interaction/machine_verb/food_replicator_eject_beaker,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): opens the print dialogue.
-/datum/interaction/machine_hand/ungated/food_replicator_use
-	id = "food_replicator_use"
-	name = "Use"
-	effect = /obj/machinery/food_replicator/proc/interaction_use
-
-/obj/machinery/food_replicator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/food_replicator/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
 		return TRUE
@@ -130,14 +115,9 @@
 		after(src, print_delay/speed, PROC_REF(print_done), with = list(foodItem))
 
 
-/// Scan a food item to learn its recipe.
-/datum/interaction/machine_item/food_replicator_scan
-	id = "food_replicator_scan"
-	name = "Scan food"
-	held_type = /obj/item/reagent_containers/food
-	effect = /obj/machinery/food_replicator/proc/interaction_scan
-
-/obj/machinery/food_replicator/proc/interaction_scan(mob/user, obj/item/reagent_containers/food/O, datum/interaction/interaction)
+/obj/machinery/food_replicator/proc/interaction_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/O = A.held
 	balloon_alert(user, "scanning...")
 	om_task_timed(user, 10, target = src, receiver = src, on_done = PROC_REF(interaction_scan_timed_done), done_args = list(O))
 	return TRUE
@@ -146,15 +126,11 @@
 	foodcheck(O)
 	return TRUE
 
-/// Insert a reagent container to supply nutriment.
-/datum/interaction/machine_item/food_replicator_insert_container
-	id = "food_replicator_insert_container"
-	name = "Insert container"
-	held_type = /obj/item/reagent_containers/glass
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("container"), "there is already a reagent container inserted"))
-	effect = /obj/machinery/food_replicator/proc/interaction_insert_container
+MSG_DEF_SELF(food_replicator/container, "There is already a reagent container inserted.")
 
-/obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
+/obj/machinery/food_replicator/proc/interaction_insert_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/O = A.held
 	if(!move_into(src, nameof(src.container), O, user))
 		return TRUE
 	balloon_alert(user, "placed \the [O] in \the [src]")
@@ -201,6 +177,11 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/food_replicator)
 	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), then(PROC_REF(interaction_scan)))
+	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_beaker)))
 
 /obj/machinery/food_replicator/proc/work_step(datum/act/timer/A)
 	if(!operable())
@@ -221,14 +202,18 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	speed = max(cap_rating, 1) / 2
 
 
-/// Old verb/eject_beaker().
-/datum/interaction/machine_verb/food_replicator_eject_beaker
-	id = "food_replicator_eject_beaker"
-	name = "Eject Beaker"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/food_replicator/proc/interaction_eject_beaker
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/food_replicator/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/food_replicator/proc/interaction_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/food_replicator/proc/dq_actor_can_act_refusal(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return istext(answer) ? answer : "you can't do that right now"
+
+/obj/machinery/food_replicator/proc/interaction_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	remove_beaker()
 	return TRUE

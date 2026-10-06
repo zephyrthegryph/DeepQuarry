@@ -8,19 +8,20 @@
  *
  * Omens end once the victim has used up its incidents (or on remove_omen()).
  *
- * A shared OM behaviour: the omen's numbers live on the mob (omen_*), and the behaviour reacts
- * to the moved, carbon_slip, moved_down_stairs, stun_effect, picked_up_item events and the
- * before/dice_roll and before/catch_throw events. Add with L.add_omen().
+ * A capability the mob grants itself: the omen's numbers live on the mob (omen_*), and its hooks react
+ * to the moved, carbon_slip, moved_down_stairs, stun_effect and picked_up_item notices. Dice
+ * (omen_roll_override()) and catches (omen_blocks_catch()) ask the mob directly. Add with L.add_omen().
  */
-/datum/om/behaviour/omen
-	handles = list(
-		/datum/om/event/moved,
-		/datum/om/event/carbon_slip,
-		/datum/om/event/moved_down_stairs,
-		/datum/om/event/stun_effect,
-		/datum/om/event/picked_up_item,
-		/datum/om/event/before/dice_roll,
-		/datum/om/event/before/catch_throw,
+CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
+/datum/capability/omen
+
+/datum/capability/omen/entries()
+	return list(
+		on_notice(/datum/notice/moved, then(CAP_PROC(omen_moved))),
+		on_notice(/datum/notice/carbon_slip, then(CAP_PROC(omen_slipped))),
+		on_notice(/datum/notice/moved_down_stairs, then(CAP_PROC(omen_stairs))),
+		on_notice(/datum/notice/stun_effect, then(CAP_PROC(omen_stunned))),
+		on_notice(/datum/notice/picked_up_item, then(CAP_PROC(omen_picked_up))),
 	)
 
 #define OMEN_TRAIT_SOURCE "omen"
@@ -41,7 +42,7 @@
 
 /// TRUE while the mob carries an omen.
 /mob/living/proc/has_omen()
-	return om_attached(src, /datum/om/behaviour/omen)
+	return granted(src, /datum/capability/omen)
 
 /**
  * Curses the mob. A second omen on an already cursed mob: this is a omen eat omen world!
@@ -56,7 +57,7 @@
 		omen_evil = evil
 		omen_safe_disposals = safe_disposals
 		omen_vorish = vorish
-		om_attach(src, /datum/om/behaviour/omen)
+		grant(src, /datum/capability/omen, src)
 		return
 	// If we have more incidents left the new one is dropped.
 	if(omen_incidents > incidents_left)
@@ -76,39 +77,47 @@
 		omen_vorish = TRUE
 
 /mob/living/proc/remove_omen()
-	om_detach(src, /datum/om/behaviour/omen)
+	revoke(src, /datum/capability/omen, src)
 
-/datum/om/behaviour/omen/on_start(mob/living/person)
-	add_trait(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+/datum/capability/omen/on_activate(datum/activation/A)
+	add_trait(A.holder, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 
 // Lifts the unlucky trait and tells the person.
-/datum/om/behaviour/omen/on_stop(mob/living/person)
+/datum/capability/omen/on_deactivate(datum/activation/A)
+	var/mob/living/person = A.holder
 	remove_trait(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 	if(!QDELETED(person))
 		to_chat(person, span_warning(span_green("You feel a horrible omen lifted off your shoulders!")))
 
-/datum/om/behaviour/omen/on_moved(mob/living/L, datum/om/event/moved/event)
+/datum/capability/omen/proc/omen_moved(datum/act/A)
+	var/mob/living/L = A.holder
 	L.omen_check_accident(L)
 
-/datum/om/behaviour/omen/on_carbon_slip(mob/living/L, datum/om/event/carbon_slip/event)
-	L.omen_check_slip(L, event.stun_duration)
+/datum/capability/omen/proc/omen_slipped(datum/notice/carbon_slip/A)
+	var/mob/living/L = A.holder
+	L.omen_check_slip(L, A.stun_duration)
 
-/datum/om/behaviour/omen/on_moved_down_stairs(mob/living/L, datum/om/event/moved_down_stairs/event)
+/datum/capability/omen/proc/omen_stairs(datum/act/A)
+	var/mob/living/L = A.holder
 	L.omen_check_stairs(L)
 
-/datum/om/behaviour/omen/on_stun_effect(mob/living/L, datum/om/event/stun_effect/event)
-	L.omen_check_taser(L, event.stun_amount, event.agony_amount, event.def_zone, event.used_weapon, event.electric)
+/datum/capability/omen/proc/omen_stunned(datum/notice/stun_effect/A)
+	var/mob/living/L = A.holder
+	L.omen_check_taser(L, A.stun_amount, A.agony_amount, A.def_zone, A.used_weapon, A.electric)
 
-/datum/om/behaviour/omen/on_picked_up_item(mob/living/L, datum/om/event/picked_up_item/event)
-	L.omen_check_pickup(L, event.item)
+/datum/capability/omen/proc/omen_picked_up(datum/notice/picked_up_item/A)
+	var/mob/living/L = A.holder
+	L.omen_check_pickup(L, A.item)
 
-/datum/om/behaviour/omen/on_before_dice_roll(mob/living/L, datum/om/event/before/dice_roll/event)
-	var/override = L.omen_check_roll(L, event.dice, event.silent, event.roll_result)
-	if(override)
-		event.result_override = override
+/// The result an omen forces on a dice roll by this mob, or null (no omen, or luck held).
+/mob/living/proc/omen_roll_override(obj/item/dice/the_dice, silent, result)
+	if(!has_omen())
+		return null
+	return omen_check_roll(src, the_dice, silent, result)
 
-/datum/om/behaviour/omen/on_before_catch_throw(mob/living/L, datum/om/event/before/catch_throw/event)
-	return L.omen_check_throw(L, event.source, event.speed) ? EVENT_VETO : null
+/// TRUE when an omen makes this mob fumble a catch (the throw lands instead).
+/mob/living/proc/omen_blocks_catch(source, speed)
+	return has_omen() && omen_check_throw(src, source, speed)
 
 /mob/living/proc/omen_consume()
 	omen_incidents--
@@ -483,107 +492,3 @@
 			return
 
 #undef OMEN_TRAIT_SOURCE
-
-// ---------------------------------------------------------------- events
-
-/// Notification: the carbon slipped on `slipped_on`.
-/datum/om/event/carbon_slip
-	coalesce = FALSE
-	var/slipped_on
-	var/stun_duration
-
-/datum/om/event/carbon_slip/New(slipped_on, stun_duration)
-	src.slipped_on = slipped_on
-	src.stun_duration = stun_duration
-
-/datum/om/event/carbon_slip/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_carbon_slip(E, src)
-
-/datum/om/behaviour/proc/on_carbon_slip(datum/E, datum/om/event/carbon_slip/event)
-	return
-
-/// Notification: the movable went down stairs.
-/datum/om/event/moved_down_stairs
-	coalesce = FALSE
-	var/old_loc
-
-/datum/om/event/moved_down_stairs/New(old_loc)
-	src.old_loc = old_loc
-
-/datum/om/event/moved_down_stairs/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_moved_down_stairs(E, src)
-
-/datum/om/behaviour/proc/on_moved_down_stairs(datum/E, datum/om/event/moved_down_stairs/event)
-	return
-
-/// Notification: the mob took a stun weapon hit.
-/datum/om/event/stun_effect
-	coalesce = FALSE
-	var/stun_amount
-	var/agony_amount
-	var/def_zone
-	var/used_weapon
-	var/electric
-
-/datum/om/event/stun_effect/New(stun_amount, agony_amount, def_zone, used_weapon, electric)
-	src.stun_amount = stun_amount
-	src.agony_amount = agony_amount
-	src.def_zone = def_zone
-	src.used_weapon = used_weapon
-	src.electric = electric
-
-/datum/om/event/stun_effect/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_stun_effect(E, src)
-
-/datum/om/behaviour/proc/on_stun_effect(datum/E, datum/om/event/stun_effect/event)
-	return
-
-/// Notification: the mob is picking up `item`.
-/datum/om/event/picked_up_item
-	coalesce = FALSE
-	var/item
-
-/datum/om/event/picked_up_item/New(item)
-	src.item = item
-
-/datum/om/event/picked_up_item/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_picked_up_item(E, src)
-
-/datum/om/behaviour/proc/on_picked_up_item(datum/E, datum/om/event/picked_up_item/event)
-	return
-
-/// Synchronous: the mob rolled `dice`; a handler may set
-/// `result_override` to force the result.
-/datum/om/event/before/dice_roll
-	var/dice
-	var/silent
-	var/roll_result
-	/// Set by a handler to force the roll.
-	var/result_override
-
-/datum/om/event/before/dice_roll/New(dice, silent, roll_result)
-	src.dice = dice
-	src.silent = silent
-	src.roll_result = roll_result
-
-/datum/om/event/before/dice_roll/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_before_dice_roll(E, src)
-
-/datum/om/behaviour/proc/on_before_dice_roll(datum/E, datum/om/event/before/dice_roll/event)
-	return
-
-/// Veto: the mob is about to catch thrown `source`;
-/// EVENT_VETO stops the catch.
-/datum/om/event/before/catch_throw
-	var/source
-	var/speed
-
-/datum/om/event/before/catch_throw/New(source, speed)
-	src.source = source
-	src.speed = speed
-
-/datum/om/event/before/catch_throw/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_before_catch_throw(E, src)
-
-/datum/om/behaviour/proc/on_before_catch_throw(datum/E, datum/om/event/before/catch_throw/event)
-	return

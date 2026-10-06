@@ -68,6 +68,7 @@
 	return isnum(value) ? max(0, SSsupply.export_revenue(value)) : 0
 
 /proc/storefront_department_authorized(mob/living/user, department)
+	READS_FROM(user) // the actor's job and the access on their card, read when the op is tried
 	if(!user || !department)
 		return FALSE
 	if(department_for_mob(user) == department)
@@ -208,6 +209,8 @@
 	var/list/stock_suggested_prices
 	var/list/stock_stocker_accounts
 
+TRACKED(/obj/machinery/department_storefront, department_id)
+
 /obj/machinery/department_storefront/Initialize(mapload)
 	. = ..()
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
@@ -219,32 +222,18 @@
 	. = ..()
 	. += "It deposits revenue into the [department_id] budget. Department staff can stock it by using an item on it."
 
-/obj/machinery/department_storefront/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/storefront_id_fallthrough,
-		/datum/interaction/machine_item/storefront_stock,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
+/// Requirement (was REQ_* can_stock): the legacy check answers TRUE to pass.
+/obj/machinery/department_storefront/proc/can_stock_holds(datum/act/op/A)
+	var/answer = can_stock(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/// The old attackby's leading branch: an ID card always fell through to ..().
-/datum/interaction/machine_item/storefront_id_fallthrough
-	id = "storefront_id_fallthrough"
-	name = "Use"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/department_storefront/proc/interaction_id_fallthrough
+/// Why can_stock_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/department_storefront/proc/can_stock_refusal(datum/act/op/A)
+	var/answer = can_stock(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
-/obj/machinery/department_storefront/proc/interaction_id_fallthrough(mob/user, obj/item/item, datum/interaction/interaction)
-	return FALSE
-
-/// The old attackby: stocks the storefront with an offered item.
-/datum/interaction/machine_item/storefront_stock
-	id = "storefront_stock"
-	name = "Stock"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/department_storefront/proc/can_stock))
-	effect = /obj/machinery/department_storefront/proc/interaction_stock
+/obj/machinery/department_storefront/proc/interaction_id_fallthrough(datum/act/op/A)
+	return OP_DECLINE
 
 /// Requirement: TRUE, or why this item can't be stocked by this user.
 /obj/machinery/department_storefront/proc/can_stock(mob/user, atom/target, obj/item/held)
@@ -254,12 +243,14 @@
 		return "[held] cannot be offered through this storefront"
 	return TRUE
 
-/obj/machinery/department_storefront/proc/interaction_stock(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/machinery/department_storefront/proc/interaction_stock(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	var/suggested = storefront_suggested_price(item)
 	var/price = max(1, round(suggested * (100 + markup_percent) / 100))
 	if(!user.drop_from_inventory(item, src))
 		to_chat(user, span_warning("You cannot release [item] into the storefront."))
-		return TRUE
+		return OP_OK
 	item.forceMove(src)
 	var/item_ref = REF(item)
 	stock_suggested_prices[item_ref] = suggested
@@ -267,7 +258,7 @@
 	stock_stocker_accounts[item_ref] = user.mind?.initial_account()?.account_number || 0
 	to_chat(user, span_notice("You stock [item] at [price] Thalers (suggested [suggested])."))
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/department_storefront/proc/storefront_staff_authorized(mob/living/user)
 	return storefront_department_authorized(user, department_id)
@@ -284,6 +275,8 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	op("withdraw", ui_act("withdraw", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_withdraw)))
 	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
 	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
+	op("storefront_id_fallthrough", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_id_fallthrough)))
+	op("storefront_stock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Stock"), needs(req(PROC_REF(can_stock_holds), because = PROC_REF(can_stock_refusal))), then(PROC_REF(interaction_stock)))
 
 /// /obj/machinery/department_storefront's window data.
 /obj/machinery/department_storefront/ui_data(datum/act/eval/A)

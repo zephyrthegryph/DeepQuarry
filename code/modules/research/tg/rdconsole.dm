@@ -57,23 +57,12 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	op("ejectDisk", ui_act("ejectDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_ejectdisk)))
 	op("uploadDisk", ui_act("uploadDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_uploaddisk)))
 	op("loadTech", ui_act("loadTech"), then(PROC_REF(ui_act_loadtech)))
+	op("insert_disk", item(/obj/item/disk), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(interaction_insert_disk)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rdconsole_insert_disk,
-		/datum/interaction/machine_hand/ungated/rdconsole_open_ui,
-	)
-	..()
-
-/// Old attackby: load a tech or design disk.
-/datum/interaction/machine_item/rdconsole_insert_disk
-	id = "rdconsole_insert_disk"
-	name = "Insert disk"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/disk
-	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_insert_disk
-
-/obj/machinery/computer/rdconsole_tg/proc/interaction_insert_disk(mob/user, obj/item/D, datum/interaction/interaction)
+/obj/machinery/computer/rdconsole_tg/proc/interaction_insert_disk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/D = A.held
 	if(istype(D, /obj/item/disk/tech_disk))
 		if(t_disk)
 			to_chat(user, span_warning("A technology disk is already loaded!"))
@@ -158,14 +147,8 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	atom_say("Not enough research points...")
 	return FALSE
 
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/rdconsole_open_ui
-	id = "rdconsole_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/rdconsole_tg/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 

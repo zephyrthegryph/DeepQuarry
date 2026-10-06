@@ -49,21 +49,12 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	update_nearby_tiles()
 	..()
 
-/obj/machinery/shield/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_hit,
-	)
-	..()
+CAPABILITIES(/obj/machinery/shield)
+	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
-/// Old attackby ended with a trailing return ..(): decline so the base attackby still runs.
-/datum/interaction/machine_item/shield_hit
-	id = "shield_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	effect = /obj/machinery/shield/proc/interaction_hit
-
-/obj/machinery/shield/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/shield/proc/interaction_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	//Play a fitting sound
 	play_sfx(src, SFX_EFFECTS_EMPULSE, 0.75)
 
@@ -73,7 +64,7 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 
 	set_opacity(1)
 	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), with = list(0))
-	return FALSE
+	return OP_DECLINE
 
 DAMAGE_REACTION_AFTER(/obj/machinery/shield, DAMAGE_PROJECTILE, PROC_REF(shield_flash_opaque))
 DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit))
@@ -120,11 +111,21 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 
+TRACKED(/obj/machinery/shieldgen, malfunction)
+
+TRACKED(/obj/machinery/shieldgen, is_open)
+
 CAPABILITIES(/obj/machinery/shieldgen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))
 	climb()
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("shieldgen_repair", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Repair wiring"), when(req(PROC_REF(needs_repair_holds))), then(PROC_REF(interaction_repair)))
+	op("shieldgen_toggle_lock", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle lock"), then(PROC_REF(interaction_toggle_lock)))
+	op("shieldgen_insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cell"), then(PROC_REF(interaction_insert_cell)))
+	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(unlocked_holds), because = PROC_REF(unlocked_refusal)), req(PROC_REF(panel_closed_holds), because = PROC_REF(panel_closed_refusal))), then(PROC_REF(interaction_toggle)))
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)
@@ -190,7 +191,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 // Dropping below 30% integrity makes the generator start to malfunction.
 /obj/machinery/shieldgen/atom_break(damage_flag)
 	. = ..()
-	malfunction = TRUE
+	set_malfunction(TRUE)
 
 // Integrity zero blows the generator apart.
 /obj/machinery/shieldgen/atom_destruction(damage_flag)
@@ -203,7 +204,7 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EXPLOSION, PROC_REF(shieldgen_b
 /// A heavy blast can knock the generator into malfunctioning.
 /obj/machinery/shieldgen/proc/shieldgen_blast_malfunction(datum/damage_packet/packet)
 	if(packet.severity == 2 && prob(15))
-		malfunction = TRUE
+		set_malfunction(TRUE)
 
 DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 
@@ -212,30 +213,38 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 	switch(packet.severity)
 		if(1)
 			deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
-			malfunction = 1
+			set_malfunction(1)
 			set_locked(pick(0,1))
 		if(2)
 			if(prob(50))
 				deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
-				malfunction = 1
+				set_malfunction(1)
 	return DAMAGE_REACTION_BLOCK
 
-/obj/machinery/shieldgen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shieldgen_repair,
-		/datum/interaction/machine_item/shieldgen_toggle_lock,
-		/datum/interaction/machine_item/shieldgen_insert_cell,
-		/datum/interaction/machine_hand/ungated/shieldgen_toggle,
-	)
-	..()
+/// Requirement (was REQ_* needs_repair): the legacy check answers TRUE to pass.
+/obj/machinery/shieldgen/proc/needs_repair_holds(datum/act/op/A)
+	var/answer = needs_repair(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/shieldgen_toggle
-	id = "shieldgen_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/shieldgen/proc/unlocked, "the machine is locked, you are unable to use it"), REQ_ON(PRED_TARGET, /obj/machinery/shieldgen/proc/panel_closed, "the panel must be closed before operating this machine"))
-	effect = /obj/machinery/shieldgen/proc/interaction_toggle
+/// Requirement (was REQ_* unlocked): the legacy check answers TRUE to pass.
+/obj/machinery/shieldgen/proc/unlocked_holds(datum/act/op/A)
+	var/answer = unlocked(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why unlocked_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/shieldgen/proc/unlocked_refusal(datum/act/op/A)
+	var/answer = unlocked(A.actor, src, A.held)
+	return istext(answer) ? answer : "the machine is locked, you are unable to use it"
+
+/// Requirement (was REQ_* panel_closed): the legacy check answers TRUE to pass.
+/obj/machinery/shieldgen/proc/panel_closed_holds(datum/act/op/A)
+	var/answer = panel_closed(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why panel_closed_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/shieldgen/proc/panel_closed_refusal(datum/act/op/A)
+	var/answer = panel_closed(A.actor, src, A.held)
+	return istext(answer) ? answer : "the panel must be closed before operating this machine"
 
 /obj/machinery/shieldgen/proc/unlocked(mob/actor, atom/target, obj/item/held)
 	return !locked
@@ -243,7 +252,8 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 /obj/machinery/shieldgen/proc/panel_closed(mob/actor, atom/target, obj/item/held)
 	return !is_open
 
-/obj/machinery/shieldgen/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shieldgen/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if (active)
 		act_message(user, null, MSG_SELF(span_blue("[icon2html(src,user.client)] You deactivate the shield generator.")), \
 			MSG_OTHERS(span_blue("[icon2html(src,viewers(src))] %U% deactivated the shield generator.")), \
@@ -257,88 +267,75 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 			shields_up()
 		else
 			to_chat(user, "The device must first be secured to the floor.")
-	return TRUE
+	return OP_OK
 
 DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 /obj/machinery/shieldgen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!malfunction)
-		malfunction = TRUE
-		changed(src)
+		set_malfunction(TRUE)
+		update_icon()
 		return 1
-
-/datum/interaction/machine_item/shieldgen_repair
-	id = "shieldgen_repair"
-	name = "Repair wiring"
-	category = INTERACTION_CAT_REPAIR
-	held_type = /obj/item/stack/cable_coil
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/shieldgen/proc/needs_repair, null))
-	effect = /obj/machinery/shieldgen/proc/interaction_repair
 
 /obj/machinery/shieldgen/proc/needs_repair(mob/actor, atom/target, obj/item/held)
 	return malfunction && is_open
 
-/obj/machinery/shieldgen/proc/interaction_repair(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
+/obj/machinery/shieldgen/proc/interaction_repair(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/cable_coil/coil = A.held
 	to_chat(user, span_notice("You begin to replace the wires."))
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(rewire_done), list(user, coil))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/shieldgen/proc/rewire_done(mob/user, obj/item/stack/cable_coil/coil)
 	if (coil.use(1))
 		repair_damage(max_integrity)
-		malfunction = 0
+		set_malfunction(0)
 		to_chat(user, span_notice("You repair the [src]!"))
 		changed(src)
 
-/datum/interaction/machine_item/shieldgen_toggle_lock
-	id = "shieldgen_toggle_lock"
-	name = "Toggle lock"
-	category = INTERACTION_CAT_LOCK
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	effect = /obj/machinery/shieldgen/proc/interaction_toggle_lock
-
-/obj/machinery/shieldgen/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shieldgen/proc/interaction_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(allowed(user))
 		set_locked(!locked)
 		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/shieldgen_insert_cell
-	id = "shieldgen_insert_cell"
-	name = "Insert cell"
-	held_type = /obj/item/cell
-	effect = /obj/machinery/shieldgen/proc/interaction_insert_cell
-
-/obj/machinery/shieldgen/proc/interaction_insert_cell(mob/user, obj/item/cell/held, datum/interaction/interaction)
+/obj/machinery/shieldgen/proc/interaction_insert_cell(datum/act/op/A)
+	var/mob/user = A.actor
 	if(is_open)
 		if(cell)
 			to_chat(user, "There is already a power cell inside.")
-			return TRUE
+			return OP_OK
 		// insert cell
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
 			if(!move_into(src, nameof(src.cell), C, user))
-				return TRUE
+				return OP_OK
 			C.add_fingerprint(user)
 
 			act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))
 			power_change()
 	else
 		to_chat(user, "The hatch must be open to insert a power cell.")
-		return TRUE
-	return TRUE
+		return OP_OK
+	return OP_OK
 
-/obj/machinery/shieldgen/screwdriver_act(mob/user, obj/item/W)
+/obj/machinery/shieldgen/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	playsound(src, W.usesound, 100, 1)
-	is_open = !is_open
+	set_is_open(!is_open)
 	to_chat(user, span_blue("You [is_open ? "open the panel and expose the wiring" : "close the panel"]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/shieldgen/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shieldgen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(locked)
 		to_chat(user, "The bolts are covered, unlocking this would retract the covers.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(anchored)
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_blue("You unsecure the [src] from the floor!"))
@@ -348,11 +345,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		set_anchored(FALSE)
 	else
 		if(istype(get_turf(src), /turf/space))
-			return ITEM_INTERACT_BLOCKING
+			return OP_OK
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_blue("You secure the [src] to the floor!"))
 		set_anchored(TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Appearance reader: projecting (active and powered).
 /obj/machinery/shieldgen/proc/appearance_projecting()

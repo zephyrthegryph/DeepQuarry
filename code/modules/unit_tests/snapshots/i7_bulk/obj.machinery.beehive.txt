@@ -1,8 +1,5 @@
-/obj/machinery/beehive|human|none => beehive_harvest|beehive_smoke:needs a bee smoker,beehive_load_frame:needs a beehive frame,beehive_bee_pack:needs a bee pack,beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|robot|none => beehive_harvest|gen_robot_interaction_swallow:not possible right now,beehive_smoke:needs a bee smoker,beehive_load_frame:needs a beehive frame,beehive_bee_pack:needs a bee pack,beehive_scan:needs a plant analyzer
+/obj/machinery/beehive|human|none => |
+/obj/machinery/beehive|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/beehive|ai|none => |
 /obj/machinery/beehive|ghost|none => |
-/obj/machinery/beehive|human|/obj/item/bee_smoker => beehive_smoke,beehive_harvest|beehive_load_frame:needs a beehive frame,beehive_bee_pack:needs a bee pack,beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|human|/obj/item/honey_frame => beehive_load_frame,beehive_harvest|beehive_smoke:needs a bee smoker,beehive_bee_pack:needs a bee pack,beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|human|/obj/item/bee_pack => beehive_bee_pack,beehive_harvest|beehive_smoke:needs a bee smoker,beehive_load_frame:needs a beehive frame,beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|human|/obj/item/analyzer/plant_analyzer => beehive_scan,beehive_harvest|beehive_smoke:needs a bee smoker,beehive_load_frame:needs a beehive frame,beehive_bee_pack:needs a bee pack
+

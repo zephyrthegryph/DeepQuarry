@@ -1,5 +1,5 @@
-/obj/machinery/bunsen_burner|human|none => bunsen_burner_remove_container|machine_panel:needs a screwdriver,machine_anchor:needs a wrench,bunsen_burner_place_container:needs an item
-/obj/machinery/bunsen_burner|robot|none => bunsen_burner_remove_container|machine_panel:needs a screwdriver,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,bunsen_burner_place_container:needs an item
+/obj/machinery/bunsen_burner|human|none => |machine_panel:needs a screwdriver,machine_anchor:needs a wrench
+/obj/machinery/bunsen_burner|robot|none => |machine_panel:needs a screwdriver,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/bunsen_burner|ai|none => |
 /obj/machinery/bunsen_burner|ghost|none => |
-/obj/machinery/bunsen_burner|human|/obj/item => bunsen_burner_place_container,bunsen_burner_remove_container|machine_panel:needs a screwdriver,machine_anchor:needs a wrench
+

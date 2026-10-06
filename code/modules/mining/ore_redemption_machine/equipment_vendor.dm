@@ -182,15 +182,6 @@
 	else
 		look.state("[initial(icon_state)]-off")
 
-/obj/machinery/mineral/equipment_vendor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/equipment_vendor_voucher,
-		/datum/interaction/machine_item/equipment_vendor_insert_id,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
 /// /obj/machinery/mineral/equipment_vendor's window data.
 /obj/machinery/mineral/equipment_vendor/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -241,6 +232,11 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	without("ui_open")
 	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"), then(PROC_REF(interaction_voucher)))
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 
 /obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
@@ -285,38 +281,28 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	flick(icon_vend, src)
 	add_fingerprint()
 
-/// Old attackby: a mining voucher redeems its selection.
-/datum/interaction/machine_item/equipment_vendor_voucher
-	id = "equipment_vendor_voucher"
-	name = "Redeem voucher"
-	held_type = /obj/item/mining_voucher
-	effect = /obj/machinery/mineral/equipment_vendor/proc/interaction_voucher
-
-/obj/machinery/mineral/equipment_vendor/proc/interaction_voucher(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/mineral/equipment_vendor/proc/interaction_voucher(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!powered())
 		return TRUE
 	redeem_voucher(I, user)
 	return TRUE
 
-/// Old attackby: insert an ID card.
-/datum/interaction/machine_item/equipment_vendor_insert_id
-	id = "equipment_vendor_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id
-
-/obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!powered())
 		return TRUE
 	else if(!inserted_id && move_into(src, nameof(src.inserted_id), I, user))
 		tgui_interact(user)
 	return TRUE
 
-/obj/machinery/mineral/equipment_vendor/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/mineral/equipment_vendor/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/mineral/equipment_vendor/crowbar_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/mineral/equipment_vendor/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)

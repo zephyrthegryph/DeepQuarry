@@ -252,7 +252,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		if(def_lang)
 			new_character.default_language = def_lang
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
 	new_character.regenerate_icons()
 

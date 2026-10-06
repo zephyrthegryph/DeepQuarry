@@ -130,5 +130,5 @@ human|/obj/item menu: Ring
 human|/obj/item menu: Ring (refused: you need an empty hand for that)
 human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand:Hammer rudely:hammer_by_hand, hand:Ring:ring_by_hand, use_on:Hammer rudely:hammer_with_item, use_on:Ring:ring_with_item, use_wrench
+keys: drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand:Hammer rudely:hammer_by_hand, hand:Ring:ring_by_hand, use_on:Hammer rudely:hammer_with_item, use_on:Ring:ring_with_item, use_wrench
 

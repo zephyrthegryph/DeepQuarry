@@ -1,5 +1,5 @@
-/obj/machinery/conveyor|human|none => conveyor_push_pulled|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,conveyor_drop_item:needs an item
-/obj/machinery/conveyor|robot|none => conveyor_push_pulled|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,conveyor_drop_item:needs an item
+/obj/machinery/conveyor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/conveyor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/conveyor|ai|none => |
 /obj/machinery/conveyor|ghost|none => |
-/obj/machinery/conveyor|human|/obj/item => conveyor_drop_item,conveyor_push_pulled|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

@@ -35,21 +35,13 @@
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		perform_exit()
 
-/obj/machinery/vr_sleeper/alien/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/vr_sleeper_alien_scan,
-		/datum/interaction/machine_verb/vr_sleeper_alien_eject,
-	)
-	..()
+CAPABILITIES(/obj/machinery/vr_sleeper/alien)
+	op("scan_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_scan_impl)))
+	op("eject_impl", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_impl)))
 
-/// Old attackby: always fingerprints, then lets a medical scanner analyze the occupant.
-/datum/interaction/machine_item/vr_sleeper_alien_scan
-	id = "vr_sleeper_alien_scan"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl
-
-/obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	add_fingerprint(user)
 
@@ -57,13 +49,18 @@
 		I.attack(occupant, user)
 	return TRUE
 
-/datum/interaction/machine_verb/vr_sleeper_alien_eject
-	id = "vr_sleeper_alien_eject"
-	name = "Eject"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/vr_sleeper/alien/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/vr_sleeper/alien/proc/dq_actor_can_act_refusal(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return istext(answer) ? answer : "you can't do that right now"
+
+/obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(has_stat(BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
 		perform_exit()
@@ -170,7 +167,7 @@
 			avatar().sync_organ_dna()
 			avatar().initialize_vessel()
 
-		OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
+		PUBLISH_LEGACY(avatar(), /datum/notice/human_dna_finalized)
 
 		open_request(src, /datum/prompt/text, PROC_REF(alien_avatar_renamed), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 

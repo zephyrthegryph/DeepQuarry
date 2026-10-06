@@ -338,7 +338,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		if(in_throw_mode && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
 			if(canmove && !restrained() && !src.is_incorporeal())
 				if(isturf(thrown_object.loc) && can_catch(thrown_object))
-					if(!(om_wants(src, /datum/om/event/before/catch_throw) && om_emit(src, new /datum/om/event/before/catch_throw(source, speed)) == EVENT_VETO))
+					if(!omen_blocks_catch(source, speed))
 						put_in_active_hand(thrown_object)
 						act_message(src, null, others = span_warning("%U% catches [thrown_object]!"))
 						throw_mode_off()

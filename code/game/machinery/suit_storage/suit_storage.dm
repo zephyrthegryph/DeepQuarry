@@ -42,6 +42,11 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	op("toggleUV", ui_act("toggleUV"), then(PROC_REF(ui_act_toggleuv)))
 	op("togglesafeties", ui_act("togglesafeties"), then(PROC_REF(ui_act_togglesafeties)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("get_out", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Suit Storage Unit"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_get_out)))
+	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_move_inside)))
+	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), then(PROC_REF(interaction_use_item)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
 /// their own typed vars -- only the person hiding inside is a slot.
@@ -78,22 +83,8 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		dump_everything()
 	return HOOK_DECLINE
 
-/obj/machinery/suit_storage_unit/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/suit_storage_get_out,
-		/datum/interaction/machine_verb/suit_storage_move_inside,
-		/datum/interaction/machine_item/suit_storage_use_item,
-		/datum/interaction/machine_hand/suit_storage_use,
-	)
-	..()
-
-/// The old attack_hand: called ..() first, then opened the UI if powered and dexterous.
-/datum/interaction/machine_hand/suit_storage_use
-	id = "suit_storage_use"
-	name = "Use"
-	effect = /obj/machinery/suit_storage_unit/proc/interaction_use
-
-/obj/machinery/suit_storage_unit/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suit_storage_unit/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_stat(NOPOWER))
 		return TRUE
 	if(!user.IsAdvancedToolUser())
@@ -370,28 +361,14 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	return
 
 
-/// The old "Eject Suit Storage Unit" object verb.
-/datum/interaction/machine_verb/suit_storage_get_out
-	id = "suit_storage_get_out"
-	name = "Eject Suit Storage Unit"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/suit_storage_unit/proc/interaction_get_out
-
-/obj/machinery/suit_storage_unit/proc/interaction_get_out(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suit_storage_unit/proc/interaction_get_out(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return TRUE
 	eject_occupant(user)
 	add_fingerprint(user)
 	changed(src)
 	return TRUE
-
-/// The old "Hide in Suit Storage Unit" object verb.
-/datum/interaction/machine_verb/suit_storage_move_inside
-	id = "suit_storage_move_inside"
-	name = "Hide in Suit Storage Unit"
-	requires = list(REQ_INTERACTION_REACH, REQ_TARGET_STATE(/obj/machinery/suit_storage_unit/proc/can_move_inside))
-	effect = /obj/machinery/suit_storage_unit/proc/interaction_move_inside
 
 /// Requirement for hiding inside: TRUE, or why not.
 /obj/machinery/suit_storage_unit/proc/can_move_inside(mob/user, atom/target, obj/item/held)
@@ -405,7 +382,14 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return "it's too cluttered inside for you to fit in"
 	return TRUE
 
-/obj/machinery/suit_storage_unit/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suit_storage_unit/proc/interaction_move_inside(datum/act/op/A)
+	// the legacy check, read when the op runs: its text is the refusal
+	var/allowed = can_move_inside(A.actor, src, A.held)
+	if(allowed != TRUE)
+		if(istext(allowed))
+			to_chat(A.actor, span_warning(allowed))
+		return
+	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)
 		return TRUE
 	act_message(user, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
@@ -422,14 +406,9 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	add_fingerprint(user)
 	return TRUE
 
-/// The old attackby: never called ..(), loaded a grabbed mob, suit, helmet or mask.
-/datum/interaction/machine_item/suit_storage_use_item
-	id = "suit_storage_use_item"
-	name = "Load"
-	held_type = /obj/item
-	effect = /obj/machinery/suit_storage_unit/proc/interaction_use_item
-
-/obj/machinery/suit_storage_unit/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/suit_storage_unit/proc/interaction_use_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(!ispowered)
 		return TRUE
@@ -501,13 +480,15 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	changed(src)
 	return TRUE
 
-/obj/machinery/suit_storage_unit/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/suit_storage_unit/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!ispowered)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	panelopen = !panelopen
 	playsound(src, tool.usesound, 100, TRUE)
 	to_chat(user, span_notice("You [panelopen ? "open up" : "close"] the unit's maintenance panel."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 
 //////////////////////////////REMINDER: Make it lock once you place some fucker inside.

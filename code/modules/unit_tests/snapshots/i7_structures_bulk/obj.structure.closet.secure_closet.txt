@@ -2,3 +2,4 @@
 /obj/structure/closet/secure_closet|robot|none => |
 /obj/structure/closet/secure_closet|ai|none => |
 /obj/structure/closet/secure_closet|ghost|none => |
+

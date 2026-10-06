@@ -304,15 +304,15 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 	addstack.use(amount)
 	return OP_OK
 
-/obj/machinery/power/port_gen/pacman/screwdriver_act(mob/user, obj/item/O)
+/obj/machinery/power/port_gen/pacman/proc/screwdriver_used(datum/act/op/A)
 	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/power/port_gen/pacman/crowbar_act(mob/user, obj/item/O)
+/obj/machinery/power/port_gen/pacman/proc/crowbar_used(datum/act/op/A)
 	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /// Bolted down it joins its cable network; loose it leaves it.
 /obj/machinery/power/port_gen/pacman/proc/anchoring_changed(datum/act/A)
@@ -346,6 +346,8 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("lower_power", ui_act("lower_power"), then(PROC_REF(ui_act_lower_power)))
 	op("higher_power", ui_act("higher_power"), then(PROC_REF(ui_act_higher_power)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
 	var/list/data = list()

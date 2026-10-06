@@ -450,19 +450,14 @@ CAPABILITIES(/datum/ai_brain)
 		if(new_threat)
 			break
 	if(new_threat != primary_threat)
-		var/old = primary_threat
 		rel_set(src, nameof(primary_threat), new_threat)
-		OM_EMIT(holder, /datum/om/event/dqai_target_changed, new_threat, old)
 		sync_fast_processing()
 
 /// Shared "we no longer have a threat" path: clears the slot, signals, stops
 /// whatever combat behavior was chasing it and leaves the fast loop.
 /datum/ai_brain/proc/drop_primary_threat()
 	lose_threat_at = 0
-	var/old = primary_threat
 	rel_clear(src, nameof(primary_threat))
-	if(holder)
-		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	sync_fast_processing()
@@ -603,10 +598,8 @@ CAPABILITIES(/datum/ai_brain)
 	if(ismob(attacker) && attacker != holder && should_retaliate_against(attacker))
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
-			var/mob/old = primary_threat
 			rel_set(src, nameof(primary_threat), attacker)
-			OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
-	OM_EMIT(holder, /datum/om/event/dqai_damage_taken, amount, injury_kind, attacker)
+	PUBLISH_LEGACY(holder, /datum/notice/dqai_damage_taken, amount, injury_kind, attacker)
 	dispatch_behavior_signal(DQAI_TRIGGER_DAMAGE_TAKEN, amount, injury_kind, attacker)
 	var/wellness = holder.vitality()
 	if(wellness <= DQ_LOW_HP_THRESHOLD)

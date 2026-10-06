@@ -29,8 +29,6 @@
 
 pub mod helpers;
 pub mod keys;
-pub mod om_ask;
-pub mod om_hook;
 pub mod own_decl;
 pub mod report;
 pub mod scan;

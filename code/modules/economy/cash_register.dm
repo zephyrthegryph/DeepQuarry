@@ -51,61 +51,37 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		else
 			. += "It's completely empty."
 
-/obj/machinery/cash_register/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/cash_register_pay,
-		/datum/interaction/machine_alt/cash_register_open_box_alt,
-		/datum/interaction/machine_hand/ungated/cash_register_use,
-		/datum/interaction/machine_verb/cash_register_open_box_verb,
-		/datum/interaction/machine_drag/cash_register_drop,
-	)
-	..()
-
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/cash_register_use
-	id = "cash_register_use"
-	name = "Use"
-	effect = /obj/machinery/cash_register/proc/interaction_use
-
-/obj/machinery/cash_register/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cash_register/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	// Don't be accessible from the wrong side of the machine
 	if(get_dir(src, user) & GLOB.reverse_dir[src.dir])
-		return TRUE
+		return OP_OK
 
 	if(cash_open)
 		if(cash_stored)
 			spawn_money(cash_stored, loc, user)
 			cash_stored = 0
 			cut_overlay("register_cash")
-			return TRUE
+			return OP_OK
 		open_cash_box(user)
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-/// Old click_alt: `if(Adjacent(user)) open_cash_box(user)`.
-/datum/interaction/machine_alt/cash_register_open_box_alt
-	id = "cash_register_open_box_alt"
-	name = "Open cash box"
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/machinery/cash_register/proc/interaction_open_box_alt
-
-/obj/machinery/cash_register/proc/interaction_open_box_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cash_register/proc/interaction_open_box_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	open_cash_box(user)
-	return TRUE
+	return OP_OK
 
 /**
  * Old attackby: paying methods (ID/e-wallet/cash) or a price scan for anything else. An emag
  * declined (returns FALSE) so dispatch falls through to `..()`, exactly as the old
  * `else if(istype(O, /obj/item/card/emag)) return ..()` branch did.
  */
-/datum/interaction/machine_item/cash_register_pay
-	id = "cash_register_pay"
-	name = "Pay / scan"
-	held_type = /obj/item
-	effect = /obj/machinery/cash_register/proc/interaction_pay
 
-/obj/machinery/cash_register/proc/interaction_pay(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/cash_register/proc/interaction_pay(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
 	var/obj/item/card/id/I = O.GetID()
 	if(I)
@@ -126,11 +102,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		else
 			scan_cash(SC, user)
 	else if(istype(O, /obj/item/card/emag))
-		return FALSE
+		return OP_DECLINE
 	// Not paying: Look up price and add it to transaction_amount
 	else
 		scan_item_price(O, user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/cash_register)
 	interface("RetailScanner")
@@ -146,6 +122,12 @@ CAPABILITIES(/obj/machinery/cash_register)
 	op("clear", ui_act("clear", arg("item", num())), then(PROC_REF(ui_act_clear)))
 	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
 	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("cash_register_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay / scan"), then(PROC_REF(interaction_pay)))
+	op("cash_register_open_box_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Open cash box"), then(PROC_REF(interaction_open_box_alt)))
+	op("cash_register_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("cash_register_open_box_verb", menu(), label("Open Cash Box"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_open_box_verb)))
+	op("cash_register_drop", item(/obj), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put on the register"), then(PROC_REF(interaction_drop)))
 
 /// /obj/machinery/cash_register's window data.
 /obj/machinery/cash_register/ui_data(datum/act/eval/A)
@@ -319,21 +301,18 @@ CAPABILITIES(/obj/machinery/cash_register)
 	to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 	return TRUE
 
-/obj/machinery/cash_register/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/cash_register/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	toggle_anchors(tool, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/// The old MouseDrop_T: an object dragged on is used on the register.
-/datum/interaction/machine_drag/cash_register_drop
-	id = "cash_register_drop"
-	name = "Put on the register"
-	held_type = /obj
-	effect = /obj/machinery/cash_register/proc/interaction_drop
-
-/obj/machinery/cash_register/proc/interaction_drop(mob/user, obj/dropping, datum/interaction/interaction)
+/obj/machinery/cash_register/proc/interaction_drop(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/dropping = A.held
 	if(Adjacent(dropping) && Adjacent(user) && !user.stat)
 		attackby(dropping, user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/cash_register/proc/confirm(obj/item/I)
 	if(confirm_item == I && confirm_revision == ticket_revision)
@@ -606,14 +585,8 @@ CAPABILITIES(/obj/machinery/cash_register)
 	service_staff_name = null
 	ticket_changed()
 
-/// Old object verb, now a plain proc: still called directly by interaction_use(),
-/// interaction_open_box_alt() and on_emag().
-/datum/interaction/machine_verb/cash_register_open_box_verb
-	id = "cash_register_open_box_verb"
-	name = "Open Cash Box"
-	effect = /obj/machinery/cash_register/proc/interaction_open_box_verb
-
-/obj/machinery/cash_register/proc/interaction_open_box_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cash_register/proc/interaction_open_box_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	open_cash_box(user)
 	return TRUE
 

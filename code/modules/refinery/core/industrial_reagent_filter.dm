@@ -20,6 +20,9 @@
 
 CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	climb()
+	op("reagent_filter_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_reagent_filter_use)))
+	op("reagent_filter_set_filter", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set Filter Chemical"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_reagent_filter_set_filter)))
+	op("reagent_filter_flip", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip Filter Direction"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_reagent_filter_flip)))
 
 /obj/machinery/reagent_refinery/filter/Initialize(mapload)
 	. = ..()
@@ -66,32 +69,26 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 		filling.color = reagents.get_color()
 		. += filling
 
-/obj/machinery/reagent_refinery/filter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/reagent_filter_use,
-		/datum/interaction/machine_verb/reagent_filter_set_filter,
-		/datum/interaction/machine_verb/reagent_filter_flip,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/reagent_filter_use
-	id = "reagent_filter_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_use
-
-/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_use(datum/act/op/A)
+	var/mob/user = A.actor
 	set_filter(user)
 	return TRUE
 
 /obj/machinery/reagent_refinery/filter/proc/get_filter_side()
 	return filter_side
 
-/datum/interaction/machine_verb/reagent_filter_set_filter
-	id = "reagent_filter_set_filter"
-	name = "Set Filter Chemical"
-	effect = /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_set_filter
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/reagent_refinery/filter/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_set_filter(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/reagent_refinery/filter/proc/dq_actor_can_act_refusal(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return istext(answer) ? answer : "you can't do that right now"
+
+/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_set_filter(datum/act/op/A)
+	var/mob/user = A.actor
 	set_filter(user)
 	return TRUE
 
@@ -142,12 +139,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 	if(select && select != "")
 		filter_reagent_id = tgui_list[select]
 
-/datum/interaction/machine_verb/reagent_filter_flip
-	id = "reagent_filter_flip"
-	name = "Flip Filter Direction"
-	effect = /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_flip
-
-/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_flip(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_flip(datum/act/op/A)
+	var/mob/user = A.actor
 	flip_filter(user)
 	return TRUE
 

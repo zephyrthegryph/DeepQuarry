@@ -17,6 +17,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/recycling)
 	started_work(step = PROC_REF(work_step))
+	op("feed", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Feed"), needs(req_is(nameof(working), FALSE, because = MSG(recycling/working))), then(PROC_REF(interaction_feed)))
 
 /obj/machinery/recycling/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL // these are all stateful
@@ -29,11 +30,7 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 /**
  * Generic procs common to all
  */
-/obj/machinery/recycling/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/recycling_feed,
-	)
-	..()
+MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 
 /**
  * Old attackby: several silent guards (actor must be living and adjacent, not busy), then
@@ -41,22 +38,16 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
  * it never called ..() (unconditionally intercepts every item) and the guards mix silent
  * returns with messaged refusals.
  */
-/datum/interaction/machine_item/recycling_feed
-	id = "recycling_feed"
-	name = "Feed"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	effect = /obj/machinery/recycling/proc/interaction_feed
-	also_requires = list(REQ_FIELD_NOT("working", "it's busy; wait until it's idle"))
-
-/obj/machinery/recycling/proc/interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/recycling/proc/interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!isliving(user) || !Adjacent(user))
-		return TRUE
+		return OP_OK
 
 	if(default_part_replacement(user, O))
-		return TRUE
+		return OP_OK
 	if(!hand_fed)
-		return TRUE
+		return OP_OK
 	var/mob/living/M = user
 	if(can_accept_item(O))
 		M.drop_from_inventory(O)
@@ -64,7 +55,7 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 		act_message(M, src, MSG_SELF(span_info("You insert [O] into %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " inserts [O] into %T%.")))
 	else
 		to_chat(user, span_warning("\The [src] can't accept [O] for recycling."))
-	return TRUE
+	return OP_OK
 
 // Conveyors etc
 /obj/machinery/recycling/Bumped(atom/A)

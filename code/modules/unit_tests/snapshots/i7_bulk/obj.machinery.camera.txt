@@ -5,3 +5,4 @@
 /obj/machinery/camera|human|/obj/item => camera_update_coverage|camera_paper_show:needs a sheet of paper or a PDA,camera_bug_toggle:needs a camera bug,camera_shred:not possible right now,camera_bash:not possible right now
 /obj/machinery/camera|human|/obj/item/paper => camera_update_coverage,camera_paper_show|camera_bug_toggle:needs a camera bug,camera_shred:not possible right now,camera_bash:not possible right now
 /obj/machinery/camera|human|/obj/item/camera_bug => camera_update_coverage,camera_bug_toggle|camera_paper_show:needs a sheet of paper or a PDA,camera_shred:not possible right now,camera_bash:not possible right now
+

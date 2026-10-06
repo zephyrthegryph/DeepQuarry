@@ -615,8 +615,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	return "[base_state][rand(1, 2)]"
 
 /// Overrides tree's interaction_search_sticks(): no sticks to find in fur.
-/obj/structure/flora/tree/fur/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+/obj/structure/flora/tree/fur/interaction_search_sticks(datum/act/op/A)
+	return OP_OK
 
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)
@@ -631,7 +631,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		visible_message(span_danger("\The [s] tumbles out of \the [src]!"))
 		//legacy ai_holder.hostile/retaliate replaced with brain API.
 		s.ai_brain?.set_hostile(FALSE)
-		s.ghostjoin = TRUE
+		s.set_ghostjoin(TRUE)
 		s.ghostjoin_icon()
 
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
@@ -936,17 +936,8 @@ CAPABILITIES(/obj/structure/control_pod)
 	pixel_y = -16
 	clicksound = SFX_VORE_SQUISH1
 
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/dog_eye_swallow,
-	)
-	..()
-
-/// The old attackby did nothing at all with any item, and never called ..(): swallow it silently.
-/datum/interaction/machine_item/dog_eye_swallow
-	id = "dog_eye_swallow"
-	name = "Use"
-	effect = /atom/proc/interaction_swallow
+CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
@@ -1539,7 +1530,6 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 /obj/structure/auto_flesh_door/draw(datum/look/look)
 	..()
 	look.state("flesh-[state ? "open" : "closed"]")
-
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)

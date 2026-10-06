@@ -42,6 +42,9 @@ CAPABILITIES(/obj/machinery/bomb_tester)
 	op("set_can_pressure", ui_act("set_can_pressure", arg("pressure", num())), then(PROC_REF(ui_act_set_can_pressure)))
 	op("start_sim", ui_act("start_sim"), then(PROC_REF(ui_act_start_sim)))
 	extend(TAG_UI, needs(req(PROC_REF(not_simulating), because = MSG(bomb_tester/simulating))))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("load_tank", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Connect tank"), when(req(PROC_REF(has_free_tank_slot_holds))), then(PROC_REF(interaction_load_tank)))
+	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 
 MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
@@ -97,25 +100,17 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
-/obj/machinery/bomb_tester/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/bomb_tester_load_tank,
-		/datum/interaction/machine_hand/ungated/bomb_tester_open,
-	)
-	..()
-
-/datum/interaction/machine_item/bomb_tester_load_tank
-	id = "bomb_tester_load_tank"
-	name = "Connect tank"
-	held_type = /obj/item/tank
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/bomb_tester/proc/has_free_tank_slot, null))
-	effect = /obj/machinery/bomb_tester/proc/interaction_load_tank
-
 /obj/machinery/bomb_tester/proc/has_free_tank_slot(mob/actor, atom/target, obj/item/held)
 	return !tank1 || !tank2
 
-/obj/machinery/bomb_tester/proc/interaction_load_tank(mob/user, obj/item/I, datum/interaction/interaction)
+/// Requirement (was REQ_* has_free_tank_slot): the legacy check answers TRUE to pass.
+/obj/machinery/bomb_tester/proc/has_free_tank_slot_holds(datum/act/op/A)
+	var/answer = has_free_tank_slot(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/obj/machinery/bomb_tester/proc/interaction_load_tank(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/adopted = tank1 ? move_into(src, nameof(src.tank2), I, user) : move_into(src, nameof(src.tank1), I, user)
 	if(!adopted)
 		return TRUE
@@ -123,12 +118,8 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
 	return TRUE
 
-/datum/interaction/machine_hand/ungated/bomb_tester_open
-	id = "bomb_tester_open"
-	name = "Use"
-	effect = /obj/machinery/bomb_tester/proc/interaction_open
-
-/obj/machinery/bomb_tester/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bomb_tester/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE

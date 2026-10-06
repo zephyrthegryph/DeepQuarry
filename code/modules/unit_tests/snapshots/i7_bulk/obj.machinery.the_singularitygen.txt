@@ -1,5 +1,5 @@
-/obj/machinery/the_singularitygen|human|none => |singularitygen_install_particle_accelerator:needs a superconductive transmission coil
-/obj/machinery/the_singularitygen|robot|none => |gen_robot_interaction_swallow:not possible right now,singularitygen_install_particle_accelerator:needs a superconductive transmission coil
+/obj/machinery/the_singularitygen|human|none => |
+/obj/machinery/the_singularitygen|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/the_singularitygen|ai|none => |
 /obj/machinery/the_singularitygen|ghost|none => |
-/obj/machinery/the_singularitygen|human|/obj/item/smes_coil/super_io => |singularitygen_install_particle_accelerator:not possible right now
+

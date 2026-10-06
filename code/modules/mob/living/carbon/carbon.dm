@@ -395,8 +395,7 @@
 	return
 
 /mob/living/carbon/slip(slipped_on,stun_duration=8)
-	if(om_wants(src, /datum/om/event/carbon_slip))
-		om_emit(src, new /datum/om/event/carbon_slip(slipped_on, stun_duration))
+	PUBLISH_LEGACY(src, /datum/notice/carbon_slip, slipped_on, stun_duration)
 	if(src?.buckled_to())
 		return FALSE
 	stop_pulling()

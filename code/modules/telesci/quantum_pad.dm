@@ -85,20 +85,27 @@
 	consume(booster, user)
 	return TRUE
 
-/obj/machinery/power/quantumpad/multitool_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/machinery/power/quantumpad)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+
+/obj/machinery/power/quantumpad/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	if(panel_open)
 		rel_set(multitool, nameof(multitool.connectable), src)
 		to_chat(user, span_notice("You save the data in [tool]'s buffer."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(!istype(multitool.connectable(), /obj/machinery/power/quantumpad))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	rel_set(src, nameof(linked_pad), multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	update_icon()
+	return OP_OK
+
 /obj/machinery/power/quantumpad/draw(datum/look/look)
 	..()
 

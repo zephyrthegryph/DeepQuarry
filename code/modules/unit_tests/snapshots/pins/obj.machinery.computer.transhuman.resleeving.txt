@@ -33,6 +33,7 @@ human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool menu: Resleeving console interaction hand
 human|/obj/item/multitool menu: Resleeving console interaction item
 human|/obj/item/multitool menu: Use item
+human|/obj/item/multitool menu: Use multitool
 human|/obj/item/multitool click: Click: Resleeving console interaction item
 human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool menu: Resleeving console interaction hand
@@ -55,5 +56,11 @@ human|/obj/item/card/id menu: Resleeving console interaction hand
 human|/obj/item/card/id menu: Resleeving console interaction item
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Resleeving console interaction item
-keys: cleartemp, clear_b_rec, clear_m_rec, climb.climb, climb.climb_menu, coredump, create, disconnect, ejectdisk, genereset, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, menu, resleeving_console_interaction_hand, resleeving_console_interaction_item, selectpod, selectprinter, selectsleever, sleeve, use_gripper, use_item, view_b_rec, view_m_rec
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Resleeving console interaction hand
+human|/obj/item menu: Resleeving console interaction item
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Resleeving console interaction item
+keys: cleartemp, clear_b_rec, clear_m_rec, climb.climb, climb.climb_menu, coredump, create, disconnect, drag_buckle, ejectdisk, genereset, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, menu, resleeving_console_interaction_hand, resleeving_console_interaction_item, selectpod, selectprinter, selectsleever, sleeve, use_gripper, use_item, use_multitool, view_b_rec, view_m_rec
 

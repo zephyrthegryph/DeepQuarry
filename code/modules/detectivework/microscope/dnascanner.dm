@@ -21,29 +21,6 @@ OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/dnaforensics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/dnaforensics_insert_swab,
-		/datum/interaction/machine_hand/ungated/dnaforensics_open_ui,
-	)
-	..()
-
-/// Old attackby: insert a used blood swab for analysis.
-/datum/interaction/machine_item/dnaforensics_insert_swab
-	id = "dnaforensics_insert_swab"
-	name = "Insert swab"
-	requires = list(REQ_INTERACTION_REACH,
-		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/no_sample_loaded, "there is a sample in the machine"),
-		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"),
-		REQ_TARGET_STATE(/obj/machinery/dnaforensics/proc/can_insert_swab))
-	effect = /obj/machinery/dnaforensics/proc/interaction_insert_swab
-
-/obj/machinery/dnaforensics/proc/no_sample_loaded(mob/actor, atom/target, obj/item/held)
-	return !bloodsamp()
-
-/obj/machinery/dnaforensics/proc/not_currently_scanning(mob/actor, atom/target, obj/item/held)
-	return !scanning
-
 /// A used forensic swab must be releasable before the analyzer accepts it.
 /obj/machinery/dnaforensics/proc/can_insert_swab(mob/user, atom/target, obj/item/held)
 	var/obj/item/forensics/swab/swab = held
@@ -53,31 +30,29 @@ OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 			return reason
 	return TRUE
 
-/obj/machinery/dnaforensics/proc/interaction_insert_swab(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/dnaforensics/proc/interaction_insert_swab(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
 		if(can_insert_swab(user, src, swab) != TRUE)
-			return FALSE
+			return OP_DECLINE
 		if(!swab.loc.release_to(swab, src, null, user))
-			return FALSE
+			return OP_DECLINE
 		rel_set(src, nameof(bloodsamp), swab)
 		to_chat(user, span_notice("You insert [W] into [src]."))
 	else
 		to_chat(user, span_warning("\The [src] only accepts used swabs."))
-	return TRUE
-
-/// Old attack_hand: `tgui_interact(user)`, no gate (never called ..()).
-/datum/interaction/machine_hand/ungated/dnaforensics_open_ui
-	id = "dnaforensics_open_ui"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/dnaforensics)
+	ref_one(nameof(bloodsamp), /obj/item/forensics/swab)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
 	without("ui_open")
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
+	op("insert_swab", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert swab"), needs(req_empty(nameof(bloodsamp), because = MSG(dnaforensics/sample_loaded)), req_is(nameof(scanning), FALSE, because = MSG(dnaforensics/scanning)), req_held_releasable()), then(PROC_REF(interaction_insert_swab)))
 
 /obj/machinery/dnaforensics/ui_prepare(mob/user, datum/tgui/ui)
 	if(has_stat(NOPOWER))
@@ -171,6 +146,9 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 
 /obj/machinery/dnaforensics
 	silicon_use = SILICON_USE_UI
+
+MSG_DEF_SELF(dnaforensics/sample_loaded, "there is a sample in the machine")
+MSG_DEF_SELF(dnaforensics/scanning, "it is busy scanning right now")
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/dnaforensics/draw(datum/look/look)

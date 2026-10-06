@@ -288,6 +288,11 @@ shapes, and any spec the table above does not name), `interaction_overlap`, `req
   declared on `/mob`: `provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE)` while `tk_ready()` (a TK mutation, or powered kinesis gloves, and not through a remote view); `add_mutation(TK)`, `remove_mutation(TK)` and a glove's power spent call
   `tk_refresh()`. As the design says, it is a plain `AFF_MANIPULATE` provider, so a telekinetic actor does any `hand()` op on a target it sees within `TK_RANGE` (the old reach was only the types that declared an `INTERACT_TK`); a `tk()` op sits one tier above hand ops so that at range
   the op that means telekinesis goes first. Compartments, requirements and the actor half of the hand gate apply; the machine half never does (a mind has no posture or dexterity).
+- **observer.** `INTERACT_OBSERVER(name, PROC_REF(h), reqs...)` (a ghost's click, the old `attack_ghost`) -> `op("key", observer(), label(name), needs(...), then(PROC_REF(h)))`.
+  `observer()` needs `AFF_OBSERVE`, which only `/mob/observer/dead` provides; reach is `REACH_ANY`, and the reach gate still checks the provider, so no
+  living actor reaches it. A question the old handler opened is the op's `asks()` with `keeps = TARGET_PRESENT` (a ghost is neither adjacent nor alive).
+  Test: `dq_gap/input_observe_is_the_ghosts_only`.
+- **the actor's mutation.** `req_mutation(M, of = ON_ACTOR)` (a hulk's smash: `when(req_mutation(HULK))`). Test: `dq_gap/req_mutation_reads_the_actor`.
 - **pass-through.** `OP_PASS`, below.
 
 ## OP_DECLINE: an op handler that is not handled

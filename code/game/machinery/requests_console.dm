@@ -65,6 +65,8 @@ CAPABILITIES(/obj/machinery/requests_console)
 	op("print", ui_act("print", arg("print", num())), then(PROC_REF(ui_act_print)))
 	op("setScreen", ui_act("setScreen", arg("setScreen", num())), then(PROC_REF(ui_act_setscreen)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	op("requests_console_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id)))
+	op("requests_console_stamp", item(/obj/item/stamp), priority(OP_PRIORITY_DEFAULT - 1), label("Stamp"), then(PROC_REF(interaction_stamp)))
 
 /// Whoever presses a button leaves their prints on the console.
 /obj/machinery/requests_console/proc/ui_fingerprint(datum/act/op/A)
@@ -120,26 +122,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 		set_light(2)
 		set_light_on(TRUE)
 
-/obj/machinery/requests_console/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/requests_console_id,
-		/datum/interaction/machine_item/requests_console_stamp,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/requests_console_id
-	id = "requests_console_id"
-	name = "Swipe ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/requests_console/proc/interaction_id
-
-/datum/interaction/machine_item/requests_console_stamp
-	id = "requests_console_stamp"
-	name = "Stamp"
-	held_type = /obj/item/stamp
-	effect = /obj/machinery/requests_console/proc/interaction_stamp
-
 /obj/machinery/requests_console/ui_title(mob/user)
 	return "[department] Request Console"
 
@@ -163,7 +145,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	data["msgVerified"] = msgVerified
 	data["announceAuth"] = announceAuth
 	return data
-
 
 /obj/machinery/requests_console/proc/ui_act_write(datum/act/op/A, raw_priority, raw_write)
 	var/mob/user = A.actor
@@ -283,9 +264,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	else
 		reset_message(1)
 	. = TRUE
-/obj/machinery/requests_console/proc/interaction_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/requests_console/proc/interaction_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!operable(MAINT))
-		return TRUE
+		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/card/id/T = held
 		msgVerified = span_green(span_bold("Verified by [T.registered_name] ([T.assignment])"))
@@ -299,16 +282,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 			reset_message()
 			to_chat(user, span_warning("You are not authorized to send announcements."))
 		SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/requests_console/proc/interaction_stamp(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/requests_console/proc/interaction_stamp(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(!operable(MAINT))
-		return TRUE
+		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/stamp/T = held
 		msgStamped = span_blue(span_bold("Stamped with the [T.name]"))
 		SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/requests_console/multitool_act(mob/user, obj/item/tool)
 	open_request(src, /datum/prompt/text, PROC_REF(department_entered), answerer = user, title = "Multitool-Request Console Interface", question = "What Department ID would you like to give this request console?", default = department, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
@@ -454,4 +438,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	department = "Head of Personnel's Desk"
 	departmentType = RC_ASSIST|RC_INFO
 	announcementConsole = 1
-

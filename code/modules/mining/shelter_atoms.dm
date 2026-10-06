@@ -688,19 +688,10 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 	var/tmp/obj/machinery/light/target_light
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
-/obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/survival_pod_light_switch,
-	)
-	..()
+CAPABILITIES(/obj/machinery/light_switch/survival_pod)
+	op("toggle_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_toggle_impl)))
 
-/datum/interaction/machine_hand/ungated/survival_pod_light_switch
-	id = "survival_pod_light_switch"
-	name = "Use"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl
-
-/obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(datum/act/op/A)
 	set_on(!on)
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	if(!target_light())
@@ -719,7 +710,7 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 			target_light().set_light(0)
 
 	GLOB.lights_switched_on_roundstat++
-	return TRUE
+	return OP_OK
 
 //Windows
 /obj/structure/window/reinforced/survival_pod

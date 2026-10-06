@@ -208,20 +208,10 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 				rel_add(src, nameof(magnets), M)
 	return PROCESS_KILL
 
-/obj/machinery/magnetic_controller/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/magnetic_controller_open,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/magnetic_controller_open
-	id = "magnetic_controller_open"
-	name = "Use"
-	effect = /obj/machinery/magnetic_controller/proc/interaction_open
-
 // structured TGUI MagneticConsole (see
 // code/modules/admin/magnetic_console_panel.dm).
-/obj/machinery/magnetic_controller/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/magnetic_controller/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	user.set_machine(src)

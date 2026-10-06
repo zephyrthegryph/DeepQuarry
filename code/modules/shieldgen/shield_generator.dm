@@ -74,6 +74,12 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		then(PROC_REF(ui_act_set_input_cap)))
 	op("toggle_mode", ui_act("toggle_mode", arg("toggle_mode", num())), then(PROC_REF(ui_act_toggle_mode)))
 	op("switch_idle", ui_act("switch_idle", arg("switch_idle", num())), then(PROC_REF(ui_act_switch_idle)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), needs(req(PROC_REF(can_replace_parts_holds), because = PROC_REF(can_replace_parts_refusal))), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/power/shield_generator/proc/wire_lights()
 	return list(
@@ -405,52 +411,49 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	else if (field_integrity() > 25)
 		overloaded = 0
 
-/obj/machinery/power/shield_generator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_generator_part_replacement,
-		/datum/interaction/machine_hand/shield_generator_use,
-	)
-	..()
+/// Requirement (was REQ_* can_replace_parts): the legacy check answers TRUE to pass.
+/obj/machinery/power/shield_generator/proc/can_replace_parts_holds(datum/act/op/A)
+	var/answer = can_replace_parts(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/// Old attackby's part_replacer checks, running the shared part-replacement effect.
-/datum/interaction/machine_item/shield_generator_part_replacement
-	id = "shield_generator_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/shield_generator/proc/can_replace_parts, null))
-	effect = /obj/machinery/proc/interaction_part_replacement
+/// Why can_replace_parts_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/power/shield_generator/proc/can_replace_parts_refusal(datum/act/op/A)
+	var/answer = can_replace_parts(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/machinery/power/shield_generator/proc/can_replace_parts(mob/actor, atom/target, obj/item/held)
-	if(offline_for)
+	if(offline_for) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return "wait until it cools down from emergency shutdown first"
-	if(running)
+	if(running) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return "turn it off first"
 	return TRUE
 
-/obj/machinery/power/shield_generator/screwdriver_act(mob/user, obj/item/O)
-	return ..()
+/obj/machinery/power/shield_generator/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/power/shield_generator/multitool_act(mob/user, obj/item/O)
+/obj/machinery/power/shield_generator/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/power/shield_generator/wirecutter_act(mob/user, obj/item/O)
+/obj/machinery/power/shield_generator/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/power/shield_generator/crowbar_act(mob/user, obj/item/O)
+/obj/machinery/power/shield_generator/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(offline_for)
 		to_chat(user, span_warning("Wait until \the [src] cools down from emergency shutdown first!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(running)
 		to_chat(user, span_notice("Turn off \the [src] first!"))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/power/shield_generator/wrench_act(mob/user, obj/item/O)
 	if(offline_for)
@@ -521,12 +524,8 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 
 	return data
 
-/datum/interaction/machine_hand/shield_generator_use
-	id = "shield_generator_use"
-	name = "Use"
-	effect = /obj/machinery/power/shield_generator/proc/interaction_use
-
-/obj/machinery/power/shield_generator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/shield_generator/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(panel_open && Adjacent(user))
 		wires_open(src, user)
 	else

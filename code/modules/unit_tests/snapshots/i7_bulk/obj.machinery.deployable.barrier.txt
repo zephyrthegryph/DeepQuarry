@@ -1,6 +1,5 @@
-/obj/machinery/deployable/barrier|human|none => |barrier_swipe_id:needs an identification card,barrier_hit:needs an item
-/obj/machinery/deployable/barrier|robot|none => |gen_robot_interaction_swallow:not possible right now,barrier_swipe_id:needs an identification card,barrier_hit:needs an item
+/obj/machinery/deployable/barrier|human|none => |
+/obj/machinery/deployable/barrier|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/deployable/barrier|ai|none => |
 /obj/machinery/deployable/barrier|ghost|none => |
-/obj/machinery/deployable/barrier|human|/obj/item/card/id => barrier_swipe_id,barrier_hit|
-/obj/machinery/deployable/barrier|human|/obj/item => barrier_hit|barrier_swipe_id:needs an identification card
+

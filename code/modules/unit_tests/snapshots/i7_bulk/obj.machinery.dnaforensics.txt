@@ -1,4 +1,5 @@
-/obj/machinery/dnaforensics|human|none => dnaforensics_insert_swab,dnaforensics_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/dnaforensics|robot|none => dnaforensics_insert_swab,dnaforensics_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/dnaforensics|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/dnaforensics|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/dnaforensics|ai|none => |
 /obj/machinery/dnaforensics|ghost|none => |
+

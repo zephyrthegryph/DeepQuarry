@@ -1,5 +1,5 @@
-/obj/machinery/lapvend|human|none => machine_open_ui_ungated|lapvend_pay:needs an item
-/obj/machinery/lapvend|robot|none => machine_open_ui_ungated|gen_robot_interaction_swallow:not possible right now,lapvend_pay:needs an item
+/obj/machinery/lapvend|human|none => |
+/obj/machinery/lapvend|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/lapvend|ai|none => |
 /obj/machinery/lapvend|ghost|none => |
-/obj/machinery/lapvend|human|/obj/item => machine_open_ui_ungated,lapvend_pay|
+

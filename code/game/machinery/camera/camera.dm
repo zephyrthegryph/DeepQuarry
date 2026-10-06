@@ -52,6 +52,8 @@ CAPABILITIES(/obj/machinery/camera)
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
 	on_wire(WIRE_CAM_LIGHT, cut = PROC_REF(light_wire_cut), pulse = PROC_REF(light_wire_pulsed))
 	on_wire(WIRE_CAM_ALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
@@ -134,7 +136,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		cancel_after(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
-		om_attach(src, /datum/om/behaviour/sleeper/timed)
+		sleep_audit_join(src)
 		after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired), key = "camera_timer_token")
 
 /obj/machinery/camera/proc/camera_timer_fired()
@@ -147,7 +149,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	check_motion_alarm()
 	schedule_camera_timer()
 
-/obj/machinery/camera/om_sleep_violation()
+/obj/machinery/camera/sleep_violation()
 	var/deadline = next_camera_deadline()
 	if(deadline && (!after_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
@@ -287,13 +289,15 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		return OP_OK
 	return OP_OK
 
-/obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/camera/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	update_coverage()
 	set_panel_open(!panel_open)
 	act_message(user, null, MSG_SELF(span_notice("You screw the camera's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% screws the camera's panel [panel_open ? "open" : "closed"]!")))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/camera/wirecutter_act(mob/user, obj/item/tool)
 	update_coverage()
@@ -305,13 +309,15 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/multitool_act(mob/user, obj/item/tool)
 	return wirecutter_act(user, tool)
 
-/obj/machinery/camera/welder_act(mob/user, obj/item/tool)
+/obj/machinery/camera/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	update_coverage()
 	if(!wires_all_cut(src) && !has_stat(BROKEN))
-		return ..()
+		return OP_DECLINE
 	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
-		return ITEM_INTERACT_BLOCKING
-	return TRUE
+		return OP_OK
+	return OP_OK
 
 /obj/machinery/camera/proc/welded_off(mob/user, obj/item/tool)
 	if(assembly)

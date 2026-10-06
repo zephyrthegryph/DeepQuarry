@@ -14,5 +14,8 @@ human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id click: nothing
-keys: anchor, fit_material, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, painter
+human|/obj/item/stack/material click: nothing
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter click: Click: Painter
+keys: anchor, drag_buckle, fit_material, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, painter
 

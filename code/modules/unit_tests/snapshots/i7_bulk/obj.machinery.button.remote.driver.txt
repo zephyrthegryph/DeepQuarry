@@ -1,5 +1,6 @@
 /obj/machinery/button/remote/driver|human|none => button_press|
-/obj/machinery/button/remote/driver|robot|none => button_press,gen_silicon_silicon_pressed|gen_robot_interaction_swallow:not possible right now
-/obj/machinery/button/remote/driver|ai|none => gen_silicon_silicon_pressed|
+/obj/machinery/button/remote/driver|robot|none => button_press|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/button/remote/driver|ai|none => |
 /obj/machinery/button/remote/driver|ghost|none => |
 /obj/machinery/button/remote/driver|human|/obj/item => button_press|
+

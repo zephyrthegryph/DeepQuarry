@@ -1,11 +1,12 @@
-// Mob chunks as object-model entities (roadmap S3: mob chunk keys).
+// Mob chunks (roadmap S3: mob chunk keys).
 //
-// A 16x16 chunk that something waits on is a /datum/mob_chunk entity. A mob entering, leaving or
-// moving in it raises its change channels -- CHANGE_CHUNK_ANY_MOB for any mob, CHANGE_CHUNK_PLAYER
-// for a mob with a client -- and whatever sleeps on it om_watch()es those channels with its own
-// behaviour (a turret's machine pipeline, a calm AI brain, a looping sound, an auto-flicker light).
-// A chunk nobody watches has no datum, and mob movement skips the lookup entirely while nothing
-// watches any chunk.
+// A 16x16 chunk that something waits on is a /datum/mob_chunk. A mob entering, leaving or moving in
+// it raises its bits -- CHANGE_CHUNK_ANY_MOB for any mob, CHANGE_CHUNK_PLAYER for a mob with a
+// client -- and whatever sleeps on it (a calm AI brain, a dormant looping sound, a proximity-gated
+// object) is called back: watch_mob_chunks(watcher, chunks, mask, PROC_REF(x)) runs
+// watcher.x(chunk, bits). Watchers are held by REF text, so a deleted watcher is dropped at the
+// next wake. A chunk nobody watches has no datum, and mob movement skips the lookup entirely while
+// nothing watches any chunk.
 
 /// Chunk id -> /datum/mob_chunk, for chunks something watches.
 GLOBAL_LIST_EMPTY(mob_chunks)
@@ -16,6 +17,8 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /datum/mob_chunk
 	var/id
+	/// REF(watcher) -> list(mask, handler).
+	var/list/watchers
 
 /// The chunk id for a location, or null off-map.
 /proc/mob_chunk_id(atom/location)
@@ -40,11 +43,19 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"]
 	if(!C)
 		return
-	if(!length(C.om_rec?.watches_in))
+	if(!length(C.watchers))
 		GLOB.mob_chunks -= "[id]"
 		spent(C)
 		return
-	changed(C, bits)
+	for(var/key in C.watchers.Copy())
+		var/list/watch = C.watchers[key]
+		if(!watch || !(watch[1] & bits))
+			continue
+		var/datum/watcher = locate(key)
+		if(!watcher || QDELETED(watcher) || REF(watcher) != key)
+			C.watchers -= key
+			continue
+		call(watcher, watch[2])(C, bits)
 
 /// Every chunk within `radius` tiles of `center`.
 /proc/mob_chunks_around(turf/center, radius)
@@ -55,11 +66,11 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		for(var/chunk_y in MOB_CHUNK_COORD(max(center.y - radius, 1)) to MOB_CHUNK_COORD(min(center.y + radius, world.maxy)))
 			. += mob_chunk(MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y))
 
-/// `watcher`'s behaviour `B` wakes (CHANGE_RELATED) when `mask` changes on any of `chunks`.
-/// Returns the chunks, for unwatch_mob_chunks().
-/proc/watch_mob_chunks(datum/watcher, list/chunks, mask, B)
+/// `watcher`.handler(chunk, bits) runs when `mask` is raised on any of `chunks`. Returns the chunks, for unwatch_mob_chunks().
+/proc/watch_mob_chunks(datum/watcher, list/chunks, mask, handler)
+	var/key = REF(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
-		om_watch(watcher, C, mask, B)
+		LAZYSET(C.watchers, key, list(mask, handler))
 	if(mask & CHANGE_CHUNK_ANY_MOB)
 		GLOB.mob_chunk_watches += length(chunks)
 	if(mask & CHANGE_CHUNK_PLAYER)
@@ -67,9 +78,10 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	return chunks
 
 /// Drops watches made by watch_mob_chunks(). Returns null, for `chunks = unwatch_mob_chunks(...)`.
-/proc/unwatch_mob_chunks(datum/watcher, list/chunks, mask, B)
+/proc/unwatch_mob_chunks(datum/watcher, list/chunks, mask)
+	var/key = REF(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
-		om_unwatch(watcher, C, B)
+		LAZYREMOVE(C.watchers, key)
 	if(mask & CHANGE_CHUNK_ANY_MOB)
 		GLOB.mob_chunk_watches = max(GLOB.mob_chunk_watches - length(chunks), 0)
 	if(mask & CHANGE_CHUNK_PLAYER)
@@ -109,15 +121,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /// Something whose periodic work only matters with mobs (or players) nearby -- a radiation source,
 /// a spawner, a haunting -- ends its step with `return sleep_until_mob_near(radius)` when nobody is
-/// in range: it watches the chunks around it and restarts on its lane when a mob moves into one.
-/datum/om/behaviour/sleeper/proximity
-	name = "proximity gate"
-
-/datum/om/behaviour/sleeper/proximity/on_wake(atom/movable/A, changes)
-	if(QDELETED(A) || !A.proximity_chunks)
-		return
-	A.proximity_chunks = unwatch_mob_chunks(A, A.proximity_chunks, A.proximity_mask, /datum/om/behaviour/sleeper/proximity)
-	om_task_periodic(A, A.proximity_lane)
+/// in range: it watches the chunks around it and restarts on its lane when a mob moves into one (proximity_woke(), periodic.dm).
 
 /atom/movable/var/tmp/list/proximity_chunks
 /atom/movable/var/tmp/proximity_mask = 0
@@ -137,17 +141,17 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 /// `radius`. Returns PROCESS_KILL. `lane` is the periodic lane to restart on.
 /atom/movable/proc/sleep_until_mob_near(radius, players_only = FALSE, lane = PERIODIC_SLOW)
 	if(proximity_chunks)
-		proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask, /datum/om/behaviour/sleeper/proximity)
+		proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask)
 	var/turf/T = get_turf(src)
 	if(!T)
 		return PROCESS_KILL
 	proximity_mask = players_only ? CHANGE_CHUNK_PLAYER : CHANGE_CHUNK_ANY_MOB
 	proximity_lane = lane
-	om_attach(src, /datum/om/behaviour/sleeper/proximity)
-	proximity_chunks = watch_mob_chunks(src, mob_chunks_around(T, radius), proximity_mask, /datum/om/behaviour/sleeper/proximity)
+	sleep_audit_join(src)
+	proximity_chunks = watch_mob_chunks(src, mob_chunks_around(T, radius), proximity_mask, PROC_REF(proximity_woke))
 	return PROCESS_KILL
 
-/atom/movable/om_sleep_violation()
+/atom/movable/sleep_violation()
 	if(proximity_chunks && om_task_periodic_running(src))
 		return "watching for mobs while already running"
 	return ..()

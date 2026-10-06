@@ -82,7 +82,7 @@
 
 /datum/unit_test/dq_world_lanes_f3_reflector/Run()
 	var/datum/cadence/P = cadence_def(PERIODIC_REFLECTORS)
-	TEST_ASSERT_EQUAL(P.clock, CLOCK_MACHINE, "the reflector lane is not on the machine clock")
+	TEST_ASSERT_EQUAL(P.clock, CLOCK_WORLD, "the reflector lane runs on world time")
 	TEST_ASSERT_EQUAL(P.every, 0.5 SECONDS, "the reflector lane lost SSreflector's cadence")
 	var/obj/structure/reflector/box/B = allocate(/obj/structure/reflector/box, run_loc_floor_bottom_left)
 	TEST_ASSERT_NULL(B.periodic_pipe, "an idle reflector is running")

@@ -95,6 +95,16 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	set_working(now)
 	if(!farming())
 		show_idle_readout()
+		return
+	// Switched on with nothing to do: its readout says why (its gas watch parks it before a step could).
+	if(stored_material[MAT_ALGAE] < algae_per_mole)
+		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
+	else if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
+		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
+	else if(!now)
+		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
+	else
+		ui_error = null
 
 /// One service interval of farming (its every(), while it has work).
 /obj/machinery/atmospherics/binary/algae_farm/proc/farm_step(datum/act/A)

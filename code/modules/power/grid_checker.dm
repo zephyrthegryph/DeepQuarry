@@ -42,29 +42,21 @@ TRACKED(/obj/machinery/power/grid_checker, power_failing)
 		opened = panel_open
 	return result
 
-/obj/machinery/power/grid_checker/crowbar_act(mob/user, obj/item/W)
-	return ..()
+/obj/machinery/power/grid_checker/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/power/grid_checker/multitool_act(mob/user, obj/item/W)
+/obj/machinery/power/grid_checker/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/power/grid_checker/wirecutter_act(mob/user, obj/item/W)
+/obj/machinery/power/grid_checker/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/power/grid_checker/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/grid_checker_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/grid_checker_use
-	id = "grid_checker_use"
-	name = "Use"
-	effect = /obj/machinery/power/grid_checker/proc/interaction_grid_checker_use
-
-/obj/machinery/power/grid_checker/proc/interaction_grid_checker_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/grid_checker/proc/interaction_grid_checker_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user)
 		return TRUE
 	add_fingerprint(user)
@@ -139,6 +131,10 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 	on_wire(WIRE_ALLOW_MANUAL2, cut = PROC_REF(manual_wire_cut))
 	on_wire(WIRE_ALLOW_MANUAL3, cut = PROC_REF(manual_wire_cut))
 	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_touched), pulse = PROC_REF(shock_wire_touched))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
+	op("grid_checker_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_grid_checker_use)))
 
 
 /obj/machinery/power/grid_checker/proc/wire_lights()

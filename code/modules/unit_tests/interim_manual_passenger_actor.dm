@@ -16,7 +16,7 @@
 	var/datum/ghost_query/query = pod.Q
 	TEST_ASSERT_NOTNULL(query, "the real manual pod starts an owned query")
 	rel_add(query, nameof(query.candidates), winner)
-	OM_EMIT(query, /datum/om/event/ghost_query_complete)
+	PUBLISH_LEGACY(query, /datum/notice/ghost_query_complete)
 	own_turf_contents(T)
 	TEST_ASSERT(pod.used && !pod.busy, "real completion opens the passenger pod")
 	TEST_ASSERT(QDELETED(query), "real completion disposes of the pending query")

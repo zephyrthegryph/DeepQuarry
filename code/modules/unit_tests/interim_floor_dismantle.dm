@@ -26,6 +26,7 @@
 	plate = TRUE
 
 /datum/unit_test/interim_catwalk_dismantle/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/catwalk/catwalk = allocate(/obj/structure/catwalk, T)
@@ -40,16 +41,16 @@
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/rods)), 0, "the floor starts without recovered rods")
 	var/obj/item/weldingtool/welder = allocate(/obj/item/weldingtool, T)
 	TEST_ASSERT(user.put_in_active_hand(welder), "the actor holds the real welder before slicing")
-	var/datum/interaction/slice = INTERACTION(/datum/interaction/catwalk_slice/help)
-	TEST_ASSERT(slice, "the real help slicing interaction is registered")
-	TEST_ASSERT_EQUAL(slice.stance, I_HELP, "the actual help entry requests preserving a lattice")
-	catwalk.interaction_slice(user, welder, slice)
+	user.set_combat_mode(FALSE) // the help stance keeps the lattice
+	test_click(user, catwalk, welder)
+	test_time(1 SECOND)
 	TEST_ASSERT(!QDELETED(catwalk), "an unlit real welder does not dismantle the catwalk")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/rods)), 0, "the unlit slicing attempt returns no rods")
 	TEST_ASSERT(test_op_handler(welder, "interaction_self", user, welder), "actual welder activation reports success")
 	TEST_ASSERT(welder.isOn(), "actual activation lights the held welder")
 	var/fuel_before = welder.get_fuel()
-	TEST_ASSERT(catwalk.interaction_slice(user, welder, slice), "the public slicing effect reports completion")
+	TEST_ASSERT(test_op_committed(test_click(user, catwalk, welder)), "the public slicing op commits")
+	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(welder.get_fuel(), fuel_before, "catwalk slicing preserves the declared zero fuel cost")
 	test_op_handler(welder, "interaction_self", user, welder)
 	TEST_ASSERT(!welder.isOn(), "actual activation switches the welder off after slicing")
@@ -68,3 +69,4 @@
 			recovered_tiles += tile_stack.get_amount()
 	TEST_ASSERT_EQUAL(recovered_tiles, plate ? 1 : 0, "only a plated catwalk returns its installed tile")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), welder, "slicing keeps the original welder held instead of equipping recovered material")
+	test_driver_end()

@@ -139,11 +139,11 @@ CAPABILITIES(/obj/item/dice)
 		else if(prob(75)) //makeshift weighted dice don't always work
 			result = loaded
 	icon_state = "[name][result]"
-	if(om_wants(user, /datum/om/event/before/dice_roll)) //We can override dice rolls!
-		var/datum/om/event/before/dice_roll/roll = new(src, silent, result)
-		om_emit(user, roll)
-		if(roll.result_override)
-			result = roll.result_override
+	if(isliving(user)) //An omen can override dice rolls!
+		var/mob/living/roller = user
+		var/override = roller.omen_roll_override(src, silent, result)
+		if(override)
+			result = override
 
 	if(!silent)
 		var/comment = ""

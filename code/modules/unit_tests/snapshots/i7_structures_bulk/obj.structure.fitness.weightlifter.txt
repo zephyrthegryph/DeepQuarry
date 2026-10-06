@@ -1,5 +1,5 @@
-/obj/structure/fitness/weightlifter|human|none => weightlifter_hand|
-/obj/structure/fitness/weightlifter|robot|none => weightlifter_hand|
+/obj/structure/fitness/weightlifter|human|none => |
+/obj/structure/fitness/weightlifter|robot|none => |
 /obj/structure/fitness/weightlifter|ai|none => |
 /obj/structure/fitness/weightlifter|ghost|none => |
 

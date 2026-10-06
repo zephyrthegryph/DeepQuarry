@@ -38,7 +38,6 @@
 	var/combine_first = FALSE // If TRUE, this appliance will do combination cooking before checking recipes
 	var/food_safety = FALSE	// If true, the appliance automatically ejects food instead of burning it
 
-
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_power = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_power")
 	var/static/radial_safety = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_safety")
@@ -57,6 +56,9 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
 	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
 	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
+	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds), because = PROC_REF(can_take_item_refusal))), then(PROC_REF(appliance_interaction_item)))
+	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
+	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds), because = PROC_REF(can_toggle_power_verb_refusal))), then(PROC_REF(appliance_toggle_power_effect)))
 
 /// Whether or not the machine is currently operating (cooking its contents).
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
@@ -145,7 +147,8 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off_icon}")
 
-/obj/machinery/appliance/proc/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/proc/appliance_toggle_power_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	attempt_toggle_power(user)
 
@@ -249,11 +252,25 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance, \
-	INTERACT_ITEM(null, PROC_REF(appliance_interaction_item), REQ_TARGET_STATE(/obj/machinery/appliance/proc/can_take_item)), \
-	INTERACT_HAND(null, PROC_REF(appliance_interaction_hand)), \
-	INTERACT_VERB("Toggle Power", PROC_REF(appliance_toggle_power_effect), REQ_TARGET_STATE(/obj/machinery/appliance/proc/can_toggle_power_verb)), \
-)
+/// Requirement (was REQ_* can_take_item): the legacy check answers TRUE to pass.
+/obj/machinery/appliance/proc/can_take_item_holds(datum/act/op/A)
+	var/answer = can_take_item(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_take_item_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/appliance/proc/can_take_item_refusal(datum/act/op/A)
+	var/answer = can_take_item(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// Requirement (was REQ_* can_toggle_power_verb): the legacy check answers TRUE to pass.
+/obj/machinery/appliance/proc/can_toggle_power_verb_holds(datum/act/op/A)
+	var/answer = can_toggle_power_verb(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_toggle_power_verb_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/appliance/proc/can_toggle_power_verb_refusal(datum/act/op/A)
+	var/answer = can_toggle_power_verb(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Requirement: the appliance works.
 /obj/machinery/appliance/proc/can_take_item(mob/user, atom/target, obj/item/held)
@@ -272,7 +289,9 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	return FALSE
 
 /// Old attackby.
-/obj/machinery/appliance/proc/appliance_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/appliance/proc/appliance_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/ToCook = I
 
 	if(istype(I, /obj/item/gripper))
@@ -282,29 +301,29 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			var/result = can_insert(wrap, user)
 			if(!result)
 				default_part_replacement(user, I)
-				return TRUE
+				return OP_OK
 			add_content(wrap, user)
 			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		attack_hand(user)
-		return TRUE
+		return OP_OK
 
 	var/result = can_insert(I, user)
 	if(!result)
 		default_part_replacement(user, I)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(result == 2)
 		var/obj/item/grab/G = I
 		if (G && istype(G) && G?.grab_target())
 			cook_mob(G?.grab_target(), user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	//From here we can start cooking food
 	add_content(ToCook, user)
 	update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 //Override for container mechanics
 /obj/machinery/appliance/proc/add_content(obj/item/I, mob/user)
@@ -663,11 +682,12 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			break
 
 /// Old attack_hand.
-/obj/machinery/appliance/proc/appliance_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/proc/appliance_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tgui_id)
 		tgui_interact(user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/appliance/ui_data(datum/act/eval/A)
 	var/list/data = list()

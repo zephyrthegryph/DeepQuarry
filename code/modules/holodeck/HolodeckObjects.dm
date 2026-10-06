@@ -179,7 +179,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 	return TRUE
 
 CAPABILITIES(/obj/structure/window/reinforced/holowindow)
-	op("holowindow_interaction_item", item(/obj/item), then(PROC_REF(holowindow_interaction_item)))
+	op("holowindow_interaction_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(holowindow_interaction_item)))   // ahead of the window's own item use, which its pass goes on to
 
 /// Old attackby: slam a grabbed mob against it, or take a hit; then the window's own handling.
 /obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(datum/act/op/A)

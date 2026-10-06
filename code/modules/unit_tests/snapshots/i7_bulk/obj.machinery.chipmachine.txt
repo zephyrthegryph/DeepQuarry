@@ -1,5 +1,5 @@
-/obj/machinery/chipmachine|human|none => |chipmachine_exchange:needs an item
-/obj/machinery/chipmachine|robot|none => |gen_robot_interaction_swallow:not possible right now,chipmachine_exchange:needs an item
+/obj/machinery/chipmachine|human|none => |
+/obj/machinery/chipmachine|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chipmachine|ai|none => |
 /obj/machinery/chipmachine|ghost|none => |
-/obj/machinery/chipmachine|human|/obj/item => chipmachine_exchange|
+

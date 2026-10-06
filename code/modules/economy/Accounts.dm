@@ -117,7 +117,8 @@ CAPABILITIES(/datum/money_account)
 	return TRUE
 
 /proc/department_for_mob(mob/living/user)
-	if(!istype(user) || !user.job)
+	READS_FROM(user)
+	if(!istype(user) || !user.job) // ALLOW(reads): a mob's job is fixed when it joins; a storefront asks it when stock is offered
 		return
 	var/datum/department/department = SSjob.get_primary_department_of_job(user.job)
 	if(department?.name in GLOB.department_accounts)

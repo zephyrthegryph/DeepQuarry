@@ -55,26 +55,16 @@ CAPABILITIES(/obj/machinery/account_database)
 	op("view_accounts_list", ui_act("view_accounts_list"), then(PROC_REF(ui_act_view_accounts_list)))
 	op("revoke_payroll", ui_act("revoke_payroll"), then(PROC_REF(ui_act_revoke_payroll)))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("interaction_insert_card", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_card)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/account_database/Initialize(mapload)
 	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
 	. = ..()
 
-/obj/machinery/account_database/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/account_database_insert_card,
-		/datum/interaction/machine_hand/ungated/account_database_open_ui,
-	)
-	..()
-
-/// Old attackby: insert an ID card, then reopen the UI.
-/datum/interaction/machine_item/account_database_insert_card
-	id = "account_database_insert_card"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/account_database/proc/interaction_insert_card
-
-/obj/machinery/account_database/proc/interaction_insert_card(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/account_database/proc/interaction_insert_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!held_card)
 		if(!move_into(src, nameof(src.held_card), O, user))
 			return TRUE
@@ -87,14 +77,8 @@ CAPABILITIES(/obj/machinery/account_database)
 /obj/machinery/account_database/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
 
-/// Old attack_hand: never called ..(); silently did nothing when unpowered or broken.
-/datum/interaction/machine_hand/ungated/account_database_open_ui
-	id = "account_database_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/account_database/proc/interaction_open_ui_impl
-
-/obj/machinery/account_database/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/account_database/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
@@ -210,7 +194,7 @@ CAPABILITIES(/obj/machinery/account_database)
 		return FALSE
 	if(detailed_account_view())
 		detailed_account_view().suspended = !detailed_account_view().suspended
-		OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
+		PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_payment_account_status, detailed_account_view())
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_finalise_create_account(datum/act/op/A, holder_name, starting_funds_arg)

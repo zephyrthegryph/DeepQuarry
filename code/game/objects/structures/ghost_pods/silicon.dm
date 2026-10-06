@@ -119,7 +119,7 @@
 
 /obj/structure/ghost_pod/manual/lost_drone/dogborg/create_occupant(mob/M)
 	if(!drone_laws)
-		used = TRUE
+		set_used(TRUE)
 		open_request(src, /datum/prompt/choice, PROC_REF(drone_type_chosen), answerer = M, title = "Drone Type", question = "What sort of laws do you wish to have as Lost Drone (they will still be random)", choices = list("Regular", "Vore"), buttons = TRUE, timeout = 0)
 		return
 	if(!(drone_laws == "Vore"))	// Regular
@@ -141,5 +141,5 @@
 		R.ckey = M.ckey
 		visible_message(span_warning("As \the [src] opens, the eyes of the robot flicker as it is activated."))
 		log_and_message_admins("successfully opened \a [src] and got a Lost Drone.", opening_actor)
-		used = TRUE
+		set_used(TRUE)
 		return TRUE

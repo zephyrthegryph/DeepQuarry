@@ -34,9 +34,10 @@
 
 /// A wrench used on the machine.
 /proc/p2c_wrench(mob/living/carbon/human/H, obj/machinery/M, obj/item/tool)
-	if(p2c_legacy(M))
-		M.wrench_act(H, tool)
+	if(p2c_legacy(M) && hascall(M, "wrench_act"))
+		call(M, "wrench_act")(H, tool)
 		return
+	H.next_click = 0
 	test_click(H, M, tool)
 
 /// A dragged item dropped onto the machine.

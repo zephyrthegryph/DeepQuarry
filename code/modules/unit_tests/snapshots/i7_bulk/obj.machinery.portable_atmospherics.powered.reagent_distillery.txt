@@ -1,6 +1,5 @@
-/obj/machinery/portable_atmospherics/powered/reagent_distillery|human|none => distillery_toggle_power,distillery_toggle_mixing,distillery_radial|distillery_install_beaker:needs a  
-/obj/machinery/portable_atmospherics/powered/reagent_distillery|robot|none => distillery_toggle_power,distillery_toggle_mixing,distillery_radial|gen_robot_interaction_swallow:not possible right now,distillery_install_beaker:needs a  
+/obj/machinery/portable_atmospherics/powered/reagent_distillery|human|none => |
+/obj/machinery/portable_atmospherics/powered/reagent_distillery|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|ai|none => |
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|ghost|none => |
-/obj/machinery/portable_atmospherics/powered/reagent_distillery|human|/obj/item/reagent_containers/glass => distillery_toggle_power,distillery_toggle_mixing,distillery_install_beaker,distillery_radial|
 

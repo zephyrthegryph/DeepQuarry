@@ -303,13 +303,6 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 		if(T.state == OM_TASK_RUNNING && (!target || T.target == target))
 			. += T
 
-/// Cancels `user`'s timed actions (on `target`, when given). Returns how many.
-/proc/om_cancel_timed_actions(mob/user, atom/target, reason = "cancelled")
-	. = 0
-	for(var/datum/om/task/timed/T as anything in om_timed_actions(user, target))
-		if(om_task_cancel(T, reason))
-			.++
-
 #undef TIMED_ACTION_CHANNELS
 
 // ---------------------------------------------------------------- staggered work

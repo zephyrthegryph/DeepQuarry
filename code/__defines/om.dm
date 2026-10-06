@@ -150,14 +150,8 @@
 /// value = stacks. Timed ones expire on the mob's body clock.
 #define EFFECT_BODY_EFFECTS "body_effects"
 
-// Clock domains and their generated effect ids ("clock:<id>:mult"/":inhibit").
+// The biological clock domain: it runs at the clock_rate_bio stat (code/datums/om/contribution.dm, om_clock_compute()).
 #define CLOCK_BIO "bio"
-#define CLOCK_MACHINE "machine"
-#define CLOCK_CHEM "chem"
-#define EFFECT_CLOCK_MACHINE_MULT "clock:machine:mult"
-#define EFFECT_CLOCK_MACHINE_INHIBIT "clock:machine:inhibit"
-#define EFFECT_CLOCK_CHEM_MULT "clock:chem:mult"
-#define EFFECT_CLOCK_CHEM_INHIBIT "clock:chem:inhibit"
 
 // ---- Relations (section D). ----
 #define OM_REL_REPLACE 1

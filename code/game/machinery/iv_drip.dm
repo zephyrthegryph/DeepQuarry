@@ -5,7 +5,6 @@
 	anchored = FALSE
 	density = FALSE
 
-
 OM_FIELD_VIEW(/obj/machinery/iv_drip, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
 /// Drips (or draws) while hooked up to a patient.
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
@@ -18,7 +17,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 		icon_state = "hooked"
 	else
 		icon_state = ""
-
 
 	if(beaker)
 		var/datum/reagents/reagents = beaker.reagents
@@ -41,6 +39,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 CAPABILITIES(/obj/machinery/iv_drip)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
 	drag_onto(PROC_REF(drop_input))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("iv_drip_interaction_item", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Attach container"), needs(req_is(nameof(beaker), FALSE, because = MSG(iv_drip/beaker))), then(PROC_REF(iv_drip_interaction_item)))
+	op("iv_drip_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove container"), then(PROC_REF(iv_drip_interaction_hand)))
+	op("iv_drip_toggle_mode", menu(), label("Toggle Mode"), needs(req_adjacent(), req_capable(), req(/mob/living, of = ON_ACTOR, because = MSG(iv_drip/actor_type))), then(PROC_REF(iv_drip_toggle_mode)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
 /// then the native drop goes on.
@@ -63,29 +65,30 @@ CAPABILITIES(/obj/machinery/iv_drip)
 		rel_set(src, nameof(attached), over_object)
 		update_icon()
 
+MSG_DEF_SELF(iv_drip/beaker, "there is already a reagent container loaded")
 
-EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
-	INTERACT_INSERT(/obj/item/reagent_containers, PROC_REF(iv_drip_interaction_item), "Attach container", REQ_BECAUSE(REQ_FIELD_NOT("beaker"), "there is already a reagent container loaded")), \
-	INTERACT_HAND_UNGATED("Remove container", PROC_REF(iv_drip_interaction_hand)), \
-	INTERACT_VERB("Toggle Mode", PROC_REF(iv_drip_toggle_mode), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living)), "you can't do that")), \
-)
+MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 
 /// Old attackby.
-/obj/machinery/iv_drip/proc/iv_drip_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/iv_drip/proc/iv_drip_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/reagent_containers))
-		return FALSE
+		return OP_DECLINE
 
 	if(!move_into(src, nameof(src.beaker), W, user))
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, "You attach \the [W] to \the [src].")
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/iv_drip/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
 	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)
 	to_chat(user, span_notice("You dismantle the IV drip."))
@@ -162,17 +165,17 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 					), "blood-donation:[REF(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
 
 /// Old attack_hand: take the container off before the machinery gate; with none, the touch goes on.
-/obj/machinery/iv_drip/proc/iv_drip_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/iv_drip/proc/iv_drip_interaction_hand(datum/act/op/A)
 	if(!beaker)
-		return FALSE
+		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
 	own_take(src, nameof(beaker))
 	update_icon()
-	return TRUE
-
+	return OP_OK
 
 /// Old verb "Toggle Mode".
-/obj/machinery/iv_drip/proc/iv_drip_toggle_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/iv_drip/proc/iv_drip_toggle_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
 		return
 

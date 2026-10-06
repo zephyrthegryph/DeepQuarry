@@ -195,7 +195,7 @@ SYSTEM_DEF(time_track)
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,
 			REGISTRY_COUNT(REGISTRY_MOBS),
-			om_ai_brain_cost(),
+			round(GLOB.ai_brain_cost_ms, 0.01),
 			0, // SStimer cost: gone
 			0, // all_queries: the query pump is gone (I/O lane jobs are counted by SSdb)
 			0, // queries_active

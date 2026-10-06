@@ -110,9 +110,6 @@ CAPABILITIES(/datum/feed_network)
 		NEWSCASTER.newsAlert(annoncement)
 		NEWSCASTER.update_icon()
 
-
-
-
 /obj/machinery/newscaster
 	name = "newscaster"
 	desc = "A standard newsfeed handler for use on commercial space stations. All the news you absolutely have no use for, in one place!"
@@ -180,6 +177,8 @@ CAPABILITIES(/obj/machinery/newscaster)
 	op("censor_channel_story_body", ui_act("censor_channel_story_body", arg("ref")), then(PROC_REF(ui_act_censor_channel_story_body)))
 	op("toggle_d_notice", ui_act("toggle_d_notice", arg("ref")), then(PROC_REF(ui_act_toggle_d_notice)))
 	op("show_channel", ui_act("show_channel", arg("show_channel")), then(PROC_REF(ui_act_show_channel)))
+	op("open", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open)))
+	op("as_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_as_touch)))
 
 /obj/machinery/newscaster/security_unit                   //Security unit
 	name = "Security Newscaster"
@@ -245,22 +244,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		return STATUS_CLOSE
 	. = ..()
 
-/obj/machinery/newscaster/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/newscaster_open,
-		/datum/interaction/machine_item/newscaster_item_open,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): open the newscaster's interface.
-/datum/interaction/machine_hand/ungated/newscaster_open
-	id = "newscaster_open"
-	name = "Use"
-	effect = /obj/machinery/newscaster/proc/interaction_open
-
-/obj/machinery/newscaster/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/newscaster/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ispowered || (has_stat(BROKEN)))
-		return TRUE
+		return OP_OK
 
 	if(!node())
 		rel_set(src, nameof(node), get_exonet_node())
@@ -268,13 +255,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(!node() || !node().on || !node().allow_external_newscasters)
 		to_chat(user, span_danger("Error: Cannot connect to external content.  Please try again in a few minutes.  If this error persists, please \
 		contact the system administrator."))
-		return TRUE
+		return OP_OK
 
 	if(!user.IsAdvancedToolUser())
-		return TRUE
+		return OP_OK
 
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/newscaster/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -672,13 +659,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		set_temp("Wanted issue taken down.", "success", FALSE)
 		SStgui.update_uis(src)
 
-/// Old attackby: any item used on the newscaster just forwarded to attack_hand().
-/datum/interaction/machine_item/newscaster_item_open
-	id = "newscaster_item_open"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_as_touch
-
 /obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)
 
@@ -775,7 +755,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	alert = 0
 	update_icon()
 
-
 /// parent channel (a relation view: it reads null once the target is deleted).
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel
 	return parent_channel
@@ -795,4 +774,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 /// photo (a relation view: it reads null once the target is deleted).
 /datum/news_photo/proc/photo() as /obj/item/photo
 	return photo
-

@@ -130,6 +130,10 @@ CAPABILITIES(/obj/machinery/clonepod)
 	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(clonepod_emp))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)
@@ -185,7 +189,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	if(!H)
 		attempting = 0
 		return
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body
@@ -312,21 +316,23 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return TRUE
 	return OP_DECLINE
 
-/obj/machinery/clonepod/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/screwdriver_used(datum/act/op/A)
 	if(get_occupant())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/clonepod/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/crowbar_used(datum/act/op/A)
 	if(get_occupant())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/clonepod/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/mob/living/occupant = get_occupant()
 	if(locked && (anchored || occupant))
 		to_chat(user, span_warning("Can not do that while [src] is in use."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(anchored)
 		set_anchored(FALSE)
 		rel_clear(src, nameof(connected))
@@ -335,16 +341,18 @@ CAPABILITIES(/obj/machinery/clonepod)
 	playsound(src, tool.usesound, 100, TRUE)
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] %T% to the floor."), \
 		MSG_OTHERS("%U% [anchored ? "secures" : "unsecures"] %T% to the floor."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/clonepod/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(tool, /obj/item/multitool))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.connecting), src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
-	changed(multitool)
-	return ITEM_INTERACT_SUCCESS
+	multitool.update_icon()
+	return OP_OK
 
 /// A sequencer forces an emergency ejection.
 /obj/machinery/clonepod/proc/on_emag(datum/act/op/A)

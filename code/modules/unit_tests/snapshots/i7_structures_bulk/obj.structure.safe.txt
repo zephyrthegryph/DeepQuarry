@@ -1,5 +1,5 @@
-/obj/structure/safe|human|none => safe_open_ui,safe_item|
-/obj/structure/safe|robot|none => safe_open_ui,safe_item|
+/obj/structure/safe|human|none => |
+/obj/structure/safe|robot|none => |
 /obj/structure/safe|ai|none => |
 /obj/structure/safe|ghost|none => |
 

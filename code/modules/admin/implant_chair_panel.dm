@@ -1,16 +1,8 @@
 // Implant chair — structured TGUI.
 
-/obj/machinery/implantchair/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/implantchair_open_ui,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): set_machine() then open the interface.
-/datum/interaction/machine_hand/ungated/implantchair_open_ui
-	id = "implantchair_open_ui"
-	name = "Use"
-	effect = /obj/machinery/implantchair/proc/interaction_open_ui_impl
+EXTEND_INTERACTIONS(/obj/machinery/implantchair, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open_ui_impl)), \
+)
 
 /obj/machinery/implantchair/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)

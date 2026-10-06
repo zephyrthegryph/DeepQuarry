@@ -9,21 +9,11 @@
 
 CAPABILITIES(/obj/machinery/computer/shutoff_monitor)
 	owns_one(nameof(monitor), /datum/tgui_module/shutoff_monitor, starts = /datum/tgui_module/shutoff_monitor)
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 
-/obj/machinery/computer/shutoff_monitor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/shutoff_monitor_use,
-	)
-	..()
-
-/// The old attack_hand: called ..() then always opened the monitor, regardless of the result.
-/datum/interaction/machine_hand/shutoff_monitor_use
-	id = "shutoff_monitor_use"
-	name = "Use"
-	effect = /obj/machinery/computer/shutoff_monitor/proc/interaction_use
-
-/obj/machinery/computer/shutoff_monitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/shutoff_monitor/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	monitor.tgui_interact(user)
 	return TRUE
 

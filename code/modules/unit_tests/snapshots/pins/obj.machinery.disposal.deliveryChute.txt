@@ -1,0 +1,75 @@
+human|none menu: Alt-click
+human|none menu: Force Eject
+human|none menu: Insert
+human|none menu: Toggle flush
+human|none menu: Use
+human|none click: nothing
+robot|none menu: Alt-click
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Force Eject
+robot|none menu: Insert
+robot|none menu: Toggle flush
+robot|none menu: Use
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Alt-click
+human|/obj/item/tool/screwdriver menu: Force Eject
+human|/obj/item/tool/screwdriver menu: Insert
+human|/obj/item/tool/screwdriver menu: Toggle flush
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar menu: Alt-click
+human|/obj/item/tool/crowbar menu: Force Eject
+human|/obj/item/tool/crowbar menu: Insert
+human|/obj/item/tool/crowbar menu: Toggle flush
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Alt-click
+human|/obj/item/tool/wrench menu: Force Eject
+human|/obj/item/tool/wrench menu: Insert
+human|/obj/item/tool/wrench menu: Toggle flush
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Alt-click
+human|/obj/item/tool/wirecutters menu: Force Eject
+human|/obj/item/tool/wirecutters menu: Insert
+human|/obj/item/tool/wirecutters menu: Toggle flush
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Alt-click
+human|/obj/item/multitool menu: Force Eject
+human|/obj/item/multitool menu: Insert
+human|/obj/item/multitool menu: Toggle flush
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
+human|/obj/item/weldingtool menu: Alt-click
+human|/obj/item/weldingtool menu: Force Eject
+human|/obj/item/weldingtool menu: Insert
+human|/obj/item/weldingtool menu: Toggle flush
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
+human|/obj/item/stack/cable_coil menu: Alt-click
+human|/obj/item/stack/cable_coil menu: Force Eject
+human|/obj/item/stack/cable_coil menu: Insert
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle flush
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Alt-click
+human|/obj/item/stack/material/steel menu: Force Eject
+human|/obj/item/stack/material/steel menu: Insert
+human|/obj/item/stack/material/steel menu: Toggle flush
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Alt-click
+human|/obj/item/card/id menu: Force Eject
+human|/obj/item/card/id menu: Insert
+human|/obj/item/card/id menu: Toggle flush
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: nothing
+keys: disengageHandle, disposal_drag_insert, disposal_flush, disposal_force_eject, disposal_insert, disposal_use, drag_buckle, eject, engageHandle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, pumpOff, pumpOn, swallow, use_multitool, use_screwdriver, use_welder
+

@@ -24,7 +24,7 @@
 	TEST_ASSERT(produce in microwave.cookingContents(), "the actual cooking-contents view contains the original apple")
 	TEST_ASSERT_EQUAL(length(microwave.cookingContents()), 1, "allowed loading records exactly one real ingredient")
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed loading clears the original hand")
-	microwave.microwave_verb_eject(user, null, null)
+	test_op_handler(microwave, "microwave_verb_eject", user)
 	TEST_ASSERT(LAZYLEN(user.do_afters), "the actual eject interaction starts its real timed action")
 	TEST_ASSERT_EQUAL(produce.loc, microwave, "starting actual ejection returns no ingredient early")
 	scheduler_advance((2 SECONDS) / (1 SECOND))

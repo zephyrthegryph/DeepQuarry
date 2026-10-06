@@ -1,4 +1,5 @@
-/obj/machinery/giga_drill|human|none => giga_drill_toggle|
-/obj/machinery/giga_drill|robot|none => giga_drill_toggle|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/giga_drill|human|none => |
+/obj/machinery/giga_drill|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/giga_drill|ai|none => |
 /obj/machinery/giga_drill|ghost|none => |
+

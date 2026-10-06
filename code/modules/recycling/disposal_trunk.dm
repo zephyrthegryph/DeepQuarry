@@ -18,7 +18,7 @@ CAPABILITIES(/obj/structure/disposalpipe/trunk)
 // its linked machine unlinks.
 /obj/structure/disposalpipe/trunk/on_destroy(force)
 	if(linked()) //Linked to something, better unlink.
-		OM_EMIT(linked(), /datum/om/event/disposal_unlink)
+		PUBLISH_LEGACY(linked(), /datum/notice/disposal_unlink)
 	..()
 
 // Override attackby so we disallow trunkremoval when somethings ontop

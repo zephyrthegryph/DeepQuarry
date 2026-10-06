@@ -42,7 +42,7 @@ CAPABILITIES(/obj/structure/gootrap)
 /obj/structure/gootrap/proc/attack_mob(mob/living/L)
 	//trap the victim in place
 	set_dir(L.dir)
-	can_buckle = 1
+	set_can_buckle(TRUE)
 	buckle_mob(L)
 	var/goo_sounds = list (
 			'sound/rakshasa/Decay1.ogg',
@@ -53,7 +53,7 @@ CAPABILITIES(/obj/structure/gootrap)
 	playsound(src, sound, 100, 1)
 	L << span_danger("You hear a gooey schlorp as \the [src] ensnares your leg, trapping you in place!")
 	deployed = 0
-	can_buckle = initial(can_buckle)
+	set_can_buckle(initial(can_buckle))
 
 
 /obj/structure/gootrap/Crossed(AM as mob|obj)

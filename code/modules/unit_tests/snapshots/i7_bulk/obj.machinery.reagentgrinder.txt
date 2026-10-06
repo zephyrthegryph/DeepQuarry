@@ -1,5 +1,5 @@
-/obj/machinery/reagentgrinder|human|none => reagentgrinder_replace_beaker,reagentgrinder_interact|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,reagentgrinder_attackby:needs an item
-/obj/machinery/reagentgrinder|robot|none => reagentgrinder_replace_beaker,reagentgrinder_interact|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,reagentgrinder_attackby:needs an item
+/obj/machinery/reagentgrinder|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/reagentgrinder|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/reagentgrinder|ai|none => |
 /obj/machinery/reagentgrinder|ghost|none => |
-/obj/machinery/reagentgrinder|human|/obj/item => reagentgrinder_attackby,reagentgrinder_replace_beaker,reagentgrinder_interact|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

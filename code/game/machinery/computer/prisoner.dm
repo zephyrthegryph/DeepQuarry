@@ -15,12 +15,6 @@
 	var/stop = 0.0
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
 
-/obj/machinery/computer/prisoner/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
 CAPABILITIES(/obj/machinery/computer/prisoner)
 	interface("PrisonerManagement")
 	op("inject", ui_act("inject", arg("imp"), arg("val", num())), then(PROC_REF(ui_act_inject)))

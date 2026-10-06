@@ -3,3 +3,4 @@
 /obj/machinery/computer/teleporter|ai|none => gen_silicon_teleporter_computer_silicon_use|
 /obj/machinery/computer/teleporter|ghost|none => |
 /obj/machinery/computer/teleporter|human|/obj/item/card/data => teleporter_computer_insert_card,teleporter_computer_use,teleporter_computer_set_id|
+

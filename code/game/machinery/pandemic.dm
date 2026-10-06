@@ -217,20 +217,9 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	P.name = "Releasing Virus - [D.name]"
 	printing = FALSE
 
-/obj/machinery/computer/pandemic/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/pandemic_insert_beaker,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// Insert a beaker/syringe of blood.
-/datum/interaction/machine_item/pandemic_insert_beaker
-	id = "pandemic_insert_beaker"
-	name = "Insert beaker"
-	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/pandemic/proc/beaker_slot_empty, "a beaker is already loaded"))
-	effect = /obj/machinery/computer/pandemic/proc/interaction_insert_beaker
+EXTEND_INTERACTIONS(/obj/machinery/computer/pandemic, \
+	INTERACT_ITEM("Insert beaker", PROC_REF(interaction_insert_beaker), REQ_ON(PRED_TARGET, /obj/machinery/computer/pandemic/proc/beaker_slot_empty, "a beaker is already loaded"), OFFERED_WHEN(REQ_ON(PRED_HELD, /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe, null))), \
+)
 
 /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe(mob/actor, atom/target, obj/item/held)
 	return (istype(held, /obj/item/reagent_containers/glass) && held.is_open_container()) || istype(held, /obj/item/reagent_containers/syringe)
@@ -248,10 +237,6 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	update_tgui_static_data(user)
 	icon_state = "pandemic1"
 	return TRUE
-
-/obj/machinery/computer/pandemic/screwdriver_act(mob/user, obj/item/tool)
-	eject_beaker()
-	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/pandemic/proc/get_viruses_data(datum/reagent/blood/blood)
 	. = list()

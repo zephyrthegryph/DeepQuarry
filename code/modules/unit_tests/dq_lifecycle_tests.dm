@@ -174,7 +174,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	var/timers = om_timer_count(D)
 	if(ismovable(D))
 		var/atom/movable/AM = D
-		if(om_timer_slot_pending(AM, "lifecycle_lifetime_timer"))
+		if(after_pending(AM, "lifecycle_lifetime_timer"))
 			timers--
 	if(timers > 0)
 		. += "[timers] timer(s)"

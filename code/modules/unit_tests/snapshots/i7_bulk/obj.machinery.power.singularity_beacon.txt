@@ -1,5 +1,5 @@
-/obj/machinery/power/singularity_beacon|human|none => singularity_beacon_toggle|power_cable_place:needs a cable coil
-/obj/machinery/power/singularity_beacon|robot|none => singularity_beacon_toggle|gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/singularity_beacon|human|none => |
+/obj/machinery/power/singularity_beacon|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/singularity_beacon|ai|none => |
 /obj/machinery/power/singularity_beacon|ghost|none => |
-/obj/machinery/power/singularity_beacon|human|/obj/item/stack/cable_coil => singularity_beacon_toggle,power_cable_place|
+
