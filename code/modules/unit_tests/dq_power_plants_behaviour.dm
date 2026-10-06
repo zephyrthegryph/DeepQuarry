@@ -905,6 +905,8 @@
 	F.plasma_temperature = 10001
 	pp_step(T, PP_TRAP_STEP)
 	TEST_ASSERT_EQUAL(T.icon_state, "mag_trap1", "above 10000 K it takes power")
+	if("things_in_range" in T.vars)
+		T.vars["things_in_range"] = null // the legacy trap kept its scan (itself included) in a var
 	power_test_drop_grid(net)
 	F.owned_core.Shutdown()
 
