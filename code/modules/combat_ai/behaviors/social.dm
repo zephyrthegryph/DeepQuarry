@@ -21,7 +21,7 @@
 
 /datum/ai_behavior/threaten/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	// Only when fresh — high score for one tick after target change, then nothing.
@@ -49,11 +49,11 @@
 	cooldown = 30 SECONDS
 
 /datum/ai_behavior/call_for_help/evaluate(datum/ai_brain/brain, atom/source)
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	// Only worth calling if there are allies nearby.
-	if(!brain.model || !length(brain.model.visible_friendlies))
+	if(!length(brain.known_friendlies()))
 		return null
 	return DQAI_RESULT(50, threat)
 
@@ -64,7 +64,7 @@
 	var/mob/living/owner = brain.get_owner()
 	brain.perform_attack_op(owner, owner, "mob_attacks.alarm")
 	// Forward the attacker to each friendly's brain so they upgrade them to HOSTILE.
-	for(var/mob/living/ally as anything in brain.model.visible_friendlies)
+	for(var/mob/living/ally as anything in brain.known_friendlies())
 		if(!ally.ai_brain)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "ally distress")

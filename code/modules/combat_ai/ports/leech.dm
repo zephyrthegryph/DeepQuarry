@@ -117,7 +117,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 
 /datum/ai_behavior/leech_infest/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/leech/SL = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(SL) || SL.host)   // already have a host; don't grab another
 		return null
 	if(!ishuman(threat))
@@ -160,7 +160,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 
 /datum/ai_behavior/leech_poison/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/leech/SL = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(SL) || SL.host)
 		return null
 	if(!ishuman(threat))

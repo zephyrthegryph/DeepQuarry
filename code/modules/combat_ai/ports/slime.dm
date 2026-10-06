@@ -85,7 +85,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
 
 /datum/ai_behavior/slime_smart_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/slime/SM = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!SM || !threat || !SM.Adjacent(threat))
 		return null
 	if(!SM.checkClickCooldown())

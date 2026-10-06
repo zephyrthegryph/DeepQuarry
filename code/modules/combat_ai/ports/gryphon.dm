@@ -76,17 +76,17 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 	var/mob/living/simple_mob/vore/gryphon/G = brain.get_owner()
 	if(!istype(G) || G.client)
 		return null
-	if(!brain.model)
+	if(!brain.perceives())
 		return null
 	// Already committed to a fight — let the combat kit handle it.
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		dq_gryphon_reset_ramp(G)
 		return null
 	// Find a single lonely, edible, sentient candidate. If more than one
 	// attackable target is present, the gryphon won't eat in company.
 	var/mob/living/sentient = null
 	var/alone = TRUE
-	for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		if(M.client)
 			if(isnull(sentient) && G.dq_vore_check(M))
 				sentient = M
@@ -138,9 +138,9 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 
 /// True if `victim` is the only attackable target the gryphon can see.
 /proc/dq_gryphon_alone_with(datum/ai_brain/brain, mob/living/simple_mob/vore/gryphon/G, mob/living/victim)
-	if(!brain.model)
+	if(!brain.perceives())
 		return TRUE
-	for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		if(M != victim)
 			return FALSE
 	return TRUE
@@ -163,7 +163,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 
 /datum/ai_behavior/gryphon_leap/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vore/gryphon/G = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(G) || !isliving(threat))
 		return null
 	if(!G.can_special_attack(threat))

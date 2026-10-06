@@ -20,7 +20,7 @@
 
 /datum/ai_behavior/melee_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	if(!owner.Adjacent(threat))
@@ -71,7 +71,7 @@
 
 /datum/ai_behavior/charge_slam/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	var/dist = get_dist(owner, threat)

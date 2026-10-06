@@ -38,8 +38,8 @@
 		return FALSE
 	if(rabid)
 		return TRUE
-	if(holder().ai_brain?.primary_threat)
-		var/mob/threat = holder().ai_brain.primary_threat
+	if(holder().ai_brain?.primary_target())
+		var/mob/threat = holder().ai_brain.primary_target()
 		if(ishuman(threat))
 			var/mob/living/carbon/human/H = threat
 			if(istype(H.species, /datum/species/monkey))
@@ -154,7 +154,7 @@
 			dq_delayed_say(holder(), "Fine...", speaker)
 			adjust_discipline(1, TRUE)
 			holder().stop_consumption()
-		if(holder().ai_brain?.primary_threat)
+		if(holder().ai_brain?.primary_target())
 			if(!can_command(speaker) || !is_justified_to_discipline())
 				dq_delayed_say(holder(), "No...", speaker)
 				return

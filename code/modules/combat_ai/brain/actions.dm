@@ -46,3 +46,61 @@ GLOBAL_VAR_INIT(ai_trace_all, FALSE)
 	if(!away || away.density)
 		return FALSE
 	return act_step(away)
+
+// ---------------------------------------------------------------------------
+// The accessor seam. A tactic reads the world and issues acts only through these; it never reads brain.model or the brain's
+// vars, so a pack can answer them (known_hostiles() from the pack's knowledge, primary_target() from the pack's assignment)
+// without a tactic knowing which one does.
+// ---------------------------------------------------------------------------
+
+/// TRUE once the brain has a perception model (a brain made with no owner never does).
+/datum/ai_brain/proc/perceives()
+	return !!model
+
+/// The mobs this brain currently treats as hostile and knows of (a list; empty, never null).
+/datum/ai_brain/proc/known_hostiles()
+	return model?.visible_hostiles || list()
+
+/// The mobs this brain currently treats as friendly and knows of (a list; empty, never null).
+/datum/ai_brain/proc/known_friendlies()
+	return model?.visible_friendlies || list()
+
+/// Whoever struck this mob last, or null.
+/datum/ai_brain/proc/last_attacker()
+	return model?.get_last_attacker()
+
+/// The mob this brain is fighting now, or null.
+/datum/ai_brain/proc/primary_target()
+	RETURN_TYPE(/mob/living)
+	return primary_threat
+
+/// The orders in force on this brain (intents with a source and a lifetime). None until the roles land (B6).
+/datum/ai_brain/proc/active_intents()
+	return list()
+
+/// The first step of a path to `goal` (a turf or atom), asking the path system for one when none is cached; null when there is none yet.
+/datum/ai_brain/proc/path_to(atom/goal, get_to = 1)
+	if(!goal || !holder)
+		return null
+	if(!smart_step_toward(goal, get_to) && !length(planned_path))
+		return null
+	return length(planned_path) ? planned_path[1] : null
+
+/// Runs the op `key` on `target` as this mob. TRUE when it committed.
+/datum/ai_brain/proc/act(key, atom/target, obj/item/held = null, stance = null)
+	if(!holder)
+		return FALSE
+	return perform_attack_op(holder, target, key, held, stance)
+
+/// Starts the op `key` and returns its /datum/op_result: a null outcome means the op still waits (its later steps run on timers), and
+/// the same record is filled in when it ends. The tactic resumes on that outcome.
+/datum/ai_brain/proc/act_waiting(key, atom/target, obj/item/held = null)
+	if(!holder)
+		return null
+	var/datum/op_result/result = perform_op(holder, target, key, held, ORIGIN_AI, AUTH_AI)
+	trace("op [key] on [target] started: [isnull(result?.outcome) ? "waiting" : "outcome [result?.outcome]"]")
+	return result
+
+/// Assigns the mob this brain fights (a tactic that retargets, such as a retaliation, goes through this).
+/datum/ai_brain/proc/set_primary_target(mob/living/M)
+	rel_set(src, nameof(primary_threat), M)

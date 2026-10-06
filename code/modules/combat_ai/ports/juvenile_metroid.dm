@@ -86,7 +86,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 
 /datum/ai_behavior/metroid_smart_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/metroid/juvenile/MJ = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(MJ) || !threat || !MJ.Adjacent(threat))
 		return null
 	if(!MJ.checkClickCooldown())

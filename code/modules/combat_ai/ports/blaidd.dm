@@ -62,12 +62,12 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 /// the blaidd AND hasn't attacked it (legacy: !check_attacker && !stat). If the
 /// prey is incapacitated, the blaidd ignores the stare and keeps hunting.
 /proc/dq_blaidd_active_watcher(datum/ai_brain/brain)
-	if(!brain || !brain.model)
+	if(!brain)
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)
 		return null
-	for(var/mob/living/L as anything in brain.model.visible_hostiles)
+	for(var/mob/living/L as anything in brain.known_hostiles())
 		if(L.stat)
 			continue
 		if(brain.check_attacker(L))
@@ -98,7 +98,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 	if(!owner)
 		return null
 	// If already adjacent we should be attacking, not freezing — let melee win.
-	if(brain.primary_threat && owner.Adjacent(brain.primary_threat))
+	if(brain.primary_target() && owner.Adjacent(brain.primary_target()))
 		return null
 	var/mob/living/watcher = dq_blaidd_active_watcher(brain)
 	if(!watcher)
@@ -136,7 +136,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 		return null
 	// Adjacent prey is fair game — pounce, don't flee. Legacy let can_attack
 	// through at distance <= 2.
-	if(brain.primary_threat && B.Adjacent(brain.primary_threat))
+	if(brain.primary_target() && B.Adjacent(brain.primary_target()))
 		B.blaidd_watched_since = 0
 		return null
 	var/mob/living/watcher = dq_blaidd_active_watcher(brain)
@@ -198,7 +198,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 	if(!istype(B))
 		return DQ_BEHAVIOR_DONE
 	// No prey in view, or adjacent to prey -> drop the cloak. Otherwise hide.
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	var/want_cloak = FALSE
 	if(threat && get_dist(B, threat) > 1)
 		want_cloak = TRUE

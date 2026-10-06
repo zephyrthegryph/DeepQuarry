@@ -52,7 +52,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_target_selectors, list( \
 	var/mob/living/simple_mob/vore/ddraig/D = brain.holder
 	if(!istype(D) || D.client)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/dist = get_dist(D, threat)
@@ -187,7 +187,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 		return null
 	if(D.vitality() >= 0.25)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	return DQAI_RESULT(150, threat)
@@ -222,7 +222,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 	var/mob/living/simple_mob/vore/ddraig/D = brain.holder
 	if(!istype(D) || !dq_get_cloaked(D))
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	// Below the panic-cloak score so the cloak itself wins on the trigger tick.

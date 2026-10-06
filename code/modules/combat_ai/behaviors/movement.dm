@@ -12,7 +12,7 @@
 	cooldown = 0
 
 /datum/ai_behavior/approach_threat/evaluate(datum/ai_brain/brain, atom/source)
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/mob/living/owner = brain.get_owner()
@@ -48,7 +48,7 @@
 	no_threat_required = TRUE
 
 /datum/ai_behavior/idle_wander/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null  // not idle if there's a threat
 	if(!brain.wander)
 		return null  // honor the legacy wander toggle
@@ -81,7 +81,7 @@
 	var/hp_frac = owner.vitality()
 	if(hp_frac > DQ_LOW_HP_THRESHOLD)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	// Score grows as HP drops. At 0% HP and a NEMESIS attacker, this is decisive.

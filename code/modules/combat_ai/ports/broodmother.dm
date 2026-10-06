@@ -60,7 +60,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodmother, get_ai_target
 
 /datum/ai_behavior/broodmother_spawn_brood/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/giant_spider/broodmother/BM = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(BM) || !threat)
 		return null
 	// should_special_attack(): don't birth past the brood cap.
@@ -70,8 +70,8 @@ TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodmother, get_ai_target
 		return null
 	// Count nearby attackable enemies (legacy tallied list_targets within 4).
 	var/nearby = 0
-	if(brain.model)
-		for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	if(brain.perceives())
+		for(var/mob/living/M as anything in brain.known_hostiles())
 			if(get_dist(BM, M) <= BROODMOTHER_SWARM_RANGE)
 				nearby++
 	var/target_close = get_dist(BM, threat) <= BROODMOTHER_SWARM_RANGE
@@ -106,7 +106,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodmother, get_ai_target
 
 /datum/ai_behavior/broodmother_launch_brood/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/giant_spider/broodmother/BM = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(BM) || !threat)
 		return null
 	if(!BM.can_spawn_brood())

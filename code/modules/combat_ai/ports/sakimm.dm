@@ -117,7 +117,7 @@ GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 	return istype(owner, /mob/living/simple_mob/animal/sif/sakimm)
 
 /datum/ai_behavior/sakimm_steal_item/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null  // busy fighting
 	var/mob/living/simple_mob/animal/sif/sakimm/S = brain.holder
 	if(!istype(S) || S.get_active_hand())
@@ -164,7 +164,7 @@ GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 
 /datum/ai_behavior/sakimm_smart_melee/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/sakimm/S = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(S) || !threat || !S.Adjacent(threat))
 		return null
 	if(!S.checkClickCooldown())

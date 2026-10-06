@@ -40,7 +40,7 @@
 /datum/target_selector/recent_attacker/select(datum/ai_brain/brain, list/candidates)
 	if(!length(candidates))
 		return null
-	var/atom/attacker = brain.model?.get_last_attacker()
+	var/atom/attacker = brain.last_attacker()
 	if(attacker && (attacker in candidates))
 		return attacker
 	var/datum/target_selector/closest_selector = dq_get_selector(/datum/target_selector/closest)

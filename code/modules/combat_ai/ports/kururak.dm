@@ -100,7 +100,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 
 /datum/ai_behavior/kururak_special/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/kururak/K = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(K) || !threat)
 		return null
 	// can_special_attack covers range + special_attack_cooldown;
@@ -149,12 +149,12 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 
 /datum/ai_behavior/kururak_pack_rally/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/kururak/K = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(K) || !threat)
 		return null
 	if(!K.has_body_effect(/datum/body_effect/ace))
 		return null
-	if(!brain.model || !length(brain.model.visible_friendlies))
+	if(!length(brain.known_friendlies()))
 		return null
 	// Only worth rallying once we're actually in a fight (recently swung).
 	if(ELAPSED_SINCE(src, brain.last_attack_at + 5 SECONDS, CLOCK_WORLD) > 0)
@@ -166,7 +166,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 	if(!istype(K) || !isliving(target))
 		return DQ_BEHAVIOR_FAILED
 	act_message(K, null, others = span_warning("%U% yowls, calling the pack!"))
-	for(var/mob/living/ally as anything in brain.model.visible_friendlies)
+	for(var/mob/living/ally as anything in brain.known_friendlies())
 		if(!ally.ai_brain)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "pack rally")

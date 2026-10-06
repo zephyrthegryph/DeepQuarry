@@ -56,7 +56,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /datum/ai_behavior/three_phases_special/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/mechanical/mecha/eclipse/E = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(E) || !threat)
 		return null
 	// Mob-side range + cooldown + should_special_attack gating (legacy shim).
@@ -100,7 +100,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /datum/ai_behavior/three_phases_kite/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	if(get_dist(owner, threat) >= desired_distance)

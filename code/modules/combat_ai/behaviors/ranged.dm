@@ -19,7 +19,7 @@
 
 /datum/ai_behavior/ranged_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	var/dist = get_dist(owner, threat)
@@ -61,7 +61,7 @@
 		return null
 	var/obj/item/gun/G = source
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	if(!owner.checkClickCooldown())
