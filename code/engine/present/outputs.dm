@@ -213,11 +213,11 @@
 
 /// A window button the holder answers with an op that has a ui_act() binding: runs it as the player (origin ORIGIN_UI), its arguments through the
 /// schema boundary. Returns the op's /datum/op_result, or null when the holder has no op for the action (the legacy UI_ACT rows follow).
-/proc/present_ui_act(datum/holder, mob/user, action, list/params)
+/proc/present_ui_act(datum/holder, mob/user, action, list/params, datum/tgui/pressed_in = null)
 	RETURN_TYPE(/datum/op_result)
 	if(!user || !op_has_ops(holder))
 		return null
-	return op_ui_act(user, holder, action, params)
+	return op_ui_act(user, holder, action, params, pressed_in = pressed_in)
 
 // ---- what the outputs read: the carrier's read analysis ----
 

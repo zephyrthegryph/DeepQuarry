@@ -153,19 +153,18 @@
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/replicator, "XenoarchReplicator")
-
-UI_DATA(/obj/machinery/replicator, "merge:ui_data_obj_machinery_replicator{tgui_construction:bool}")
+CAPABILITIES(/obj/machinery/replicator)
+	interface("XenoarchReplicator")
+	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
 /// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
-/obj/machinery/replicator/proc/ui_data_obj_machinery_replicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/replicator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_construction || list())
 	return data
 
-UI_ACT(/obj/machinery/replicator, "construct", ui_act_construct, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
-	var/key = params["key"]
+/obj/machinery/replicator/proc/ui_act_construct(datum/act/op/A, key_arg)
+	var/key = key_arg
 	if(key in construction)
 		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
 			if(LAZYLEN(spawning_types))
@@ -445,7 +444,13 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
-UI_DATA(/obj/machinery/replicator/vore, "merge:ui_data_obj_machinery_replicator_vore{tgui_construction:bool}")
+/obj/machinery/replicator/vore/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_machinery_replicator_vore(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/replicator/vore's window data (declared on its UI_DATA row).
 /obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -453,12 +458,13 @@ UI_DATA(/obj/machinery/replicator/vore, "merge:ui_data_obj_machinery_replicator_
 	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
-UI_ACT(/obj/machinery/replicator/vore, "construct", ui_act_construct, UI_ARG_TEXT("key"))
-UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
+CAPABILITIES(/obj/machinery/replicator/vore)
+	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
+/obj/machinery/replicator/vore/ui_act_construct(datum/act/op/A, key_arg)
 	. = ..()
 	if(.)
 		return
-	var/key = params["key"]
+	var/key = key_arg
 	if(key in created_mobs)
 		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
 			if(LAZYLEN(spawning_types))
@@ -721,9 +727,17 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	return TRUE
 
 
-DECLARE_UI(/obj/machinery/replicator/clothing, "XenoarchReplicatorClothing")
+CAPABILITIES(/obj/machinery/replicator/clothing)
+	interface("XenoarchReplicatorClothing")
+	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
-UI_DATA(/obj/machinery/replicator/clothing, "merge:ui_data_obj_machinery_replicator_clothing{tgui_construction:bool}")
+/obj/machinery/replicator/clothing/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_machinery_replicator_clothing(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/replicator/clothing's window data (declared on its UI_DATA row).
 /obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -731,12 +745,11 @@ UI_DATA(/obj/machinery/replicator/clothing, "merge:ui_data_obj_machinery_replica
 	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
-UI_ACT(/obj/machinery/replicator/clothing, "construct", ui_act_construct, UI_ARG_TEXT("key"))
-UI_ACT_OVERRIDE(/obj/machinery/replicator/clothing, ui_act_construct)
+/obj/machinery/replicator/clothing/ui_act_construct(datum/act/op/A, key_arg)
 	. = ..()
 	if(.)
 		return
-	var/key = params["key"]
+	var/key = key_arg
 	if(key in created_items)
 		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
 			if(LAZYLEN(spawning_types))

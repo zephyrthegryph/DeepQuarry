@@ -17,6 +17,9 @@
 
 CAPABILITIES(/datum/lootpanel)
 	owns_many(nameof(searchables), /datum/search_object)
+	interface("LootPanel")
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("grab", ui_act("grab", arg("ref", schema_ref(/datum/search_object)), arg("ctrl", bool()), arg("middle", bool()), arg("shift", bool()), arg("alt", bool()), arg("right", bool())), then(PROC_REF(ui_act_grab)))
 
 /datum/lootpanel/New(client/owner)
 	. = ..()
@@ -28,18 +31,15 @@ CAPABILITIES(/datum/lootpanel)
 	reset_contents()
 	..()
 
-DECLARE_UI(/datum/lootpanel, "LootPanel")
-
 /datum/lootpanel/tgui_close(mob/user)
 	. = ..()
 
 	rel_clear(src, nameof(source_turf))
 	reset_contents()
 
-UI_DATA_REPLACE(/datum/lootpanel, "merge:ui_data_datum_lootpanel{contents:unknown,is_blind:bool,searching:num}")
-
 /// The computed part of /datum/lootpanel's window data (declared on its UI_DATA row).
-/datum/lootpanel/proc/ui_data_datum_lootpanel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/lootpanel/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["contents"] = get_contents()
@@ -58,8 +58,7 @@ UI_DATA_REPLACE(/datum/lootpanel, "merge:ui_data_datum_lootpanel{contents:unknow
 
 	return STATUS_INTERACTIVE
 
-UI_ACT(/datum/lootpanel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/lootpanel, ui_act_refresh)
+/datum/lootpanel/proc/ui_act_refresh(datum/act/op/A)
 	return populate_contents()
 
 /// The source_turf this refers to (a relation view: null once that is deleted).

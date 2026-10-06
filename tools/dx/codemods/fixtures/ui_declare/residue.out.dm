@@ -4,9 +4,12 @@ CAPABILITIES(/obj/machinery/stately)
 /obj/machinery/stately/proc/ui_act_go(datum/act/op/A)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/greedy, "Greedy")
-UI_ACT(/obj/machinery/greedy, "go", greedy_go)
-UI_ACT_PROC(/obj/machinery/greedy, greedy_go)
+CAPABILITIES(/obj/machinery/greedy)
+	interface("Greedy")
+	op("go", ui_act("go"), then(PROC_REF(greedy_go)))
+/obj/machinery/greedy/proc/greedy_go(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	ui.close()
 	return TRUE
 

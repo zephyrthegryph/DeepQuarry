@@ -256,6 +256,8 @@ CAPABILITIES(/obj/machinery/computer/ship)
 
 CAPABILITIES(/obj/machinery/computer/shuttle_control/explore)
 	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
+	op("plot_expedition", ui_act("plot_expedition"), then(PROC_REF(ui_act_plot_expedition)))
+	op("pick", ui_act("pick"), then(PROC_REF(ui_act_pick)))
 
 /obj/machinery/computer/shuttle_control/explore/ui_redirect(mob/user)
 	if(!flight_operations_ui)

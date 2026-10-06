@@ -112,7 +112,16 @@
 		if(demand.len > record_size)
 			demand.Cut(1, 2)
 
-UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=record_size:num", "history:list", "merge:ui_data_obj_machinery_power_sensor{interval:num,attached:bool,areas:list}")
+/obj/machinery/power/sensor/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["name"] = name_tag
+	data["stored"] = record_size
+	data["history"] = history
+	var/list/merged_1 = ui_data_obj_machinery_power_sensor(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).
 /obj/machinery/power/sensor/proc/ui_data_obj_machinery_power_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)

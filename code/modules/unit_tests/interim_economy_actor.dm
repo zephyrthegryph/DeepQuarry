@@ -8,10 +8,10 @@
 	terminal.access_code = 1234
 	card.access = list(ACCESS_RESEARCH)
 	TEST_ASSERT(operator.put_in_active_hand(card), "the operator holds the ID being checked")
-	TEST_ASSERT(terminal.ui_act_reset(operator, list(), null, null, "reset"), "reset action is handled")
+	TEST_ASSERT(test_op_committed(op_ui_act(operator, terminal, "reset")), "reset action is handled")
 	TEST_ASSERT_EQUAL(terminal.access_code, 1234, "an unauthorized ID preserves the code")
 	card.access = list(ACCESS_HOP)
-	TEST_ASSERT(terminal.ui_act_reset(operator, list(), null, null, "reset"), "authorized reset is handled")
+	TEST_ASSERT(test_op_committed(op_ui_act(operator, terminal, "reset")), "authorized reset is handled")
 	TEST_ASSERT_EQUAL(terminal.access_code, 0, "the supplied operator's authorized ID resets the code")
 	TEST_ASSERT_EQUAL(card.loc, operator, "reset does not consume or eject the ID")
 

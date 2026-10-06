@@ -282,6 +282,14 @@ def words_in(text, name):
     return [m.start() for m in re.finditer(r"(?<![\w./])" + re.escape(name) + r"(?![\w])", text)]
 
 
+FORCE = set()
+
+
+def forced(code):
+    """A residue code the run was told to accept (--force CODE: convert anyway, the rest is a hand fix the compile points at)."""
+    return None if (code in FORCE or code.split(":")[0] + ":*" in FORCE) else code
+
+
 def main():
     global LA
     asks_on = ("--no-asks" not in sys.argv) and (ASKS_DEFAULT or "--asks" in sys.argv)
@@ -296,6 +304,10 @@ def main():
     while "--skip" in sys.argv:
         k = sys.argv.index("--skip")
         skip.add(sys.argv[k + 1])
+        del sys.argv[k : k + 2]
+    while "--force" in sys.argv:
+        k = sys.argv.index("--force")
+        FORCE.add(sys.argv[k + 1])
         del sys.argv[k : k + 2]
     exclude = []  # --exclude PREFIX: types whose rows stand in a file under PREFIX are left alone (another branch owns those files)
     while "--exclude" in sys.argv:
@@ -547,7 +559,7 @@ def main():
                 break
             specs = []
             for sp in parts[3:]:
-                sm = re.match(r'^UI_ARG_(NUM|INT|VALUE|TEXT|BOOL|PATH|REF|CHOICE|LIST)\(\s*"([A-Za-z_][A-Za-z0-9_]*)"\s*(?:,\s*(.*))?\)$', sp)
+                sm = re.match(r'^UI_ARG_(NUM|INT|VALUE|TEXT|BOOL|PATH|REF|CHOICE|LIST)\(\s*"([A-Za-z_][A-Za-z0-9_-]*)"\s*(?:,\s*(.*))?\)$', sp)
                 if not sm:
                     bad = "arg_kind"
                     break
@@ -790,19 +802,15 @@ def main():
                 break
             body_no_user = re.sub(r"(?<![\w.])ui\.user\b", "user", body)  # ui.user is the viewer: the handler's `user`
             if re.search(r"(?<![\w.])open_request\(", body):
-                bad = "body_uses:open_request"  # a question asked from an effect is an asks() step (dx_review request_in_effect): by hand
+                bad = forced("body_uses:open_request")  # a question asked from an effect is an asks() step (dx_review request_in_effect): by hand
                 break
-            for w in ("ui", "state") + (() if a.get("fallback") else ("action",)):
-                if words_in(body_no_user, w):
-                    bad = "body_uses:" + w
-                    break
-            if bad:
-                break
+            # the window a handler touched (ui.close(), ui.send_asset(), its state) is the actor's open window of the holder: looked up
+            uses_ui = bool(words_in(body_no_user, "ui")) or bool(words_in(body_no_user, "state"))
             declared = [s[1] for s in a["specs"]]
             body_c = "\n".join(strip_code(l, keep=True) for l in body_lines)
-            for m2 in re.finditer(r"\bparams\b(\s*\[\s*\"([A-Za-z_][A-Za-z0-9_]*)\"\s*\])?", body_c):
+            for m2 in re.finditer(r"\bparams\b(\s*\[\s*\"([A-Za-z_][A-Za-z0-9_-]*)\"\s*\])?", body_c):
                 if not m2.group(1) or m2.group(2) not in declared:
-                    bad = "body_uses:params"
+                    bad = forced("body_uses:params")
                     break
             if bad:
                 break
@@ -820,11 +828,11 @@ def main():
             for d in declared:
                 # a declared name that is already a word of the body outside params["d"] (a host var, a local) is not the parameter's name: the handler
                 # takes its arguments in order, so the parameter is called `<d>_arg` (the op's arg key stays `d`)
-                stripped = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", "", body_c)
+                stripped = re.sub(r"\bparams\s*\[\s*\"" + re.escape(d) + r"\"\s*\]", "", body_c)
                 stripped = "\n".join(strip_code(x) for x in stripped.split("\n"))
                 local_names[d] = d
-                if words_in(stripped, d) or d in RESERVED or d == "src":
-                    local_names[d] = d + "_arg"
+                if words_in(stripped, d) or d in RESERVED or d == "src" or "-" in d:
+                    local_names[d] = d.replace("-", "_") + "_arg"
                     if words_in(stripped, local_names[d]) or any(local_names[d] == o for o in declared):
                         bad = "name_clash"
                         break
@@ -834,14 +842,14 @@ def main():
                 t2 = bl.strip()
                 rm = re.match(r"^return\b\s*(.*)$", t2)
                 if rm and rm.group(1).strip() not in ("", "TRUE", "FALSE", "1", "0", "null"):
-                    bad = "body_uses:return"
+                    bad = forced("body_uses:return")
                     break
                 if re.match(r"^\.\s*[^\w\s=]", t2) or re.match(r"^\.\s*=\s*(?!(?:TRUE|FALSE|1|0|null)\s*$)\S", t2) or re.search(r"\.\.\(", t2):
-                    bad = "body_uses:dot"
+                    bad = forced("body_uses:dot")
                     break
             if bad:
                 break
-            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names, "asks": asks, "body": body, "owner": job["owner"], "override": job["row"] is not None})
+            plan["handlers"].append({"act": a, "rel": rel, "idx": i, "first": first, "last": last, "rename_a": rename_a, "local_names": local_names, "uses_ui": uses_ui, "uses_state": bool(words_in(body_no_user, "state")), "asks": asks, "body": body, "owner": job["owner"], "override": job["row"] is not None})
         if bad:
             return None, bad
         # ---- the questions of the handlers
@@ -899,16 +907,16 @@ def main():
                 f = files[rel]
                 first, last = body_range(f.lines, i)
                 body = "\n".join(strip_code(l) for l in f.lines[first : last + 1])
-                if words_in(body, uin) or words_in(body, stn) or words_in(body, "A") or re.search(r"\.\.\(", body):
+                if words_in(body, uin) or words_in(body, stn) or re.search(r"\.\.\(", body):
                     helper_bad = True
                     break
-                helpers[name] = {"rel": rel, "idx": i, "first": first, "last": last, "user": un, "uses_user": bool(words_in(body, un)), "speaks": bool(re.search(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(", body))}
+                helpers[name] = {"rel": rel, "idx": i, "first": first, "last": last, "user": un, "uses_user": bool(words_in(body, un)), "uses_a": bool(words_in(body, "A")), "speaks": bool(re.search(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(", body))}
             if helper_bad:
                 return None, "data_rows"
             data["helpers"] = helpers
             # a lone merge proc becomes ui_data() itself, unless it speaks (an output says nothing: dx_review output_side_effect; it stays a
             # helper ui_data() calls, for a hand fix)
-            data["rename"] = len(data["fields"]) == 1 and data["fields"][0][0] == "merge" and not any(h["speaks"] for h in helpers.values())
+            data["rename"] = len(data["fields"]) == 1 and data["fields"][0][0] == "merge" and not any(h["speaks"] or h["uses_a"] for h in helpers.values())
         return plan, None
 
     # ---- families: the types related by path convert together, parents first (a subtype's buttons, data and state build on its parents')
@@ -1044,7 +1052,7 @@ def main():
                 if l is None:
                     continue
                 for d in declared:
-                    l = re.sub(r"\bparams\s*\[\s*\"" + d + r"\"\s*\]", h["local_names"][d], l)
+                    l = re.sub(r"\bparams\s*\[\s*\"" + re.escape(d) + r"\"\s*\]", h["local_names"][d], l)
                 l = re.sub(r"(?<![\w.])ui\.user\b", "user", l)
                 if h.get("rename_a"):
                     l = rename_local_a(l, h["rename_a"])
@@ -1055,7 +1063,12 @@ def main():
                 sig = "\n\n".join(h["helpers"]) + "\n\n" + sig
             # insert `user` after the leading settings
             extra = ""
-            heads = (["var/mob/user = A.actor"] if words_in(body, "user") else []) + (["var/action = A.window_action()"] if a.get("fallback") and words_in(body, "action") else []) + (["if(!ui_gate(A))\n\treturn FALSE"] if (plan["pred"] or plan["fam_gated"]) else []) + (["add_fingerprint(A.actor)"] if (plan["fp"] or plan["anc_fp"]) else []) + [LA.answer_local(ask) for ask in h["asks"] if words_in(body, ask["name"])]
+            heads = (["var/mob/user = A.actor"] if (words_in(body, "user") or h["uses_ui"]) else [])
+            if h["uses_ui"]:
+                heads.append("var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in")
+            if h["uses_state"]:
+                heads.append("var/datum/tgui_state/state = ui?.state()")
+            heads += [] + (["var/action = A.window_action()"] if words_in(body, "action") else []) + (["if(!ui_gate(A))\n\treturn FALSE"] if (plan["pred"] or plan["fam_gated"]) else []) + (["add_fingerprint(A.actor)"] if (plan["fp"] or plan["anc_fp"]) else []) + [LA.answer_local(ask) for ask in h["asks"] if words_in(body, ask["name"])]
             for kind, name, bounds in a["specs"]:
                 for g in arg_guards(kind, h["local_names"][name], bounds, body):
                     heads.append(g + "\n\treturn FALSE")

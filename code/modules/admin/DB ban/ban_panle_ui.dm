@@ -21,14 +21,16 @@
 	rel_set(src, nameof(admin_datum), admind)
 	database_lookup()
 
-DECLARE_UI_STATE(/datum/tgui_ban_panel, ADMIN_STATE(R_BAN))
-
 /datum/tgui_ban_panel/tgui_close()
 	rel_clear(src, nameof(holder))
 	rel_clear(src, nameof(admin_datum))
 	qdel(src)
 
-DECLARE_UI(/datum/tgui_ban_panel, "BanPanel", UI_TITLE("Ban Panel"))
+CAPABILITIES(/datum/tgui_ban_panel)
+	interface("BanPanel", title = "Ban Panel", rights = R_BAN)
+	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), then(PROC_REF(ui_act_confirmban)))
+	op("searchBans", ui_act("searchBans", arg("aCkey", schema_text(4096)), arg("banType", num()), arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("ip", schema_text(4096)), arg("minMatch", num())), then(PROC_REF(ui_act_searchbans)))
+	op("banEdit", ui_act("banEdit", arg("action", schema_text(4096)), arg("banid", num())), then(PROC_REF(ui_act_banedit)))
 
 /datum/tgui_ban_panel/tgui_static_data(mob/user)
 	var/list/bantypes = list("traitor","changeling","operative","revolutionary","cultist","wizard") //For legacy bans.
@@ -48,46 +50,44 @@ DECLARE_UI(/datum/tgui_ban_panel, "BanPanel", UI_TITLE("Ban Panel"))
 	return data
 
 
-UI_DATA_REPLACE(/datum/tgui_ban_panel, "merge:ui_data_datum_tgui_ban_panel{min_search:num}")
-
 /// The computed part of /datum/tgui_ban_panel's window data (declared on its UI_DATA row).
-/datum/tgui_ban_panel/proc/ui_data_datum_tgui_ban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_ban_panel/ui_data(datum/act/eval/A)
 	var/list/data = list(
 							"min_search" = min_search,
 						)
 	return data
 
-UI_ACT(/datum/tgui_ban_panel, "confirmBan", ui_act_confirmban, UI_ARG_TEXT("cid"), UI_ARG_TEXT("ckey"), UI_ARG_NUM("duration"), UI_ARG_TEXT("ip"), UI_ARG_TEXT("job"), UI_ARG_TEXT("reason"), UI_ARG_NUM("type"))
-UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
+/datum/tgui_ban_panel/proc/ui_act_confirmban(datum/act/op/A, cid, ckey_arg, duration, ip, job, reason, type)
+	var/mob/user = A.actor
 
-	var/bantype = params["type"]
-	var/banip = params["ip"]
-	var/banduration = params["duration"]
-	var/banckey = ckey(params["ckey"])
-	var/bancid = params["cid"]
-	var/banjob = params["job"]
-	var/banreason = params["reason"]
+	var/bantype = type
+	var/banip = ip
+	var/banduration = duration
+	var/banckey = ckey(ckey_arg)
+	var/bancid = cid
+	var/banjob = job
+	var/banreason = reason
 
 	switch(bantype)
 		if(BANTYPE_PERMA)
 			if(!banckey || !banreason)
-				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
+				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
 				return
 			banduration = null
 			banjob = null
 		if(BANTYPE_TEMP)
 			if(!banckey || !banreason || !banduration)
-				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
+				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
 				return
 			banjob = null
 		if(BANTYPE_JOB_PERMA)
 			if(!banckey || !banreason || !banjob)
-				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
+				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
 				return
 			banduration = null
 		if(BANTYPE_JOB_TEMP)
 			if(!banckey || !banreason || !banjob || !banduration)
-				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
+				to_chat(user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
 				return
 
 	var/mob/playermob
@@ -106,34 +106,35 @@ UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
 			banreason = "[banreason] (CUSTOM CID)"
 	else
 		message_admins("Ban process: A mob matching [playermob.ckey] was found at location [playermob.x], [playermob.y], [playermob.z]. Custom ip and computer id fields replaced with the ip and computer id from the located mob")
-	notes_add(banckey, banreason, ui.user)
+	notes_add(banckey, banreason, user)
 
-	admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid, FALSE, ui.user)
+	admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid, FALSE, user)
 	if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
 		qdel(playermob.client)
 
 	return TRUE
 
-UI_ACT(/datum/tgui_ban_panel, "searchBans", ui_act_searchbans, UI_ARG_TEXT("aCkey"), UI_ARG_NUM("banType"), UI_ARG_TEXT("cid"), UI_ARG_TEXT("ckey"), UI_ARG_TEXT("ip"), UI_ARG_NUM("minMatch"))
-UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_searchbans)
-	playerckey = ckey(params["ckey"])
-	adminckey = ckey(params["aCkey"])
-	playerip = params["ip"]
-	playercid = params["cid"]
-	dbbantype = params["banType"]
-	min_search = params["minMatch"]
+/datum/tgui_ban_panel/proc/ui_act_searchbans(datum/act/op/A, aCkey, banType, cid, ckey_arg, ip, minMatch)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	playerckey = ckey(ckey_arg)
+	adminckey = ckey(aCkey)
+	playerip = ip
+	playercid = cid
+	dbbantype = banType
+	min_search = minMatch
 	database_lookup()
-	update_tgui_static_data(ui.user, ui)
+	update_tgui_static_data(user, ui)
 	return TRUE
 
-UI_ACT(/datum/tgui_ban_panel, "banEdit", ui_act_banedit, UI_ARG_TEXT("action"), UI_ARG_NUM("banid"))
-UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_banedit)
-	var/banedit = params["action"]
-	var/banid = params["banid"]
+/datum/tgui_ban_panel/proc/ui_act_banedit(datum/act/op/A, action_arg, banid_arg)
+	var/mob/user = A.actor
+	var/banedit = action_arg
+	var/banid = banid_arg
 	if(!banedit || !banid)
 		return FALSE
 
-	admin_datum().DB_ban_edit(ui.user.client, banid, banedit)
+	admin_datum().DB_ban_edit(user.client, banid, banedit)
 	return TRUE
 
 /// Starts the ban search for the current filters; the rows arrive in sql_rows_arrived().

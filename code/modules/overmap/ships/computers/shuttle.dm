@@ -32,23 +32,29 @@
 			"can_plot_expedition" = shuttle.moving_status == SHUTTLE_IDLE && can_plot_expedition()
 		)
 
-/obj/machinery/computer/shuttle_control/explore/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/shuttle_control/explore/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!..())
 		return FALSE
 	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(!istype(shuttle))
-		to_chat(ui.user, span_warning("Unable to establish link with the shuttle."))
+		to_chat(user, span_warning("Unable to establish link with the shuttle."))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control/explore, "plot_expedition", ui_act_plot_expedition)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_plot_expedition)
+/obj/machinery/computer/shuttle_control/explore/proc/ui_act_plot_expedition(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
-	plot_expedition(ui.user, shuttle)
+	plot_expedition(user, shuttle)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control/explore, "pick", ui_act_pick)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_pick)
+/obj/machinery/computer/shuttle_control/explore/proc/ui_act_pick(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	return explore_destination_stage(ui, FALSE)
 
 /obj/machinery/computer/shuttle_control/explore/proc/explore_destination_stage(datum/tgui/ui, answered, selected, datum/request/request)

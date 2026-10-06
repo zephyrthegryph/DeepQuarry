@@ -15,9 +15,11 @@
 
 
 /// Clicks an object from the searchables. Validates the object and the user
-UI_ACT(/datum/lootpanel, "grab", ui_act_grab, UI_ARG_REF("ref", "searchables", /datum/search_object), UI_ARG_BOOL("ctrl"), UI_ARG_BOOL("middle"), UI_ARG_BOOL("shift"), UI_ARG_BOOL("alt"), UI_ARG_BOOL("right"))
-UI_ACT_PROC(/datum/lootpanel, ui_act_grab)
-	var/datum/search_object/index = params["ref"]
+/datum/lootpanel/proc/ui_act_grab(datum/act/op/A, ref, ctrl, middle, shift, alt, right)
+	var/mob/user = A.actor
+	if(!isnull(ref) && !(ref in src.searchables))
+		return FALSE
+	var/datum/search_object/index = ref
 	if(isnull(index))
 		return FALSE
 	var/atom/thing = index?.item()
@@ -29,15 +31,15 @@ UI_ACT_PROC(/datum/lootpanel, ui_act_grab)
 		return TRUE
 
 	var/modifiers = ""
-	if(params["ctrl"])
+	if(ctrl)
 		modifiers += "ctrl=1;"
-	if(params["middle"])
+	if(middle)
 		modifiers += "middle=1;"
-	if(params["shift"])
+	if(shift)
 		modifiers += "shift=1;"
-	if(params["alt"])
+	if(alt)
 		modifiers += "alt=1;"
-	if(params["right"])
+	if(right)
 		modifiers += "right=1;"
 
 

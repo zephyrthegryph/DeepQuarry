@@ -29,9 +29,11 @@
 	while(!submitted && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI_STATE(/datum/tgui_bitfield_input, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/tgui_bitfield_input, "BitfieldInput")
+CAPABILITIES(/datum/tgui_bitfield_input)
+	interface("BitfieldInput", state = nameof(GLOB.tgui_always_state))
+	op("toggle", ui_act("toggle", arg("bit", num())), then(PROC_REF(ui_act_toggle)))
+	op("submit", ui_act("submit"), then(PROC_REF(ui_act_submit)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_bitfield_input/ui_title(mob/user)
 	return title
@@ -40,10 +42,8 @@ DECLARE_UI(/datum/tgui_bitfield_input, "BitfieldInput")
 	. = ..()
 	closed = TRUE
 
-UI_DATA_REPLACE(/datum/tgui_bitfield_input, "merge:ui_data_datum_tgui_bitfield_input{title:text,flags:list}")
-
 /// The computed part of /datum/tgui_bitfield_input's window data (declared on its UI_DATA row).
-/datum/tgui_bitfield_input/proc/ui_data_datum_tgui_bitfield_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_bitfield_input/ui_data(datum/act/eval/A)
 	var/list/flags = list()
 	for(var/name in bitflags)
 		var/bit = bitflags[name]
@@ -58,9 +58,8 @@ UI_DATA_REPLACE(/datum/tgui_bitfield_input, "merge:ui_data_datum_tgui_bitfield_i
 		"flags" = flags,
 	)
 
-UI_ACT(/datum/tgui_bitfield_input, "toggle", ui_act_toggle, UI_ARG_NUM("bit"))
-UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_toggle)
-	var/bit = params["bit"]
+/datum/tgui_bitfield_input/proc/ui_act_toggle(datum/act/op/A, bit_arg)
+	var/bit = bit_arg
 	if(!isnum(bit))
 		return
 	if(!(allowed_edit_field & bit))
@@ -71,14 +70,12 @@ UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_toggle)
 		value |= bit
 	return TRUE
 
-UI_ACT(/datum/tgui_bitfield_input, "submit", ui_act_submit)
-UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_submit)
+/datum/tgui_bitfield_input/proc/ui_act_submit(datum/act/op/A)
 	submitted = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_bitfield_input, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_cancel)
+/datum/tgui_bitfield_input/proc/ui_act_cancel(datum/act/op/A)
 	value = initial_value
 	submitted = FALSE
 	closed = TRUE

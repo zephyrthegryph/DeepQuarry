@@ -88,41 +88,49 @@
 		return FALSE
 	return TRUE
 
-/obj/machinery/computer/shuttle_control/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/shuttle_control/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(skip_act)
 		return FALSE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 	if(!istype(shuttle))
-		to_chat(ui.user, span_warning("Unable to establish link with the shuttle."))
+		to_chat(user, span_warning("Unable to establish link with the shuttle."))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control, "move", ui_act_move)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_move)
+/obj/machinery/computer/shuttle_control/proc/ui_act_move(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
-	if(can_move(shuttle, ui.user))
-		shuttle.launch(src, ui.user)
+	if(can_move(shuttle, user))
+		shuttle.launch(src, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control, "force", ui_act_force)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_force)
+/obj/machinery/computer/shuttle_control/proc/ui_act_force(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
-	if(can_move(shuttle, ui.user))
-		shuttle.force_launch(src, ui.user)
+	if(can_move(shuttle, user))
+		shuttle.force_launch(src, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control, "cancel", ui_act_cancel)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_cancel)
+/obj/machinery/computer/shuttle_control/proc/ui_act_cancel(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
-	shuttle.cancel_launch(src, ui.user)
+	shuttle.cancel_launch(src, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control, "set_codes", ui_act_set_codes)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_set_codes)
-	shuttle_codes_stage(ui, ui.user, FALSE)
+/obj/machinery/computer/shuttle_control/proc/ui_act_set_codes(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
+	shuttle_codes_stage(ui, user, FALSE)
 
 /obj/machinery/computer/shuttle_control/proc/shuttle_codes_stage(datum/tgui/ui, mob/actor, answered, newcode)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
@@ -165,13 +173,24 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control, ui_act_set_codes)
 		return "the original window is not interactive"
 	return captured?["late_refusal"]
 
-DECLARE_UI(/obj/machinery/computer/shuttle_control, "ShuttleControl")
+CAPABILITIES(/obj/machinery/computer/shuttle_control)
+	interface("ShuttleControl")
+	op("move", ui_act("move"), then(PROC_REF(ui_act_move)))
+	op("force", ui_act("force"), then(PROC_REF(ui_act_force)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
+	op("set_codes", ui_act("set_codes"), then(PROC_REF(ui_act_set_codes)))
 
 /obj/machinery/computer/shuttle_control/ui_title(mob/user)
 	return "[shuttle_tag] Shuttle Control"
 
 // We delegate populating data to another proc to make it easier for overriding types to add their data.
-UI_DATA_REPLACE(/obj/machinery/computer/shuttle_control, "merge:ui_data_obj_machinery_computer_shuttle_control{}")
+/obj/machinery/computer/shuttle_control/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	var/list/merged_1 = ui_data_obj_machinery_computer_shuttle_control(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/computer/shuttle_control's window data (declared on its UI_DATA row).
 /obj/machinery/computer/shuttle_control/proc/ui_data_obj_machinery_computer_shuttle_control(mob/user, datum/tgui/ui, datum/tgui_state/state)

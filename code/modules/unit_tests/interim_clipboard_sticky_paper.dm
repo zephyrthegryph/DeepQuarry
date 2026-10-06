@@ -4,6 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clipboard/board = allocate(/obj/item/clipboard, T)
 	user.put_in_inactive_hand(board) // the window works in the hand that holds it
+	user.put_in_inactive_hand(board) // the window works in the hand that holds it
 	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
 	paper.info = "Original checked clipboard contents"
 	TEST_ASSERT_NULL(board.toppaper(), "the actual clipboard initializes without a top paper")
