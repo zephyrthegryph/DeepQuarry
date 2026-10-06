@@ -48,9 +48,9 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 /datum/admins/proc/topic_editrightsbrowserhousekeep(mob/user, list/args)
 	if(args["editrightschange"])
-		change_admin_rank(ckey(args["editrightschange"]), args["editrightschange"], TRUE, user = user)
+		permission_housekeeping_stage(user, args["editrightschange"], FALSE)
 	else if(args["editrightsremove"])
-		remove_admin(ckey(args["editrightsremove"]), args["editrightsremove"], TRUE, user = user)
+		permission_housekeeping_stage(user, args["editrightsremove"], TRUE)
 	else if(args["editrightsremoverank"])
 		remove_rank(args["editrightsremoverank"], user = user)
 	edit_admin_permissions(PERMISSIONS_PAGE_HOUSEKEEPING)
