@@ -678,7 +678,13 @@ ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the curre
 	log_admin(log)
 
 ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework Override", "Toggles ability for weather fireworks to affect weather on planet of choice.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a10", args, /datum/om/prompt/choice, message = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = SSplanets.planets)
+	var/datum/planet/planet
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	if(istype(resumed, /datum/prompt/choice/admin_firework_override) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(firework_override_answered))
+		planet = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_firework_override, PROC_REF(firework_override_answered), answerer = user.mob, question = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = SSplanets.planets)
+		return
 	if(isnull(planet))
 		return
 	if(istype(planet) && planet.weather_holder)
@@ -991,6 +997,35 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 	return null
 
 /datum/admin_verb/startSinglo/proc/startSinglo_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_firework_override
+	timeout = 0
+	rights = R_DEBUG|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_firework_override/normalize(given)
+	if(isdatum(given))
+		var/datum/selected = given
+		if(QDELETED(selected))
+			return null
+	return given
+
+/datum/prompt/choice/admin_firework_override/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_firework_override/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/toggle_firework_override/proc/firework_override_answered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/mob/actor = A.request.answerer
