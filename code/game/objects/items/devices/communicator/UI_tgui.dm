@@ -379,7 +379,6 @@ CAPABILITIES(/obj/item/communicator)
 	return notehtml
 
 /obj/item/communicator/proc/ui_act_rename(datum/act/op/A)
-	var/mob/user = A.actor
 	add_fingerprint(A.actor)
 	var/new_name = sanitizeSafe(A.step_value("name"))
 	if(new_name)
@@ -405,7 +404,6 @@ CAPABILITIES(/obj/item/communicator)
 	return OP_OK
 
 /obj/item/communicator/proc/ui_act_set_ringer_tone(datum/act/op/A)
-	var/mob/user = A.actor
 	add_fingerprint(A.actor)
 	var/tone = A.step_value("tone")
 	if(tone)
@@ -524,7 +522,6 @@ CAPABILITIES(/obj/item/communicator)
 	selected_tab = switch_tab
 
 /obj/item/communicator/proc/ui_act_edit(datum/act/op/A)
-	var/mob/user = A.actor
 	add_fingerprint(A.actor)
 	var/n = sanitizeSafe(A.step_value("note"), extra = 0)
 	if(n)

@@ -16,18 +16,33 @@
 		rel_clear(SSevents, nameof(/datum/system/events::tgui_event_manager_panel))
 	..()
 
-DECLARE_UI_STATE(/datum/event_manager_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
-
-DECLARE_UI(/datum/event_manager_panel, "EventManagerPanel", UI_TITLE("Event Manager"))
+CAPABILITIES(/datum/event_manager_panel)
+	interface("EventManagerPanel", title = "Event Manager", rights = R_ADMIN|R_EVENT)
+	op("pause_all", ui_act("pause_all"), then(PROC_REF(ui_act_pause_all)))
+	op("toggle_report", ui_act("toggle_report"), then(PROC_REF(ui_act_toggle_report)))
+	op("inc_timer", ui_act("inc_timer", arg("amount", num()), arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_inc_timer)))
+	op("dec_timer", ui_act("dec_timer", arg("amount", num()), arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_inc_timer)))
+	op("toggle_pause", ui_act("toggle_pause", arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_toggle_pause)))
+	op("set_interval", ui_act("set_interval", arg("ref", schema_ref(/datum/event_container))), asks(/datum/prompt/number, fields = list("question" = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", "title" = "Set Interval Modifier", "timeout" = 0), step = "interval"), then(PROC_REF(ui_act_set_interval)))
+	op("select_event", ui_act("select_event", arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_select_event)))
+	op("clear_event", ui_act("clear_event", arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_clear_event)))
+	op("view_events", ui_act("view_events", arg("ref", schema_ref(/datum/event_container))), then(PROC_REF(ui_act_view_events)))
+	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
+	op("stop_event", ui_act("stop_event", arg("ref", schema_ref(/datum/event))), asks(/datum/prompt/choice, fields = list("question" = "Stopping an event may have unintended side-effects. Continue?", "title" = "Stopping Event!", "choices" = list("Yes","No"), "buttons" = TRUE, "timeout" = 0), step = "stop"), then(PROC_REF(ui_act_stop_event)))
+	op("set_name", ui_act("set_name", arg("ref", schema_ref(/datum/event_meta))), asks(/datum/prompt/text, fields = list("question" = "Enter event name.", "title" = "Set Name", "max_len" = MAX_LNAME_LEN, "timeout" = 0), step = "name"), then(PROC_REF(ui_act_set_name)))
+	op("set_type", ui_act("set_type", arg("ref", schema_ref(/datum/event_meta))), asks(/datum/prompt/choice, fields = list("question" = "Select event type.", "title" = "Select", "choices" = computed(PROC_REF(ui_act_set_type_type_choices)), "timeout" = 0), step = "type"), then(PROC_REF(ui_act_set_type)))
+	op("set_weight", ui_act("set_weight", arg("ref", schema_ref(/datum/event_meta))), asks(/datum/prompt/number, fields = list("question" = "Enter weight. A higher value means higher chance for the event of being selected.", "title" = "Set Weight", "timeout" = 0), step = "weight"), then(PROC_REF(ui_act_set_weight)))
+	op("toggle_oneshot", ui_act("toggle_oneshot", arg("ref", schema_ref(/datum/event_meta))), then(PROC_REF(ui_act_toggle_oneshot)))
+	op("toggle_enabled", ui_act("toggle_enabled", arg("ref", schema_ref(/datum/event_meta))), then(PROC_REF(ui_act_toggle_enabled)))
+	op("remove_event", ui_act("remove_event", arg("container_ref", schema_ref(/datum/event_container)), arg("ref", schema_ref(/datum/event_meta))), asks(/datum/prompt/choice, fields = list("question" = "This will remove the event from rotation. Continue?", "title" = "Removing Event!", "choices" = list("Yes","No"), "buttons" = TRUE, "timeout" = 0), step = "remove"), then(PROC_REF(ui_act_remove_event)))
+	op("add_event", ui_act("add_event"), asks(/datum/prompt/choice, fields = list("question" = "This will add a new event to the rotation. Continue?", "title" = "Add Event!", "choices" = list("Yes","No"), "buttons" = TRUE, "timeout" = 0), step = "add"), then(PROC_REF(ui_act_add_event)))
 
 /datum/event_manager_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
 	qdel(src)
 
-UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_panel{events_paused:bool,report_at_round_end:bool,selected_severity:unknown,selected_time_left_minutes:num,available_events:list,new_event:list,selected_container_ref:text,severities:list,next_events:list,running_events:list}")
-
 /// The computed part of /datum/event_manager_panel's window data (declared on its UI_DATA row).
-/datum/event_manager_panel/proc/ui_data_datum_event_manager_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/event_manager_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)
 	data["report_at_round_end"] = !!SSevents.report_at_round_end
@@ -124,31 +139,37 @@ UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_p
 /datum/event_manager_panel/proc/active_events()
 	return SSevents.active_events()
 
-/datum/event_manager_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!check_rights(R_ADMIN|R_EVENT))
+/datum/event_manager_panel/proc/ui_gate(datum/act/op/A)
+	if(!admin_can(A.actor?.client, R_ADMIN|R_EVENT))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "pause_all", ui_act_pause_all)
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_pause_all)
+/datum/event_manager_panel/proc/ui_act_pause_all(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	CONFIG_SET(flag/allow_random_events, !CONFIG_GET(flag/allow_random_events))
 	log_and_message_admins("has [CONFIG_GET(flag/allow_random_events) ? "resumed" : "paused"] countdown for all events.", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "toggle_report", ui_act_toggle_report)
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_report)
+/datum/event_manager_panel/proc/ui_act_toggle_report(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/system/events/service = SSevents
 	service.report_at_round_end = !service.report_at_round_end
 	log_and_message_admins("has [service.report_at_round_end ? "enabled" : "disabled"] the round end event report.", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "inc_timer", ui_act_inc_timer, UI_ARG_NUM("amount"), UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT(/datum/event_manager_panel, "dec_timer", ui_act_inc_timer, UI_ARG_NUM("amount"), UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_inc_timer)
-	var/datum/event_container/EC = params["ref"]
-	var/amount = params["amount"]
+/datum/event_manager_panel/proc/ui_act_inc_timer(datum/act/op/A, amount_arg, ref)
+	var/mob/user = A.actor
+	var/action = A.window_action()
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in event_containers()))
+		return FALSE
+	var/datum/event_container/EC = ref
+	var/amount = amount_arg
 	if(!EC || !isnum(amount))
 		return
 	var/change = 60 * (10 ** clamp(round(amount), 0, 2))
@@ -160,38 +181,54 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_inc_timer)
 		log_and_message_admins("decreased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "toggle_pause", ui_act_toggle_pause, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_pause)
-	var/datum/event_container/EC = params["ref"]
+/datum/event_manager_panel/proc/ui_act_toggle_pause(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in event_containers()))
+		return FALSE
+	var/datum/event_container/EC = ref
 	if(!EC)
 		return
 	EC.delayed = !EC.delayed
 	log_and_message_admins("has [EC.delayed ? "paused" : "resumed"] countdown for [GLOB.severity_to_string[EC.severity]] events.", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "set_interval", ui_act_set_interval, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_interval)
-	var/datum/event_container/EC = params["ref"]
+/datum/event_manager_panel/proc/ui_act_set_interval(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in event_containers()))
+		return FALSE
+	var/datum/event_container/EC = ref
 	if(!EC)
 		return
-	var/delay = act_ask(user, action, params, ui, "interval", /datum/om/prompt/number, message = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", title = "Set Interval Modifier")
+	var/delay = A.step_value("interval")
 	if(!isnum(delay) || delay <= 0)
 		return
 	EC.delay_modifier = delay
 	log_and_message_admins("has set the interval modifier for [GLOB.severity_to_string[EC.severity]] events to [EC.delay_modifier].", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "select_event", ui_act_select_event, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_select_event)
-	var/datum/event_container/EC = params["ref"]
+/datum/event_manager_panel/proc/ui_act_select_event(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in event_containers()))
+		return FALSE
+	var/datum/event_container/EC = ref
 	if(!EC)
 		return
 	EC.SelectEvent(user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "clear_event", ui_act_clear_event, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_clear_event)
-	var/datum/event_container/EC = params["ref"]
+/datum/event_manager_panel/proc/ui_act_clear_event(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in event_containers()))
+		return FALSE
+	var/datum/event_container/EC = ref
 	if(!EC)
 		return
 	if(EC.next_event())
@@ -199,27 +236,35 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_clear_event)
 		rel_clear(EC, nameof(/datum/event_container::next_event))
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "view_events", ui_act_view_events, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_view_events)
+/datum/event_manager_panel/proc/ui_act_view_events(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in event_containers()))
+		return FALSE
 	var/datum/system/events/service = SSevents
-	var/datum/event_container/EC = params["ref"]
+	var/datum/event_container/EC = ref
 	if(!EC)
 		return
 	rel_set(service, nameof(/datum/system/events::selected_event_container), EC)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "back", ui_act_back)
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_back)
+/datum/event_manager_panel/proc/ui_act_back(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/system/events/service = SSevents
 	rel_clear(service, nameof(/datum/system/events::selected_event_container))
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "stop_event", ui_act_stop_event, UI_ARG_REF("ref", "proc:active_events", /datum/event))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_stop_event)
-	var/datum/event/E = params["ref"]
+/datum/event_manager_panel/proc/ui_act_stop_event(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in active_events()))
+		return FALSE
+	var/datum/event/E = ref
 	if(!E)
 		return
-	var/answer = act_ask(user, action, params, ui, "stop", /datum/om/prompt/choice/alert, message = "Stopping an event may have unintended side-effects. Continue?", title = "Stopping Event!", choices = list("Yes","No"))
+	var/answer = A.step_value("stop")
 	if(answer != "Yes" || QDELETED(E))
 		return
 	var/datum/event_meta/EM = E.event_meta()
@@ -227,36 +272,45 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_stop_event)
 	E.kill()
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "set_name", ui_act_set_name, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_name)
-	var/datum/event_meta/EM = params["ref"]
+/datum/event_manager_panel/proc/ui_act_set_name(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in editable_metas()))
+		return FALSE
+	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	var/name = act_ask(user, action, params, ui, "name", /datum/om/prompt/text, message = "Enter event name.", title = "Set Name", max_length = MAX_LNAME_LEN)
+	var/name = A.step_value("name")
 	if(!name)
 		return
 	EM.name = name
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "set_type", ui_act_set_type, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_type)
-	var/datum/system/events/service = SSevents
-	var/datum/event_meta/EM = params["ref"]
+/datum/event_manager_panel/proc/ui_act_set_type(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in editable_metas()))
+		return FALSE
+	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	var/type = act_ask(user, action, params, ui, "type", /datum/om/prompt/choice, message = "Select event type.", title = "Select", choices = service.allEvents)
+	var/type = A.step_value("type")
 	if(!type)
 		return
 	EM.event_type = type
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "set_weight", ui_act_set_weight, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_weight)
+/datum/event_manager_panel/proc/ui_act_set_weight(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in editable_metas()))
+		return FALSE
 	var/datum/system/events/service = SSevents
-	var/datum/event_meta/EM = params["ref"]
+	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
-	var/weight = act_ask(user, action, params, ui, "weight", /datum/om/prompt/number, message = "Enter weight. A higher value means higher chance for the event of being selected.", title = "Set Weight")
+	var/weight = A.step_value("weight")
 	if(!isnum(weight) || weight <= 0)
 		return
 	EM.weight = weight
@@ -264,10 +318,14 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_weight)
 		log_and_message_admins("has changed the weight of the [GLOB.severity_to_string[EM.severity]] event '[EM.name]' to [EM.weight].", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "toggle_oneshot", ui_act_toggle_oneshot, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_oneshot)
+/datum/event_manager_panel/proc/ui_act_toggle_oneshot(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in editable_metas()))
+		return FALSE
 	var/datum/system/events/service = SSevents
-	var/datum/event_meta/EM = params["ref"]
+	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
 	EM.one_shot = !EM.one_shot
@@ -275,38 +333,50 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_oneshot)
 		log_and_message_admins("has [EM.one_shot ? "set" : "unset"] the oneshot flag for the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "toggle_enabled", ui_act_toggle_enabled, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_enabled)
-	var/datum/event_meta/EM = params["ref"]
+/datum/event_manager_panel/proc/ui_act_toggle_enabled(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in editable_metas()))
+		return FALSE
+	var/datum/event_meta/EM = ref
 	if(!EM)
 		return
 	EM.enabled = !EM.enabled
 	log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "remove_event", ui_act_remove_event, UI_ARG_REF("container_ref", "proc:event_containers", /datum/event_container), UI_ARG_REF("ref", "proc:all_available_events", /datum/event_meta))
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_remove_event)
-	var/datum/event_container/EC = params["container_ref"]
+/datum/event_manager_panel/proc/ui_act_remove_event(datum/act/op/A, container_ref, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(container_ref) && !(container_ref in event_containers()))
+		return FALSE
+	if(!isnull(ref) && !(ref in all_available_events()))
+		return FALSE
+	var/datum/event_container/EC = container_ref
 	if(!EC)
 		return
-	var/datum/event_meta/EM = params["ref"]
+	var/datum/event_meta/EM = ref
 	if(!EM || !(EM in EC.available_events))
 		return
-	var/answer = act_ask(user, action, params, ui, "remove", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
+	var/answer = A.step_value("remove")
 	if(answer != "Yes")
 		return
 	rel_remove(EC, nameof(/datum/event_container::available_events), EM)
 	log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 	return TRUE
 
-UI_ACT(/datum/event_manager_panel, "add_event", ui_act_add_event)
-UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
+/datum/event_manager_panel/proc/ui_act_add_event(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/system/events/service = SSevents
 	var/datum/event_container/EC = service.selected_event_container()
 	var/datum/event_meta/NE = service.new_event
 	if(!EC || !NE?.name || !NE.event_type)
 		return
-	var/answer = act_ask(user, action, params, ui, "add", /datum/om/prompt/choice/alert, message = "This will add a new event to the rotation. Continue?", title = "Add Event!", choices = list("Yes","No"))
+	var/answer = A.step_value("add")
 	if(answer != "Yes" || NE != service.new_event)
 		return
 	NE.severity = EC.severity
@@ -320,3 +390,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
 /datum/system/events
 	var/datum/event_manager_panel/tgui_event_manager_panel
 
+// The questions' computed fields (asks()).
+/datum/event_manager_panel/proc/ui_act_set_type_type_choices(datum/act/op/A)
+	var/datum/system/events/service = SSevents
+	return service.allEvents

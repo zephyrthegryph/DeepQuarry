@@ -1447,6 +1447,10 @@ focused tests of the touched windows (the tests that called a handler with its o
   are `asks()` steps. Cancelling the note question now leaves the note (it cleared it); a message is asked before the exonet check (the
   check still refuses to send). Answering "Yes" to keep editing an oversized song import ends it: the player presses import again (it
   reopened the paste box).
+* **Library computers, mob spawner, feedback form, event manager, character directory.** Their questions are `asks()` steps of the button's
+  op (the event manager's from the old `act_ask()` calls). The library upload confirmation is asked even with nothing scanned (the
+  handler then does nothing); a feedback submission that is empty or too long is not confirmed (the handler says why). A guard in a
+  handler that stood above its question now runs after the answer.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it

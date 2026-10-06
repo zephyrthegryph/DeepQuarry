@@ -18,14 +18,21 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 
 // This is a global singleton. Keep in mind that all operations should occur on usr, not src.
 /datum/character_directory
-DECLARE_UI_STATE(/datum/character_directory, GLOB.tgui_always_state)
 
-DECLARE_UI(/datum/character_directory, "CharacterDirectory", UI_TITLE("Character Directory"))
-
-UI_DATA(/datum/character_directory, "merge:ui_data_datum_character_directory{personalVisibility:unknown,personalTag:bool,personalErpTag:bool,personalEventTag:unknown,personalGenderTag:bool,personalSexualityTag:bool}")
+CAPABILITIES(/datum/character_directory)
+	interface("CharacterDirectory", title = "Character Directory", state = nameof(GLOB.tgui_always_state))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("setTag", ui_act("setTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
+	op("setErpTag", ui_act("setErpTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
+	op("setVisible", ui_act("setVisible", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
+	op("editAd", ui_act("editAd", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
+	op("setGenderTag", ui_act("setGenderTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
+	op("setSexualityTag", ui_act("setSexualityTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
+	op("setEventTag", ui_act("setEventTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
 
 /// The computed part of /datum/character_directory's window data (declared on its UI_DATA row).
-/datum/character_directory/proc/ui_data_datum_character_directory(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/character_directory/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	if (user?.mind)
@@ -260,8 +267,9 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 	return data
 
 
-UI_ACT(/datum/character_directory, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/character_directory, ui_act_refresh)
+/datum/character_directory/proc/ui_act_refresh(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	// This is primarily to stop malicious users from trying to lag the server by spamming this verb
 	if(!user.checkMoveCooldown())
 		to_chat(user, span_warning("Don't spam character directory refresh."))
@@ -270,15 +278,10 @@ UI_ACT_PROC(/datum/character_directory, ui_act_refresh)
 	update_tgui_static_data(user, ui)
 	return TRUE
 
-UI_ACT(/datum/character_directory, "setTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT(/datum/character_directory, "setErpTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT(/datum/character_directory, "setVisible", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT(/datum/character_directory, "editAd", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT(/datum/character_directory, "setGenderTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT(/datum/character_directory, "setSexualityTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT(/datum/character_directory, "setEventTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
-UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
-	return check_for_mind_or_prefs(user, action, params["overwrite_prefs"])
+/datum/character_directory/proc/ui_act_directory_setting(datum/act/op/A, overwrite_prefs)
+	var/mob/user = A.actor
+	var/action = A.window_action()
+	return check_for_mind_or_prefs(user, action, overwrite_prefs)
 
 /datum/character_directory/proc/check_for_mind_or_prefs(mob/user, action, overwrite_prefs, selected_value = null)
 	if (!user.client)
