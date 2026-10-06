@@ -10,8 +10,8 @@ robot|none menu: Toggle Tray Lid
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none click: nothing
-ghost|none menu: Harvest
-ghost|none click: nothing
+ghost|none menu: Harvest (refused: )
+ghost|none click: Click: Harvest
 human|/obj/item/tool/screwdriver menu: Remove Label
 human|/obj/item/tool/screwdriver menu: Set Light
 human|/obj/item/tool/screwdriver menu: Toggle Tray Lid

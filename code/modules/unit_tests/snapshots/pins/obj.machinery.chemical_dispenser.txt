@@ -6,7 +6,7 @@ robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none menu: View
-ghost|none click: nothing
+ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Remove cartridge
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver click: Click: Ui open

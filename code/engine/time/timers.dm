@@ -1,6 +1,6 @@
 // Timers: the owner's timer store and the deadline that fires it (doc/rewrite/framework_gaps.md C1; doc/rewrite/final_api.html section 3).
 //
-// om_after(E, delay, proc, args...) is a one-shot call on the deadline wheel (after(), after_if_alive() and the keyed forms are in after.dm):
+// timer_schedule(E, delay, proc, args...) is a one-shot call on the deadline wheel (after(), after_if_alive() and the keyed forms are in after.dm):
 //   - owned by E: cancelled when E is deleted (om_teardown_rest drops rec.timers);
 //   - on E's clock: E's timer clock (om_timer_clock(), bio for living mobs, machine for machinery) scales it, and suspension or stasis
 //     pauses it;
@@ -41,7 +41,7 @@
 
 /datum/om/scheduler/var/datum/om/global_owner/global_owner
 /datum/om/scheduler/var/timers_dropped = 0
-/// Timers that ran with at least one deleted argument passed as null (the default, om_after()/after()).
+/// Timers that ran with at least one deleted argument passed as null (the default, timer_schedule()/after()).
 /datum/om/scheduler/var/timers_nulled = 0
 /// Deleted arguments om_resolve_value() replaced with null during the current resolution.
 GLOBAL_VAR_INIT(om_resolve_nulled, 0)
@@ -58,14 +58,14 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /// Runs `proc` after `delay` deciseconds of E's timer clock. A
 /// global proc (/proc/x) gets `call_args`; a type proc is called on E. Returns the timer id
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
-/proc/om_after(datum/E, delay, proc_ref, ...)
+/proc/timer_schedule(datum/E, delay, proc_ref, ...)
 	return rx_after(E, delay, proc_ref, null, CLOCK_OWN, length(args) > 3 ? args.Copy(4) : null, TRUE)
 
-/// om_after()'s body. nulls_for_gone (the default for om_after()/after()): a captured datum argument
+/// timer_schedule()'s body. nulls_for_gone (the default for timer_schedule()/after()): a captured datum argument
 /// deleted before the timer fires, or already deleted when it is scheduled, is passed as null and the
 /// call runs. FALSE (after_if_alive()): the call is dropped, and an already-deleted argument is
 /// refused up front (returns 0).
-/proc/om_after_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = TRUE, owner_first = FALSE)
+/proc/timer_schedule_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = TRUE, owner_first = FALSE)
 	if(isnull(E))
 		E = om_global_owner()
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
@@ -285,7 +285,7 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 		om_timers_arm(rec)
 	return TRUE
 
-/// How many om_after() timers E has pending.
+/// How many timer_schedule() timers E has pending.
 /datum/om/scheduler/proc/timer_count(datum/E)
 	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
 
@@ -506,7 +506,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		return now == captured_value
 	return json_encode(now) == json_encode(captured_value)
 
-/// om_after(), unless the same call (owner, proc, arguments) is already pending: then
+/// timer_schedule(), unless the same call (owner, proc, arguments) is already pending: then
 /// nothing, and the pending timer's id is returned. (Was TIMER_UNIQUE.)
 /datum/om/scheduler/proc/after_unique(datum/E, delay, proc_ref, ...)
 	if(isnull(E))
@@ -516,9 +516,9 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	var/i = timer_find(rec, proc_ref, call_args)
 	if(i)
 		return rec.timers[i]
-	return om_after(arglist(list(E, delay, proc_ref) + call_args))
+	return timer_schedule(arglist(list(E, delay, proc_ref) + call_args))
 
-/// om_after(), replacing the same call if it is pending: the delay restarts. (Was
+/// timer_schedule(), replacing the same call if it is pending: the delay restarts. (Was
 /// TIMER_UNIQUE | TIMER_OVERRIDE.)
 /datum/om/scheduler/proc/after_replace(datum/E, delay, proc_ref, ...)
 	if(isnull(E))
@@ -528,7 +528,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	var/i = timer_find(rec, proc_ref, call_args)
 	if(i)
 		om_cancel_timer(E, rec.timers[i])
-	return om_after(arglist(list(E, delay, proc_ref) + call_args))
+	return timer_schedule(arglist(list(E, delay, proc_ref) + call_args))
 
 /// Cancels every pending timer on E that calls `proc_ref`, whatever its arguments.
 /datum/om/scheduler/proc/cancel_calls(datum/E, proc_ref)
@@ -552,17 +552,17 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // wheel fires it early. (Was TIMER_CLIENT_TIME.)
 
 /// Runs `proc` after `delay` deciseconds of real time, on the global owner. Arguments are
-/// captured weakly, as om_after() does. A global proc gets the arguments; a type proc runs on
+/// captured weakly, as timer_schedule() does. A global proc gets the arguments; a type proc runs on
 /// the first argument and gets the rest.
-/proc/om_after_realtime(delay, proc_ref, ...)
+/proc/timer_schedule_realtime(delay, proc_ref, ...)
 	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
-	return om_after(arglist(list(null, delay, /proc/om_realtime_fire, REALTIMEOFDAY + max(delay, 0), proc_ref) + call_args))
+	return timer_schedule(arglist(list(null, delay, /proc/om_realtime_fire, REALTIMEOFDAY + max(delay, 0), proc_ref) + call_args))
 
 /proc/om_realtime_fire(due, proc_ref, ...)
 	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
 	var/left = due - REALTIMEOFDAY
 	if(left > 0)
-		om_after(arglist(list(null, left, /proc/om_realtime_fire, due, proc_ref) + call_args))
+		timer_schedule(arglist(list(null, left, /proc/om_realtime_fire, due, proc_ref) + call_args))
 		return
 	if(om_proc_is_global(proc_ref))
 		call(proc_ref)(arglist(call_args))
