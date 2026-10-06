@@ -115,10 +115,9 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	var/list/internal_log
 	mode = 0  // 0 - making pass, 1 - viewing logs
 
-// ALLOW(init/INSTANCE_STATE): uid rolled at random for each instance
-/obj/machinery/computer/guestpass/Initialize(mapload)
-	. = ..()
-	uid = "[rand(100,999)]-G[rand(10,99)]"
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/machinery/computer/guestpass/proc/roll_uid(datum/roller/R)
+	return "[R.number(100, 999)]-G[R.number(10, 99)]"
 
 /obj/machinery/computer/guestpass/declare_interactions(list/into)
 	into += list(
@@ -191,6 +190,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 	op("issue", ui_act("issue"), then(PROC_REF(ui_act_issue)))
+	rolls(nameof(uid), PROC_REF(roll_uid))
 
 /obj/machinery/computer/guestpass/ui_data(datum/act/eval/A)
 	var/list/data = list()

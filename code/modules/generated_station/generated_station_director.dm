@@ -177,7 +177,7 @@ CAPABILITIES(/datum/generated_station_director)
 		var/list/knowledge = local_knowledge[department_id]
 		knowledge?.Remove(report_id)
 	own_take_member(src, nameof(reports), report_id)
-	qdel(report)
+	spent(report)
 
 /datum/generated_station_director/proc/department_knows(department_id, report_id)
 	var/list/knowledge = local_knowledge[department_id]
@@ -244,7 +244,7 @@ CAPABILITIES(/datum/generated_station_director)
 	if(squad?.active_order_id == order.id)
 		squad.active_order_id = null
 	own_take_member(src, nameof(orders), order.id)
-	qdel(order)
+	spent(order)
 	return TRUE
 
 /// Accessor for the simulation var.

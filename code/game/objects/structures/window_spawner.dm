@@ -44,7 +44,7 @@ MAP_RESOLVER_VARS(/obj/effect/wingrille_spawn, "id;win_path")
 			for(var/obj/structure/window/W in turf_contents_of_type(N, /obj/structure/window))
 				if(W.type == win_path && W.dir == get_dir(N, T))
 					found_connection = 1
-					qdel(W)
+					spent(W)
 		if(!found_connection)
 			var/obj/structure/window/new_win = new win_path(T)
 			new_win.set_dir(dir)

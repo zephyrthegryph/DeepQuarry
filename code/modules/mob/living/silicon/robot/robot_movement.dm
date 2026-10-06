@@ -55,7 +55,7 @@
 		for(var/A in tile)
 			if(istype(A, /obj/effect))
 				if(istype(A, /obj/effect/rune) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay))
-					qdel(A)
+					spent(A)
 			else if(istype(A, /obj/item))
 				var/obj/item/cleaned_item = A
 				cleaned_item.wash(CLEAN_SCRUB)

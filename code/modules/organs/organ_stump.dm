@@ -22,8 +22,7 @@
 
 /obj/item/organ/external/stump/removed()
 	..()
-	// ALLOW(lifecycle): a removed stump has nothing left to be
-	qdel(src)
+	spent(src)
 
 /obj/item/organ/external/stump/is_usable()
 	return 0

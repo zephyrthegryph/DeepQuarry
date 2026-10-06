@@ -166,7 +166,7 @@ CAPABILITIES(/datum/remote_materials)
 			if(mat_container() == local_container)
 				own_clear(src, nameof(local_container), OWN_DELETE) // mat_container's view clears with it
 			else
-				qdel(mat_container())
+				spent(mat_container(), user)
 		rel_set(src, nameof(silo), new_silo)
 		rel_add(new_silo, nameof(new_silo.ore_connected_machines), src)
 		rel_set(src, nameof(mat_container), new_container)

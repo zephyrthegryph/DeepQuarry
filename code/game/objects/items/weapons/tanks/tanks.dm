@@ -229,7 +229,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 			rel_clear(assy.a_right, nameof(/client::holder))
 			own_take(assy, nameof(assy.a_right))
 			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
-			qdel(assy)
+			destroyed(assy, user)
 	cut_overlays()
 	last_gauge_pressure = 0
 	update_gauge()
@@ -497,11 +497,10 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 			if(istype(loc, /obj/item/transfer_valve))
 				var/obj/item/transfer_valve/TTV = loc
 				TTV.remove_tank(src)
-				qdel(TTV)
+				spent(TTV)
 
 			if(src)
-				// ALLOW(lifecycle): the overpressured tank explodes
-				qdel(src)
+				destroyed(src)
 
 		else
 			tank_stress(70)
@@ -533,8 +532,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 				var/obj/item/transfer_valve/TTV = loc
 				TTV.remove_tank(src)
 
-			// ALLOW(lifecycle): the tank ruptures into fragments
-			qdel(src)
+			spent(src)
 
 		else
 			if(!valve_welded)
@@ -708,10 +706,10 @@ TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 		other = assy.a_right
 
 	other.dropInto(get_turf(src))
-	qdel(ign)
+	destroyed(ign)
 	rel_clear(assy, nameof(assy.master))
 	rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
-	qdel(assy)
+	destroyed(assy)
 	src.update_icon()
 	src.update_gauge()
 

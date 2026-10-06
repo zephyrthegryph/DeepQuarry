@@ -330,10 +330,8 @@ CAPABILITIES(/obj/item/card_fluff)
 /obj/item/card/emag/used
 	uses = 1
 
-// ALLOW(init/INSTANCE_STATE): uses rolled at random for each instance
-/obj/item/card/emag/used/Initialize(mapload)
-	. = ..()
-	uses = rand(1, 5)
+CAPABILITIES(/obj/item/card/emag/used)
+	rolls(nameof(uses), range_of(1, 5))
 
 /// Relation view: robot owner (reads null once it is gone).
 /obj/item/card/id/synthetic/borg/proc/robot_owner() as /mob/living/silicon/robot

@@ -63,9 +63,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 // cooking food and its containers go with the machine.
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
-		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
+		destroyed(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
 		own_take_member(src, nameof(cooking_objs), CI)
-		qdel(CI)
+		destroyed(CI)
 	..()
 
 /obj/machinery/appliance/examine(mob/user)
@@ -562,10 +562,10 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			S.reagents.trans_to_holder(buffer, S.reagents.total_volume)
 		//Cleanup these empty husk ingredients now
 		if (I)
-			qdel(I)
+			spent(I)
 			CI.container().food_items--
 		if(S && !QDELETED(S)) //Incase I = S up there.
-			qdel(S)
+			spent(S)
 			CI.container().food_items--
 
 	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
@@ -777,7 +777,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 
 	if (delete)
 		own_take_member(src, nameof(cooking_objs), CI)
-		qdel(CI)
+		spent(CI, user)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside
 
@@ -834,7 +834,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)
 	if (!istype(H) || !H.held_mob)
-		qdel(H)
+		consumed(H)
 		return null
 	var/mob/living/victim = H.held_mob
 	if (victim.stat != DEAD)
@@ -862,9 +862,9 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 
 	// all done, now delete the old objects
 	rel_clear(H, nameof(H.held_mob))
-	qdel(victim)
+	consumed(victim, H)
 	victim = null
-	qdel(H)
+	consumed(H)
 	H = null
 
 	return result

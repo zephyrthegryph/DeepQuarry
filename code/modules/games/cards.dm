@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/item/deck)
 	owns_many(nameof(cards))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/deck/holder
 	name = "card box"
@@ -390,8 +391,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	shuffle(user)
 	return TRUE
 
-/obj/item/deck/MouseDrop(mob/user) // Code from Paper bin, so you can still pick up the deck
-	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native tabletop-item drag captures its initiating actor separately from its drop destination.
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/deck/proc/mousedrop_input(datum/act/input/A)
+	return pickup_with_actor(A.actor, A.over)
 
 /obj/item/deck/proc/pickup_with_actor(mob/user, mob/destination)
 	if((user && user == destination && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
@@ -505,8 +507,7 @@ CAPABILITIES(/obj/item/pack)
 		H.Move(get_step(user,user.dir))
 
 	if(!length(cards))
-		// ALLOW(lifecycle): an empty hand of cards is gone
-		qdel(src)
+		spent(src, user)
 
 DECLARE_INTERACTIONS(/obj/item/hand, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -571,8 +572,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	src.update_icon()
 
 	if(!length(cards))
-		// ALLOW(lifecycle): an empty hand of cards is gone
-		qdel(src)
+		spent(src, user)
 	return
 
 /obj/item/hand
@@ -586,8 +586,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 	var/cardNumber = length(cards)
 
 	if(!cardNumber)
-		// ALLOW(lifecycle): an empty hand of cards is gone
-		qdel(src)
+		spent(src)
 		return .
 	else if(cardNumber > 1)
 		name = "hand of cards ([cardNumber])"

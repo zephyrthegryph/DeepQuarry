@@ -11,10 +11,9 @@
 	var/tamper_proof = FALSE //Set to TRUE if the die needs to be unable to be weighted, such as for events
 	attack_verb = list("diced")
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/dice/Initialize(mapload)
-	. = ..()
-	icon_state = "[name][rand(1,sides)]"
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/dice/proc/roll_icon_state(datum/roller/R)
+	return "[name][R.number(1, sides)]"
 
 /// Old attackby.
 /obj/item/dice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -125,6 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 
 CAPABILITIES(/obj/item/dice)
 	op("roll", in_hand(), label("Roll die"), then(PROC_REF(dice_roll_requested)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /obj/item/dice/proc/dice_roll_requested(datum/act/op/A)
 	rollDice(A.actor, 0)

@@ -1653,7 +1653,7 @@ CAPABILITIES(/obj/structure/sign/flag)
 		act_message(user, src, MSG_SELF(span_notice("You unfasten the tattered remains of %T%.")), \
 			MSG_OTHERS(span_notice("%U% unfastens the tattered remnants of %T%.")))
 	if(linked_flag)
-		qdel(linked_flag) //otherwise you're going to get weird duping nonsense
+		spent(linked_flag, user) //otherwise you're going to get weird duping nonsense
 	consume(src, user)
 
 /obj/structure/sign/flag/declare_interactions(list/into)
@@ -1711,7 +1711,7 @@ CAPABILITIES(/obj/structure/sign/flag)
 	play_sfx(src.loc, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT, volume = 100, extrarange = 0)
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)
-		qdel(linked_flag)
+		consumed(linked_flag, src)
 	consume(src, user)
 	return TRUE
 

@@ -398,7 +398,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	if(istype(host.loc, /turf/simulated))
 		host.loc.assume_air(leaked_gas)
 	else
-		qdel(leaked_gas) // ALLOW(lifecycle): a gas_mixture handle is a plain datum with no lifecycle verb; the leak has nowhere to go off-turf
+		spent(leaked_gas)
 
 /datum/mech_affliction/control_damage
 	name = "control damage"

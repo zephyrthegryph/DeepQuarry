@@ -110,7 +110,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, TYPE_PROC_REF(
 		//use_power(radio_power_use)	//neat idea, but causes way too much lag.
 		return radio_connection().post_signal(src, signal, radio_filter)
 	else
-		qdel(signal)
+		spent(signal)
 
 /obj/machinery/embedded_controller/radio/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)

@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 	dat += patient_notes(M, D.profile.scan_level)
 	user.show_message(dat.Join("<br>"), 1)
 	log_diagnosis(user, M, D)
-	qdel(D)
+	spent(D, M)
 	if(guide)
 		guide(M, user)
 

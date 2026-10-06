@@ -144,8 +144,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 		return TRUE
 
 	SStgui.close_uis(src)
-	// ALLOW(lifecycle): a submitted feedback form has done its job and closes for good
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 

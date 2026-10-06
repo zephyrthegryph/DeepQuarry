@@ -79,7 +79,7 @@
 		var/datum/material_power_overlay/overlay = power_material_overlays[id]
 		if(!power_grids[id] || !overlay.process_material_network())
 			power_material_overlays -= id
-			qdel(overlay)
+			spent(overlay)
 
 /// The cable network's topology was edited (a node bound or unbound): regions may split, merge or gain members at
 /// the next commit, so the next power step re-reads every machine's region. Every vg_power_bind_* and
@@ -98,7 +98,7 @@
 /// cannot survive it.
 /datum/system/machines/proc/power_reregister_all()
 	for(var/id in power_material_overlays)
-		qdel(power_material_overlays[id])
+		spent(power_material_overlays[id])
 	power_material_overlays = alist()
 	power_grids = alist()
 	power_regions_stale = TRUE

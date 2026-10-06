@@ -435,7 +435,7 @@
 					var/obj/item/storage/container = I
 					container.spill()
 					container.close_all()
-				qdel(I)
+				spent(I)
 	return parts
 
 /datum/personal_crafting/proc/on_button_click(datum/act/notice/A)

@@ -47,7 +47,7 @@
 		if (INITIALIZE_HINT_NORMAL)
 			EMPTY_BLOCK_GUARD // Pass
 		if(INITIALIZE_HINT_QDEL)
-			qdel(A)
+			spent(A)
 			qdeleted = TRUE
 		else
 			BadInitializeCalls[the_type] |= BAD_INIT_NO_HINT

@@ -60,7 +60,7 @@
 	coinsToProduce = initial(coinsToProduce)
 	if(M.amount == 0)
 		icon_state = "coinpress0"
-		qdel(M)	//clean it up just to be sure
+		spent(M)	//clean it up just to be sure
 		src.visible_message(span_notice("\The [src] has run out of usable materials."))
 		return
 	press_next(user, M)

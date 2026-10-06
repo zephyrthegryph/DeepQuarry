@@ -122,8 +122,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/proc/burst_from_pressure()
 	visible_message(span_danger("\The [src] bursts!"))
 	play_sfx(src, SFX_EFFECTS_BANG, 0.5)
-	// ALLOW(lifecycle): the overpressured pipe bursts apart
-	qdel(src)
+	destroyed(src)
 
 /obj/machinery/atmospherics/pipe/return_air()
 	if(QDELETED(src))
@@ -138,7 +137,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		return
 	if(line.network?.rust_authoritative)
 		return
-	qdel(line)
+	spent(line)
 
 /obj/machinery/atmospherics/pipe/return_network(obj/machinery/atmospherics/reference)
 	if(QDELETED(src))
@@ -165,7 +164,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 			rel_remove(old_parent, nameof(old_parent.leaks), src)
 	else
 		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
-		qdel(old_parent)
+		spent(old_parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
 		own_clear(src, nameof(air_temporary), OWN_DELETE)
@@ -238,7 +237,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	if(released_capacity > 0 && material_sorbed_thermal_energy > 0)
 		heat_set(released, material_sorbed_thermal_energy / released_capacity)
 	environment.merge(released)
-	qdel(released)
+	spent(released)
 	material_sorbed_moles = 0
 	material_sorbed_thermal_energy = 0
 

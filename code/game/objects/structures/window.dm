@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 		if(isliving(G?.grab_target()))
 			var/mob/living/M = G?.grab_target()
 			var/state = G.state
-			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
+			consumed(W, src)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
@@ -644,7 +644,7 @@ CAPABILITIES(/obj/machinery/button/windowtint)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			spent(src, user)
 			return TRUE
 	return FALSE
 */

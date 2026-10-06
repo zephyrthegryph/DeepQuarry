@@ -210,7 +210,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 			qty_need -= amount_to_take
 		else
 			qty_need -= 1
-			qdel(I)
+			spent(I)
 		return 1
 
 //

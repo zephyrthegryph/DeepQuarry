@@ -77,8 +77,7 @@
 	var/datum/effect/effect/system/smoke_spread/smoke = new
 	smoke.set_up(1,0, src.loc, 0)
 	smoke.start()
-	// ALLOW(lifecycle): the overpressured pipe bursts apart
-	qdel(src) // NOT qdel.
+	destroyed(src) // NOT qdel.
 
 /obj/machinery/atmospherics/pipe/zpipe/proc/normalize_dir()
 	if(dir == (NORTH|SOUTH))
@@ -97,12 +96,12 @@
 /obj/machinery/atmospherics/pipe/zpipe/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			spent(parent)
 		rel_clear(src, nameof(node1))
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			spent(parent)
 		rel_clear(src, nameof(node2))
 
 	return null

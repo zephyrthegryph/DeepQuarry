@@ -110,7 +110,7 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 		return
 	for(var/obj/effect/landmark/event_trigger/ET in GLOB.event_triggers[owner_ckey])
 		ET.delete_me = TRUE
-		qdel(ET)
+		spent(ET)
 	if(owner_ckey != user.ckey)
 		log_and_message_admins("[user.ckey] deleted all of [owner_ckey]'s event triggers[choice == "Confirm" ? " while [owner_ckey] was active" : ". [owner_ckey] was either inactive or disconnected at this time."]", user)
 
@@ -150,6 +150,6 @@ CAPABILITIES(/datum/prompt/choice/manage_event_triggers)
 		return
 	var/trigger_name = trigger.name
 	trigger.delete_me = TRUE
-	qdel(trigger)
+	spent(trigger)
 	if(owner_ckey != user.ckey)
 		log_and_message_admins("[user.ckey] deleted event trigger [trigger_name][choice == "Confirm" ? " while [owner_ckey] is active." : ", [owner_ckey] is either disconnected or inactive."]", user)

@@ -40,8 +40,7 @@
 //
 /datum/n_Keyword/nS_Keyword/New(inline=0)
 	if(inline)
-		// ALLOW(lifecycle): an inline keyword is only parsed and not kept
-		qdel(src)
+		spent(src)
 
 /datum/n_Keyword/nS_Keyword/kwReturn/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS

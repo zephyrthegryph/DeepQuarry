@@ -112,7 +112,7 @@ DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam
 		return FALSE
 
 	rel_remove(src, nameof(my_beams), B)
-	qdel(B)
+	destroyed(B)
 	if(beam_destruction_sound)
 		playsound(src, beam_destruction_sound, 70, 1)
 

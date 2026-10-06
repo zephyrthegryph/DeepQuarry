@@ -8,69 +8,35 @@ allow_matches_form	code/_onclick/hud/ability_screen_objects.dm	var/mob/user = us
 allow_matches_form	code/_onclick/hud/action/action_screen_objects.dm	drag_with_actor(usr, over_object, over_location, over_control, params) // ALLOW(sys_usr_outside_verb): Native action button drag supplies its viewer after unchanged parent drag routing.
 allow_matches_form	code/_onclick/hud/action/action_screen_objects.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native action button drop supplies its viewer before unchanged conditional parent routing.
 allow_matches_form	code/_onclick/hud/action/action_screen_objects.dm	show_tooltip(usr, params) // ALLOW(sys_usr_outside_verb): BYOND palette MouseEntered supplies the actual hovering viewer to its tooltip helper.
-allow_matches_form	code/_onclick/hud/action/action_screen_objects.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): Native palette clicks supply the actor without invoking parent input routing.
-allow_matches_form	code/_onclick/hud/alert.dm	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native alert click captures its actor without adding parent input routing.
-allow_matches_form	code/_onclick/hud/alert.dm	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native alert click captures its actor without adding parent input routing.
 allow_matches_form	code/_onclick/hud/alert.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native alert click captures its actor while retaining native master forwarding and parent fallback.
-allow_matches_form	code/_onclick/hud/ghost.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND native ghost HUD clicks provide their actor only through usr
 allow_matches_form	code/_onclick/hud/minihud_rigmech.dm	// ALLOW(sys_usr_outside_verb): Native screen clicks supply the actor through BYOND usr.
 allow_matches_form	code/_onclick/hud/minihud_rigmech.dm	// ALLOW(sys_usr_outside_verb): Native screen clicks supply the actor through BYOND usr.
-allow_matches_form	code/_onclick/hud/popups.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/_onclick/hud/radial.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native radial hover supplies one initiating mob for tooltip delivery and the existing hover-click gate.
 allow_matches_form	code/_onclick/hud/radial.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native radial slice Click supplies the initiating mob for both client ownership and selection.
-allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND item action screen Click supplies its clicking mob through usr at this native boundary
-allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native storage HUD Click supplies the initiating mob while retaining its no-parent virtual mob click dispatch.
-allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): native targeting HUD clicks supply the initiating actor without chaining the atom input router
 allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND screen Click supplies the clicking mob through usr at this native boundary
-allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND inventory screen Click supplies its clicking mob through usr at this native boundary
-allow_matches_form	code/_onclick/hud/screen_objects.dm	// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
 allow_matches_form	code/_onclick/hud/screen_objects.dm	parent().component_click(src, params, usr) // ALLOW(sys_usr_outside_verb): native HUD component Click supplies the initiating actor to its parent callback
 allow_matches_form	code/_onclick/hud/screen_objects.dm	// ALLOW(init/CTOR_ARGS): newowner is a constructor argument from whoever builds it
-allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native mapper control captures its clicking actor without adding parent input routing.
-allow_matches_form	code/_onclick/hud/screen_objects.dm	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native mapper control captures its clicking actor without adding parent input routing.
-allow_matches_form	code/_onclick/hud/soulcatcher_guest.dm	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): native soulcatcher HUD clicks capture the initiating actor without chaining the atom input router
-allow_matches_form	code/_onclick/hud/spell_screen_objects.dm	return cast_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native spell button clicks supply the initiating mob to the unchanged casting path.
-allow_matches_form	code/controllers/admin.dm	// ALLOW(init/CTOR_ARGS): text and target are constructor arguments from whoever builds it
 allow_matches_form	code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm	register_and_show_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native card clicks supply the initiating mob before the unchanged parent routing.
 allow_matches_form	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	// ALLOW(init/CTOR_ARGS): user and trigger_now are constructor arguments from whoever builds it
-allow_matches_form	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	// ALLOW(lifecycle): the trap is spent when it misses
-allow_matches_form	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	// ALLOW(lifecycle): the trap is spent once it drags its catch away
-allow_matches_form	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	// ALLOW(lifecycle): the trap is spent once it nets its catch
-allow_matches_form	code/datums/status_effects/debuffs/fire_stacks.dm	// ALLOW(lifecycle): the new stacks merged into the existing effects and this one is spent
-allow_matches_form	code/datums/status_effects/grouped_effect.dm	// ALLOW(lifecycle): the source joined the existing grouped effect, so this copy is spent
-allow_matches_form	code/defines/obj/weapon.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-allow_matches_form	code/game/gamemodes/cult/construct_spells.dm	// ALLOW(lifecycle): the slam spell is spent once the wall is torn down
-allow_matches_form	code/game/gamemodes/meteor/meteors.dm	// ALLOW(lifecycle): a meteor that left its level or reached its target is spent
-allow_matches_form	code/game/gamemodes/meteor/meteors.dm	// ALLOW(lifecycle): a meteor is spent once it has broken apart
 allow_matches_form	code/game/gamemodes/technomancer/core_obj.dm	// ALLOW(init/CTOR_ARGS): path, new_name and new_icon_state are constructor arguments from whoever builds it
 allow_matches_form	code/game/gamemodes/technomancer/core_obj.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native spell button clicking supplies the initiating actor through BYOND usr.
 allow_matches_form	code/game/gamemodes/technomancer/spell_objs.dm	// ALLOW(init/CTOR_ARGS): coreless is a constructor argument from whoever builds it
 allow_matches_form	code/game/gamemodes/technomancer/spells/chroma.dm	// ALLOW(init/CTOR_ARGS): new_color is a constructor argument from whoever builds it
-allow_matches_form	code/game/gamemodes/technomancer/spells/energy_siphon.dm	// ALLOW(lifecycle): the siphon beam is spent on reaching its own caster
-allow_matches_form	code/game/gamemodes/technomancer/spells/reflect.dm	// ALLOW(lifecycle): the reflect shield fades once it has been used up
 allow_matches_form	code/game/machinery/atmoalter/clamp.dm	// ALLOW(init/CTOR_ARGS): to_attach is a constructor argument from whoever builds it
-allow_matches_form	code/game/machinery/atmoalter/clamp.dm	// ALLOW(lifecycle): the clamp item becomes the clamp machine fitted onto the pipe
 allow_matches_form	code/game/machinery/atmoalter/pump.dm	// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
 allow_matches_form	code/game/machinery/atmoalter/scrubber.dm	// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
-allow_matches_form	code/game/machinery/computer/ai_core.dm	// ALLOW(lifecycle): the finished core becomes the AI that was just built in its place
-allow_matches_form	code/game/machinery/computer/ai_core.dm	// ALLOW(lifecycle): the inactive core is replaced by the AI loaded into it
 allow_matches_form	code/game/machinery/computer/arcade.dm	// ALLOW(init/INSTANCE_STATE): a generic arcade cabinet becomes a randomly picked arcade machine
 allow_matches_form	code/game/machinery/computer/bodycamera.dm	if(!handle_click_with_actor(usr, params)) // ALLOW(sys_usr_outside_verb): Native monitor click captures its actor while preserving conditional parent input routing.
 allow_matches_form	code/game/machinery/computer/camera.dm	if(!handle_click_with_actor(usr, params)) // ALLOW(sys_usr_outside_verb): Native monitor click captures its actor while preserving conditional parent input routing.
-allow_matches_form	code/game/machinery/computer/guestpass.dm	// ALLOW(init/INSTANCE_STATE): uid rolled at random for each instance
 allow_matches_form	code/game/machinery/doorbell.dm	// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
 allow_matches_form	code/game/machinery/doors/airlock.dm	// ALLOW(init/CTOR_ARGS): a door built from an assembly takes the assembly's electronics, access, name and facing (constructor arguments)
-allow_matches_form	code/game/machinery/event/christmas.dm	// ALLOW(init/INSTANCE_STATE): pixel_x, pixel_y and icon_state rolled at random for each instance
 allow_matches_form	code/game/machinery/feeder.dm	return drop_patient_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native patient attachment drag supplies the actor after unchanged parent input routing.
 allow_matches_form	code/game/machinery/frame.dm	// ALLOW(init/CTOR_ARGS): dir, building, type and user are constructor arguments from whoever builds it
 allow_matches_form	code/game/machinery/gear_dispenser.dm	// ALLOW(init/INSTANCE_STATE): a random roll removes some adventure boxes at creation
 allow_matches_form	code/game/machinery/iv_drip.dm	return drop_patient_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native patient attachment drag supplies the actor after unchanged parent input routing.
 allow_matches_form	code/game/machinery/machinery.dm	// ALLOW(init/CTOR_ARGS): d is a constructor argument from whoever builds it
-allow_matches_form	code/game/machinery/machinery.dm	// ALLOW(lifecycle): the dismantled machine is replaced by the frame built above
 allow_matches_form	code/game/machinery/pipe/construction.dm	// ALLOW(init/CTOR_ARGS): _pipe_type, _dir and make_from are constructor arguments from whoever builds it
-allow_matches_form	code/game/machinery/pipe/construction.dm	// ALLOW(lifecycle): the pipe item becomes the pipe it was fastened into
 allow_matches_form	code/game/machinery/supplybeacon.dm	// ALLOW(init/INSTANCE_STATE): drop_type rolled at random for each instance
-allow_matches_form	code/game/mecha/equipment/weapons/energy/pulse.dm	// ALLOW(lifecycle): the heavy pulse is spent when its life runs out
 allow_matches_form	code/game/objects/effects/alien/aliens.dm	// ALLOW(init/CTOR_ARGS): node and newcolor are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/alien/aliens.dm	// ALLOW(init/CTOR_ARGS): target is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/effects/anomalies/_anomalies.dm	// ALLOW(init/CTOR_ARGS): new_lifespan and drops_core are constructor arguments from whoever builds it
@@ -89,81 +55,46 @@ allow_matches_form	code/game/objects/effects/decals/posters/posters.dm	// ALLOW(
 allow_matches_form	code/game/objects/effects/decals/posters/posters.dm	// ALLOW(init/CTOR_ARGS): placement_dir and P are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/decals/posters/postersubtypes.dm	// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/effects/effect_system.dm	// ALLOW(init/CTOR_ARGS): lifetime, range, power and color are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/effects/info.dm	// ALLOW(init/CTOR_ARGS): info_text is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/effects/misc.dm	// ALLOW(init/CTOR_ARGS): _range, _power, _color and _duration are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/overlays.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 allow_matches_form	code/game/objects/effects/particle_holder.dm	// ALLOW(init/CTOR_ARGS): particle_path and particle_flags are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/prop/columnblast.dm	// ALLOW(init/CTOR_ARGS): ttd and newcolor are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/effects/prop/snake.dm	// ALLOW(init/CTOR_ARGS): hunt_target and Creator are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/shared_particle_holder.dm	// ALLOW(init/CTOR_ARGS): particle_path and particle_flags are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/effects/spiders.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/effects/spiders.dm	// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/effects/spiders.dm	// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/effects/spiders.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/effects/temporary_visuals/miscellaneous.dm	// ALLOW(init/CTOR_ARGS): mimiced_atom and customappearance are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/temporary_visuals/miscellaneous.dm	// ALLOW(init/CTOR_ARGS): P, x and y are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/effects/temporary_visuals/miscellaneous.dm	// ALLOW(init/CTOR_ARGS): P, x and y are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/effects/temporary_visuals/miscellaneous.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 allow_matches_form	code/game/objects/effects/temporary_visuals/projectiles/projectile_effects.dm	// ALLOW(init/CTOR_ARGS): angle_override, p_x, p_y, color_override and scaling are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/effects/temporary_visuals/projectiles/projectile_effects.dm	// ALLOW(init/CTOR_ARGS): color, range, intensity and owner_key are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/effects/temporary_visuals/swing_telegraph.dm	// ALLOW(init/CTOR_ARGS): set_duration is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/effects/temporary_visuals/temporary_visual.dm	// ALLOW(init/CTOR_ARGS): set_dir is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/devices/extrapolator.dm	// ALLOW(init/CTOR_ARGS): starting_scanner is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/devices/flashlight.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native flashlight drag supplies its actor before unchanged conditional parent input routing.
 allow_matches_form	code/game/objects/items/devices/flashlight.dm	// ALLOW(init/INSTANCE_STATE): fuel rolled at random for each instance
 allow_matches_form	code/game/objects/items/devices/flashlight.dm	// ALLOW(init/INSTANCE_STATE): fuel rolled at random for each instance
-allow_matches_form	code/game/objects/items/devices/hacktool.dm	// ALLOW(init/INSTANCE_STATE): max_known_targets rolled at random for each instance
 allow_matches_form	code/game/objects/items/devices/laserpointer.dm	// ALLOW(init/CTOR_ARGS): laser_path is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/items/devices/paicard.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 allow_matches_form	code/game/objects/items/devices/personal_shield_generator.dm	// ALLOW(init/CTOR_ARGS): shield_gen is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/items/devices/taperecorder.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/items/falling_object_attack.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/items/fantasy_items.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/magazine.dm	// ALLOW(init/INSTANCE_STATE): pixel_x, icon_state, headline and name rolled at random for each instance
-allow_matches_form	code/game/objects/items/petrifier.dm	// ALLOW(init/CTOR_ARGS): to_link is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/items/soap.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/items/stacks/marker_beacons.dm	// ALLOW(init/CTOR_ARGS): set_color is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/stacks/sandbags.dm	// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/items/stacks/sandbags.dm	// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/items/stacks/stack.dm	// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/items/toys/fake_coin.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 allow_matches_form	code/game/objects/items/toys/target_toy.dm	// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
-allow_matches_form	code/game/objects/items/toys/toys.dm	// ALLOW(init/INSTANCE_STATE): fake_bullets rolled at random for each instance
-allow_matches_form	code/game/objects/items/toys/toys.dm	// ALLOW(init/INSTANCE_STATE): real rolled at random for each instance
-allow_matches_form	code/game/objects/items/toys/toys.dm	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native tabletop-item drag captures its initiating actor separately from its drop destination.
 allow_matches_form	code/game/objects/items/trash.dm	// ALLOW(init/CTOR_ARGS): _age is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/RCD.dm	// ALLOW(init/CTOR_ARGS): rcd_delay and rcd_status are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/cigs_lighters.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset and transform rolled at random for each instance
-allow_matches_form	code/game/objects/items/weapons/dna_injector.dm	// ALLOW(lifecycle): the injector is used up by the injection
-allow_matches_form	code/game/objects/items/weapons/ecigs.dm	// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/gift_wrappaper.dm	// ALLOW(init/INSTANCE_STATE): icon_state, chaos, name and desc rolled at random for each instance
-allow_matches_form	code/game/objects/items/weapons/grenades/anti_photon_grenade.dm	// ALLOW(lifecycle): the grenade is spent once it detonates
-allow_matches_form	code/game/objects/items/weapons/grenades/grenade.dm	// ALLOW(lifecycle): the grenade is spent once its spray runs out
-allow_matches_form	code/game/objects/items/weapons/grenades/supermatter.dm	// ALLOW(lifecycle): the grenade is spent once it implodes
-allow_matches_form	code/game/objects/items/weapons/id cards/cards.dm	// ALLOW(init/INSTANCE_STATE): uses rolled at random for each instance
-allow_matches_form	code/game/objects/items/weapons/implants/implant.dm	// ALLOW(init/INSTANCE_STATE): id rolled at random for each instance
-allow_matches_form	code/game/objects/items/weapons/implants/implant.dm	// ALLOW(lifecycle): the explosive implant is spent once it goes off
-allow_matches_form	code/game/objects/items/weapons/implants/implant.dm	// ALLOW(lifecycle): the explosive implant is spent once it goes off
-allow_matches_form	code/game/objects/items/weapons/implants/implant.dm	// ALLOW(lifecycle): the explosive implant is spent once it goes off
-allow_matches_form	code/game/objects/items/weapons/implants/implant.dm	// ALLOW(lifecycle): the explosive implant is spent once it goes off
-allow_matches_form	code/game/objects/items/weapons/implants/implantfreedom.dm	// ALLOW(init/INSTANCE_STATE): activation_emote and uses rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/inducer.dm	// ALLOW(init/CTOR_ARGS): H is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/items/weapons/lego.dm	// ALLOW(lifecycle): the cursed brick is spent once someone steps on it
-allow_matches_form	code/game/objects/items/weapons/material/kitchen.dm	// ALLOW(init/INSTANCE_STATE): pixel_y rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/material/material_armor.dm	// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/material/material_weapons.dm	// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/items/weapons/material/thrown.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/melee/misc.dm	// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/melee/shock_maul.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native weapon drag supplies the actor before preserving its conditional parent routing.
 allow_matches_form	code/game/objects/items/weapons/storage/backpack.dm	// ALLOW(init/INSTANCE_STATE): icon_state and tilted rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/storage/backpack.dm	// ALLOW(init/INSTANCE_STATE): icon_state and tilted rolled at random for each instance
-allow_matches_form	code/game/objects/items/weapons/storage/egg.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/storage/firstaid.dm	// ALLOW(init/INSTANCE_STATE): icon_state and icon_variety rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/storage/mre.dm	// ALLOW(init/CTOR_ARGS): newflavor is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/storage/storage.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native storage drag supplies its actor after existing subtype guards and preserves conditional parent routing.
 allow_matches_form	code/game/objects/items/weapons/storage/storage.dm	// ALLOW(init/CTOR_ARGS): held_item is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/stunbaton.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native weapon drag supplies the actor before preserving its conditional parent routing.
-allow_matches_form	code/game/objects/items/weapons/syndie.dm	// ALLOW(lifecycle): the charge is spent once it detonates
 allow_matches_form	code/game/objects/items/weapons/tanks/tanks.dm	// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/tanks/tanks.dm	// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/tools/crowbar.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
@@ -171,14 +102,12 @@ allow_matches_form	code/game/objects/items/weapons/tools/weldingtool.dm	if(!hand
 allow_matches_form	code/game/objects/items/weapons/towels.dm	// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 allow_matches_form	code/game/objects/items/weapons/weldbackpack.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native inventory drag supplies the actor before preserving its conditional parent routing.
 allow_matches_form	code/game/objects/mail.dm	// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
-allow_matches_form	code/game/objects/mail.dm	// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
 allow_matches_form	code/game/objects/structures/artstuff.dm	// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/structures/barricades.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/barricades.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/barsign.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/structures/bonfire.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/crate_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/_closets_appearance_definitions.dm	// ALLOW(init/CTOR_ARGS): newappearance is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
@@ -208,46 +137,16 @@ allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// 
 allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/desert_planet_structures.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/structures/droppod.dm	// ALLOW(init/CTOR_ARGS): A and auto_open are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/structures/extinguisher.dm	// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/structures/flora/flora.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/structures/flora/flora.dm	// ALLOW(init/CTOR_ARGS): bush_icon is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/flora/grass.dm	// ALLOW(init/CTOR_ARGS): grass_icon is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/gargoyle.dm	// ALLOW(init/CTOR_ARGS): H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert and discard_clothes are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/structures/ghost_pods/event.dm	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
-allow_matches_form	code/game/objects/structures/ghost_pods/event.dm	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
-allow_matches_form	code/game/objects/structures/ghost_pods/event.dm	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
-allow_matches_form	code/game/objects/structures/ghost_pods/human.dm	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
-allow_matches_form	code/game/objects/structures/ghost_pods/silicon.dm	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
-allow_matches_form	code/game/objects/structures/ghost_pods/unified_ghost_hole.dm	// ALLOW(lifecycle): the ghost hole is spent once its occupant is made
-allow_matches_form	code/game/objects/structures/ghost_pods/unified_ghost_hole.dm	// ALLOW(lifecycle): the ghost hole is spent once its occupant is made
 allow_matches_form	code/game/objects/structures/girders.dm	// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/structures/girders.dm	// ALLOW(lifecycle): the girder becomes the wall raised over it
 allow_matches_form	code/game/objects/structures/gravemarker.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/structures/holosign.dm	// ALLOW(init/CTOR_ARGS): source_projector is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/low_wall.dm	// ALLOW(init/CTOR_ARGS): materialtype is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/mirror.dm	// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/structures/props/alien_props.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/structures/railing.dm	// ALLOW(init/CTOR_ARGS): constructed is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/structures/safe.dm	// ALLOW(init/INSTANCE_STATE): tumbler_1_pos, tumbler_1_open, tumbler_2_pos and tumbler_2_open rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/game/objects/structures/salvageable.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/structures/simple_doors.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/simple_doors.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/simple_doors.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
@@ -297,65 +196,25 @@ allow_matches_form	code/game/objects/structures/window.dm	// ALLOW(init/CTOR_ARG
 allow_matches_form	code/game/turfs/simulated/floor.dm	// ALLOW(init/CTOR_ARGS): floortype is a constructor argument from whoever builds it
 allow_matches_form	code/game/turfs/simulated/outdoors/sky.dm	// ALLOW(init/CTOR_ARGS): color is a constructor argument from whoever builds it
 allow_matches_form	code/game/turfs/simulated/walls.dm	// ALLOW(init/CTOR_ARGS): materialtype, rmaterialtype and girdertype are constructor arguments from whoever builds it
-allow_matches_form	code/game/turfs/simulated/walls.dm	// ALLOW(lifecycle): the girder becomes the wall the RCD just raised over it
-allow_matches_form	code/game/turfs/unsimulated/beach.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/admin/verbs/SDQL2/SDQL_2.dm	Q.delete_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query deletion.
 allow_matches_form	code/modules/admin/verbs/SDQL2/SDQL_2.dm	Q.action_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query execution.
-allow_matches_form	code/modules/admin/verbs/buildmode.dm	return show_help_with_actor(usr) // ALLOW(sys_usr_outside_verb): native buildmode help Click supplies its initiating actor without parent routing
-allow_matches_form	code/modules/admin/verbs/buildmode.dm	return configure_with_actor(usr, params) // ALLOW(sys_usr_outside_verb): native buildmode configuration Click supplies its initiating actor and unchanged mouse parameters
 allow_matches_form	code/modules/blob2/blobs/base_blob.dm	// ALLOW(init/CTOR_ARGS): new_overmind is a constructor argument from whoever builds it
 allow_matches_form	code/modules/blob2/blobs/core.dm	// ALLOW(init/CTOR_ARGS): its overmind, point rate and whether it was placed are constructor arguments
 allow_matches_form	code/modules/blob2/core_chunk.dm	// ALLOW(init/CTOR_ARGS): parentblob is a constructor argument from whoever builds it
 allow_matches_form	code/modules/blob2/overmind/overmind.dm	// ALLOW(init/CTOR_ARGS): pre_placed, starting_points and desired_blob_type are constructor arguments from whoever builds it
-allow_matches_form	code/modules/casino/spawnergrenade.dm	// ALLOW(lifecycle): the cake grenade is used up once it has spawned the cake
-allow_matches_form	code/modules/casino/spawnergrenade.dm	// ALLOW(lifecycle): the grenade is used up once it has spawned its kit
 allow_matches_form	code/modules/clothing/accessories/clothing.dm	// ALLOW(init/INSTANCE_STATE): icon_state and color rolled at random for each instance
 allow_matches_form	code/modules/clothing/accessories/hands.dm	// ALLOW(init/CTOR_ARGS): new_material is a constructor argument from whoever builds it
 allow_matches_form	code/modules/clothing/accessories/rings.dm	// ALLOW(init/CTOR_ARGS): new_material is a constructor argument from whoever builds it
-allow_matches_form	code/modules/clothing/clothing.dm	// ALLOW(init/INSTANCE_STATE): sensor_mode rolled at random for each instance
-allow_matches_form	code/modules/clothing/clothing_accessories.dm	return drop_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native clothing drag supplies its actor without invoking parent input routing.
 allow_matches_form	code/modules/clothing/spacesuits/rig/modules/modules.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): native stat-panel Click supplies the initiating rig-module actor
 allow_matches_form	code/modules/detectivework/microscope/microscope.dm	if(!handle_sample_drop(usr, other)) // ALLOW(sys_usr_outside_verb): Native microscope drag supplies the actor before selecting the unchanged parent routing branch.
 allow_matches_form	code/modules/detectivework/tools/evidencebag.dm	if(!bag_with_actor(usr, I)) // ALLOW(sys_usr_outside_verb): Native evidence bag drag supplies its actor before unchanged conditional parent input routing.
 allow_matches_form	code/modules/detectivework/tools/sample_kits.dm	// ALLOW(init/CTOR_ARGS): supplied is a constructor argument from whoever builds it
-allow_matches_form	code/modules/economy/cash.dm	// ALLOW(lifecycle): a cash stack spent down to nothing is gone
-allow_matches_form	code/modules/economy/casinocash.dm	// ALLOW(lifecycle): a chip stack spent down to nothing is gone
-allow_matches_form	code/modules/economy/casinocash.dm	// ALLOW(lifecycle): a chip stack spent down to nothing is gone
-allow_matches_form	code/modules/economy/coins.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-allow_matches_form	code/modules/economy/coins.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-allow_matches_form	code/modules/entrepreneur/entrepreneur_items.dm	// ALLOW(init/INSTANCE_STATE): emf rolled at random for each instance
 allow_matches_form	code/modules/env_message/env_message.dm	env_message_hovered(usr, params) // ALLOW(sys_usr_outside_verb): BYOND environmental marker MouseEntered supplies the hovering mob through usr at this native callback boundary.
-allow_matches_form	code/modules/events/meteor_strike.dm	// ALLOW(lifecycle): the falling meteor is spent once it has struck
-allow_matches_form	code/modules/exploration/tyr_tribal_gear.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/exploration/tyr_tribal_gear.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/flufftext/fake_attacker.dm	// ALLOW(init/CTOR_ARGS): targeting_mob and clone_appearance_from are constructor arguments from whoever builds it
-allow_matches_form	code/modules/food/food/condiment.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-allow_matches_form	code/modules/food/food/drinks.dm	// ALLOW(init/INSTANCE_STATE): cant_open rolled at random for each instance
-allow_matches_form	code/modules/food/food/drinks/drinkingglass.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/food/food/snacks.dm	// ALLOW(init/INSTANCE_STATE): unpopped rolled at random for each instance
-allow_matches_form	code/modules/food/food/snacks.dm	// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
-allow_matches_form	code/modules/food/food/snacks.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/food/food/snacks.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/food/glass/bottle.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
-allow_matches_form	code/modules/games/cards.dm	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native tabletop-item drag captures its initiating actor separately from its drop destination.
-allow_matches_form	code/modules/games/dice.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_icon_state is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/generated_station/generated_station_utility_topology.dm	// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 allow_matches_form	code/modules/hydroponics/grown.dm	// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
 allow_matches_form	code/modules/hydroponics/grown.dm	// ALLOW(init/CTOR_ARGS): S is a constructor argument from whoever builds it
 allow_matches_form	code/modules/hydroponics/grown_inedible.dm	// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
-allow_matches_form	code/modules/hydroponics/grown_sif.dm	// ALLOW(init/INSTANCE_STATE): seeds rolled at random for each instance
-allow_matches_form	code/modules/hydroponics/seed_machines.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 allow_matches_form	code/modules/hydroponics/seed_packets.dm	// ALLOW(init/CTOR_ARGS): _seed_type is a constructor argument from whoever builds it
 allow_matches_form	code/modules/hydroponics/spreading/spreading.dm	// ALLOW(init/CTOR_ARGS): newseed and newparent are constructor arguments from whoever builds it
 allow_matches_form	code/modules/hydroponics/trays/tray_soil.dm	// ALLOW(init/CTOR_ARGS): newseed is a constructor argument from whoever builds it
@@ -365,26 +224,19 @@ allow_matches_form	code/modules/living/carbon/human/ai_controlled/ai_controlled.
 allow_matches_form	code/modules/materials/sheets/_sheets.dm	// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mining/fulton.dm	// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
 allow_matches_form	code/modules/mining/mine_items.dm	// ALLOW(init/CTOR_ARGS): _mat is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mining/ore.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-allow_matches_form	code/modules/mining/ore_redemption_machine/equipment_vendor.dm	qdel(old_entry) // ALLOW(lifecycle): the vendor's own catalogue entry, replaced by the new one below
 allow_matches_form	code/modules/mining/resonator.dm	// ALLOW(init/CTOR_ARGS): new_creator and timetoburst are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/combat_mode.dm	return toggle_combat_mode_with_actor(usr) // ALLOW(sys_usr_outside_verb): native HUD Click supplies the initiating mob for the combat toggle
 allow_matches_form	code/modules/mob/dead/observer/observer.dm	// ALLOW(init/CTOR_ARGS): aghost is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/dead/observer/observer.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob; pass that actor to the confirmation helper.
 allow_matches_form	code/modules/mob/holder.dm	// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/holder.dm	// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/bot/farmbot.dm	// ALLOW(init/CTOR_ARGS): newTank is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/bot/farmbot.dm	// ALLOW(init/CTOR_ARGS): theTank is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/carbon/alien/progression.dm	// ALLOW(lifecycle): the larva is replaced by its evolved form
 allow_matches_form	code/modules/mob/living/carbon/human/human.dm	// ALLOW(init/CTOR_ARGS): new_species is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	// ALLOW(init/CTOR_ARGS): new_power is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native protean cluster drag supplies its actor before unchanged conditional parent inventory routing.
 allow_matches_form	code/modules/mob/living/carbon/human/species/station/teshari.dm	if(!micro_scoop_with_actor(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native micro-carry drag supplies its actor before the unchanged parent fallback.
-allow_matches_form	code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/mob/living/silicon/ai/ai.dm	// ALLOW(init/CTOR_ARGS): is_decoy, L, B and safety are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/silicon/robot/component.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/mob/living/silicon/silicon.dm	// ALLOW(init/CTOR_ARGS): is_decoy is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/simple_mob/overmap_mob.dm	// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/simple_mob/overmap_mob.dm	// ALLOW(init/CTOR_ARGS): new_child is a constructor argument from whoever builds it
@@ -392,69 +244,39 @@ allow_matches_form	code/modules/mob/living/simple_mob/overmap_mob.dm	// ALLOW(in
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	// ALLOW(init/CTOR_ARGS): jellyfish is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	// ALLOW(init/CTOR_ARGS): inherit is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	// ALLOW(init/CTOR_ARGS): teppi1 and teppi2 are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	// ALLOW(init/CTOR_ARGS): keep_parent_data is a constructor argument from whoever builds it
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm	// ALLOW(init/INSTANCE_STATE): gender rolled at random for each instance
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/pets/parrot.dm	// ALLOW(init/INSTANCE_STATE): gender, icon_state, icon_rest and icon_dead rolled at random for each instance
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/sif/kururak.dm	// ALLOW(init/INSTANCE_STATE): instinct rolled at random for each instance
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	// ALLOW(init/CTOR_ARGS): my_factory is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/gateway/imperion.dm	// ALLOW(lifecycle): the missile is spent on impact
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/metroid/metObjects.dm	// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/subtypes.dm	// ALLOW(lifecycle): the slime is consumed by its own inferno
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/subtypes.dm	// ALLOW(lifecycle): the slime is consumed by its own explosion
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	// ALLOW(init/CTOR_ARGS): my_predecessor is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/slimess/feral.dm	// ALLOW(lifecycle): the slime is consumed by its own inferno
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	// ALLOW(init/CTOR_ARGS): pred, preyname and prey are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	// ALLOW(lifecycle): the dominating prey mind is dissolved once control returns
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	// ALLOW(lifecycle): the dominated brain is dissolved once its prey returns
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/frog.dm	// ALLOW(init/INSTANCE_STATE): name and desc rolled at random for each instance
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	// ALLOW(init/CTOR_ARGS): pmind, parent and prey are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	// ALLOW(lifecycle): the dominated morph shell is dissolved once the bodies return
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/solargrub.dm	// ALLOW(lifecycle): the grub is replaced by its adult form
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	// ALLOW(lifecycle): the larva is replaced by the grub it matured into
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm	// ALLOW(lifecycle): the critter is replaced by its evolved form
 allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/vore_hostile.dm	// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 allow_matches_form	code/modules/mob/mob_grab.dm	// ALLOW(init/CTOR_ARGS): victim is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/mob_grab_specials.dm	// ALLOW(lifecycle): the grab is spent on the headbutt
-allow_matches_form	code/modules/mob/mob_planes.dm	// ALLOW(init/CTOR_ARGS): M is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/transform_procs.dm	// ALLOW(lifecycle): the human is replaced by the alien its player moved into
-allow_matches_form	code/modules/mob/transform_procs.dm	// ALLOW(lifecycle): the human is replaced by the corgi its player moved into
-allow_matches_form	code/modules/mob/transform_procs.dm	// ALLOW(lifecycle): the mob is replaced by the animal its player moved into
 allow_matches_form	code/modules/modular_computers/hardware/battery_module.dm	// ALLOW(init/CTOR_ARGS): cell_type is a constructor argument from whoever builds it
 allow_matches_form	code/modules/multiz/hoist.dm	detach_with_actor(usr, dest) // ALLOW(sys_usr_outside_verb): native hoist drag supplies its initiating actor after the unchanged parent drag router
 allow_matches_form	code/modules/multiz/hoist.dm	// ALLOW(init/CTOR_ARGS): ndir is a constructor argument from whoever builds it
 allow_matches_form	code/modules/nifsoft/nif.dm	// ALLOW(init/CTOR_ARGS): wear and load_data are constructor arguments from whoever builds it
-allow_matches_form	code/modules/nifsoft/nifsoft.dm	// ALLOW(lifecycle): the software disk is used up by the upload
 allow_matches_form	code/modules/nifsoft/software/13_soulcatcher.dm	// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
 allow_matches_form	code/modules/nifsoft/software/14_commlink.dm	// ALLOW(init/CTOR_ARGS): soft is a constructor argument from whoever builds it
-allow_matches_form	code/modules/organs/internal/brain.dm	// ALLOW(lifecycle): the core is spent once it revives a body
-allow_matches_form	code/modules/organs/internal/malignant/malignant.dm	// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
 allow_matches_form	code/modules/organs/internal/malignant/malignant.dm	// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
 allow_matches_form	code/modules/organs/organ_stump.dm	// ALLOW(init/CTOR_ARGS): internal and limb are constructor arguments from whoever builds it
-allow_matches_form	code/modules/organs/subtypes/diona.dm	// ALLOW(lifecycle): the removed limb becomes a nymph
-allow_matches_form	code/modules/organs/subtypes/diona.dm	// ALLOW(lifecycle): the removed organ becomes a nymph
-allow_matches_form	code/modules/organs/subtypes/diona.dm	// ALLOW(lifecycle): the removed organ becomes a nymph
 allow_matches_form	code/modules/organs/subtypes/machine.dm	// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
 allow_matches_form	code/modules/overmap/bluespace_rift.dm	// ALLOW(init/CTOR_ARGS): new_partner is a constructor argument from whoever builds it
-allow_matches_form	code/modules/overmap/champagne.dm	// ALLOW(init/CTOR_ARGS): base_area and base_turf are constructor arguments from whoever builds it
-allow_matches_form	code/modules/overmap/champagne.dm	// ALLOW(init/CTOR_ARGS): _name and _shuttle are constructor arguments from whoever builds it
 allow_matches_form	code/modules/overmap/ships/engines/gas_thruster.dm	// ALLOW(init/CTOR_ARGS): ndir and flame are constructor arguments from whoever builds it
 allow_matches_form	code/modules/overmap/ships/landable.dm	// ALLOW(init/CTOR_ARGS): shuttle_name is a constructor argument from whoever builds it
 allow_matches_form	code/modules/overmap/ships/landable.dm	// ALLOW(init/CTOR_ARGS): master and _name are constructor arguments from whoever builds it
 allow_matches_form	code/modules/overmap/ships/ship.dm	return offer_ingestion_with_actor(over, usr) // ALLOW(sys_usr_outside_verb): Native ship drag captures its initiating actor before recipient-owned prompts resume.
 allow_matches_form	code/modules/paperwork/clipboard.dm	if(!handle_hand_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native clipboard drag supplies the actor before preserving its conditional parent routing.
 allow_matches_form	code/modules/paperwork/paper.dm	// ALLOW(init/CTOR_ARGS): text and title are constructor arguments from whoever builds it
-allow_matches_form	code/modules/paperwork/paper_sticky.dm	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native paper-supply drag captures its initiating actor separately from the destination mob.
-allow_matches_form	code/modules/paperwork/paper_sticky.dm	// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
-allow_matches_form	code/modules/paperwork/paperbin.dm	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native paper-supply drag captures its initiating actor separately from the destination mob.
 allow_matches_form	code/modules/paperwork/paperplane.dm	// ALLOW(init/CTOR_ARGS): newPaper is a constructor argument from whoever builds it
 allow_matches_form	code/modules/paperwork/papershredder.dm	// ALLOW(init/INSTANCE_STATE): pixel_x, pixel_y and color rolled at random for each instance
 allow_matches_form	code/modules/paperwork/photography.dm	if(!handle_album_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native photo album drag supplies the actor before preserving its conditional parent routing.
-allow_matches_form	code/modules/persistence/filth.dm	// ALLOW(init/INSTANCE_STATE): alpha rolled at random for each instance
 allow_matches_form	code/modules/persistence/graffiti.dm	// ALLOW(init/CTOR_ARGS): _age, _message and _author are constructor arguments from whoever builds it
-allow_matches_form	code/modules/planet/sun.dm	// ALLOW(init/CTOR_ARGS): newdir and newstate are constructor arguments from whoever builds it
 allow_matches_form	code/modules/point/point.dm	// ALLOW(init/CTOR_ARGS): set_invis is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/apc.dm	// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
 allow_matches_form	code/modules/power/cable.dm	// ALLOW(init/CTOR_ARGS): length, param_color and material_id are constructor arguments from whoever builds it
@@ -465,56 +287,33 @@ allow_matches_form	code/modules/power/lighting.dm	// ALLOW(init/CTOR_ARGS): cons
 allow_matches_form	code/modules/power/lighting.dm	// ALLOW(init/CTOR_ARGS): construct is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/lightswitch.dm	// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
 allow_matches_form	code/modules/power/singularity/particle_accelerator/particle.dm	// ALLOW(init/CTOR_ARGS): dir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/power/singularity/particle_accelerator/particle.dm	// ALLOW(lifecycle): the particle is spent when its range runs out
 allow_matches_form	code/modules/power/singularity/singularity.dm	// ALLOW(init/CTOR_ARGS): starting_energy is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/solar.dm	// ALLOW(init/CTOR_ARGS): glass_type is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/tesla/energy_ball.dm	// ALLOW(init/CTOR_ARGS): starting_energy and is_miniball are constructor arguments from whoever builds it
-allow_matches_form	code/modules/projectiles/ammunition.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 allow_matches_form	code/modules/projectiles/ammunition.dm	// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
 allow_matches_form	code/modules/projectiles/broken.dm	// ALLOW(init/CTOR_ARGS): path is a constructor argument from whoever builds it
 allow_matches_form	code/modules/projectiles/gun.dm	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native inventory drag supplies the actor before preserving its conditional parent routing.
 allow_matches_form	code/modules/projectiles/guns/projectile.dm	// ALLOW(init/CTOR_ARGS): starts_loaded is a constructor argument from whoever builds it
-allow_matches_form	code/modules/projectiles/projectile/energy.dm	// ALLOW(init/CTOR_ARGS): particle is a constructor argument from whoever builds it
-allow_matches_form	code/modules/projectiles/projectile/explosive.dm	// ALLOW(lifecycle): the rocket is spent on impact
-allow_matches_form	code/modules/projectiles/projectile/explosive.dm	// ALLOW(lifecycle): the rocket is spent on impact
 allow_matches_form	code/modules/projectiles/projectile/magnetic.dm	// ALLOW(init/CTOR_ARGS): range_mod is a constructor argument from whoever builds it
-allow_matches_form	code/modules/projectiles/projectile/special.dm	// ALLOW(lifecycle): the meteor projectile is spent on impact
 allow_matches_form	code/modules/random_map/drop/droppod_doors.dm	// ALLOW(init/CTOR_ARGS): autoopen is a constructor argument from whoever builds it
-allow_matches_form	code/modules/reagents/reagent_containers/blood_pack.dm	// ALLOW(init/INSTANCE_STATE): blood_type rolled at random for each instance
 allow_matches_form	code/modules/reagents/reagent_containers/pill.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/recycling/conveyor2.dm	// ALLOW(init/CTOR_ARGS): newdir and on are constructor arguments from whoever builds it
 allow_matches_form	code/modules/recycling/disposal-construction.dm	// ALLOW(init/CTOR_ARGS): newtype, newdir, flipped and newsubtype are constructor arguments from whoever builds it
 allow_matches_form	code/modules/recycling/disposal_machines.dm	// ALLOW(init/CTOR_ARGS): make_from is a constructor argument from whoever builds it
-allow_matches_form	code/modules/recycling/disposal_machines.dm	// ALLOW(lifecycle): the bin is replaced by the reconfigured one
 allow_matches_form	code/modules/recycling/recycling.dm	// ALLOW(init/CTOR_ARGS): matter_init is a constructor argument from whoever builds it
 allow_matches_form	code/modules/recycling/recycling.dm	// ALLOW(init/CTOR_ARGS): mat is a constructor argument from whoever builds it
-allow_matches_form	code/modules/research/tg/disks.dm	// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-allow_matches_form	code/modules/resleeving/implant.dm	// ALLOW(init/CTOR_ARGS): db_key is a constructor argument from whoever builds it
 allow_matches_form	code/modules/resleeving/sleevecard.dm	// ALLOW(init/CTOR_ARGS): our_name and db_key are constructor arguments from whoever builds it
 allow_matches_form	code/modules/shieldgen/directional_shield.dm	// ALLOW(init/CTOR_ARGS): new_projector is a constructor argument from whoever builds it
 allow_matches_form	code/modules/shieldgen/energy_field.dm	// ALLOW(init/CTOR_ARGS): new_gen is a constructor argument from whoever builds it
 allow_matches_form	code/modules/shieldgen/sheldwallgen.dm	// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
-allow_matches_form	code/modules/spells/spell_projectile.dm	// ALLOW(lifecycle): the spell projectile is spent once it casts
-allow_matches_form	code/modules/telesci/bscyrstal.dm	// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-allow_matches_form	code/modules/tickets/tickets.dm	// ALLOW(init/CTOR_ARGS): name and state are constructor arguments from whoever builds it
-allow_matches_form	code/modules/tickets/tickets.dm	// ALLOW(init/CTOR_ARGS): T is a constructor argument from whoever builds it
-allow_matches_form	code/modules/turbolift/turbolift_console.dm	// ALLOW(init/CTOR_ARGS): _lift is a constructor argument from whoever builds it
-allow_matches_form	code/modules/vehicles/bike.dm	// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
 allow_matches_form	code/modules/vehicles/boat.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/modules/vehicles/boat.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/modules/vehicles/boat.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/modules/vehicles/quad.dm	// ALLOW(init/CTOR_ARGS): assembly is a constructor argument from whoever builds it
-allow_matches_form	code/modules/vehicles/quad.dm	// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
-allow_matches_form	code/modules/vehicles/quad.dm	// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
-allow_matches_form	code/modules/vehicles/snowmobile.dm	// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
 allow_matches_form	code/modules/vore/eating/leave_remains.dm	// ALLOW(init/CTOR_ARGS): pred and prey are constructor arguments from whoever builds it
-allow_matches_form	code/modules/vore/fluffstuff/custom_items.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/modules/vore/resizing/holder_micro.dm	// ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob after the unchanged parent route.
 allow_matches_form	code/modules/xenoarcheaology/artifacts/autocloner.dm	// ALLOW(init/INSTANCE_STATE): time_per_spawn and spawn_type rolled at random for each instance
 allow_matches_form	code/modules/xenoarcheaology/artifacts/crystal.dm	// ALLOW(init/INSTANCE_STATE): icon_state and desc rolled at random for each instance
-allow_matches_form	code/modules/xenoarcheaology/boulder.dm	// ALLOW(init/INSTANCE_STATE): icon_state and excavation_level rolled at random for each instance
 allow_matches_form	code/modules/xenoarcheaology/finds/find_spawning.dm	// ALLOW(init/CTOR_ARGS): new_item_type is a constructor argument from whoever builds it
 allow_matches_form	code/modules/xenoarcheaology/finds/finds.dm	// ALLOW(init/CTOR_ARGS): inside_item_type is a constructor argument from whoever builds it
-allow_matches_form	code/modules/xenoarcheaology/finds/fossils.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-allow_matches_form	code/modules/xenoarcheaology/sampling.dm	// ALLOW(init/INSTANCE_STATE): icon_state and its pixel offset rolled at random for each instance
 allow_matches_form	code/tests/engine/e1_fixtures.dm	// ALLOW(init/CTOR_ARGS): label_arg is a constructor argument from whoever builds it

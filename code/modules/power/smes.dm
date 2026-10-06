@@ -427,7 +427,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 			return OP_OK
 	new /obj/item/stack/cable_coil(loc, 10)
 	rel_remove(src, nameof(terminals), term)
-	qdel(term)
+	spent(term)
 	return OP_OK
 
 // ---- the casing ----

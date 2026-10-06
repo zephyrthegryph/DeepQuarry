@@ -272,8 +272,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 			new /obj/item/assembly/prox_sensor(loc)
 	else
 		to_chat(user, span_notice("You remove the turret but did not manage to salvage anything."))
-	// ALLOW(lifecycle): the salvaged turret is removed after its parts drop
-	qdel(src)
+	spent(src)
 	return OP_OK
 
 /// A blow meant to hurt it: half the force lands, and it gets angry.
@@ -394,7 +393,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 	after(src, 1 SECOND, PROC_REF(cover_flick_done), with = list(flick_holder))
 
 /obj/machinery/porta_turret/proc/cover_flick_done(atom/movable/flick_holder)
-	qdel(flick_holder)
+	spent(flick_holder)
 
 /atom/movable/porta_turret_cover
 	icon = 'icons/obj/turrets.dmi'
@@ -1053,7 +1052,7 @@ CAPABILITIES(/obj/machinery/porta_turret/rcd)
 
 /obj/machinery/porta_turret/rcd/die()
 	fx_sparks(src, 5, FALSE)
-	qdel(src) // ALLOW(lifecycle): an RCD-made turret leaves no wreck behind; it is destroyed outright
+	destroyed(src)
 
 #undef TURRET_PRIORITY_TARGET
 #undef TURRET_SECONDARY_TARGET

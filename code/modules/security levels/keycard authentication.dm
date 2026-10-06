@@ -52,8 +52,7 @@
 	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
-	// ALLOW(lifecycle): the device is taken off the wall into its frame
-	qdel(src)
+	destroyed(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/keycard_auth/declare_interactions(list/into)

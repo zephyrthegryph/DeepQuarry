@@ -184,7 +184,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 	var/mob/new_player/NP = new()
 	NP.ckey = M.ckey
-	qdel(M)
+	spent(M, user)
 
 /// Sends `M` to one of the thunderdome landmark lists; `strip` drops their gear first.
 /datum/admins/proc/topic_send_to_thunderdome(mob/user, list/args, key, answer_key, strip)

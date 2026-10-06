@@ -25,8 +25,7 @@
 /obj/item/clothing/proc/set_material(new_material)
 	material = get_material_by_name(new_material)
 	if(!material)
-		// ALLOW(lifecycle): armour made of an unknown material cannot exist
-		qdel(src)
+		spent(src)
 	else
 		name = "[material.display_name] [initial(name)]"
 		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT

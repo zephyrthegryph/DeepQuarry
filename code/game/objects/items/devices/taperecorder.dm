@@ -449,11 +449,12 @@ CAPABILITIES(/obj/item/rectape)
 	to_chat(user, span_notice("You wound the tape back in."))
 	fix()
 
-//Random colour tapes
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/rectape/random/Initialize(mapload)
-	. = ..()
-	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+CAPABILITIES(/obj/item/rectape/random)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/rectape/random/proc/roll_icon_state(datum/roller/R)
+	return "tape_[R.choose(list("white", "blue", "red", "yellow", "purple"))]"
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/taperecorder, \

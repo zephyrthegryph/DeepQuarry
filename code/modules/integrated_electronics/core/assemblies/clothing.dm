@@ -46,6 +46,7 @@ CAPABILITIES(/obj/item/clothing)
 	owns_one(nameof(IC), /obj/item/electronic_assembly/clothing)
 	owns_many(nameof(accessories))
 	verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/clothing/examine(mob/user)
 	. = ..()

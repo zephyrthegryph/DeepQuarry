@@ -47,7 +47,7 @@
 		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), with = list(user, timer - 1))
 		return
 	explosion(user.loc, 3,6,12,24)
-	qdel(user)
+	spent(user)
 
 
 /datum/game_mode/malfunction/verb/ai_toggle_apu()

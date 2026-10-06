@@ -649,7 +649,7 @@ SYSTEM_DEF(job)
 			active_wheelchair.add_fingerprint(human_mob)
 			if(used_wheelchair)
 				active_wheelchair.color = used_wheelchair.color
-				qdel(used_wheelchair)
+				spent(used_wheelchair)
 
 	to_chat(human_mob, span_filter_notice(span_bold("You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].")))
 

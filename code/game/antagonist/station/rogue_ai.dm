@@ -79,7 +79,7 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		var/mob/holder = player.current
 		rel_set(player, nameof(player.current), new mob_path(get_turf(player.current), null, null, 1))
 		player.transfer_to(player.current)
-		if(holder) qdel(holder)
+		if(holder) spent(holder)
 	rel_set(player, nameof(player.original_character), player.current)
 	return player.current
 

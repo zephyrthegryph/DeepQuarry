@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	if (internal)
 		if (!internal.air_contents)
-			qdel(internal)
+			spent(internal)
 		else
 			. += "Internal Atmosphere Info: [internal.name]"
 			. += "Tank Pressure: [internal.air_contents.return_pressure()]"
@@ -886,7 +886,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	for(var/x in all_hairs)
 		var/datum/sprite_accessory/hair/H = new x // create new hair datum based on type x
 		hairs.Add(H.name) // add hair name to hairs
-		qdel(H) // delete the hair after it's all done
+		spent(H) // delete the hair after it's all done
 
 	// facial hair
 	var/list/all_fhairs = subtypesof(/datum/sprite_accessory/facial_hair)
@@ -895,7 +895,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	for(var/x in all_fhairs)
 		var/datum/sprite_accessory/facial_hair/H = new x
 		fhairs.Add(H.name)
-		qdel(H)
+		spent(H)
 
 	// Every question can be skipped (cancel keeps what you have).
 	var/datum/morph_review/review = new
@@ -1232,7 +1232,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == identity())
 				host.release_mind(src, "revived body reclaimed its brain")
-				qdel(H)
+				spent(H)
 				break
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
@@ -1464,7 +1464,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	old_species?.remove_components(src, species)
 	if(replaced)
-		qdel(replaced) // the private copy proto_replace() handed back, done with now
+		spent(replaced) // the private copy proto_replace() handed back, done with now
 	invalidate_factors()
 
 	if(species.language)

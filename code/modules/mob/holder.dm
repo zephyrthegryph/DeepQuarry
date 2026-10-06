@@ -120,8 +120,7 @@
 
 /obj/item/holder/proc/cleanup_check()
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
-		// ALLOW(lifecycle): the mob holder ends once its mob is out of it
-		qdel(src)
+		spent(src)
 
 /// Releases the mob from inside the holder. Calls forceMove() which calls Exited(). Then does cleanup for the client's eye location.
 /obj/item/holder/proc/dump_mob()

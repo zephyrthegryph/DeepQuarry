@@ -645,7 +645,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
 	else if(owner().material_service_can_retire(src))
 		settle_heat()
-		qdel(src) // ALLOW(lifecycle): a retired material service ends itself when its owner no longer needs it
+		spent(src)
 
 /obj/proc/material_service_conducts_contents()
 	return TRUE

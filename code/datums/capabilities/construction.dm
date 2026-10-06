@@ -103,7 +103,7 @@ CAPABILITIES(/datum/capability/construction)
 	var/datum/ladder_progress/progress = holder.cap_data?[key]
 	if(progress)
 		LAZYREMOVE(holder.cap_data, key)
-		qdel(progress) // ALLOW(lifecycle): ladder progress is a plain datum in the holder's cap_data table; the lifecycle verbs only take atoms
+		destroyed(progress)
 
 /// The stage's icon state, when the ladder draws its stages. Writes no holder state (ladder_for()
 /// only builds the type's shared ladder the first time, which the type's first draw may be).

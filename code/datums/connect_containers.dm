@@ -55,8 +55,7 @@
 
 /datum/connect_containers/proc/handle_tracked_qdel(datum/act/notice/A)
 	EVENT_HANDLER
-	// ALLOW(lifecycle): the container connector ends with the movable it tracks
-	qdel(src)
+	spent(src)
 
 /datum/connect_containers/proc/update_hooks(atom/movable/moved_thing)
 	if(!ismovable(moved_thing.loc) || !listener)

@@ -666,17 +666,17 @@
 		H.invalidate_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
-			qdel(Org)
+			consumed(Org, H)
 
 		if(old_species)
-			qdel(old_species)
+			consumed(old_species, H)
 		return
 
 	for(var/mob/living/carbon/alien/diona/D in contents_of(H))
 		if(D.client)
 			D.forceMove(get_turf(H))
 		else
-			qdel(D)
+			consumed(D, H)
 
 	act_message(H, null, others = span_danger("%U% splits apart with a wet slithering noise!"))
 

@@ -78,7 +78,7 @@
 	kill_program(1)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
-		qdel(CH)
+		destroyed(CH)
 	rel_clear(src, nameof(paired_uavs))
 	..()
 

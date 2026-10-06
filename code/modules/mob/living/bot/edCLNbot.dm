@@ -45,7 +45,7 @@
 		if(istype(loc, /turf/simulated))
 			var/turf/simulated/T = loc
 			act_message(src, T, others = span_warning("%U% stomps on %T%, breaking it!"))
-			qdel(T)
+			spent(T)
 
 	if(red_switch && blue_switch && green_switch && prob(1))
 		src.explode()

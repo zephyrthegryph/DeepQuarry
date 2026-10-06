@@ -46,7 +46,7 @@ CAPABILITIES(/datum/pipeline)
 	// line a share of the gas it is about to store back into its pipes.
 	for(var/datum/pipe_network/membership as anything in network_memberships?.Copy())
 		rel_remove(src, nameof(network_memberships), membership)
-	qdel(network)
+	spent(network)
 
 	if(air && air.return_volume())
 		temporarily_store_air()
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/pipeline)
 			// A pipe being destroyed (its unbind destroys this line) can't adopt a new
 			// mixture: its share goes straight back to the room.
 			member.loc?.assume_air(share)
-			qdel(share)
+			spent(share)
 			continue
 		rel_set(member, nameof(member.air_temporary), share)
 

@@ -193,7 +193,7 @@ CAPABILITIES(/obj/item/inducer)
 /obj/item/inducer/proc/recharge_end(datum/om/task/timed/induce/task)
 	var/mob/user = task.actor
 	var/atom/A = task.charged
-	qdel(task.beam)
+	spent(task.beam)
 	if(A)
 		A.filters -= task.filter
 	if(task.done_any && user) // Only show a message if we succeeded at least once

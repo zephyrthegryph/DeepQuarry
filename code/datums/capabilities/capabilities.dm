@@ -280,7 +280,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 	for(var/key in holder.cap_data)
 		var/datum/D = holder.cap_data[key]
 		if(isdatum(D))
-			qdel(D) // ALLOW(lifecycle): capability data is a plain datum in the holder's cap_data table with no slot of its own; the lifecycle verbs only take atoms
+			destroyed(D)
 	holder.cap_data = null
 
 

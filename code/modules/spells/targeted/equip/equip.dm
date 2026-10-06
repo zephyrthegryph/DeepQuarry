@@ -23,7 +23,7 @@ CAPABILITIES(/datum/spell/targeted/equip_item)
 			if(old_item)
 				L.remove_from_mob(old_item)
 				if(delete_old)
-					qdel(old_item)
+					spent(old_item, user)
 				else
 					old_item.forceMove(L.loc)
 

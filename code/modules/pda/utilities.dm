@@ -44,7 +44,7 @@
 		return
 	user.show_message(D.render_chat(), 1)
 	log_diagnosis(user, C, D)
-	qdel(D)
+	spent(D, user)
 
 /datum/data/pda/utility/scanmode/dna
 	base_name = "DNA Scanner"

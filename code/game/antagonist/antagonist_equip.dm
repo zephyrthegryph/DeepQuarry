@@ -8,7 +8,7 @@
 		for(var/obj/item/thing in contents_of(player))
 			player.drop_from_inventory(thing)
 			if(thing.loc != player)
-				qdel(thing)
+				spent(thing)
 	return 1
 
 /datum/antagonist/proc/unequip(mob/living/carbon/human/player)

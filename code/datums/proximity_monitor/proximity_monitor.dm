@@ -55,8 +55,7 @@ CAPABILITIES(/datum/proximity_monitor)
 
 /datum/proximity_monitor/proc/on_host_or_receiver_del(datum/act/notice/A)
 	EVENT_HANDLER
-	// ALLOW(lifecycle): the proximity monitor ends with its host or its receiver
-	qdel(src)
+	spent(src)
 
 /datum/proximity_monitor/proc/set_range(range, force_rebuild = FALSE)
 	if(!force_rebuild && range == current_range)

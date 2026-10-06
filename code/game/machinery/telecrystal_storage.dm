@@ -17,7 +17,7 @@
 /obj/machinery/smartfridge/tcrystal/proc/mod_amount(datum/stored_item/I,mod)
 	if(I.amount + mod <= 0)
 		own_take_member(src, nameof(item_records), I)
-		qdel(I)
+		spent(I)
 	else
 		I.amount += mod
 
@@ -27,7 +27,7 @@
 		if((O.type == I.item_path) && (O.name == I.item_name))
 			mod_amount(I,O.get_amount())
 			hasRecord = TRUE
-			qdel(O)
+			spent(O)
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())

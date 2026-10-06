@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 			var/type = pick_n_take(core_types)
 			var/obj/effect/anomaly/anom = new type
 			choices[capitalize(anom.name)] = type
-			qdel(anom) // only the type is kept; don't leak the sample object
+			spent(anom, user) // only the type is kept; don't leak the sample object
 
 	if(isnull(selected_core))
 		var/original_client_ckey

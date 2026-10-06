@@ -63,8 +63,7 @@
 /datum/native_watch/proc/fire(list/arguments)
 	var/datum/owner = om_resolve(owner_ref)
 	if(!owner)
-		// ALLOW(lifecycle): a native watch whose owner is gone ends
-		qdel(src)
+		spent(src)
 		return
 	native_fired(delivery_source)
 	call(owner, callback)(arglist(list(src) + arguments))

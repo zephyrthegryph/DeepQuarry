@@ -173,7 +173,7 @@ CAPABILITIES(/obj/structure/mirror)
 	if(user.mind)
 		user.mind.transfer_to(vox)
 	open_request(vox, /datum/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, raider_vox_named), answerer = vox, title = "Name change", question = "Enter a name, or leave blank for the default name.", default = "", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
-	qdel(user)
+	spent(user)
 
 /// The new vox is named: a closed window is the blank name, which is the default one.
 /mob/living/carbon/human/proc/raider_vox_named(datum/act/request/A)

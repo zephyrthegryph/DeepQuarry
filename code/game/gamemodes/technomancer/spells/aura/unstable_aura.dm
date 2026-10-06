@@ -19,8 +19,7 @@
 
 /obj/item/spell/aura/unstable/periodic_step()
 	if(!pay_energy(200))
-		// ALLOW(lifecycle): the aura collapses when its caster runs out of energy
-		qdel(src)
+		spent(src)
 		return
 	var/list/nearby_mobs = range(calculate_spell_power(14),owner_ref())
 	for(var/mob/living/L in nearby_mobs)

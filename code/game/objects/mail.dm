@@ -604,10 +604,12 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 	name = "smudged paper"
 	icon_state = "scrap"
 
-// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
-/obj/item/paper/fluff/junkmail_redpill/Initialize(mapload)
-	. = ..()
-	info = "You need to escape the simulation. Don't forget the numbers, they help you remember: '[rand(0,9)]*[rand(0,9)][rand(0,9)]...'"
+CAPABILITIES(/obj/item/paper/fluff/junkmail_redpill)
+	rolls(nameof(info), PROC_REF(roll_info))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/paper/fluff/junkmail_redpill/proc/roll_info(datum/roller/R)
+	return "You need to escape the simulation. Don't forget the numbers, they help you remember: '[R.number(0, 9)]*[R.number(0, 9)][R.number(0, 9)]...'"
 
 /obj/item/paper/fluff/love_letter
 	name = "love letter"

@@ -143,8 +143,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
 /obj/effect/meteor/Move()
 	if(z != z_original || loc == dest)
-		// ALLOW(lifecycle): a meteor that left its level or reached its target is spent
-		qdel(src)
+		spent(src)
 		return
 
 	. = ..() //process movement...
@@ -210,16 +209,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/proc/die(explode = TRUE)
 	make_debris()
 	meteor_effect(explode)
-	// ALLOW(lifecycle): a meteor is spent once it has broken apart
-	qdel(src)
+	spent(src)
 
 CAPABILITIES(/obj/effect/meteor)
 	op("mine_meteor", item(/obj/item/pickaxe), label("Break up"), then(PROC_REF(interaction_mine_meteor)))
 
 /// Old attackby: a pickaxe breaks the meteor up.
 /obj/effect/meteor/proc/interaction_mine_meteor(datum/act/op/A)
-	// ALLOW(lifecycle): mining a meteor down removes it
-	qdel(src)
+	destroyed(src)
 	return OP_PASS
 
 /obj/effect/meteor/bullet_act(obj/item/projectile/Proj)

@@ -715,9 +715,9 @@ CAPABILITIES(/datum/cargo_market_bid)
 			continue
 		var/datum/cargo_market_profile/profile = new profile_path
 		if(profile.id == profile_id)
-			qdel(profile)
+			spent(profile)
 			return profile_path
-		qdel(profile)
+		spent(profile)
 	return /datum/cargo_market_profile/general_manufactured
 
 /datum/system/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)

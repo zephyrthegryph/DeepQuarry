@@ -207,7 +207,7 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 
 	// Now clean up the effects.
 	if(scan_beam)
-		qdel(scan_beam)
+		spent(scan_beam)
 	if(L)
 		L.filters -= filter
 	if(C) // If for some reason they logged out mid-scan the box will be gone anyways.
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/slow_sizegun)
 /obj/item/slow_sizegun/proc/delete_box(list/box_segments, client/C)
 	for(var/i in box_segments)
 		C.images -= i
-		qdel(i)
+		spent(i)
 
 /obj/item/slow_sizegun/proc/color_box(list/box_segments, new_color, new_time)
 	for(var/i in box_segments)

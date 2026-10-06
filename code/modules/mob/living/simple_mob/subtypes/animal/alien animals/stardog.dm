@@ -315,7 +315,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	if(heal)
 		fully_heal()
 	if(delet)
-		qdel(E)
+		consumed(E)
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/spawn_mob()
 	for(var/area/redgate/stardog/flesh_abyss/a in weather_areas)
@@ -640,8 +640,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		dog.adjust_affinity(15)
 
-	// ALLOW(lifecycle): the fur tree is cut down
-	qdel(src)
+	destroyed(src)
 
 /obj/structure/flora/tree/fur/wall
 	name = "dense fur"
@@ -1222,7 +1221,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 		if(dog.client)
 			var/mob/thrower = I.throwing?.get_thrower()
 			to_chat(dog, span_notice("[thrower ? "\The [thrower]" : "Someone"] feeds \the [I] to you!"))
-		qdel(I)
+		spent(I)
 		GLOB.items_digested_roundstat++
 
 /obj/effect/dog_teleporter/reciever
@@ -1380,7 +1379,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 				linked_mob.adjust_nutrition(how_much)
 				H.mind?.vore_death = TRUE
 				GLOB.prey_digested_roundstat++
-			qdel(H)	//glorp
+			consumed(H)	//glorp
 			return
 		H.burn_skin(damage)
 		if(linked_mob)
@@ -1401,7 +1400,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 				if(!L.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
-			qdel(L) //gloop
+			consumed(L) //gloop
 			return
 		L.injure(INJURY_DIGESTION, damage, source = src)
 		if(linked_mob)

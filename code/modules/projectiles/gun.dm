@@ -771,7 +771,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			else if(suicide_kind == INJURY_PAIN)
 				to_chat(user, span_notice("Ow..."))
 				user.apply_effect(110,AGONY,0)
-		qdel(in_chamber)
+		spent(in_chamber, M)
 		mouthshoot = 0
 		return
 	else

@@ -131,8 +131,7 @@ CAPABILITIES(/obj/item/clamp)
 		return OP_FAILED
 	var/atom/pipe = A.target
 	new /obj/machinery/clamp(pipe.loc, pipe)
-	// ALLOW(lifecycle): the clamp item becomes the clamp machine fitted onto the pipe
-	qdel(src)
+	spent(src)
 	return OP_OK
 
 /// target (a relation view: it reads null once the target is deleted).

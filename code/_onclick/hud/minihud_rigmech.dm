@@ -31,8 +31,7 @@
 
 /datum/mini_hud/rig/periodic_step()
 	if(!owner_rig())
-		// ALLOW(lifecycle): the readout ends once the rig it shows is gone
-		qdel(src)
+		spent(src)
 		return
 
 	var/obj/item/cell/rigcell = owner_rig().cell
@@ -76,8 +75,7 @@
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())
-		// ALLOW(lifecycle): the readout ends once the exosuit it shows is gone
-		qdel(src)
+		spent(src)
 		return
 
 	var/obj/item/cell/mechcell = owner_mech().cell

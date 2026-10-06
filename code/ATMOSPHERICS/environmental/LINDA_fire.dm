@@ -289,8 +289,7 @@
 
 	var/turf/open/location = loc
 	if(!istype(location))
-		// ALLOW(lifecycle): a hotspot off an open turf goes out
-		qdel(src)
+		destroyed(src)
 		return
 
 	// Excited groups live in the Rust arena now; there's no DM group to poke a
@@ -302,19 +301,16 @@
 		cold_fire = TRUE
 
 	if((temperature < FIRE_MINIMUM_TEMPERATURE_TO_EXIST && !cold_fire) || (volume <= 1))
-		// ALLOW(lifecycle): a hotspot too cold or too small to burn goes out
-		qdel(src)
+		destroyed(src)
 		return
 
 	//Not enough / nothing to burn. One batched read covers every fuel and oxidiser check.
 	if(!location.air)
-		// ALLOW(lifecycle): a hotspot on a turf without air goes out
-		qdel(src)
+		destroyed(src)
 		return
 	var/list/readings = read_gas_mixtures(list(location.air))
 	if((INSUFFICIENT(GAS_ID_PLASMA) && INSUFFICIENT(GAS_ID_TRITIUM) && INSUFFICIENT(GAS_ID_HYDROGEN) && INSUFFICIENT(GAS_ID_FREON)) || INSUFFICIENT(GAS_ID_OXYGEN))
-		// ALLOW(lifecycle): a hotspot without fuel or oxidiser goes out
-		qdel(src)
+		destroyed(src)
 		return
 
 	perform_exposure()
@@ -420,8 +416,7 @@ CAPABILITIES(/datum/hot_group)
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	rel_remove(src, nameof(spot_list), target)
 	if(!length(spot_list))
-		// ALLOW(lifecycle): a hot group with no hotspots left ends
-		qdel(src)
+		spent(src)
 		return
 
 /datum/hot_group/proc/add_to_group(obj/effect/hotspot/target)
@@ -446,7 +441,7 @@ CAPABILITIES(/datum/hot_group)
 	// Two-sided: re-pointing a hotspot moves it between the groups' spot_lists.
 	for(var/obj/effect/hotspot/reference as anything in sacrificial_group.spot_list?.Copy())
 		rel_set(reference, nameof(reference.our_hot_group), saving_group)
-	qdel(sacrificial_group)
+	consumed(sacrificial_group, src)
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
 		COOLDOWN_START(src, update_sound_center, 5 SECONDS)

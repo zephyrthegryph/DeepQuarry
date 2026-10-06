@@ -8,12 +8,9 @@
 	var/uses = 1.0
 
 
-// ALLOW(init/INSTANCE_STATE): activation_emote and uses rolled at random for each instance
-/obj/item/implant/freedom/Initialize(mapload)
-	. = ..()
-	activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	uses = rand(1, 5)
-
+CAPABILITIES(/obj/item/implant/freedom)
+	rolls(nameof(activation_emote), pick_one(list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")))
+	rolls(nameof(uses), range_of(1, 5))
 
 /obj/item/implant/freedom/trigger(emote, mob/living/carbon/source as mob, mob/actor)
 	if (src.uses < 1)

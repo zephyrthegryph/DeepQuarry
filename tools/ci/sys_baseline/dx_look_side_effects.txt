@@ -425,7 +425,6 @@ dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_out
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	name = "[prefix] [name]"
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/fryer.dm	light.pixel_x = light_x
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/fryer.dm	light.pixel_y = light_y
-dx_appearance_side_effect	code/modules/games/cards.dm	qdel(src)
 dx_appearance_side_effect	code/modules/games/cards.dm	name = "hand of cards ([cardNumber])"
 dx_appearance_side_effect	code/modules/games/cards.dm	desc = "Some playing cards."
 dx_appearance_side_effect	code/modules/games/cards.dm	name = "a playing card"

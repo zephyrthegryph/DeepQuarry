@@ -79,7 +79,7 @@ CAPABILITIES(/datum/admin_resize_review)
 	return target_expected && QDELETED(target) ? "target is gone" : null
 
 /datum/admin_resize_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/admin_resize_review/proc/answered(datum/act/request/A)
 	finish(A)

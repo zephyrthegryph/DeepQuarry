@@ -188,7 +188,7 @@ CAPABILITIES(/datum/map_template)
 		for(var/turf/T in turfs_to_clean)
 			for(var/atom/movable/AM in contents_of(T))
 				++deleted_atoms
-				qdel(AM)
+				spent(AM)
 	admin_notice(span_danger("Annihilated [deleted_atoms] objects."), R_DEBUG)
 
 /// Takes in a type path, locates an instance of that type in the cached map, and calculates its offset from the origin of the map, returns this offset in the form list(x, y).

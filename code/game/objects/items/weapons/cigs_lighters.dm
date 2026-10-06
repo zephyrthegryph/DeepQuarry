@@ -236,13 +236,13 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		var/datum/effect/effect/system/reagents_explosion/e = new()
 		e.set_up(round(source.reagents.get_reagent_amount(REAGENT_ID_PHORON) / 2.5, 1), get_turf(source), 0, 0)
 		e.start()
-		qdel(source) // ALLOW(lifecycle): the item explodes and ends whether or not taking it out of a holder would be allowed (a refusable consume() would leave it burning)
+		destroyed(source)
 		return TRUE
 	if(source.reagents?.get_reagent_amount(REAGENT_ID_FUEL)) // the fuel explodes, too, but much less violently
 		var/datum/effect/effect/system/reagents_explosion/e = new()
 		e.set_up(round(source.reagents.get_reagent_amount(REAGENT_ID_FUEL) / 5, 1), get_turf(source), 0, 0)
 		e.start()
-		qdel(source) // ALLOW(lifecycle): the item explodes and ends whether or not taking it out of a holder would be allowed (a refusable consume() would leave it burning)
+		destroyed(source)
 		return TRUE
 	source.flags &= ~NOREACT // allowing reagents to react after being lit
 	source.reagents?.handle_reactions()
@@ -268,7 +268,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		if(src.possessed_voice && src.possessed_voice.len)
 			var/mob/living/voice/V = src.possessed_voice[1]
 			butt.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-			qdel(V)
+			destroyed(V)
 		replace_with(src, butt)
 	else
 		new /obj/effect/decal/cleanable/ash(T)

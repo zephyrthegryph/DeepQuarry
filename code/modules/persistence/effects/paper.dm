@@ -49,4 +49,4 @@
 	var/obj/structure/noticeboard/board = value.loc
 	if(istype(board))
 		board.remove_paper(value)
-	qdel(value)
+	spent(value)

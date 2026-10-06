@@ -281,8 +281,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 	// Allow the explosion to finish. The global owner: the crystal is deleted below and the
 	// explosion may replace the turf.
 	after(null, 5, /proc/leave_broken_supermatter, with = list(TS))
-	// ALLOW(lifecycle): the crystal delaminates
-	qdel(src)
+	destroyed(src)
 
 /proc/leave_broken_supermatter(turf/TS)
 	new /obj/item/broken_sm(TS)
@@ -434,7 +433,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		damage += max((power - 15*POWER_FACTOR)/10, 0)
 	else if (grav_pulling) //If supermatter is detonating, remove all air from the zone
 		var/datum/gas_mixture/drained = env.remove(xgm_total_moles(env)) // total_moles is a proc in LINDA, use xgm_total_moles helper
-		qdel(drained)
+		spent(drained)
 	else
 		damage_archived = damage
 
@@ -475,7 +474,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 		env.merge(removed)
 
-	qdel(removed)
+	spent(removed)
 
 	for(var/mob/living/carbon/human/l in view(src, min(7, round(sqrt(power/6))))) // If they can see it without mesons on.  Bad on them.
 		if(!istype(l.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence
@@ -638,7 +637,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 		user.dust()
 		power += 200
 	else
-		qdel(user)
+		consumed(user)
 
 	power += 200
 

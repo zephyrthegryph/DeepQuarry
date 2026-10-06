@@ -27,8 +27,7 @@
 /datum/turfslip/proc/end_slip()
 	if(owner?.turfslip == src)
 		own_take(owner, nameof(owner.turfslip))
-	// ALLOW(lifecycle): the slip ends once it has run its course
-	qdel(src)
+	spent(src)
 
 /datum/turfslip/proc/start_slip(turf/simulated/start, is_dirt)
 	var/slip_stun = 6

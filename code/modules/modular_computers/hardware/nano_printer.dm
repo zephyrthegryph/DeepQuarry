@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/computer_hardware/nano_printer)
 		for(var/obj/item/bundleitem in B) //loop through items in bundle
 			if(istype(bundleitem, /obj/item/paper)) //if item is paper (and not photo), add into the bin
 				rel_remove(B, nameof(B.pages), bundleitem)
-				qdel(bundleitem)
+				consumed(bundleitem, src)
 				num_of_pages_added++
 				stored_paper++
 			if(stored_paper >= max_paper) //check if the printer is full yet

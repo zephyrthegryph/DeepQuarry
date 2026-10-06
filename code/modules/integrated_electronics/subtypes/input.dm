@@ -259,7 +259,7 @@
 	set_pin_data(IC_OUTPUT, 5, D?.respiratory_rate)
 	set_pin_data(IC_OUTPUT, 6, D?.temperature)
 	set_pin_data(IC_OUTPUT, 7, LAZYLEN(D?.findings))
-	qdel(D)
+	spent(D, H)
 
 /obj/item/integrated_circuit/input/examiner
 	name = "examiner"

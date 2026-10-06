@@ -495,7 +495,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, gener
 			existing[movable] = TRUE
 	var/datum/map_template/template = new(template_path, "generated room fragment [id]", TRUE)
 	if(template.width != width || template.height != height)
-		qdel(template)
+		spent(template)
 		return FALSE
 	template.load(origin)
 	var/created = FALSE
@@ -507,7 +507,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, gener
 			if(istype(movable, /obj/machinery/door))
 				rel_add(owner, nameof(owner.doors), movable)
 			created = TRUE
-	qdel(template)
+	spent(template)
 	return created
 
 /datum/generated_room_fragment/reception_corner
@@ -883,10 +883,10 @@ TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list
 					var/datum/generated_room_feature/motif_feature = new motif_type
 					if(motif_feature.atom_type == required_feature.atom_type)
 						plan.feature_types -= required_type
-					qdel(motif_feature)
-				qdel(required_feature)
-			qdel(motif)
-		qdel(fragment_prng)
+					spent(motif_feature)
+				spent(required_feature)
+			spent(motif)
+		spent(fragment_prng)
 	var/list/matches = list()
 	var/total_weight = 0
 	for(var/variant_type in variant_options)
@@ -895,11 +895,11 @@ TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list
 			matches += variant
 			total_weight += variant.weight
 		else
-			qdel(variant)
+			spent(variant)
 	if(total_weight)
 		var/datum/generated_station_prng/prng = new(seed)
 		var/roll = prng.next_range(1, total_weight)
-		qdel(prng)
+		spent(prng)
 		for(var/datum/generated_room_variant/variant in matches)
 			roll -= variant.weight
 			if(roll > 0)
@@ -913,7 +913,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list
 	if(length(optional_groups) && !cohesive_fragment)
 		var/datum/generated_station_prng/optional_prng = new(seed + 7919)
 		plan.group_types |= optional_groups[optional_prng.next_range(1, length(optional_groups))]
-		qdel(optional_prng)
+		spent(optional_prng)
 	return plan
 
 /datum/generated_room_definition/surgery
@@ -1414,7 +1414,7 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 				var/datum/generated_room_feature_group/group = new group_type
 				if(length(group.feature_types))
 					compact_features |= group.feature_types[1]
-				qdel(group)
+				spent(group)
 				if(length(compact_features) >= 2)
 					break
 	compact.required_features = compact_features
@@ -1437,7 +1437,7 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 		return null
 	var/list/signature_features = generated_room_compact_authored_features(department_id, role)
 	if(!length(signature_features))
-		qdel(micro)
+		spent(micro)
 		return null
 	micro.id = "[department_id]-micro-[role]"
 	micro.name = "Micro [capitalize(replacetext(role, "-", " "))]"

@@ -12,7 +12,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
-		qdel(t)
+		spent(t)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
 	animation.icon_state = "blank"
 	animation.icon = 'icons/mob/mob.dmi'
@@ -37,7 +37,7 @@
 	set_species(species.primitive_form)
 
 	to_chat(src, span_infoplain(span_bold("You are now [species.name]. ")))
-	qdel(animation)
+	spent(animation)
 
 	return src
 
@@ -49,7 +49,7 @@
 	if (transforming)
 		return
 	for(var/t in organs)
-		qdel(t)
+		spent(t)
 
 	var/mob/living/silicon/ai/O = ..(move)
 	if(O)
@@ -156,7 +156,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
-		qdel(t)
+		spent(t)
 
 	var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(loc)
 
@@ -206,7 +206,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
-		qdel(t)
+		spent(t)
 
 	var/alien_caste = pick("Hunter","Sentinel","Drone")
 	var/mob/living/carbon/human/new_xeno = create_new_xenomorph(alien_caste,loc)
@@ -215,8 +215,7 @@
 	move_player(src, new_xeno, "alienized")
 
 	to_chat(new_xeno, span_infoplain(span_bold("You are now an alien.")))
-	// ALLOW(lifecycle): the human is replaced by the alien its player moved into
-	qdel(src)
+	spent(src)
 	return
 
 
@@ -231,15 +230,14 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)	//this really should not be necessary
-		qdel(t)
+		spent(t)
 
 	var/mob/living/simple_mob/animal/passive/dog/corgi/new_corgi = new /mob/living/simple_mob/animal/passive/dog/corgi (loc)
 	new_corgi.set_use_stance(I_HURT)
 	move_player(src, new_corgi, "corgized")
 
 	to_chat(new_corgi, span_infoplain(span_bold("You are now a Corgi. Yap Yap!")))
-	// ALLOW(lifecycle): the human is replaced by the corgi its player moved into
-	qdel(src)
+	spent(src)
 	return
 
 /mob/living/carbon/human/Animalize(mob/user)
@@ -268,7 +266,7 @@
 	invisibility = INVISIBILITY_ABSTRACT
 
 	for(var/t in organs)
-		qdel(t)
+		spent(t)
 
 	var/mob/new_mob = new mobpath(src.loc)
 
@@ -303,8 +301,7 @@
 	new_mob.set_use_stance(I_HURT)
 	to_chat(new_mob, "You feel more... animalistic")
 
-	// ALLOW(lifecycle): the mob is replaced by the animal its player moved into
-	qdel(src)
+	spent(src)
 
 /* Certain mob types have problems and should not be allowed to be controlled by players.
  *

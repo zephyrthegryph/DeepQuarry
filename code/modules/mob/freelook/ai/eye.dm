@@ -54,7 +54,7 @@
 	if(!eyeobj) return
 	if(!new_eye)
 		new_eye = src
-	qdel(eyeobj) // No AI, no Eye
+	destroyed(eyeobj) // No AI, no Eye
 	eyeobj = null
 	reset_perspective(new_eye)
 
