@@ -991,7 +991,7 @@
 	log_test("PACMAN at output 4 after 60 steps: [P.temperature] K")
 	TEST_ASSERT(P.temperature >= 200 && P.temperature <= 280, "it settles in its band (256..276 K at 1 atm 20 C): [P.temperature]")
 	TEST_ASSERT_EQUAL(P.overheating, 0, "below 300 it does not overheat")
-	P.temperature = 310
+	P.temperature = P.max_temperature + 10
 	P.power_output = 5
 	pp_step(P, PP_GEN_STEP_PROC)
 	TEST_ASSERT(P.overheating >= 1, "above 300 it overheats: [P.overheating]")
