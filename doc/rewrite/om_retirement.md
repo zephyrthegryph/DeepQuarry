@@ -121,7 +121,7 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | P observer upkeep | landed | `every(OBSERVER_UPKEEP_INTERVAL)` in `CAPABILITIES(/mob/observer)`; the OM decl and behaviour are gone |
 | R relevance | landed | `STAT_RELEVANCE` (MAX, `/datum`) replaces `EFFECT_RELEVANCE`; `relevance_changed()` keeps the OM cadences in step until the framework goes |
 | S suspension | landed | `STAT_SUSPENDED` (ANY, `/datum`) replaces `EFFECT_SUSPENDED`; `suspended_changed()` keeps OM timers and cadences in step |
-| C bio clock | landed | CLOCK_BIO runs at `STAT_CLOCK_RATE_BIO`; stasis holds it; `clock_now()` replaces `om_clock_now()`; CLOCK_OWN and the machine/chem clocks are still OM |
+| C clocks | landed | CLOCK_BIO runs at `STAT_CLOCK_RATE_BIO`; stasis holds it; `clock_now()` replaces `om_clock_now()`; the unused machine and chem domains are deleted; CLOCK_OWN is still the OM record's timer clock |
 | E effects | started | alpha and push blocking are stats; dead library rows deleted; left: `EFFECT_BUCKLED` (the buckle relation), `EFFECT_BODY_EFFECTS` (body), the `GRANT_*` kinds |
 | V Life events | landed | status announcements, vision and darksight are FIXED actions (`world_actions.dm`); the mutations veto is deleted; Life has no OM_EMIT left |
 | M machine pipeline | owned by `rewrite/machines-full` and `rewrite/pipenet-full` | they move machines off `machine_step()`; the pipeline goes with their last wave |

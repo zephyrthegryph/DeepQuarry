@@ -2167,3 +2167,9 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
   (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
   listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).
+
+## The machine and chem clock domains are gone (rewrite/om-life)
+
+- `CLOCK_MACHINE` and `CLOCK_CHEM` had no effect held on them anywhere, so they always ran at world speed. They are
+  deleted: a machine's timers run on its own clock (suspension still pauses them), and the reflector lane measures its
+  dt on world time. The final API's clocks are CLOCK_WORLD, CLOCK_OWN and CLOCK_BIO. No behaviour change intended.

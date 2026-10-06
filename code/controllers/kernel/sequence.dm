@@ -36,7 +36,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/step = 0
 	/// At most this many frames for one member in one sweep when it is behind; the rest are dropped.
 	var/max_catchup = 1
-	/// CLOCK_WORLD, or an entity clock (CLOCK_BIO, CLOCK_MACHINE): the member's elapsed time is read on it, so a
+	/// CLOCK_WORLD, or an entity clock (CLOCK_BIO): the member's elapsed time is read on it, so a
 	/// stasis pause stretches its frames. Its step rewakes follow the member's own timer clock.
 	var/clock = CLOCK_WORLD
 	/// LANE_* whose share pays for the sweep.
