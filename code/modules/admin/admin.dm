@@ -116,6 +116,13 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 #define HARDEST_RESTART "Hardest Restart (No actions, just reboot)"
 #define TGS_RESTART "Server Restart (Kill and restart DD)"
 ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.", ADMIN_CATEGORY_SERVER_GAME)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_restart_replay) || istype(resumed, /datum/prompt/number/admin_restart_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(restart_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/list/options = list(REGULAR_RESTART, REGULAR_RESTART_DELAYED, HARD_RESTART)
 
 	// this option runs a codepath that can leak db connections because it skips subsystem (specifically SSdbcore) shutdown
@@ -126,20 +133,32 @@ ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.",
 		options += TGS_RESTART;
 
 	if(SSticker.admin_delay_notice)
-		var/sure = verb_ask(user, "delayed", args, /datum/om/prompt/choice/alert, message = "Are you sure? An admin has already delayed the round end for the following reason: [SSticker.admin_delay_notice]", title = "Confirmation", choices = list("Yes", "No"))
+		if(!("delayed" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_restart_replay, PROC_REF(restart_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "delayed", buttons = TRUE, question = "Are you sure? An admin has already delayed the round end for the following reason: [SSticker.admin_delay_notice]", title = "Confirmation", choices = list("Yes", "No"))
+			return
+		var/sure = replay_answers["delayed"]
 		if(sure != "Yes")
 			return FALSE
 
-	var/result = verb_ask(user, "method", args, /datum/om/prompt/choice, message = "Select reboot method", title = "World Reboot", choices = options, default = options[1])
+	if(!("method" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_restart_replay, PROC_REF(restart_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "method", question = "Select reboot method", title = "World Reboot", choices = options, default = options[1])
+		return
+	var/result = replay_answers["method"]
 	if(isnull(result))
 		return
 	var/delay = 0
 	if(result == REGULAR_RESTART_DELAYED)
-		delay = verb_ask(user, "delay", args, /datum/om/prompt/number, message = "What delay should the restart have (in seconds)?", title = "Restart Delay", default = 5)
+		if(!("delay" in replay_answers))
+			open_request(src, /datum/prompt/number/admin_restart_replay, PROC_REF(restart_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "delay", question = "What delay should the restart have (in seconds)?", title = "Restart Delay", default = 5)
+			return
+		delay = replay_answers["delay"]
 		if(!delay)
 			return FALSE
 	if((result == REGULAR_RESTART || result == REGULAR_RESTART_DELAYED) && !user.is_localhost())
-		var/live = verb_ask(user, "live", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to restart the server?", title = "This server is live", choices = list("Restart", "Cancel"))
+		if(!("live" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_restart_replay, PROC_REF(restart_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "live", buttons = TRUE, question = "Are you sure you want to restart the server?", title = "This server is live", choices = list("Restart", "Cancel"))
+			return
+		var/live = replay_answers["live"]
 		if(live != "Restart")
 			return FALSE
 
@@ -1447,3 +1466,41 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 		key = "origin"
 	fax_answers[key] = context.answer.value
 	fax_request_stage(user, fax_answers)
+
+/datum/prompt/choice/admin_restart_replay
+	timeout = 0
+	rights = R_SERVER
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_restart_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_restart_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_restart_replay/refusal(given)
+	return null
+
+/datum/prompt/number/admin_restart_replay
+	timeout = 0
+	rights = R_SERVER
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_restart_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/number/admin_restart_replay/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/admin_verb/restart/proc/restart_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

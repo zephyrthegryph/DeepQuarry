@@ -482,7 +482,17 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 		SM.power = 320
 
 ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singularity and all machines to get power flowing through the station.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/_answer_a5 = verb_ask(user, "a5", args, /datum/om/prompt/choice/alert, message = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Start Singularity", choices = list("Yes","No"))
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_singularity_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(startSinglo_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a5" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_singularity_replay, PROC_REF(startSinglo_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a5", buttons = TRUE, question = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Start Singularity", choices = list("Yes","No"))
+		return
+	var/_answer_a5 = replay_answers["a5"]
 	if(isnull(_answer_a5))
 		return
 	if(_answer_a5 != "Yes")
@@ -788,7 +798,17 @@ ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-
 	feedback_add_details("admin_verb","QNIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the configuration from the default path on the disk, wiping any in-round modifications.", ADMIN_CATEGORY_DEBUG_SERVER)
-	var/_answer_a16 = verb_ask(user, "a16", args, /datum/om/prompt/choice/alert, message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", title = "Really reset?", choices = list("No", "Yes"))
+	// Replay input is only a synchronous answered request from this verb.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/admin_reload_configuration_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(reload_configuration_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a16" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_reload_configuration_replay, PROC_REF(reload_configuration_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a16", buttons = TRUE, question = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", title = "Really reset?", choices = list("No", "Yes"))
+		return
+	var/_answer_a16 = replay_answers["a16"]
 	if(isnull(_answer_a16))
 		return
 	if(_answer_a16 != "Yes")
@@ -928,3 +948,53 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 #else
 	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
 #endif
+
+/datum/prompt/choice/admin_reload_configuration_replay
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_reload_configuration_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_reload_configuration_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_reload_configuration_replay/refusal(given)
+	return null
+
+/datum/admin_verb/reload_configuration/proc/reload_configuration_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_singularity_replay
+	timeout = 0
+	rights = R_DEBUG|R_ADMIN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_singularity_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_singularity_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_singularity_replay/refusal(given)
+	return null
+
+/datum/admin_verb/startSinglo/proc/startSinglo_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

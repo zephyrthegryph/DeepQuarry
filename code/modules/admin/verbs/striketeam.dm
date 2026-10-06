@@ -85,24 +85,40 @@ GLOBAL_VAR(can_call_ert)
 GLOBAL_VAR_INIT(silent_ert, FALSE)
 
 ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Team", "Send an emergency response team to the station.", ADMIN_CATEGORY_FUN_EVENT_KIT)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_response_team_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(response_team_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	if(SSticker.current_state <= GAME_STATE_PREGAME)
 		to_chat(user, span_danger("The round hasn't started yet!"))
 		return
 	if(GLOB.send_emergency_team)
 		to_chat(user, span_danger("[using_map.boss_name] has already dispatched an emergency response team!"))
 		return
-	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to dispatch an Emergency Response Team?", title = "ERT", choices = list("Yes","No"))
+	if(!("a1" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_response_team_replay, PROC_REF(response_team_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", buttons = TRUE, question = "Do you want to dispatch an Emergency Response Team?", title = "ERT", choices = list("Yes","No"))
+		return
+	var/_answer_a1 = replay_answers["a1"]
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")
 		return
-	var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "Do you want this Response Team to be announced?", title = "ERT", choices = list("Yes","No"))
+	if(!("a2" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_response_team_replay, PROC_REF(response_team_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a2", buttons = TRUE, question = "Do you want this Response Team to be announced?", title = "ERT", choices = list("Yes","No"))
+		return
+	var/_answer_a2 = replay_answers["a2"]
 	if(isnull(_answer_a2))
 		return
 	if(_answer_a2 != "Yes")
 		GLOB.silent_ert = TRUE
 	if(get_security_level() != "red") // Allow admins to reconsider if the alert level isn't Red
-		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice/alert, message = "The station is not in red alert. Do you still want to dispatch a response team?", title = "ERT", choices = list("Yes","No"))
+		if(!("a3" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_response_team_replay, PROC_REF(response_team_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a3", buttons = TRUE, question = "The station is not in red alert. Do you still want to dispatch a response team?", title = "ERT", choices = list("Yes","No"))
+			return
+		var/_answer_a3 = replay_answers["a3"]
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")
@@ -228,3 +244,28 @@ GLOBAL_VAR(ert_loaded)
 			log_mapping("ERT Area is not a valid map template!")
 		else
 			MT.load_new_z_async(TRUE, om_callable(null, GLOBAL_PROC_REF(ert_load_finished)))
+
+/datum/prompt/choice/admin_response_team_replay
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_response_team_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_response_team_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_response_team_replay/refusal(given)
+	return null
+
+/datum/admin_verb/response_team/proc/response_team_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

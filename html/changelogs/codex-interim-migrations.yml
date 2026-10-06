@@ -82,3 +82,4 @@ changes:
   - code_imp: "Migrated casino prize purchase confirmation and item choices to native requests."
   - code_imp: "Migrated event-trigger setup to native requests, retaining cancellation cleanup and creation logging."
   - code_imp: "Migrated fax staffing, ticket creation, and server FPS prompts to native requests while preserving actor checks and logging."
+  - code_imp: "Migrated additional admin confirmations and resleeving consent prompts to native requests while retaining checks and tracing."
