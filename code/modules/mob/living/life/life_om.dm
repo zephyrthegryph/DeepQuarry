@@ -70,9 +70,9 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	P.occupied = occupied
 	for(var/mob/living/L as anything in P.members)
 		if(occupied)
-			om_observe(L, P, RELEVANCE_NEAR)
+			hold(L, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 		else
-			om_unobserve(L, P)
+			release(L, STAT_RELEVANCE, P)
 
 /// Re-decides who keeps this mob relevant: itself, or its z-level's presence.
 /mob/living/proc/life_update_relevance()
@@ -80,9 +80,9 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 		return
 	if(!low_priority)
 		life_leave_z()
-		om_observe(src, src, RELEVANCE_NEAR)
+		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, src)
 		return
-	om_unobserve(src, src)
+	release(src, STAT_RELEVANCE, src)
 	var/new_z = loc ? get_z(src) : 0
 	if(new_z == life_z)
 		return
@@ -93,7 +93,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	rel_add(P, nameof(P.members), src)
 	life_z = new_z
 	if(P.occupied)
-		om_observe(src, P, RELEVANCE_NEAR)
+		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 
 /mob/living/proc/life_leave_z()
 	if(!life_z)
@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	life_z = 0
 	if(P)
 		rel_remove(P, nameof(P.members), src)
-		om_unobserve(src, P)
+		release(src, STAT_RELEVANCE, P)
 
 /mob/proc/set_low_priority(value)
 	low_priority = value

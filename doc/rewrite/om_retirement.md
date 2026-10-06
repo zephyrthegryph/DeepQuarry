@@ -119,6 +119,9 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | P mob repeats | landed | the mob `DECLARE_REPEAT`s are type-level `every()` gated on a tracked var (`dq_mob_every_tests.dm`); the dizzy/jittery OM behaviours are gone |
 | P disabilities | landed | trait disabilities are capabilities with `every(LIFE_CYCLE)`, granted by their trait (`added_capability`); the `handle_disabilities` event is gone |
 | P observer upkeep | landed | `every(OBSERVER_UPKEEP_INTERVAL)` in `CAPABILITIES(/mob/observer)`; the OM decl and behaviour are gone |
+| R relevance | landed | `STAT_RELEVANCE` (MAX, `/datum`) replaces `EFFECT_RELEVANCE`; `relevance_changed()` keeps the OM cadences in step until the framework goes |
+| S suspension | landed | `STAT_SUSPENDED` (ANY, `/datum`) replaces `EFFECT_SUSPENDED`; `suspended_changed()` keeps OM timers and cadences in step |
+| C bio clock | landed | CLOCK_BIO runs at `STAT_CLOCK_RATE_BIO`; stasis holds it; `clock_now()` replaces `om_clock_now()`; CLOCK_OWN and the machine/chem clocks are still OM |
 | M machine pipeline | owned by `rewrite/machines-full` and `rewrite/pipenet-full` | they move machines off `machine_step()`; the pipeline goes with their last wave |
 | `OM_EMIT` / `om_hook` | Phase C codemod track | needs `ACTION()` declarations for `publish_<x>()` |
 | I internals, E, D | open | relations and slots, timed actions, scheduler, clocks, contribution store, prompts and flows, io |

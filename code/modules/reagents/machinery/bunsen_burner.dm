@@ -8,24 +8,14 @@
 	var/heat_power = BUNSEN_HEAT_POWER
 	var/obj/item/reagent_containers/held_container
 
-OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/bunsen_burner/var/heating = FALSE
+TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 /// Boils its container while heating (start_boiling() .. end_boil()).
 // The holder resizes to match the boiling container.
 
-/obj/machinery/bunsen_burner/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/bunsen_burner_place_container,
-		/datum/interaction/machine_hand/bunsen_burner_remove_container,
-	)
-	..()
-
-/datum/interaction/machine_item/bunsen_burner_place_container
-	id = "bunsen_burner_place_container"
-	name = "Place container"
-	held_type = /obj/item
-	effect = /obj/machinery/bunsen_burner/proc/interaction_place_container
-
-/obj/machinery/bunsen_burner/proc/interaction_place_container(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/bunsen_burner/proc/interaction_place_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	add_fingerprint(user)
 	// Handle container
 	if(!istype(W, /obj/item/reagent_containers))
@@ -58,9 +48,6 @@ OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
 			end_boil()
 	return .
 
-/obj/machinery/bunsen_burner/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
-
 /obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
 	if(!panel_open || !isturf(loc))
 		return ITEM_INTERACT_BLOCKING
@@ -73,13 +60,8 @@ OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
 	replace_with(src, /obj/item/stack/material/steel, 1)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/interaction/machine_hand/bunsen_burner_remove_container
-	id = "bunsen_burner_remove_container"
-	name = "Remove container"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/bunsen_burner/proc/interaction_remove_container
-
-/obj/machinery/bunsen_burner/proc/interaction_remove_container(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bunsen_burner/proc/interaction_remove_container(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!held_container)
 		to_chat(user, span_notice("There is nothing on \the [src]."))
@@ -89,7 +71,7 @@ OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
 	to_chat(user, span_notice("You remove \the [held_container] from \the [src]."))
 	held_container.forceMove(get_turf(src))
 	held_container.attack_hand(user) // Pick it up
-	own_take(src, nameof(held_container))
+	rel_take(src, nameof(held_container))
 
 	// Removed beaker, so kill processing
 	if(heating)
@@ -116,11 +98,14 @@ OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
 	if(!held_container)
 		return
 	held_container.forceMove(get_turf(src))
-	own_take(src, nameof(held_container))
+	rel_take(src, nameof(held_container))
 
 /// Boils its container; runs while heating (declared).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
+	owns_one(nameof(held_container), /obj/item/reagent_containers)
+	op("place_container", item(/obj/item), label("Place container"), then(PROC_REF(interaction_place_container)))
+	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
 	reagents(1, holder = /datum/reagents/distilling)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
 
@@ -176,16 +161,14 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	visible_message(span_notice("\The [src] clicks."))
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/bunsen_burner/appearance_overlays()
-	. = list()
-	icon_state = "bunsen0"
+/// The burner, what sits on it, and the flame while it heats.
+/obj/machinery/bunsen_burner/draw(datum/look/look)
+	..()
+	look.state("bunsen0")
 	if(held_container)
-		var/image/I = image("icon"=held_container)
-		. += I
+		look.overlay(image("icon" = held_container))
 	if(heating)
-		var/image/I = image(icon, icon_state = "bunsen1", layer = layer+0.1)
-		. += I
+		look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
 
 /obj/machinery/bunsen_burner/examine(mob/user, infix, suffix)
 	. = ..()
@@ -203,6 +186,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appea
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
 
-/obj/machinery/bunsen_burner/ownership()
-	. = ..()
-	. += owns(nameof(held_container), policy = OWN_CONTAINED)

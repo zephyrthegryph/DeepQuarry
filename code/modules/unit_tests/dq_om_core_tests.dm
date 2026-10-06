@@ -510,62 +510,6 @@
 	TEST_ASSERT(found_behaviour, "an order_after cycle must be a boot error")
 	TEST_ASSERT(found_derived, "a derived input cycle must be a boot error")
 
-/datum/unit_test/om/clock_scales_dt_and_zero_sleeps
-
-/datum/unit_test/om/clock_scales_dt_and_zero_sleeps/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	om_attach(E, /datum/om/behaviour/test/clocked)
-	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 2)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(E, CLOCK_BIO), 2, "multiplier applies")
-	scheduler_advance(3)
-	TEST_ASSERT(length(E.dts) >= 2, "clocked behaviour ran")
-	var/last_dt = E.dts[length(E.dts)]
-	TEST_ASSERT(abs(last_dt - 2) < 0.01, "dt is scaled by the clock rate: [last_dt]")
-	om_hold(E, EFFECT_CLOCK_BIO_INHIBIT, source, 1)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(E, CLOCK_BIO), 0, "full inhibition stops the clock")
-	var/before = E.ticks
-	scheduler_advance(3)
-	TEST_ASSERT_EQUAL(E.ticks, before, "a zero-rate clock sleeps cadence work")
-	qdel(source)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(E, CLOCK_BIO), 1, "deleting the source restores the rate")
-	scheduler_advance(2)
-	TEST_ASSERT(E.ticks > before, "cadence resumes")
-
-/// om_clock_now(): local biological time stops under full inhibition, runs at the
-/// multiplied rate, and settles across rate changes.
-/datum/unit_test/om/clock_now_reads_local_time
-
-/datum/unit_test/om/clock_now_reads_local_time/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 1)
-	var/start = om_clock_now(E, CLOCK_BIO)
-	scheduler_advance(2)
-	TEST_ASSERT(abs(om_clock_now(E, CLOCK_BIO) - start - 20) < 0.01, "rate 1: 2 s of local time")
-	om_hold(E, EFFECT_CLOCK_BIO_INHIBIT, source, 1)
-	var/frozen = om_clock_now(E, CLOCK_BIO)
-	scheduler_advance(3)
-	TEST_ASSERT(abs(om_clock_now(E, CLOCK_BIO) - frozen) < 0.01, "full inhibition stops local time")
-	om_release(E, EFFECT_CLOCK_BIO_INHIBIT, source)
-	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 2)
-	scheduler_advance(1)
-	TEST_ASSERT(abs(om_clock_now(E, CLOCK_BIO) - frozen - 20) < 0.01, "rate 2: 1 s real is 2 s local")
-
-/datum/unit_test/om/clocked_deadline_tracks_rate
-
-/datum/unit_test/om/clocked_deadline_tracks_rate/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/source = entity(made)
-	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 0.5)
-	om_deadline(E, 2 SECONDS, /datum/om/behaviour/test/deadline_clocked)
-	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(E.deadlines, 0, "half speed: not yet")
-	om_hold(E, EFFECT_CLOCK_BIO_MULT, source, 4)
-	// 0.5 s of local time elapsed; 1.5 s left at 4x = 0.375 s real.
-	scheduler_advance(0.5)
-	TEST_ASSERT_EQUAL(E.deadlines, 1, "a rate increase re-inserts the deadline earlier")
-
 /datum/unit_test/om/substeps_and_fixed_steps
 
 /datum/unit_test/om/substeps_and_fixed_steps/run_om(list/made)
@@ -589,12 +533,12 @@
 	om_attach(E, /datum/om/behaviour/test/relevant)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "RELEVANCE_NONE sleeps this behaviour")
-	om_observe(E, viewer, RELEVANCE_WATCHED)
-	TEST_ASSERT_EQUAL(om_relevance(E), RELEVANCE_WATCHED, "relevance derives from observers")
+	hold(E, STAT_RELEVANCE, RELEVANCE_WATCHED, viewer)
+	TEST_ASSERT_EQUAL(stat_value(E, STAT_RELEVANCE), RELEVANCE_WATCHED, "relevance derives from observers")
 	scheduler_advance(1)
 	TEST_ASSERT(E.ticks >= 5, "WATCHED runs every decisecond: [E.ticks]")
 	qdel(viewer)
-	TEST_ASSERT_EQUAL(om_relevance(E), RELEVANCE_NONE, "observer gone, relevance drops")
+	TEST_ASSERT_EQUAL(stat_value(E, STAT_RELEVANCE), RELEVANCE_NONE, "observer gone, relevance drops")
 	var/before = E.ticks
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(E.ticks, before, "back to sleep")
@@ -1045,7 +989,7 @@
 	var/datum/om_test_entity/session = entity(made)
 	var/datum/om_test_entity/target = entity(made)
 	om_ui_bind(session, target, CHANGE_DATUM_A)
-	TEST_ASSERT_EQUAL(om_relevance(target), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
+	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
 	changed(target, CHANGE_DATUM_A)
 	changed(target, CHANGE_DATUM_A)
 	changed(target, CHANGE_DATUM_A)
@@ -1057,7 +1001,7 @@
 	scheduler_advance(0.3)
 	TEST_ASSERT_EQUAL(session.ui_pushes, 2, "the throttled change is pushed later")
 	om_ui_unbind(session, target)
-	TEST_ASSERT_EQUAL(om_relevance(target), RELEVANCE_NONE, "unbinding drops relevance")
+	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_NONE, "unbinding drops relevance")
 
 // ---------------------------------------------------------------- K: helpers
 
@@ -1118,7 +1062,7 @@
 	var/datum/om_test_entity/viewer = entity(made)
 	om_attach(A, B)
 	om_attach(C, B)
-	om_observe(A, viewer, RELEVANCE_WATCHED)
+	hold(A, STAT_RELEVANCE, RELEVANCE_WATCHED, viewer)
 	scheduler_advance(1)
 	TEST_ASSERT(A.ticks > 0 && C.ticks == 0, "per-entity relevance, not per-type")
 	for(var/i in 1 to 4)

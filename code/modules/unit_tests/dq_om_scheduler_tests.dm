@@ -131,31 +131,15 @@
 
 /datum/unit_test/om/timer_follows_clock/run_om(list/made)
 	var/datum/om_test_entity/bio/E = entity(made, /datum/om_test_entity/bio)
-	var/datum/om_test_entity/source = entity(made)
-	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("stasis"))
-	om_hold(E, EFFECT_CLOCK_BIO_INHIBIT, source, 1)
-	scheduler_advance(5)
-	TEST_ASSERT(!("stasis" in E.log), "stasis (an inhibited bio clock) pauses the timer")
-	qdel(source)
-	scheduler_advance(1)
-	TEST_ASSERT(!("stasis" in E.log), "the paused time does not count")
-	scheduler_advance(1.5)
-	TEST_ASSERT("stasis" in E.log, "the timer runs once its clock has advanced 2 s")
-
+	// Stasis on the bio clock: life_om/bio_clock_follows_its_stat (a stat of living mobs).
 	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("suspended"))
 	scheduler_advance(1)
-	om_suspend(E, E)
+	hold(E, STAT_SUSPENDED, TRUE, E)
 	scheduler_advance(5)
 	TEST_ASSERT(!("suspended" in E.log), "suspension pauses the timer")
-	om_unsuspend(E, E)
+	release(E, STAT_SUSPENDED, E)
 	scheduler_advance(1.5)
 	TEST_ASSERT("suspended" in E.log, "the timer resumes with the time it had left")
-
-	var/datum/om_test_entity/fast_source = entity(made)
-	om_hold(E, EFFECT_CLOCK_BIO_MULT, fast_source, 2)
-	after(E, 4 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("fast"))
-	scheduler_advance(2.5)
-	TEST_ASSERT("fast" in E.log, "a doubled clock halves the wait")
 
 /// The default (after()/after()): a deleted argument arrives as null and the call still runs,
 /// counted and logged (SStimer's semantics: cleanup like vend_ready = TRUE always happens).

@@ -655,7 +655,7 @@ CAPABILITIES(/obj/belly)
 	// Reverts TF on death. This fixes a bug with posibrains or similar, and also makes reforming easier.
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
 		M.return_player_to_tf_holder("digested in [src]")
-		om_unsuspend(M.tf_mob_holder, M.tf_mob_holder)
+		release(M.tf_mob_holder, STAT_SUSPENDED, M.tf_mob_holder)
 		M.tf_mob_holder.forceMove(M.loc)
 		M.tf_mob_holder.forceMove(M.loc)
 		own_clear(M.tf_mob_holder, nameof(/mob::vore_organs), OWN_DELETE)
@@ -749,14 +749,14 @@ CAPABILITIES(/obj/belly)
 
 	if(istype(hasMMI))
 		rel_set(hasMMI, nameof(hasMMI.body_backup), M)
-		om_suspend(M, M)
+		hold(M, STAT_SUSPENDED, TRUE, M)
 		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
 			belly_insert(G)
 			rel_set(G, nameof(G.body_backup), M)
-			om_suspend(M, M)
+			hold(M, STAT_SUSPENDED, TRUE, M)
 			slot_remove(M, G)
 		else
 			dissolved(M, src)

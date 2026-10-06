@@ -29,7 +29,7 @@
 
 /// A suspended mob (absorbed prey, a body kept for reforming) runs no frame until it is resumed.
 /datum/sequence/life/admit(mob/living/L)
-	return !L.om_rec?.contribs || !om_value_of(L, EFFECT_SUSPENDED)
+	return !L.rx?.stats || !stat_value(L, STAT_SUSPENDED)
 
 /// The bands of the old Life() sequence, in order.
 /datum/sequence/life/anchors()

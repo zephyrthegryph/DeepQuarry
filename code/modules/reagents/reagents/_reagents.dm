@@ -177,8 +177,11 @@
 	return
 
 /datum/reagent/proc/touch_obj(obj/O, amount, mob/user = null) // Acid melting, cleaner cleaning, etc
-	OM_EMIT(O, /datum/om/event/reagent_expose_obj, src, amount)
-	return
+	if(notice_wanted(O, /datum/notice/reagent_expose_obj))
+		var/datum/notice/reagent_expose_obj/N = notice_take(/datum/notice/reagent_expose_obj)
+		N.reagent = src
+		N.amount = amount
+		notice_publish(O, N)
 
 /datum/reagent/proc/touch_turf(turf/T, amount) // Cleaner cleaning, lube lubbing, etc, all go here
 	return

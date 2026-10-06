@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/runlevels = RUNLEVELS_DEFAULT
 	/// Frames in a row with every step asleep before a member parks. 0: never parks.
 	var/park_after = 2
-	/// A member below this relevance (om_observe()) is out of the sweep. RELEVANCE_NONE: always relevant.
+	/// A member below this relevance (STAT_RELEVANCE) is out of the sweep. RELEVANCE_NONE: always relevant.
 	var/min_relevance = RELEVANCE_NONE
 	/// Change channels that wake every step (changed()).
 	var/wake_all = 0
@@ -144,7 +144,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 
 /// Whether `E` is relevant enough to be in the sweep.
 /datum/sequence/proc/relevant(datum/E)
-	return !min_relevance || om_relevance(E) >= min_relevance
+	return !min_relevance || stat_value(E, STAT_RELEVANCE) >= min_relevance
 
 /// Runs the entity's step proc `name` with frame `F`. By name (call()); a sequence whose entities have big proc tables
 /// overrides this with a typed dispatch (a by-name call looks the name up in the entity type's proc table on every call).

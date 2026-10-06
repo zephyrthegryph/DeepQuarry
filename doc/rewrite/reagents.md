@@ -1,7 +1,7 @@
 # Reagents and chemistry: the final forms
 
-Status: sections 1, 2 and 4 are **built** (`rewrite/reagents`); section 3 is the plan for the reagent and effect tables; section 5 lists the
-machines. The design it follows is `final_api.html` (section 11 "Reagents and food", 16.5, section 17's `DECLARE_REAGENTS` rows).
+Status: sections 1, 2, 4 and most of 5 are **built** (`rewrite/reagents`, on master); section 3 is the plan for the reagent and effect
+tables. The design it follows is `final_api.html` (section 11 "Reagents and food", 16.5, section 17's `DECLARE_REAGENTS` rows).
 
 ## 1. What changed
 
@@ -72,8 +72,9 @@ by the body (`accumulate_reagent_factors()`, `build_treatment_snapshot()`, dose 
 2. **Effects are contributions, holds and doses.** What a reagent does while it is metabolised is declared on its definition:
    - a steady effect scaled by dose is `contributes(STAT_X, per_unit, band =)` from the reagent as source (the `factors` table, renamed when
      body factors become `STAT_*`, final_api section 5);
-   - a status a reagent keeps up (`status_at_least(STAT_DROWSY, 20)` every cycle) is `hold(mob, STATUS_X, value, SRC_REAGENT(id), lasts =)`,
-     released when the dose ends (`on_mob_end_metabolize()` already marks that edge);
+   - a status a reagent keeps up (`status_at_least(STAT_DROWSY, 20)` every cycle) is already a timed hold: `status_at_least()` is sugar over
+     `hold_until(mob, STATUS_X, rate, SRC_STATUS, until)` on the body clock (`code/library/mob/statuses.dm`); what is left is to give it the
+     reagent as its source (`SRC_REAGENT(id)`) so the dose's end can release it (`on_mob_end_metabolize()` already marks that edge);
    - an amount per unit (healing, injury, nutrition) is a `doses(INJURY_X | TREAT_X | NUTRITION, per_unit)` row the cycle applies with
      the uptake, in Rust when the body's ledger moves there;
    - what is left (an emote, a message, a mutation roll) stays a `then(PROC_REF(x))` on the definition, run by the cycle.
@@ -116,11 +117,16 @@ gas one).
 
 ## 5. Machines and chemistry still on legacy forms
 
-`modules/reagents` machines keep interaction-era forms (`DECLARE_INTERACTIONS` rows with `REQ_*`, `INTERACT_SILICON`/`INTERACT_OBSERVER`,
-`OM_FIELD`, `DECLARE_APPEARANCE_PROC`, `OM_EMIT`, `ITEM_INTERACT_*` returns): the chemical dispenser (`dispenser2.dm`), the chem master,
-the grinder, the distillery, the synthesizer, the bunsen burner, the alembic, the injector maker, the pump, the chemalyzer, and the syringe's
-`DECLARE_PERIODIC_WHILE`. Their conversion follows `conversion_guide.md` (behaviour pins first, then the block). Status per machine is
-in `intended_changes.md` under "Reagents".
+Built: the chem master, grinder, chemical dispenser, synthesizer, distillery, bunsen burner, alembic, injector maker, fluid pump and chem
+analyzer declare `op()` entries (their `/datum/interaction/machine_*` datums are gone), `owns_one()` slots (no `ownership()` procs),
+`draw(look)` looks where the look reads tracked state, `TRACKED` vars, notice publishes (`notice_publish()`, no `OM_EMIT`), a `STAT` hold for
+the grinder's run, an op wait with `claims()` for the analyzer's scan, and `asks()` for the radials and the thermostat. The syringe's
+dirtying is an `every()`. Pinned by `dq_reagent_machines_behaviour.dm` (written on master first) and the generated conversion pins.
+
+Left, each waiting for its replacement to land (`intended_changes.md`, "Reagent machines"): the ghost view of the dispenser and synthesizer
+(`INTERACT_OBSERVER`: `by(AFF_OBSERVE)` has no provider yet), their screwdriver cartridge removal (`rerun_ask` in `screwdriver_act`), the
+`*_act` tool procs, the look procs that read untracked state (pump, distillery, synthesizer, syringe, blood pack) and the container
+`APPEARANCE_TEMPLATE`s (dropper, hypospray, autoinjector: a `draw()` does not refresh in the same tick the template did, which their tests read).
 
 ## 6. Codemod
 

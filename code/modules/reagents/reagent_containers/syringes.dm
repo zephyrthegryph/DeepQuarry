@@ -31,20 +31,20 @@
 	drop_sound = SFX_ITEMS_DROP_GLASS
 	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
-/// Set once it has been injected into someone: from then on it gets dirtier over time.
-OM_FIELD(/obj/item/reagent_containers/syringe, used, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/syringe, PERIODIC_SLOW, "used")
+/// Set once it has been injected into someone: from then on it gets dirtier over time, until it is as dirty as it gets.
+/obj/item/reagent_containers/syringe/var/used = FALSE
+TRACKED(/obj/item/reagent_containers/syringe, used)
 
 /obj/item/reagent_containers/syringe/Initialize(mapload)
 	. = ..()
 	update_icon()
 
 
-/obj/item/reagent_containers/syringe/periodic_step()
-	dirtiness = min(dirtiness + targets.len,75)
+/// Every 2 seconds while used: dirtier by one per person it went into, up to 75, where it stops (as dirty as it gets).
+/obj/item/reagent_containers/syringe/proc/syringe_step(datum/act/timer/A)
+	dirtiness = min(dirtiness + targets.len, 75)
 	if(dirtiness >= 75)
-		return PROCESS_KILL // as dirty as it gets
-	return 1
+		set_used(FALSE)
 
 /obj/item/reagent_containers/syringe/on_reagent_change()
 	update_icon()
@@ -77,6 +77,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe)
 		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))),
 		then(PROC_REF(stabbed)))
 	owns_many(nameof(viruses))
+	every(2 SECONDS, then(PROC_REF(syringe_step)), when = nameof(used))
 
 MSG_DEF_SELF(syringe/too_big, "This syringe is too big to stab someone with it.")
 MSG_DEF_SELF(syringe/no_blood, "This needle isn't designed for drawing blood.")
