@@ -277,6 +277,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 		update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
+	smoothing()
 	param(nameof(dir), pos = 1)
 	param(nameof(constructed), pos = 2)
 
@@ -302,10 +303,6 @@ CAPABILITIES(/obj/structure/window)
 	update_nearby_tiles(need_rebuild=1)
 	update_nearby_icons()
 
-	for(var/obj/structure/table/T in view(src, 1))
-		T.update_connections()
-		T.update_icon()
-
 // neighbouring windows and tables re-smooth without it.
 /obj/structure/window/on_destroy(force)
 	set_density(FALSE)
@@ -314,9 +311,6 @@ CAPABILITIES(/obj/structure/window)
 	..()
 	for(var/obj/structure/window/W in orange(location, 1))
 		W.update_icon()
-	for(var/obj/structure/table/T in view(location, 1))
-		T.update_connections()
-		T.update_icon()
 
 /obj/structure/window/Move()
 	var/ini_dir = dir
@@ -325,10 +319,6 @@ CAPABILITIES(/obj/structure/window)
 	. = ..()
 	set_dir(ini_dir)
 	update_nearby_tiles(need_rebuild=1)
-	if(loc != location)
-		for(var/obj/structure/table/T in view(location, 1) | view(loc, 1))
-			T.update_connections()
-			T.update_icon()
 
 //checks if this window is full-tile one
 /obj/structure/window/proc/is_fulltile()

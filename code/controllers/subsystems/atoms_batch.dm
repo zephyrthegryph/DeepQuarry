@@ -7,7 +7,7 @@
 // 1. Atoms initialize in the order the caller listed them (areas, turfs, then movables for
 //    a template); a yield never reorders or skips one.
 // 2. A frame's after_init() entries (code/engine/actions/after_init.dm) run after every atom of that frame has initialized.
-// 3. Deferred work (BATCH_WORK_*: wall smoothing, cable binds) belongs to the frame that
+// 3. Deferred work (BATCH_WORK_*: adjacency recomputes, cable binds) belongs to the frame that
 //    owns it and flushes once when that frame closes, before its after_init() entries,
 //    in BATCH_WORK_* order.
 // 4. A frame opened while another frame is running (a nested InitializeAtoms() from inside
@@ -184,23 +184,9 @@
 /// Runs one kind of deferred work. Every flusher skips deleted things.
 /datum/system/atoms/proc/flush_batch_work(kind, list/queued)
 	switch(kind)
-		if(BATCH_WORK_WALL_SMOOTHING)
-			flush_wall_smoothing(queued)
+		if(BATCH_WORK_ADJACENCY)
+			adjacency_flush_batch(queued)
 		if(BATCH_WORK_CABLE_BINDS)
 			power_bind_cables(queued)
 		else
 			stack_trace("flush_batch_work: unknown kind [kind]")
-
-/// Smooths every wall the batch queued, plus the walls next to them (a template's edge
-/// touches walls that were already there), once each, now that every material is set.
-/// A neighbour another frame has not initialized yet queues itself when it does.
-/datum/system/atoms/proc/flush_wall_smoothing(list/queued)
-	var/list/walls = queued.Copy()
-	for(var/turf/simulated/wall/W as anything in queued)
-		for(var/turf/simulated/wall/neighbour in orange(W, 1))
-			walls[neighbour] = TRUE
-	for(var/turf/simulated/wall/W as anything in walls)
-		if(QDELETED(W) || !istype(W) || !(W.flags & ATOM_INITIALIZED))
-			continue
-		W.update_connections()
-		W.update_icon()

@@ -1200,7 +1200,6 @@ world_reads	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access = G
 world_reads	code/game/objects/items/weapons/storage/misc.dm	var/type_to_spawn = pickweight(GLOB.random_weighted_donuts)
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/objects/structures/props/puzzledoor.dm	for(var/obj/structure/prop/lock/L in orange(src, check_range))
-world_reads	code/game/objects/structures/window.dm	for(var/obj/structure/table/T in view(src, 1))
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])

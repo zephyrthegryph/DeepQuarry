@@ -55,6 +55,11 @@
 /// The four corners as well (the same bit as the Rust index's DIR_DIAGONALS).
 #define ADJ_DIAGONALS (1<<6)
 #define ADJ_VERTICAL (UP|DOWN)
+/// The smoothing kind: walls, low walls, tables, catwalks, windows and the other structures that join their neighbours' look share it, and
+/// each decides through its connects proc which neighbours it joins (a join across types is a shared kind, not a second index).
+#define ADJ_KIND_SMOOTH "smooth"
+/// Every direction a smoothing member looks at: the faces and the corners.
+#define ADJ_ALL_AROUND (ADJ_CARDINAL | ADJ_DIAGONALS)
 /// Junction bits of the corners in an adjacency() mask (the faces use their BYOND direction bits).
 #define ADJ_JUNCTION_NE (1<<6)
 #define ADJ_JUNCTION_NW (1<<7)

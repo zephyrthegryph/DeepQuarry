@@ -29,7 +29,7 @@
 DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
 
 CAPABILITIES(/obj/structure/low_wall)
-	after_init(0, then(PROC_REF(connect_after_init)))
+	smoothing()
 	climb()
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
@@ -45,10 +45,6 @@ CAPABILITIES(/obj/structure/low_wall)
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 
-/// Joins its neighbours, once they exist.
-/obj/structure/low_wall/proc/connect_after_init(datum/act/timer/A)
-	update_connections(1)
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbor_type = /obj/structure/low_wall))
 
@@ -347,12 +343,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appea
 	color = "#666666"
 
 CAPABILITIES(/obj/structure/grille/bay)
-	after_init(0, then(PROC_REF(connect_after_init)))
-
-/// Joins its neighbours, once they exist.
-/obj/structure/grille/bay/proc/connect_after_init(datum/act/timer/A)
-	update_connections(1)
-	update_icon()
+	smoothing()
 
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 

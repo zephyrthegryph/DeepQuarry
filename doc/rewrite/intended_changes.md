@@ -1751,6 +1751,13 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
   when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
 - A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- Smoothing is adjacency(): walls, low walls, tables, catwalks, windows, bay grilles, sandbag barricades and retention fields share
+  ADJ_KIND_SMOOTH, each joining what its connects proc accepts (walls take walls of a blending material and the low walls they join;
+  structures the anchored structures they connect to). The index tells every member whose neighbours changed, so a removed table,
+  catwalk or wall now redraws its neighbours (before, they kept joining the gone piece, pinned by dq_smoothing_pins), placing and anchoring
+  reach them too, and the hand propagation (update_connections(1) in Initialize/on_destroy, the low walls' and bay grilles' after-init
+  connect, windows refreshing nearby tables) is gone. A map load recomputes each member once when the batch closes
+  (BATCH_WORK_ADJACENCY replaces the wall smoothing batch). The look of a placed layout is unchanged (the pin's placed rows).
 - More native input reads its actor from the input: the vitals monitor, the backpack-style packs (defib, shield generator, bluespace
   radio, proton pack, medigun), the cup on a cooler, a mob dragged onto its dragger (`drag_onto()`), the mob nametag tooltip (`hover()`),
   the debug and ticket stat buttons and the rig stat buttons (`click_on()`). Admin rights checks with an actor in scope read its client

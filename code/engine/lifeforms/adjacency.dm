@@ -15,6 +15,13 @@
 // `changed` runs after the mask changed. So update_neighbours() in Initialize() and on_destroy() is gone: placing, moving, anchoring and a
 // neighbour's creation or destruction all reach the members it concerns.
 //
+// Joins across types: members of one kind see each other whatever their type, so a group of types that smooth together (walls with low
+// walls, tables beside windows) share one kind and each one's `connects` picks what it joins (ADJ_KIND_SMOOTH).
+//
+// Map loads: while a load batch runs (SSatoms.batch_defer(), code/controllers/subsystems/atoms_batch.dm), a member whose neighbours changed is
+// queued instead of recomputed (BATCH_WORK_ADJACENCY), and every queued member recomputes once when the batch closes, after every atom of
+// the load (and its materials) exists. adjacency_refresh(holder, neighbours) recomputes now, for a change the index cannot see (a material).
+//
 // The index lives in Rust (verdigris/core/src/adjacency.rs, binds in verdigris/ffi/src/adjacency.rs): DM holds a handle per member and asks
 // for the members whose sets changed. adjacency_seen(holder, KIND) is the neighbours a member sees, for code that wants them by name.
 
@@ -107,6 +114,8 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 		var/atom/member = GLOB.adjacency_members[h]
 		if(!member || QDELETED(member))
 			continue
+		if(SSatoms?.batch_defer(BATCH_WORK_ADJACENCY, member))
+			continue // a load batch runs: recomputed once when it closes
 		var/datum/lifeform_plan/MP = lifeform_plan_of(member)
 		for(var/datum/centry/MC as anything in MP.adjacencies)
 			var/datum/entry/ME = MC.item
@@ -161,3 +170,47 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 		var/atom/other = GLOB.adjacency_members[seen[i]]
 		if(other)
 			.[other] = seen[i + 1]
+
+/// Recomputes every adjacency() entry of `holder` now (a change the index cannot see: a material, a flip); with `neighbours`, the members it
+/// sees as well. The old update_connections(propagate) callers land here.
+/proc/adjacency_refresh(atom/holder, neighbours = FALSE)
+	if(!holder?.adj_handle || QDELETED(holder))
+		return
+	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
+	for(var/datum/centry/C as anything in P.adjacencies)
+		adjacency_recompute(holder, C)
+		if(!neighbours)
+			continue
+		var/datum/entry/E = C.item
+		for(var/atom/other as anything in adjacency_seen(holder, E.args["kind"]))
+			if(QDELETED(other))
+				continue
+			var/datum/lifeform_plan/OP = lifeform_plan_of(other)
+			for(var/datum/centry/OC as anything in OP.adjacencies)
+				var/datum/entry/OE = OC.item
+				if(OE.args["kind"] == E.args["kind"])
+					adjacency_recompute(other, OC)
+
+/// A load batch closed (BATCH_WORK_ADJACENCY): each member it queued recomputes once.
+/proc/adjacency_flush_batch(list/queued)
+	for(var/atom/member as anything in queued)
+		if(QDELETED(member) || !member.adj_handle)
+			continue
+		var/datum/lifeform_plan/P = lifeform_plan_of(member)
+		for(var/datum/centry/C as anything in P.adjacencies)
+			adjacency_recompute(member, C)
+
+/// The BYOND directions a junction mask names: each face it holds, and each corner (NORTHEAST..SOUTHWEST) for the corner bits.
+/proc/adjacency_mask_dirs(mask)
+	. = list()
+	for(var/dir in list(NORTH, SOUTH, EAST, WEST))
+		if(mask & dir)
+			. += dir
+	if(mask & ADJ_JUNCTION_NE)
+		. += NORTHEAST
+	if(mask & ADJ_JUNCTION_NW)
+		. += NORTHWEST
+	if(mask & ADJ_JUNCTION_SE)
+		. += SOUTHEAST
+	if(mask & ADJ_JUNCTION_SW)
+		. += SOUTHWEST
