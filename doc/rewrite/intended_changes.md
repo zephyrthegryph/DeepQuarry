@@ -1891,3 +1891,13 @@ Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscure
 - Ops: the panel's and tracker's crowbar (2 s and 5 s), a hostile swing at a panel, the controller's screwdriver (2 s) and its window (an
   empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
   `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).
+
+## Power plants: the gas turbine (rewrite/power-plants)
+
+Pinned by `dq_pp/turbine_output_curve` and `compressor_spin_up` (((rpm / 100000) ^ 0.8) * 100000 * productivity W; a tenth of the way to the
+target a step less rpm^2 / (500000 * efficiency)); unchanged.
+
+- The compressor and the turbine step on `every(MACHINE_SERVICE_INTERVAL, when = running)` (the compressor's `starter` is tracked; the turbine
+  no longer needs the compressor to wake it). Their overlays are `draw()` from tracked stages (no raw overlays).
+- Ops: part replacement, the compressor's and the computer's ident tags (`asks()`); the turbine's window is an empty hand on a working turbine
+  (the legacy `ui_prepare()` check); the "touch for a fingerprint" interactions on any item are gone (they swallowed every tool's click).

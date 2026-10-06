@@ -1157,3 +1157,66 @@
 	P.unset_control()
 	power_test_drop_grid(net)
 	power_test_drop_grid(net2)
+
+// ============================================================================================ the gas turbine
+
+#define PP_COMP_STEP "compressor_step"
+#define PP_TURB_STEP "turbine_step"
+
+/// A compressor and its turbine along a run of 4 floors: the inlet, the compressor, the turbine, the outlet. list(compressor, turbine).
+/datum/unit_test/dq_pp/proc/pp_turbine_pair()
+	var/list/run = pp_run(4)
+	var/d = pp_run_dir(run)
+	var/obj/machinery/compressor/C = allocate(/obj/machinery/compressor, run[2])
+	var/obj/machinery/power/turbine/T = allocate(/obj/machinery/power/turbine, run[3])
+	C.set_dir(turn(d, 180))
+	T.set_dir(d)
+	rel_clear(C, nameof(C.turbine))
+	rel_clear(T, nameof(T.compressor))
+	rel_set(C, nameof(C.inturf), run[1])
+	rel_set(T, nameof(T.outturf), run[4])
+	C.locate_machinery()
+	T.locate_machinery()
+	TEST_ASSERT_EQUAL(C.turbine, T, "the compressor found its turbine")
+	TEST_ASSERT_EQUAL(T.compressor, C, "and the turbine its compressor")
+	C.atom_fix()
+	T.atom_fix()
+	return list(C, T)
+
+/// The turbine's curve: ((rpm / 100000) ^ 0.8) * 100000 * productivity W a step.
+/datum/unit_test/dq_pp/turbine_output_curve
+
+/datum/unit_test/dq_pp/turbine_output_curve/run_pp()
+	var/list/pair = pp_turbine_pair()
+	var/obj/machinery/compressor/C = pair[1]
+	var/obj/machinery/power/turbine/T = pair[2]
+	C.set_starter(TRUE)
+	C.rpm = 50000
+	pp_step(T, PP_TURB_STEP)
+	var/expected = ((50000 / 100000) ** 0.8) * 100000 * T.productivity
+	TEST_ASSERT(pp_close(T.lastgen, expected, 0.0001), "50000 rpm makes [expected] W: [T.lastgen]")
+	C.set_starter(FALSE)
+
+/// The compressor's spin-up: started, it aims for 1000 rpm; rpm moves a tenth of the way a step and loses rpm^2 / (500000 * efficiency).
+/datum/unit_test/dq_pp/compressor_spin_up
+
+/datum/unit_test/dq_pp/compressor_spin_up/run_pp()
+	var/list/pair = pp_turbine_pair()
+	var/obj/machinery/compressor/C = pair[1]
+	var/area/room = get_area(C)
+	var/required = room.requires_power
+	room.requires_power = FALSE
+	C.power_change()
+	C.set_starter(TRUE)
+	C.rpm = 0
+	C.rpmtarget = 0
+	pp_step(C, PP_COMP_STEP)
+	TEST_ASSERT_EQUAL(C.rpmtarget, 1000, "started, it aims for 1000 rpm")
+	pp_step(C, PP_COMP_STEP)
+	var/expected = 100 - (100 * 100) / (500000 * C.efficiency)
+	TEST_ASSERT(pp_close(C.rpm, expected, 0.0001), "a step moves it a tenth of the way, less friction: [C.rpm], expected [expected]")
+	C.set_starter(FALSE)
+	room.requires_power = required
+
+#undef PP_COMP_STEP
+#undef PP_TURB_STEP

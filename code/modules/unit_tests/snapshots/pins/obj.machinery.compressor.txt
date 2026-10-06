@@ -1,99 +1,51 @@
 human|none menu: Deconstruct (refused: needs a crowbar)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
-human|none menu: Replace parts (refused: needs a rapid part exchange device)
-human|none menu: Set ident tag (refused: needs a multitool)
-human|none menu: Touch (refused: needs an item)
 human|none menu: Unsecure (refused: needs a wrench)
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Deconstruct (refused: needs a crowbar)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
-robot|none menu: Replace parts (refused: needs a rapid part exchange device)
-robot|none menu: Set ident tag (refused: needs a multitool)
-robot|none menu: Touch (refused: needs an item)
 robot|none menu: Unsecure (refused: needs a wrench)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
-human|/obj/item/tool/screwdriver menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/screwdriver menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/tool/screwdriver menu: Touch
 human|/obj/item/tool/screwdriver menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/crowbar menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/crowbar menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/tool/crowbar menu: Touch
 human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/wrench menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/wrench menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/tool/wrench menu: Touch
 human|/obj/item/tool/wrench menu: Unsecure
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/wirecutters menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/wirecutters menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/tool/wirecutters menu: Touch
 human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/multitool menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/multitool menu: Set ident tag
-human|/obj/item/multitool menu: Touch
 human|/obj/item/multitool menu: Unsecure (refused: needs a wrench)
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Set ident tag
 human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/weldingtool menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/weldingtool menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/weldingtool menu: Touch
 human|/obj/item/weldingtool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/cable_coil menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/stack/cable_coil menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/stack/cable_coil menu: Touch
 human|/obj/item/stack/cable_coil menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/material/steel menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/stack/material/steel menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/stack/material/steel menu: Touch
 human|/obj/item/stack/material/steel menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/card/id menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: nothing
-human|/obj/item menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item menu: Set ident tag (refused: needs a multitool)
-human|/obj/item menu: Touch
-human|/obj/item menu: Unsecure (refused: needs a wrench)
-human|/obj/item click: nothing
-human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/storage/part_replacer menu: Empty contents
-human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/part_replacer menu: Replace parts
-human|/obj/item/storage/part_replacer menu: Set ident tag (refused: needs a multitool)
-human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/part_replacer menu: Touch
-human|/obj/item/storage/part_replacer menu: Unsecure (refused: needs a wrench)
-human|/obj/item/storage/part_replacer click: nothing
-keys: compressor_fingerprint, compressor_set_ident, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_part_replacement, machine_repair
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, set_ident
 
