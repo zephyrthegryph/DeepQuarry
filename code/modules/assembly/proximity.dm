@@ -125,7 +125,7 @@ CAPABILITIES(/obj/item/assembly/prox_sensor)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/assembly/prox_sensor's window data (declared on its UI_DATA row).
+/// /obj/item/assembly/prox_sensor's window data.
 /obj/item/assembly/prox_sensor/proc/ui_data_obj_item_assembly_prox_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/radio/electropack)
 	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("delta", num())), then(PROC_REF(ui_act_code)))
 
-/// The computed part of /obj/item/radio/electropack's window data (declared on its UI_DATA row).
+/// /obj/item/radio/electropack's window data.
 /obj/item/radio/electropack/ui_data(datum/act/eval/A)
 	return list(
 		"on" = on,

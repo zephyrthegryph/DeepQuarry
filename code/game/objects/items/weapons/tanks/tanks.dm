@@ -295,7 +295,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		src.proxyassembly.assembly.attack_self(user)
 	return TRUE
 
-/// The computed part of /obj/item/tank's window data (declared on its UI_DATA row).
+/// /obj/item/tank's window data.
 /obj/item/tank/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

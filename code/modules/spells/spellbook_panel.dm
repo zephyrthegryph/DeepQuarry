@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/spellbook)
 
 GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 
-/// The computed part of /obj/item/spellbook's window data (declared on its UI_DATA row).
+/// /obj/item/spellbook's window data.
 /obj/item/spellbook/ui_data(datum/act/eval/A)
 	var/list/catalog = GLOBAL_TABLE_GET(spellbook_catalog)
 	var/list/data = list()

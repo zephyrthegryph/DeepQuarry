@@ -235,7 +235,7 @@ CAPABILITIES(/datum/vore_look)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/vore_look's window data (declared on its UI_DATA row).
+/// /datum/vore_look's window data.
 /datum/vore_look/proc/ui_data_datum_vore_look(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 
@@ -1713,8 +1713,6 @@ CAPABILITIES(/datum/vore_look)
 		return "gone"
 	if(original_ui.status != STATUS_INTERACTIVE)
 		return "not interactive"
-	if(!panel.ui_act_allowed(original_ui.user, "saveprefs", original_ui, original_ui.state()))
-		return "not allowed"
 	return null
 
 /datum/tgui/proc/vore_save_preferences_answered(datum/act/request/A)

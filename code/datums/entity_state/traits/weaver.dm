@@ -125,7 +125,7 @@ CAPABILITIES(/datum/trait_state/weaver)
 	RETURN_TYPE(/datum/trait_state/weaver)
 	return get_trait_state(/datum/trait_state/weaver)
 
-/// The computed part of /datum/trait_state/weaver's window data (declared on its UI_DATA row).
+/// /datum/trait_state/weaver's window data.
 /datum/trait_state/weaver/ui_data(datum/act/eval/A)
 	var/data = list(
 		"silk_reserve" = silk_reserve,

@@ -997,14 +997,6 @@ initialize	code/modules/power/supermatter/supermatter.dm	/obj/machinery/power/su
 initialize	code/modules/power/supermatter/supermatter.dm	/obj/item/broken_sm/Initialize(mapload)
 initialize	code/modules/power/terminal.dm	/obj/machinery/power/terminal/Initialize(mapload)
 initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/relay/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/splitter/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/amplifier/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/recaster/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/tesla_coil/collector/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tesla/coil.dm	/obj/machinery/power/grounding_rod/pre_mapped/Initialize(mapload)
-initialize	code/modules/power/tracker.dm	/obj/machinery/power/tracker/Initialize(mapload, glass_type)
 initialize	code/modules/power/turbine.dm	/obj/machinery/compressor/Initialize(mapload)
 initialize	code/modules/power/turbine.dm	/obj/machinery/power/turbine/Initialize(mapload)
 initialize	code/modules/projectiles/ammunition/rounds.dm	/obj/item/ammo_casing/a145/spent/Initialize(mapload)
@@ -1296,7 +1288,6 @@ world_reads	code/modules/integrated_electronics/core/tools.dm	for(var/obj/item/i
 world_reads	code/modules/integrated_electronics/core/tools.dm	for(var/obj/item/integrated_circuit/power/IC in GLOB.all_integrated_circuits)
 world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.cameranet.addCamera(src)
 world_reads	code/modules/integrated_electronics/subtypes/input.dm	var/datum/language/newlang = GLOB.all_languages[lang]
-world_reads	code/modules/lighting/emissive_blocker.dm	color = GLOB.em_block_color
 world_reads	code/modules/maint_recycler/code/util.dm	GLOB.recycler_vendor_locations |= get_turf(src)
 world_reads	code/modules/materials/sheets/metals/rods.dm	recipes = GLOB.rods_recipes
 world_reads	code/modules/mining/machine_silo.dm	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
@@ -1333,7 +1324,6 @@ world_reads	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_l
 world_reads	code/modules/mob/living/silicon/pai/software.dm	for(var/id in GLOB.default_pai_software)
 world_reads	code/modules/mob/living/silicon/silicon.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 world_reads	code/modules/mob/living/simple_mob/simple_mob.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	GLOB.jellyfish_count ++
 world_reads	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	GLOB.teppi_count ++
 world_reads	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	GLOB.chicken_count += 1
 world_reads	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	switch(GLOB.world_time_season)
@@ -1365,7 +1355,6 @@ world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_te
 world_reads	code/modules/paperwork/faxmachine.dm	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 world_reads	code/modules/paperwork/faxmachine.dm	GLOB.alldepartments |= department
 world_reads	code/modules/paperwork/photography.dm	id = GLOB.photo_count++
-world_reads	code/modules/power/fusion/core/core_field.dm	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
 world_reads	code/modules/recycling/disposal-construction.dm	if(ptype == DISPOSAL_PIPE_STRAIGHT && (dir in GLOB.cornerdirs))

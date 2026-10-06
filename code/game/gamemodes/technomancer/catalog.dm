@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/technomancer_catalog's window data (declared on its UI_DATA row).
+/// /obj/item/technomancer_catalog's window data.
 /obj/item/technomancer_catalog/proc/ui_data_obj_item_technomancer_catalog(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["spell_categories"] = list(ALL_SPELLS, OFFENSIVE_SPELLS, DEFENSIVE_SPELLS, UTILITY_SPELLS, SUPPORT_SPELLS)

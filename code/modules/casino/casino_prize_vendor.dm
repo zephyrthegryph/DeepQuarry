@@ -297,7 +297,7 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/vending),
 	)
 
-/// The computed part of /obj/machinery/casino_prize_dispenser's window data (declared on its UI_DATA row).
+/// /obj/machinery/casino_prize_dispenser's window data.
 /obj/machinery/casino_prize_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

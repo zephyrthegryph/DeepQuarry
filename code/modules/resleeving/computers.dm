@@ -135,7 +135,7 @@
 
 	return TRUE
 
-/// The computed part of /obj/machinery/computer/transhuman/resleeving's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/transhuman/resleeving's window data.
 /obj/machinery/computer/transhuman/resleeving/ui_data(datum/act/eval/A)
 	var/data[0]
 	data["menu"] = menu
@@ -486,8 +486,6 @@
 		return "gone"
 	if(original_ui.status != STATUS_INTERACTIVE)
 		return "the original window is not interactive"
-	if(!console.ui_act_allowed(original_ui.user, "sleeve", original_ui, original_ui.state()))
-		return "the sleeve action is unavailable"
 	return null
 
 /datum/prompt/choice/resleeving_consent

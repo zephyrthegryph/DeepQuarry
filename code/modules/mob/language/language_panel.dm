@@ -30,7 +30,7 @@ CAPABILITIES(/datum/languages_panel)
 	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))
 	op("edit_key", ui_act("edit_key", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_edit_key)))
 
-/// The computed part of /datum/languages_panel's window data (declared on its UI_DATA row).
+/// /datum/languages_panel's window data.
 /datum/languages_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host)

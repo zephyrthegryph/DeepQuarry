@@ -127,7 +127,7 @@ CAPABILITIES(/datum/tgui_input_text)
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data
 
-/// The computed part of /datum/tgui_input_text's window data (declared on its UI_DATA row).
+/// /datum/tgui_input_text's window data.
 /datum/tgui_input_text/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)

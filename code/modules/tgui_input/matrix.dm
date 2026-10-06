@@ -111,7 +111,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/tgui_input_colormatrix's window data (declared on its UI_DATA row).
+/// /datum/tgui_input_colormatrix's window data.
 /datum/tgui_input_colormatrix/proc/ui_data_datum_tgui_input_colormatrix(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["matrixcolors"] = list(

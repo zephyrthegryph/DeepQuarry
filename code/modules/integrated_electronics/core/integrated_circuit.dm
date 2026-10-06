@@ -145,7 +145,7 @@ CAPABILITIES(/datum/prompt/text/electronics_rename)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/integrated_circuit's window data (declared on its UI_DATA row).
+/// /obj/item/integrated_circuit's window data.
 /obj/item/integrated_circuit/proc/ui_data_obj_item_integrated_circuit(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

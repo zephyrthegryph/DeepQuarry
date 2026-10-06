@@ -63,7 +63,7 @@ CAPABILITIES(/datum/tooltip)
 		window.close()
 	return ..()
 
-/// The computed part of /datum/tooltip's window data (declared on its UI_DATA row).
+/// /datum/tooltip's window data.
 /datum/tooltip/ui_data(datum/act/eval/A)
 	return list(
 		"visible" = _visible,

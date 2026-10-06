@@ -117,7 +117,7 @@ CAPABILITIES(/mob/living/silicon/pai/infomorph)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /mob/living/silicon/pai/infomorph's window data (declared on its UI_DATA row).
+/// /mob/living/silicon/pai/infomorph's window data.
 /mob/living/silicon/pai/infomorph/proc/ui_data_mob_living_silicon_pai_infomorph(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

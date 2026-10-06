@@ -37,7 +37,7 @@ CAPABILITIES(/datum/lootpanel)
 	rel_clear(src, nameof(source_turf))
 	reset_contents()
 
-/// The computed part of /datum/lootpanel's window data (declared on its UI_DATA row).
+/// /datum/lootpanel's window data.
 /datum/lootpanel/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

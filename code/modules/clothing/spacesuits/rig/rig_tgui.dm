@@ -56,7 +56,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/rig's window data (declared on its UI_DATA row).
+/// /obj/item/rig's window data.
 /obj/item/rig/proc/ui_data_obj_item_rig(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

@@ -182,7 +182,7 @@ CAPABILITIES(/datum/material_service)
 /datum/material_service/ui_title(mob/user)
 	return "[owner().name] — diagnostics"
 
-/// The computed part of /datum/material_service's window data (declared on its UI_DATA row).
+/// /datum/material_service's window data.
 /datum/material_service/ui_data(datum/act/eval/A)
 	var/list/parts = list()
 	for(var/role in owner().material_roles())

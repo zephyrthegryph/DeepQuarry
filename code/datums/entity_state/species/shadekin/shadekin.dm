@@ -221,7 +221,7 @@
 		return TRUE
 	return FALSE
 
-/// The computed part of /datum/shadekin's window data (declared on its UI_DATA row).
+/// /datum/shadekin's window data.
 /datum/shadekin/ui_data(datum/act/eval/A)
 	var/data = list(
 		"stun_time" = calculate_stun(),

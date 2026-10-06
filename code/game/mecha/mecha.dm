@@ -1850,7 +1850,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/mecha's window data (declared on its UI_DATA row).
+/// /obj/mecha's window data.
 /obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 	data["title"] = "[name]"
