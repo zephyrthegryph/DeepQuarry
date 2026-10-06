@@ -33,7 +33,8 @@
 CAPABILITIES(/obj/machinery/chemical_dispenser)
 	owns_one(nameof(container), /obj/item/reagent_containers)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), nameof(stat)))
-	interface("ChemDispenser")
+	interface("ChemDispenser", observe = TRUE)
+	extend("ui_observe", needs(req(PROC_REF(not_broken), silent = TRUE)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
 	op("dispense", ui_act("dispense", arg("reagent", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("remove", ui_act("remove", arg("amount", num()), arg("reagent")), then(PROC_REF(ui_act_remove)))
@@ -108,14 +109,6 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
 	. = rel_take(src, nameof(cartridges), key = label)
 	SStgui.update_uis(src)
-
-/obj/machinery/chemical_dispenser/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("View", PROC_REF(chemical_dispenser_ghost_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	..()
 
 /// The old attackby: a cartridge goes into a free slot under its label.
 /obj/machinery/chemical_dispenser/proc/cartridge_added(datum/act/op/A)
@@ -342,12 +335,6 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	add_fingerprint(user)
 	LAZYREMOVE(saved_recipes, recipe)
 	. = TRUE
-
-/// Old attack_ghost: view the interface unless broken. Never fell through.
-/obj/machinery/chemical_dispenser/proc/chemical_dispenser_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!has_stat(BROKEN))
-		tgui_interact(user)
-	return TRUE
 
 // Label -> installed cartridge (in contents); they go with the machine.
 

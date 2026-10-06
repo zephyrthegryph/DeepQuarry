@@ -11,11 +11,10 @@
 	/// If true, the effect is held relevant everywhere: it runs even with nobody around to see it.
 	var/always_run = FALSE
 
-// ALLOW(init/INSTANCE_STATE): an always_run effect holds itself relevant from the start
-/obj/effect/map_effect/Initialize(mapload)
-	. = ..()
-	if(always_run)
-		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, src)
+/// An always_run effect is relevant everywhere: it runs even with nobody around to see it.
+TRACKED(/obj/effect/map_effect, always_run)
+CAPABILITIES(/obj/effect/map_effect)
+	contributes(STAT_RELEVANCE, nameof(always_run))
 
 /obj/effect/map_effect/singularity_pull()
 	return

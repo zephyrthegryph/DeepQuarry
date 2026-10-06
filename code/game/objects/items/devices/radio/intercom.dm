@@ -50,9 +50,9 @@ TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 CAPABILITIES(/obj/item/radio/intercom)
 	owns_one(nameof(circuit), starts = nameof(circuit))
 	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel
-	op("remote_microphone", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the microphone"),
+	op("remote_microphone", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the microphone"),
 		wait(0), then(PROC_REF(remote_microphone)))
-	op("remote_channel", remote(), gesture(GESTURE_ALT), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the AI channel"),
+	op("remote_channel", remote(), gesture(GESTURE_ALT), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the AI channel"),
 		wait(0), then(PROC_REF(remote_channel)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use", inputs(hand(), remote()), label("Use"), then(PROC_REF(interaction_hand)))

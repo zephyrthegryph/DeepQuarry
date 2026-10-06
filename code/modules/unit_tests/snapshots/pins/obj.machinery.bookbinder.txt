@@ -24,9 +24,11 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/paper menu: Bind
 human|/obj/item/paper menu: Climb
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper click: Click: Bind
 human|/obj/item/paper_bundle menu: Bind
 human|/obj/item/paper_bundle menu: Climb

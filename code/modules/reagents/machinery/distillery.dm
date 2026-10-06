@@ -58,8 +58,8 @@
 	var/efficiency = 1
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
-	op("distillery_toggle_power", menu(), when(req(/mob/living, of = ON_ACTOR)), needs(req_capable()), label("Toggle Distillery Heating"), then(PROC_REF(interaction_distillery_toggle_power)))
-	op("distillery_toggle_mixing", menu(), when(req(/mob/living, of = ON_ACTOR)), needs(req_capable()), label("Start Distillery Mixing"), then(PROC_REF(interaction_distillery_toggle_mixing)))
+	op("distillery_toggle_power", menu(), when(req_actor_kind(/mob/living)), needs(req_capable()), label("Toggle Distillery Heating"), then(PROC_REF(interaction_distillery_toggle_power)))
+	op("distillery_toggle_mixing", menu(), when(req_actor_kind(/mob/living)), needs(req_capable()), label("Start Distillery Mixing"), then(PROC_REF(interaction_distillery_toggle_mixing)))
 	op("distillery_install_beaker", item(/obj/item/reagent_containers/glass), label("Install beaker"), when(PROC_REF(has_free_beaker_slot)),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(install_choices)), "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "slot"),
 		then(PROC_REF(install_beaker_chosen)))

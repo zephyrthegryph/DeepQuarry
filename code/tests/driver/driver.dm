@@ -117,6 +117,7 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 /// Sends a click through the input inbox with origin ORIGIN_CLICK and resolves it as a player's click would. Returns the
 /// /datum/op_result of the op that ran (outcome null while it waits), or null when nothing resolved.
 /proc/test_click(mob/actor, atom/target, obj/item/held, gesture = GESTURE_CLICK)
+	RETURN_TYPE(/datum/op_result)
 	return inbox_click(actor, target, held, gesture, ORIGIN_CLICK)
 
 /// Drags `dragged` onto `over` as a player's drag would (origin ORIGIN_CLICK, gesture GESTURE_DRAG): the dragged atom, an item or a mob, is the held one.

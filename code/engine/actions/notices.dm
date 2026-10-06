@@ -147,7 +147,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		try
 			hook_run_parts(H, N, H.entry.children)
 		catch(var/exception/e)
-			stack_trace("notice [N.type] hook on [run_on.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "notice [N.type] hook on [run_on.type]")
 		GLOB.act_depth = depth
 		GLOB.act_chain.len--
 
@@ -160,6 +160,8 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		hooks_drain_changes()
 
 /proc/notice_drain_late()
+	var/depth = GLOB.act_depth
+	var/chain_len = length(GLOB.act_chain)
 	GLOB.notice_draining_late = TRUE
 	var/passes = 0
 	while(length(GLOB.notice_late_queue) && passes < DRAIN_MAX_PASSES)
@@ -169,7 +171,14 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		for(var/list/row as anything in batch)
 			var/datum/holder = row[1]
 			var/datum/notice/N = row[2]
-			if(!QDELETED(holder))
-				notice_deliver(holder, N, row[3])
-			N.release()
+			try
+				if(!QDELETED(holder))
+					notice_deliver(holder, N, row[3])
+			catch(var/exception/fault)
+				// One throwing delivery must not strand the rest of the batch or leave the draining flag set (the late queue would never drain again).
+				dq_report_caught(fault, "late notice [N?.type] on [holder?.type]")
+				act_unwind(depth, chain_len, "late notice drain", fault)
+			N?.release()
+	if(length(GLOB.notice_late_queue))
+		log_world("ACT: the late notice drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.notice_late_queue)] notice(s) still queued (a handler keeps publishing past the depth cap); they wait for the next drain point")
 	GLOB.notice_draining_late = FALSE

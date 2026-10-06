@@ -24,6 +24,7 @@ human|/obj/item/stack/cable_coil click: Click: Insert
 human|/obj/item/stack/material/steel menu: Insert
 human|/obj/item/stack/material/steel click: Click: Insert
 human|/obj/item/card/id menu: Insert
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Insert
 human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there is nothing to drain)
 human|/obj/item/reagent_containers/glass menu: Insert

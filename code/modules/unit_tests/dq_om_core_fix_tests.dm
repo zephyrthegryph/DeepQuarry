@@ -171,3 +171,69 @@
 	has_insert = op_known_anywhere(null, H, null, "item")
 	TEST_ASSERT(has_use, "a headset keeps the radio's Use")
 	TEST_ASSERT(has_insert, "and has its own Insert key")
+
+// ---------------------------------------------------------------- the time engine (code/engine/time/)
+
+/// The due-order heap: many timers on one owner fire in due order (ties in the order they were set), cancelled ones never fire, and the owner's
+/// list and soonest cache stay right throughout.
+/datum/unit_test/om/time_heap_fires_in_due_order
+
+/datum/unit_test/om/time_heap_fires_in_due_order/run_om(list/made)
+	var/datum/om_test_entity/E = entity(made)
+	var/list/ids = list()
+	var/list/expected = list()
+	for(var/i in 1 to 120)
+		var/delay = (1 + (i * 37) % 23) * 1 SECONDS // many ties, in no order
+		ids["[i]"] = after(E, delay, /datum/om_test_entity/proc/timer_hit, with = list("[i]"))
+		expected += list(list(delay, i))
+	for(var/i in 3 to 120 step 3)
+		TEST_ASSERT(om_cancel_timer(E, ids["[i]"]), "cancelled timer [i]")
+	var/list/kept = list()
+	for(var/list/pair in expected)
+		if(pair[2] % 3)
+			kept += list(pair)
+	// (delay, set order) is the firing order
+	for(var/a in 1 to length(kept) - 1)
+		for(var/b in a + 1 to length(kept))
+			var/list/pa = kept[a]
+			var/list/pb = kept[b]
+			if(pb[1] < pa[1] || (pb[1] == pa[1] && pb[2] < pa[2]))
+				kept.Swap(a, b)
+	var/datum/om/rec/rec = E.om_rec
+	TEST_ASSERT_EQUAL(rec.timer_soonest, om_timer_local(rec) + kept[1][1], "the soonest follows the heap root once the cancelled ones are gone")
+	scheduler_advance(30)
+	TEST_ASSERT_EQUAL(length(E.log), length(kept), "every uncancelled timer fired once, no cancelled one did")
+	for(var/n in 1 to length(kept))
+		TEST_ASSERT_EQUAL(E.log[n], "[kept[n][2]]", "timer [n] fired in due order")
+	TEST_ASSERT_NULL(rec.timers, "no timers left")
+	TEST_ASSERT_NULL(rec.timer_heap, "and no heap")
+	TEST_ASSERT_NULL(rec.timer_soonest, "and no soonest")
+
+/// A heap that outgrew its live timers through cancellations compacts, and a timer set from a firing timer lands in order.
+/datum/unit_test/om/time_heap_compacts_and_rearms
+
+/datum/unit_test/om/time_heap_compacts_and_rearms/run_om(list/made)
+	var/datum/om_test_entity/E = entity(made)
+	for(var/i in 1 to 400)
+		var/id = after(E, 50 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("x"))
+		om_cancel_timer(E, id)
+	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("one"))
+	var/datum/om/rec/rec = E.om_rec
+	TEST_ASSERT(length(rec.timer_heap) / OM_TIMER_HEAP_STRIDE <= 2 + OM_TIMER_HEAP_SLACK + 2, "cancelled entries do not pile up in the heap ([length(rec.timer_heap) / OM_TIMER_HEAP_STRIDE])")
+	scheduler_advance(3)
+	TEST_ASSERT_EQUAL(E.log?.len, 1, "the one live timer fired")
+	TEST_ASSERT(!("x" in E.log), "no cancelled timer fired")
+
+/// A world-clock timer without a key names its owner by handle: it fires on a live owner and is dropped, without a runtime, once the owner is deleted.
+/datum/unit_test/om/time_world_timer_follows_its_owner
+
+/datum/unit_test/om/time_world_timer_follows_its_owner/run_om(list/made)
+	var/datum/om_test_entity/alive = entity(made)
+	var/datum/om_test_entity/doomed = entity(made)
+	TEST_ASSERT(after(alive, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, clock = CLOCK_WORLD, with = list("alive")), "an unkeyed world timer on a live owner")
+	TEST_ASSERT(after(doomed, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, clock = CLOCK_WORLD, with = list("doomed")), "and one on the owner about to be deleted")
+	qdel(doomed)
+	TEST_ASSERT_EQUAL(after(doomed, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, clock = CLOCK_WORLD, with = list("late")), 0, "a world timer on a deleted owner is refused")
+	scheduler_advance(3)
+	TEST_ASSERT(("alive" in alive.log), "the live owner's timer fired")
+	TEST_ASSERT(!("doomed" in doomed.log) && !("late" in doomed.log), "a deleted owner is never fired on")

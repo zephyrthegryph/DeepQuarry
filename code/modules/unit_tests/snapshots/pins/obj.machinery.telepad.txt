@@ -25,6 +25,7 @@ human|/obj/item/stack/cable_coil menu: Replace parts
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Replace parts
 human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Replace parts
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Replace parts

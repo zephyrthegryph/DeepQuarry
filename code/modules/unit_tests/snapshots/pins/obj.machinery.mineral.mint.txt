@@ -13,6 +13,7 @@ human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Press coins
 human|/obj/item/stack/material/steel click: Click: Press coins
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/stack/material menu: Press coins
 human|/obj/item/stack/material click: Click: Press coins

@@ -31,7 +31,7 @@ macros it defines):
 | File | Uses | What replaces it |
 |---|---:|---|
 | `relation.dm` (`om_link`, `linked`) | ~760 | `rel_*` / `ref_one` / `link` (section 6) |
-| `timer.dm` (`om_after`, `om_callable`, timer slots) | ~570 | `after()` (`reactions/timer.dm` becomes self-contained) |
+| `timer.dm` (`om_after`, `om_callable`, timer slots) | ~570 | moved to `code/engine/time/` (`handles.dm`, `timers.dm`, `after.dm`); `after()` is native there |
 | `timed_action.dm` (`om_task_timed`, 401) | ~420 | the op `wait(t)` part; the timed task moves into `code/engine` |
 | `scheduler.dm` (`scheduler_advance` in tests, `om_scheduler`) | ~370 | the kernel (`kernel().sched` moves under `code/controllers/kernel`) |
 | `contribution.dm` (`om_hold`, `om_has`, `om_grant`, clocks) | ~280 | the stat store (`code/engine/stats`), `grant()`, `clock_now()` |

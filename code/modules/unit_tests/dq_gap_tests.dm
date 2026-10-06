@@ -438,3 +438,131 @@
 	TEST_ASSERT(P.name_text, "name_text as declared")
 	test_answer(H, "Rex")
 	TEST_ASSERT_EQUAL(asker.log_text(), "named:Rex", "the answer reaches the effect")
+
+/// req_actor_kind(): picks and refuses by the kind of the actor; not = TRUE inverts it.
+/datum/unit_test/dq_gap/req_actor_kind_gates_on_the_actor
+/datum/unit_test/dq_gap/req_actor_kind_gates_on_the_actor/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/simple_mob/animal/passive/mouse/rat = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
+	var/obj/gap_actor_kind/target = allocate(/obj/gap_actor_kind, run_loc_floor_bottom_left)
+	TEST_ASSERT(test_op_committed(test_menu(H, target, "humans_only")), "a human passes the human gate")
+	var/datum/op_result/R = test_menu(H, target, "not_humans")
+	TEST_ASSERT(!test_op_committed(R), "a human is refused by the inverted gate")
+	TEST_ASSERT_EQUAL(reason_text(R?.reason), "You can't do that right now.", "with the reason the declaration gave")
+	R = test_menu(rat, target, "humans_only")
+	TEST_ASSERT(!test_op_committed(R), "a mouse is refused the human gate")
+	TEST_ASSERT_EQUAL(reason_text(R?.reason), "That isn't something you can do.", "with the default reason")
+	TEST_ASSERT(test_op_committed(test_menu(rat, target, "not_humans")), "and passes the inverted one")
+	TEST_ASSERT_EQUAL(target.ran_text(), "humans_only,not_humans", "only the two committed ops ran")
+
+/// interface(observe = TRUE): a ghost's click opens the window read-only (the ui_observe op), a living actor never reaches it,
+/// and the window's own requirements (extend) apply to it.
+/datum/unit_test/dq_gap/interface_observe_is_the_ghosts_view
+/datum/unit_test/dq_gap/interface_observe_is_the_ghosts_view/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
+	var/obj/gap_observed_window/target = allocate(/obj/gap_observed_window, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(op_plan_for(target, "ui_observe", list()), "interface(observe = TRUE) declares the ui_observe op")
+	var/datum/op_result/R = test_click(ghost, target, null)
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_COMMITTED, "the ghost's click opens the view (refused: [reason_text(R?.reason)])")
+	R = test_menu(H, target, "ui_observe")
+	TEST_ASSERT(!test_op_committed(R), "a living actor cannot pick the ghost's view")
+	target.blocked = TRUE
+	R = test_click(ghost, target, null)
+	TEST_ASSERT_NOTEQUAL(R?.outcome, ACT_COMMITTED, "the window's requirement (extend on ui_observe) stops the view too")
+
+/// The chemical dispenser and synthesizer give a ghost the read-only view; a broken dispenser shows nothing.
+/datum/unit_test/dq_gap/reagent_machines_show_the_ghost_view
+/datum/unit_test/dq_gap/reagent_machines_show_the_ghost_view/run_gap()
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
+	var/obj/machinery/chemical_dispenser/disp = allocate(/obj/machinery/chemical_dispenser, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(op_plan_for(disp, "ui_observe", list()), "the dispenser declares the ghost's view")
+	TEST_ASSERT_EQUAL(test_click(ghost, disp, null)?.outcome, ACT_COMMITTED, "the ghost's click on a working dispenser opens the view")
+	disp.atom_break()
+	TEST_ASSERT_NOTEQUAL(test_click(ghost, disp, null)?.outcome, ACT_COMMITTED, "a broken dispenser shows the ghost nothing")
+	var/obj/machinery/chemical_synthesizer/synth = allocate(/obj/machinery/chemical_synthesizer, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(op_plan_for(synth, "ui_observe", list()), "the synthesizer declares the ghost's view")
+	for(var/obj/item/paper/leftover in run_loc_floor_bottom_left) // the machines print their instructions
+		qdel(leftover)
+
+/// The hydroponics tray's ghost harvest: an observer() op, offered to a ghost only for a ripe tray whose plant is a creature.
+/datum/unit_test/dq_gap/hydroponics_tray_has_the_ghost_harvest
+/datum/unit_test/dq_gap/hydroponics_tray_has_the_ghost_harvest/run_gap()
+	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, run_loc_floor_bottom_left)
+	TEST_ASSERT_NOTNULL(op_plan_for(tray, "ghost_harvest", list()), "the tray declares the ghost harvest as an op")
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
+	var/datum/op_result/R = test_menu(ghost, tray, "ghost_harvest")
+	TEST_ASSERT(!test_op_committed(R), "an empty tray offers a ghost nothing to harvest")
+
+/// owns_one(on_destroy = ON_DESTROY_HAND_OVER, to =, to_var =): the part goes to the successor with its holder; with no successor it is deleted.
+/// only_if: a conditional policy (spill while the flag is set, else deleted).
+/datum/unit_test/dq_gap/owns_hands_over_to_a_successor
+/datum/unit_test/dq_gap/owns_hands_over_to_a_successor/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/gap_handover_successor/heir = allocate(/obj/gap_handover_successor, T)
+	var/obj/gap_handover_holder/with_heir = new(T)
+	var/obj/item/pen/p1 = new(with_heir)
+	var/obj/item/pen/k1 = new(with_heir)
+	rel_set(with_heir, nameof(with_heir.part), p1)
+	rel_set(with_heir, nameof(with_heir.kept), k1)
+	with_heir.heir = heir
+	with_heir.going_out = TRUE
+	qdel(with_heir)
+	TEST_ASSERT(!QDELETED(p1), "the handed-over part survives its holder")
+	TEST_ASSERT_EQUAL(p1.loc, heir, "it moved into the successor")
+	TEST_ASSERT(p1 in heir.salvage, "and the successor holds it under the declared var")
+	TEST_ASSERT(!QDELETED(k1), "with the flag set the other part is spilled, not deleted")
+	TEST_ASSERT_EQUAL(k1.loc, T, "onto the holder's turf")
+	qdel(p1)
+	qdel(k1)
+	var/obj/gap_handover_holder/alone = new(T)
+	var/obj/item/pen/p2 = new(alone)
+	var/obj/item/pen/k2 = new(alone)
+	rel_set(alone, nameof(alone.part), p2)
+	rel_set(alone, nameof(alone.kept), k2)
+	qdel(alone)
+	TEST_ASSERT(QDELETED(p2), "with no successor the part is deleted with its holder")
+	TEST_ASSERT(QDELETED(k2), "with the flag clear the other part is deleted")
+
+/// A mech destroyed in play hands its cell to the wreckage as salvage; a plain qdel leaves no wreckage and deletes it.
+/datum/unit_test/dq_gap/mecha_wreck_takes_the_cell
+/datum/unit_test/dq_gap/mecha_wreck_takes_the_cell/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/mecha/working/ripley/wrecked = new(T)
+	var/obj/item/cell/cell = wrecked.cell
+	TEST_ASSERT_NOTNULL(cell, "a ripley starts with a cell")
+	wrecked.wrecked = TRUE
+	qdel(wrecked)
+	var/obj/effect/decal/mecha_wreckage/WR = locate(/obj/effect/decal/mecha_wreckage) in T
+	TEST_ASSERT_NOTNULL(WR, "a mech destroyed in play leaves wreckage")
+	var/list/salvage = WR?.crowbar_salvage?.Copy()
+	TEST_ASSERT(!QDELETED(cell), "its cell survives")
+	TEST_ASSERT(cell in WR.crowbar_salvage, "as the wreckage's salvage")
+	TEST_ASSERT_EQUAL(cell.loc, WR, "inside the wreckage")
+	for(var/datum/part as anything in salvage)
+		qdel(part)
+	qdel(WR)
+	var/obj/mecha/working/ripley/plain = new(T)
+	var/obj/item/cell/cell2 = plain.cell
+	qdel(plain)
+	TEST_ASSERT(QDELETED(cell2), "a plain qdel deletes the cell")
+	TEST_ASSERT_NULL(locate(/obj/effect/decal/mecha_wreckage) in T, "and leaves no wreckage")
+
+/// A borg destroyed with a mind and a place gives its MMI to the turf (the declared conditional policy: mmi_ejects); a mindless borg's goes with it.
+/datum/unit_test/dq_gap/robot_mmi_leaves_with_a_minded_borg
+/datum/unit_test/dq_gap/robot_mmi_leaves_with_a_minded_borg/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/silicon/robot/minded = new(T)
+	var/obj/item/mmi/kept = new(minded)
+	rel_set(minded, nameof(minded.mmi), kept)
+	var/datum/mind/who = own(new /datum/mind("robot_mmi_test"))
+	minded.mind = who
+	qdel(minded)
+	TEST_ASSERT(!QDELETED(kept), "the MMI of a destroyed borg that had a mind survives")
+	TEST_ASSERT_EQUAL(kept.loc, T, "on the borg's turf")
+	qdel(kept)
+	var/mob/living/silicon/robot/mindless = new(T)
+	var/obj/item/mmi/lost = new(mindless)
+	rel_set(mindless, nameof(mindless.mmi), lost)
+	qdel(mindless)
+	TEST_ASSERT(QDELETED(lost), "a mindless borg's MMI goes with it")

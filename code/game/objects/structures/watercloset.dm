@@ -55,12 +55,12 @@ CAPABILITIES(/obj/structure/toilet)
 		then(PROC_REF(interaction_hand)))
 	// the old attack_ai: the hand's Use for a silicon, except a cyborg that is remote viewing or has no player
 	op("silicon_use", remote(), label("Use"), needs(req(PROC_REF(silicon_at_hand), silent = TRUE)), then(PROC_REF(interaction_hand)))
-	op("item", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
-	op("item_cyborg", item(/obj/item), label("Use"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(interaction_item_cyborg)))
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
 	// the old click_alt: pull the flush lever (a living, conscious actor; the lid open)
-	op("flush_yank", hand(), ungated(), gesture(GESTURE_ALT), stance(I_HURT), label("Yank the flush lever"), when(req(/mob/living, of = ON_ACTOR)),
+	op("flush_yank", hand(), ungated(), gesture(GESTURE_ALT), stance(I_HURT), label("Yank the flush lever"), when(req_actor_kind(/mob/living)),
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt_harm)))
-	op("flush", hand(), ungated(), gesture(GESTURE_ALT), stance(I_HELP, I_DISARM, I_GRAB), label("Flush"), when(req(/mob/living, of = ON_ACTOR)),
+	op("flush", hand(), ungated(), gesture(GESTURE_ALT), stance(I_HELP, I_DISARM, I_GRAB), label("Flush"), when(req_actor_kind(/mob/living)),
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt)))
 
 /obj/structure/toilet/Initialize(mapload)
@@ -1075,7 +1075,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 
 CAPABILITIES(/obj/structure/sink)
 	// a wash claims the sink: nobody else washes in it meanwhile; a silicon has no hands to wash
-	op("wash", hand(), label("Wash hands"), when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))),
+	op("wash", hand(), label("Wash hands"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
 		needs(req(PROC_REF(hand_usable), because = PROC_REF(hand_refusal)), req(PROC_REF(sink_free), because = MSG(sink/busy))), then(PROC_REF(interaction_wash)))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(sink_free), because = MSG(sink/busy))), then(PROC_REF(interaction_item)))
 	op("empty", item(/obj/item/reagent_containers), gesture(GESTURE_DRAG), label("Empty into sink"), then(PROC_REF(interaction_drag)))

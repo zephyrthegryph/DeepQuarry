@@ -41,7 +41,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 
 CAPABILITIES(/obj/structure/fitness/weightlifter)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("lift", hand(), label("Lift"), when(req(/mob/living/carbon/human, of = ON_ACTOR)), needs(req(PROC_REF(can_lift), because = PROC_REF(lift_refusal))), then(PROC_REF(interaction_hand)))
+	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift), because = PROC_REF(lift_refusal))), then(PROC_REF(interaction_hand)))
 
 /obj/structure/fitness/weightlifter/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

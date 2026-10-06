@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 		return "ckey:[C.ckey]"
 	if(isdatum(value))
 		var/h = om_handle(value)
-		return h ? list("om_h" = h) : null
+		return h ? list("rerun_h" = h) : null
 	return value
 
 /proc/dx_exec_stat(op, index)

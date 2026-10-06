@@ -62,6 +62,7 @@ human|/obj/item/card/id menu: Clonepod interaction hand
 human|/obj/item/card/id menu: Clonepod interaction item
 human|/obj/item/card/id menu: Eject Beakers
 human|/obj/item/card/id menu: Eject Cloner
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Clonepod interaction item
 human|/obj/item menu: Clonepod interaction hand
 human|/obj/item menu: Clonepod interaction item

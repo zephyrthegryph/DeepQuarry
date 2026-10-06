@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: Click: Insert chip
 human|/obj/item/stack/material/steel menu: Insert chip
 human|/obj/item/stack/material/steel click: Click: Insert chip
 human|/obj/item/card/id menu: Insert chip
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Insert chip
 human|/obj/item menu: Insert chip
 human|/obj/item click: Click: Insert chip

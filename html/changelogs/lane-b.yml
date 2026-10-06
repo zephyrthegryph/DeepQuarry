@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Timers live in code/engine/time; a world timer names its owner by handle and fires from a heap instead of rescanning the owner's list"
+  - refactor: "Actor-type gates use req_actor_kind(); ghosts view the chemical dispenser, synthesizer and harvest hydroponics trays through ops; mecha parts, robot MMIs and paired gates clean up by declared ownership policy"

@@ -41,13 +41,31 @@
 	return "every:[A.serial]:[copytext(md5(E.sig), 1, 9)]"
 
 /// The deciseconds to the next run of an every() on `holder`: its interval, or what the holder proc the interval names answers now (never below one
-/// decisecond).
-/proc/every_interval(datum/holder, datum/entry/E)
+/// decisecond). The proc gets a real timer context (A is the activation, null for a type-level every()), like a handler. A runtime in it is logged and
+/// the every() keeps running on a one second fallback: one fault must not end the every() for the instance's life.
+/proc/every_interval(datum/holder, datum/entry/E, datum/activation/A = null)
 	var/interval = E.args["interval"]
-	if(istext(interval))
-		var/answer = call(holder, interval)(null)
-		return isnum(answer) ? max(1, answer) : 1
-	return interval
+	if(!istext(interval))
+		return interval
+	var/datum/act/timer/T = every_context(holder, A, A ? A.source : holder, 0)
+	var/answer = 1 SECOND
+	try
+		answer = call(holder, interval)(T)
+	catch(var/exception/fault)
+		dq_report_caught(fault, "every() interval [interval] on [holder.type]; re-armed on the fallback")
+		answer = 1 SECOND
+	T.release()
+	return isnum(answer) ? max(1, answer) : 1
+
+/// Does the `when =` condition `cond` of an every() on `holder` hold? A runtime in it is logged and counts as "does not hold" this run (the next run is
+/// still armed by the caller).
+/proc/every_gate_holds(datum/holder, cond, what)
+	var/held = FALSE
+	try
+		held = !!change_condition(holder, cond)
+	catch(var/exception/fault)
+		dq_report_caught(fault, "every() gate of [what] on [holder.type]; skipped this run")
+	return held
 
 /// The pooled timer context of one every() run: holder, the activation (null for a type-level every()), its source and the interval.
 /proc/every_context(datum/holder, datum/activation/A, source, dt)
@@ -64,7 +82,7 @@
 	var/datum/holder = A.holder
 	if(!holder || QDELETED(holder) || A.dead)
 		return
-	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E))
+	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E))
 
 /// One run of an every(): the handler (unless the activation is shadowed or its when fails), then the next arming unless the handler ended the activation.
 /proc/activation_every_fire(datum/activation/A, datum/entry/E)
@@ -76,14 +94,14 @@
 	var/gated = A.runs
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
-		gated = !!change_condition(holder, cond)
+		gated = every_gate_holds(holder, cond, A.def.key)
 	if(gated)
 		var/datum/act/timer/T = every_context(holder, A, A.source, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 		var/depth = GLOB.act_depth
 		try
 			hook_run_parts(null, T, E.children)
 		catch(var/exception/fault)
-			stack_trace("every() of [A.def.key] on [holder.type]: [fault] ([fault.file]:[fault.line])")
+			dq_report_caught(fault, "every() of [A.def.key] on [holder.type]")
 		GLOB.act_depth = depth
 		T.release()
 	if(!A.dead)
@@ -195,10 +213,14 @@
 	if(!holder || QDELETED(holder) || !C)
 		return
 	var/datum/entry/E = C.item
-	var/gated = op_whens_hold(holder, C.whens)
+	var/gated = FALSE
+	try
+		gated = op_whens_hold(holder, C.whens)
+	catch(var/exception/when_fault)
+		dq_report_caught(when_fault, "every() when() block on [holder.type]; skipped this run")
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
-		gated = !!change_condition(holder, cond)
+		gated = every_gate_holds(holder, cond, "type every()")
 	if(!gated && type_every_parkable(holder, C))
 		type_every_park(holder, index)
 		return
@@ -208,7 +230,7 @@
 		try
 			hook_run_parts(null, T, E.children)
 		catch(var/exception/fault)
-			stack_trace("type every() on [holder.type]: [fault] ([fault.file]:[fault.line])")
+			dq_report_caught(fault, "type every() on [holder.type]")
 		GLOB.act_depth = depth
 		T.release()
 	if(!QDELETED(holder))

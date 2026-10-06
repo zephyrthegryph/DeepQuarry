@@ -38,6 +38,7 @@ human|/obj/item/stack/material/steel menu: Launch (refused: there is no firework
 human|/obj/item/stack/material/steel click: Click: Launch
 human|/obj/item/card/id menu: Eject Firework Star
 human|/obj/item/card/id menu: Launch (refused: there is no firework star loaded in the firework launcher)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Launch
 human|/obj/item/storage/part_replacer menu: Eject Firework Star
 human|/obj/item/storage/part_replacer menu: Empty contents

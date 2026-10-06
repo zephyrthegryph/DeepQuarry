@@ -100,7 +100,7 @@ field pokes:
 | Declared periodic | `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT` | `datums/sys/periodic.dm`, `__defines/sys_periodic.dm:43` | 158 + 58 |
 | Machine step | `machine_step()`, `MACHINE_WAKE/SLEEP`, `step_active` | `game/machinery/machine_pipeline.dm:300-315` | 227 / 130 |
 | World lanes | `/datum/om/behaviour/world/X` → `service_step(resumed)` | `datums/om/world_lanes.dm:155-190` | 34 |
-| Timers | `om_after*`, `om_after_slot`, `om_deadline` (DM deadline wheel) | `datums/om/timer.dm`, `deadline.dm` | about 1,560 + 59 + 31 |
+| Timers | `om_after*`, `om_after_slot`, `om_deadline` (DM deadline wheel) | `engine/time/timers.dm` (was `datums/om/timer.dm`), `deadline.dm` | about 1,560 + 59 + 31 |
 | Rust wheel | `om_world_at/on_key/on_change/when/on_rate` → `vg_world_step` | `datums/om/world_watch.dm:196-230` | 35 |
 | Rust pacers | `vg_world_tick` (SSvg), `vg_heat_tick` (SSair), event drains in 2 places | `vg.dm:75-77`, `SSair.dm:215`, `heat.dm:365-369` | 4 drivers |
 | DX refresh | `changed()` → `refresh_queue` → `refresh_one()` (draw, verbs, UIs, `should_run`) plus a sweep | `datums/capabilities/refresh.dm:24-205` | presentation lane |

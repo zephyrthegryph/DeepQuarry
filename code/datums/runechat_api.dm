@@ -8,4 +8,9 @@
 	wake_work_item(PROC_REF(deliver_messages))
 
 /datum/system/runechat/proc/dequeue(list/callable)
-	message_queue -= list(callable)
+	var/at = message_queue.Find(callable)
+	if(!at)
+		return
+	message_queue.Cut(at, at + 1)
+	if(at < deliver_cursor)
+		deliver_cursor-- // a message before the cursor left: the next one slid down

@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/appliance)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), nameof(stat)))
 	owns_many(nameof(cooking_objs))
 	// the AI's ctrl-click switches it on or off over its link
-	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle power"),
+	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle power"),
 		wait(0), then(PROC_REF(remote_power)))
 	interface(null, window_var = nameof(tgui_id))
 	without("ui_open")

@@ -43,6 +43,7 @@ human|/obj/item/stack/material/steel menu: Smash
 human|/obj/item/stack/material/steel menu: Use (refused: it must be screwed down first)
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Smash
 human|/obj/item/card/id menu: Use (refused: it must be screwed down first)
 human|/obj/item/card/id click: Click: Use

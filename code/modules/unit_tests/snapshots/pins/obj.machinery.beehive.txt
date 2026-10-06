@@ -38,6 +38,7 @@ human|/obj/item/stack/material/steel menu: Harvest honeycombs
 human|/obj/item/stack/material/steel click: Click: Harvest honeycombs
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Harvest honeycombs
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Harvest honeycombs
 human|/obj/item/bee_smoker menu: Climb
 human|/obj/item/bee_smoker menu: Harvest honeycombs

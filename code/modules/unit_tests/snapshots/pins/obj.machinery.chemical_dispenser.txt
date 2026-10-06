@@ -6,7 +6,7 @@ robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none menu: View
-ghost|none click: nothing
+ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Remove cartridge
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver click: Click: Ui open
@@ -41,5 +41,5 @@ human|/obj/item/reagent_containers/chem_canister menu: Ui open
 human|/obj/item/reagent_containers/chem_canister click: Click: Refill cartridge
 human|/obj/item/reagent_containers menu: Ui open
 human|/obj/item/reagent_containers click: Click: Ui open
-keys: add_cartridge, amount, cancel_recording, clear_recipes, dispense, dispense_recipe, drag_buckle, ejectBeaker, gen_observer_chemical_dispenser_ghost_view, gen_robot_interaction_swallow, import_config, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, record_recipe, refill_cartridge, remove, remove_cartridge, remove_recipe, save_recording, set_container, ui_open
+keys: add_cartridge, amount, cancel_recording, clear_recipes, dispense, dispense_recipe, drag_buckle, ejectBeaker, gen_robot_interaction_swallow, import_config, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, record_recipe, refill_cartridge, remove, remove_cartridge, remove_recipe, save_recording, set_container, ui_observe, ui_open
 

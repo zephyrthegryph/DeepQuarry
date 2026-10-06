@@ -124,5 +124,15 @@ human|/obj/item/storage menu: Show Area Colors (refused: You can't do that.)
 human|/obj/item/storage menu: Show Room Colors (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item/areaeditor menu: Add material
+human|/obj/item/areaeditor menu: Collect (refused: needs a storage)
+human|/obj/item/areaeditor menu: Customise (refused: needs an item)
+human|/obj/item/areaeditor menu: Move To Top
+human|/obj/item/areaeditor menu: Pick up
+human|/obj/item/areaeditor menu: Remove Area Colors (refused: You can't do that.)
+human|/obj/item/areaeditor menu: Show Area Colors (refused: You can't do that.)
+human|/obj/item/areaeditor menu: Show Room Colors (refused: You can't do that.)
+human|/obj/item/areaeditor menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/areaeditor click: Click: Add material
 keys: add_charges, area_colors, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, read, remove_colors, room_colors
 

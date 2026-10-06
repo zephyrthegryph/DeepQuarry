@@ -213,6 +213,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 
 /// The drain: each marked (holder, hook) is evaluated once; an edge or a changed value runs the hook's parts.
 /proc/hooks_drain_changes()
+	var/depth = GLOB.act_depth
+	var/chain_len = length(GLOB.act_chain)
 	var/passes = 0
 	while(length(GLOB.hook_change_pending) && passes < DRAIN_MAX_PASSES)
 		passes++
@@ -224,9 +226,16 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 			for(var/datum/hook/H as anything in batch[E])
 				if(H.activation && (H.activation.dead || !H.activation.runs))
 					continue
-				if(!hook_conditions_hold(H, E))
-					continue
-				hook_change_eval(E, H)
+				try
+					if(!hook_conditions_hold(H, E))
+						continue
+					hook_change_eval(E, H)
+				catch(var/exception/fault)
+					// A throwing condition or value read must not abort the drain and strand the rest of the batch.
+					dq_report_caught(fault, "on_change drain of [E.type]")
+					act_unwind(depth, chain_len, "on_change drain", fault)
+	if(length(GLOB.hook_change_pending))
+		log_world("ACT: the on_change drain stopped after [DRAIN_MAX_PASSES] passes with [length(GLOB.hook_change_pending)] holder(s) still marked (a hook keeps writing what another hook watches); they wait for the next drain point")
 
 /proc/hook_change_eval(datum/E, datum/hook/H)
 	var/datum/rx_state/rx = rx_of(E)
@@ -255,7 +264,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	try
 		hook_run_parts(H, A, H.entry.children)
 	catch(var/exception/e)
-		stack_trace("on_change hook on [E.type]: [e] ([e.file]:[e.line])")
+		dq_report_caught(e, "on_change hook on [E.type]")
 	GLOB.act_depth = depth
 	GLOB.act_chain.len--
 	A.release()

@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	extend(TAG_UI, then(PROC_REF(control_touched), early = TRUE))
 	op("switchOn", ui_act("switchOn"), then(PROC_REF(switch_on)))
 	op("switchOff", ui_act("switchOff"), then(PROC_REF(switch_off)))
-	op("ejectOccupant", ui_act("ejectOccupant"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_not(req(list(/mob/living/simple_mob/slime, /mob/living/silicon/pai), of = ON_ACTOR), because = MSG(cryo_cell/cannot_release))),
+	op("ejectOccupant", ui_act("ejectOccupant"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_actor_kind(list(/mob/living/simple_mob/slime, /mob/living/silicon/pai), not = TRUE, because = MSG(cryo_cell/cannot_release))),
 		then(PROC_REF(eject_from_window)), logs(LOG_GAME))
 
 // ALLOW(init/INSTANCE_STATE): its pipe connection follows the direction it was placed in

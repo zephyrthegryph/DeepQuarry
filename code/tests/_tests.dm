@@ -22,6 +22,7 @@
 #include "engine\gap_fixtures.dm"
 #include "engine\proximity_fixtures.dm"
 #include "engine\eg2_wait_fixtures.dm"
+#include "engine\prompt_fixtures.dm"
 #include "engine\eg2_fixtures.dm"
 #include "domains\heat_fixtures.dm"
 #endif

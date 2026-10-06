@@ -17,7 +17,7 @@ MSG_DEF_SELF(permit/reset, "You reset the naming locks on %T%!")
 
 CAPABILITIES(/obj/item/clothing/accessory/permit)
 	op("register", in_hand(), label("Register"),
-		needs(req(/mob/living, of = ON_ACTOR), req_is(nameof(owner), FALSE, because = MSG(permit/already_registered))), then(PROC_REF(registered)))
+		needs(req_actor_kind(/mob/living), req_is(nameof(owner), FALSE, because = MSG(permit/already_registered))), then(PROC_REF(registered)))
 	emag(then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE)
 
 /obj/item/clothing/accessory/permit/proc/registered(datum/act/op/A)

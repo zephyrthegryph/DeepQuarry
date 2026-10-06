@@ -68,6 +68,7 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Climb out (refused: you aren't inside it)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Start
 human|/obj/item/card/id menu: Start Washing
 human|/obj/item/card/id menu: Use

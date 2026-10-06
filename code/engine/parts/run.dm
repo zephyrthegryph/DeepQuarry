@@ -358,6 +358,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
 	owns_one(nameof(progbar), /datum/progressbar)
 	owns_one(nameof(cog), /datum/cogbar)
 
@@ -510,7 +511,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			if(!R)
 				suspend_act()
 				return cancel(/datum/msg/op/failed)
-			request = R // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			rel_set(src, nameof(request), R)
 			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
 			R.step_name = Q.args["step"]
 			suspend_act()
@@ -563,7 +564,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!active)
 		return
 	var/datum/request/R = RA.request
-	request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	rel_clear(src, nameof(request))
 	if(R.outcome != REQ_ANSWERED)
 		return cancel(R.outcome == REQ_TIMED_OUT ? /datum/msg/op/timed_out : (R.outcome == REQ_CANCELLED ? /datum/msg/op/answer_no : /datum/msg/op/failed))
 	if(!resume_act())
@@ -829,7 +830,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	cancel_after(src, "op_wait")
 	if(request)
 		var/datum/request/R = request
-		request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		rel_clear(src, nameof(request))
 		R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		request_end(R, REQ_CANCELLED, null)
 	// The op is over: the record lets go of the four entities (their reverse links go with the relations) and of the act; its caller deletes it.
@@ -869,7 +870,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_end()
 		if(request)
 			var/datum/request/R = request
-			request = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 			R.waiting = null // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 			request_end(R, REQ_CANCELLED, null)
 		if(A && !QDELETED(A))

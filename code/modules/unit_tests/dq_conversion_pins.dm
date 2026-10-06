@@ -108,7 +108,8 @@
 			if(binding.bind_kind != BIND_ITEM && binding.bind_kind != BIND_STACK)
 				continue
 			var/bound = binding.args["type"]
-			if(ispath(bound, /obj/item) && !ispath(bound, /obj/item/grab))
+			// a holder is made around a mob (its constructor param), so a bare one is not a probe
+			if(ispath(bound, /obj/item) && !ispath(bound, /obj/item/grab) && !ispath(bound, /obj/item/holder))
 				held_types |= bound
 	var/list/combinations = list(list("human", null), list("robot", null), list("ai", null), list("ghost", null))
 	for(var/path in held_types)

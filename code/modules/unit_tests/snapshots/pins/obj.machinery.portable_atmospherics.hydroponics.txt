@@ -12,8 +12,8 @@ robot|none menu: Toggle Tray Lid
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none click: nothing
-ghost|none menu: Harvest
-ghost|none click: nothing
+ghost|none menu: Harvest (refused: )
+ghost|none click: Click: Harvest
 human|/obj/item/tool/screwdriver menu: Remove Label
 human|/obj/item/tool/screwdriver menu: Set Light
 human|/obj/item/tool/screwdriver menu: Toggle lid
@@ -86,5 +86,5 @@ human|/obj/item menu: Toggle lid
 human|/obj/item menu: Toggle Tray Lid
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: bolt, close_lid, drag_buckle, freezer, gen_observer_hydroponics_ghost_harvest, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, remove_label, sample, set_light, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
+keys: bolt, close_lid, drag_buckle, freezer, gen_robot_interaction_swallow, ghost_harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, remove_label, sample, set_light, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
 
