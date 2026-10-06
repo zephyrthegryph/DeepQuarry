@@ -15,6 +15,7 @@
 	for(var/client/C in clients)
 		live_clients++
 	if(!live_clients)
+		// ALLOW(lifecycle): a fake attacker with no clients left to fool is cleaned up
 		qdel(src)
 
 /obj/effect/fake_attacker/set_dir(newdir)
@@ -151,6 +152,7 @@
 
 DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 
+// ALLOW(init/CTOR_ARGS): targeting_mob and clone_appearance_from are constructor arguments from whoever builds it
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
 	. = ..()
 	set_target(targeting_mob)
@@ -212,6 +214,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 		step_away(src,M)
 
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
+		// ALLOW(lifecycle): the fleeing fake attacker vanishes
 		qdel(src)
 
 CAPABILITIES(/obj/effect/fake_attacker)

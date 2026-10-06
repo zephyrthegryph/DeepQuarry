@@ -263,6 +263,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
 	devourable = 0
 	digestable = 0
 
+// ALLOW(init/INSTANCE_STATE): rolls which pet rat it is
 /mob/living/simple_mob/vore/aggressive/rat/pet/Initialize(mapload)
 	.=..()
 

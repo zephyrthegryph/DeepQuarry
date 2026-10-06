@@ -23,6 +23,7 @@
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null
 	VAR_PROTECTED/poster_type = /obj/structure/sign/poster
 
+// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
 /obj/item/poster/Initialize(mapload, datum/decl/poster/P = null)
 	if(ispath(poster_decl))
 		poster_decl = get_poster_decl(poster_decl, TRUE, null)
@@ -98,6 +99,7 @@
 	VAR_PROTECTED/roll_type = /obj/item/poster
 	VAR_PRIVATE/ruined = FALSE
 
+// ALLOW(init/CTOR_ARGS): placement_dir and P are constructor arguments from whoever builds it
 /obj/structure/sign/poster/Initialize(mapload, placement_dir = null, obj/item/poster/P = null)
 	. = ..()
 

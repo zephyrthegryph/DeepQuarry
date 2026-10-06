@@ -142,6 +142,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	var/obj/item/technomancer_core/core = null
 	var/ability_icon_state = null
 
+// ALLOW(init/CTOR_ARGS): path, new_name and new_icon_state are constructor arguments from whoever builds it
 /obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
 	. = ..()
 	rel_set(src, nameof(core), loc)

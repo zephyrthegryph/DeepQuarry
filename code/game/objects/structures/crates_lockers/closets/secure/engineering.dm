@@ -42,6 +42,7 @@
 		/obj/item/rcd/advanced/loaded,
 		/obj/item/pipe_dispenser)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/engineering_chief/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/industrial
@@ -111,6 +112,7 @@
 		/obj/item/reagent_containers/spray/windowsealant,
 		/obj/item/areaeditor/blueprints/engineers)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/engineering_personal/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/industrial
@@ -147,6 +149,7 @@
 		/obj/item/pipe_dispenser,
 		/obj/item/storage/belt/utility/atmostech) // . They don't get a toolbox to fill it from, so why not give a spare one that's full already?
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/atmos_personal/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/industrial

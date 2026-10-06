@@ -5,6 +5,7 @@
 /obj/structure/disposalpipe/junction
 	icon_state = "pipe-j1"
 
+// ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
 /obj/structure/disposalpipe/junction/Initialize(mapload)
 	. = ..()
 	if(icon_state == "pipe-j1")

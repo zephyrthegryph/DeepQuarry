@@ -505,6 +505,7 @@ CAPABILITIES(/obj/item/pack)
 		H.Move(get_step(user,user.dir))
 
 	if(!length(cards))
+		// ALLOW(lifecycle): an empty hand of cards is gone
 		qdel(src)
 
 DECLARE_INTERACTIONS(/obj/item/hand, \
@@ -570,6 +571,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	src.update_icon()
 
 	if(!length(cards))
+		// ALLOW(lifecycle): an empty hand of cards is gone
 		qdel(src)
 	return
 
@@ -584,6 +586,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/hand, TYPE_PROC_REF(/atom, appearance_overlays
 	var/cardNumber = length(cards)
 
 	if(!cardNumber)
+		// ALLOW(lifecycle): an empty hand of cards is gone
 		qdel(src)
 		return .
 	else if(cardNumber > 1)

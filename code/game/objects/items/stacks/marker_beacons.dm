@@ -130,6 +130,7 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), then(PROC_REF(picked_up_into_stack)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
 
+// ALLOW(init/CTOR_ARGS): set_color is a constructor argument from whoever builds it
 /obj/structure/marker_beacon/Initialize(mapload, set_color)
 	. = ..()
 	if(set_color)

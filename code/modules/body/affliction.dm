@@ -195,6 +195,7 @@ OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
 /datum/affliction/proc/cure()
 	if(body)
 		body.remove_affliction(src)
+	// ALLOW(lifecycle): a cured affliction ends
 	qdel(src)
 
 // --- Severity -------------------------------------------------------------------

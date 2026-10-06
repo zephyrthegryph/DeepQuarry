@@ -15,6 +15,7 @@
 CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
 
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is created inside and draws that mob's abilities
 /atom/movable/screen/movable/ability_master/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))

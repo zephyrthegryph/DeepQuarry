@@ -22,6 +22,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	owns_one(nameof(button_x), /atom/movable/screen/component_button)
 	owns_one(nameof(popup_screen), /atom/movable/screen/map_view_tg)
 
+// ALLOW(init/INSTANCE_STATE): its map view is made per window and named after this instance
 /atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
 	. = ..()
 	make_backgrounds()
@@ -38,6 +39,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 /atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	if(component == button_x)
 		user?.client?.close_popup("camera-[REF(src)]")
+		// ALLOW(lifecycle): the close button ends this picture-in-picture view
 		qdel(src)
 	else if(component == button_expand)
 		set_view_size(width+1, height+1)

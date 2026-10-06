@@ -35,6 +35,7 @@ CAPABILITIES(/obj/soulgem)
 		saved["linked_belly"] = saved["linked_belly_handle"]
 		saved -= "linked_belly_handle"
 
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))

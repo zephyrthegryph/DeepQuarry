@@ -278,6 +278,8 @@ GLOBAL_VAR_INIT(schemas_built, FALSE)
 				return list(SCHEMA_REJECT, "[value] sets undeclared flags")
 			return list(value, null)
 		if(SCHEMA_TEXT)
+			if(boundary && isnum(value) && value == value)
+				value = "[value]" // a window sends a typed-in or selected number for a text field: its text (the legacy UI_ARG_TEXT parse)
 			if(!istext(value))
 				return list(SCHEMA_REJECT, "[value] is not text")
 			var/t = value

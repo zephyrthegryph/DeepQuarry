@@ -1174,6 +1174,7 @@
 	rolled_down = 0
 	rolled_sleeves = 0
 
+// ALLOW(init/INSTANCE_STATE): its name and sprite follow the uniform colour it was given
 /obj/item/clothing/under/color/ranger/Initialize(mapload)
 	. = ..()
 	if(icon_state == "ranger_uniform") //allows for custom items
@@ -1867,6 +1868,7 @@ DECLARE_EMAG(/obj/item/clothing/gloves/bluespace, PROC_REF(on_emag), null, null)
 /obj/item/clothing/gloves/bluespace/emagged
 	emagged = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls the size these gloves set
 /obj/item/clothing/gloves/bluespace/emagged/Initialize(mapload)
 	. = ..()
 	target_size = (rand(25,200)) /100 // set to our rule cap

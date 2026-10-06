@@ -107,6 +107,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/weak	//This is for the loadout
 	degrade_time = 2.5 MINUTES
 
+// ALLOW(init/INSTANCE_STATE): id rolled at random for each instance
 /obj/item/implant/tracking/Initialize(mapload, ...)
 	. = ..()
 	id = rand(1, 1000)
@@ -245,6 +246,7 @@ Implant Specifics:<BR>"}
 	msg = replace_characters(msg, replacechars)
 	if(findtext(msg,phrase))
 		activate()
+		// ALLOW(lifecycle): the explosive implant is spent once it goes off
 		qdel(src)
 
 /obj/item/implant/explosive/proc/limb_boom()
@@ -255,10 +257,12 @@ Implant Specifics:<BR>"}
 		istype(part,/obj/item/organ/external/head))
 		part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
 		explosion(get_turf(imp_in()), -1, -1, 1, 3)
+		// ALLOW(lifecycle): the explosive implant is spent once it goes off
 		qdel(src)
 	else
 		explosion(get_turf(imp_in()), -1, -1, 1, 3)
 		part.droplimb(0,DROPLIMB_BLUNT)
+		// ALLOW(lifecycle): the explosive implant is spent once it goes off
 		qdel(src)
 
 /obj/item/implant/explosive/activate()
@@ -962,6 +966,7 @@ CAPABILITIES(/obj/item/implanter/compliance)
 		else
 			part.droplimb(0,DROPLIMB_BLUNT)
 	explosion(get_turf(imp_in()), -1, -1, 1, 3)
+	// ALLOW(lifecycle): the explosive implant is spent once it goes off
 	qdel(src)
 
 /// Relation view: imp in (reads null once it is gone).

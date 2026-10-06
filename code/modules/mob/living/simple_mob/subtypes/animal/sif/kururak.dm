@@ -93,6 +93,7 @@
 	endurance = 250
 	instinct = 50
 
+// ALLOW(init/INSTANCE_STATE): instinct rolled at random for each instance
 /mob/living/simple_mob/animal/sif/kururak/Initialize(mapload)
 	. = ..()
 	if(!instinct)

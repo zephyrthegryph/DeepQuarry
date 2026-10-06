@@ -19,6 +19,7 @@
 CAPABILITIES(/obj/item/storage/vore_egg)
 	configure(storage(max_size = 0))
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 /obj/item/storage/vore_egg/Initialize(mapload)
 	. = ..()
 	randpixel_xy()

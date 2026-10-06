@@ -24,6 +24,7 @@ OM_DERIVE_FIELD(/obj/item/gun/launcher/spikethrower, spikes_short, list("spikes"
 	return spikes < max_spikes
 DECLARE_PERIODIC_WHILE(/obj/item/gun/launcher/spikethrower, PERIODIC_SLOW, "spikes_short")
 
+// ALLOW(init/INSTANCE_STATE): starts its spike regeneration timer from when it is made
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, regen_cooldown, spike_gen_time)

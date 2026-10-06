@@ -14,6 +14,7 @@
 CAPABILITIES(/obj/item/paperplane)
 	owns_one(nameof(internalPaper), /obj/item/paper)
 
+// ALLOW(init/CTOR_ARGS): newPaper is a constructor argument from whoever builds it
 /obj/item/paperplane/Initialize(mapload, obj/item/paper/newPaper)
 	. = ..()
 	pixel_y = rand(-8, 8)

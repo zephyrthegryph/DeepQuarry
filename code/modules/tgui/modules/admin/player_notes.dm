@@ -13,6 +13,7 @@
 /datum/tgui_module/player_notes/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): the notes window lives only while it is open
 		qdel(src)
 
 /datum/tgui_module/player_notes/proc/filter_ckeys(page, filter, mob/user)
@@ -120,6 +121,7 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 /datum/tgui_module/player_notes_info/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): the notes window lives only while it is open
 		qdel(src)
 
 CAPABILITIES(/datum/tgui_module/player_notes_info)

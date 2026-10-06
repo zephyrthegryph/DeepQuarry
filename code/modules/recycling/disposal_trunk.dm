@@ -3,6 +3,7 @@
 	icon_state = "pipe-t"
 	var/tmp/atom/linked	// The linked atom. It should have a disposal system connection to handle receiving disposal packets.
 
+// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/trunk/Initialize(mapload)
 	. = ..()
 	dpdir = dir

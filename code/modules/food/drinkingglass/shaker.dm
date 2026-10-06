@@ -12,6 +12,7 @@
 	var/lid_color = "black"
 
 
+// ALLOW(init/INSTANCE_STATE): rolls its lid colour
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/Initialize(mapload)
 	. = ..()
 	lid_color = pick("black", "red", "blue")

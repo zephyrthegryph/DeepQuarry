@@ -115,6 +115,7 @@ TRACKED(/obj/machinery/atmospherics, pipe_color)
 		var/datum/material/material = engineered_material()
 		. += span_notice("Pressure construction: [material?.display_name || engineered_material_id]; exposed liner integrity [round(material_liner_integrity)]%.")
 
+// ALLOW(init/CTOR_ARGS): newdir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/Initialize(mapload, newdir)
 	. = ..()
 	if(!isnull(newdir))
@@ -284,6 +285,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 			var/obj/item/pipe/trinary/flippable/flip = I
 			flip.icon_state = "[flip.icon_state][flip.mirrored ? "m" : ""]"
 		transfer_fingerprints_to(I)
+	// ALLOW(lifecycle): the deconstructed device leaves the pipe item built above in its place
 	qdel(src)
 
 // Return the neighboring nodes whose physical links must be refreshed during construction.

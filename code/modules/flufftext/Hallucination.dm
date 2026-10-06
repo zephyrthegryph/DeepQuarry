@@ -81,12 +81,15 @@ CAPABILITIES(/datum/hallucinations)
 /datum/hallucinations/proc/trigger()
 	PROTECTED_PROC(TRUE)
 	if(QDELETED(our_human))
+		// ALLOW(lifecycle): the hallucination ends with its human
 		qdel(src)
 		return
 	if(!our_human.client)
+		// ALLOW(lifecycle): the hallucination ends when its human has no client
 		qdel(src)
 		return
 	if(our_human.status_units(EFFECT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
+		// ALLOW(lifecycle): the hallucination ends when the human stops hallucinating
 		qdel(src)
 		return
 	handle_hallucinating()
@@ -128,13 +131,16 @@ CAPABILITIES(/datum/hallucinations)
 
 /datum/hallucinations/xenochimera/trigger()
 	if(QDELETED(our_human))
+		// ALLOW(lifecycle): the hallucination ends with its human
 		qdel(src)
 		return
 	if(!our_human.client)
+		// ALLOW(lifecycle): the hallucination ends when its human has no client
 		qdel(src)
 		return
 	var/datum/xenochimera/XC = our_human.xenochimera
 	if(!XC || XC.feral < XENOCHIFERAL_THRESHOLD)
+		// ALLOW(lifecycle): the hallucination ends when the feral state passes
 		qdel(src)
 		return
 	handle_hallucinating()

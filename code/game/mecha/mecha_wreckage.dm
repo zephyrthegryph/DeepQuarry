@@ -24,6 +24,7 @@ DAMAGE_REACTION(/obj/effect/decal/mecha_wreckage, DAMAGE_PROJECTILE, TYPE_PROC_R
 	name = "Gygax wreckage"
 	icon_state = "gygax-broken"
 
+// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
 /obj/effect/decal/mecha_wreckage/gygax/Initialize(mapload)
 	. = ..()
 	var/list/parts = list(/obj/item/mecha_parts/part/gygax_torso,
@@ -71,6 +72,7 @@ DAMAGE_REACTION(/obj/effect/decal/mecha_wreckage, DAMAGE_PROJECTILE, TYPE_PROC_R
 	name = "Ripley wreckage"
 	icon_state = "ripley-broken"
 
+// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
 /obj/effect/decal/mecha_wreckage/ripley/Initialize(mapload)
 	. = ..()
 	var/list/parts = list(/obj/item/mecha_parts/part/ripley_torso,
@@ -88,6 +90,7 @@ DAMAGE_REACTION(/obj/effect/decal/mecha_wreckage, DAMAGE_PROJECTILE, TYPE_PROC_R
 	name = "Firefighter wreckage"
 	icon_state = "firefighter-broken"
 
+// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
 /obj/effect/decal/mecha_wreckage/ripley/firefighter/Initialize(mapload)
 	. = ..()
 	var/list/parts = list(/obj/item/mecha_parts/part/ripley_torso,
@@ -110,6 +113,7 @@ DAMAGE_REACTION(/obj/effect/decal/mecha_wreckage, DAMAGE_PROJECTILE, TYPE_PROC_R
 	name = "Durand wreckage"
 	icon_state = "durand-broken"
 
+// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
 /obj/effect/decal/mecha_wreckage/durand/Initialize(mapload)
 	. = ..()
 	var/list/parts = list(
@@ -134,6 +138,7 @@ DAMAGE_REACTION(/obj/effect/decal/mecha_wreckage, DAMAGE_PROJECTILE, TYPE_PROC_R
 	name = "Odysseus wreckage"
 	icon_state = "odysseus-broken"
 
+// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
 /obj/effect/decal/mecha_wreckage/odysseus/Initialize(mapload)
 	. = ..()
 	var/list/parts = list(

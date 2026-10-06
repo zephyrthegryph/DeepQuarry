@@ -13,6 +13,7 @@
 	var/able_to_unpetrify = TRUE
 	var/obj/machinery/petrification/linked
 
+// ALLOW(init/CTOR_ARGS): to_link is a constructor argument from whoever builds it
 /obj/item/petrifier/Initialize(mapload, to_link)
 	. = ..()
 	rel_set(src, nameof(linked), to_link)

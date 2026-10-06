@@ -57,6 +57,7 @@
 
 	allow_mind_transfer = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
 /mob/living/simple_mob/vore/scel/Initialize(mapload)
 	. = ..()
 	if(random_skin)

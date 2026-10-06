@@ -29,6 +29,7 @@ GLOBAL_LIST_INIT(dq_teshari_undercoat_variants, list(
 	"brown_grey" = list("name" = "brown and grey undercoat", "icon_state" = "tesh_uniform_brg"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/under/teshari/undercoat/standard/Initialize(mapload)
 	apply_variant()
 	. = ..()

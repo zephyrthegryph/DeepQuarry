@@ -131,6 +131,7 @@
 		if(istype(owner))
 			forceMove(owner)
 		else
+			// ALLOW(lifecycle): a belly without an owner has nowhere to be
 			qdel(src)
 			return FALSE
 	return TRUE

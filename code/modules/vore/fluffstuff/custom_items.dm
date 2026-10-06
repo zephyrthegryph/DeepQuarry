@@ -1577,6 +1577,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	..()
 	icon_state = "ceph_d6[result]"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/dice/loaded/ceph/Initialize(mapload)
 	. = ..()
 	icon_state = "ceph_d6[rand(1,sides)]"

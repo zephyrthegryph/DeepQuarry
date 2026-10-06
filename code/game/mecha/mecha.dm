@@ -1008,6 +1008,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		fx_sparks(src, 2, FALSE)
 	else
 		wrecked = TRUE
+		// ALLOW(lifecycle): an exosuit with no integrity left is wrecked
 		qdel(src)
 	return
 

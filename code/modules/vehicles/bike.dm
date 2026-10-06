@@ -44,6 +44,7 @@ CAPABILITIES(/obj/vehicle/bike)
 	. = ..()
 	own_clear(src, nameof(cell), OWN_DELETE)
 
+// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
 /obj/vehicle/bike/random/Initialize(mapload)
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()

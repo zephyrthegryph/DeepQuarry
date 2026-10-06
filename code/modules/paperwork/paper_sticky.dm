@@ -106,6 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 
 	return
 
+// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 /obj/item/sticky_pad/random/Initialize(mapload)
 	. = ..()
 	color = pick(COLOR_YELLOW, COLOR_LIME, COLOR_CYAN, COLOR_ORANGE, COLOR_PINK)

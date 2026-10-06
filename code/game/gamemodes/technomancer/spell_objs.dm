@@ -110,6 +110,7 @@
 // Proc: New()
 // Parameters: 0
 // Description: Sets owner to equal its loc, links to the owner's core, then applies overlays if needed.
+// ALLOW(init/CTOR_ARGS): coreless is a constructor argument from whoever builds it
 /obj/item/spell/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))

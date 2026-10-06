@@ -38,6 +38,7 @@
 	anchored = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/material/regular_crystal)
 
+// ALLOW(init/INSTANCE_STATE): rolls the colour of each crystal
 /obj/machinery/crystal/Initialize(mapload)
 	randomize_color()
 	return ..()

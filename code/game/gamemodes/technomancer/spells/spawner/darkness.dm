@@ -18,9 +18,11 @@
 		adjust_instability(4)
 		..()
 
-/obj/item/spell/spawner/darkness/Initialize(mapload)
-	. = ..()
-	set_light(6, -20, l_color = "#FFFFFF")
+/obj/item/spell/spawner/darkness
+	light_range = 6
+	light_power = -20
+	light_color = "#FFFFFF"
+	light_on = TRUE
 
 /obj/effect/temporary_effect/darkness
 	name = "darkness"

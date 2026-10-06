@@ -86,6 +86,7 @@
 	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
 	return taken
 
+// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
 /obj/item/rig/protean/Initialize(mapload, mob/living/carbon/human/P)
 	. = ..()
 	if(!istype(P))

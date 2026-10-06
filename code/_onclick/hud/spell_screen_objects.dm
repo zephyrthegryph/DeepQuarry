@@ -35,6 +35,7 @@
 
 /atom/movable/screen/movable/spell_master/Click()
 	if(!length(spell_buttons()))
+		// ALLOW(lifecycle): the spell bar goes away when it holds no spells
 		qdel(src)
 		return
 
@@ -121,6 +122,7 @@
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)
 	else
+		// ALLOW(lifecycle): the spell bar goes away when its last spell is removed
 		qdel(src)
 
 /atom/movable/screen/movable/spell_master/proc/silence_spells(amount)
@@ -177,6 +179,7 @@
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	var/datum/spell/spell = spell()
 	if(!spell)
+		// ALLOW(lifecycle): a spell button whose spell is gone has nothing to cast
 		qdel(src)
 		return
 
@@ -219,6 +222,7 @@
 /atom/movable/screen/spell/proc/cast_with_actor(mob/user)
 	var/datum/spell/spell = spell()
 	if(!user || !spell)
+		// ALLOW(lifecycle): a spell button whose spell or caster is gone has nothing to cast
 		qdel(src)
 		return
 

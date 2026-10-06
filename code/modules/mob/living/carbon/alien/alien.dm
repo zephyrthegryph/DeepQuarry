@@ -21,6 +21,7 @@
 	var/adult_name
 	var/instance_num
 
+// ALLOW(init/INSTANCE_STATE): stamps its birth, rolls its number and names itself after it
 /mob/living/carbon/alien/Initialize(mapload)
 	. = ..()
 

@@ -580,6 +580,7 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 	update_icon()
 	return TRUE
 
+// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
 /obj/item/paper/fluff/junkmail_generic/Initialize(mapload)
 	. = ..()
 	info = pick(
@@ -603,6 +604,7 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 	name = "smudged paper"
 	icon_state = "scrap"
 
+// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
 /obj/item/paper/fluff/junkmail_redpill/Initialize(mapload)
 	. = ..()
 	info = "You need to escape the simulation. Don't forget the numbers, they help you remember: '[rand(0,9)]*[rand(0,9)][rand(0,9)]...'"

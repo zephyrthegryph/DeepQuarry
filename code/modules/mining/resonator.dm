@@ -141,6 +141,7 @@ CAPABILITIES(/obj/item/resonator)
 	/// Relation view: who made the field (for attack logs); null once they are gone.
 	var/tmp/mob/creator
 
+// ALLOW(init/CTOR_ARGS): new_creator and timetoburst are constructor arguments from whoever builds it
 /obj/effect/resonance/Initialize(mapload, mob/new_creator = null, timetoburst)
 	. = ..()
 	// Start small and grow to big size as we are about to burst

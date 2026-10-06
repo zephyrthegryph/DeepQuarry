@@ -252,6 +252,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	var/connected_mob
 	var/area_name
 
+// ALLOW(init/INSTANCE_STATE): names itself after the area it is placed in
 /obj/structure/glamour_ring/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)

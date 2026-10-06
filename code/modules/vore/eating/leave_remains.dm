@@ -138,6 +138,7 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE   //not organic bones, so they get different sounds
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
+// ALLOW(init/CTOR_ARGS): pred and prey are constructor arguments from whoever builds it
 /obj/item/digestion_remains/Initialize(mapload, mob/living/pred, mob/living/prey)
 	. = ..()
 	if(!mapload)

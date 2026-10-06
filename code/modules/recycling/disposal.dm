@@ -21,6 +21,7 @@
 	var/subtype = 0
 
 // new pipe, set the icon_state as on map
+// ALLOW(init/INSTANCE_STATE): remembers the sprite it was placed with as its base
 /obj/structure/disposalpipe/Initialize(mapload)
 	. = ..()
 	base_icon_state = icon_state
@@ -269,6 +270,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 /obj/structure/disposalpipe/segment
 	icon_state = "pipe-s"
 
+// ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
 /obj/structure/disposalpipe/segment/Initialize(mapload)
 	. = ..()
 	if(icon_state == "pipe-s")
@@ -282,6 +284,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 /obj/structure/disposalpipe/up
 	icon_state = "pipe-u"
 
+// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/up/Initialize(mapload)
 	. = ..()
 	dpdir = dir
@@ -331,6 +334,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 /obj/structure/disposalpipe/down
 	icon_state = "pipe-d"
 
+// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/down/Initialize(mapload)
 	. = ..()
 	dpdir = dir
@@ -390,6 +394,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 // called when welded
 /obj/structure/disposalpipe/broken/welded()
+	// ALLOW(lifecycle): welding a broken pipe clears it away
 	qdel(src)
 
 // called when movable is expelled from a disposal pipe or outlet

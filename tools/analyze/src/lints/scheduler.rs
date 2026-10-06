@@ -80,7 +80,8 @@ impl Scheduler {
     fn new() -> Scheduler {
         Scheduler {
             patterns: vec![
-                ("spawn", Pat::new(r"(?<![\w.])spawn\s*\(")),
+                // A bare `spawn` (no delay) or `spawn x()` on one line is the same form.
+                ("spawn", Pat::new(r"(?<![\w./])spawn(?:\s*\(|\s*$|\s+[A-Za-z_])")),
                 ("addtimer", Pat::new(r"(?<![\w.])addtimer\s*\(")),
                 ("invoke_async", Pat::new(r"\bINVOKE_ASYNC\b")),
                 ("do_after", Pat::new(r"(?<![\w./])do_after\s*\(")),

@@ -263,6 +263,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /obj/item/stock_parts/Initialize(mapload)
 	. = ..()
 	src.pixel_x = rand(-5.0, 5)

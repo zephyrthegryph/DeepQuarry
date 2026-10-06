@@ -10,6 +10,7 @@
 
 DECLARE_REAGENTS(/obj/item/grown, 50, null)
 
+// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
 /obj/item/grown/Initialize(mapload, planttype)
 	. = ..()
 

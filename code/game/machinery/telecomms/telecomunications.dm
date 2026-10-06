@@ -166,6 +166,7 @@ CAPABILITIES(/obj/machinery/telecomms)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/telecomms/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

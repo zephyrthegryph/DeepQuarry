@@ -22,6 +22,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 CAPABILITIES(/obj/effect/decal/cleanable)
 	owns_many(nameof(viruses), /datum/affliction/contagion)
 
+// ALLOW(init/CTOR_ARGS): _age is a constructor argument from whoever builds it
 /obj/effect/decal/cleanable/Initialize(mapload, _age)
 	if(islist(_age)) // new /obj/effect/decal/cleanable/vomit(loc, contagion_copies(...))
 		add_contagions(_age, copy = FALSE)

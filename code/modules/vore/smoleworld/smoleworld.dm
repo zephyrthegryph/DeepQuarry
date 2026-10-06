@@ -95,6 +95,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
+	// ALLOW(lifecycle): the track is dismantled into bricks
 	qdel(src)
 
 /obj/structure/smoletrack/ghosts_can_use_rotate_verbs()
@@ -131,6 +132,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
+	// ALLOW(lifecycle): the track is dismantled into bricks
 	qdel(src)
 	return
 
@@ -196,6 +198,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 		if(!isnull(loc))
 			new /obj/item/stack/material/smolebricks(loc)
 			new /obj/item/stack/material/smolebricks(loc)
+		// ALLOW(lifecycle): the building is dismantled into bricks
 		qdel(src)
 
 	else if (interaction.stance == I_HURT)
@@ -254,6 +257,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
+	// ALLOW(lifecycle): the ruins are dismantled into bricks
 	qdel(src)
 
 //Ruins go asplode same as buildings if attacked
@@ -292,6 +296,7 @@ DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruin
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
+	// ALLOW(lifecycle): the building is dismantled into bricks
 	qdel(src)
 	return
 

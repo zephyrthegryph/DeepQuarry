@@ -1042,6 +1042,7 @@ CAPABILITIES(/obj/item/light)
 		if(LIGHT_BROKEN)
 			desc = "A broken [name]."
 
+// ALLOW(init/CTOR_ARGS): fixture is a constructor argument from whoever builds it
 /obj/item/light/Initialize(mapload, obj/machinery/light/fixture = null)
 	. = ..()
 	if(fixture)
@@ -1220,6 +1221,7 @@ CAPABILITIES(/obj/item/light)
 	layer = BELOW_MOB_LAYER
 
 // ition, to override the New() proc further below, since this is a lamp.
+// ALLOW(init/CTOR_ARGS): construct is a constructor argument from whoever builds it
 /obj/machinery/light/flamp/Initialize(mapload, obj/machinery/light_construct/construct = null)
 	layer = initial(layer)
 	. = ..()
@@ -1231,6 +1233,7 @@ CAPABILITIES(/obj/item/light)
 			declare_emergency_cell()
 
 // create a new lighting fixture
+// ALLOW(init/CTOR_ARGS): construct is a constructor argument from whoever builds it
 /obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct = null)
 	. = ..()
 

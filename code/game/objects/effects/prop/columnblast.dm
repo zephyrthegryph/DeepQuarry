@@ -8,6 +8,7 @@
 
 	pixel_x = -16
 
+// ALLOW(init/CTOR_ARGS): ttd and newcolor are constructor arguments from whoever builds it
 /obj/effect/temporary_effect/eruption/Initialize(mapload, ttd = 10 SECONDS, newcolor)
 	if(ttd)
 		time_to_die += ttd

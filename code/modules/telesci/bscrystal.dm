@@ -10,6 +10,7 @@
 			play_sfx(src, SFX_SHATTER, volume = 50)
 			fx_sparks(T, 5)
 			SK.attack_dephase(T, src)
+			// ALLOW(lifecycle): the crystal fizzles away against the phased shadekin
 			qdel(src)
 
 

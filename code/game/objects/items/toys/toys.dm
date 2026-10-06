@@ -2416,6 +2416,7 @@ CAPABILITIES(/obj/item/toy/russian_revolver)
 	max_shots = 1
 	var/fake_bullets = 0
 
+// ALLOW(init/INSTANCE_STATE): fake_bullets rolled at random for each instance
 /obj/item/toy/russian_revolver/trick_revolver/Initialize(mapload)
 	. = ..()
 	fake_bullets = rand(2, 7)
@@ -2487,6 +2488,7 @@ DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/t
 	var/popped = 0
 	var/real = 0
 
+// ALLOW(init/INSTANCE_STATE): real rolled at random for each instance
 /obj/item/toy/snake_popper/Initialize(mapload)
 	. = ..()
 	if(prob(0.1))

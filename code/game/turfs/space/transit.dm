@@ -7,6 +7,7 @@
 // Old attackby: no building rods in transit space.
 EXTEND_INTERACTIONS(/turf/space/transit, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
+// ALLOW(init/INSTANCE_STATE): points its transit animation the way the map pushes
 /turf/space/transit/Initialize(mapload)
 	. = ..()
 	toggle_transit(GLOB.reverse_dir[pushdirection])

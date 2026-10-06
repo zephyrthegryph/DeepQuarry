@@ -49,6 +49,7 @@
 	gen[circuit] = 1
 	return gen
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with before the parent init reads them
 /obj/machinery/protean_reconstitutor/Initialize(mapload)
 	own_take_all(src, nameof(component_parts))
 	RefreshParts()

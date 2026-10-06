@@ -53,6 +53,7 @@ CAPABILITIES(/mob/observer)
 	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF
 	see_invisible = SEE_INVISIBLE_OBSERVER
 
+// ALLOW(init/CTOR_ARGS): aghost is a constructor argument from whoever builds it
 /mob/observer/dead/Initialize(mapload, aghost = FALSE)
 
 	appearance = loc

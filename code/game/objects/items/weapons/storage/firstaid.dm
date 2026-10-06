@@ -18,6 +18,7 @@
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
+// ALLOW(init/INSTANCE_STATE): icon_state and icon_variety rolled at random for each instance
 /obj/item/storage/firstaid/Initialize(mapload)
 	. = ..()
 	if(icon_variety)
