@@ -26,7 +26,7 @@ CAPABILITIES(/obj/structure/cable/generated_station)
 
 /// Breaking or mending it changes what it supplies.
 CAPABILITIES(/obj/machinery/power/generator/generated_station)
-	on_change(nameof(stat), ANY, then(PROC_REF(reconsider)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
 
 /obj/machinery/atmospherics/pipe/tank/air/full/generated_station
 	dir = EAST

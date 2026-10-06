@@ -15,7 +15,7 @@
 	idle_power_usage = 1000
 
 CAPABILITIES(/obj/machinery/auto_cloner)
-	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)), unpowered = TRUE)
+	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	rolls(nameof(time_per_spawn), range_of(1200, 3600))
 	rolls(nameof(spawn_type), PROC_REF(roll_spawn_type))
 

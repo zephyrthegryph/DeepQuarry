@@ -46,7 +46,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	examine_line(PROC_REF(examine_contents))
 	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed)))
 	on_change(nameof(anchored), ANY, then(PROC_REF(condition_changed)))
-	on_change(nameof(stat), ANY, then(PROC_REF(condition_changed)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(condition_changed)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging))
 
 /obj/machinery/cell_charger/Initialize(mapload)

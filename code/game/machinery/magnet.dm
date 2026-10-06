@@ -112,7 +112,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 /// every power or break change.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/magnetic_module)
-	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(nameof(stat)), unpowered = TRUE)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 
 /obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
 	if(power_lost())

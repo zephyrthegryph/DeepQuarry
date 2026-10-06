@@ -39,7 +39,7 @@ FIRE ALARM
 OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
 
 CAPABILITIES(/obj/machinery/firealarm)
-	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), nameof(stat)))
+	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
 	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
 	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm)

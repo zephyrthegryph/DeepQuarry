@@ -34,7 +34,7 @@ OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
 
 	// create a conveyor
 CAPABILITIES(/obj/machinery/conveyor)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
 	adjacency(ADJ_KIND_CONVEYOR, dirs = ADJ_ALL_AROUND)
