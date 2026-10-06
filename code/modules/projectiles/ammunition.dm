@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		for(var/obj/item/ammo_casing/C in stored_ammo)
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
-		own_take_all(src, nameof(stored_ammo))
+		rel_take(src, nameof(stored_ammo))
 		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))

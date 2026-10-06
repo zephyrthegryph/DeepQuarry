@@ -156,7 +156,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 				for(var/obj/item/ammo_casing/C in loaded)
 					C.forceMove(T)
 					count++
-				own_take_all(src, nameof(loaded))
+				rel_take(src, nameof(loaded))
 			if(count)
 				act_message(user, src, MSG_SELF(span_notice("You unload [count] round\s from %T%.")), MSG_OTHERS("%U% unloads %T%."))
 		else if(load_method & SINGLE_CASING)
