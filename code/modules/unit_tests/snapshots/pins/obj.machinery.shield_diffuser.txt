@@ -24,6 +24,7 @@ human|/obj/item/stack/cable_coil menu: Toggle
 human|/obj/item/stack/cable_coil click: Click: Toggle
 human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: Click: Toggle
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
 human|/obj/item/storage/part_replacer menu: Empty contents

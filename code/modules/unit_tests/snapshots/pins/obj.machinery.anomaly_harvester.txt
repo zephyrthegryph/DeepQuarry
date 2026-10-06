@@ -36,6 +36,7 @@ human|/obj/item/stack/material/steel menu: Attach anomaly (refused: needs an ano
 human|/obj/item/stack/material/steel menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Attach anomaly (refused: needs an anomaly scanner)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/card/id click: nothing
 human|/obj/item/storage/part_replacer menu: Attach anomaly (refused: needs an anomaly scanner)

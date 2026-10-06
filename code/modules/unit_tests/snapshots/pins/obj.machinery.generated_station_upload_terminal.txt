@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil menu: Upload payload
 human|/obj/item/stack/cable_coil click: Click: Upload payload
 human|/obj/item/stack/material/steel menu: Upload payload
 human|/obj/item/stack/material/steel click: Click: Upload payload
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Upload payload
 human|/obj/item/card/id click: Click: Upload payload
 keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, upload

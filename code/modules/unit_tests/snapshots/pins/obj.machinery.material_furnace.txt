@@ -35,6 +35,7 @@ human|/obj/item/stack/material/steel menu: Load material
 human|/obj/item/stack/material/steel menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/stack/material/steel click: Click: Load material
 human|/obj/item/card/id menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/card/id click: Click: Use
 human|/obj/item/stack/material menu: Eject contents (refused: the furnace is empty)

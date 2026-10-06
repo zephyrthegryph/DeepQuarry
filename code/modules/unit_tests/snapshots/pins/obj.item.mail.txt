@@ -82,5 +82,12 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item/destTagger menu: Collect (refused: needs a storage)
+human|/obj/item/destTagger menu: Customise (refused: needs an item)
+human|/obj/item/destTagger menu: Move To Top
+human|/obj/item/destTagger menu: Pick up
+human|/obj/item/destTagger menu: Tag
+human|/obj/item/destTagger menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/destTagger click: Click: Tag
 keys: drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, tag, unwrap
 

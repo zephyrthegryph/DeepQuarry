@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil menu: Touch
 human|/obj/item/stack/cable_coil click: Click: Touch
 human|/obj/item/stack/material/steel menu: Touch
 human|/obj/item/stack/material/steel click: Click: Touch
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id click: Click: Touch
 human|/obj/item menu: Touch

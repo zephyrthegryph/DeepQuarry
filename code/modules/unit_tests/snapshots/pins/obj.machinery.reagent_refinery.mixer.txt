@@ -36,6 +36,7 @@ human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Set Mixer Rotation
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Set Mixer Rotation
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use

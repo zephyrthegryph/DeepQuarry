@@ -54,6 +54,7 @@ human|/obj/item/stack/material/steel menu: Rotate Clockwise
 human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
 human|/obj/item/stack/material/steel menu: Turn Around
 human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rotate Clockwise
 human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Turn Around

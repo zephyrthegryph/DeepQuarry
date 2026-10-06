@@ -35,6 +35,7 @@ human|/obj/item/stack/material/steel menu: Push pulled object
 human|/obj/item/stack/material/steel click: Click: Push pulled object
 human|/obj/item/card/id menu: Drop on belt
 human|/obj/item/card/id menu: Push pulled object
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Push pulled object
 human|/obj/item menu: Drop on belt
 human|/obj/item menu: Push pulled object

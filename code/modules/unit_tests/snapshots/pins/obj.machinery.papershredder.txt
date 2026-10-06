@@ -39,6 +39,7 @@ human|/obj/item/stack/material/steel menu: Empty bin (refused: it is empty)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Empty bin (refused: it is empty)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Shred
 human|/obj/item/card/id click: Click: Shred
 human|/obj/item/storage menu: Climb (refused: There's a material processor in the way.)
@@ -61,6 +62,7 @@ human|/obj/item/shreddedp menu: Empty bin (refused: it is empty)
 human|/obj/item/shreddedp menu: Shred
 human|/obj/item/shreddedp click: Click: Shred
 human|/obj/item/paper menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Empty bin (refused: it is empty)
 human|/obj/item/paper menu: Shred
 human|/obj/item/paper click: Click: Shred

@@ -2400,3 +2400,13 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   power region, the grid checker's flag, the firework launcher's redraw, the anomaly harvester lets go). The six wall displays share
   `display_disconnect_op()` (2 s, needs a board). The chemical dispenser's and synthesizer's cartridge removal ask on the op. The drill's
   label op asks instead of opening its prompt from the effect.
+
+## Integration 2026-10-06 (om-retire-2, draw-sweep, items-structures-2)
+
+* **Conversion pins re-recorded (147 files).** A converted item op (`menu()`, `item(T)`, `stack(T)`) is probed with what it binds, so the
+  pins of the targets those items act on gained rows: the held ID card's "Read ID Card" and the paper's "Create Area" (a carried-only verb
+  refuses with the engine's wording, as above), the new held-item rows of the converted items (tape recorder, pAI card, UAV, translocator,
+  robot head and suit, mail, camera bug, area editor, TV assembly, glass jar, toy mecha, drone circuit), and the turn ops of the five
+  `rotatable()` machines. The implant chair's grab op is "Put in chair" with a grab only; its two verbs are ops. A bare `/obj/item/holder`
+  is not a probe (it is made around a mob).
+* **A deferred `dx_*` callback finds its owner again**: the wrapper key is the one `rerun_unwrap()` reads (`rerun_h`).

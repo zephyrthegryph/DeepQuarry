@@ -179,5 +179,33 @@ human|/obj/item/storage menu: Stop (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Wipe Tape (refused: You can't do that.)
 human|/obj/item/storage click: Click: Eject tape
+human|/obj/item/card/emag menu: Collect (refused: needs a storage)
+human|/obj/item/card/emag menu: Customise (refused: needs an item)
+human|/obj/item/card/emag menu: Eject tape
+human|/obj/item/card/emag menu: Eject Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Pick up
+human|/obj/item/card/emag menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/card/emag menu: Start Recording (refused: You can't do that.)
+human|/obj/item/card/emag menu: Stop (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/rectape menu: Collect (refused: needs a storage)
+human|/obj/item/rectape menu: Customise (refused: needs an item)
+human|/obj/item/rectape menu: Eject tape
+human|/obj/item/rectape menu: Eject Tape (refused: You can't do that.)
+human|/obj/item/rectape menu: Insert tape (refused: There's already a tape inside.)
+human|/obj/item/rectape menu: Move To Top
+human|/obj/item/rectape menu: Pick up
+human|/obj/item/rectape menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/rectape menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/rectape menu: Start Recording (refused: You can't do that.)
+human|/obj/item/rectape menu: Stop (refused: You can't do that.)
+human|/obj/item/rectape menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/rectape menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/rectape click: Click: Insert tape
 keys: drag_buckle, eject, emag.subvert, emag.use, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand_eject, insert_tape, playback, print, record, stop, use, wipe
 
