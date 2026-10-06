@@ -37,20 +37,5 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Close (refused: Access denied.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-human|/obj/item menu: Close (refused: Access denied.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
-human|/obj/item/card/emag menu: Close (refused: Access denied.)
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Use (refused: It must be closed first.)
-human|/obj/item/card/emag click: Click: Use
-human|/obj/item/stack/material/plasteel menu: Close (refused: Access denied.)
-human|/obj/item/stack/material/plasteel menu: Reinforce (refused: It is already reinforced.)
-human|/obj/item/stack/material/plasteel menu: Use
-human|/obj/item/stack/material/plasteel click: Click: Reinforce
-human|/obj/item/taperoll menu: Close (refused: Access denied.)
-human|/obj/item/taperoll menu: Tape
-human|/obj/item/taperoll menu: Use
-human|/obj/item/taperoll click: Click: Tape
-keys: busy, doors.close, doors.open, emag.subvert, emag.use, force_claws, force_generic, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_silicon_use, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, strike, tape, unreinforce, use, weld, welded, weld_plasteel
+keys: busy, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, force_claws, force_generic, gen_robot_interaction_swallow, gen_silicon_silicon_use, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, strike, tape, unreinforce, use, weld, welded, weld_plasteel
 

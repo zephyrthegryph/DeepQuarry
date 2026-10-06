@@ -86,7 +86,7 @@
 
 /// Tell subscribers (slaved cyborgs) that this unit's laws changed.
 /mob/living/silicon/proc/laws_changed()
-	OM_EMIT(src, /datum/om/event/silicon_laws_changed)
+	PUBLISH_LEGACY(src, /datum/notice/silicon_laws_changed)
 
 /mob/living/silicon/proc/notify_of_law_change(message)
 	throw_alert("newlaw", /atom/movable/screen/alert/newlaw)

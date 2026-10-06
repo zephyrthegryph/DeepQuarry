@@ -1,78 +1,19 @@
-human|none menu: Plate (refused: needs a floor tile)
-human|none menu: Slice apart (refused: combat mode is off)
-human|none menu: Slice apart (refused: hold Disarm)
-human|none menu: Slice apart (refused: hold Grab)
-human|none menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|none click: nothing
-robot|none menu: Plate (refused: needs a floor tile)
-robot|none menu: Slice apart (refused: combat mode is off)
-robot|none menu: Slice apart (refused: hold Disarm)
-robot|none menu: Slice apart (refused: hold Grab)
-robot|none menu: Slice apart, keeping the lattice (refused: needs a welder)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Plate (refused: needs a floor tile)
-human|/obj/item/tool/screwdriver menu: Slice apart (refused: combat mode is off)
-human|/obj/item/tool/screwdriver menu: Slice apart (refused: hold Disarm)
-human|/obj/item/tool/screwdriver menu: Slice apart (refused: hold Grab)
-human|/obj/item/tool/screwdriver menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Plate (refused: needs a floor tile)
-human|/obj/item/tool/crowbar menu: Slice apart (refused: combat mode is off)
-human|/obj/item/tool/crowbar menu: Slice apart (refused: hold Disarm)
-human|/obj/item/tool/crowbar menu: Slice apart (refused: hold Grab)
-human|/obj/item/tool/crowbar menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Use crowbar
-human|/obj/item/tool/wrench menu: Plate (refused: needs a floor tile)
-human|/obj/item/tool/wrench menu: Slice apart (refused: combat mode is off)
-human|/obj/item/tool/wrench menu: Slice apart (refused: hold Disarm)
-human|/obj/item/tool/wrench menu: Slice apart (refused: hold Grab)
-human|/obj/item/tool/wrench menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Plate (refused: needs a floor tile)
-human|/obj/item/tool/wirecutters menu: Slice apart (refused: combat mode is off)
-human|/obj/item/tool/wirecutters menu: Slice apart (refused: hold Disarm)
-human|/obj/item/tool/wirecutters menu: Slice apart (refused: hold Grab)
-human|/obj/item/tool/wirecutters menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Plate (refused: needs a floor tile)
-human|/obj/item/multitool menu: Slice apart (refused: combat mode is off)
-human|/obj/item/multitool menu: Slice apart (refused: hold Disarm)
-human|/obj/item/multitool menu: Slice apart (refused: hold Grab)
-human|/obj/item/multitool menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Plate (refused: needs a floor tile)
-human|/obj/item/weldingtool menu: Slice apart (refused: combat mode is off)
-human|/obj/item/weldingtool menu: Slice apart (refused: hold Disarm)
-human|/obj/item/weldingtool menu: Slice apart (refused: hold Grab)
+human|/obj/item/weldingtool menu: Slice apart
 human|/obj/item/weldingtool menu: Slice apart, keeping the lattice
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Slice apart, keeping the lattice
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Plate (refused: needs a floor tile)
-human|/obj/item/stack/cable_coil menu: Slice apart (refused: combat mode is off)
-human|/obj/item/stack/cable_coil menu: Slice apart (refused: hold Disarm)
-human|/obj/item/stack/cable_coil menu: Slice apart (refused: hold Grab)
-human|/obj/item/stack/cable_coil menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Plate (refused: needs a floor tile)
-human|/obj/item/stack/material/steel menu: Slice apart (refused: combat mode is off)
-human|/obj/item/stack/material/steel menu: Slice apart (refused: hold Disarm)
-human|/obj/item/stack/material/steel menu: Slice apart (refused: hold Grab)
-human|/obj/item/stack/material/steel menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Plate (refused: needs a floor tile)
-human|/obj/item/card/id menu: Slice apart (refused: combat mode is off)
-human|/obj/item/card/id menu: Slice apart (refused: hold Disarm)
-human|/obj/item/card/id menu: Slice apart (refused: hold Grab)
-human|/obj/item/card/id menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/card/id click: nothing
-human|/obj/item/stack/tile/floor menu: Plate
-human|/obj/item/stack/tile/floor menu: Slice apart (refused: combat mode is off)
-human|/obj/item/stack/tile/floor menu: Slice apart (refused: hold Disarm)
-human|/obj/item/stack/tile/floor menu: Slice apart (refused: hold Grab)
-human|/obj/item/stack/tile/floor menu: Slice apart, keeping the lattice (refused: needs a welder)
-human|/obj/item/stack/tile/floor click: nothing
-keys: catwalk_plate, catwalk_slice_disarm, catwalk_slice_grab, catwalk_slice_harm, catwalk_slice_help, gen_drag_interaction_drag_buckle, use_crowbar
+keys: drag_buckle, plate, slice, slice_keep, use_crowbar
 

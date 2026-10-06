@@ -24,7 +24,7 @@
 	for(var/received_packet in partial_packets["chunks"])
 		assembled_payload += received_packet
 
-	om_cancel_timer_slot(src, "packet_timeout")
+	cancel_after(src, "packet_timeout")
 	partial_packets = null
 	if (!rustg_json_is_valid(assembled_payload))
 		log_tgui(client()?.mob, "Error: Invalid JSON")

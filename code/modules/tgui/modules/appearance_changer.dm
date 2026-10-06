@@ -173,7 +173,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	if(owner() == user || !customize_usr)
 		close_ui()
 		unobserve(owner(), /datum/notice/movable_attempted_move, src)
-		OM_EMIT(owner(), /datum/om/event/human_dna_finalized) // Update any components using our saved appearance
+		PUBLISH_LEGACY(owner(), /datum/notice/human_dna_finalized)
 		rel_clear(src, nameof(owner))
 		rel_clear(src, nameof(last_camera_turf))
 		cut_data()

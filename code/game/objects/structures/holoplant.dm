@@ -16,28 +16,17 @@
 	. = ..()
 	activate()
 
-/obj/machinery/holoplant/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/holoplant_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/holoplant_toggle
-	id = "holoplant_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_BECAUSE(REQ_ANCHORED, "it must be anchored before activation"))
-	effect = /obj/machinery/holoplant/proc/interaction_toggle
-
-/obj/machinery/holoplant/proc/interaction_toggle(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: switch the projection on or off (not while it flickers).
+/obj/machinery/holoplant/proc/interaction_toggle(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!istype(user) || interference)
-		return TRUE
+		return OP_OK
 
 	if(!plant)
 		activate()
 	else
 		deactivate()
-	return TRUE
+	return OP_OK
 
 /// Anchored or loosened (the machine's wrench), the projection goes out.
 /obj/machinery/holoplant/proc/anchoring_changed(datum/act/A)
@@ -91,6 +80,9 @@
 CAPABILITIES(/obj/machinery/holoplant)
 	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))
 	emag(then(PROC_REF(on_emag)))
+	op("toggle", hand(), label("Toggle"), needs(req_is(nameof(anchored), TRUE, because = MSG(holoplant/unanchored))), then(PROC_REF(interaction_toggle)))
+
+MSG_DEF_SELF(holoplant/unanchored, "It must be anchored before activation.")
 
 /// The sequencer swaps the plant for the corrupted one.
 /obj/machinery/holoplant/proc/on_emag(datum/act/op/A)

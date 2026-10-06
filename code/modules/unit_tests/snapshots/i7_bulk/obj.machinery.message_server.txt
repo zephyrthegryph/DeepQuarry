@@ -2,4 +2,3 @@
 /obj/machinery/message_server|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/message_server|ai|none => |
 /obj/machinery/message_server|ghost|none => |
-

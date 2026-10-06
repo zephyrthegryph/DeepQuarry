@@ -4,4 +4,3 @@
 /obj/machinery/power/quantumpad|ghost|none => gen_observer_quantumpad_ghost_travel|
 /obj/machinery/power/quantumpad|human|/obj/item/quantum_pad_booster => quantumpad_boost,quantumpad_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device
 /obj/machinery/power/quantumpad|human|/obj/item/storage/part_replacer => machine_part_replacement,quantumpad_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,quantumpad_boost:needs a quantum pad particle booster
-

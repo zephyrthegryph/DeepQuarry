@@ -277,7 +277,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	for(var/effect_type in identity.genetic_effects)
 		H.apply_body_effect(effect_type)
 
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	spent(src)
 	return 1

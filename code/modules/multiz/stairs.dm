@@ -440,8 +440,7 @@ CAPABILITIES(/obj/structure/stairs/middle)
 				var/mob/living/L = P
 				if(L.client)
 					L.client.Process_Grab() // Update any miscellanous grabs, possibly break grab-chains
-		if(om_wants(AM, /datum/om/event/moved_down_stairs))
-			om_emit(AM, new /datum/om/event/moved_down_stairs(oldloc))
+		PUBLISH_LEGACY(AM, /datum/notice/moved_down_stairs, oldloc)
 	return TRUE
 
 /obj/structure/stairs/top/use_stairs_instant(atom/movable/AM)
@@ -481,8 +480,7 @@ CAPABILITIES(/obj/structure/stairs/middle)
 			L.client.Process_Grab()
 	else
 		AM.forceMove(get_turf(bottom))
-	if(om_wants(AM, /datum/om/event/moved_down_stairs))
-		om_emit(AM, new /datum/om/event/moved_down_stairs(null))
+	PUBLISH_LEGACY(AM, /datum/notice/moved_down_stairs, null)
 
 // Mapping pieces, placed at the bottommost part of the stairs
 /obj/structure/stairs/spawner

@@ -8,6 +8,7 @@
 
 // The package's own unwrap replaces the parent's: the old override ran both and handed out two items.
 CAPABILITIES(/obj/item/contraband/package)
+	without("unwrap")
 	op("unwrap_package", in_hand(), label("Unwrap"), then(PROC_REF(interaction_unwrap_package)))
 
 /// Old attack_self.
@@ -28,6 +29,8 @@ CAPABILITIES(/obj/item/contraband/package)
 		/obj/item/seeds/ambrosiavulgarisseed,
 		/obj/item/bodysnatcher)
 
+	// Used up first, as the parent's unwrap: what was inside goes into the hand that held it.
+	if(!consume(src, user))
+		return OP_REFUSED
 	user.put_in_hands(new contraband(user.loc))
 	to_chat(user, span_notice("You unwrap the package."))
-	consume(src, user)

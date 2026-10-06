@@ -1,5 +1,4 @@
-/obj/machinery/light_switch/survival_pod|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/light_switch/survival_pod|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/light_switch/survival_pod|human|none => gen_hand_ungated_interaction_toggle_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/light_switch/survival_pod|robot|none => gen_hand_ungated_interaction_toggle_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/light_switch/survival_pod|ai|none => |
 /obj/machinery/light_switch/survival_pod|ghost|none => |
-

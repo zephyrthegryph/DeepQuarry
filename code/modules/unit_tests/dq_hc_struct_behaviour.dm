@@ -482,7 +482,7 @@
 /datum/unit_test/dq_hc_struct/teleplumbed_toilet_offers_its_crystal/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/toilet/teleplumbed/T = allocate(/obj/structure/toilet/teleplumbed, tile(3, 2))
-	T.cistern = TRUE
+	T.set_cistern(TRUE)
 	T.open = FALSE
 	var/obj/item/bluespace_crystal/crystal = T.teleplumb_crystal
 	TEST_ASSERT_NOTNULL(crystal, "it has a crystal")

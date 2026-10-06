@@ -11,7 +11,7 @@
 // `overrides`, or boot validation reports a conflict.
 //
 // Contributors fold into the base value through the property's aggregator:
-//   /datum/property_provider/behaviour  an OM behaviour attached to the instance.
+//   /datum/property_provider/behaviour  a capability granted to the instance.
 //   /datum/property_provider/equipment  a mob's equipped items.
 
 /datum/property_provider
@@ -114,17 +114,17 @@
 /datum/property_provider/behaviour
 	source = PROP_SOURCE_BEHAVIOUR
 	applies_to = /datum
-	/// OM behaviour type whose attachment contributes.
+		/// The capability type (a /datum/capability path) whose grant contributes.
 	var/behaviour_type
 
 /datum/property_provider/behaviour/contribute(datum/D)
-	if(!om_attached(D, behaviour_type))
+	if(!granted(D, behaviour_type))
 		return null
-	var/datum/om/behaviour/B = om_registry().behaviour(behaviour_type)
-	return B?.property_value(D, property)
+	var/datum/capability/def = grant_definition(behaviour_type)
+	return def?.property_value(D, property)
 
-/// An attached behaviour's contribution to property `id` on `E`, or null.
-/datum/om/behaviour/proc/property_value(datum/E, id)
+/// A granted capability's contribution to property `id` on `E`, or null.
+/datum/capability/proc/property_value(datum/E, id)
 	return null
 
 // ---- Equipment ----

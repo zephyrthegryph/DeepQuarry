@@ -67,5 +67,5 @@ human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Management c
 human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Release prize (refused: not possible right now)
 human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Use (refused: the SPASM is disabled)
 human|/obj/item/clothing/accessory/collar/casinosentientprize click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_use, gen_insert_interaction_cash, gen_insert_interaction_collar, gen_insert_interaction_id, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, gen_hand_ungated_interaction_use, gen_insert_interaction_cash, gen_insert_interaction_collar, gen_insert_interaction_id, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

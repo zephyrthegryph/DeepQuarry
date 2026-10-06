@@ -29,7 +29,7 @@
 
 	//Get the DNA and generate a new mob
 	var/mob/living/carbon/human/H = current_project.produce_human_mob(src,FALSE,FALSE,"clone ([rand(0,999)])")
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Give breathing equipment if needed
 	if(current_project.breath_type != null && current_project.breath_type != GAS_O2)
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 
 	//Get the DNA and generate a new mob
 	var/mob/living/carbon/human/H = current_project.produce_human_mob(src,TRUE,FALSE,"synth ([rand(0,999)])")
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Apply damage
 	H.injure(INJURY_BLUNT, brute_value, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)

@@ -1,5 +1,5 @@
-/obj/structure/girder|human|none => girder_item|girder:anchored>displaced:crowbar:needs a crowbar,girder:anchored>done:wrench:needs a wrench,girder:anchored>anchored:screwdriver:needs a screwdriver,girder_hulk_smash:not possible right now
-/obj/structure/girder|robot|none => girder_item|girder:anchored>displaced:crowbar:needs a crowbar,girder:anchored>done:wrench:needs a wrench,girder:anchored>anchored:screwdriver:needs a screwdriver,girder_hulk_smash:not possible right now
+/obj/structure/girder|human|none => |girder:anchored>displaced:crowbar:needs a crowbar,girder:anchored>done:wrench:needs a wrench,girder:anchored>anchored:screwdriver:needs a screwdriver
+/obj/structure/girder|robot|none => |girder:anchored>displaced:crowbar:needs a crowbar,girder:anchored>done:wrench:needs a wrench,girder:anchored>anchored:screwdriver:needs a screwdriver
 /obj/structure/girder|ai|none => |
 /obj/structure/girder|ghost|none => |
 

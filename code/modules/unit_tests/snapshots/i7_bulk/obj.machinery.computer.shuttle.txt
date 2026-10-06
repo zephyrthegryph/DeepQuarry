@@ -3,4 +3,3 @@
 /obj/machinery/computer/shuttle|ai|none => |
 /obj/machinery/computer/shuttle|ghost|none => |
 /obj/machinery/computer/shuttle|human|/obj/item/card => gen_insert_interaction_authorize|
-

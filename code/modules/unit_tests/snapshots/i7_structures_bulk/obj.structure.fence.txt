@@ -1,5 +1,5 @@
-/obj/structure/fence|human|none => gen_hand_interaction_hand,gen_item_interaction_item|
-/obj/structure/fence|robot|none => gen_hand_interaction_hand,gen_item_interaction_item|
+/obj/structure/fence|human|none => |
+/obj/structure/fence|robot|none => |
 /obj/structure/fence|ai|none => |
 /obj/structure/fence|ghost|none => |
 

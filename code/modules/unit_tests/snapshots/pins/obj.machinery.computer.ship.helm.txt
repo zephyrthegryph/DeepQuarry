@@ -65,11 +65,5 @@ human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
-human|/obj/item menu: Climb
-human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item menu: Use
-human|/obj/item menu: Use item
-human|/obj/item click: Click: Use item
-keys: accellimit, add, apilot, apilot_lock, brake, climb.climb, climb.climb_menu, close, disconnect, emag, gen_drag_interaction_drag_buckle, gen_observer_ship_ghost_view, gen_robot_interaction_swallow, gen_silicon_ship_silicon_use, machine_anchor, machine_deconstruct, machine_panel, machine_repair, manual, move, remove, reset, setcoord, setds, ship_console_use, speedlimit, sync, update_camera_view, use_gripper, use_item
+keys: accellimit, add, apilot, apilot_lock, brake, climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag, gen_observer_ship_ghost_view, gen_robot_interaction_swallow, gen_silicon_ship_silicon_use, machine_anchor, machine_deconstruct, machine_panel, machine_repair, manual, move, remove, reset, setcoord, setds, ship_console_use, speedlimit, sync, update_camera_view, use_gripper, use_item
 

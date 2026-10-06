@@ -347,7 +347,7 @@ GLOBAL_VAR(op_gesture_now)
 /datum/interaction/capability/pay_cost(mob/actor, atom/target, obj/item/held)
 	if(!op || tool || duration <= 0 || !op_waits())
 		return ..()
-	if(om_timer_slot_pending(actor, "op_wait"))
+	if(after_pending(actor, "op_wait"))
 		to_chat(actor, span_warning("You are already busy."))
 		return FALSE
 	var/datum/op_ctx/ctx = op_ctx_take(actor, target, held, op, GLOB.op_route_now)

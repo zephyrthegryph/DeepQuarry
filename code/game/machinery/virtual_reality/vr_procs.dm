@@ -88,7 +88,7 @@
 			if(is_lang_whitelisted(avatar, chosen_language) || (avatar.species && (chosen_language.name in avatar.species.secondary_langs)))
 				avatar.add_language(lang)
 
-	OM_EMIT(avatar, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(avatar, /datum/notice/human_dna_finalized)
 
 	avatar.regenerate_icons()
 	avatar.update_transform()

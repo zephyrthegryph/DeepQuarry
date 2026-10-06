@@ -424,8 +424,8 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		sent_atoms += ROI
 		do_teleport(ROI, dest)
 	// Either works for the experiment scan, so fire signals on both
-	OM_EMIT(src, /datum/om/event/telesci_teleport, sent_atoms, target, sending)
-	OM_EMIT(telepad(), /datum/om/event/telesci_teleport, sent_atoms, target, sending)
+	PUBLISH_LEGACY(src, /datum/notice/telesci_teleport, sent_atoms, target, sending)
+	PUBLISH_LEGACY(telepad(), /datum/notice/telesci_teleport, sent_atoms, target, sending)
 
 	if (!dd_hassuffix(log_msg, ", "))
 		log_msg += "nothing"

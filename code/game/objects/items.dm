@@ -466,7 +466,7 @@
 		action_item_has.Remove(user)
 
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
-		OM_EMIT(src, /datum/om/event/item_dropped, user)
+		PUBLISH_LEGACY(src, /datum/notice/item_dropped, user)
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
 			spent(src, user)
 
@@ -475,10 +475,9 @@
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
-	OM_EMIT(src, /datum/om/event/item_pickup, user)
-	OM_EMIT(user, /datum/om/event/item_pickup, src)
-	if(om_wants(user, /datum/om/event/picked_up_item))
-		om_emit(user, new /datum/om/event/picked_up_item(src))
+	PUBLISH_LEGACY(src, /datum/notice/item_pickup, user)
+	PUBLISH_LEGACY(user, /datum/notice/item_pickup, src)
+	PUBLISH_LEGACY(user, /datum/notice/picked_up_item, src)
 	pixel_x = 0
 	pixel_y = 0
 	return
@@ -520,8 +519,8 @@
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
 			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
-	OM_EMIT(src, /datum/om/event/item_equipped, user, slot)
-	OM_EMIT(user, /datum/om/event/mob_equipped_item, src, slot)
+	PUBLISH_LEGACY(src, /datum/notice/item_equipped, user, slot)
+	PUBLISH_LEGACY(user, /datum/notice/mob_equipped_item, src, slot)
 	user.on_equipment_changed()
 	var/mob/living/M = loc
 	if(!istype(M))
@@ -749,7 +748,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	if(!zoom && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
-	OM_EMIT(src, /datum/om/event/remote_view_clear)
+	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
 
 /obj/item/proc/pwr_drain()
 	return 0 // Process Kill
@@ -800,7 +799,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	#ifdef UNIT_TESTS
 	var/mob/living/carbon/human/H = loc
 	if(ishuman(H))
-		OM_EMIT(H, /datum/om/event/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
+		PUBLISH_LEGACY(H, /datum/notice/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
 	#endif
 
 	//Generate the base onmob icon
@@ -941,7 +940,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 
 /obj/item/MouseExited()
 	. = ..()
-	om_cancel_timer_slot(src, "tip_timer")
+	cancel_after(src, "tip_timer")
 	closeToolTip(usr, src)
 
 /obj/item/proc/openTip(location, control, params, user)

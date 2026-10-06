@@ -1,5 +1,5 @@
-/obj/structure/dispenser|human|none => dispenser_open_ui,dispenser_item|dispenser_item_harm:combat mode is off
-/obj/structure/dispenser|robot|none => dispenser_open_ui,dispenser_item|dispenser_item_harm:combat mode is off
+/obj/structure/dispenser|human|none => |
+/obj/structure/dispenser|robot|none => |
 /obj/structure/dispenser|ai|none => |
 /obj/structure/dispenser|ghost|none => |
 

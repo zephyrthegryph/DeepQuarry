@@ -338,31 +338,36 @@ CAPABILITIES(/obj/item/taperoll)
 			crumple()
 	return ..()
 
-/// Old attackby.
-/obj/item/tape/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	breaktape(user, interaction.stance)
-	return INTERACTION_HANDLED_PASS
+/// Old attackby: a held thing breaks the tape outside the help stance (in it, you refrain); the click goes on.
+/obj/item/tape/proc/interaction_item_help(datum/act/op/A)
+	breaktape(A.actor, I_HELP)
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/tape, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Lift", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Break", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Break", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Break", PROC_REF(interaction_hand)), \
-	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Break", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Break", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Break", PROC_REF(interaction_item)), \
-)
+/obj/item/tape/proc/interaction_item(datum/act/op/A)
+	breaktape(A.actor, I_HURT)
+	return OP_PASS
 
-/// Old attack_hand.
-/obj/item/tape/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (interaction.stance == I_HELP && src.allowed(user))
+CAPABILITIES(/obj/item/tape)
+	op("lift", hand(), ungated(), stance(I_HELP), label("Lift"), then(PROC_REF(interaction_lift)))
+	op("break", hand(), ungated(), stance(I_DISARM, I_GRAB, I_HURT), label("Break"), then(PROC_REF(interaction_break)))
+	op("refrain", item(/obj/item), stance(I_HELP), then(PROC_REF(interaction_item_help)))
+	op("break_with", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), label("Break"), then(PROC_REF(interaction_item)))
+
+/// Old attack_hand in the help stance: someone allowed lifts the tape line to pass (anyone else refrains from breaking it).
+/obj/item/tape/proc/interaction_lift(datum/act/op/A)
+	var/mob/user = A.actor
+	if(src.allowed(user))
 		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
 			T.lift(10 SECONDS) //~10 seconds
 	else
-		breaktape(user, interaction.stance)
-	return TRUE
+		breaktape(user, I_HELP)
+	return OP_OK
+
+/// Old attack_hand outside the help stance: break the tape.
+/obj/item/tape/proc/interaction_break(datum/act/op/A)
+	breaktape(A.actor, I_HURT)
+	return OP_OK
 
 /obj/item/tape/proc/lift(time)
 	lifted = 1

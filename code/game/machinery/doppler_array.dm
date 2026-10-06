@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/doppler_array)
 	if(our_turf.Distance(epicenter) > 100)
 		return
 	atom_say("Explosive disturbance detected - Epicenter at: grid ([x0],[y0],[z0]). Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range]. Temporal displacement of tachyons: [seconds_taken] seconds.")
-	OM_EMIT(src, /datum/om/event/machinery_explosion_detected, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
+	PUBLISH_LEGACY(src, /datum/notice/machinery_explosion_detected, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
 	LAZYINITLIST(detected_explosions); detected_explosions += list(
 		list(
 			"index" = length(detected_explosions),

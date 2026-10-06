@@ -159,7 +159,7 @@
 		mats_consumed[MAT] = mat_amount
 		material_amount += mat_amount
 	if(length(mats_consumed))
-		OM_EMIT(src, /datum/om/event/matcontainer_item_consumed, source, primary_mat, mats_consumed, material_amount, context)
+		PUBLISH_LEGACY(src, /datum/notice/matcontainer_item_consumed, source, primary_mat, mats_consumed, material_amount, context)
 
 	return primary_mat
 //===================================================================================
@@ -669,7 +669,7 @@
 		use_amount_mat(new_sheets.amount * SHEET_MATERIAL_AMOUNT, material)
 		sheet_amt -= new_sheets.amount
 		//send signal
-		OM_EMIT(src, /datum/om/event/matcontainer_stack_retrieved, new_sheets, context)
+		PUBLISH_LEGACY(src, /datum/notice/matcontainer_stack_retrieved, new_sheets, context)
 		//no point merging anything into an already full stack
 		if(new_sheets.amount == new_sheets.max_amount)
 			continue

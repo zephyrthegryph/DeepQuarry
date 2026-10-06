@@ -3,4 +3,3 @@
 /obj/machinery/doppler_array|ai|none => |
 /obj/machinery/doppler_array|ghost|none => |
 /obj/machinery/doppler_array|human|/obj/item/storage/part_replacer => gen_insert_interaction_part_replacement_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-

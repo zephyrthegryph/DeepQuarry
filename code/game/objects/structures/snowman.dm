@@ -5,26 +5,18 @@
 	desc = "A happy little snowman smiles back at you!"
 	anchored = TRUE
 
-/obj/structure/snowman/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/snowman_crush,
-	)
-	..()
+CAPABILITIES(/obj/structure/snowman)
+	// the old attack_hand: crumple the snowman (combat mode only)
+	op("crush", hand(), stance(I_HURT), label("Crush"), then(PROC_REF(snowman_crushed)))
 
-/// Old attack_hand: crumple the snowman (combat mode only).
-/datum/interaction/entry_hand/snowman_crush
-	id = "snowman_crush"
-	name = "Crush"
-	effect = /obj/structure/snowman/proc/interaction_crush
-	stance = I_HURT
-
-/obj/structure/snowman/proc/interaction_crush(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/snowman/proc/snowman_crushed(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("In one hit, [src] easily crumples into a pile of snow. You monster."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if (istype(F))
 		new /obj/item/stack/material/snow(F)
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/snowman/borg
 	name = "snowborg"

@@ -2,4 +2,3 @@
 /obj/machinery/computer/turbine_computer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/turbine_computer|ai|none => |
 /obj/machinery/computer/turbine_computer|ghost|none => |
-

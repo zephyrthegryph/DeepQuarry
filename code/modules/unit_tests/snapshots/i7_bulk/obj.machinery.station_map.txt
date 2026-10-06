@@ -1,5 +1,5 @@
-/obj/machinery/station_map|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/station_map|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/station_map|human|none => gen_hand_ungated_interaction_watch|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_fingerprint:needs an item
+/obj/machinery/station_map|robot|none => gen_hand_ungated_interaction_watch|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_fingerprint:needs an item
 /obj/machinery/station_map|ai|none => |
 /obj/machinery/station_map|ghost|none => |
-
+/obj/machinery/station_map|human|/obj/item => gen_hand_ungated_interaction_watch,gen_insert_interaction_fingerprint|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar

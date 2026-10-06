@@ -449,14 +449,6 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /mob/living/proc/leash_item() as /obj/item
 	return link_of(src, /datum/om/relation/leashed_to)
 
-/// Was TETHERED_HANDHELD().
-/obj/item/proc/tethered_handheld() as /obj/item
-	return link_source_of(src, /datum/om/relation/tethered_to)
-
-/// Was TETHER_HOST().
-/obj/item/proc/tether_host() as /obj/item
-	return link_of(src, /datum/om/relation/tethered_to)
-
 /// Was FOLLOWING().
 /mob/observer/proc/following_target() as /atom/movable
 	return link_of(src, /datum/om/relation/following)

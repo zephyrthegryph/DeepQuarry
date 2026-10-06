@@ -3,4 +3,3 @@
 /obj/machinery/computer/aiupload|ai|none => |
 /obj/machinery/computer/aiupload|ghost|none => gen_observer_interaction_swallow|
 /obj/machinery/computer/aiupload|human|/obj/item => gen_verb_interaction_access_internals,gen_insert_interaction_install,gen_hand_ungated_interaction_select_ai|
-

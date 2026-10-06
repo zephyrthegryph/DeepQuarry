@@ -2,4 +2,3 @@
 /obj/machinery/computer/guestpass|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/guestpass|ai|none => |
 /obj/machinery/computer/guestpass|ghost|none => |
-

@@ -24,5 +24,5 @@ human|/obj/item/stack/material/steel menu: Open
 human|/obj/item/stack/material/steel click: Click: Open
 human|/obj/item/card/id menu: Open
 human|/obj/item/card/id click: Click: Open
-keys: gen_drag_interaction_drag_buckle, open, use_wrench
+keys: drag_buckle, open, use_wrench
 

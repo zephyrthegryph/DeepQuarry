@@ -158,7 +158,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 		else if(E.periodic_pipe == W.cadence)
 			om_task_periodic_stop(E)
 	for(var/proc_name in T.repeats)
-		om_cancel_timer_slot(E, "sys_repeat:[proc_name]")
+		cancel_after(E, "sys_repeat:[proc_name]")
 
 /// Re-evaluates every declaration of E (the service's on_changes()).
 /proc/sys_periodic_evaluate(datum/E)
@@ -194,10 +194,10 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 		var/datum/sys_periodic_def/R = T.repeats[proc_name]
 		var/slot = "sys_repeat:[proc_name]"
 		if(sys_periodic_def_holds(E, R))
-			if(!om_timer_slot_pending(E, slot))
+			if(!after_pending(E, slot))
 				sys_repeat_arm(E, R)
 		else
-			om_cancel_timer_slot(E, slot)
+			cancel_after(E, slot)
 
 /// The gate: FALSE while E's type declares while-work on `cadence` whose fields don't hold.
 /// om_task_periodic() and MACHINE_WAKE() ask it; so do the machine stages before machine_step().
@@ -250,7 +250,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 		return
 	if(QDELETED(E) || !sys_periodic_def_holds(E, R))
 		return
-	if(!om_timer_slot_pending(E, "sys_repeat:[proc_name]"))
+	if(!after_pending(E, "sys_repeat:[proc_name]"))
 		sys_repeat_arm(E, R)
 
 // ---------------------------------------------------------------- the watch

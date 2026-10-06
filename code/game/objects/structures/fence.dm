@@ -31,6 +31,8 @@ CAPABILITIES(/obj/structure/fence)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(gate = PROC_REF(needs_a_climbable_hole))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("touch", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// A fence is climbed through a medium hole: an intact one is too tight to, and a large one is walked through.
 /obj/structure/fence/proc/needs_a_climbable_hole(mob/living/climber)
@@ -82,21 +84,21 @@ CAPABILITIES(/obj/structure/fence)
 		return TRUE
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/structure/fence, \
-	INTERACT_HAND("Use", PROC_REF(interaction_hand)), \
-	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
-)
-
-/obj/structure/fence/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: an electrified fence shocks whoever touches it.
+/obj/structure/fence/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(electric && isliving(user) && !user.is_incorporeal())
 		electrocute(user)
-	return TRUE
+	return OP_OK
 
-/obj/structure/fence/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: an electrified fence shocks through whatever conducts.
+/obj/structure/fence/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT))
 		electrocute(user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/fence/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -171,6 +173,13 @@ EXTEND_INTERACTIONS(/obj/structure/fence, \
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
 	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
+// the fence door is never electrified: its own Use replaces the fence's
+CAPABILITIES(/obj/structure/fence/door)
+	without("touch")
+	without("item")
+	op("door_hand", hand(), label("Use"), then(PROC_REF(interaction_door_hand)))
+	op("door_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_door_item)))
+
 /obj/structure/fence/door/Initialize(mapload)
 	update_door_status()
 	return ..()
@@ -184,35 +193,21 @@ EXTEND_INTERACTIONS(/obj/structure/fence, \
 	desc = "It looks like it has a strong padlock attached."
 	locked = TRUE
 
-// The fence door's Use overrides its own, replacing (not chaining to) the base fence's
-// electrify interactions: a fence door is never electrified, so it declares its own set
-// instead of calling ..() into /obj/structure/fence/declare_interactions().
-/obj/structure/fence/door/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/fence_door_hand,
-		/datum/interaction/entry_item/fence_door_item,
-	)
-
 /// Old attack_hand: open/close the door.
-/datum/interaction/entry_hand/fence_door_hand
-	id = "fence_door_hand"
-	name = "Use"
-	effect = /obj/structure/fence/door/proc/interaction_door_hand
+/obj/structure/fence/door/proc/interaction_door_hand(datum/act/op/A)
+	door_used(A.actor)
+	return OP_OK
 
-/obj/structure/fence/door/proc/interaction_door_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fence/door/proc/door_used(mob/user)
 	if(can_open(user))
 		toggle(user)
 	else
 		to_chat(user, span_warning("\The [src] is [!open ? "locked" : "stuck open"]."))
-	return TRUE
 
 /// Old attackby: lock/unlock with the matching key, pick the lock, or fall back to toggling.
-/datum/interaction/entry_item/fence_door_item
-	id = "fence_door_item"
-	name = "Use"
-	effect = /obj/structure/fence/door/proc/interaction_door_item
-
-/obj/structure/fence/door/proc/interaction_door_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/fence/door/proc/interaction_door_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(istype(W,/obj/item/simple_key))
 		var/obj/item/simple_key/key = W
@@ -224,28 +219,28 @@ EXTEND_INTERACTIONS(/obj/structure/fence, \
 			act_message(user, src, others = span_notice("%U% [key.keyverb] %I% and [locked ? "unlocks" : "locks"] %T%."), item = key)
 			locked = !locked
 			playsound(src, keysound,100, 1)
-		return TRUE
+		return OP_OK
 
 	else if(istype(W,/obj/item/lockpick))
 		var/obj/item/lockpick/L = W
 		if(!locked)
 			to_chat(user, span_notice("\The [src] isn't locked."))
-			return TRUE
+			return OP_OK
 		else if(lock_type != L.pick_type) //make sure our types match
 			to_chat(user, span_warning("\The [L] can't pick \the [src]. Another tool might work?"))
-			return TRUE
+			return OP_OK
 		else if(!can_pick)
 			to_chat(user, span_warning("\The [src] can't be [L.pick_verb]ed."))
-			return TRUE
+			return OP_OK
 		else
 			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
 			playsound(src, keysound,100, 1)
 			om_task_timed(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return TRUE
+		return OP_OK
 
 	else
-		interaction_door_hand(user, W, interaction)
-	return TRUE
+		door_used(user)
+	return OP_OK
 
 /obj/structure/fence/door/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("Success!"))

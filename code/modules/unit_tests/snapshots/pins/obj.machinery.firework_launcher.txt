@@ -69,21 +69,5 @@ human|/obj/item/card/id menu: Launch (refused: there is no firework star loaded 
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Launch
-human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/storage/part_replacer menu: Eject Firework Star
-human|/obj/item/storage/part_replacer menu: Empty contents
-human|/obj/item/storage/part_replacer menu: Launch (refused: there is no firework star loaded in the firework launcher)
-human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/part_replacer menu: Replace parts
-human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/part_replacer menu: Unsecure (refused: needs a wrench)
-human|/obj/item/storage/part_replacer click: Click: Replace parts
-human|/obj/item/firework_star menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/firework_star menu: Eject Firework Star
-human|/obj/item/firework_star menu: Insert firework star
-human|/obj/item/firework_star menu: Launch (refused: there is no firework star loaded in the firework launcher)
-human|/obj/item/firework_star menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/firework_star menu: Unsecure (refused: needs a wrench)
-human|/obj/item/firework_star click: Click: Insert firework star
-keys: eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement
+keys: drag_buckle, eject, gen_robot_interaction_swallow, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement
 

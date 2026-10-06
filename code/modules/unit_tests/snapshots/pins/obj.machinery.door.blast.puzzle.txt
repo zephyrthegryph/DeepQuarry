@@ -1,126 +1,46 @@
 human|none menu: Open
-human|none menu: Open (refused: Access denied.)
-human|none menu: Strike (refused: combat mode is off)
-human|none menu: Use (refused: hold Disarm)
-human|none menu: Use (refused: hold Grab)
-human|none menu: Use (refused: needs an item)
 human|none click: Click: Open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Open
-robot|none menu: Strike (refused: combat mode is off)
-robot|none menu: Use (refused: hold Disarm)
-robot|none menu: Use (refused: hold Grab)
-robot|none menu: Use (refused: needs an item)
-robot|none click: nothing
+robot|none click: Click: Open
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Open
-human|/obj/item/tool/screwdriver menu: Open (refused: Access denied.)
 human|/obj/item/tool/screwdriver menu: Strike
-human|/obj/item/tool/screwdriver menu: Strike (refused: combat mode is off)
-human|/obj/item/tool/screwdriver menu: Swallow
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use (refused: hold Disarm)
-human|/obj/item/tool/screwdriver menu: Use (refused: hold Grab)
-human|/obj/item/tool/screwdriver click: Click: Swallow
+human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Open
-human|/obj/item/tool/crowbar menu: Open (refused: Access denied.)
-human|/obj/item/tool/crowbar menu: Pry (refused: Its motors resist your effort.)
 human|/obj/item/tool/crowbar menu: Strike
-human|/obj/item/tool/crowbar menu: Strike (refused: combat mode is off)
-human|/obj/item/tool/crowbar menu: Swallow
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use (refused: hold Disarm)
-human|/obj/item/tool/crowbar menu: Use (refused: hold Grab)
-human|/obj/item/tool/crowbar click: Click: Pry
+human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Open
-human|/obj/item/tool/wrench menu: Open (refused: Access denied.)
 human|/obj/item/tool/wrench menu: Strike
-human|/obj/item/tool/wrench menu: Strike (refused: combat mode is off)
-human|/obj/item/tool/wrench menu: Swallow
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use (refused: hold Disarm)
-human|/obj/item/tool/wrench menu: Use (refused: hold Grab)
-human|/obj/item/tool/wrench click: Click: Swallow
+human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Open
-human|/obj/item/tool/wirecutters menu: Open (refused: Access denied.)
 human|/obj/item/tool/wirecutters menu: Strike
-human|/obj/item/tool/wirecutters menu: Strike (refused: combat mode is off)
-human|/obj/item/tool/wirecutters menu: Swallow
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use (refused: hold Disarm)
-human|/obj/item/tool/wirecutters menu: Use (refused: hold Grab)
-human|/obj/item/tool/wirecutters click: Click: Swallow
+human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Open
-human|/obj/item/multitool menu: Open (refused: Access denied.)
 human|/obj/item/multitool menu: Strike
-human|/obj/item/multitool menu: Strike (refused: combat mode is off)
-human|/obj/item/multitool menu: Swallow
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use (refused: hold Disarm)
-human|/obj/item/multitool menu: Use (refused: hold Grab)
-human|/obj/item/multitool click: Click: Swallow
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Open
-human|/obj/item/weldingtool menu: Open (refused: Access denied.)
 human|/obj/item/weldingtool menu: Strike
-human|/obj/item/weldingtool menu: Strike (refused: combat mode is off)
-human|/obj/item/weldingtool menu: Swallow
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use (refused: hold Disarm)
-human|/obj/item/weldingtool menu: Use (refused: hold Grab)
-human|/obj/item/weldingtool click: Click: Swallow
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open
-human|/obj/item/stack/cable_coil menu: Open (refused: Access denied.)
 human|/obj/item/stack/cable_coil menu: Strike
-human|/obj/item/stack/cable_coil menu: Strike (refused: combat mode is off)
-human|/obj/item/stack/cable_coil menu: Swallow
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil menu: Use (refused: hold Disarm)
-human|/obj/item/stack/cable_coil menu: Use (refused: hold Grab)
-human|/obj/item/stack/cable_coil click: Click: Swallow
+human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Open
-human|/obj/item/stack/material/steel menu: Open (refused: Access denied.)
 human|/obj/item/stack/material/steel menu: Strike
-human|/obj/item/stack/material/steel menu: Strike (refused: combat mode is off)
-human|/obj/item/stack/material/steel menu: Swallow
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel menu: Use (refused: hold Disarm)
-human|/obj/item/stack/material/steel menu: Use (refused: hold Grab)
-human|/obj/item/stack/material/steel click: Click: Swallow
+human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Open
-human|/obj/item/card/id menu: Open (refused: Access denied.)
-human|/obj/item/card/id menu: Strike (refused: combat mode is off)
-human|/obj/item/card/id menu: Swallow
+human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id menu: Use (refused: hold Disarm)
-human|/obj/item/card/id menu: Use (refused: hold Grab)
-human|/obj/item/card/id click: Click: Swallow
-human|/obj/item menu: Open
-human|/obj/item menu: Open (refused: Access denied.)
-human|/obj/item menu: Strike
-human|/obj/item menu: Strike (refused: combat mode is off)
-human|/obj/item menu: Swallow
-human|/obj/item menu: Use
-human|/obj/item menu: Use (refused: hold Disarm)
-human|/obj/item menu: Use (refused: hold Grab)
-human|/obj/item click: Click: Swallow
-human|/obj/item/card/emag menu: Open
-human|/obj/item/card/emag menu: Open (refused: Access denied.)
-human|/obj/item/card/emag menu: Strike (refused: combat mode is off)
-human|/obj/item/card/emag menu: Swallow
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Use (refused: hold Disarm)
-human|/obj/item/card/emag menu: Use (refused: hold Grab)
-human|/obj/item/card/emag click: Click: Use
-human|/obj/item/stack/material/plasteel menu: Open
-human|/obj/item/stack/material/plasteel menu: Open (refused: Access denied.)
-human|/obj/item/stack/material/plasteel menu: Repair (refused: It is already fully repaired.)
-human|/obj/item/stack/material/plasteel menu: Strike (refused: combat mode is off)
-human|/obj/item/stack/material/plasteel menu: Swallow
-human|/obj/item/stack/material/plasteel menu: Use
-human|/obj/item/stack/material/plasteel menu: Use (refused: hold Disarm)
-human|/obj/item/stack/material/plasteel menu: Use (refused: hold Grab)
-human|/obj/item/stack/material/plasteel click: Click: Repair
-keys: doors.close, doors.open, emag.subvert, emag.use, force_generic, force_xeno, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, mend, pry, pry_broken, puzzle_door_touch, puzzle_door_use_disarm, puzzle_door_use_grab, puzzle_door_use_harm, puzzle_door_use_help, repair, strike, swallow
+human|/obj/item/card/id click: Click: Use
+keys: drag_buckle, emag.subvert, emag.use, force_generic, force_xeno, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, mend, puzzle_strike, repair, strike, touch, use
 

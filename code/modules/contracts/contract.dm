@@ -435,8 +435,8 @@ CAPABILITIES(/datum/contract)
 		escrow_balance = reward
 	negotiation_locked = TRUE
 	var/old_state = state
-	if(om_timer_slot_pending(src, "offer_timer"))
-		om_cancel_timer_slot(src, "offer_timer")
+	if(after_pending(src, "offer_timer"))
+		cancel_after(src, "offer_timer")
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
 	EXPIRY_STAMP(src, accepted_at, CLOCK_WORLD)
@@ -545,8 +545,8 @@ CAPABILITIES(/datum/contract)
 		// Gameplay is already complete. An unavailable finance account must not
 		// turn an otherwise successful contract into a deadline failure while it
 		// waits for the account-status signal that retries payment.
-		if(om_timer_slot_pending(src, "deadline_timer"))
-			om_cancel_timer_slot(src, "deadline_timer")
+		if(after_pending(src, "deadline_timer"))
+			cancel_after(src, "deadline_timer")
 		deadline = 0
 		grace_until = 0
 		audit(CONTRACT_AUDIT_PAYMENT, "Completion is verified, but payment is deferred until every recipient account can accept its share.")
@@ -654,10 +654,10 @@ CAPABILITIES(/datum/contract)
 	var/old_state = state
 	if(old_state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
-	if(om_timer_slot_pending(src, "deadline_timer"))
-		om_cancel_timer_slot(src, "deadline_timer")
-	if(om_timer_slot_pending(src, "offer_timer"))
-		om_cancel_timer_slot(src, "offer_timer")
+	if(after_pending(src, "deadline_timer"))
+		cancel_after(src, "deadline_timer")
+	if(after_pending(src, "offer_timer"))
+		cancel_after(src, "offer_timer")
 	offer_expires_at = 0
 	grace_until = 0
 	state = new_state

@@ -1,5 +1,5 @@
-/obj/machinery/computer/secure_data|human|none => |
-/obj/machinery/computer/secure_data|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/secure_data|human|none => gen_verb_interaction_secure_data_eject_id,gen_hand_interaction_open_ui_fingerprint|gen_insert_interaction_secure_data_insert_id:needs an identification card
+/obj/machinery/computer/secure_data|robot|none => gen_verb_interaction_secure_data_eject_id,gen_hand_interaction_open_ui_fingerprint|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_secure_data_insert_id:needs an identification card
 /obj/machinery/computer/secure_data|ai|none => |
 /obj/machinery/computer/secure_data|ghost|none => |
-
+/obj/machinery/computer/secure_data|human|/obj/item/card/id => gen_verb_interaction_secure_data_eject_id,gen_insert_interaction_secure_data_insert_id,gen_hand_interaction_open_ui_fingerprint|

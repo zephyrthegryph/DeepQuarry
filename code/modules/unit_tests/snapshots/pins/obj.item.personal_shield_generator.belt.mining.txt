@@ -137,26 +137,5 @@ human|/obj/item/storage menu: Toggle Gun (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Shield (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
-human|/obj/item menu: Alternate use
-human|/obj/item menu: Collect (refused: needs a storage)
-human|/obj/item menu: Customise (refused: needs an item)
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up
-human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item menu: Toggle Gun (refused: You can't do that.)
-human|/obj/item menu: Toggle Shield (refused: You can't do that.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
-human|/obj/item/borg/upgrade/shield_upgrade menu: Alternate use
-human|/obj/item/borg/upgrade/shield_upgrade menu: Collect (refused: needs a storage)
-human|/obj/item/borg/upgrade/shield_upgrade menu: Customise (refused: needs an item)
-human|/obj/item/borg/upgrade/shield_upgrade menu: Move To Top
-human|/obj/item/borg/upgrade/shield_upgrade menu: Pick up
-human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Gun (refused: You can't do that.)
-human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Shield (refused: You can't do that.)
-human|/obj/item/borg/upgrade/shield_upgrade menu: Upgrade
-human|/obj/item/borg/upgrade/shield_upgrade menu: Use
-human|/obj/item/borg/upgrade/shield_upgrade click: Click: Upgrade
-keys: alt, destroy_cell, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand, item, recolor, remove_cell, toggle_shield_effect, upgrade, weapon_toggle_effect
+keys: alt, destroy_cell, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand, item, recolor, remove_cell, toggle_shield_effect, upgrade, weapon_toggle_effect
 

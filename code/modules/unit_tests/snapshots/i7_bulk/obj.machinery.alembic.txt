@@ -2,4 +2,3 @@
 /obj/machinery/alembic|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/alembic|ai|none => |
 /obj/machinery/alembic|ghost|none => |
-

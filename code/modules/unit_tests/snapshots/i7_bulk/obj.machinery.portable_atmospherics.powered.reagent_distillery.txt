@@ -2,4 +2,3 @@
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|ai|none => |
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|ghost|none => |
-

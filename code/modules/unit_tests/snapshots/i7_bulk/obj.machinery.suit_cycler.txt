@@ -4,4 +4,3 @@
 /obj/machinery/suit_cycler|ghost|none => |
 /obj/machinery/suit_cycler|human|/obj/item/clothing/head/helmet/space/void => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:the suit cycler is locked,gen_insert_interaction_insert_suit:needs a voidsuit
 /obj/machinery/suit_cycler|human|/obj/item/clothing/suit/space/void => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:the suit cycler is locked
-

@@ -37,6 +37,8 @@ CAPABILITIES(/atom/movable)
 	owns_one(nameof(recursive_move), /datum/recursive_move)
 	owns_one(nameof(riding_datum), /datum/riding)
 	owns_many(nameof(hose_connectors))
+	// the default drag of every movable: buckle the dragged mob (code/game/objects/buckling.dm)
+	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(cond_all(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
 
 // The proc you should always use to set the light of this atom.
 // Nonesensical value for l_color default, so we can detect if it gets set to null.
@@ -159,7 +161,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_power
 	light_power = new_power
-	OM_EMIT(src, /datum/om/event/atom_update_light_power, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_power, .)
 
 /// Setter for the light range of this atom.
 /atom/proc/set_light_range(new_range)
@@ -167,7 +169,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_range
 	light_range = new_range
-	OM_EMIT(src, /datum/om/event/atom_update_light_range, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_range, .)
 
 /// Setter for the light color of this atom.
 /atom/proc/set_light_color(new_color)
@@ -175,7 +177,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_color
 	light_color = new_color
-	OM_EMIT(src, /datum/om/event/atom_update_light_color, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_color, .)
 
 /// Setter for whether or not this atom's light is on.
 /atom/proc/set_light_on(new_value)
@@ -183,7 +185,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_on
 	light_on = new_value
-	OM_EMIT(src, /datum/om/event/atom_update_light_on, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_on, .)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
@@ -191,7 +193,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_flags
 	light_flags = new_value
-	OM_EMIT(src, /datum/om/event/atom_update_light_flags, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_flags, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
 /atom/movable/proc/update_dynamic_luminosity()

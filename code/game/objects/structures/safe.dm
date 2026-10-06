@@ -63,21 +63,11 @@ APPEARANCE_TEMPLATE(/obj/structure/safe, "{initial(icon_state)}{open?-open:}")
 
 // TGUI migration. attack_hand opens Safe.tsx; the Topic
 // dial/open/retrieve actions move to tgui_act below.
-/obj/structure/safe/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/safe_open_ui,
-		/datum/interaction/entry_item/safe_item,
-	)
-	..()
-
-/datum/interaction/entry_hand/safe_open_ui
-	id = "safe_open_ui"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui
-
 CAPABILITIES(/obj/structure/safe)
 	after_init(0, then(PROC_REF(take_loose_items)))
 	interface("Safe")
+	// the old attackby: put an item in the open safe, or a stethoscope hint while closed
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
 	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))
 	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
@@ -162,17 +152,13 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	return TRUE
 
 
-/// Old attackby: put an item in the open safe, or a stethoscope hint while closed.
-/datum/interaction/entry_item/safe_item
-	id = "safe_item"
-	name = "Use"
-	effect = /obj/structure/safe/proc/interaction_item
-
-/obj/structure/safe/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/safe/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(open)
 		if(I.w_class + space <= maxspace)
 			if(!own_bring_in(src, nameof(contents), I, null, user, TRUE, null, FALSE))
-				return TRUE
+				return OP_OK
 			space += I.w_class
 			to_chat(user, span_notice("You put [I] in \the [src]."))
 			updateUsrDialog(user)
@@ -181,7 +167,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	else
 		if(istype(I, /obj/item/clothing/accessory/stethoscope))
 			to_chat(user, "Hold [I] in one of your hands while you manipulate the dial.")
-	return TRUE
+	return OP_OK
 
 
 //FLOOR SAFES

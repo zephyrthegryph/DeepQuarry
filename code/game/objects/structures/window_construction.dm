@@ -55,13 +55,6 @@
 /datum/construction_graph/window/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	return
 
-/// Weld repair is declared for I_HELP only: in any other stance it isn't meant, and the welder hits the window instead.
-/obj/structure/window/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
-	var/datum/interaction/window_repair/repair = INTERACTION(/datum/interaction/window_repair)
-	if(quality == TOOL_WELDER && !repair.is_meant(user, src, tool))
-		return NONE
-	return ..()
-
 /datum/interaction/construction/window
 	tool_volume = 75
 
@@ -128,34 +121,16 @@
 
 // ---- Repair ----
 
-/obj/structure/window/declare_interactions(list/into)
-	..()
-	into += /datum/interaction/window_repair
-
-/datum/interaction/window_repair
-	feedback = /datum/msg/interaction/window_repair
-	id = "window_repair"
-	name = "Repair the window"
-	category = INTERACTION_CAT_REPAIR
-	priority = 20
-	default_action = INPUT_ACTION_USE
-	stance = I_HELP
-	tool = TOOL_WELDER
-	tool_amount = 1
-	duration = 4 SECONDS
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/structure/window/proc/is_damaged, "it is already in good condition"))
-	effect = /obj/structure/window/proc/weld_repair
-	start_feedback = /datum/msg/start/interaction/window_repair
-
-/datum/msg/interaction/window_repair
-	self = "You repair %T%."
+MSG_DEF_SELF(interaction/window_repair, "You repair %T%.")
+MSG_DEF_SELF(window/undamaged, "It is already in good condition.")
 
 MSG_DEF_SELF(start/interaction/window_repair, "You begin repairing %T%...")
 
-/obj/structure/window/proc/is_damaged(mob/actor, atom/target, obj/item/held)
-	return get_integrity() < max_integrity
+/// Requirement for weld repair: the window is damaged.
+/obj/structure/window/proc/is_damaged(datum/act/op/A)
+	return get_integrity_damage() > 0
 
-/obj/structure/window/proc/weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
+/obj/structure/window/proc/weld_repair(datum/act/op/A)
 	repair_damage(max_integrity)
 	update_icon()
-	return TRUE
+	return OP_OK

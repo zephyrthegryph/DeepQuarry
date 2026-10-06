@@ -113,8 +113,8 @@ CAPABILITIES(/datum/mind)
 		else
 			new_character.bind_identity(identity)
 	if(old_character)
-		OM_EMIT(old_character, /datum/om/event/mob_mind_transferred_out_of, new_character)
-	OM_EMIT(new_character, /datum/om/event/mob_mind_transferred_into, old_character)
+		PUBLISH_LEGACY(old_character, /datum/notice/mob_mind_transferred_out_of, new_character)
+	PUBLISH_LEGACY(new_character, /datum/notice/mob_mind_transferred_into, old_character)
 
 	// Handle mode/antag specific respawns
 	if(changeling_comp)

@@ -22,13 +22,17 @@ CAPABILITIES(/obj/item/grenade/chem_grenade)
 	reagents(1000)
 	owns_many(nameof(beakers))
 	owns_one(nameof(detonator), /obj/item/assembly_holder)
+	without("prime")   // its own self-use takes the assembly apart or primes it
+	op("assemble", in_hand(), then(PROC_REF(interaction_self)))
+	op("assembly_item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle))
 
 
 
-/// Old attack_self.
-/obj/item/grenade/chem_grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: take the detonator or the containers out, or prime it once assembled.
+/obj/item/grenade/chem_grenade/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stage || stage==1)
 		if(detonator)
 			detonator.detached()
@@ -53,35 +57,29 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		if(iscarbon(user))
 			var/mob/living/carbon/C = user
 			C.throw_mode_on()
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/grenade/chem_grenade/proc/can_insert_container)), \
-)
+/// A matching chemical container must be releasable before grenade assembly changes it: null, or why not.
+/obj/item/grenade/chem_grenade/proc/container_refusal(mob/user, obj/item/held)
+	return held.loc?.release_refusal(held, user)
 
-/// A matching chemical container must be releasable before grenade assembly changes.
-/obj/item/grenade/chem_grenade/proc/can_insert_container(mob/user, atom/target, obj/item/held)
-	if((!stage || stage == 1) && path != 2 && is_type_in_list(held, TYPE_TABLE_GET(src, chem_grenade_containers)))
-		var/reason = held.loc?.release_refusal(held, user)
-		if(reason)
-			return reason
-	return TRUE
-
-/// Old attackby.
-/obj/item/grenade/chem_grenade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: fit a detonator assembly or a chemical container.
+/obj/item/grenade/chem_grenade/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/assembly_holder) && (!stage || stage==1) && !detonator && path != 2)
 		var/obj/item/assembly_holder/det = W
 		if(istype(det.a_left,det.a_right.type) || (!isigniter(det.a_left) && !isigniter(det.a_right)))
 			to_chat(user, span_warning("Assembly must contain one igniter."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!det.secured)
 			to_chat(user, span_warning("Assembly must be secured with screwdriver."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		path = 1
 		to_chat(user, span_notice("You add [W] to the metal casing."))
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2)
 		if(!move_into(src, nameof(src.detonator), det, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
 			det_time = 10*T.time
@@ -92,22 +90,24 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 		stage = 1
 	else if(is_type_in_list(W, TYPE_TABLE_GET(src, chem_grenade_containers)) && (!stage || stage==1) && path != 2)
-		if(can_insert_container(user, src, W) != TRUE)
-			return INTERACTION_HANDLED_PASS
+		var/why = container_refusal(user, W)
+		if(why)
+			to_chat(user, span_warning(capitalize("[why].")))
+			return OP_PASS
 		path = 1
 		if(length(beakers) == 2)
 			to_chat(user, span_warning("The grenade can not hold more containers."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			if(W.reagents.total_volume)
 				if(!move_into(src, nameof(beakers), W, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
 				stage = 1
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else
 				to_chat(user, span_warning("\The [W] is empty."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/grenade/chem_grenade/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -32,5 +32,5 @@ human|/obj/item/storage/part_replacer click: Click: Replace parts
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
 wires: Disable, Hack, High Voltage Ground
-keys: anchor.toggle, block, construction.dismantle, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, panel.open, part_replacement.replace, wires.cut, wires.open, wires.pulse
+keys: anchor.toggle, block, construction.dismantle, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, panel.open, part_replacement.replace, wires.cut, wires.open, wires.pulse
 

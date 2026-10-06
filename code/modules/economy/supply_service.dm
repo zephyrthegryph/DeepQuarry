@@ -549,7 +549,7 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 //Selling
 /datum/system/supply/proc/sell()
 	// Loop over each area in the supply shuttle
-	OM_EMIT_WORLD(/datum/om/event/world_supply_shuttle_depart, shuttle.shuttle_area)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_supply_shuttle_depart, shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
 		for(var/atom/movable/MA in subarea)
 			if(MA.anchored)

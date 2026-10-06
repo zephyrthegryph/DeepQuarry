@@ -51,7 +51,7 @@
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)
-	OM_EMIT(src, /datum/om/event/mob_login)
+	PUBLISH_LEGACY(src, /datum/notice/mob_login)
 
 	client.perspective = MOB_PERSPECTIVE
 	client.eye = src
@@ -98,7 +98,7 @@
 			CB.Invoke()
 
 	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")
-	OM_EMIT(src, /datum/om/event/mob_client_login, client)
+	PUBLISH_LEGACY(src, /datum/notice/mob_client_login, client)
 	client.init_verbs()
 
 	set_listening(LISTENING_PLAYER)

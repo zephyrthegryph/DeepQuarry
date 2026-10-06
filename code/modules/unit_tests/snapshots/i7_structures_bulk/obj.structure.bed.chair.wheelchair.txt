@@ -1,5 +1,5 @@
-/obj/structure/bed/chair/wheelchair|human|none => gen_drag_interaction_drag_buckle|
-/obj/structure/bed/chair/wheelchair|robot|none => gen_drag_interaction_drag_buckle|
+/obj/structure/bed/chair/wheelchair|human|none => |
+/obj/structure/bed/chair/wheelchair|robot|none => |
 /obj/structure/bed/chair/wheelchair|ai|none => |
 /obj/structure/bed/chair/wheelchair|ghost|none => |
 

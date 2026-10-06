@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/structure/barricade)
 	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
+	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// The barricade's material (its constructor param; a subtype's default).
 /obj/structure/barricade/var/barricade_material = MAT_WOOD
@@ -37,24 +38,23 @@ CAPABILITIES(/obj/structure/barricade)
 		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
 	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
 
-EXTEND_INTERACTIONS(/obj/structure/barricade, \
-	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
-)
-
-/obj/structure/barricade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a sheet of its own material repairs it, anything else hits it.
+/obj/structure/barricade/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(istype(W, /obj/item/stack))
 		var/obj/item/stack/D = W
 		if(D.get_material_name() != material.name)
-			return TRUE //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
+			return OP_OK //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
 		if(get_integrity() < max_integrity)
 			if(D.get_amount() < 1)
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
-				return TRUE
+				return OP_OK
 			act_message(user, src, others = span_notice("%U% begins to repair %T%."))
 			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
-			return TRUE
-		return TRUE
+			return OP_OK
+		return OP_OK
 
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
 		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/structure/barricade, \
 			receive_weapon_hit(W, user, W.force, INJURY_BURN)
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.75)
-	return TRUE
+	return OP_OK
 
 /obj/structure/barricade/proc/attackby_timed_done(mob/user, obj/item/stack/D)
 	if(!(get_integrity() < max_integrity))

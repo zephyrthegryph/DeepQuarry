@@ -474,19 +474,21 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/obj/item/retail_scanner/scanner = new(test_turf)
 	scanner.locked = FALSE
-	TEST_ASSERT(scanner.ui_act_custom_order(null, list("purpose" = "Meal", "amount" = 2, "price" = 10)), "scanner rejected a valid custom-order row")
-	TEST_ASSERT(scanner.ui_act_custom_order(null, list("purpose" = "Meal", "amount" = 3, "price" = 10)), "scanner did not deterministically merge a duplicate row")
+	// The handlers are op effects now (datum/act/op/A, args...); they read only the actor, which a direct call names here.
+	var/datum/dq_test_op_stub/op_stub = new
+	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 2, 10, "Meal"), "scanner rejected a valid custom-order row")
+	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 3, 10, "Meal"), "scanner did not deterministically merge a duplicate row")
 	TEST_ASSERT_EQUAL(scanner.item_list["Meal"], 5, "scanner duplicate row overwrote rather than merged quantity")
 	TEST_ASSERT_EQUAL(scanner.transaction_amount, 50, "scanner total diverged from merged itemization")
-	TEST_ASSERT(!scanner.ui_act_custom_order(null, list("purpose" = "Meal", "amount" = 1, "price" = 11)), "scanner accepted one item label with conflicting prices")
+	TEST_ASSERT(!scanner.ui_act_custom_order(op_stub, 1, 11, "Meal"), "scanner accepted one item label with conflicting prices")
 	TEST_ASSERT_EQUAL(scanner.transaction_amount, 50, "rejected scanner row changed the payable total")
-	TEST_ASSERT(scanner.ui_act_custom_order(null, list("purpose" = "Drink", "amount" = 1, "price" = 7)), "scanner rejected a second valid custom-order row")
+	TEST_ASSERT(scanner.ui_act_custom_order(op_stub, 1, 7, "Drink"), "scanner rejected a second valid custom-order row")
 	TEST_ASSERT_EQUAL(scanner.transaction_amount, 57, "scanner did not derive its total from every visible row")
 	TEST_ASSERT_EQUAL(service_ticket_total(scanner.item_list, scanner.price_list), scanner.transaction_amount, "scanner itemization and payable total did not reconcile")
 	TEST_ASSERT(findtext(scanner.transaction_purpose, "Meal") && findtext(scanner.transaction_purpose, "Drink"), "scanner confirmation description omitted an itemized row")
 	var/revision_before_invalid = scanner.ticket_revision
 	var/staff_before_invalid = scanner.service_staff_account_number
-	TEST_ASSERT(!scanner.ui_act_custom_order(null, list("purpose" = "", "amount" = 1, "price" = 10)), "scanner accepted an invalid custom order")
+	TEST_ASSERT(!scanner.ui_act_custom_order(op_stub, 1, 10, ""), "scanner accepted an invalid custom order")
 	TEST_ASSERT_EQUAL(scanner.ticket_revision, revision_before_invalid, "rejected scanner input mutated the ticket revision")
 	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, staff_before_invalid, "rejected scanner input changed staff attribution")
 	var/datum/money_account/first_provider = new
@@ -508,22 +510,22 @@
 	rel_set(scanner, nameof(scanner.linked_account), first_provider)
 	scanner.service_staff_account_number = 884003
 	scanner.service_staff_name = "Previous worker"
-	TEST_ASSERT(scanner.ui_act_link_account(null, list("name" = second_provider.account_number, "pin" = second_provider.remote_access_pin)), "scanner rejected a valid provider relink")
+	TEST_ASSERT(scanner.ui_act_link_account(op_stub, second_provider.account_number, second_provider.remote_access_pin), "scanner rejected a valid provider relink")
 	TEST_ASSERT_EQUAL(length(scanner.item_list), 0, "scanner carried an old ticket into a new provider account")
 	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, 0, "scanner carried old staff attribution into a new provider account")
 
 	var/obj/machinery/cash_register/register = new(test_turf)
 	register.set_locked(FALSE)
-	TEST_ASSERT(register.ui_act_custom_order(null, list("purpose" = "Repair", "amount" = 2, "price" = 15)), "register rejected a valid custom-order row")
-	TEST_ASSERT(register.ui_act_custom_order(null, list("purpose" = "Repair", "amount" = 1, "price" = 15)), "register did not deterministically merge a duplicate row")
+	TEST_ASSERT(register.ui_act_custom_order(op_stub, 2, 15, "Repair"), "register rejected a valid custom-order row")
+	TEST_ASSERT(register.ui_act_custom_order(op_stub, 1, 15, "Repair"), "register did not deterministically merge a duplicate row")
 	TEST_ASSERT_EQUAL(register.item_list["Repair"], 3, "register duplicate row overwrote rather than merged quantity")
 	TEST_ASSERT_EQUAL(register.transaction_amount, 45, "register total diverged from its itemization")
-	TEST_ASSERT(!register.ui_act_custom_order(null, list("purpose" = "Repair", "amount" = 1, "price" = 20)), "register accepted one item label with conflicting prices")
+	TEST_ASSERT(!register.ui_act_custom_order(op_stub, 1, 20, "Repair"), "register accepted one item label with conflicting prices")
 	TEST_ASSERT_EQUAL(service_ticket_total(register.item_list, register.price_list), register.transaction_amount, "register itemization and payable total did not reconcile")
 	rel_set(register, nameof(register.linked_account), first_provider)
 	register.service_staff_account_number = 884003
 	register.service_staff_name = "Previous worker"
-	TEST_ASSERT(register.ui_act_link_account(null, list("name" = second_provider.account_number, "pin" = second_provider.remote_access_pin)), "register rejected a valid provider relink")
+	TEST_ASSERT(register.ui_act_link_account(op_stub, second_provider.account_number, second_provider.remote_access_pin), "register rejected a valid provider relink")
 	TEST_ASSERT_EQUAL(length(register.item_list), 0, "register carried an old ticket into a new provider account")
 	TEST_ASSERT_EQUAL(register.service_staff_account_number, 0, "register carried old staff attribution into a new provider account")
 	TEST_ASSERT(!SSsupply.create_service_invoice(null, first_provider, "Malformed checkout", list("Meal" = 1), list("Meal" = 10), list("total" = 10, "subsidy" = 0, "personal" = 9, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null, "Malformed customer"), "invoice accepted a financial split that did not reconcile")
@@ -1257,3 +1259,7 @@
 		registry_leave(REGISTRY_PLAYERS, M)
 	for(var/mob/M as anything in original)
 		registry_join(REGISTRY_PLAYERS, M)
+
+/// What a direct call of an op effect hands it as its act: only the actor is read.
+/datum/dq_test_op_stub
+	var/mob/actor

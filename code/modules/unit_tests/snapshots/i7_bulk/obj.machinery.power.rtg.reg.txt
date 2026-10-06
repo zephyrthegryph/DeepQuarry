@@ -1,5 +1,4 @@
-/obj/machinery/power/rtg/reg|human|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/power/rtg/reg|robot|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/power/rtg/reg|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/power/rtg/reg|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/rtg/reg|ai|none => |
 /obj/machinery/power/rtg/reg|ghost|none => |
-

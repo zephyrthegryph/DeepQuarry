@@ -471,6 +471,11 @@
 
 /datum/unit_test/dq_hc_struct/tanks_burst_when_hit
 /datum/unit_test/dq_hc_struct/tanks_burst_when_hit/run_gate()
+	// A burst canister empties into the room: its air is put back after the test (restore_atmos()), or the next test's mobs are blown about.
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
+		dq_atmos_test_snapshot_air(T)
+	// The oil barrel splashes the room (radius 3): the slick floor is dried after the test, or the next test's people slide across it.
+	defer_cleanup(src, PROC_REF(dry_the_room))
 	var/obj/structure/reagent_dispensers/watertank/W = allocate(/obj/structure/reagent_dispensers/watertank, tile(3, 2))
 	W.blob_act()
 	TEST_ASSERT(QDELETED(W), "a blob bursts a water tank")
@@ -480,6 +485,11 @@
 	var/obj/machinery/portable_atmospherics/canister/C = allocate(/obj/machinery/portable_atmospherics/canister, tile(2, 3))
 	C.blob_act()
 	TEST_ASSERT(QDELETED(C), "a blob bursts a canister")
+
+/datum/unit_test/dq_hc_struct/tanks_burst_when_hit/proc/dry_the_room()
+	for(var/turf/simulated/T in block(locate(run_loc_floor_bottom_left.x - 1, run_loc_floor_bottom_left.y - 1, run_loc_floor_bottom_left.z), locate(run_loc_floor_top_right.x + 1, run_loc_floor_top_right.y + 1, run_loc_floor_top_right.z)))
+		if(T.wet)
+			T.wet_floor_finish()
 
 /datum/unit_test/dq_hc_struct/operating_table_may_be_knocked_flat_by_a_light_blast
 /datum/unit_test/dq_hc_struct/operating_table_may_be_knocked_flat_by_a_light_blast/run_gate()
@@ -698,7 +708,7 @@
 	var/obj/machinery/power/thermoregulator/T = mach(/obj/machinery/power/thermoregulator, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
 	H.put_in_active_hand(M)
-	T.multitool_act(H, M)
+	hci_click(H, T, M) // the multitool is an op that asks (it was multitool_act(), which the op replaced)
 	TEST_ASSERT(asked(H), "the multitool asks for a temperature")
 	hci_answer(H, 20)
 	settle()

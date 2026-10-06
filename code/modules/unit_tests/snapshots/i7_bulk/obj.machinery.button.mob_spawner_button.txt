@@ -3,4 +3,3 @@
 /obj/machinery/button/mob_spawner_button|ai|none => |
 /obj/machinery/button/mob_spawner_button|ghost|none => |
 /obj/machinery/button/mob_spawner_button|human|/obj/item => gen_hand_ungated_interaction_spawn,button_press,button_press_item|
-

@@ -30,5 +30,5 @@ human|/obj/item/card/id menu: Request AI presence
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Request AI presence
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_holopad_silicon_use, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, gen_robot_interaction_swallow, gen_silicon_holopad_silicon_use, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

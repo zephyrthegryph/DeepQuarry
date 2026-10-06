@@ -37,9 +37,9 @@
 	// The legacy slot wrappers are the keyed timer.
 	TEST_ASSERT(after_slot(F, "slot", 3 SECONDS, TYPE_PROC_REF(/datum/a1_fx, hit), 1), "after_slot schedules")
 	TEST_ASSERT(after_pending(F, "slot"), "a slot is an after() key")
-	TEST_ASSERT(om_timer_slot_pending(F, "slot"), "and reads back through the legacy name")
-	TEST_ASSERT(om_timer_slot_left(F, "slot") > 0, "with its time left")
-	TEST_ASSERT(om_cancel_timer_slot(F, "slot"), "and cancels by its key")
+	TEST_ASSERT(after_pending(F, "slot"), "and reads back through the legacy name")
+	TEST_ASSERT(after_left(F, "slot") > 0, "with its time left")
+	TEST_ASSERT(cancel_after(F, "slot"), "and cancels by its key")
 	TEST_ASSERT(!after_pending(F, "slot"), "gone")
 
 /// guard(E, GUARD_X, ...): before_op on a guard key; null lets it proceed, a reason refuses; nothing runs unguarded.

@@ -1,5 +1,5 @@
-/obj/structure/morgue|human|none => gen_hand_interaction_hand,gen_item_interaction_item|
-/obj/structure/morgue|robot|none => gen_hand_interaction_hand,gen_item_interaction_item|
+/obj/structure/morgue|human|none => |
+/obj/structure/morgue|robot|none => |
 /obj/structure/morgue|ai|none => |
 /obj/structure/morgue|ghost|none => |
 

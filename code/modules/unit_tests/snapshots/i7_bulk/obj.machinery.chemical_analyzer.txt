@@ -2,4 +2,3 @@
 /obj/machinery/chemical_analyzer|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chemical_analyzer|ai|none => |
 /obj/machinery/chemical_analyzer|ghost|none => |
-

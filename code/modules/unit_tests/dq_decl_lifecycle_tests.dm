@@ -22,8 +22,6 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 /obj/item/dq_decl_part/better
 	name = "better declared part"
 
-/datum/om/behaviour/dq_decl_test
-
 /datum/decl_binder/dq_decl_test/bind_list(list/atoms)
 	GLOB.dq_decl_test_log += "bind:[length(atoms)]"
 	return ..()
@@ -74,7 +72,6 @@ DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "mode", list("off" = list(APPEARANCE
 DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "lid", list("1" = list(APPEARANCE_OVERLAYS = list("lid_beakerlarge"))))
 DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)
 DECLARE_BIND(/obj/item/dq_decl_probe, /datum/decl_binder/dq_decl_test)
-DECLARE_BEHAVIOUR(/obj/item/dq_decl_probe, /datum/om/behaviour/dq_decl_test)
 DECLARE_PERIODIC(/obj/item/dq_decl_probe, PERIODIC_SLOW)
 DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_contents = TRUE, debris = list(/obj/item/dq_decl_part/better = 2)))
 
@@ -243,7 +240,6 @@ CAPABILITIES(/obj/item/dq_decl_probe/dry)
 /datum/unit_test/dq_decl_scheduling/Run()
 	om_test_begin()
 	var/obj/item/dq_decl_probe/probe = new(dq_containment_floor())
-	TEST_ASSERT(om_attached(probe, /datum/om/behaviour/dq_decl_test), "the declared behaviour attached at materialize")
 	TEST_ASSERT(probe.periodic_pipe == PERIODIC_SLOW, "periodic work started at materialize")
 	TEST_ASSERT(!probe.timer_fired, "the timer waits")
 	scheduler_advance(3)

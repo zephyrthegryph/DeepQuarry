@@ -437,9 +437,9 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT_EQUAL(F.power_level, 2, "timed_cancel keeps the current value")
 
 	timed_set(F, nameof(F.power_level), 8, for_time = 1 SECONDS, clock = CLOCK_OWN)
-	TEST_ASSERT(om_timer_slot_pending(F, "timed:[nameof(F.power_level)]"), "the owned slot is pending")
+	TEST_ASSERT(after_pending(F, "timed:[nameof(F.power_level)]"), "the owned slot is pending")
 	qdel(F)
-	TEST_ASSERT(!om_timer_slot_pending(F, "timed:[nameof(F.power_level)]"), "teardown drops the timer")
+	TEST_ASSERT(!after_pending(F, "timed:[nameof(F.power_level)]"), "teardown drops the timer")
 
 // ---------------------------------------------------------------- review-2 follow-ups
 

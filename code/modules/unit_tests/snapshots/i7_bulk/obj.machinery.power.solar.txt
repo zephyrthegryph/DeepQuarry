@@ -2,4 +2,3 @@
 /obj/machinery/power/solar|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/solar|ai|none => |
 /obj/machinery/power/solar|ghost|none => |
-

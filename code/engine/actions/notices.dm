@@ -14,7 +14,7 @@
 // build fails on it: delayed, never dropped.
 //
 // Legacy bridge. A notice delivered here also reaches the legacy on_notice() reactions (code/datums/reactions) of its holder, and a notice a
-// legacy publish() delivers reaches the hooks here, so both sides run on one occurrence. The OM event twins are twins.dm.
+// legacy publish() delivers reaches the hooks here, so both sides run on one occurrence.
 
 /datum/notice
 	parent_type = /datum/act/notice
@@ -59,14 +59,12 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /proc/outcome_heard(asked, outcome)
 	return !!(asked & outcome)
 
-/// TRUE when something on E listens for `notice_type` for `outcome` (the committed outcome by default): a type-level or activation hook, a
-/// legacy on_notice() reaction (committed only), or an OM event twin that has a listener.
+/// TRUE when something on E listens for `notice_type` for `outcome` (the committed outcome by default): a type-level or activation hook, or a
+/// legacy on_notice() reaction (committed only).
 /proc/notice_wanted(datum/E, notice_type, outcome = ACT_COMMITTED)
-	if(notice_wanted_native(E, notice_type, outcome))
-		return TRUE
-	return !!(outcome & ACT_COMMITTED) && notice_twin_wanted(E, notice_type)
+	return notice_wanted_native(E, notice_type, outcome)
 
-/// notice_wanted() without the OM event twin (the twin's own check calls this).
+/// notice_wanted()'s body.
 /proc/notice_wanted_native(datum/E, notice_type, outcome = ACT_COMMITTED)
 	if(notice_entity_gone(E) || !islist(GLOB?.notice_plans))
 		return FALSE
@@ -113,13 +111,12 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		. += H
 	. = hooks_sorted(.)
 
-/// Delivers N to every listener, synchronously: the hooks here, the legacy on_notice() reactions, the OM event twin.
+/// Delivers N to every listener, synchronously: the hooks here and the legacy on_notice() reactions.
 /proc/notice_deliver(datum/holder, datum/notice/N, outcome)
 	notice_deliver_hooks(holder, N, outcome)
 	if(outcome & ACT_COMMITTED)
 		N.source = holder
 		rx_deliver_notice_to(holder, N)
-		notice_to_event_twin(holder, N)
 
 /// The hooks of this module that hear N (also called for a notice the legacy publish() delivers).
 /proc/notice_deliver_hooks(datum/holder, datum/notice/N, outcome)

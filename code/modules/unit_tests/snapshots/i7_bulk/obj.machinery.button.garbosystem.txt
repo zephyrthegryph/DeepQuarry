@@ -3,4 +3,3 @@
 /obj/machinery/button/garbosystem|ai|none => |
 /obj/machinery/button/garbosystem|ghost|none => |
 /obj/machinery/button/garbosystem|human|/obj/item => button_press,button_press_item|
-

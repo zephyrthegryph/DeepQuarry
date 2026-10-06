@@ -1,5 +1,5 @@
-/obj/machinery/item_bank|human|none => |
-/obj/machinery/item_bank|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/item_bank|human|none => gen_hand_ungated_interaction_use|gen_insert_interaction_store:needs an item
+/obj/machinery/item_bank|robot|none => gen_hand_ungated_interaction_use|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_store:needs an item
 /obj/machinery/item_bank|ai|none => |
 /obj/machinery/item_bank|ghost|none => |
-
+/obj/machinery/item_bank|human|/obj/item => gen_hand_ungated_interaction_use,gen_insert_interaction_store|

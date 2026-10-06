@@ -2,4 +2,3 @@
 /obj/machinery/nuclearbomb|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/nuclearbomb|ai|none => |
 /obj/machinery/nuclearbomb|ghost|none => |
-

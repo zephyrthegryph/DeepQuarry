@@ -3,4 +3,3 @@
 /obj/machinery/shield_capacitor|ai|none => |
 /obj/machinery/shield_capacitor|ghost|none => |
 /obj/machinery/shield_capacitor|human|/obj/item/card/emag => emag|
-

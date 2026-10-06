@@ -28,8 +28,7 @@
 
 /// Emits /datum/om/event/examine on `A` when a behaviour wants it.
 /proc/om_emit_examine(atom/A, mob/user, list/texts)
-	if(om_wants(A, /datum/om/event/examine))
-		om_emit(A, new /datum/om/event/examine(user, texts))
+	PUBLISH_LEGACY(A, /datum/notice/examine, user, texts)
 
 // ---------------------------------------------------------------- moved
 
@@ -54,8 +53,7 @@
 
 /// Emits /datum/om/event/moved on `AM` when a behaviour wants it.
 /proc/om_emit_moved(atom/movable/AM, atom/old_loc, direction, forced)
-	if(om_wants(AM, /datum/om/event/moved))
-		om_emit(AM, new /datum/om/event/moved(old_loc, direction, forced))
+	PUBLISH_LEGACY(AM, /datum/notice/moved, old_loc, direction, forced)
 
 // ---------------------------------------------------------------- attack_self / attackby
 

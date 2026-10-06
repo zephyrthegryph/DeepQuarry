@@ -29,7 +29,7 @@
 		if(!evaluate_candidate(D))
 			rel_remove(src, nameof(candidates), D)
 	finished = TRUE
-	OM_EMIT(src, /datum/om/event/ghost_query_complete)
+	PUBLISH_LEGACY(src, /datum/notice/ghost_query_complete)
 
 /// Test a candidate for allowance to join as this
 /datum/ghost_query/proc/evaluate_candidate(mob/observer/dead/candidate)

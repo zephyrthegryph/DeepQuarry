@@ -79,11 +79,11 @@
 	test_time(1 SECOND)
 
 	// A change on another network leaves the valve alone; its own network makes it look again.
-	TEST_ASSERT(!om_timer_slot_pending(valve, "leak_check"), "the valve had a check pending before any change")
+	TEST_ASSERT(!after_pending(valve, "leak_check"), "the valve had a check pending before any change")
 	wake_automatic_shutoff_valves(theirs)
-	TEST_ASSERT(!om_timer_slot_pending(valve, "leak_check"), "a change on another network woke the valve")
+	TEST_ASSERT(!after_pending(valve, "leak_check"), "a change on another network woke the valve")
 	wake_automatic_shutoff_valves(ours)
-	TEST_ASSERT(om_timer_slot_pending(valve, "leak_check"), "a change on its own network did not wake the valve")
+	TEST_ASSERT(after_pending(valve, "leak_check"), "a change on its own network did not wake the valve")
 	test_time(1 SECOND)
 	test_driver_end()
 

@@ -1,6 +1,5 @@
-/obj/machinery/computer/supplycomp|human|none => |emag:needs a cryptographic sequencer
-/obj/machinery/computer/supplycomp|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/supplycomp|human|none => gen_hand_interaction_open_ui|emag:needs a cryptographic sequencer
+/obj/machinery/computer/supplycomp|robot|none => gen_hand_interaction_open_ui|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/supplycomp|ai|none => |
 /obj/machinery/computer/supplycomp|ghost|none => |
-/obj/machinery/computer/supplycomp|human|/obj/item/card/emag => emag|
-
+/obj/machinery/computer/supplycomp|human|/obj/item/card/emag => emag,gen_hand_interaction_open_ui|

@@ -2,4 +2,3 @@
 /obj/machinery/particle_accelerator/control_box|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/particle_accelerator/control_box|ai|none => |
 /obj/machinery/particle_accelerator/control_box|ghost|none => |
-

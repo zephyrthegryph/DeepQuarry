@@ -1,10 +1,12 @@
 human|none menu: Climb
 human|none menu: Use
-human|none click: Click: Use
+human|none menu: Use (refused: needs an item)
+human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Use
-robot|none click: Click: Use
+robot|none menu: Use (refused: needs an item)
+robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
@@ -46,10 +48,9 @@ human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: attackby, climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, stocks_archive, stocks_backbutton, stocks_buy, stocks_check, stocks_cycle_view, stocks_history, stocks_sell, use, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_hand_interaction_use, gen_insert_interaction_attackby, gen_robot_interaction_swallow, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, stocks_archive, stocks_backbutton, stocks_buy, stocks_check, stocks_cycle_view, stocks_history, stocks_sell, use_gripper, use_item
 

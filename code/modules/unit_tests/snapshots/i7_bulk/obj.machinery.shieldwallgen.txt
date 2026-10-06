@@ -1,5 +1,6 @@
-/obj/machinery/shieldwallgen|human|none => |
-/obj/machinery/shieldwallgen|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/shieldwallgen|human|none => |gen_insert_interaction_id_swipe:needs an identification card or a PDA,gen_insert_interaction_hit:needs an item,gen_hand_ungated_interaction_toggle:the shield generator needs to be firmly secured to the floor first
+/obj/machinery/shieldwallgen|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_id_swipe:needs an identification card or a PDA,gen_insert_interaction_hit:needs an item,gen_hand_ungated_interaction_toggle:the shield generator needs to be firmly secured to the floor first
 /obj/machinery/shieldwallgen|ai|none => |
 /obj/machinery/shieldwallgen|ghost|none => |
-
+/obj/machinery/shieldwallgen|human|/obj/item/card/id => gen_insert_interaction_id_swipe,gen_insert_interaction_hit|gen_hand_ungated_interaction_toggle:the shield generator needs to be firmly secured to the floor first
+/obj/machinery/shieldwallgen|human|/obj/item => gen_insert_interaction_hit|gen_insert_interaction_id_swipe:needs an identification card or a PDA,gen_hand_ungated_interaction_toggle:the shield generator needs to be firmly secured to the floor first

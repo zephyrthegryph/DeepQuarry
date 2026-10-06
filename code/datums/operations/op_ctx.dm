@@ -399,7 +399,7 @@ GLOBAL_LIST_EMPTY(op_watchers)
 	var/mob/actor = ctx.actor
 	var/text = req_reason_text(reason_type || /datum/msg/req_cancelled, ctx)
 	if(actor)
-		om_cancel_timer_slot(actor, "op_wait")
+		cancel_after(actor, "op_wait")
 		if(!QDELETED(actor))
 			to_chat(actor, span_warning(text))
 	if(ctx.op)

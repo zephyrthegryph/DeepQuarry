@@ -2,4 +2,3 @@
 /obj/machinery/injector_maker|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/injector_maker|ai|none => |
 /obj/machinery/injector_maker|ghost|none => |
-

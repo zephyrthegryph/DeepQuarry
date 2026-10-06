@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 /// A blob bursts a portable canister or pump outright.
 /obj/machinery/portable_atmospherics/proc/blob_bursts(datum/act/hit/blob/A)
-	expire(0)
+	destroyed(src, null, "blob") // at once: expire(0) only queued it, so the blob's hit left it standing for the tick
 	return TRUE
 
 /obj/machinery/portable_atmospherics/proc/StandardAirMix()

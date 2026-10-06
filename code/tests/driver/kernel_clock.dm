@@ -213,6 +213,9 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 		K.test_now = min(K.test_now + OM_SLOT_DS, target)
 		K.test_slot(K.test_now)
 		vg_heat_net_advance(OM_SLOT_DS / (1 SECONDS)) // the test clock does not pace the native world: the heat network's edges advance with it
+		// Gas watches: Rust reports a mixture's change at the next drain and the machine service (a live item, not stepped here) hands
+		// each to its watch. Without this a test's gas watches only fired when it drained them by hand.
+		SSmachines.wake_dirty_gas_subscribers()
 
 /// Runs one kernel phase once at the current kernel time and moves no clock, so a timer that is not yet due stays pending.
 /proc/kernel_phase_run(phase)

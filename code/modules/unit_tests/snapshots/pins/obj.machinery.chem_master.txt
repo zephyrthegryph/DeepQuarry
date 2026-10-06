@@ -58,18 +58,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Ui open
-human|/obj/item/reagent_containers menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/reagent_containers menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/reagent_containers menu: Ui open
-human|/obj/item/reagent_containers menu: Unsecure (refused: needs a wrench)
-human|/obj/item/reagent_containers click: Click: Ui open
-human|/obj/item/storage/pill_bottle menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/storage/pill_bottle menu: Empty contents
-human|/obj/item/storage/pill_bottle menu: Load pill bottle
-human|/obj/item/storage/pill_bottle menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/pill_bottle menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/pill_bottle menu: Ui open
-human|/obj/item/storage/pill_bottle menu: Unsecure (refused: needs a wrench)
-human|/obj/item/storage/pill_bottle click: Click: Load pill bottle
-keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, eject, ejectp, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print, remove, removecustom, toggle, ui_open
+keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, drag_buckle, eject, ejectp, gen_robot_interaction_swallow, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print, remove, removecustom, toggle, ui_open
 

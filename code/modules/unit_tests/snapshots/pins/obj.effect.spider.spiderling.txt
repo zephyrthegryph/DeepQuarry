@@ -33,16 +33,5 @@ human|/obj/item/stack/material/steel click: Click: Hit web
 human|/obj/item/card/id menu: Hit web
 human|/obj/item/card/id menu: Stomp
 human|/obj/item/card/id click: Click: Hit web
-human|/obj/item/mop_deploy menu: Hit web
-human|/obj/item/mop_deploy menu: Insert a mop
-human|/obj/item/mop_deploy menu: Stomp
-human|/obj/item/mop_deploy click: Click: Insert a mop
-human|/obj/item/soap menu: Hit web
-human|/obj/item/soap menu: Insert a soap
-human|/obj/item/soap menu: Stomp
-human|/obj/item/soap click: Click: Insert a soap
-human|/obj/item menu: Hit web
-human|/obj/item menu: Stomp
-human|/obj/item click: Click: Hit web
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_stomp_spiderling, hit_web, pass_insert, pass_insert_2, use_welder
+keys: drag_buckle, gen_hand_interaction_stomp_spiderling, hit_web, pass_insert, pass_insert_2, use_welder
 

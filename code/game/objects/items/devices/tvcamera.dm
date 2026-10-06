@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/tvcamera, TYPE_PROC_REF(/atom, appearance_over
 
 /obj/item/tvcamera/proc/update_feed()
 	if(camera.status)
-		OM_EMIT(camera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
+		PUBLISH_LEGACY(camera, /datum/notice/movable_attempted_move, null, null)
 
 // Bodycam
 // Security Bodycam
@@ -230,7 +230,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 
 /obj/item/clothing/accessory/bodycam/proc/update_feed()
 	if(bcamera.status)
-		OM_EMIT(bcamera, /datum/om/event/movable_attempted_move, null, null) // Forward the movement event
+		PUBLISH_LEGACY(bcamera, /datum/notice/movable_attempted_move, null, null)
 
 DECLARE_APPEARANCE_PROC(/obj/item/clothing/accessory/bodycam, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clothing/accessory/bodycam/appearance_overlays()

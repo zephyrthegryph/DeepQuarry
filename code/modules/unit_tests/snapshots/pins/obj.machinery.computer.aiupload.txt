@@ -75,6 +75,5 @@ human|/obj/item menu: Install module
 human|/obj/item menu: Select AI
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
-keys: climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_select_ai, gen_insert_interaction_install, gen_observer_interaction_swallow, gen_robot_interaction_swallow, gen_verb_interaction_access_internals, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_hand_ungated_interaction_select_ai, gen_insert_interaction_install, gen_observer_interaction_swallow, gen_robot_interaction_swallow, gen_verb_interaction_access_internals, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
 

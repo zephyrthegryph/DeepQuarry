@@ -11,7 +11,7 @@
 // Order (also in the define file's header and the doc, keep all three in step):
 //   init:          starting occupants (owns_one / owns_many with starts =),
 //                  gas, appearance
-//   materialize:   registries, service members, binds, behaviours, periodic, declared periodic work (sys_periodic)
+//   materialize:   registries, service members, binds, periodic, declared periodic work (sys_periodic)
 //   dematerialize: periodic stop, declared periodic stop, service leave, bind release
 //   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
 //                  phase 6 destroy effects
@@ -58,8 +58,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/services
 	/// /datum/decl_binder types.
 	var/list/binders
-	/// OM behaviour types.
-	var/list/behaviours
 	/// A periodic pipeline type, or null.
 	var/periodic
 	/// EXPIRY_ON_LAPSE: var name -> list(clock, proc_ref) (code/datums/sys/expiry.dm).
@@ -86,7 +84,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	registries = null
 	services = null
 	binders = null
-	behaviours = null
 	periodic = null
 	verbs_always = null
 	verbs_login = null
@@ -107,9 +104,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /datum/lifecycle_decls/proc/add_binder(binder)
 	LAZYOR(binders, binder)
-
-/datum/lifecycle_decls/proc/add_behaviour(behaviour)
-	LAZYOR(behaviours, behaviour)
 
 /datum/lifecycle_decls/proc/set_periodic(pipeline)
 	periodic = pipeline
@@ -195,7 +189,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			periodic = null
 		if(sys_periodic && !isatom(D))
 			work |= DECL_WORK_INIT // a non-atom starts it from New() (lifecycle_decls_init())
-	if(registries || services || binders || behaviours || periodic || expiry_hooks || (sys_periodic && isatom(D)))
+	if(registries || services || binders || periodic || expiry_hooks || (sys_periodic && isatom(D)))
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
@@ -353,8 +347,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			call(target, service[2])(A)
 	if(decls.binders)
 		lifecycle_decls_bind(A, decls)
-	for(var/behaviour in decls.behaviours)
-		om_attach(A, behaviour)
 	if(decls.periodic)
 		om_task_periodic(A, decls.periodic)
 	for(var/hook_var in decls.expiry_hooks)

@@ -2,4 +2,3 @@
 /obj/machinery/power|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power|ai|none => |
 /obj/machinery/power|ghost|none => |
-

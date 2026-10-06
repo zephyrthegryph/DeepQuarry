@@ -291,6 +291,10 @@
 		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
+	// A gravity generator going away switches its area's gravity off (as in play): the room gets its gravity back after the sweep, or every later
+	// test's mobs drift (dq_p2_closet/drag_stuffs_a_person_into_an_open_closet).
+	var/area/sweep_room = get_area(T)
+	var/sweep_gravity = sweep_room.has_gravity
 	var/list/actual_by_type = list()
 	var/list/actual = list()
 	for(var/type in snapshot_types)
@@ -305,6 +309,8 @@
 		actual_by_type[type] = dq_snapshot_lines(target, T, actors)
 		actual += actual_by_type[type]
 		qdel(target)
+	if(sweep_room.has_gravity != sweep_gravity)
+		sweep_room.gravitychange(sweep_gravity)
 	if(snapshot_dir)
 		var/snap_name = copytext("[type]", length("[/datum/unit_test/dq_interaction_domain_snapshot]") + 2)
 		var/report = dq_snapshot_compare(snapshot_dir, snap_name, actual_by_type, expected_by_type, bad_snapshot_files)

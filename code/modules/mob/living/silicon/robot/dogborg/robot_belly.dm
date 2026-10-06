@@ -23,7 +23,7 @@
 		log_runtime("robot_belly created for a non-robot ([R]).")
 		return
 	rel_set(src, nameof(owner), R)
-	R.can_buckle = TRUE
+	R.set_can_buckle(TRUE)
 	R.buckle_movable = TRUE
 	R.buckle_lying = FALSE
 	R.max_buckled_mobs = 1
@@ -42,7 +42,7 @@
 		for(var/rider in R.buckled_mob_list())
 			R.riding_datum?.force_dismount(rider)
 		own_clear(R, nameof(R.riding_datum), OWN_DELETE)
-		R.can_buckle = initial(R.can_buckle)
+		R.set_can_buckle(initial(R.can_buckle))
 	..()
 
 /// Gives `R` a robot belly if it has none.

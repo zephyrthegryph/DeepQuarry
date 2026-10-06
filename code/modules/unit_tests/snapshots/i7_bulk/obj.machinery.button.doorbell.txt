@@ -3,4 +3,3 @@
 /obj/machinery/button/doorbell|ai|none => |
 /obj/machinery/button/doorbell|ghost|none => |
 /obj/machinery/button/doorbell|human|/obj/item => gen_hand_interaction_press_impl,gen_insert_interaction_rename,button_press,button_press_item|machine_panel:needs a screwdriver
-

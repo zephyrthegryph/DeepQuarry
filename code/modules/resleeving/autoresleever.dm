@@ -215,7 +215,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 
 	apply_resleeve_languages(new_character, ghost, ghost_client)
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 	return new_character
 
 /// The character's whitelisted languages, custom language keys and preferred language.

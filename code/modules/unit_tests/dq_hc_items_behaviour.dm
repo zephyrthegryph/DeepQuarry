@@ -320,6 +320,19 @@
 	TEST_ASSERT(H.get_active_hand(), "what was inside is in the hand that held the package")
 	qdel(H.get_active_hand())
 
+/// The package subtype unwraps through its own op alone: it drops the parent's `unwrap` (both answered the hand at one tier: op_clash).
+/datum/unit_test/dq_hc_items/contraband_package_unwraps_once
+
+/datum/unit_test/dq_hc_items/contraband_package_unwraps_once/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/contraband/package/B = allocate(/obj/item/contraband/package, tile(2, 2))
+	B.w_class = ITEMSIZE_SMALL
+	hci_click(H, B, B)
+	settle()
+	TEST_ASSERT(QDELETED(B), "the package is used up")
+	TEST_ASSERT(H.get_active_hand(), "what was inside is in the hand that held the package")
+	qdel(H.get_active_hand())
+
 /datum/unit_test/dq_hc_items/telecrystal_use_without_mind_keeps_stack
 
 /datum/unit_test/dq_hc_items/telecrystal_use_without_mind_keeps_stack/run_gate()

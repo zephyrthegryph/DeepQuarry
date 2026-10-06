@@ -58,19 +58,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/storage/part_replacer menu: Empty contents
-human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/part_replacer menu: Replace parts
-human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/part_replacer menu: Ui open
-human|/obj/item/storage/part_replacer menu: Use
-human|/obj/item/storage/part_replacer click: Click: Ui open
-human|/obj/item/tank menu: Connect tank
-human|/obj/item/tank menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/tank menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tank menu: Ui open
-human|/obj/item/tank menu: Use
-human|/obj/item/tank click: Click: Ui open
-keys: add_tank, canister_scan, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load_tank, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open, part_replacement, remove_tank, set_can_pressure, set_mode, start_sim, ui_open
+keys: add_tank, canister_scan, drag_buckle, gen_robot_interaction_swallow, load_tank, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open, part_replacement, remove_tank, set_can_pressure, set_mode, start_sim, ui_open
 

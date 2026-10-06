@@ -315,7 +315,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	color_for_now(GLOB.palette_removed_matrix)
 
 /atom/movable/screen/button_palette/proc/color_for_now(list/color)
-	if(om_timer_slot_pending(src, "color_timer_id"))
+	if(after_pending(src, "color_timer_id"))
 		return
 	add_atom_colour(color, TEMPORARY_COLOUR_PRIORITY) //We unfortunately cannot animate matrix colors. Curse you lummy it would be ~~non~~trivial to interpolate between the two valuessssssssss
 	after(src, 2 SECONDS, PROC_REF(remove_color), key = "color_timer_id", with = list(color))

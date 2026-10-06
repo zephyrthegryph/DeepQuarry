@@ -1,61 +1,79 @@
 human|none menu: Deconstruct (refused: needs a crowbar)
+human|none menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
 human|none menu: Remove item
 human|none menu: Ui open
 human|none menu: Unsecure (refused: needs a wrench)
+human|none menu: Use
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Deconstruct (refused: needs a crowbar)
+robot|none menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
 robot|none menu: Remove item
 robot|none menu: Ui open
 robot|none menu: Unsecure (refused: needs a wrench)
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/screwdriver menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Remove item
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Unsecure (refused: needs a wrench)
+human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Ui open
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Remove item
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
+human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wrench menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wrench menu: Remove item
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Ui open
 human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wirecutters menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Remove item
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
+human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Ui open
 human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/multitool menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool menu: Remove item
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Unsecure (refused: needs a wrench)
+human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Ui open
 human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/weldingtool menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool menu: Remove item
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Unsecure (refused: needs a wrench)
+human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Ui open
 human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/cable_coil menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/cable_coil menu: Remove item
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil menu: Unsecure (refused: needs a wrench)
+human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Ui open
 human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/material/steel menu: Insert
@@ -63,12 +81,15 @@ human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: need
 human|/obj/item/stack/material/steel menu: Remove item
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel menu: Unsecure (refused: needs a wrench)
+human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/card/id menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Remove item
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
+human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
 human|/obj/item/clothing menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/clothing menu: Insert
@@ -76,35 +97,7 @@ human|/obj/item/clothing menu: Open maintenance panel (refused: needs a screwdri
 human|/obj/item/clothing menu: Remove item
 human|/obj/item/clothing menu: Ui open
 human|/obj/item/clothing menu: Unsecure (refused: needs a wrench)
+human|/obj/item/clothing menu: Use
 human|/obj/item/clothing click: Click: Ui open
-human|/obj/item/storage/backpack menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/storage/backpack menu: Insert
-human|/obj/item/storage/backpack menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/backpack menu: Remove item
-human|/obj/item/storage/backpack menu: Ui open
-human|/obj/item/storage/backpack menu: Unsecure (refused: needs a wrench)
-human|/obj/item/storage/backpack click: Click: Ui open
-human|/obj/item/storage/belt menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/storage/belt menu: Insert
-human|/obj/item/storage/belt menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/belt menu: Remove item
-human|/obj/item/storage/belt menu: Switch Belt Layer (refused: You can't do that.)
-human|/obj/item/storage/belt menu: Ui open
-human|/obj/item/storage/belt menu: Unsecure (refused: needs a wrench)
-human|/obj/item/storage/belt click: Click: Ui open
-human|/obj/item/toy menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/toy menu: Insert
-human|/obj/item/toy menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/toy menu: Remove item
-human|/obj/item/toy menu: Ui open
-human|/obj/item/toy menu: Unsecure (refused: needs a wrench)
-human|/obj/item/toy click: Click: Ui open
-human|/obj/item/stack/material menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/stack/material menu: Insert
-human|/obj/item/stack/material menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/material menu: Remove item
-human|/obj/item/stack/material menu: Ui open
-human|/obj/item/stack/material menu: Unsecure (refused: needs a wrench)
-human|/obj/item/stack/material click: Click: Ui open
-keys: choose_color, clear, drop, gear_painter_alt_drop, gear_painter_insert, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, paint, set_hue, set_matrix_color, set_matrix_string, set_sat, set_val, switch_modes, ui_open
+keys: choose_color, clear, drag_buckle, drop, gear_painter_alt_drop, gear_painter_insert, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, paint, set_hue, set_matrix_color, set_matrix_string, set_sat, set_val, switch_modes, ui_open
 

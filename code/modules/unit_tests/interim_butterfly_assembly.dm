@@ -7,7 +7,7 @@
 	TEST_ASSERT(user.put_in_l_hand(grip), "the real grip occupies the left hand")
 	TEST_ASSERT(user.put_in_r_hand(blade), "the real blade occupies the right hand")
 	var/datum/material/blade_material = blade.material
-	grip.butterflyhandle_interaction_item(user, blade, null)
+	test_op_handler(grip, "butterflyhandle_interaction_item", user, blade)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(grip), "assembly consumes the actual grip")
 	TEST_ASSERT(QDELETED(blade), "assembly consumes the actual blade")
@@ -30,8 +30,8 @@
 		var/obj/item/sticky = source_refuses ? grip : blade
 		add_trait(sticky, TRAIT_NODROP, "interim_butterfly_assembly")
 		TEST_ASSERT(sticky.loc.release_refusal(sticky, user), "the actual sticky ingredient refuses release")
-		TEST_ASSERT(grip.can_attach_blade(user, grip, blade) != TRUE, "the assembly requirement rejects the sticky ingredient")
-		grip.butterflyhandle_interaction_item(user, blade, null)
+		TEST_ASSERT(grip.attach_refusal(user, blade), "the assembly refuses the sticky ingredient")
+		test_op_handler(grip, "butterflyhandle_interaction_item", user, blade)
 		own_turf_contents(T)
 		TEST_ASSERT(!QDELETED(grip), "refusal preserves the actual grip")
 		TEST_ASSERT(!QDELETED(blade), "refusal preserves the actual blade")

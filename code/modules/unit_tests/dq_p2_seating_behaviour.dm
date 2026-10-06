@@ -480,14 +480,14 @@
 // The entries that stay on the old forms
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// A person dragged onto a bed is buckled to it (the mob drag is the engine-gaps work: this entry is the old MouseDrop_T and stays).
+/// A person dragged onto a bed is buckled to it (the buckle capability's drag, ahead of every movable's default drag buckle).
 /datum/unit_test/dq_p2_seat/a_person_dragged_onto_a_bed_is_buckled
 
 /datum/unit_test/dq_p2_seat/a_person_dragged_onto_a_bed_is_buckled/run_gate()
 	var/obj/structure/bed/B = allocate(/obj/structure/bed, floor_at(1, 1))
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	var/mob/living/carbon/human/M = patient(floor_at(0, 1))
-	B.MouseDrop_T(M, H)
+	test_drag(H, M, B)
 	settle()
 	TEST_ASSERT(M in p2_seat_occupants(B), "the dragged person is buckled")
 

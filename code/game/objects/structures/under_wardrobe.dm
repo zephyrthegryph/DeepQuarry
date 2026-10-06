@@ -12,28 +12,18 @@ CAPABILITIES(/obj/structure/undies_wardrobe)
 	op("change_underwear", ui_act("change_underwear", arg("category")), then(PROC_REF(ui_act_change_underwear)))
 	op("tweak", ui_act("tweak", arg("category"), arg("tweak")), then(PROC_REF(ui_act_tweak)))
 	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(undies_wardrobe/not_human))))
-
-/obj/structure/undies_wardrobe/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/undies_wardrobe_open_ui,
-	)
-	..()
-
-/datum/interaction/entry_hand/undies_wardrobe_open_ui
-	id = "undies_wardrobe_open_ui"
-	name = "Use"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/undies_wardrobe/proc/can_browse))
-	effect = /obj/structure/undies_wardrobe/proc/wardrobe_open_ui
+	extend("ui_open", needs(req(PROC_REF(can_browse), because = MSG(undies_wardrobe/nothing))))
 
 /// Requirement: only someone who wears underwear finds anything in here.
-/obj/structure/undies_wardrobe/proc/can_browse(mob/user, atom/target, obj/item/held)
-	if(!human_who_can_use_underwear(user))
-		return "sadly there's nothing in here for you to wear"
-	return TRUE
+/obj/structure/undies_wardrobe/proc/can_browse(datum/act/op/A)
+	return wears_underwear(A.actor)
 
-/obj/structure/undies_wardrobe/proc/wardrobe_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
+/// Does `M` wear underwear (a human whose species has it)?
+/proc/wears_underwear(mob/living/carbon/human/H)
+	READS_FROM() // a species is set when the body is made; the window asks again when it opens
+	return istype(H) && H.species && (H.species.appearance_flags & HAS_UNDERWEAR)
+
+MSG_DEF_SELF(undies_wardrobe/nothing, "Sadly there's nothing in here for you to wear.")
 
 // TGUI migration. interact opens UndiesWardrobe.tsx; Topic
 // handlers move to tgui_act below.

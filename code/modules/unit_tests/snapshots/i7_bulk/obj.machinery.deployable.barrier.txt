@@ -2,4 +2,3 @@
 /obj/machinery/deployable/barrier|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/deployable/barrier|ai|none => |
 /obj/machinery/deployable/barrier|ghost|none => |
-

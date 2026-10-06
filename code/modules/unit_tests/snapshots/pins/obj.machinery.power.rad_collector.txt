@@ -28,11 +28,5 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id click: Click: Toggle
-human|/obj/item/pda menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/pda menu: Toggle (refused: Access denied.)
-human|/obj/item/pda click: Click: Toggle
-human|/obj/item/tank/phoron menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/tank/phoron menu: Load phoron tank (refused: It needs to be secured to the floor first.)
-human|/obj/item/tank/phoron click: Click: Load phoron tank
-keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, toggle
+keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, toggle
 

@@ -101,9 +101,6 @@
 /datum/ai_behavior/retaliate_to_attacker/start(datum/ai_brain/brain, atom/target, atom/source)
 	// Switching primary_threat will make the standard attack behaviors pick the
 	// attacker on the next tick.
-	var/mob/old = brain.primary_threat
 	rel_set(brain, nameof(brain.primary_threat), target)
-	if(old != target)
-		OM_EMIT(brain.holder, /datum/om/event/dqai_target_changed, target, old)
 	brain.invalidate_selection()
 	return DQ_BEHAVIOR_DONE

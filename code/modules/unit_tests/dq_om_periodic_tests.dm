@@ -320,7 +320,7 @@
 	for(var/datum/om/stage/T as anything in missed)
 		names |= "[T.type]"
 	TEST_ASSERT(!length(missed), "the pipeline audit found missed wakes: [jointext(names, ", ")]")
-	var/list/woken = om_sleeper_audit(100000, FALSE)
+	var/list/woken = sleep_audit(100000, FALSE)
 	TEST_ASSERT(!length(woken), "the timer/key audit found sleepers with work: [jointext(woken, "; ")]")
 
 /// Tanning racks and modular computers sleep when idle and wake on their producer.

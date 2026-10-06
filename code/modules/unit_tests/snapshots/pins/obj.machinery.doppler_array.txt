@@ -65,5 +65,5 @@ human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer click: Click: Ui open
-keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ui_open
+keys: drag_buckle, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ui_open
 

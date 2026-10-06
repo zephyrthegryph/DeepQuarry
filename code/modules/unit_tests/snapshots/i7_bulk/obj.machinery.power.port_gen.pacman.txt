@@ -2,4 +2,3 @@
 /obj/machinery/power/port_gen/pacman|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/port_gen/pacman|ai|none => |
 /obj/machinery/power/port_gen/pacman|ghost|none => |
-

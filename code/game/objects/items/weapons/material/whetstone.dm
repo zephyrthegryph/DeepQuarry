@@ -61,11 +61,14 @@ CAPABILITIES(/obj/item/whetstone)
 	repair_time = material.density * 0.5 // weight renamed to density.
 	sharpen_time = material.density * 3 // weight renamed to density.
 
-EXTEND_INTERACTIONS(/obj/item/material/sharpeningkit, INTERACT_ITEM(null, PROC_REF(sharpeningkit_interaction_item)))
+CAPABILITIES(/obj/item/material/sharpeningkit)
+	op("sharpen", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(sharpeningkit_interaction_item)))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/material/sharpeningkit/proc/sharpeningkit_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/material/sharpeningkit/proc/sharpeningkit_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/S = W
 		if(S.material == material)

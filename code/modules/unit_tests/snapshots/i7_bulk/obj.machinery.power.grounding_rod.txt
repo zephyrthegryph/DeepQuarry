@@ -1,5 +1,4 @@
-/obj/machinery/power/grounding_rod|human|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
-/obj/machinery/power/grounding_rod|robot|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/power/grounding_rod|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/power/grounding_rod|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/grounding_rod|ai|none => |
 /obj/machinery/power/grounding_rod|ghost|none => |
-

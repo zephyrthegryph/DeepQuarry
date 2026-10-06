@@ -1,27 +1,27 @@
-human|none menu: Crush (refused: combat mode is off)
+human|none menu: Crush
 human|none click: nothing
-robot|none menu: Crush (refused: combat mode is off)
+robot|none menu: Crush
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Crush (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Crush
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Crush (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Crush
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Crush (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Crush
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Crush (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Crush
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Crush (refused: combat mode is off)
+human|/obj/item/multitool menu: Crush
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Crush (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Crush
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Crush (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Crush
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Crush (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Crush
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Crush (refused: combat mode is off)
+human|/obj/item/card/id menu: Crush
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, snowman_crush
+keys: crush, drag_buckle
 

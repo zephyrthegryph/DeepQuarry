@@ -249,3 +249,7 @@ reset once per pass.
 - **Bench gate**: `life_sequence` now pins the pipeline's cost against a reference runner (section 8's gate without the
   pipeline). `life_sweep` (real mobs, same machine, back to back): h512 kernel 327 ms/s for 2563 frames against the
   pipeline's 373-392 ms/s for 2286-2517; mix 104 against 142-171 ms/s.
+- **After the stat moves** (relevance, suspension and the bio clock are stats; trait disabilities, shakes and the mob
+  repeats are every(); October 6 2026): `life_sequence` ratios awake 0.81/0.78, mixed 0.85/0.88 (runner/scheduled), idle
+  0.99/1.26 (the known idle gap above: `life_sequence_gate_failures` 1, the idle scheduled path, as at S0's 1.47).
+  `life_sweep`: h512 149.8 ms/s for 3413 frames, mix 33.4 ms/s (the body migration also took its stages out of Life).

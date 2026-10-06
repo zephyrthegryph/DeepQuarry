@@ -2,4 +2,3 @@
 /obj/machinery/lapvend|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/lapvend|ai|none => |
 /obj/machinery/lapvend|ghost|none => |
-

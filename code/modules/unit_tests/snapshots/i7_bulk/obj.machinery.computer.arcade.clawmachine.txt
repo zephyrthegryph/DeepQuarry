@@ -1,6 +1,5 @@
-/obj/machinery/computer/arcade/clawmachine|human|none => |emag_gated:needs a cryptographic sequencer
-/obj/machinery/computer/arcade/clawmachine|robot|none => |emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/arcade/clawmachine|human|none => machine_open_ui,clawmachine_pay|emag_gated:needs a cryptographic sequencer
+/obj/machinery/computer/arcade/clawmachine|robot|none => machine_open_ui,clawmachine_pay|emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/arcade/clawmachine|ai|none => |
 /obj/machinery/computer/arcade/clawmachine|ghost|none => |
-/obj/machinery/computer/arcade/clawmachine|human|/obj/item/card/emag => emag_gated|
-
+/obj/machinery/computer/arcade/clawmachine|human|/obj/item/card/emag => emag_gated,machine_open_ui,clawmachine_pay|

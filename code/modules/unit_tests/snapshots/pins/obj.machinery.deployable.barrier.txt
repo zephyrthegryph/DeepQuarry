@@ -24,10 +24,5 @@ human|/obj/item/stack/material/steel click: Click: Hit
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Swipe ID
 human|/obj/item/card/id click: Click: Swipe ID
-human|/obj/item/card/emag menu: Hit
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag click: Click: Use
-human|/obj/item menu: Hit
-human|/obj/item click: Click: Hit
-keys: emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, hit, machine_anchor, machine_deconstruct, machine_panel, machine_repair, swipe_id, use_wrench
+keys: drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, hit, machine_anchor, machine_deconstruct, machine_panel, machine_repair, swipe_id, use_wrench
 

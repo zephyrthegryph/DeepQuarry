@@ -2,4 +2,3 @@
 /obj/machinery/fusion_fuel_compressor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/fusion_fuel_compressor|ai|none => |
 /obj/machinery/fusion_fuel_compressor|ghost|none => |
-

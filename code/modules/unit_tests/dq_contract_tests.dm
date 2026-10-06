@@ -516,7 +516,7 @@
 			break
 	if(!original_routine)
 		original_routine = trial_terms_definition.create_contract(list("offer_key" = "dq-medical-rotation-test", "board_key" = "[CONTRACT_SCOPE_DEPARTMENT]:[DEPARTMENT_MEDICAL]", "offer_kind" = CONTRACT_OFFER_STANDING))
-	TEST_ASSERT(om_timer_slot_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
+	TEST_ASSERT(after_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
 	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")
@@ -789,7 +789,7 @@
 	))
 	TEST_ASSERT(conditional in SScontracts.offered_contracts, "three-person therapeutic offer was not published")
 	var/mob/living/carbon/human/departing = subjects[1]
-	OM_EMIT(departing, /datum/om/event/mob_logout)
+	PUBLISH_LEGACY(departing, /datum/notice/mob_logout)
 	registry_leave(REGISTRY_PLAYERS, departing)
 	// Reconciliation is deferred to an om_after(0) timer, which fires on the next scheduler slot
 	// (OM_SLOT_DS) and pass: not always inside one decisecond on a busy test world.

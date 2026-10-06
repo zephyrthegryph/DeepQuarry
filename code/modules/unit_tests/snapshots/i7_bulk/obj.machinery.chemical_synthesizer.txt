@@ -2,4 +2,3 @@
 /obj/machinery/chemical_synthesizer|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chemical_synthesizer|ai|none => |
 /obj/machinery/chemical_synthesizer|ghost|none => gen_observer_chem_synthesizer_ghost_view|
-

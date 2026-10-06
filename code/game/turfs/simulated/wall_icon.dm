@@ -51,7 +51,7 @@
 	return CACHED_KEY(wall_material_facts, "[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[temperature_key]", src, material_temperature)
 
 /// Builds the shared facts for a wall's (material, reinforcement, temperature); cleared with the
-/// material facts (material_facts_changed() emits /datum/om/event/material_facts_changed).
+/// material facts (material_facts_changed() clears it, SC_ON_NOTICE).
 /proc/build_wall_material_facts(turf/simulated/wall/W, material_temperature)
 	var/datum/material/material = W.material
 	var/datum/material/reinf_material = W.reinf_material
@@ -69,7 +69,7 @@
 		reinf_material ? "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]." : "It seems to be a section of wall plated with [material.display_name].",
 	)
 
-DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material_facts), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
+DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material_facts), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)
 
 /turf/simulated/wall/proc/set_material(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
 	material = newmaterial
@@ -118,7 +118,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_ov
 		damage_step = min(round(damage_fraction * damage_overlays.len) + 1, damage_overlays.len)
 	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 
-DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_sets), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
+DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_sets), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)
 
 /// Builder for wall_overlay_sets. `damage_image` is the damage overlay for the state, or null.
 /proc/build_wall_overlay_sets(wall_masks, datum/material/material, datum/material/reinf_material, list/connections, construction_stage, image/damage_image)

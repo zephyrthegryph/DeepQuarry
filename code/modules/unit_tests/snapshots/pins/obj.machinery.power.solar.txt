@@ -36,8 +36,5 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id click: nothing
-human|/obj/item menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item menu: Strike
-human|/obj/item click: nothing
-keys: cable_place, climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remove_glass, strike
+keys: cable_place, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remove_glass, strike
 

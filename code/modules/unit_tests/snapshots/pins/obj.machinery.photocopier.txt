@@ -1,91 +1,93 @@
-human|none menu: Buckle
 human|none menu: Deconstruct (refused: needs a crowbar)
+human|none menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|none menu: Insert toner (refused: needs a toner cartridge)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
+human|none menu: Use (refused: needs an item)
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Buckle
 robot|none menu: Deconstruct (refused: needs a crowbar)
+robot|none menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+robot|none menu: Insert toner (refused: needs a toner cartridge)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
+robot|none menu: Use (refused: needs an item)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Buckle
 human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/screwdriver menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/tool/screwdriver menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
-human|/obj/item/tool/crowbar menu: Buckle
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/tool/crowbar menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Use crowbar
-human|/obj/item/tool/wrench menu: Buckle
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wrench menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/tool/wrench menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Use wrench
-human|/obj/item/tool/wirecutters menu: Buckle
 human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wirecutters menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/tool/wirecutters menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Use
-human|/obj/item/multitool menu: Buckle
+human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/multitool menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/multitool menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: Click: Use
-human|/obj/item/weldingtool menu: Buckle
+human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/weldingtool menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/weldingtool menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: Click: Use
-human|/obj/item/stack/cable_coil menu: Buckle
+human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/cable_coil menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/stack/cable_coil menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Use
-human|/obj/item/stack/material/steel menu: Buckle
+human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/material/steel menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/stack/material/steel menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Use
-human|/obj/item/card/id menu: Buckle
+human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/card/id menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item/card/id menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: Click: Use
-human|/obj/item/paper menu: Buckle
+human|/obj/item/card/id click: nothing
 human|/obj/item/paper menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/paper menu: Insert
+human|/obj/item/paper menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/paper menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/paper menu: Use
-human|/obj/item/paper click: Click: Insert
-human|/obj/item/photo menu: Buckle
-human|/obj/item/photo menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/photo menu: Insert
-human|/obj/item/photo menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/photo menu: Use
-human|/obj/item/photo click: Click: Insert
-human|/obj/item/paper_bundle menu: Buckle
-human|/obj/item/paper_bundle menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/paper_bundle menu: Insert
-human|/obj/item/paper_bundle menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/paper_bundle menu: Use
-human|/obj/item/paper_bundle click: Click: Insert
-human|/obj/item/toner menu: Buckle
+human|/obj/item/paper click: nothing
 human|/obj/item/toner menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/toner menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
 human|/obj/item/toner menu: Insert toner
 human|/obj/item/toner menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/toner menu: Use
-human|/obj/item/toner click: Click: Insert toner
-human|/obj/item menu: Buckle
+human|/obj/item/toner click: nothing
 human|/obj/item menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
+human|/obj/item menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Use
-human|/obj/item click: Click: Use
-keys: ai_photo, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert, insert_toner, machine_anchor, machine_deconstruct, machine_panel, machine_repair, make_copy, remove, set_copies, swallow, use_crowbar, use_screwdriver, use_wrench
+human|/obj/item click: nothing
+keys: ai_photo, drag_buckle, gen_insert_interaction_insert, gen_insert_interaction_insert_toner, gen_insert_interaction_swallow, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, make_copy, remove, set_copies, use_crowbar, use_screwdriver, use_wrench
 

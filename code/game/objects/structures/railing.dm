@@ -41,6 +41,9 @@
 
 CAPABILITIES(/obj/structure/railing)
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
+	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
+	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
+	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
@@ -145,50 +148,40 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 	if(.)
 		update_icon()
 
-/obj/structure/railing/proc/railing_flip_effect(mob/user, obj/item/held, datum/interaction/interaction) // This will help push railing to remote places, such as open space turfs
-
+/// The old Flip Railing verb: this will help push railing to remote places, such as open space turfs.
+/obj/structure/railing/proc/railing_flip_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.incapacitated())
-		return 0
+		return OP_OK
 
 	if (!can_touch(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
-		return
+		return OP_OK
 
 	if(anchored)
 		to_chat(user, "It is fastened to the floor therefore you can't flip it!")
-		return 0
+		return OP_OK
 
 	var/obj/occupied = can_climb_neighbor_turf(src)
 	if(occupied)
 		to_chat(user, "You can't flip \the [src] because there's \a [occupied] in the way.")
-		return 0
+		return OP_OK
 
 	src.forceMove(get_step(src, src.dir))
 	set_dir(turn(dir, 180))
 	update_icon()
-	return
-
-/obj/structure/railing/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/railing_item/harm,
-		/datum/interaction/entry_item/railing_item,
-	)
-	var/static/list/flip_spec = INTERACT_VERB("Flip Railing", PROC_REF(railing_flip_effect))
-	into += dq_interaction_from_spec(/obj/structure/railing, flip_spec)
-	..()
-
-/// Old attackby: slam/throw a grabbed mob over the railing, or take a weapon hit.
-/datum/interaction/entry_item/railing_item
-	id = "railing_item"
-	name = "Use"
-	effect = /obj/structure/railing/proc/interaction_item
+	return OP_OK
 
 /// Combat mode: a weak grab slams the victim's face against the railing.
-/datum/interaction/entry_item/railing_item/harm
-	id = "railing_item_harm"
-	name = "Slam"
-	stance = I_HURT
+/obj/structure/railing/proc/interaction_slam(datum/act/op/A)
+	return railing_item_used(A, TRUE)
 
-/obj/structure/railing/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: slam/throw a grabbed mob over the railing, or take a weapon hit.
+/obj/structure/railing/proc/interaction_item(datum/act/op/A)
+	return railing_item_used(A, FALSE)
+
+/obj/structure/railing/proc/railing_item_used(datum/act/op/A, harm)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// Handle combat-mode grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -197,9 +190,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 			var/obj/occupied = can_climb_turf(src)
 			if(occupied)
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
-				return TRUE
+				return OP_OK
 			if (G.state < 2)
-				if(interaction.stance == I_HURT)
+				if(harm)
 					if (prob(15))	M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
@@ -207,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 					play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 				else
 					to_chat(user, span_danger("You need a better grip to do that!"))
-					return TRUE
+					return OP_OK
 			else
 				if (get_turf(M) == get_turf(src))
 					M.forceMove(get_step(src, src.dir))
@@ -216,14 +209,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 				M.status_at_least(STAT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] throws [M] over \the [src]!"))
 			consume(W, user)
-			return TRUE
+			return OP_OK
 
 	else
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 		receive_weapon_hit(W, user)
 		user.setClickCooldown(user.get_attack_speed(W))
 
-	return TRUE
+	return OP_OK
 
 /obj/structure/railing/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

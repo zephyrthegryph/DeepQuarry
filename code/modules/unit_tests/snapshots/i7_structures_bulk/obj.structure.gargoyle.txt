@@ -1,5 +1,5 @@
-/obj/structure/gargoyle|human|none => gargoyle_item|
-/obj/structure/gargoyle|robot|none => gargoyle_item|
+/obj/structure/gargoyle|human|none => |
+/obj/structure/gargoyle|robot|none => |
 /obj/structure/gargoyle|ai|none => |
 /obj/structure/gargoyle|ghost|none => |
 

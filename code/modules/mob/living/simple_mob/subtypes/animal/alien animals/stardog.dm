@@ -615,8 +615,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	return "[base_state][rand(1, 2)]"
 
 /// Overrides tree's interaction_search_sticks(): no sticks to find in fur.
-/obj/structure/flora/tree/fur/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+/obj/structure/flora/tree/fur/interaction_search_sticks(datum/act/op/A)
+	return OP_OK
 
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)

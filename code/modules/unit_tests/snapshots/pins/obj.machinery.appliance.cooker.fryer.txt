@@ -2,16 +2,15 @@ human|none menu: Deconstruct (refused: needs a crowbar)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
 human|none menu: Toggle Power
 human|none menu: Use
-human|none click: Click: Use
+human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Deconstruct (refused: needs a crowbar)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
 robot|none menu: Toggle Power
 robot|none menu: Use
-robot|none click: Click: Use
+robot|none click: nothing
 ai|none menu: Toggle power
 ai|none click: nothing
-ghost|none menu: Toggle Power (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Fryer interaction oil
@@ -68,11 +67,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Toggle Power
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Fryer interaction oil
-human|/obj/item menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item menu: Fryer interaction oil
-human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item menu: Toggle Power
-human|/obj/item menu: Use
-human|/obj/item click: Click: Fryer interaction oil
-keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, fryer_interaction_oil, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remote_power, remove_menu, slot, toggle_power, toggle_safety
+keys: change_output, drag_buckle, fryer_interaction_oil, gen_hand_appliance_interaction_hand, gen_item_appliance_interaction_item, gen_robot_interaction_swallow, gen_verb_appliance_toggle_power_effect, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remote_power, remove_menu, slot, toggle_power, toggle_safety
 

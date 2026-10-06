@@ -106,8 +106,8 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tending)
 		return
 	set_tending(FALSE)
 	if(parent)
-		// Every change, not only temperature: a heat-domain write to a pipe region does not report a temperature-only change.
-		gas_watch_many(src, nameof(glow_watches), list(parent.air), GAS_DEPENDENCY_ALL, PROC_REF(glow_heard))
+		// Its glow follows its gas's temperature only: Rust reports every change of a pipe region, whoever wrote it.
+		gas_watch_many(src, nameof(glow_watches), list(parent.air), GAS_DEPENDENCY_TEMPERATURE, PROC_REF(glow_heard))
 	else
 		gas_watch_many_clear(src, nameof(glow_watches))
 

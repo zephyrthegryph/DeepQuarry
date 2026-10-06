@@ -88,5 +88,5 @@ human|/obj/item menu: Enter VR Capsule
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: eject_impl, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, scan_impl, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
+keys: drag_buckle, eject_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, scan_impl, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
 

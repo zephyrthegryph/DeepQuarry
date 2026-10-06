@@ -3,4 +3,3 @@
 /obj/machinery/suspension_gen|ai|none => |
 /obj/machinery/suspension_gen|ghost|none => |
 /obj/machinery/suspension_gen|human|/obj/item/card/emag => emag|machine_panel:needs a screwdriver
-

@@ -47,9 +47,6 @@
 /mob/living/om_timer_clock()
 	return CLOCK_BIO
 
-/obj/machinery/om_timer_clock()
-	return CLOCK_MACHINE
-
 // ---------------------------------------------------------------- global owner
 
 /// The owner of timers that belong to no entity (round events, client real time). One per

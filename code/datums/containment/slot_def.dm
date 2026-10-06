@@ -149,11 +149,12 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 	name = "declared slot"
 	capacity_model = SLOT_CAPACITY_COUNT
 	drop_policy = SLOT_DROP_SPILL
-	/// A slot() entry's accepts: the type a thing must be.
+	/// A slot() entry's accepts: the type a thing must be, or a list of them.
 	var/accepts_type
 
 /datum/om/relation/slot/declared/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(accepts_type && !istype(thing, accepts_type))
+	// slot(..., accepts = ) takes a type or a list of types (buckle(), interior()): istype() against a list is never true.
+	if(accepts_type && !(islist(accepts_type) ? is_type_in_list(thing, accepts_type) : istype(thing, accepts_type)))
 		return "\The [thing] doesn't go there."
 	return ..()
 

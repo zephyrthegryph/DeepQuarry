@@ -509,7 +509,7 @@
 	for(var/subscribed_id in service.mixture_ids)
 		TEST_ASSERT(om_watch_armed(service, "gas[subscribed_id]"), "Material subscriptions must use the coalesced mixture registry")
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
-	om_cancel_after(service, /datum/om/behaviour/material_service)
+	cancel_after(service, "material_service")
 	service.timer = FALSE
 	service.active = FALSE
 	service.last_update = world.time - 10 MINUTES
@@ -518,14 +518,14 @@
 	var/first_due = service.next_update
 	for(var/i in 1 to 1000)
 		service.environment_changed(FALSE)
-	TEST_ASSERT(om_deadline_pending(service, /datum/om/behaviour/material_service), "A changed environment must queue exposure work")
+	TEST_ASSERT(after_pending(service, "material_service"), "A changed environment must queue exposure work")
 	TEST_ASSERT(service.next_update <= first_due || !first_due, "Repeated gas publications must coalesce into one queued exposure, not push it back")
 	cell.forceMove(destination)
 	service.rebind()
 	var/list/ids = service.mixture_ids.Copy()
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
-	TEST_ASSERT(!om_deadline_pending(service, /datum/om/behaviour/material_service), "Deleting an assembly must remove its queued exposure work")
+	TEST_ASSERT(!after_pending(service, "material_service"), "Deleting an assembly must remove its queued exposure work")
 	for(var/id in ids)
 		TEST_ASSERT(!GLOB.om_gas_watches_by_mixture["[id]"], "Deleted assemblies must release mixture subscriptions")
 
@@ -563,17 +563,17 @@
 	// it earlier, and deleting the assembly cancels it.
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
 	var/datum/material_service/a_service = material_service_of(a)
-	om_cancel_after(a_service, /datum/om/behaviour/material_service)
+	cancel_after(a_service, "material_service")
 	a_service.timer = FALSE
 	a_service.schedule(10 SECONDS)
-	TEST_ASSERT(om_deadline_pending(a_service, /datum/om/behaviour/material_service), "Scheduling must queue one exposure deadline")
+	TEST_ASSERT(after_pending(a_service, "material_service"), "Scheduling must queue one exposure deadline")
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 10 SECONDS, "The deadline is when it was asked for")
 	a_service.schedule(20 SECONDS)
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 10 SECONDS, "A later request must not push an earlier deadline back")
 	a_service.schedule(1 SECOND)
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 1 SECOND, "An accelerated environmental event must move the deadline earlier")
 	qdel(a)
-	TEST_ASSERT(!om_deadline_pending(a_service, /datum/om/behaviour/material_service), "Deleting a queued assembly must leave no deadline")
+	TEST_ASSERT(!after_pending(a_service, "material_service"), "Deleting a queued assembly must leave no deadline")
 
 /datum/unit_test/dq_material_corrosion_interval_invariance
 

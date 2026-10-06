@@ -184,8 +184,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.scintillation_efficiency > 0)
 		var/obj/item/item = parent
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
-		if(om_timer_slot_pending(src, "scintillation_timer"))
-			om_cancel_timer_slot(src, "scintillation_timer")
+		if(after_pending(src, "scintillation_timer"))
+			cancel_after(src, "scintillation_timer")
 		after(src, 5 SECONDS, PROC_REF(end_scintillation), key = "scintillation_timer")
 
 /datum/material_response/proc/end_scintillation()

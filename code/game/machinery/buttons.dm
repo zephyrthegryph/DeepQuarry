@@ -11,6 +11,8 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
+TRACKED(/obj/machinery/button, id)
+
 /obj/machinery/button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 

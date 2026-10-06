@@ -167,7 +167,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 			avatar().sync_organ_dna()
 			avatar().initialize_vessel()
 
-		OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
+		PUBLISH_LEGACY(avatar(), /datum/notice/human_dna_finalized)
 
 		open_request(src, /datum/prompt/text, PROC_REF(alien_avatar_renamed), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 

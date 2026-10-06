@@ -1,5 +1,4 @@
-/obj/machinery/computer/robotics|human|none => |
-/obj/machinery/computer/robotics|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/robotics|human|none => gen_hand_interaction_use|
+/obj/machinery/computer/robotics|robot|none => gen_robot_robotics_console_robot_use,gen_hand_interaction_use|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/robotics|ai|none => |
 /obj/machinery/computer/robotics|ghost|none => |
-

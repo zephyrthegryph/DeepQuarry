@@ -1,5 +1,5 @@
-/obj/structure/flora/tree/pine/xmas/presents|human|none => xmas_presents_hand,tree_item,tree_hand|
-/obj/structure/flora/tree/pine/xmas/presents|robot|none => xmas_presents_hand,tree_item,tree_hand|
+/obj/structure/flora/tree/pine/xmas/presents|human|none => |
+/obj/structure/flora/tree/pine/xmas/presents|robot|none => |
 /obj/structure/flora/tree/pine/xmas/presents|ai|none => |
 /obj/structure/flora/tree/pine/xmas/presents|ghost|none => |
 
