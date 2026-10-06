@@ -31,4 +31,4 @@
 	if(master)
 		master.post_signal(signal, comm_line)
 	else
-		qdel(signal)
+		spent(signal)

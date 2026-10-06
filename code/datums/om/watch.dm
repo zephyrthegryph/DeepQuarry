@@ -236,7 +236,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	GLOB.om_gas_watch_interest_counts -= key
 	var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
 	GLOB.om_gas_native_watches -= key
-	qdel(native)
+	spent(native)
 
 /// The gas fields this watch needs its mixture's native watch to report: its bands' fields, or its interest mask.
 /datum/om_watch/proc/interest_contribution()

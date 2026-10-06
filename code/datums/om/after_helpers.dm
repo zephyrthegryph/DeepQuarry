@@ -6,7 +6,7 @@
 
 /// om_after() target: deletes the owner.
 /datum/proc/om_qdel_self()
-	qdel(src)
+	spent(src)
 
 /// om_after() target: deletes the owner as one batched destroy
 /// (code/datums/lifecycle/batch.dm), with `extra` in the same set.

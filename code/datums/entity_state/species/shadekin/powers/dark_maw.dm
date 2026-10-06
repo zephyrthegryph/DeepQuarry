@@ -71,6 +71,7 @@ TRACKED(/obj/effect/abstract/dark_maw, armed)
 CAPABILITIES(/obj/effect/abstract/dark_maw)
 	every(2 SECONDS, then(PROC_REF(dark_maw_step)), when = nameof(armed))
 
+// ALLOW(init/CTOR_ARGS): user and trigger_now are constructor arguments from whoever builds it
 /obj/effect/abstract/dark_maw/Initialize(mapload, mob/user, trigger_now = FALSE)
 	. = ..()
 	if(!isturf(loc))
@@ -113,7 +114,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 ///Called when we get a signal that our owner is being qdel'd
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	qdel(src)
+	spent(src)
 
 /obj/effect/abstract/dark_maw/Crossed(O)
 	. = ..()
@@ -136,7 +137,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	else
 		visible_message(span_notice("The crystals and shadowy tendrils dissipate with the light shone on it."))
 	icon_state = "dark_maw_used"
-	qdel(src)
+	spent(src)
 
 /obj/effect/abstract/dark_maw/proc/triggered_by(mob/living/L, triggered_instantly = 0)
 	set_armed(FALSE)
@@ -160,13 +161,13 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 
 	if(L.loc != get_turf(src))
 		visible_message(span_notice("The shadowy tendrils fail to catch anything and dissipate."))
-		qdel(src)
+		spent(src, L)
 		return
 
 	if(will_vore)
 		visible_message(span_warning("The shadowy tendrils grab around [L] and drag them into the floor, leaving nothing behind."))
 		target().nom_atom(L)
-		qdel(src)
+		spent(src, L)
 		return
 
 	var/obj/effect/energy_net/dark/net = new /obj/effect/energy_net/dark(get_turf(src))
@@ -174,7 +175,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 		visible_message(span_warning("The shadowy tendrils wrap around [L] and traps them in a net of dark energy."))
 	else
 		visible_message(span_notice("The shadowy tendrils wrap around [L] and then dissipate, leaving them in place."))
-	qdel(src)
+	spent(src, L)
 
 /obj/effect/energy_net/dark
 	name = "dark net"
@@ -199,7 +200,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	var/turf/T = get_turf(src)
 	if(!istype(T) || T.get_lumcount() >= 0.6)
 		visible_message(span_notice("The tangle of dark tendrils fades away in the light."))
-		qdel(src)
+		spent(src)
 
 /// The shadekin who opened the maw (a relation view).
 /obj/effect/abstract/dark_maw/proc/owner() as /mob/living

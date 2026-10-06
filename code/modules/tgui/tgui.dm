@@ -287,7 +287,7 @@
 	if(parent_ui())
 		parent_ui().children -= src
 	rel_clear(src, nameof(parent_ui))
-	qdel(src)
+	spent(src)
 
 /**
  * public

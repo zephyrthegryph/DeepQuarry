@@ -143,7 +143,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 
 /obj/effect/meteor/Move()
 	if(z != z_original || loc == dest)
-		qdel(src)
+		spent(src)
 		return
 
 	. = ..() //process movement...
@@ -209,14 +209,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/proc/die(explode = TRUE)
 	make_debris()
 	meteor_effect(explode)
-	qdel(src)
+	spent(src)
 
 CAPABILITIES(/obj/effect/meteor)
 	op("mine_meteor", item(/obj/item/pickaxe), label("Break up"), then(PROC_REF(interaction_mine_meteor)))
 
 /// Old attackby: a pickaxe breaks the meteor up.
 /obj/effect/meteor/proc/interaction_mine_meteor(datum/act/op/A)
-	qdel(src)
+	destroyed(src)
 	return OP_PASS
 
 /obj/effect/meteor/bullet_act(obj/item/projectile/Proj)

@@ -110,6 +110,7 @@
 // Proc: New()
 // Parameters: 0
 // Description: Sets owner to equal its loc, links to the owner's core, then applies overlays if needed.
+// ALLOW(init/CTOR_ARGS): coreless is a constructor argument from whoever builds it
 /obj/item/spell/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
@@ -279,7 +280,7 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 		put_in_hands(S)
 		return 1
 	else
-		qdel(S)
+		spent(S)
 		return 0
 
 // Proc: throw_impact()

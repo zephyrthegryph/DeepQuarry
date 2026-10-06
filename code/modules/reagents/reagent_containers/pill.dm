@@ -17,10 +17,9 @@
 	slot_flags = SLOT_EARS
 	volume = 60
 
-/obj/item/reagent_containers/pill/Initialize(mapload)
-	. = ..()
-	if(!icon_state)
-		icon_state = "[base_state][rand(1, 4)]" //preset pills only use colour changing or unique icons
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/pill/proc/roll_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 4)]"
 
 // A pill is a sealed holder of its volume that is taken whole and used up (dose(), code/library/reagents/dose.dm): swallowed at once by yourself, forced down
 // somebody else's throat in three seconds, dissolved in an open container. A sharp thing or an ID card cuts it up into a powder.
@@ -33,6 +32,7 @@ CAPABILITIES(/obj/item/reagent_containers/pill)
 		shows_contents = FALSE,
 		transfer_default = nameof(amount_per_transfer_from_this))
 	dose(route = CHEM_INGEST, cuts_into = /obj/item/reagent_containers/powder)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = cond_not(nameof(icon_state)))
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Pills. END
@@ -194,6 +194,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/happy, null, list(REAG
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/pill/zoom, null, list(REAGENT_ID_EXPIREDMEDICINE = 5, REAGENT_ID_STIMM = 5))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this pill carries mould
 /obj/item/reagent_containers/pill/zoom/Initialize(mapload)
 	. = ..()
 	if(prob(50)) // Zoom pill: chance to be more dangerous

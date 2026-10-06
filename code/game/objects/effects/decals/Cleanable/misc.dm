@@ -73,6 +73,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	mouse_opacity = 0
 	var/delete_me = FALSE
 
+// ALLOW(init/CTOR_ARGS): _age and dirt are constructor arguments from whoever builds it
 /obj/effect/decal/cleanable/dirt/Initialize(mapload, _age, dirt)
 	.=..()
 	if(delete_me)

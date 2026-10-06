@@ -25,8 +25,9 @@ exempt_files = [
 ]
 
 [lint."sys/usr_use"]
-# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/"]
+# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context. code/engine/ is the engine's one reader and
+# writer of usr: the generated native input overrides and with_actor() (code/engine/lifeforms/input.dm).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/engine/"]
 
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
@@ -156,7 +157,12 @@ exempt_files = [
     "code/datums/lifecycle/links.dm",
     "code/datums/lifecycle/verbs.dm",
     "code/datums/containment/lifecycle.dm",
+    "code/engine/lifeforms/lifetimes.dm",
 ]
+
+[lint.lifeforms]
+# The lifecycle forms' checks (tools/analyze/src/lints/lifeforms.rs): the tests make bad make() calls on purpose to see them reported.
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
 
 [lint.qdel_src]
 # qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
@@ -169,6 +175,7 @@ exempt_files = [
     "code/datums/lifecycle/links.dm",
     "code/datums/lifecycle/verbs.dm",
     "code/datums/containment/lifecycle.dm",
+    "code/engine/lifeforms/lifetimes.dm",
 ]
 
 [lint.spatial]
@@ -299,15 +306,20 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 51
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 108
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 50
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 107
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
+objects_ratchet_on_legacy_interactions = 158
+objects_ratchet_on_tool_act_overrides = 8
+objects_ratchet_on_damage_reactions = 0
+objects_ratchet_on_declare_emag = 1
+objects_ratchet_on_periodic = 29
 heat_ratchet_on_fire_act_overrides_h3 = 6
 damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
 damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 2
-bump_ratchet_on_bumped_overrides = 22
+bump_ratchet_on_bumped_overrides = 17
 generic_hit_ratchet_on_attack_generic_overrides = 38
 
 [lint.op_order]

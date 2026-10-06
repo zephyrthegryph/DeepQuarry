@@ -8,13 +8,9 @@
 	w_class = ITEMSIZE_TINY
 	var/blink_range = 8 // The teleport range when crushed/thrown at someone.
 
-/obj/item/bluespace_crystal/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5, 5)
-	pixel_y = rand(-5, 5)
-
 CAPABILITIES(/obj/item/bluespace_crystal)
 	op("self", in_hand(), needs(req(PROC_REF(crystal_releasable), because = PROC_REF(crystal_release_refusal))), then(PROC_REF(interaction_self)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 
 /// A crystal must be removable before crushing can teleport its holder.
 /obj/item/bluespace_crystal/proc/crystal_releasable(datum/act/op/A)
@@ -43,7 +39,7 @@ CAPABILITIES(/obj/item/bluespace_crystal)
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
 		dephase_shadekin() // mess with shadekins
-		qdel(src)
+		destroyed(src)
 
 // Artifical bluespace crystal, doesn't give you much research.
 

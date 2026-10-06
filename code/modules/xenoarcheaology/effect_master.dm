@@ -65,7 +65,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 /datum/artifact_master/New(atom/new_holder)
 	. = ..()
 	if(!istype(new_holder) || new_holder.artifact_master)
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(holder), new_holder)
 	rel_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
@@ -433,7 +433,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
 		om_task_periodic_stop(src)
 		if(!QDELETED(src))
-			qdel(src)
+			spent(src)
 			return
 
 	var/turf/L = holder().loc

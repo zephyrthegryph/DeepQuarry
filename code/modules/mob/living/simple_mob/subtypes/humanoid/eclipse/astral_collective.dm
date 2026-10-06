@@ -113,6 +113,7 @@
 	things that seem abnormal."
 	value = CATALOGUER_REWARD_EASY
 
+// ALLOW(init/INSTANCE_STATE): rolls which experiment it is
 /mob/living/simple_mob/humanoid/astral_collective/Initialize(mapload)
 	. = ..()
 	expirmental = rand(1,4)

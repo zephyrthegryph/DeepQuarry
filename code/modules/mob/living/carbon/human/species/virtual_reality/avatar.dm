@@ -133,4 +133,4 @@
 		if(I)
 			unEquip(I,force = TRUE)
 	release_vore_contents(include_absorbed = TRUE, silent = TRUE)
-	qdel(src)
+	spent(src)

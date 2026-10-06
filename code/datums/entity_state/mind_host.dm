@@ -66,7 +66,7 @@ CAPABILITIES(/datum/mind_host)
 		rel_clear(old_view, nameof(old_view.host))
 		rel_clear(old_view, nameof(old_view.container))
 		if(!QDELETED(old_view))
-			qdel(old_view)
+			spent(old_view)
 	set_tissue(null)
 	rel_clear(src, nameof(owner))
 
@@ -132,7 +132,7 @@ CAPABILITIES(/datum/mind_host)
 	own_take(src, nameof(view))
 	rel_clear(old_view, nameof(old_view.host))
 	rel_clear(old_view, nameof(old_view.container))
-	qdel(old_view)
+	spent(old_view)
 
 /// Move `other`'s view (and the mind in it) into this host. Returns TRUE if a
 /// view moved.

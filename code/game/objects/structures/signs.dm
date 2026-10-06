@@ -8,12 +8,17 @@
 	w_class = ITEMSIZE_NORMAL
 	flags = WALL_ITEM
 
-/obj/structure/sign/screwdriver_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/structure/sign)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+/obj/structure/sign/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(istype(src, /obj/structure/sign/scenery) || istype(src, /obj/structure/sign/double))
-		return ..()
+		return OP_DECLINE
 	playsound(src, tool.usesound, 50, 1)
 	unfasten(user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/proc/unfasten(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You unfasten %T%.")), MSG_OTHERS(span_notice("%U% unfastens %T%.")))
@@ -33,28 +38,19 @@
 	var/sign_state = ""
 	var/original_type
 
-/obj/item/sign/screwdriver_act(mob/user, obj/item/tool)
-	if(isturf(user.loc))
-		open_request(src, /datum/prompt/choice, PROC_REF(direction_chosen), valid = PROC_REF(direction_valid), answerer = user, subject = tool, title = "Select direction.", question = "In which direction?", choices = list("North", "East", "South", "West", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-		return TRUE
-	return ..()
+CAPABILITIES(/obj/item/sign)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Fasten"), wait(0),
+		asks(/datum/prompt/choice, fields = list("title" = "Select direction.", "question" = "In which direction?", "choices" = list("North", "East", "South", "West", "Cancel"), "timeout" = 0)),
+		then(PROC_REF(direction_chosen)))
 
-/// Fastening a sign: the screwdriver (the subject) stays in hand, the fastener on a turf.
-/obj/item/sign/proc/direction_valid(datum/request/R)
-	var/mob/M = R.answerer
-	if(!istype(M) || !isturf(M.loc))
-		return FALSE
-	return isnull(loc?.release_refusal(src, M))
-
-/obj/item/sign/proc/direction_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/obj/item/tool = A.request.subject
-	var/direction = A.answer.value
+/// Fastening the sign to the wall the answer names: the fastener stands on a turf, the sign leaves the hand (the screwdriver stays in the other).
+/obj/item/sign/proc/direction_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	var/datum/prompt/R = A.answer
 	var/offset_x = 0
 	var/offset_y = 0
-	switch(direction)
+	switch(R?.value)
 		if("North")
 			offset_y = 32
 		if("East")
@@ -64,13 +60,15 @@
 		if("West")
 			offset_x = -32
 		else
-			return
+			return OP_OK
+	if(!isturf(user.loc) || !isnull(loc?.release_refusal(src, user)))
+		return OP_OK
 	var/target_type = original_type || /obj/structure/sign
 	var/restored_name = name
 	var/restored_desc = desc
 	var/restored_state = sign_state
 	if(!consume(src, user))
-		return FALSE
+		return OP_OK
 	var/obj/structure/sign/S = new target_type(user.loc)
 	S.pixel_x = offset_x
 	S.pixel_y = offset_y
@@ -78,7 +76,7 @@
 	S.desc = restored_desc
 	S.icon_state = restored_state
 	to_chat(user, "You fasten \the [S] with your [tool].")
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/scenery/map
 	name = "station map"
@@ -1655,7 +1653,7 @@ CAPABILITIES(/obj/structure/sign/flag)
 		act_message(user, src, MSG_SELF(span_notice("You unfasten the tattered remains of %T%.")), \
 			MSG_OTHERS(span_notice("%U% unfastens the tattered remnants of %T%.")))
 	if(linked_flag)
-		qdel(linked_flag) //otherwise you're going to get weird duping nonsense
+		spent(linked_flag, user) //otherwise you're going to get weird duping nonsense
 	consume(src, user)
 
 /obj/structure/sign/flag/declare_interactions(list/into)
@@ -1713,7 +1711,7 @@ CAPABILITIES(/obj/structure/sign/flag)
 	play_sfx(src.loc, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT, volume = 100, extrarange = 0)
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)
-		qdel(linked_flag)
+		consumed(linked_flag, src)
 	consume(src, user)
 	return TRUE
 

@@ -21,6 +21,7 @@ OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled
 	return enabled || alarm
 DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffuser_has_work")
 
+// ALLOW(init/INSTANCE_STATE): takes its built parts and hides under the floor tile it is placed on
 /obj/machinery/shield_diffuser/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -53,7 +54,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffus
 			S.diffuse(5)
 		// Legacy shield support
 		for(var/obj/effect/energy_field/S in turf_contents_of_type(shielded_tile, /obj/effect/energy_field))
-			qdel(S)
+			spent(S)
 	return PROCESS_KILL
 
 /// Appearance reader: working and switched on.

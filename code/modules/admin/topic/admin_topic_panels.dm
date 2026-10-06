@@ -48,9 +48,9 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 /datum/admins/proc/topic_editrightsbrowserhousekeep(mob/user, list/args)
 	if(args["editrightschange"])
-		change_admin_rank(ckey(args["editrightschange"]), args["editrightschange"], TRUE, user = user)
+		permission_housekeeping_stage(user, args["editrightschange"], FALSE)
 	else if(args["editrightsremove"])
-		remove_admin(ckey(args["editrightsremove"]), args["editrightsremove"], TRUE, user = user)
+		permission_housekeeping_stage(user, args["editrightsremove"], TRUE)
 	else if(args["editrightsremoverank"])
 		remove_rank(args["editrightsremoverank"], user = user)
 	edit_admin_permissions(PERMISSIONS_PAGE_HOUSEKEEPING)
@@ -124,7 +124,14 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 	label_to_mode["Secret"] = "secret"
 	labels += "Random"
 	label_to_mode["Random"] = "random"
-	var/pick = topic_ask(user, args, "a21", /datum/om/prompt/choice, message = "What mode do you wish to play? (current: [GLOB.master_mode])", title = "Game Mode", choices = labels)
+	var/datum/request/replayed = round_mode_topic_request(user, args, "a21")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		var/list/saved_href = original_href.Copy()
+		saved_href -= "round_mode_request"
+		open_request(src, /datum/prompt/choice/admin_round_mode_topic, PROC_REF(round_mode_topic_answered), answerer = user, captured = list("href" = saved_href), step_name = "a21", question = "What mode do you wish to play? (current: [GLOB.master_mode])", title = "Game Mode", choices = labels)
+		return
+	var/pick = replayed.value
 	if(!pick)
 		return
 	var/picked_mode = label_to_mode[pick]
@@ -144,7 +151,14 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 		label_to_mode[label] = mode
 	labels += "Random (default)"
 	label_to_mode["Random (default)"] = "secret"
-	var/pick = topic_ask(user, args, "a22", /datum/om/prompt/choice, message = "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])", title = "Force Secret", choices = labels)
+	var/datum/request/replayed = round_mode_topic_request(user, args, "a22")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		var/list/saved_href = original_href.Copy()
+		saved_href -= "round_mode_request"
+		open_request(src, /datum/prompt/choice/admin_round_mode_topic, PROC_REF(round_mode_topic_answered), answerer = user, captured = list("href" = saved_href), step_name = "a22", question = "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])", title = "Force Secret", choices = labels)
+		return
+	var/pick = replayed.value
 	if(!pick)
 		return
 	var/picked_mode = label_to_mode[pick]
@@ -218,3 +232,35 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 			A.tgui_interact(user)
 		if("list")
 			PlayerNotesPage(user, args["index"])
+
+/datum/prompt/choice/admin_round_mode_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_round_mode_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/choice/admin_round_mode_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_round_mode_topic/refusal(given)
+	return null
+
+/datum/admins/proc/round_mode_topic_request(mob/user, list/args, key)
+	RETURN_TYPE(/datum/request)
+	var/list/href = args[TOPIC_HREF]
+	var/datum/request/replayed = href["round_mode_request"]
+	if(!istype(replayed, /datum/prompt/choice/admin_round_mode_topic) || replayed.owner != src || replayed.answerer != user || replayed.outcome != REQ_ANSWERED || replayed.is_open() || QDELETED(replayed) || replayed.handler != PROC_REF(round_mode_topic_answered) || replayed.step_name != key)
+		return null
+	return replayed
+
+/datum/admins/proc/round_mode_topic_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/original_href = A.answer.captured["href"]
+	var/list/replayed_href = original_href.Copy()
+	replayed_href["round_mode_request"] = A.answer
+	var/mob/actor = A.request.answerer
+	world.push_usr(actor, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, actor, replayed_href)

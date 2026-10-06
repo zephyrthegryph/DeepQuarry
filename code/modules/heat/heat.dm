@@ -266,7 +266,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	src.lane = lane
 	src.keep_body = keep_body
 	if(!register() && keep_body)
-		qdel(src)
+		spent(src)
 		return null
 	return src
 

@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/chainsaw)
 			replace_with(A, /obj/item/stack/rods)
 		else if(istype(A,/obj/effect/plant))
 			var/obj/effect/plant/P = A
-			qdel(P) //Plant isn't surviving that. At all
+			consumed(P, src) //Plant isn't surviving that. At all
 		else if(istype(A,/obj/machinery/portable_atmospherics/hydroponics))
 			var/obj/machinery/portable_atmospherics/hydroponics/Hyd = A
 			if(Hyd.seed && !Hyd.dead)

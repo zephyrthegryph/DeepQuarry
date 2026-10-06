@@ -78,7 +78,7 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
 		stack_trace("ai_brain instantiated with no owner")
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(holder), owner)
 	rel_set(src, nameof(model), new /datum/world_model(owner))

@@ -3,6 +3,7 @@
 	icon_name = ""
 	dislocated = -1
 
+// ALLOW(init/CTOR_ARGS): internal and limb are constructor arguments from whoever builds it
 /obj/item/organ/external/stump/Initialize(mapload, internal, obj/item/organ/external/limb)
 	if(istype(limb))
 		organ_tag = limb.organ_tag
@@ -21,7 +22,7 @@
 
 /obj/item/organ/external/stump/removed()
 	..()
-	qdel(src)
+	spent(src)
 
 /obj/item/organ/external/stump/is_usable()
 	return 0

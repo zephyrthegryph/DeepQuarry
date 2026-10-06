@@ -99,6 +99,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/proc/lockdown_wire_pulsed(datum/act/A)
 	lockdown = !lockdown
 
+// ALLOW(init/INSTANCE_STATE): rolls its contraband seed batch
 /obj/machinery/seed_storage/Initialize(mapload)
 	. = ..()
 	if(!length(contraband_seeds))
@@ -480,12 +481,12 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		if(N.amount <= 0 || N.seeds.len <= 0)
 			own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 			own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
-			qdel(N)
+			spent(N)
 		O.forceMove(src.loc)
 	else
 		own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 		own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
-		qdel(N)
+		spent(N)
 	return TRUE
 
 /obj/machinery/seed_storage/proc/ui_act_purge(datum/act/op/A, id)
@@ -493,10 +494,10 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	if(!N)
 		return
 	for(var/obj/O in N.seeds)
-		qdel(O)
+		spent(O)
 	own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 	own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
-	qdel(N)
+	spent(N)
 	return TRUE
 
 /obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)

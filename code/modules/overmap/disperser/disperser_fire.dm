@@ -44,7 +44,7 @@
 	play_sfx(start, SFX_MACHINES_DISPERSER_FIRE)
 	handle_beam(start, direction)
 	handle_overbeam()
-	qdel(atomcharge)
+	spent(atomcharge, user)
 
 	//Some moron disregarded the cooldown warning. Let's blow in their face.
 	if(prob(cool_failchance()))
@@ -75,7 +75,7 @@
 /obj/machinery/computer/ship/disperser/proc/fire_at_event(obj/effect/overmap/event/finaltarget, chargetype)
 	if(chargetype & finaltarget.weaknesses)
 		var/turf/T = finaltarget.loc
-		qdel(finaltarget)
+		spent(finaltarget)
 		GLOB.overmap_event_handler.update_hazards(T)
 
 /obj/machinery/computer/ship/disperser/proc/handle_beam(turf/start, direction)

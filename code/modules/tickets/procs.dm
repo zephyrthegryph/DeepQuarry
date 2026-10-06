@@ -14,8 +14,8 @@
 		return
 
 	// `msg as text` is raw player input and is shown to every staff member (MessageNoRecipient,
-	// AddInteraction), so sanitize it once here. Never reassign `msg`: `args` is a live view of it, and
-	// rerun_ask() below re-runs this verb with `args`, which would sanitize the encoded copy a second time.
+	// AddInteraction), so sanitize it once here. Replay keeps the original raw argument
+	// to avoid encoding it a second time.
 	// /datum/ticket/New() takes the raw text: it sanitizes its own copy and forwards the raw text to Discord.
 	var/raw_msg = copytext(msg, 1, MAX_MESSAGE_LEN)
 	var/clean_msg = sanitize(raw_msg)
@@ -27,7 +27,7 @@
 
 	feedback_add_details("admin_verb","Mentorhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket())
-		var/input = rerun_ask(src, "k26", VERB_REF(mentorhelp), args, /datum/om/prompt/choice/alert, message = "You already have a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
+		var/input = ticket_help_question(usr, "mentorhelp", "k26", msg, length(args) > 1 ? args[2] : null, "You already have a ticket open. Is this for the same issue?", "Duplicate?", list("Yes", "No"))
 		if(isnull(input))
 			return
 		if(!input)
@@ -113,14 +113,14 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	set name = "Request help"
 	set hidden = 1
 
-	var/mhelp = rerun_ask(src, "k72", VERB_REF(requesthelp), args, /datum/om/prompt/choice/alert, message = "Select the help you need.", title = "Request for Help", choices = list("Adminhelp","Mentorhelp"))
+	var/mhelp = ticket_help_question(usr, "requesthelp", "k72", null, length(args) ? args[1] : null, "Select the help you need.", "Request for Help", list("Adminhelp", "Mentorhelp"))
 	if(isnull(mhelp))
 		return
 	if(!mhelp)
 		return
 
 	// encode = FALSE: mentorhelp()/adminhelp() sanitize their own argument, so encoding here would double-encode it.
-	var/msg = rerun_ask(src, "k76", VERB_REF(requesthelp), args, /datum/om/prompt/text, message = "Input your request for help.", title = "Request for Help ([mhelp])", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
+	var/msg = ticket_help_question(usr, "requesthelp", "k76", null, length(args) ? args[1] : null, "Input your request for help.", "Request for Help ([mhelp])", is_text = TRUE)
 	if(isnull(msg))
 		return
 	if(!msg)
@@ -154,7 +154,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 
 	feedback_add_details("admin_verb","Adminhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket())
-		var/input = rerun_ask(src, "k107", VERB_REF(adminhelp), args, /datum/om/prompt/choice/alert, message = "You already have a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
+		var/input = ticket_help_question(usr, "adminhelp", "k107", msg, length(args) > 1 ? args[2] : null, "You already have a ticket open. Is this for the same issue?", "Duplicate?", list("Yes", "No"))
 		if(isnull(input))
 			return
 		if(!input)
@@ -220,7 +220,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 
 
 /datum/admin_ticket_panel_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/admin_ticket_panel_list
 	title = "List Choice"
@@ -317,13 +317,53 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	if(T)
 		message_mentors(span_mentor_channel("[src] has started replying to [C]'s mentor help."))
 	// encode = FALSE: cmd_mentor_pm() sanitizes the raw answer before it reaches any other client or the ticket log.
-	var/msg = client_ask("k208", PROC_REF(cmd_mhelp_reply), args, 0, /datum/om/prompt/text, message = "Message:", title = "Private message to [C]", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
+	var/question_title = "Private message to [C]"
+	var/whom_is_client = isclient(whom)
+	var/original_whom = whom_is_client ? C.ckey : whom
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	var/msg
+	if(istype(resumed, /datum/prompt/text/mentor_reply) && resumed.owner == src && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(mentor_reply_entered) && resumed.captured["whom_is_client"] == whom_is_client && resumed.captured["original_whom"] == original_whom)
+		msg = resumed.value
+	else
+		open_request(src, /datum/prompt/text/mentor_reply, PROC_REF(mentor_reply_entered), answerer = mob, question = "Message:", title = question_title, captured = list("whom_is_client" = whom_is_client, "original_whom" = original_whom))
+		return
 	if(isnull(msg))
 		return
 	if (!msg)
 		message_mentors(span_mentor_channel("[src] has cancelled their reply to [C]'s mentor help."))
 		return
 	cmd_mentor_pm(whom, msg, T)
+
+/// The original client's public reply entry rereads the current recipient's ticket on every answer.
+/client/proc/mentor_reply_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/whom = A.answer.captured["original_whom"]
+	if(A.answer.captured["whom_is_client"])
+		whom = GLOB.directory[whom]
+		if(!whom)
+			return
+	world.push_usr(A.request.answerer, new /datum/callback(src, PROC_REF(cmd_mhelp_reply)), whom, A.answer)
+
+/datum/prompt/text/mentor_reply
+	timeout = 0
+	multiline = TRUE
+	encode = FALSE
+	max_len = MAX_TGUI_INPUT
+	recheck_on_open = TRUE
+
+/datum/prompt/text/mentor_reply/normalize(given)
+	return given
+
+/datum/prompt/text/mentor_reply/refusal(given)
+	return null
+
+/datum/prompt/text/mentor_reply/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	if(captured["whom_is_client"] && !GLOB.directory[captured["original_whom"]])
+		return "gone"
+	return null
 
 /client/proc/cmd_mentor_pm(whom, msg, datum/ticket/T)
 	set category = VERB_CAT_ADMIN
@@ -414,3 +454,61 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	for(var/client/C in GLOB.admins)
 		if (C != recipient && C != src)
 			to_chat(C, interaction_message)
+
+/// Public help verbs replay their current prefix with only their original scalar argument and answers.
+/client/proc/ticket_help_question(mob/actor, entry, step, original_msg, datum/request/resumed, question, title, list/choices, is_text = FALSE)
+	var/list/answers = list()
+	if((istype(resumed, /datum/prompt/choice/ticket_help_verb) || istype(resumed, /datum/prompt/text/ticket_help_verb)) && resumed.owner == src && resumed.answerer == actor && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(ticket_help_answered) && resumed.captured["entry"] == entry && resumed.captured["original_msg"] == original_msg)
+		var/list/previous = resumed.captured["answers"]
+		answers = previous.Copy()
+		answers[resumed.captured["step"]] = resumed.value
+	if(!isnull(answers[step]))
+		return answers[step]
+	var/list/captured = list("entry" = entry, "step" = step, "original_msg" = original_msg, "answers" = answers)
+	if(is_text)
+		open_request(src, /datum/prompt/text/ticket_help_verb, PROC_REF(ticket_help_answered), answerer = mob, question = question, title = title, captured = captured)
+	else
+		open_request(src, /datum/prompt/choice/ticket_help_verb, PROC_REF(ticket_help_answered), answerer = mob, question = question, title = title, choices = choices, captured = captured)
+	return null
+
+/client/proc/ticket_help_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	SStgui.update_uis(src)
+	switch(A.answer.captured["entry"])
+		if("mentorhelp")
+			return world.push_usr(A.request.answerer, new /datum/callback(src, VERB_REF(mentorhelp)), A.answer.captured["original_msg"], A.answer)
+		if("adminhelp")
+			return world.push_usr(A.request.answerer, new /datum/callback(src, VERB_REF(adminhelp)), A.answer.captured["original_msg"], A.answer)
+		if("requesthelp")
+			return world.push_usr(A.request.answerer, new /datum/callback(src, VERB_REF(requesthelp)), A.answer)
+
+/datum/prompt/choice/ticket_help_verb
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ticket_help_verb/normalize(given)
+	return given
+
+/datum/prompt/choice/ticket_help_verb/refusal(given)
+	return null
+
+/datum/prompt/choice/ticket_help_verb/recheck_extra()
+	return !owner || QDELETED(owner) || !answerer || QDELETED(answerer) ? "gone" : null
+
+/datum/prompt/text/ticket_help_verb
+	timeout = 0
+	multiline = TRUE
+	encode = FALSE
+	max_len = MAX_TGUI_INPUT
+	recheck_on_open = TRUE
+
+/datum/prompt/text/ticket_help_verb/normalize(given)
+	return given
+
+/datum/prompt/text/ticket_help_verb/refusal(given)
+	return null
+
+/datum/prompt/text/ticket_help_verb/recheck_extra()
+	return !owner || QDELETED(owner) || !answerer || QDELETED(answerer) ? "gone" : null

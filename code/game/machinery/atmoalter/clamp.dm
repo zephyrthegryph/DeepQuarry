@@ -13,6 +13,7 @@
 	var/datum/pipe_network/network_node1
 	var/datum/pipe_network/network_node2
 
+// ALLOW(init/CTOR_ARGS): to_attach is a constructor argument from whoever builds it
 /obj/machinery/clamp/Initialize(mapload, obj/machinery/atmospherics/pipe/simple/to_attach = null)
 	. = ..()
 	if(istype(to_attach))
@@ -23,28 +24,46 @@
 		update_networks()
 		dir = target_ref().dir
 
-/obj/machinery/clamp/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/clamp_toggle,
-	)
-	..()
+TRACKED(/obj/machinery/clamp, open)
 
-/// Toggle the clamp open/closed; declines (falls through) if not attached to a pipe.
-/datum/interaction/machine_hand/ungated/clamp_toggle
-	id = "clamp_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/clamp/proc/interaction_toggle
+MSG_DEF_SELF(clamp/switched, "You switch the clamp.")
+MSG_DEF_SELF(clamp/active, "You can't remove it while it's active!")
+MSG_DEF(clamp/removed, "You have removed %T%.", "%U% removes %T%.")
 
-/obj/machinery/clamp/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!target_ref())
-		return FALSE
+CAPABILITIES(/obj/machinery/clamp)
+	ref_one(nameof(target))
+	ref_one(nameof(network_node1))
+	ref_one(nameof(network_node2))
+	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(attached)), says(MSG(clamp/switched)), then(PROC_REF(toggled)))
+	// the clamp is dragged onto the one who takes it off
+	op("remove", at_target(/mob/living), gesture(GESTURE_DRAG), label("Remove"), wait(3 SECONDS),
+		needs(req(PROC_REF(dragged_by_self), because = MSG(op/not_available)), req(PROC_REF(released), because = MSG(clamp/active))), says(MSG(clamp/removed)), then(PROC_REF(removed)))
+
+/obj/machinery/clamp/proc/attached(datum/act/op/A)
+	return !!target_ref()
+
+/obj/machinery/clamp/proc/toggled(datum/act/op/A)
 	if(!open)
 		open()
 	else
 		close()
-	to_chat(user, span_notice("You turn [open ? "off" : "on"] \the [src]"))
-	return TRUE
+	return OP_OK
+
+/// The clamp is dragged onto the one dragging it.
+/obj/machinery/clamp/proc/dragged_by_self(datum/act/op/A)
+	return A.target == A.actor
+
+/obj/machinery/clamp/proc/released(datum/act/A)
+	return open
+
+/// It comes off into the hands of whoever pulled it off.
+/obj/machinery/clamp/proc/removed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/clamp/C = new /obj/item/clamp(user.loc)
+	if(ishuman(user))
+		user.put_in_hands(C)
+	replace_with(src, C)
+	return OP_OK
 
 /obj/machinery/clamp/proc/update_networks()
 	if(!target_ref())
@@ -73,7 +92,7 @@
 
 	update_networks()
 
-	open = 1
+	set_open(1)
 	icon_state = "pclamp0"
 	target_ref().in_stasis = 0
 	return 1
@@ -84,33 +103,11 @@
 
 	target_ref().rust_set_physical_edges(FALSE)
 
-	open = 0
+	set_open(0)
 	icon_state = "pclamp1"
 	target_ref().in_stasis = 1
 
 	return 1
-
-/obj/machinery/clamp/MouseDrop(obj/over_object as obj)
-	return detach_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native clamp drag captures the actor before its unchanged timed removal.
-
-/obj/machinery/clamp/proc/detach_with_actor(mob/user, atom/over_object)
-	if(!user)
-		return
-
-	if(open && over_object == user && Adjacent(user))
-		to_chat(user, span_notice("You begin to remove \the [src]..."))
-		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(user))
-	else
-		to_chat(user, span_warning("You can't remove \the [src] while it's active!"))
-
-/obj/machinery/clamp/proc/MouseDrop_timed_done(mob/usr_mob)
-	to_chat(usr_mob, span_notice("You have removed \the [src]."))
-	var/obj/item/clamp/C = new/obj/item/clamp(src.loc)
-	C.forceMove(usr_mob.loc)
-	if(ishuman(usr_mob))
-		usr_mob.put_in_hands(C)
-	replace_with(src, C)
-	return
 
 /obj/item/clamp
 	name = "stasis clamp"
@@ -118,34 +115,24 @@
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "pclamp0"
 
-/obj/item/clamp/afterattack(atom/A, mob/user as mob, proximity)
-	if(!proximity)
-		return
+MSG_DEF_SELF(clamp/occupied, "A clamp is already attached to the pipe there!")
+MSG_DEF(clamp/attached, "You attach %T% to the pipe.", "%U% attaches %T% to the pipe.")
 
-	if (istype(A, /obj/machinery/atmospherics/pipe/simple))
-		to_chat(user, span_notice("You begin to attach \the [src] to \the [A]..."))
-		var/C = locate_within(get_turf(A), /obj/machinery/clamp)
-		om_task_start(/datum/om/task/timed/clamp_afterattack, user, src, receiver = src, A = A, C = C)
-		if(C)
-			to_chat(user, span_notice("\The [C] is already attached to the pipe at this location!"))
+CAPABILITIES(/obj/item/clamp)
+	op("attach", at_target(/obj/machinery/atmospherics/pipe/simple), label("Attach clamp"), wait(3 SECONDS),
+		needs(req_adjacent(), req(PROC_REF(pipe_free), because = MSG(clamp/occupied))), says(MSG(clamp/attached)), then(PROC_REF(attached_to)))
 
-/datum/om/task/timed/clamp_afterattack
-	duration = 3 SECONDS
-	complete_proc = /obj/item/clamp/proc/afterattack_timed_done
-	var/atom/A
-	var/C
+/obj/item/clamp/proc/pipe_free(datum/act/op/A)
+	return !locate_within(get_turf(A.target), /obj/machinery/clamp)
 
-/obj/item/clamp/proc/afterattack_timed_done(datum/om/task/timed/clamp_afterattack/task)
-	var/atom/A = task.A
-	var/mob/user = task.actor
-	var/C = task.C
-	if(!(!C))
-		return
+/obj/item/clamp/proc/attached_to(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.unEquip(src))
-		return
-	to_chat(user, span_notice("You have attached \the [src] to \the [A]."))
-	new/obj/machinery/clamp(A.loc, A)
-	qdel(src)
+		return OP_FAILED
+	var/atom/pipe = A.target
+	new /obj/machinery/clamp(pipe.loc, pipe)
+	spent(src)
+	return OP_OK
 
 /// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/clamp/proc/target_ref() as /obj/machinery/atmospherics/pipe/simple

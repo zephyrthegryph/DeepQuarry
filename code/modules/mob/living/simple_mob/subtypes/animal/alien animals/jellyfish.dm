@@ -107,6 +107,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 		if(prob(25))
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
+// ALLOW(init/CTOR_ARGS): jellyfish is a constructor argument from whoever builds it
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload, jellyfish)
 	. = ..()
 	enable_swarming()
@@ -167,6 +168,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	var/inherited_nutriment = 0
 
+// ALLOW(init/CTOR_ARGS): inherit is a constructor argument from whoever builds it
 /obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload, inherit)
 	. = ..()
 	nutriment_amt += inherit

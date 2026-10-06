@@ -16,19 +16,22 @@
 	max_level = 5
 	full_override = TRUE
 
-/obj/item/multitool/hacktool/Initialize(mapload)
-	. = ..()
-	max_known_targets = 5 + rand(1,3)
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/multitool/hacktool/proc/roll_max_known_targets(datum/roller/R)
+	return 5 + R.number(1, 3)
 
 CAPABILITIES(/obj/item/multitool/hacktool)
 	owns_one(nameof(hack_state), starts = /datum/tgui_state/default/must_hack)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	rolls(nameof(max_known_targets), PROC_REF(roll_max_known_targets))
 
 // known_targets is a relation list (newest last): the framework drops a target when it dies.
 
-/obj/item/multitool/hacktool/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/multitool/hacktool/proc/screwdriver_used(datum/act/op/A)
+	var/obj/item/tool = A.held
 	in_hack_mode = !in_hack_mode
 	playsound(src, tool.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/multitool/hacktool/afterattack(atom/A, mob/user)
 	sanity_check()

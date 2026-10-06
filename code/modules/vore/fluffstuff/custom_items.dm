@@ -137,7 +137,7 @@
 			NO.contents = list()
 			NO.cell_type = null
 
-	qdel(O)
+	consumed(O, src)
 	parts -= cost
 	if(!parts && delete_on_empty)
 		consume(src, user)
@@ -1577,9 +1577,12 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	..()
 	icon_state = "ceph_d6[result]"
 
-/obj/item/dice/loaded/ceph/Initialize(mapload)
-	. = ..()
-	icon_state = "ceph_d6[rand(1,sides)]"
+CAPABILITIES(/obj/item/dice/loaded/ceph)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/dice/loaded/ceph/roll_icon_state(datum/roller/R)
+	return "ceph_d6[R.number(1, sides)]"
 
 //abc123: Mira Nesyne
 /obj/item/clothing/accessory/medal/silver/fluff/abc314

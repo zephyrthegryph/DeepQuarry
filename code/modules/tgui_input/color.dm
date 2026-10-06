@@ -27,7 +27,7 @@
 	picker.wait()
 	if (picker)
 		. = picker.choice
-		qdel(picker)
+		spent(picker, user)
 
 /**
  * # tgui_color_picker

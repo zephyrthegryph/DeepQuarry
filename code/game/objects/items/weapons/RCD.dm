@@ -322,6 +322,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
 CAPABILITIES(/obj/item/rcd)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	owns_many(nameof(effects))
 	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
 	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
@@ -414,6 +415,7 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
+// ALLOW(init/CTOR_ARGS): rcd_delay and rcd_status are constructor arguments from whoever builds it
 /obj/effect/constructing_effect/Initialize(mapload, rcd_delay, rcd_status)
 	. = ..()
 	start_animation(rcd_delay, rcd_status)

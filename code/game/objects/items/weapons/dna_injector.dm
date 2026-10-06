@@ -140,7 +140,7 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 
 	if (user)
 		user.drop_from_inventory(src)
-	qdel(src)
+	spent(src, M)
 	return uses
 
 /obj/item/dnainjector/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

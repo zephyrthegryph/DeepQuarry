@@ -23,6 +23,6 @@
 			T.ChangeTurf(world.turf)
 		else
 			vv_update_display(D, "deleted", VV_MSG_DELETED)
-			qdel(D)
+			spent(D, actor)
 			if(!QDELETED(D))
 				vv_update_display(D, "deleted", "")

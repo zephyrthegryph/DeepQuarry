@@ -99,7 +99,7 @@
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully used a Maintenance Critter spawner to spawn in as a Morph.", newMorph)
 	newMorph.offer_load_bellies()
-	qdel(src)
+	spent(src, M)
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/proc/create_lurker(mob/M)
 	if(!M?.client)
@@ -146,7 +146,7 @@
 	to_chat(new_character, span_notice("Whoever or whatever your chosen character slot is, your role is to facilitate roleplay focused around that character; this role is not free license to attack and murder people without provocation or explicit out-of-character consent. You should probably be cautious around high-traffic and highly sensitive areas (e.g. Telecomms) as Security personnel would be well within their rights to treat you as a trespasser. That said, good luck!"))
 
 	act_message(new_character, null, others = span_warning("%U% appears to crawl out of somewhere."))
-	qdel(src)
+	spent(src, M)
 
 DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/unified_hole, REGISTRY_GHOST_PODS)
 

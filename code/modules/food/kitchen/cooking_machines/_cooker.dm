@@ -34,7 +34,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooke
 CAPABILITIES(/obj/machinery/appliance/cooker)
 	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
 
-UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_cooker{temperature:num,optimalTemp:num,temperatureEnough:bool,efficiency:num}")
+/obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_machinery_appliance_cooker(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/appliance/cooker's window data (declared on its UI_DATA row).
 /obj/machinery/appliance/cooker/proc/ui_data_obj_machinery_appliance_cooker(mob/user, datum/tgui/ui, datum/tgui_state/state)

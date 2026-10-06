@@ -109,7 +109,9 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 				to_chat(user, span_warning("\The [W] is empty."))
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/grenade/chem_grenade/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/grenade/chem_grenade/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(path == 2)
 		return ..()
 	if(stage == 1)
@@ -123,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		playsound(src, tool.usesound, 50, TRUE)
 		icon_state = "[initial(icon_state)]_locked"
 		stage = 2
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(stage != 2)
 		return ..()
 	if(active && prob(95))
@@ -138,7 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		icon_state = initial(icon_state) + (detonator ? "_ass" : "")
 		stage = 1
 		active = FALSE
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/grenade/chem_grenade/examine(mob/user)
 	. = ..()

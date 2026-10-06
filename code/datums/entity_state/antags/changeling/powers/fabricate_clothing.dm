@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/clothing/head/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/clothing/head/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/clothing/suit/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/clothing/shoes/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/storage/backpack/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting. // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			AM.forceMove(get_turf(loc))
-		qdel(src)
+		spent(src)
 
 /obj/item/clothing/gloves/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/clothing/mask/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -192,7 +192,7 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/clothing/glasses/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/storage/belt/chameleon/changeling
 	emp_protection_flags = EMP_PROTECT_SELF
@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/card/id/syndicate/changeling
 	name = "chitinous card"
@@ -265,7 +265,7 @@ CAPABILITIES(/obj/item/card/id/syndicate/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
-		qdel(src)
+		spent(src)
 
 /obj/item/card/id/syndicate/changeling/Click() //Since we can't hold it in our hands, and attack_hand() doesn't work if it in inventory...
 	register_and_show_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native card clicks supply the initiating mob before the unchanged parent routing.

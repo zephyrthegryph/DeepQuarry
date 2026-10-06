@@ -19,7 +19,7 @@
 
 /obj/item/spell/aura/biomed/periodic_step()
 	if(!pay_energy(75))
-		qdel(src)
+		spent(src)
 		return
 	regen_tick++
 	if(regen_tick % 5 == 0)

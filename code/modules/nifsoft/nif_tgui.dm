@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/nif)
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	qdel(src)
+	spent(src)
 
 /datum/nif_menu/proc/on_client_login(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

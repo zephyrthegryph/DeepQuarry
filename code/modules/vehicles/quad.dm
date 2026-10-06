@@ -31,6 +31,7 @@
 	. = ..()
 	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
+// ALLOW(init/CTOR_ARGS): assembly is a constructor argument from whoever builds it
 /obj/vehicle/train/engine/quadbike/Initialize(mapload, assembly)
 	. = ..()
 	if(!assembly)
@@ -42,10 +43,12 @@
 /obj/vehicle/train/engine/quadbike/built/Initialize(mapload)
 	. = ..(mapload, TRUE)
 
-/obj/vehicle/train/engine/quadbike/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/train/engine/quadbike/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 /obj/item/key/quadbike
 	name = "key"
@@ -195,9 +198,12 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom,
 
 	paint_color = "#ffffff"
 
-/obj/vehicle/train/trolley/trailer/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/train/trolley/trailer/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 /obj/vehicle/train/trolley/trailer/proc/update_load()
 	if(load)

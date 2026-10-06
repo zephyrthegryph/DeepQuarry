@@ -133,7 +133,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	own_clear(src, nameof(summoned_mobs), OWN_DELETE)
 	for(var/mob/living/ward in wards_in_use)
 		LAZYREMOVE(wards_in_use, ward)
-		qdel(ward)
+		spent(ward)
 
 // This is what is clicked on to place a spell in the user's hands.
 /obj/spellbutton
@@ -142,6 +142,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	var/obj/item/technomancer_core/core = null
 	var/ability_icon_state = null
 
+// ALLOW(init/CTOR_ARGS): path, new_name and new_icon_state are constructor arguments from whoever builds it
 /obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
 	. = ..()
 	rel_set(src, nameof(core), loc)
@@ -200,7 +201,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
 				wearer.ability_master.remove_ability(A)
-		qdel(spell_to_remove)
+		spent(spell_to_remove)
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)

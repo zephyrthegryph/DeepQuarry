@@ -17,11 +17,11 @@
 // A bottle is stoppered at first.
 CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
 	configure(reagent_container(starts_open = FALSE))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = cond_not(nameof(icon_state)))
 
-/obj/item/reagent_containers/glass/bottle/Initialize(mapload)
-	. = ..()
-	if(!icon_state)
-		icon_state = "bottle-[rand(1,4)]"
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/glass/bottle/proc/roll_icon_state(datum/roller/R)
+	return "bottle-[R.number(1, 4)]"
 
 /// What it holds changes colour with no change of the amount: the filling is redrawn.
 /obj/item/reagent_containers/glass/bottle/on_reagent_change()

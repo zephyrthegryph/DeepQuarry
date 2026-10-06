@@ -56,9 +56,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/weatherlily, null, lis
 	desc = "A strange plant."
 	icon_state = "tyrflora"
 
-/obj/structure/flora/tyr/flowers/Initialize(mapload)
-	. = ..()
-	icon_state = "tyrflora[rand(1, 5)]gb"
+CAPABILITIES(/obj/structure/flora/tyr/flowers)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/tyr/flowers/proc/roll_icon_state(datum/roller/R)
+	return "tyrflora[R.number(1, 5)]gb"
 
 //tier 2
 /obj/item/reagent_containers/food/snacks/ant
@@ -82,9 +85,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mutatedmeat, null, lis
 
 	var/static/list/possible_states = list("crystal", "generator","core", "hilt")
 
-/obj/item/prop/alien/prototype/Initialize(mapload)
-	. = ..()
-	icon_state = pick(possible_states)
+CAPABILITIES(/obj/item/prop/alien/prototype)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/prop/alien/prototype/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_states)
 
 /* Yoinked for refrence
 /obj/item/arrow/standard

@@ -14,10 +14,9 @@
 
 	consume_range = 6
 
-DECLARE_PERIODIC(/obj/singularity/narsie/large/exit, PERIODIC_SLOW)
-
 APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
-/obj/singularity/narsie/large/exit/periodic_step()
+/// The rift's step (the singularity's every()): every player sees it, and it eats.
+/obj/singularity/narsie/large/exit/singularity_frame(datum/act/timer/A)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)
 			M.see_rift(src)
@@ -87,5 +86,5 @@ APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
 		src << riftimage
 	else
 		if(riftimage)
-			qdel(riftimage)
+			spent(riftimage)
 

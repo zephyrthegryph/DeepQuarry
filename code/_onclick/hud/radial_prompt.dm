@@ -119,4 +119,4 @@
 	if(menu_id && GLOB.radial_menus[menu_id] == src)
 		GLOB.radial_menus -= menu_id
 	hide()
-	qdel(src)
+	spent(src)

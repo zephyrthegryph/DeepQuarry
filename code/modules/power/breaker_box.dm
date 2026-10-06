@@ -24,7 +24,7 @@
 // the cables it switched go with it (an RCON console reads its breakers live, so it needs no rescan).
 /obj/machinery/power/breakerbox/on_destroy(force)
 	for(var/obj/structure/cable/C in src.loc)
-		qdel(C)
+		destroyed(C)
 	..()
 
 /obj/machinery/power/breakerbox/Initialize(mapload)
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 		icon_state = icon_state_off
 		for(var/obj/structure/cable/C in src.loc)
 			rel_clear(C, nameof(C.breaker_box))
-			qdel(C)
+			destroyed(C)
 
 // Used by RCON to toggle the breaker box.
 /obj/machinery/power/breakerbox/proc/auto_toggle()

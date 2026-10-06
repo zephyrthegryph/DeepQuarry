@@ -16,7 +16,10 @@
 	var/initialize_directions_he
 	var/surface = 2	//surface area in m^2
 	var/icon_temperature = T20C //stop small changes in temperature causing an icon refresh
-	var/stable_temperature_cycles = 0
+	/// It has work each service interval: a body lies on it, or its glow is behind its gas (reconsider()).
+	var/tending = FALSE
+	/// The watch it sleeps on: its pipeline's gas (temperature), for the glow.
+	var/list/datum/native_watch/gas/glow_watches
 	/// It lies on space and radiates (set when it joins its pipeline: a pipe does not move).
 	var/in_space = FALSE
 
@@ -39,8 +42,12 @@
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
 	// In space the pipeline's gas radiates through the pipe's surface (Stefan-Boltzmann, integrated exactly in Rust).
 	when(nameof(in_space), heat_link(HEAT_PORT(1), HEAT_SKY(HE_PIPE_SKY_TEMPERATURE), 0, 1, nameof(surface)))
+	owns_many(nameof(glow_watches), /datum/native_watch/gas)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(he_step)), when = nameof(tending))
+	on_change(nameof(parent), ANY, then(PROC_REF(reconsider)))
 
 TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
+TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tending)
 
 /// The pipe's shell is its heat body: it couples to its turf like any atom's (slot 0) and to its pipeline's gas (slot 1).
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/thermal_properties()
@@ -68,9 +75,8 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 	if(index == 1)
 		couple_to_pipeline()
 		set_in_space(istype(loc, /turf/space))
+		reconsider()
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/Initialize(mapload)
-	. = ..()
 // BubbleWrap END
 	color = "#404040" //we don't make use of the fancy overlay system for colours, use this to set the default.
 
@@ -82,55 +88,48 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/get_init_dirs()
 	return ..() | initialize_directions_he
 
-/// Wakes only once heat_exchange_actionable() holds -- pipe and surroundings far enough apart to
-/// exchange -- re-evaluated on a temperature change of either mixture.
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/register_gas_dependencies()
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(loc?.return_air(), parent?.air))
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_TEMPERATURE, om_callable(src, PROC_REF(heat_exchange_actionable)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+// ---- its DM work: a body lying on it, and its glow; the heat itself is Rust's (its shell's heat body, its sky link) ----
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "gas")
-
-/// The gas watch's wake: an external temperature change, not a state of this pipe. (The old
-/// stable_temperature_cycles reset here was dead: the step parks after one stable cycle either way.)
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/wake_from_gas()
-	unregister_gas_dependencies()
-	MACHINE_WAKE(src)
-
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/heat_exchange_actionable()
+/// Its glow is more than ten kelvin behind its gas, above 500 K.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/glow_due()
 	var/datum/gas_mixture/pipe_air = parent?.air
 	if(!pipe_air)
 		return FALSE
 	var/pipe_temperature = pipe_air.return_temperature()
-	if(istype(loc, /turf/space/))
-		return abs(pipe_temperature - TCMB) > minimum_temperature_difference
-	var/turf/simulated/simulated_turf = loc
-	if(!istype(simulated_turf))
-		return FALSE
-	if(simulated_turf.special_temperature)
-		return TRUE
-	var/environment_temperature
-	if(simulated_turf.blocks_air)
-		environment_temperature = simulated_turf.get_temperature()
+	return (icon_temperature > 500 || pipe_temperature > 500) && abs(pipe_temperature - icon_temperature) > 10
+
+/// Whether it has work: in a pipeline, with a body on it or its glow behind. Asleep, it watches its pipeline's gas for the glow.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/reconsider(datum/act/A)
+	if(parent && (has_buckled_mobs() || glow_due()))
+		gas_watch_many_clear(src, nameof(glow_watches))
+		set_tending(TRUE)
+		return
+	set_tending(FALSE)
+	if(parent)
+		// Every change, not only temperature: a heat-domain write to a pipe region does not report a temperature-only change.
+		gas_watch_many(src, nameof(glow_watches), list(parent.air), GAS_DEPENDENCY_ALL, PROC_REF(glow_heard))
 	else
-		var/datum/gas_mixture/environment = simulated_turf.return_air()
-		environment_temperature = environment?.return_temperature()
-	return !isnull(environment_temperature) && abs(environment_temperature - pipe_temperature) > minimum_temperature_difference
+		gas_watch_many_clear(src, nameof(glow_watches))
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/glow_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+	if(glow_due())
+		reconsider()
+
+/// A body lies down on it or gets up: it tends it.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/post_buckle_mob(mob/living/M)
+	. = ..()
+	reconsider()
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	om_watch_invalidate(src)
+	reconsider()
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
 	return // Heat-exchange pipes cannot leak.
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/disconnect(obj/machinery/atmospherics/reference)
-	om_watch_invalidate(src)
-	return ..()
+	. = ..()
+	reconsider()
 
 // Use initialize_directions_he to connect to neighbors instead.
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/can_be_node(obj/machinery/atmospherics/pipe/simple/heat_exchanging/target)
@@ -159,77 +158,40 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 			rel_set(src, nameof(node2), target)
 			break
 	if(!node1 && !node2)
-		qdel(src)
+		spent(src)
 		return
 
 	update_icon()
 	handle_leaking()
 	return
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/machine_step()
-	if(!parent)
-		stable_temperature_cycles = 0
-		return PROCESS_KILL // joining a pipeline wakes it (rust_pipenets.dm)
-	else
-		var/can_hibernate = !leaking && !has_buckled_mobs()
-		if(leaking)
-			parent.leak_into(loc, volume)
-		var/datum/gas_mixture/pipe_air = return_air()
-		var/pipe_temperature = pipe_air.return_temperature()
-		if(istype(loc, /turf/simulated/))
-			var/turf/simulated/loc_as_turf = loc
-			var/environment_temperature = 0
-			if(loc_as_turf.blocks_air)
-				environment_temperature = loc_as_turf.get_temperature()
-				can_hibernate = FALSE
-			else
-				var/datum/gas_mixture/environment = loc_as_turf.return_air()
-				environment_temperature = environment.return_temperature()
-			if((abs(environment_temperature-pipe_temperature) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
-				// The shell's heat body (couple_to_pipeline()) does the exchange; this step keeps it from parking while it runs.
-				can_hibernate = FALSE
-		else if(istype(loc, /turf/space/))
-			if(abs(pipe_temperature - TCMB) > minimum_temperature_difference)
-				can_hibernate = FALSE // the radiation is its heat link (CAPABILITIES); this step keeps the glow up to date
-
-		if(has_buckled_mobs())
-			for(var/mob/living/L as anything in src?.buckled_mob_list())
-				heat_equalize(pipe_air, L) // the body lying on it and the gas inside meet, conserving
-
-				var/heat_limit = 1000
-
-				var/mob/living/carbon/human/H = L
-				if(istype(H) && H.species)
-					heat_limit = H.species.heat_level_3
-
-				if(pipe_air.return_temperature() > heat_limit + 1)
-					L.injure(INJURY_BURN, 4 * log(pipe_air.return_temperature() - heat_limit), BP_TORSO, src)
-
-		//fancy radiation glowing
-		pipe_temperature = pipe_air.return_temperature()
-		if(pipe_temperature && (icon_temperature > 500 || pipe_temperature > 500)) //start glowing at 500K
-			if(abs(pipe_temperature - icon_temperature) > 10)
-				icon_temperature = pipe_temperature
-
-				var/h_r = heat2color_r(icon_temperature)
-				var/h_g = heat2color_g(icon_temperature)
-				var/h_b = heat2color_b(icon_temperature)
-
-				if(icon_temperature < 2000) //scale up overlay until 2000K
-					var/scale = (icon_temperature - 500) / 1500
-					h_r = 64 + (h_r - 64)*scale
-					h_g = 64 + (h_g - 64)*scale
-					h_b = 64 + (h_b - 64)*scale
-
-				animate(src, color = rgb(h_r, h_g, h_b), time = 20, easing = SINE_EASING)
-
-		if(can_hibernate)
-			stable_temperature_cycles++
-			if(stable_temperature_cycles >= 1)
-				register_gas_dependencies()
-				return PROCESS_KILL
-		else
-			stable_temperature_cycles = 0
+/// One service interval of tending (its every()): the body on it and its gas meet (conserving) and a hot pipe burns it; its glow follows its gas.
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/he_step(datum/act/A)
+	var/datum/gas_mixture/pipe_air = parent?.air
+	if(!pipe_air)
+		reconsider()
+		return
+	for(var/mob/living/L as anything in buckled_mob_list())
+		heat_equalize(pipe_air, L) // the body lying on it and the gas inside meet, conserving
+		var/heat_limit = 1000
+		var/mob/living/carbon/human/H = L
+		if(istype(H) && H.species)
+			heat_limit = H.species.heat_level_3
+		if(pipe_air.return_temperature() > heat_limit + 1)
+			L.injure(INJURY_BURN, 4 * log(pipe_air.return_temperature() - heat_limit), BP_TORSO, src)
+	//fancy radiation glowing
+	if(glow_due())
+		icon_temperature = pipe_air.return_temperature()
+		var/h_r = heat2color_r(icon_temperature)
+		var/h_g = heat2color_g(icon_temperature)
+		var/h_b = heat2color_b(icon_temperature)
+		if(icon_temperature < 2000) //scale up overlay until 2000K
+			var/scale = (icon_temperature - 500) / 1500
+			h_r = 64 + (h_r - 64)*scale
+			h_g = 64 + (h_g - 64)*scale
+			h_b = 64 + (h_b - 64)*scale
+		animate(src, color = rgb(h_r, h_g, h_b), time = 20, easing = SINE_EASING)
+	reconsider()
 
 //
 // Heat Exchange Junction - Interfaces HE pipes to normal pipes
@@ -286,17 +248,9 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 			break
 
 	if(!node1&&!node2)
-		qdel(src)
+		spent(src)
 		return
 
 	update_icon()
 	handle_leaking()
 	return
-
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/step_has_work()
-	return parent && heat_exchange_actionable()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/arm_wakes()
-	..()
-	register_gas_dependencies()

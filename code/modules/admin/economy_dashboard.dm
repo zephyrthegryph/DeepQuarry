@@ -6,7 +6,7 @@ CAPABILITIES(/datum/economy_dashboard)
 
 /datum/economy_dashboard/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src, user)
 
 /datum/economy_dashboard/proc/ranked_ledger_rows(list/ledger)
 	var/list/rows = list()

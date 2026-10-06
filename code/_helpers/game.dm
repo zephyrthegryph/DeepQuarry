@@ -42,6 +42,7 @@
 	return 0
 
 /proc/in_range(source, user)
+	READS_FROM() // positions are asked when a choice is made, never cached
 	if(get_dist(source, user) <= 1)
 		return 1
 
@@ -780,7 +781,7 @@
 
 /proc/flick_overlay_end(image/I, list/show_to, gc_after)
 	if(gc_after)
-		qdel(I)
+		spent(I)
 	for(var/client/C in show_to)
 		C.images -= I
 

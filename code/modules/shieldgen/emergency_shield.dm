@@ -30,7 +30,7 @@
 /obj/machinery/shield/atom_destruction(damage_flag)
 	. = ..()
 	visible_message(span_boldnotice("\The [src]") + " dissipates!")
-	qdel(src)
+	destroyed(src)
 
 /obj/machinery/shield/Initialize(mapload)
 	src.set_dir(pick(1,2,3,4))
@@ -183,7 +183,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 
 	if(malfunction)
 		if(length(deployed_shields) && prob(5))
-			qdel(DEFAULTPICK(deployed_shields, null))
+			spent(DEFAULTPICK(deployed_shields, null))
 
 // Dropping below 30% integrity makes the generator start to malfunction.
 /obj/machinery/shieldgen/atom_break(damage_flag)

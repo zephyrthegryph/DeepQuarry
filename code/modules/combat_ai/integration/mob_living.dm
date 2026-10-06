@@ -42,6 +42,7 @@ CAPABILITIES(/mob/living)
 	owns_many(nameof(stasis_sources))
 	// What holds the biological clock rate down (a sleeper, a stasis bed) is the body's stasis (code/modules/medical/stabilisation/stasis.dm).
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as
@@ -100,6 +101,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// Re-open Initialize to drive brain creation. Also handles say_list spawning
 /// since DM resolves all `/mob/living/Initialize` overrides to the last-defined
 /// one — having two separate re-opens silently drops the earlier definition.
+// ALLOW(init/FRAMEWORK): the living base allocates its speech table and AI brain when its type has them
 /mob/living/Initialize(mapload)
 	. = ..()
 	// Only allocate a say_list when the mob actually overrides the default

@@ -225,7 +225,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		T2 = T
 		if(locate_on(T, /obj/machinery/shieldwall))
 			F = (locate_on(T, /obj/machinery/shieldwall))
-			qdel(F)
+			spent(F)
 
 		if(locate_on(T, /obj/machinery/shieldwallgen))
 			G = (locate_on(T, /obj/machinery/shieldwallgen))
@@ -265,6 +265,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
+// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
 /obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
 	. = ..()
 	update_nearby_tiles()
@@ -294,11 +295,11 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 /obj/machinery/shieldwall/machine_step()
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
-			qdel(src)
+			spent(src)
 			return
 
 		if(!(gen_primary.active)||!(gen_secondary.active))
-			qdel(src)
+			spent(src)
 			return
 
 		if(prob(50))

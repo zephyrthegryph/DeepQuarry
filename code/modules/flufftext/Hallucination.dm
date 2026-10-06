@@ -42,9 +42,9 @@ CAPABILITIES(/datum/hallucinations)
 		remove_hallucination_item()
 	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
 	if(halbody)
-		qdel(halbody)
+		destroyed(halbody)
 	if(halimage)
-		qdel(halimage)
+		destroyed(halimage)
 	..()
 
 /datum/hallucinations/proc/make_timer()
@@ -81,13 +81,13 @@ CAPABILITIES(/datum/hallucinations)
 /datum/hallucinations/proc/trigger()
 	PROTECTED_PROC(TRUE)
 	if(QDELETED(our_human))
-		qdel(src)
+		spent(src)
 		return
 	if(!our_human.client)
-		qdel(src)
+		spent(src)
 		return
 	if(our_human.status_units(EFFECT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
-		qdel(src)
+		spent(src)
 		return
 	handle_hallucinating()
 	make_timer()
@@ -128,14 +128,14 @@ CAPABILITIES(/datum/hallucinations)
 
 /datum/hallucinations/xenochimera/trigger()
 	if(QDELETED(our_human))
-		qdel(src)
+		spent(src)
 		return
 	if(!our_human.client)
-		qdel(src)
+		spent(src)
 		return
 	var/datum/xenochimera/XC = our_human.xenochimera
 	if(!XC || XC.feral < XENOCHIFERAL_THRESHOLD)
-		qdel(src)
+		spent(src)
 		return
 	handle_hallucinating()
 	om_qdel_after(src, rand(3,9)SECONDS)

@@ -300,7 +300,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 		if(!length(group))
 			latent -= entry.slot
 		UNSETEMPTY(latent)
-		qdel(entry)
+		spent(entry)
 	propagate()
 
 /// Whether `entry` is still one of ours.
@@ -481,7 +481,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	// Keep the identity (ownership.md sec 4.1): the handle slot is parked and relation views naming
 	// this thing go dormant, to re-link when the entry re-materializes into the same slot.
 	var/hid = om_handle_park(src)
-	qdel(src)
+	destroyed(src)
 	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
 	if(hid)
 		if(entry)
@@ -572,5 +572,5 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	if(QDELETED(probe))
 		return null
 	var/list/after = dq_latent_entry_blob(state_serialize(probe, STATE_FULL))
-	qdel(probe)
+	spent(probe)
 	return list(after)

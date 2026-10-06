@@ -141,7 +141,7 @@ TYPE_TABLE(/obj/structure/closet/crate/secure/lootsafe/devillock, code_alphabet,
 			to_chat(user, span_danger("The crate's anti-tamper system activates!"))
 			var/turf/T = get_turf(src.loc)
 			explosion(T, 0, 0, 1, 2)
-			qdel(src)
+			spent(src)
 	return OP_OK
 
 /obj/structure/closet/crate/secure/lootsafe/proc/check_input(input)
@@ -200,6 +200,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
 	hackguard = 5
 	codelen = 3
 
+// ALLOW(init/INSTANCE_STATE): rolls its code and its loot per safe
 /obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
 	. = ..()
 	make_code()
@@ -229,6 +230,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock)
 	item_state = "gold_id"
 	access = list(150)
 
+// ALLOW(init/INSTANCE_STATE): rolls its code and its loot per safe
 /obj/structure/closet/crate/secure/lootsafe/devillock/Initialize(mapload)
 	. = ..()
 	make_code()

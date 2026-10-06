@@ -9,6 +9,7 @@
 	var/image/turf_image
 	var/list/decals
 
+// ALLOW(init/INSTANCE_STATE): remembers the turf it was placed on and waits in nullspace
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
@@ -145,9 +146,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 			us.underlays = list(landed_on)
 			appearance = us
 
-		spawn
-			if(istype(src, /turf/simulated/shuttle))
-				update_breaklights() // Update only if this coordinate is still a shuttle turf.
+		after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 		return
 
 	if(!under)
@@ -190,9 +189,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 
 	appearance = us
 
-	spawn
-		if(istype(src, /turf/simulated/shuttle))
-			update_breaklights() // Update only if this coordinate is still a shuttle turf.
+	after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 
 	return under
 
@@ -227,6 +224,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 	light_on = TRUE
 	block_tele = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls its alien pod tile and lights it
 /turf/simulated/shuttle/floor/alien/Initialize(mapload)
 	. = ..()
 	icon_state = "alienpod[rand(1, 9)]"
@@ -387,7 +385,8 @@ CAPABILITIES(/turf/simulated/shuttle)
 	icon = 'icons/turf/stomach_vr.dmi'
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/floor/flesh)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
 /turf/simulated/floor/flesh
 	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
@@ -427,7 +426,7 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
 				return OP_PASS
-			qdel(L)
+			spent(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)

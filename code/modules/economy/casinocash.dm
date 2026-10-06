@@ -128,7 +128,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 			update_icon()
 		return worth
 	else
-		qdel(src)
+		spent(src)
 		return 0
 
 /obj/item/spacecasinocash/proc/set_worth(new_worth = 0, update = 1)
@@ -317,7 +317,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 			update_icon()
 		return worth
 	else
-		qdel(src)
+		spent(src)
 		return 0
 
 /obj/item/spacecasinocash_fake/proc/set_worth(new_worth = 0, update = 1)

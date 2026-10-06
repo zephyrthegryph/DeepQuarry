@@ -435,7 +435,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		var/datum/reagents/our_chem = new /datum/reagents(30) //Create some reagents, move them over, and clean up the datum afterwards
 		our_chem.add_reagent(chem, 30)
 		our_chem.trans_to_turf(surroundings,30)
-		qdel(our_chem)
+		spent(our_chem)
 
 ////////MEDICAL//////////////
 
@@ -447,7 +447,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/datum/diagnosis/D = Tar.diagnose(/datum/diagnostic_profile/admin)
 	if(D)
 		to_chat(user, D.render_chat())
-		qdel(D)
+		spent(D)
 
 /datum/eventkit/player_effects/proc/ui_act_appendicitis(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()

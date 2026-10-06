@@ -67,7 +67,7 @@
 	if(QDELETED(src))
 		return
 
-	qdel(src)
+	spent(src)
 
 /// Parent tile has been altered, entire search needs reset
 /datum/search_object/proc/on_turf_change(datum/act/notice/A)

@@ -38,6 +38,7 @@
 	var/swarmling_type = /mob/living/simple_mob/animal/giant_spider/hunter
 	var/swarmling_prob = 10 // Odds that a spiderling will be a swarmling instead.
 
+// ALLOW(init/INSTANCE_STATE): rolls how many spiderlings it carries
 /mob/living/simple_mob/animal/giant_spider/carrier/Initialize(mapload)
 	spiderling_count = rand(5, 10)
 	adjust_scale(1.2)

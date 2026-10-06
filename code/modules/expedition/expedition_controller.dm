@@ -37,7 +37,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 /// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
 	if(!controller() || !site() || QDELETED(site()))
-		qdel(src)
+		spent(src)
 		return
 	turfs = block(locate(1, 1, z_level), locate(world.maxx, world.maxy, z_level))
 	om_task_slices(src, PROC_REF(wipe_slice), 1, PROC_REF(finish))
@@ -60,7 +60,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 /datum/expedition_teardown_job/proc/finish()
 	turfs = null
 	if(!controller() || !site() || QDELETED(site()))
-		qdel(src)
+		spent(src)
 		return
 	var/site_name = site().name
 	if(z_level >= 1 && z_level <= world.maxz)
@@ -71,7 +71,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
 	own_clear(src, nameof(site), OWN_DELETE)
-	qdel(src)
+	spent(src)
 
 // The expedition system (was SSexpedition). On demand: the lifecycle poll is parked
 // while no site is live and woken when a site is registered.
@@ -110,7 +110,7 @@ CAPABILITIES(/datum/system/expedition)
 	// jump. The blank vacuum level remains unavailable until generation claims it.
 	var/datum/map_template/expedition_site/template = new
 	var/preallocated_z = template.load_new_z()
-	qdel(template)
+	spent(template)
 	if(isnum(preallocated_z) && preallocated_z >= 1)
 		free_z |= preallocated_z
 		log_world("Expedition: preallocated expedition z[preallocated_z] during startup.")
@@ -163,7 +163,7 @@ CAPABILITIES(/datum/system/expedition)
 	rel_clear(descriptor, nameof(descriptor.assigned_shuttle))
 	rel_clear(descriptor, nameof(descriptor.assigned_flight_vessel))
 	rel_clear(descriptor, nameof(descriptor.payout_turf))
-	qdel(descriptor)
+	spent(descriptor)
 	if(!plan || QDELETED(plan))
 		return
 	plan.generation_progress = 100
@@ -354,7 +354,7 @@ CAPABILITIES(/datum/system/expedition)
 
 /datum/system/expedition/proc/generation_planned(list/generation, datum/generated_station_planner/planner, datum/generated_station_spec/station_spec)
 	var/planner_error = planner.error_message
-	qdel(planner)
+	spent(planner)
 	if(!station_spec)
 		log_world("Expedition: generated-station planning attempt [generation["attempt"]] failed on z[generation["z"]] (seed [generation["attempt_seed"]]): [planner_error || "no specification"].")
 		generation_attempt(generation)
@@ -369,13 +369,13 @@ CAPABILITIES(/datum/system/expedition)
 	generation["yields"] += materializer.last_yield_count
 	generation["elapsed"] += materializer.last_elapsed_seconds
 	var/materialization_error = materializer.last_failure_details
-	qdel(materializer)
+	spent(materializer)
 	if(station_materialization)
 		generation["seed"] = generation["attempt_seed"]
 		generation_publish(generation, station_spec, station_materialization)
 		return
 	log_world("Expedition: generated-station materialization attempt [generation["attempt"]] failed on z[generation["z"]] (seed [generation["attempt_seed"]]): [materialization_error || "no result"].")
-	qdel(station_spec)
+	spent(station_spec)
 	wipe_z_async(generation["z"], om_callable(src, PROC_REF(generation_attempt), generation))
 
 /datum/system/expedition/proc/generation_publish(list/generation, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
@@ -561,10 +561,10 @@ CAPABILITIES(/datum/system/expedition)
 		var/datum/expedition_poi/P = new poi_type()
 		// Respect each POI's min_difficulty — too-tough POIs just don't seed here.
 		if(P.min_difficulty > site.difficulty)
-			qdel(P)
+			spent(P)
 			continue
 		P.stamp(T, site)
-		qdel(P)
+		spent(P)
 
 // ---- Release / recycle ----------------------------------------------------
 
@@ -637,7 +637,7 @@ CAPABILITIES(/datum/system/expedition)
 			break
 		for(var/atom/movable/AM as anything in doomed)
 			if(!QDELETED(AM))
-				qdel(AM)
+				spent(AM)
 	if(!istype(T, /turf/space))
 		T.ChangeTurf(/turf/space, tell_universe = FALSE)
 	ChangeArea(T, space_area)

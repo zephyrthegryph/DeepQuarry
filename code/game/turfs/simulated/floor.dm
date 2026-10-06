@@ -29,6 +29,7 @@
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
 
+// ALLOW(init/CTOR_ARGS): floortype is a constructor argument from whoever builds it
 /turf/simulated/floor/Initialize(mapload, floortype)
 	. = ..()
 	if(!floortype && initial_flooring)
@@ -69,7 +70,7 @@
 	cut_overlays()
 
 	for(var/obj/effect/decal/writing/W in turf_contents_of_type(src, /obj/effect/decal/writing))
-		qdel(W)
+		spent(W)
 
 	name = base_name
 	desc = base_desc

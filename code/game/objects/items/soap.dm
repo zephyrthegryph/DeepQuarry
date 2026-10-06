@@ -18,10 +18,12 @@
 
 DECLARE_REAGENTS(/obj/item/soap, 5, null)
 
-/obj/item/soap/Initialize(mapload)
-	if(randomize && prob(square_chance))
-		icon_state = "[icon_state]-alt" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-	. = ..()
+CAPABILITIES(/obj/item/soap)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/soap/proc/roll_icon_state(datum/roller/R)
+	return randomize && R.chance(square_chance) ? "[icon_state]-alt" : icon_state
 
 /obj/item/soap/proc/wet(cleaner = FALSE)
 	if(cleaner)
@@ -83,7 +85,7 @@ DECLARE_REAGENTS(/obj/item/soap, 5, null)
 		consume(src, user)
 /obj/item/soap/proc/afterattack_timed_done2(atom/target, mob/user)
 	user.balloon_alert(user, "you scrub \the [target] out.")
-	qdel(target)
+	consumed(target, src)
 /obj/item/soap/proc/afterattack_timed_done3(atom/target, mob/user)
 	user.balloon_alert(user, "you scrub \the [target] clean.")
 	var/turf/T = target

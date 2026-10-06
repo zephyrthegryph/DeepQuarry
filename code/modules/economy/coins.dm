@@ -15,10 +15,6 @@
 	drop_sound = SFX_ITEMS_DROP_RING
 	pickup_sound = SFX_ITEMS_PICKUP_RING
 
-/obj/item/coin/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
-
 /obj/item/coin/gold
 	name = MAT_GOLD + " coin"
 	desc = "A shiny " + MAT_GOLD + " coin. Just like in the old movies with pirates!"
@@ -182,6 +178,7 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 
 CAPABILITIES(/obj/item/coin)
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /obj/item/coin/proc/coin_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor
@@ -213,10 +210,6 @@ CAPABILITIES(/obj/item/coin)
 	drop_sound = SFX_ITEMS_DROP_RING
 	pickup_sound = SFX_ITEMS_PICKUP_RING
 
-/obj/item/aliencoin/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
-
 /obj/item/aliencoin/basic
 
 /obj/item/aliencoin/gold
@@ -239,6 +232,7 @@ CAPABILITIES(/obj/item/coin)
 
 CAPABILITIES(/obj/item/aliencoin)
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(alien_coin_flip_requested)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /obj/item/aliencoin/proc/alien_coin_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor

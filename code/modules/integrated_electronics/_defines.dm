@@ -78,6 +78,16 @@ CAPABILITIES(/obj/item/integrated_circuit)
 	owns_many(nameof(inputs))
 	owns_many(nameof(outputs))
 	owns_many(nameof(activators))
+	interface("ICCircuit", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
+	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
+	op("wire", ui_act("wire", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("pin_name", ui_act("pin_name", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("pin_data", ui_act("pin_data", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("pin_unwire", ui_act("pin_unwire", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("examine", ui_act("examine", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_examine)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
 
 /// Reference to the assembly holding this circuit, if any. (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/proc/assembly() as /obj/item/electronic_assembly

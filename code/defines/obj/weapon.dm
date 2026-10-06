@@ -263,10 +263,9 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
-/obj/item/stock_parts/Initialize(mapload)
-	. = ..()
-	src.pixel_x = rand(-5.0, 5)
-	src.pixel_y = rand(-5.0, 5)
+CAPABILITIES(/obj/item/stock_parts)
+	rolls(nameof(pixel_x), range_of(-5.0, 5))
+	rolls(nameof(pixel_y), range_of(-5.0, 5))
 
 /obj/item/stock_parts/get_rating()
 	return rating

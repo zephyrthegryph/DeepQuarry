@@ -30,15 +30,28 @@
 	var/effective_gen = 0
 	var/lastgenlev = 0
 	var/datum/looping_sound/generator/soundloop
+	/// It has work each service interval: bolted, working, both circulators found and a pressure head (or energy) to turn (reconsider()).
+	var/generating = FALSE
+	/// The watches it sleeps on: its circulators' four mixtures.
+	var/list/datum/native_watch/gas/loop_watches
+
+TRACKED(/obj/machinery/power/generator, generating)
+TRACKED(/obj/machinery/power/generator, lastgenlev)
+
+MSG_DEF(teg/secured, "You secure the bolts holding %T% to the floor.", "%U% secures the bolts holding %T% to the floor.")
+MSG_DEF(teg/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% unsecures the bolts holding %T% to the floor.")
+MSG_DEF_SELF(teg/not_ready, "It isn't bolted down and working.")
 
 CAPABILITIES(/obj/machinery/power/generator)
 	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator)
+	owns_many(nameof(loop_watches), /datum/native_watch/gas)
+	membership(joins = REGISTRY_TURBINES)
 	interface("TEGenerator")
-	without("ui_open")
+	extend("ui_open", needs(req(PROC_REF(ready), because = MSG(teg/not_ready))))
 	ui_shape(totalOutput = num(), maxTotalOutput = num(), thermalOutput = num(), primary = list_of(), secondary = list_of())
-
-REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(teg_step)), when = nameof(generating))
+	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
 /obj/machinery/power/generator/Initialize(mapload)
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
@@ -51,16 +64,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	reconnect()
 
 
-/// Generates while bolted down (unbolting zeroes it in wrench_act()).
-DECLARE_PERIODIC_WHILE(/obj/machinery/power/generator, MACHINE_PIPELINE, "anchored")
-
 //generators connect in dir and GLOB.reverse_dir(dir) directions
 //mnemonic to determine circulator/generator directions: the cirulators orbit clockwise around the generator
 //so a circulator to the NORTH of the generator connects first to the EAST, then to the WEST
 //and a circulator to the WEST of the generator connects first to the NORTH, then to the SOUTH
 //note that the circulator's outlet dir is it's always facing dir, and it's inlet is always the reverse
 /obj/machinery/power/generator/proc/reconnect()
-	clear_gas_dependencies()
 	rel_clear(src, nameof(circ1))
 	rel_clear(src, nameof(circ2))
 	if(src.loc && anchored)
@@ -81,59 +90,68 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/generator, MACHINE_PIPELINE, "anchor
 				rel_clear(src, nameof(circ1))
 				rel_clear(src, nameof(circ2))
 
-/// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
-/// dependency filter made.
-/obj/machinery/power/generator/proc/register_gas_dependencies()
-	clear_gas_dependencies()
-	if(!circ1() || !circ2())
+	reconsider()
+
+// ---- its work: woken by its loops' gas, its bolts, its power; nothing polls ----
+
+/// Whether it has work, and the watches it sleeps on: its circulators' four mixtures, re-armed each time (a rebuilt loop is a new mixture).
+/obj/machinery/power/generator/proc/reconsider(datum/act/A)
+	gas_watch_many_clear(src, nameof(loop_watches))
+	if(!anchored || !circ1() || !circ2() || !operable())
+		set_generating(FALSE)
 		return
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(circ1().air1, circ1().air2, circ2().air1, circ2().air2))
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+	if(gas_wake_condition() || stored_energy >= 0.01 || effective_gen >= 0.01)
+		set_generating(TRUE)
+		return
+	set_generating(FALSE)
+	gas_watch_many(src, nameof(loop_watches), list(circ1().air1, circ1().air2, circ2().air1, circ2().air2), GAS_DEPENDENCY_PRESSURE, PROC_REF(loop_heard))
+
+/// Rust reported a change of one of its loops while it slept.
+/obj/machinery/power/generator/proc/loop_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+	if(gas_wake_condition())
+		reconsider()
+
+/// Bolted down and working: its window opens.
+/obj/machinery/power/generator/proc/ready(datum/act/A)
+	return anchored && operable()
 
 /obj/machinery/power/generator/proc/gas_wake_condition()
 	if(!circ1() || !circ2())
 		return FALSE
 	return (circ1().air1.return_pressure() - circ1().air2.return_pressure() > 10) || (circ2().air1.return_pressure() - circ2().air2.return_pressure() > 10)
 
-/obj/machinery/power/generator/proc/clear_gas_dependencies()
-	om_watch_disarm(src, "gas")
+/obj/machinery/power/generator/draw(datum/look/look)
+	..()
+	look.state(anchored ? "teg-assembled" : "teg-unassembled")
+	if(operable() && lastgenlev != 0)
+		look.overlay("teg-op[lastgenlev]")
 
-/obj/machinery/power/generator/proc/wake_from_gas()
-	clear_gas_dependencies()
-	MACHINE_WAKE(src)
+/obj/machinery/power/generator/derived()
+	. = ..()
+	. += drawn_from(nameof(lastgenlev), nameof(anchored))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/generator/appearance_overlays()
-	. = list()
-	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
-	if (circ1())
-		circ1().temperature_overlay = null
-	if (circ2())
-		circ2().temperature_overlay = null
-	if (!operable())
-		return .
-	else
-		if (lastgenlev != 0)
-			. += "teg-op[lastgenlev]"
-			if (circ1() && circ2())
-				var/extreme = (lastgenlev > 9) ? "ex" : ""
-				if (circ1().last_temperature < circ2().last_temperature)
-					circ1().temperature_overlay = "circ-[extreme]cold"
-					circ2().temperature_overlay = "circ-[extreme]hot"
-				else
-					circ1().temperature_overlay = "circ-[extreme]hot"
-					circ2().temperature_overlay = "circ-[extreme]cold"
-		return .
+/// Its circulators show which side runs hot while it generates.
+/obj/machinery/power/generator/proc/update_circulator_temperatures()
+	var/obj/machinery/atmospherics/binary/circulator/one = circ1()
+	var/obj/machinery/atmospherics/binary/circulator/two = circ2()
+	if(!one || !two)
+		return
+	if(!operable() || lastgenlev == 0)
+		one.set_temperature_overlay(null)
+		two.set_temperature_overlay(null)
+		return
+	var/extreme = (lastgenlev > 9) ? "ex" : ""
+	var/one_cold = one.last_temperature < two.last_temperature
+	one.set_temperature_overlay("circ-[extreme][one_cold ? "cold" : "hot"]")
+	two.set_temperature_overlay("circ-[extreme][one_cold ? "hot" : "cold"]")
 
-/obj/machinery/power/generator/machine_step()
+/// One service interval of generating (its every(), while it has work).
+/obj/machinery/power/generator/proc/teg_step(datum/act/A)
 	if(!circ1() || !circ2() || !operable())
 		stored_energy = 0
 		set_power_supply(0)
-		return PROCESS_KILL
+		reconsider()
+		return
 
 	var/datum/gas_mixture/air1 = circ1().return_transfer_air()
 	var/datum/gas_mixture/air2 = circ2().return_transfer_air()
@@ -184,21 +202,20 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 	if(effective_gen > 100 && genlev == 0)
 		genlev = 1
 	if(genlev != lastgenlev)
-		lastgenlev = genlev
-		update_icon()
+		set_lastgenlev(genlev)
+		update_circulator_temperatures()
 	// A supply rate, not a per-tick pulse: the TEG is a steady generator (M3).
 	set_power_supply(effective_gen)
 	if(!air1 && !air2 && stored_energy < 0.01 && effective_gen < 0.01)
 		set_power_supply(0)
-		SSmachines.hibernate_generator(src)
-		return PROCESS_KILL
+		reconsider()
 
-/obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)
-	playsound(src, W.usesound, 75, 1)
+/obj/machinery/power/generator/proc/anchor_message(datum/act/A)
+	return anchored ? /datum/msg/teg/secured : /datum/msg/teg/unsecured
+
+/// The wrench bolts it down onto the grid, or frees it.
+/obj/machinery/power/generator/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
-	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
-		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
-		MSG_BLIND("You hear a ratchet."))
 	set_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
 	if(anchored)
 		connect_to_network()
@@ -206,32 +223,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 		stored_energy = 0
 		set_power_supply(0)
 		disconnect_from_network()
-	reconnect()
-	lastgenlev = 0
+	set_lastgenlev(0)
 	effective_gen = 0
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/generator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/generator_open_ui,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/generator_open_ui
-	id = "generator_open_ui"
-	name = "Use"
-	effect = /obj/machinery/power/generator/proc/interaction_open_ui_impl
-
-/obj/machinery/power/generator/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(!operable() || !anchored)
-		return TRUE
-	if(!circ1() || !circ2()) //Just incase the middle part of the TEG was not wrenched last.
-		reconnect()
-	tgui_interact(user)
-	return TRUE
+	reconnect()
+	return OP_OK
 
 /obj/machinery/power/generator/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -281,9 +276,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 
 /obj/machinery/power/generator/power_change()
 	. = ..()
-	if(anchored)
-		clear_gas_dependencies()
-		MACHINE_WAKE(src)
+	reconsider()
 
 /obj/machinery/power/generator/power_spike(announce_prob = 30)
 	if(!(effective_gen >= max_power / 2 && power_region)) // Don't make a spike if we're not making a whole lot of power.
@@ -315,11 +308,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 	for electrical damage.",
 	"Critical Power Overload",
 	ANNOUNCER_MSG_POWERSPIKE)
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/generator/arm_wakes()
-	..()
-	register_gas_dependencies()
 
 /// the circ1 this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/generator/proc/circ1() as /obj/machinery/atmospherics/binary/circulator

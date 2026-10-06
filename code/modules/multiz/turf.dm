@@ -126,7 +126,7 @@ CAPABILITIES(/turf/simulated/open)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
 				return OP_PASS
-			qdel(L)
+			spent(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)

@@ -302,7 +302,7 @@
 // Called on death.
 /mob/living/simple_mob/animal/space/carp/holographic/proc/derez()
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
-	qdel(src)
+	spent(src)
 
 /mob/living/simple_mob/animal/space/carp/holographic/gib()
 	derez() // Holograms can't gib.
@@ -383,6 +383,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 
 	var/body_color
 
+// ALLOW(init/INSTANCE_STATE): rolls its body colour
 /mob/living/simple_mob/animal/space/carp/station/Initialize(mapload)
 	.=..()
 

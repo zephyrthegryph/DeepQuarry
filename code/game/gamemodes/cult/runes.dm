@@ -250,7 +250,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		T.hotspot_expose(700,125)
 	var/rune = src // detaching the proc - in theory
 	empulse(U, (range_red - 3), (range_red - 2), (range_red - 1), range_red)
-	qdel(rune)
+	spent(rune, user)
 	return
 
 /////////////////////////////////////////SIXTH RUNE
@@ -306,7 +306,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
 				H.set_sdisabilities(H.sdisabilities & (~BLIND))
-		for(var/obj/item/organ/E in H.bad_external_organs)
+		for(var/obj/item/organ/E in H.damaged_limbs())
 			var/obj/item/organ/external/affected = E
 			if(affected.is_fractured())
 				affected.mend_fracture()
@@ -629,8 +629,8 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 		for (var/mob/V in viewers(src))
 			V.show_message(span_warning("The runes turn into dust, which then forms into an arcane image on the paper."), 3)
 		user.say("H'drak v[pick("'","`")]loso, mir'kanas verbot!")
-		qdel(imbued_from)
-		qdel(newtalisman)
+		spent(imbued_from, user)
+		spent(newtalisman, user)
 	else
 		return fizzle(user)
 
@@ -1164,7 +1164,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 					to_chat(M, span_danger("Blood suddenly ignites, burning you!"))
 					var/turf/T = get_turf(B)
 					T.hotspot_expose(700,125)
-					qdel(B)
+					destroyed(B)
 		consume(src)
 
 //////////             Rune 24 (counting burningblood, which kinda doesnt work yet.)

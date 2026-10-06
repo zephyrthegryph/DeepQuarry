@@ -21,7 +21,7 @@
 	..()
 	owner?.adjust_nutrition(-rand(10 / packet.severity, 50 / packet.severity))
 
-/obj/item/organ/internal/cell/machine/handle_organ_proc_special()
+/obj/item/organ/internal/cell/machine/handle_organ_proc_special(cycles)
 	..()
 	// D25: the power cell is the one source of chassis waste heat.
 	apply_robobody_heat()
@@ -42,6 +42,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	owns_one(nameof(stored_mmi), /obj/item/mmi)
 
 
+// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
 /obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
 	. = ..(mapload, internal)
 	if(!ishuman(owner) || ismannequin(owner))
@@ -104,7 +105,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	var/mob/living/holder_mob = loc
 	if(istype(holder_mob))
 		holder_mob.drop_from_inventory(src)
-	qdel(src)
+	spent(src, user)
 /obj/item/organ/internal/mmi_holder/posibrain
 	name = "positronic brain interface"
 	brain_type = /obj/item/mmi/digital/posibrain

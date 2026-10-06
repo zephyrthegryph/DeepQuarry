@@ -13,17 +13,17 @@
 			new path (loc)
 	return
 
-/obj/structure/salvageable/crowbar_act(mob/user, obj/item/I)
-	playsound(src, I.usesound, 50, 1)
-	var/actual_time = I.toolspeed * 170
-	act_message(user, src, MSG_SELF(span_notice("You start salvaging from %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins salvaging from %T%.")))
-	om_task_timed(user, actual_time, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
-	return TRUE
+MSG_DEF(salvageable/start, "You start salvaging from %T%.", "%U% begins salvaging from %T%.")
+MSG_DEF(salvageable/done, "You salvage %T%.", "%U% has salvaged %T%.")
 
-/obj/structure/salvageable/proc/crowbar_act_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You salvage %T%.")), MSG_OTHERS(span_notice("%U% has salvaged %T%.")))
+CAPABILITIES(/obj/structure/salvageable)
+	op("salvage", tool(TOOL_CROWBAR), label("Salvage"), wait(17 SECONDS), begins(MSG(salvageable/start)), says(MSG(salvageable/done)), then(PROC_REF(salvaged)))
+
+/// The crowbar's wait ran out: the parts fall out and the wreck is gone.
+/obj/structure/salvageable/proc/salvaged(datum/act/op/A)
 	dismantle()
-	consume(src, user)
+	consume(src, A.actor)
+	return OP_OK
 
 //Types themself, use them, but not the parent object
 
@@ -42,9 +42,12 @@
 		/obj/item/stock_parts/matter_bin = 20
 	)
 
-/obj/structure/salvageable/machine/Initialize(mapload)
-	. = ..()
-	icon_state = "machine[rand(0,6)]"
+CAPABILITIES(/obj/structure/salvageable/machine)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/machine/proc/roll_icon_state(datum/roller/R)
+	return "machine[R.number(0, 6)]"
 
 /obj/structure/salvageable/computer
 	name = "broken computer"
@@ -61,9 +64,13 @@
 		/obj/item/stock_parts/capacitor = 30,
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
-/obj/structure/salvageable/computer/Initialize(mapload)
-	. = ..()
-	icon_state = "computer[rand(0,7)]"
+
+CAPABILITIES(/obj/structure/salvageable/computer)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/computer/proc/roll_icon_state(datum/roller/R)
+	return "computer[R.number(0, 7)]"
 
 /obj/structure/salvageable/autolathe
 	name = "broken autolathe"
@@ -107,9 +114,12 @@
 		/obj/item/stack/material/silver{amount = 10} = 30
 	)
 
-/obj/structure/salvageable/implant_container/Initialize(mapload)
-	. = ..()
-	icon_state = "implant_container[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/implant_container)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/implant_container/proc/roll_icon_state(datum/roller/R)
+	return "implant_container[R.number(0, 1)]"
 
 /obj/structure/salvageable/data
 	name = "broken data storage"
@@ -127,9 +137,12 @@
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
 
-/obj/structure/salvageable/data/Initialize(mapload)
-	. = ..()
-	icon_state = "data[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/data)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/data/proc/roll_icon_state(datum/roller/R)
+	return "data[R.number(0, 1)]"
 
 /obj/structure/salvageable/server
 	name = "broken server"
@@ -150,9 +163,12 @@
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
 
-/obj/structure/salvageable/server/Initialize(mapload)
-	. = ..()
-	icon_state = "server[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/server)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/server/proc/roll_icon_state(datum/roller/R)
+	return "server[R.number(0, 1)]"
 
 /obj/structure/salvageable/personal
 	name = "personal terminal"
@@ -190,14 +206,16 @@
 		/obj/item/computer_hardware/hard_drive/cluster = 50
 	)
 
-/obj/structure/salvageable/bliss/Initialize(mapload)
-	. = ..()
-	icon_state = "bliss[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/bliss)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
-/obj/structure/salvageable/bliss/crowbar_act(mob/user, obj/item/I)
-	. = ..()
-	if(.)
-		play_sfx(src, SFX_MACHINES_SHUTDOWN)
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/bliss/proc/roll_icon_state(datum/roller/R)
+	return "bliss[R.number(0, 1)]"
+
+/obj/structure/salvageable/bliss/salvaged(datum/act/op/A)
+	play_sfx(src, SFX_MACHINES_SHUTDOWN)
+	return ..()
 
 ///////////////////
 //// COMPUTERS ////
@@ -215,9 +233,12 @@
 		/obj/item/stock_parts/scanning_module = 40
 	)
 
-/obj/structure/salvageable/console/Initialize(mapload)
-	. = ..()
-	icon_state = "console[rand(0,2)]"
+CAPABILITIES(/obj/structure/salvageable/console)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/console/proc/roll_icon_state(datum/roller/R)
+	return "console[R.number(0, 2)]"
 
 /obj/structure/salvageable/shuttle_console
 	name = "shuttle console"

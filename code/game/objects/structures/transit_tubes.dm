@@ -87,19 +87,10 @@ CAPABILITIES(/obj/structure/transit_tube)
 				AM.forceMove(pod)
 				return
 
-/obj/structure/transit_tube/station/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/transit_tube_toggle,
-	)
-	..()
+CAPABILITIES(/obj/structure/transit_tube/station)
+	op("toggle", hand(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
-/// Old attack_hand: open/close the pod door.
-/datum/interaction/entry_hand/transit_tube_toggle
-	id = "transit_tube_toggle"
-	name = "Toggle"
-	effect = /obj/structure/transit_tube/station/proc/interaction_toggle
-
-/obj/structure/transit_tube/station/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/transit_tube/station/proc/interaction_toggle(datum/act/op/A)
 	if(!pod_moving)
 		for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 			if(!pod.moving && (pod.dir in directions()))

@@ -25,6 +25,7 @@ CAPABILITIES(/obj/structure/bonfire)
 
 TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/structure/bonfire/Initialize(mapload, material_name)
 	var/forced_material = TYPE_TABLE_GET(src, forced_bonfire_material)
 	if(forced_material)
@@ -334,21 +335,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 TRACKED(/obj/structure/fireplace, burning)
 CAPABILITIES(/obj/structure/fireplace)
 	every(2 SECONDS, then(PROC_REF(fireplace_step)), when = nameof(burning))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
-/obj/structure/fireplace/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/fireplace_item,
-		/datum/interaction/entry_hand/fireplace_hand,
-	)
-	..()
-
-/// Old attackby: add wood/logs as fuel, or ignite with a hot item.
-/datum/interaction/entry_item/fireplace_item
-	id = "fireplace_item"
-	name = "Use"
-	effect = /obj/structure/fireplace/proc/interaction_item
-
-/obj/structure/fireplace/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/fireplace/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
@@ -356,13 +348,8 @@ CAPABILITIES(/obj/structure/fireplace)
 		ignite()
 	return TRUE
 
-/// Old attack_hand: take out fuel.
-/datum/interaction/entry_hand/fireplace_hand
-	id = "fireplace_hand"
-	name = "Use"
-	effect = /obj/structure/fireplace/proc/interaction_hand
-
-/obj/structure/fireplace/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fireplace/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_fuel_amount())
 		remove_fuel(user)
 	return TRUE

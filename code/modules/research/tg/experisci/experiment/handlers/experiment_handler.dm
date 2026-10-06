@@ -61,7 +61,7 @@ CAPABILITIES(/datum/experiment_handler)
 	. = ..()
 	if(!ismovable(new_owner))
 		log_runtime("experiment_handler: created for a non-movable ([new_owner]); discarded")
-		qdel(src)
+		spent(src)
 		return
 	// The owner adopts us; its previous handler is deleted by rel_set().
 	rel_set(src, nameof(/datum/action_group::owner), new_owner)

@@ -27,6 +27,7 @@
 	/// Cooldown for when the extrapolator can be used next.
 	COOLDOWN_DECLARE(usage_cooldown)
 
+// ALLOW(init/CTOR_ARGS): starting_scanner is a constructor argument from whoever builds it
 /obj/item/extrapolator/Initialize(mapload, obj/item/stock_parts/scanning_module/starting_scanner)
 	. = ..()
 	starting_scanner = starting_scanner || default_scanning_module
@@ -40,6 +41,7 @@
 CAPABILITIES(/obj/item/extrapolator)
 	op("mode", in_hand(), label("Toggle extrapolator mode"), then(PROC_REF(extrapolator_mode_selected)))
 	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -53,15 +55,17 @@ CAPABILITIES(/obj/item/extrapolator)
 		to_chat(user, span_notice("[src] already has \the [scanner] installed."))
 	return TRUE
 
-/obj/item/extrapolator/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/extrapolator/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!scanner)
 		to_chat(user, span_warning("\The [src] has no scanner to remove!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
 	scanner.forceMove(drop_location())
 	own_take(src, nameof(scanner))
 	playsound(src, tool.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/extrapolator/proc/extrapolator_mode_selected(datum/act/op/A)
 	var/mob/user = A.actor

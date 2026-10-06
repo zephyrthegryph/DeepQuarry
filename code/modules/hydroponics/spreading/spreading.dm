@@ -76,6 +76,7 @@ CAPABILITIES(/obj/effect/plant)
 /obj/effect/plant/single
 	spread_chance = 0
 
+// ALLOW(init/CTOR_ARGS): newseed and newparent are constructor arguments from whoever builds it
 /obj/effect/plant/Initialize(mapload, datum/seed/newseed, obj/effect/plant/newparent)
 	. = ..()
 	if(isopenturf(loc))

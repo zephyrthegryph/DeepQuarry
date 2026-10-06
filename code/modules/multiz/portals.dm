@@ -32,7 +32,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	if(!target)
 		if(isliving(user))
 			to_chat(user, span_notice("Your hand scatters \the [src]..."))
-			qdel(src)	//Delete portals which aren't set that people mess with.
+			spent(src, user)	//Delete portals which aren't set that people mess with.
 		else return TRUE
 	else if(isliving(user) || isobserver(user) && check_rights_for(user?.client, R_HOLDER))	//unless they're staff
 		teleport(user)
@@ -121,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 		return
 	if (!target)
 		to_chat(M, span_notice("\The [src] scatters as you pass through it..."))
-		qdel(src)
+		spent(src, M)
 		return
 	if (!istype(M, /atom/movable))
 		return
@@ -227,4 +227,4 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	var/obj/other = target
 	..()
 	if(other && !QDELETED(other))
-		qdel(other)
+		destroyed(other)

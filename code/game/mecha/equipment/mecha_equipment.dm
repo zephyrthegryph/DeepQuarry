@@ -108,8 +108,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 					src.chassis?.slot_item(MECHA_SLOT_PILOT)  << sound('sound/mecha/critdestrsyndi.ogg',volume=70)
 				else
 					src.chassis?.slot_item(MECHA_SLOT_PILOT)  << sound('sound/mecha/critdestr.ogg',volume=50)
-	spawn
-		qdel(src)
+	expire(0)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/critfail()

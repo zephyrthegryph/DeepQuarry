@@ -147,6 +147,7 @@
 	vore_active = 0
 
 
+// ALLOW(init/INSTANCE_STATE): rolls which ghost sprite it wears
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
 	. = ..()
 	icon_living = "spookyghost-[rand(1,2)]"

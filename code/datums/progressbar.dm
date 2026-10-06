@@ -28,15 +28,15 @@
 	. = ..()
 	if (!istype(target))
 		stack_trace("Invalid target [target] passed in")
-		qdel(src)
+		spent(src)
 		return
 	if(QDELETED(User) || !istype(User))
 		stack_trace("/datum/progressbar created with [isnull(User) ? "null" : "invalid"] user")
-		qdel(src)
+		spent(src)
 		return
 	if(!isnum(goal_number))
 		stack_trace("/datum/progressbar created with [isnull(User) ? "null" : "invalid"] goal_number")
-		qdel(src)
+		spent(src)
 		return
 	goal = goal_number
 	rel_set(src, nameof(bar_loc), target)
@@ -96,7 +96,7 @@
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
-	qdel(src)
+	spent(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
 /datum/progressbar/proc/clean_user_client(datum/act/notice/N)

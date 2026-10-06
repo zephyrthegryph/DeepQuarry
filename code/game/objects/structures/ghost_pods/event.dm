@@ -48,7 +48,7 @@
 	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
 	log_and_message_admins("successfully entered \a [src] and became a [newPred].")
 	newPred.offer_load_bellies()
-	qdel(src)
+	spent(src, M)
 
 /obj/structure/ghost_pod/ghost_activated/morphspawn
 	name = "weird goo"
@@ -85,7 +85,7 @@
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully entered \a [src] and became a Morph.")
 	newMorph.offer_load_bellies()
-	qdel(src)
+	spent(src, M)
 
 /obj/structure/ghost_pod/ghost_activated/maintpred/redgate //For ghostpods placed in the redgate that aren't spawned via an event
 	name = "creature hole"
@@ -182,7 +182,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	to_chat(new_character, span_notice("Whoever or whatever your chosen character slot is, your role is to facilitate roleplay focused around that character; this role is not free license to attack and murder people without provocation or explicit out-of-character consent. You should probably be cautious around high-traffic and highly sensitive areas (e.g. Telecomms) as Security personnel would be well within their rights to treat you as a trespasser. That said, good luck!"))
 
 	act_message(new_character, null, others = span_warning("%U% appears to crawl out of somewhere."))
-	qdel(src)
+	spent(src, M)
 
 DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maint_lurker, REGISTRY_GHOST_PODS)
 

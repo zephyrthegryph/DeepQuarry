@@ -814,7 +814,7 @@
 					totalvol += R.volume
 		totalvol += volume
 		if(totalvol >= 1)
-			for(var/obj/item/organ/external/O in H.bad_external_organs)
+			for(var/obj/item/organ/external/O in H.damaged_limbs())
 				if(dq_reagent_knit_fracture(O))
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
 					H.status_adjust(EFFECT_WEAKENED, 10)		//Bones being regrown will knock you over
@@ -862,7 +862,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength / 2
-		for(var/obj/item/organ/external/O as anything in H.bad_external_organs)
+		for(var/obj/item/organ/external/O as anything in H.damaged_limbs())
 			dq_reagent_close_wounds(O, wound_heal, bleeding = FALSE)
 
 /// P2-D6 / P2-K6: the -daxon organ-repair family as data. Repair itself is
@@ -1421,7 +1421,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		dq_set_was_bloodied(I, null)
 	for(var/obj/effect/decal/cleanable/blood/B in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood))
-		qdel(B)
+		spent(B)
 
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T
@@ -1794,7 +1794,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	if(ishuman(M))
 		var/wound_heal = 1.5 * removed
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_close_wounds(O, wound_heal, internal = FALSE)
 		M.injure(INJURY_BLUNT, 3 * removed, source = src)
 		if(M.losebreath < 15)
@@ -2309,7 +2309,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + wound_heal, 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_close_wounds(O, wound_heal)
 
 /datum/reagent/flamecure
@@ -2335,7 +2335,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_close_wounds(O, wound_heal)
 
 //neoliquidfire

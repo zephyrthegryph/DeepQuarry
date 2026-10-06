@@ -115,6 +115,7 @@
 CAPABILITIES(/obj/item/gun)
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// The gun's firemodes: one /datum/firemode per settings row the gun (or a map edit) put in `firemodes`.
 /obj/item/gun/proc/starting_firemodes(list/settings)
@@ -347,9 +348,10 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		attached_lock.stored_dna = list()
 		return 1
 
-/obj/item/gun/MouseDrop(obj/over_object as obj)
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native inventory drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/gun/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/gun/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
@@ -771,7 +773,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			else if(suicide_kind == INJURY_PAIN)
 				to_chat(user, span_notice("Ow..."))
 				user.apply_effect(110,AGONY,0)
-		qdel(in_chamber)
+		spent(in_chamber, M)
 		mouthshoot = 0
 		return
 	else

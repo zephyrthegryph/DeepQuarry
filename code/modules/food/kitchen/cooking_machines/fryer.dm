@@ -72,7 +72,13 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			message += span_warning(" OVERFILLED")
 		to_chat(user, message)
 
-UI_DATA(/obj/machinery/appliance/cooker/fryer, "merge:ui_data_obj_machinery_appliance_cooker_fryer{reagents:listmap}")
+/obj/machinery/appliance/cooker/fryer/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_machinery_appliance_cooker_fryer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/appliance/cooker/fryer's window data (declared on its UI_DATA row).
 /obj/machinery/appliance/cooker/fryer/proc/ui_data_obj_machinery_appliance_cooker_fryer(mob/user, datum/tgui/ui, datum/tgui_state/state)

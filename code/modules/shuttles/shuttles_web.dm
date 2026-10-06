@@ -485,7 +485,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	else
 		WARNING("[log_info_line()]'s shuttle [global.log_info_line(ES)] initialized but destinations:[destinations]")
 
-	qdel(src)
+	spent(src)
 
 //A sensor for detecting air outside shuttles! Handy, that.
 /obj/machinery/shuttle_sensor

@@ -105,9 +105,12 @@
 	w_class = ITEMSIZE_SMALL
 	var/static/list/possible_states = list("health", "spider", "slime", "emp", "species", "egg", "vent", "mindshock", "viral", "gland")
 
-/obj/item/prop/alien/junk/Initialize(mapload)
-	. = ..()
-	icon_state = pick(possible_states)
+CAPABILITIES(/obj/item/prop/alien/junk)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/prop/alien/junk/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_states)
 
 /obj/item/prop/alien/phasecoil
 	name = "reverberating device"

@@ -54,10 +54,17 @@
 	layer = ABOVE_MOB_LAYER
 	mouse_opacity = 0
 
-/obj/effect/overlay/wallrot/Initialize(mapload)
-	. = ..()
-	pixel_x += rand(-10, 10)
-	pixel_y += rand(-10, 10)
+CAPABILITIES(/obj/effect/overlay/wallrot)
+	rolls(nameof(pixel_x), PROC_REF(roll_pixel_x))
+	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/overlay/wallrot/proc/roll_pixel_x(datum/roller/R)
+	return pixel_x + (R.number(-10, 10))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/overlay/wallrot/proc/roll_pixel_y(datum/roller/R)
+	return pixel_y + (R.number(-10, 10))
 
 /obj/effect/overlay/snow
 	name = "snow"
@@ -67,15 +74,15 @@
 	plane = TURF_PLANE
 
 // Todo: Add a version that gradually reaccumulates over time by means of alpha transparency. -Spades
-EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
-	INTERACT_INSERT(/obj/item/shovel, PROC_REF(interaction_shovel_snow), "Shovel"), \
-)
+CAPABILITIES(/obj/effect/overlay/snow)
+	op("shovel_snow", item(/obj/item/shovel), label("Shovel"), then(PROC_REF(interaction_shovel_snow)))
 
 /// Old attackby: shovel the snow away.
-/obj/effect/overlay/snow/proc/interaction_shovel_snow(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/overlay/snow/proc/interaction_shovel_snow(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% begins to shovel away %T%."))
 	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("You have finished shoveling!"))

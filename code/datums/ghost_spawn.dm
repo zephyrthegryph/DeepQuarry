@@ -17,7 +17,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 		var/mob/observer/dead/observer = user
 		observer.selecting_ghostrole = FALSE
 	if(!QDELETED(src))
-		qdel(src)
+		spent(src, user)
 
 /datum/tgui_module/ghost_spawn_menu/ui_opening(mob/user, datum/tgui/ui)
 	..()

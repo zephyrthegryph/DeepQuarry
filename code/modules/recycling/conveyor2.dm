@@ -35,6 +35,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	id = "round_end_belt"
 
 	// create a conveyor
+// ALLOW(init/CTOR_ARGS): newdir and on are constructor arguments from whoever builds it
 /obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
 	. = ..()
 	if(loc)

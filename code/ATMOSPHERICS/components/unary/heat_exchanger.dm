@@ -32,7 +32,9 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	pipe_device_unwrench()
 	extend("unwrench", needs(req(PROC_REF(floor_clear), because = MSG(air_device/plating))))
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?intact:exposed}")
+/obj/machinery/atmospherics/unary/heat_exchanger/draw(datum/look/look)
+	..()
+	look.state(node ? "intact" : "exposed")
 
 /obj/machinery/atmospherics/unary/heat_exchanger/atmos_init()
 	if(!partner)

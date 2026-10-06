@@ -61,14 +61,9 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 
 /obj/item/moneybag/vault
 
-/obj/item/moneybag/vault/Initialize(mapload)
-	. = ..()
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/gold(src)
-	new /obj/item/coin/gold(src)
+CAPABILITIES(/obj/item/moneybag/vault)
+	initial_contents(/obj/item/coin/silver, count = 4)
+	initial_contents(/obj/item/coin/gold, count = 2)
 
 /// Takes one coin of material `coin_type` out of the bag.
 /obj/item/moneybag/proc/moneybag_remove_coin(mob/living/user, coin_type)

@@ -257,7 +257,7 @@ CAPABILITIES(/datum/reagents)
 		if(!length(reagent_list))
 			reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
 			reagent_by_id = reagent_list
-		qdel(current)
+		spent(current)
 		update_total()
 		if(my_atom)
 			my_atom.on_reagent_change()
@@ -556,7 +556,7 @@ CAPABILITIES(/datum/reagents)
 		var/datum/reagents/TR = new /datum/reagents(turfportion)
 		R.trans_to_holder(TR, turfportion, 1, 0)
 		TR.splash_turf(T)
-	qdel(R)
+	spent(R)
 
 //Spreads the contents of this reagent holder all over the target turf, dividing among things in it.
 //50% is divided between mobs, 20% between objects, and whatever is left on the turf itself
@@ -584,7 +584,7 @@ CAPABILITIES(/datum/reagents)
 			trans_to(M, mobportion, multiplier, copy)
 	trans_to(T, total_volume, multiplier, copy)
 	if (total_volume <= 0)
-		qdel(src)
+		spent(src)
 
 /**
  * Calls [/datum/reagent/proc/on_update] on every reagent in this holder

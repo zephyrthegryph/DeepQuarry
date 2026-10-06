@@ -23,6 +23,11 @@
 CAPABILITIES(/obj/machinery/librarypubliccomp)
 	op("search", ui_act(), then(PROC_REF(ui_act_search)))
 	op("back", ui_act(), then(PROC_REF(ui_act_back)))
+	interface("LibraryVisitor", title = "Library Visitor")
+	without("ui_open")
+	op("settitle", ui_act("settitle"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter a title to search for:"), step = "value"), then(PROC_REF(ui_act_settitle)))
+	op("setcategory", ui_act("setcategory"), asks(/datum/prompt/choice/library_search_category, fields = list("question" = "Choose a category to search for:", "title" = "Category"), step = "value"), then(PROC_REF(ui_act_setcategory)))
+	op("setauthor", ui_act("setauthor"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter an author to search for:"), step = "value"), then(PROC_REF(ui_act_setauthor)))
 
 /obj/machinery/librarypubliccomp
 	name = "visitor computer"
@@ -57,9 +62,14 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/librarypubliccomp, "LibraryVisitor", UI_TITLE("Library Visitor"))
-
-UI_DATA_REPLACE(/obj/machinery/librarypubliccomp, "screenstate:num", "merge:ui_data_obj_machinery_librarypubliccomp{title:bool,category:bool,author:bool,has_db:unknown,has_query:bool,results:bool}")
+/obj/machinery/librarypubliccomp/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screenstate"] = screenstate
+	var/list/merged_1 = ui_data_obj_machinery_librarypubliccomp(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/librarypubliccomp's window data (declared on its UI_DATA row).
 /obj/machinery/librarypubliccomp/proc/ui_data_obj_machinery_librarypubliccomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -72,23 +82,17 @@ UI_DATA_REPLACE(/obj/machinery/librarypubliccomp, "screenstate:num", "merge:ui_d
 	data["results"] = last_results || list()
 	return data
 
-UI_ACT(/obj/machinery/librarypubliccomp, "settitle", ui_act_settitle)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_settitle)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/library_search_text, TYPE_PROC_REF(/datum/tgui, library_search_answered), answerer = ui.user, question = "Enter a title to search for:", library_action = "settitle")
+/obj/machinery/librarypubliccomp/proc/ui_act_settitle(datum/act/op/A)
+	apply_search_answer("settitle", A.step_value("value"))
+	return TRUE
 
-UI_ACT(/obj/machinery/librarypubliccomp, "setcategory", ui_act_setcategory)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_setcategory)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/library_search_category, TYPE_PROC_REF(/datum/tgui, library_search_answered), answerer = ui.user, question = "Choose a category to search for:", library_action = "setcategory", title = "Category")
+/obj/machinery/librarypubliccomp/proc/ui_act_setcategory(datum/act/op/A)
+	apply_search_answer("setcategory", A.step_value("value"))
+	return TRUE
 
-UI_ACT(/obj/machinery/librarypubliccomp, "setauthor", ui_act_setauthor)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_setauthor)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/library_search_text, TYPE_PROC_REF(/datum/tgui, library_search_answered), answerer = ui.user, question = "Enter an author to search for:", library_action = "setauthor")
+/obj/machinery/librarypubliccomp/proc/ui_act_setauthor(datum/act/op/A)
+	apply_search_answer("setauthor", A.step_value("value"))
+	return TRUE
 
 /obj/machinery/librarypubliccomp/proc/ui_act_search(datum/act/op/A)
 	var/mob/user = A.actor
@@ -176,6 +180,21 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	op("increasetime", ui_act(), then(PROC_REF(ui_act_increasetime)))
 	op("decreasetime", ui_act(), then(PROC_REF(ui_act_decreasetime)))
 	op("checkout", ui_act(), then(PROC_REF(ui_act_checkout)))
+	interface("LibraryComp", title = "Book Inventory Management")
+	without("ui_open")
+	op("switchscreen", ui_act("switchscreen", arg("screen", num())), then(PROC_REF(ui_act_switchscreen)))
+	op("editbook", ui_act("editbook"), asks(/datum/prompt/text/library_catalogue/book, fields = list("question" = "Enter the book's title:"), step = "value"), then(PROC_REF(ui_act_editbook)))
+	op("editmob", ui_act("editmob"), asks(/datum/prompt/text/library_catalogue/recipient, fields = list("question" = "Enter the recipient's name:"), step = "value"), then(PROC_REF(ui_act_editmob)))
+	op("checkin", ui_act("checkin", arg("ref", schema_ref(/datum/borrowbook))), then(PROC_REF(ui_act_checkin)))
+	op("delbook", ui_act("delbook", arg("ref", schema_ref(/obj/item/book))), then(PROC_REF(ui_act_delbook)))
+	op("setauthor", ui_act("setauthor"), asks(/datum/prompt/text/library_catalogue/author, fields = list("question" = "Enter the author's name:"), step = "value"), then(PROC_REF(ui_act_setauthor)))
+	op("setcategory", ui_act("setcategory"), asks(/datum/prompt/choice/library_catalogue_category, fields = list("question" = "Choose a category:", "title" = "Category"), step = "value"), then(PROC_REF(ui_act_setcategory)))
+	op("upload", ui_act("upload"), asks(/datum/prompt/choice/library_upload, step = "confirm"), then(PROC_REF(ui_act_upload)))
+	op("targetid", ui_act("targetid", arg("id", num())), then(PROC_REF(ui_act_targetid)))
+	op("delid", ui_act("delid", arg("id", num())), then(PROC_REF(ui_act_delid)))
+	op("orderbyid", ui_act("orderbyid"), asks(/datum/prompt/number/library_order_id, step = "id"), then(PROC_REF(ui_act_orderbyid)))
+	op("sort", ui_act("sort", arg("field", schema_text(4096))), then(PROC_REF(ui_act_sort)))
+	op("hardprint", ui_act("hardprint", arg("path", schema_path(/datum))), then(PROC_REF(ui_act_hardprint)))
 
 /obj/machinery/librarycomp/Initialize(mapload)
 	. = ..()
@@ -259,8 +278,6 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/librarycomp, "LibraryComp", UI_TITLE("Book Inventory Management"))
-
 /obj/machinery/librarycomp/tgui_state(mob/user)
 	if(is_admin_view)
 		return GLOB.tgui_always_state
@@ -291,7 +308,17 @@ DECLARE_UI(/obj/machinery/librarycomp, "LibraryComp", UI_TITLE("Book Inventory M
 		else
 			return "author"
 
-UI_DATA_REPLACE(/obj/machinery/librarycomp, "screenstate:num", "checkout_period=checkoutperiod:num", "sort_by=sortby:text", "upload_category:text", "merge:ui_data_obj_machinery_librarycomp{emagged:bool,is_admin:bool,buffer_book:bool,buffer_mob:bool,world_time_min:num,has_db:unknown,has_scanner:bool,scanner_cache:list,inventory:list,checkouts:list,internal_archive:list,external_archive:list}")
+/obj/machinery/librarycomp/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screenstate"] = screenstate
+	data["checkout_period"] = checkoutperiod
+	data["sort_by"] = sortby
+	data["upload_category"] = upload_category
+	var/list/merged_1 = ui_data_obj_machinery_librarycomp(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/librarycomp's window data (declared on its UI_DATA row).
 /obj/machinery/librarycomp/proc/ui_data_obj_machinery_librarycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -350,9 +377,8 @@ UI_DATA_REPLACE(/obj/machinery/librarycomp, "screenstate:num", "checkout_period=
 	data["external_archive"] = external
 	return data
 
-UI_ACT(/obj/machinery/librarycomp, "switchscreen", ui_act_switchscreen, UI_ARG_NUM("screen"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_switchscreen)
-	screenstate = params["screen"]
+/obj/machinery/librarycomp/proc/ui_act_switchscreen(datum/act/op/A, screen)
+	screenstate = screen
 	if(screenstate == 8)
 		refresh_external()
 	return TRUE
@@ -389,17 +415,13 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_switchscreen)
 		checkoutperiod = 1
 	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "editbook", ui_act_editbook)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editbook)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/library_catalogue/book, TYPE_PROC_REF(/datum/tgui, library_catalogue_answered), answerer = ui.user, question = "Enter the book's title:", catalogue_action = "editbook")
+/obj/machinery/librarycomp/proc/ui_act_editbook(datum/act/op/A)
+	apply_catalogue_answer("editbook", A.step_value("value"))
+	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "editmob", ui_act_editmob)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editmob)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/library_catalogue/recipient, TYPE_PROC_REF(/datum/tgui, library_catalogue_answered), answerer = ui.user, question = "Enter the recipient's name:", catalogue_action = "editmob")
+/obj/machinery/librarycomp/proc/ui_act_editmob(datum/act/op/A)
+	apply_catalogue_answer("editmob", A.step_value("value"))
+	return TRUE
 
 /obj/machinery/librarycomp/proc/ui_act_checkout(datum/act/op/A)
 	var/datum/borrowbook/b = new
@@ -410,45 +432,32 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editmob)
 	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "checkin", ui_act_checkin, UI_ARG_REF("ref", null, /datum/borrowbook))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkin)
-	var/datum/borrowbook/b = params["ref"]
+/obj/machinery/librarycomp/proc/ui_act_checkin(datum/act/op/A, ref)
+	var/datum/borrowbook/b = ref
 	if(b)
 		own_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "delbook", ui_act_delbook, UI_ARG_REF("ref", null, /obj/item/book))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delbook)
-	var/obj/item/book/b = params["ref"]
+/obj/machinery/librarycomp/proc/ui_act_delbook(datum/act/op/A, ref)
+	var/obj/item/book/b = ref
 	if(b)
 		rel_remove(src, nameof(/obj/machinery/librarycomp::inventory), b)
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "setauthor", ui_act_setauthor)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_setauthor)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/library_catalogue/author, TYPE_PROC_REF(/datum/tgui, library_catalogue_answered), answerer = ui.user, question = "Enter the author's name:", catalogue_action = "setauthor")
+/obj/machinery/librarycomp/proc/ui_act_setauthor(datum/act/op/A)
+	apply_catalogue_answer("setauthor", A.step_value("value"))
+	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "setcategory", ui_act_setcategory)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_setcategory)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/library_catalogue_category, TYPE_PROC_REF(/datum/tgui, library_catalogue_answered), answerer = ui.user, question = "Choose a category:", catalogue_action = "setcategory", title = "Category")
+/obj/machinery/librarycomp/proc/ui_act_setcategory(datum/act/op/A)
+	apply_catalogue_answer("setcategory", A.step_value("value"))
+	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "upload", ui_act_upload)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_upload)
-	return library_upload_stage(ui)
+/obj/machinery/librarycomp/proc/ui_act_upload(datum/act/op/A)
+	return library_upload_stage(A.actor, A.step_value("confirm"))
 
-/obj/machinery/librarycomp/proc/library_upload_stage(datum/tgui/ui, choice, choice_ready = FALSE)
-	var/mob/user = ui.user
+/obj/machinery/librarycomp/proc/library_upload_stage(mob/user, choice)
 	if(!scanner()?.cache())
 		return TRUE
-	if(!choice_ready)
-		if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-			return
-		open_request(ui, /datum/prompt/choice/library_upload, TYPE_PROC_REF(/datum/tgui, library_upload_answered), answerer = ui.user)
-		return
 	if(choice != "Confirm")
 		return TRUE
 	if(scanner().cache().unique)
@@ -464,9 +473,9 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_upload)
 		PROC_REF(upload_done), user.ckey, "[user.name]/[user.key] has uploaded the book titled [scanner().cache().name], [length(scanner().cache().dat)] signs")
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "targetid", ui_act_targetid, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_targetid)
-	return order_library_id(user, params["id"])
+/obj/machinery/librarycomp/proc/ui_act_targetid(datum/act/op/A, id)
+	var/mob/user = A.actor
+	return order_library_id(user, id)
 
 /obj/machinery/librarycomp/proc/order_library_id(mob/user, numeric_id)
 	// Validate that the id is a positive integer before querying.
@@ -486,11 +495,11 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_targetid)
 		PROC_REF(print_book_arrived))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "delid", ui_act_delid, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delid)
+/obj/machinery/librarycomp/proc/ui_act_delid(datum/act/op/A, id)
+	var/mob/user = A.actor
 	if(!check_rights(R_ADMIN))
 		return TRUE
-	var/numeric_id = params["id"]
+	var/numeric_id = id
 	// Validate that the id is a positive integer before deleting.
 	if(!isnum(numeric_id) || numeric_id <= 0 || round(numeric_id) != numeric_id)
 		return TRUE
@@ -502,23 +511,22 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delid)
 	refresh_external()
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "orderbyid", ui_act_orderbyid)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_orderbyid)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/number/library_order_id, TYPE_PROC_REF(/datum/tgui, library_order_id_answered), answerer = ui.user)
+/obj/machinery/librarycomp/proc/ui_act_orderbyid(datum/act/op/A)
+	var/mob/user = A.actor
+	var/orderid = A.step_value("id")
+	if(isnum(orderid))
+		order_library_id(user, orderid)
+	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "sort", ui_act_sort, UI_ARG_TEXT("field"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_sort)
-	var/field = params["field"]
+/obj/machinery/librarycomp/proc/ui_act_sort(datum/act/op/A, field_arg)
+	var/field = field_arg
 	if(field in list("author", "title", "category"))
 		sortby = field
 		refresh_external()
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "hardprint", ui_act_hardprint, UI_ARG_PATH("path", /datum))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_hardprint)
-	var/newpath = params["path"]
+/obj/machinery/librarycomp/proc/ui_act_hardprint(datum/act/op/A, path)
+	var/newpath = path
 	if(!ispath(newpath, /obj/item/book))
 		return TRUE
 	var/obj/item/book/NewBook = new newpath(get_turf(src))
@@ -699,7 +707,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	b.dat = source_paper.info
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
-	qdel(source_paper)
+	spent(source_paper)
 
 /obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
 	src.visible_message("[src] whirs as it prints and binds a new book.")
@@ -711,7 +719,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		P.forceMove(b)
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
-	qdel(source_bundle)
+	spent(source_bundle)
 
 /// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
@@ -720,20 +728,6 @@ CAPABILITIES(/obj/machinery/bookbinder)
 /// Last scanned book (a relation view: null once that is deleted).
 /obj/machinery/libraryscanner/proc/cache() as /obj/item/book
 	return cache
-
-/datum/tgui/proc/library_catalogue_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/librarycomp/computer = src_object()
-	var/selected_action
-	if(istype(context.answer, /datum/prompt/text/library_catalogue))
-		var/datum/prompt/text/library_catalogue/ask = context.answer
-		selected_action = ask.catalogue_action
-	else
-		var/datum/prompt/choice/library_catalogue_category/ask = context.answer
-		selected_action = ask.catalogue_action
-	computer.apply_catalogue_answer(selected_action, context.answer.value)
-	SStgui.update_uis(computer)
 
 /obj/machinery/librarycomp/proc/apply_catalogue_answer(selected_action, value)
 	switch(selected_action)
@@ -750,14 +744,9 @@ CAPABILITIES(/obj/machinery/bookbinder)
 
 /datum/prompt/text/library_catalogue
 	timeout = 0
-	recheck_on_open = TRUE
-	var/catalogue_action
 
 /datum/prompt/text/library_catalogue/normalize(given)
 	return istext(given) ? given : null
-
-/datum/prompt/text/library_catalogue/recheck_extra()
-	return library_catalogue_ui_reason(owner, answerer, catalogue_action)
 
 /datum/prompt/text/library_catalogue/book
 	encode = FALSE
@@ -774,37 +763,6 @@ CAPABILITIES(/obj/machinery/bookbinder)
 /datum/prompt/choice/library_catalogue_category
 	choices = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion")
 	timeout = 0
-	recheck_on_open = TRUE
-	var/catalogue_action
-
-/datum/prompt/choice/library_catalogue_category/recheck_extra()
-	return library_catalogue_ui_reason(owner, answerer, catalogue_action)
-
-/proc/library_catalogue_ui_reason(datum/tgui/original_ui, mob/original_actor, selected_action)
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(original_actor))
-		return "gone"
-	var/obj/machinery/librarycomp/computer = original_ui.src_object()
-	if(!istype(computer) || QDELETED(computer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!computer.ui_act_allowed(original_ui.user, selected_action, original_ui, original_ui.state()))
-		return "the catalogue action is unavailable"
-	return null
-
-/datum/tgui/proc/library_search_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/librarypubliccomp/computer = src_object()
-	var/selected_action
-	if(istype(context.answer, /datum/prompt/text/library_search_text))
-		var/datum/prompt/text/library_search_text/ask = context.answer
-		selected_action = ask.library_action
-	else
-		var/datum/prompt/choice/library_search_category/ask = context.answer
-		selected_action = ask.library_action
-	computer.apply_search_answer(selected_action, context.answer.value)
-	SStgui.update_uis(computer)
 
 /obj/machinery/librarypubliccomp/proc/apply_search_answer(selected_action, value)
 	switch(selected_action)
@@ -819,42 +777,13 @@ CAPABILITIES(/obj/machinery/bookbinder)
 
 /datum/prompt/text/library_search_text
 	timeout = 0
-	recheck_on_open = TRUE
-	var/library_action
 
 /datum/prompt/text/library_search_text/normalize(given)
 	return istext(given) ? given : null
 
-/datum/prompt/text/library_search_text/recheck_extra()
-	return library_search_ui_reason(owner, answerer, library_action)
-
 /datum/prompt/choice/library_search_category
 	choices = list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion")
 	timeout = 0
-	recheck_on_open = TRUE
-	var/library_action
-
-/datum/prompt/choice/library_search_category/recheck_extra()
-	return library_search_ui_reason(owner, answerer, library_action)
-
-/proc/library_search_ui_reason(datum/tgui/original_ui, mob/original_actor, selected_action)
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(original_actor))
-		return "gone"
-	var/obj/machinery/librarypubliccomp/computer = original_ui.src_object()
-	if(!istype(computer) || QDELETED(computer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!computer.ui_act_allowed(original_ui.user, selected_action, original_ui, original_ui.state()))
-		return "the search action is unavailable"
-	return null
-
-/datum/tgui/proc/library_upload_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/librarycomp/computer = src_object()
-	if(computer.library_upload_stage(src, context.answer.value, TRUE))
-		SStgui.update_uis(computer)
 
 /datum/prompt/choice/library_upload
 	question = "Are you certain you wish to upload this title to the Archive?"
@@ -862,49 +791,8 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	choices = list("Confirm", "Abort")
 	buttons = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/library_upload/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/librarycomp/computer = original_ui.src_object()
-	if(!istype(computer) || QDELETED(computer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!computer.ui_act_allowed(original_ui.user, "upload", original_ui, original_ui.state()))
-		return "the library upload action is unavailable"
-	return null
-
-/datum/tgui/proc/library_order_id_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/librarycomp/computer = src_object()
-	var/orderid = context.answer.value
-	if(orderid && isnum(orderid))
-		var/datum/notice/ui_act/notice = notice_take(/datum/notice/ui_act)
-		notice.usr_ = user
-		notice.action = "targetid"
-		notice_publish(computer, notice)
-		if(status == STATUS_INTERACTIVE && computer.ui_act_allowed(user, "targetid", src, state()))
-			computer.order_library_id(user, text2num("[orderid]"))
-	SStgui.update_uis(computer)
 
 /datum/prompt/number/library_order_id
 	question = "Enter your order:"
 	timeout = 0
-	recheck_on_open = TRUE
 
-/datum/prompt/number/library_order_id/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/librarycomp/computer = original_ui.src_object()
-	if(!istype(computer) || QDELETED(computer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!computer.ui_act_allowed(original_ui.user, "orderbyid", original_ui, original_ui.state()))
-		return "the library order is unavailable"
-	return null

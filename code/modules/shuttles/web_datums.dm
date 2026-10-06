@@ -193,7 +193,7 @@ CAPABILITIES(/datum/shuttle_web_master)
 		// routes, flight computers and autopaths from ever offering a null jump.
 		if(!D.my_landmark())
 			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
-			qdel(D)
+			spent(D)
 			continue
 		rel_add(src, nameof(destinations), D)
 

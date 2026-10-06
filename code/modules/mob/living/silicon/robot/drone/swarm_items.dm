@@ -25,7 +25,7 @@
 		if(has_trait(M, TRAIT_AMBIENT_PEST_MOB))
 			src.loc.visible_message(span_danger("[src.loc] sucks [M] into its decompiler. There's a horrible crunching noise."),span_danger("It's a bit of a struggle, but you manage to suck [M] into your decompiler. It makes a series of visceral crunching noises."))
 			new/obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-			qdel(M)
+			consumed(M, src)
 			if(wood)
 				wood.add_charge(2000)
 			if(plastic)
@@ -77,7 +77,7 @@
 		else
 			continue
 
-		qdel(W)
+		consumed(W, src)
 		grabbed_something = TRUE
 
 	if(istype(T,/turf/simulated/wall) && (COOLDOWN_FINISHED(src, field_cooldown_until)))
@@ -111,7 +111,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
 
 /obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/act/A)
 	visible_message(span_warning("\The [src] flickers, before dispersing energetically."))
-	qdel(src)
+	spent(src)
 	return TRUE
 
 /obj/effect/temporary_effect/pulse/disintegrate/on_pulse()
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
 	if(istype(T,/turf/simulated/wall))
 		T.take_damage(rand(20, 50))
 	else
-		qdel(src)
+		spent(src)
 
 // a pulse ending inside a wall blows it open.
 /obj/effect/temporary_effect/pulse/disintegrate/on_destroy(force)

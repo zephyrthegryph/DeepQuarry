@@ -29,6 +29,7 @@
 CAPABILITIES(/obj/machinery/papershredder)
 	climb()
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/papershredder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -159,11 +160,13 @@ DECLARE_APPEARANCE(/obj/machinery/papershredder, "panel_open", list("1" = list(A
 	throw_range = 3
 	throw_speed = 1
 
-/obj/item/shreddedp/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5,5)
-	pixel_y = rand(-5,5)
-	if(prob(65)) color = pick("#BABABA","#7F7F7F")
+CAPABILITIES(/obj/item/shreddedp)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/shreddedp/proc/roll_color(datum/roller/R)
+	return R.chance(65) ? R.choose(list("#BABABA", "#7F7F7F")) : color
 
 DECLARE_INTERACTIONS(/obj/item/shreddedp, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

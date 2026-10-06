@@ -75,6 +75,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
 
+// ALLOW(init/CTOR_ARGS): new_material is a constructor argument from whoever builds it
 /obj/item/clothing/accessory/bracelet/material/Initialize(mapload, new_material)
 	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
 	if(forced_material)

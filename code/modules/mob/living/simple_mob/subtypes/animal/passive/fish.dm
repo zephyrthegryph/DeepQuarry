@@ -27,6 +27,7 @@
 
 	var/randomize_location = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls where in the water it swims unless the map placed it
 /mob/living/simple_mob/animal/passive/fish/Initialize(mapload)
 	. = ..()
 
@@ -171,6 +172,7 @@
 	var/image/dorsal_image
 	var/image/belly_image
 
+// ALLOW(init/INSTANCE_STATE): rolls its dorsal and belly colours
 /mob/living/simple_mob/animal/passive/fish/icebass/Initialize(mapload)
 	. = ..()
 	dorsal_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
@@ -239,6 +241,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE
 
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 
+// ALLOW(init/INSTANCE_STATE): rolls its head colour
 /mob/living/simple_mob/animal/passive/fish/rockfish/Initialize(mapload)
 	. = ..()
 	head_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))

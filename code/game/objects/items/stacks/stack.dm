@@ -44,6 +44,7 @@ CAPABILITIES(/obj/item/stack)
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
 
+// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
 /obj/item/stack/Initialize(mapload, starting_amount)
 	. = ..()
 	if(!stacktype)
@@ -130,7 +131,7 @@ CAPABILITIES(/obj/item/stack)
 /obj/item/stack/proc/ui_act_make(datum/act/op/A, multiplier, datum/stack_recipe/ref)
 	var/mob/user = A.actor
 	if(get_amount() < 1)
-		qdel(src)
+		spent(src)
 		return
 
 	var/datum/stack_recipe/R = ref
@@ -226,7 +227,7 @@ CAPABILITIES(/obj/item/stack)
 			P.persist_storable = FALSE
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
 			for (var/obj/item/I in O)
-				qdel(I)
+				spent(I)
 
 		if ((pass_color || recipe.pass_color))
 			if(!color)
@@ -259,7 +260,7 @@ CAPABILITIES(/obj/item/stack)
 			if(istype( loc, /obj/item/storage))
 				var/obj/item/storage/holder = loc
 				holder.remove_from_storage( src, null)
-			qdel(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
+			spent(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
 		return 1
 	else
 		if(get_amount() < used)
@@ -304,7 +305,7 @@ CAPABILITIES(/obj/item/stack)
 
 	// Can set it to 0 without qdel if you really want
 	if(amount == 0 && !no_limits)
-		qdel(src)
+		spent(src)
 		return FALSE
 
 	return TRUE

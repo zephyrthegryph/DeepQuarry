@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/chameleon)
 		if(!O) return
 		var/obj/effect/dummy/chameleon/C = new /obj/effect/dummy/chameleon(user.loc)
 		C.activate(O, user, saved_icon, saved_icon_state, saved_overlays, src)
-		qdel(O)
+		spent(O, user)
 		to_chat(user, span_notice("You activate the [src]."))
 		var/obj/effect/overlay/T = new/obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
@@ -123,14 +123,16 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	master.disrupt()
 	return TRUE
 
-DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_EXPLOSION, PROC_REF(chameleon_disrupted))
-DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_PROJECTILE, PROC_REF(chameleon_disrupted))
-/// A blast or a round drops the disguise.
-/obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/damage_packet/packet)
+CAPABILITIES(/obj/effect/dummy/chameleon)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(chameleon_disrupted))))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(chameleon_disrupted))))
+
+/// A blast or a round drops the disguise, and the hit stops there.
+/obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/act/A)
 	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/dummy/chameleon/proc/allow_move()
 	can_move = 1

@@ -85,8 +85,12 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 		update_icon()
 	return TRUE
 
-/obj/item/sticky_pad/MouseDrop(mob/user)
-	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native paper-supply drag captures its initiating actor separately from the destination mob.
+CAPABILITIES(/obj/item/sticky_pad)
+	drag_onto(PROC_REF(mousedrop_input))
+
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/sticky_pad/proc/mousedrop_input(datum/act/input/A)
+	return pickup_with_actor(A.actor, A.over)
 
 /obj/item/sticky_pad/proc/pickup_with_actor(mob/user, mob/destination)
 	if(user && user == destination && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
@@ -106,9 +110,8 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 
 	return
 
-/obj/item/sticky_pad/random/Initialize(mapload)
-	. = ..()
-	color = pick(COLOR_YELLOW, COLOR_LIME, COLOR_CYAN, COLOR_ORANGE, COLOR_PINK)
+CAPABILITIES(/obj/item/sticky_pad/random)
+	rolls(nameof(color), pick_one(list(COLOR_YELLOW, COLOR_LIME, COLOR_CYAN, COLOR_ORANGE, COLOR_PINK)))
 
 /obj/item/paper/sticky
 	name = "sticky note"

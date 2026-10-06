@@ -117,7 +117,7 @@
 // Normally this does nothing, but is useful if aborted by an admin.
 /datum/event2/event/blob/end()
 	for(var/obj/structure/blob/core/B as anything in blobs?.Copy())
-		qdel(B)
+		spent(B)
 	rel_clear(src, nameof(blobs))
 
 /datum/event2/event/blob/announce()

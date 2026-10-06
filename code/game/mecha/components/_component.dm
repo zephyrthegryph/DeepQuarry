@@ -42,6 +42,7 @@
 		if(0 to 1)
 			. += span_boldwarning("It is completely destroyed.")
 
+// ALLOW(init/INSTANCE_STATE): a part flagged to start damaged begins at its danger integrity
 /obj/item/mecha_parts/component/Initialize(mapload)
 	. = ..()
 	if(start_damaged)

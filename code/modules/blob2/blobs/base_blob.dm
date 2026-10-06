@@ -19,6 +19,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
+// ALLOW(init/CTOR_ARGS): new_overmind is a constructor argument from whoever builds it
 /obj/structure/blob/Initialize(mapload, new_overmind)
 	if(new_overmind)
 		rel_set(src, nameof(overmind), new_overmind)
@@ -132,7 +133,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)
-						qdel(newB)
+						spent(newB)
 					expanded = TRUE
 
 		if(distance <= pulse_range)
@@ -194,7 +195,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 		else
 			blob_attack_animation(T, controller)
 			T.blob_act(src) //if we can't move in hit the turf again
-			qdel(B) //we should never get to this point, since we checked before moving in. destroy the blob so we don't have two blobs on one tile
+			spent(B) //we should never get to this point, since we checked before moving in. destroy the blob so we don't have two blobs on one tile
 			return null
 	else
 		blob_attack_animation(T, controller) //if we can't, animate that we attacked

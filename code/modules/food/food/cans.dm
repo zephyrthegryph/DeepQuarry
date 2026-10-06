@@ -263,6 +263,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/boda, null, list(
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bodaplus, null, list(REAGENT_ID_SODAWATER = 15))
 
+// ALLOW(init/INSTANCE_STATE): rolls which juice this can holds
 /obj/item/reagent_containers/food/drinks/cans/bodaplus/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(pick(list(

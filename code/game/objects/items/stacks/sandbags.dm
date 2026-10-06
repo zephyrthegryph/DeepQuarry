@@ -32,6 +32,7 @@
 
 	bag_material = MAT_SYNCLOTH
 
+// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
 /obj/item/stack/sandbags/Initialize(mapload, amt, bag_mat)
 	. = ..(mapload, amt)
 	recipes = GLOB.sandbag_recipes
@@ -107,7 +108,7 @@
 
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
 			for (var/obj/item/I in O)
-				qdel(I)
+				spent(I)
 
 		if ((pass_color || recipe.pass_color))
 			if(!color)
@@ -138,6 +139,7 @@
 
 	var/bag_material = MAT_CLOTH
 
+// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
 /obj/item/stack/emptysandbag/Initialize(mapload, amt, bag_mat)
 	. = ..(mapload, amt)
 	if(bag_mat)

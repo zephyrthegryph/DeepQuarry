@@ -36,6 +36,8 @@ CAPABILITIES(/obj/item/radio_jammer)
 	/// Drains its cell while switched on.
 	every(2 SECONDS, then(PROC_REF(radio_jammer_step)), when = nameof(on))
 	op("power", in_hand(), label("Toggle subspace jammer"), then(PROC_REF(jammer_power_requested)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item/cell/device/weapon), label("Insert cell"), then(PROC_REF(interaction_item)))
 
 /obj/item/radio_jammer/var/on = FALSE
 TRACKED(/obj/item/radio_jammer, on)
@@ -80,19 +82,15 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 		update_icon()
 
 
-DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_INSERT(/obj/item/cell/device/weapon, PROC_REF(interaction_item), "Insert cell"), \
-)
-
-/obj/item/radio_jammer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio_jammer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
 		own_take(src, nameof(power_source))
 		turn_off()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/radio_jammer/proc/jammer_power_requested(datum/act/op/A)
 	var/mob/user = A.actor
@@ -105,7 +103,9 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 			to_chat(user,span_warning("\The [src] has no power source!"))
 	return OP_OK
 
-/obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/radio_jammer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!power_source)
 		if(!move_into(src, nameof(src.power_source), W, user))
 			return TRUE
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 		update_icon()
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 DECLARE_APPEARANCE_PROC(/obj/item/radio_jammer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/radio_jammer/appearance_overlays()

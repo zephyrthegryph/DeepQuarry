@@ -342,11 +342,11 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		if(turf)
 			for(var/obj/structure/cable/c in turf_contents_of_type(turf, /obj/structure/cable))
 				if(c.d1 == UP || c.d2 == UP)
-					qdel(c)
+					destroyed(c, user)
 
 	investigate_log("was cut by [key_name(user, user.client)] in [user.loc.loc]","wires")
 
-	qdel(src)
+	destroyed(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/cable/multitool_act(mob/user, obj/item/W)
@@ -464,6 +464,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	tool_qualities = list(TOOL_CABLE_COIL)
 	singular_name = "cable"
 
+// ALLOW(init/CTOR_ARGS): length, param_color and material_id are constructor arguments from whoever builds it
 /obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
 	apply_blueprint_effects()
@@ -679,7 +680,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	if (C.shock(user, 50))
 		if (prob(50)) //fail
 			C.recover_coil(C.loc, 1)
-			qdel(C)
+			spent(C, user)
 
 // called when cable_coil is click on an installed obj/cable
 // or click on a turf that already contains a "node" cable
@@ -758,7 +759,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 		if (C.shock(user, 50))
 			if (prob(50)) //fail
 				C.recover_coil(C.loc, 2)
-				qdel(C)
+				spent(C, user)
 				return
 		return
 

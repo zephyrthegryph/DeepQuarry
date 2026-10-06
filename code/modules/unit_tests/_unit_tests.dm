@@ -189,7 +189,17 @@
 #include "dq_init_settle_tests.dm"
 #include "dq_init_forms_behaviour_tests.dm"
 #include "dq_init_children_tests.dm"
+#include "dq_init_codemod_tests.dm"
 #include "dq_lifecycle_forms_tests.dm"
+#include "dq_lifeform_adjacency_tests.dm"
+#include "dq_lifeform_contents_tests.dm"
+#include "dq_lifeform_derives_tests.dm"
+#include "dq_lifeform_input_tests.dm"
+#include "dq_lifeform_lifetimes_tests.dm"
+#include "dq_lifeform_params_tests.dm"
+#include "dq_lifeform_per_type_tests.dm"
+#include "dq_lifeform_registry_tests.dm"
+#include "dq_lifeform_rolls_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"
 #include "dq_gas_arena_leak_tests.dm"
@@ -200,6 +210,7 @@
 #include "dq_heat_machines_behaviour.dm"
 #include "dq_boot_gate.dm"
 #include "dq_body_heat_behaviour.dm"
+#include "dq_body_rate_pins.dm"
 #include "dq_material_heat_behaviour.dm"
 #include "dq_gas_reaction_energy_behaviour.dm"
 #include "dq_thermal_power_fixes_tests.dm"
@@ -340,6 +351,7 @@
 #include "dq_system_ports_a_tests.dm"
 #include "dq_system_ports_b_tests.dm"
 #include "dq_power_tests.dm"
+#include "dq_power_plants_behaviour.dm"
 #include "dq_om_wake_tests.dm"
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"
@@ -432,6 +444,7 @@
 #include "interim_construction_doors.dm"
 #include "interim_construction_interruptions.dm"
 #include "interim_construct_spell_actor.dm"
+#include "interim_craftable_collar_label_request.dm"
 #include "interim_device_lifecycle.dm"
 #include "interim_economy_actor.dm"
 #include "interim_ethanol_actor.dm"
@@ -1103,6 +1116,13 @@
 #include "round2_matrix_active_colour.dm"
 
 #include "round2_event_trigger_initial_denial.dm"
+
+#include "round2_resleeving_console_requests.dm"
+
+#include "round2_item_bank_retrieval_null_submit.dm"
+
+#include "interim_permit_reregistration.dm"
+#include "round2_temperature_projectile_bounded_delta.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

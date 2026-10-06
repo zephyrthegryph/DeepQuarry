@@ -99,10 +99,9 @@
 /obj/effect/shuttle_landmark/automatic/champagne
 	flags = SLANDMARK_FLAG_ZERO_G // Don't auto-set
 
-/obj/effect/shuttle_landmark/automatic/champagne/Initialize(mapload, base_area, base_turf)
-	src.base_turf = base_turf
-	src.base_area = base_area
-	. = ..()
+CAPABILITIES(/obj/effect/shuttle_landmark/automatic/champagne)
+	param(nameof(base_area), pos = 1)
+	param(nameof(base_turf), pos = 2)
 
 //
 // Landable ship dynamically created at runtime by champagne bottle.
@@ -110,7 +109,7 @@
 /obj/effect/overmap/visitable/ship/landable/champagne
 	desc = "Newly minted space faring vessel."
 
-/obj/effect/overmap/visitable/ship/landable/champagne/Initialize(mapload, _name, _shuttle)
-	src.name = _name
-	src.shuttle = _shuttle
-	. = ..()
+CAPABILITIES(/obj/effect/overmap/visitable/ship/landable/champagne)
+	param(nameof(name), pos = 1)
+	param(nameof(shuttle), pos = 2)
+

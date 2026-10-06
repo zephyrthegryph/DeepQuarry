@@ -5,7 +5,7 @@
 	var/obj/structure/target_stake/stake = allocate(/obj/structure/target_stake, T)
 	var/obj/item/target/target = allocate(/obj/item/target, T)
 	TEST_ASSERT(actor.put_in_active_hand(target), "The actor must hold the shooting target")
-	TEST_ASSERT(stake.interaction_item(actor, target, null), "The stake's real insertion interaction must accept the target")
+	TEST_ASSERT(test_op_handler(stake, "interaction_item", actor, target), "The stake's real insertion interaction must accept the target")
 	TEST_ASSERT_EQUAL(stake.pinned_target, target, "The stake must record its actual pinned target")
 	TEST_ASSERT(!stake.density && target.density, "A pinned target must replace the stake's blocking surface")
 	qdel(target)

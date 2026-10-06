@@ -34,6 +34,7 @@
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/unacidable = TRUE
 
+// ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
 	. = ..()
 	movable_instance_setup()
@@ -151,7 +152,7 @@
 	// (moveToNullspace), which makes DM's for-in skip members — skipped ones
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
-		qdel(AM)
+		destroyed(AM)
 	own_clear(src, nameof(ledger), OWN_DELETE)
 
 	moveToNullspace()
@@ -341,6 +342,8 @@
 		heat_recouple()
 	if(GLOB.heat_followers_of[src])
 		heat_followers_moved(src)
+	if(lifeform_moves)
+		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
@@ -722,7 +725,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	// cloaked_selfimage in component
 	var/image/csi = dq_get_cloaked_selfimage(src)
 	if(csi)
-		qdel(csi)
+		spent(csi)
 		dq_set_cloaked_selfimage(src, null)
 
 	//Needs to be first so people can actually see the effect, so become uninvisible first

@@ -51,5 +51,5 @@
 				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.gib()
 			play_sfx(src, SFX_MISC_LEGODEATH)
-			qdel(src)
+			spent(src)
 	..()

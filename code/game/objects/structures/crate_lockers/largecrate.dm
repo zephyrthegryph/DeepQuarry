@@ -14,6 +14,7 @@
 	name = "Dangerous drone carrier"
 	starts_with = list(/mob/living/simple_mob/vore/sect_drone)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/bugsect/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/sect_drone,
 							/mob/living/simple_mob/vore/sect_queen))

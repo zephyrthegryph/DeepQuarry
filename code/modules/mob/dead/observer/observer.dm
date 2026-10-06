@@ -53,6 +53,7 @@ CAPABILITIES(/mob/observer)
 	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF
 	see_invisible = SEE_INVISIBLE_OBSERVER
 
+// ALLOW(init/CTOR_ARGS): aghost is a constructor argument from whoever builds it
 /mob/observer/dead/Initialize(mapload, aghost = FALSE)
 
 	appearance = loc
@@ -891,7 +892,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	for(var/image/I in client.images)
 		if(I.icon_state == icon)
 			iconRemoved = 1
-			qdel(I)
+			spent(I)
 
 	if(!iconRemoved)
 		var/image/J = image('icons/mob/mob.dmi', loc = src, icon_state = icon)

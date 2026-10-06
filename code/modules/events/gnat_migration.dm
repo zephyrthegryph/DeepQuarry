@@ -99,7 +99,7 @@ CAPABILITIES(/datum/event/gnat_migration)
 			var/turf/T = get_turf(SM)
 			if(istype(T, /turf/space))
 				if(prob(75))
-					qdel(SM)
+					spent(SM)
 
 // Overmap version
 /datum/event/gnat_migration/overmap/announce()

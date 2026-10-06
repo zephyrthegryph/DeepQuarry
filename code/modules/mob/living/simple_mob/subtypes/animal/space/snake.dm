@@ -196,6 +196,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_SUGAR = 1)
 
+// ALLOW(init/INSTANCE_STATE): rolls its sugar colour
 /obj/item/reagent_containers/food/snacks/snakesnack/Initialize(mapload)
 	. = ..()
 	if(!snack_colour)

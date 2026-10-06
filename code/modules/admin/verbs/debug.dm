@@ -46,7 +46,7 @@ ADMIN_VERB(simple_DPS, R_DEBUG, "Simple DPS", "Gives a really basic idea of how 
 
 		weapon_damage = P.damage
 		weapon_attack_speed = G.fire_delay / 10
-		qdel(P)
+		spent(P)
 
 	var/DPS = weapon_damage / weapon_attack_speed
 	to_chat(user, span_notice("Damage: [weapon_damage][modified_damage_percent != 1 ? " (Modified by [modified_damage_percent*100]%)":""]"))
@@ -207,7 +207,7 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 	if(hsbitem)
 		for(var/atom/O in world)
 			if(istype(O, hsbitem))
-				qdel(O)
+				spent(O)
 		log_admin("[key_name(user)] has deleted all instances of [hsbitem].")
 		message_admins("[key_name_admin(user)] has deleted all instances of [hsbitem].", 0)
 	feedback_add_details("admin_verb","DELA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -330,7 +330,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 	var/mob/adminmob = user.mob
 	M.ckey = user.ckey
 	if( isobserver(adminmob) )
-		qdel(adminmob)
+		consumed(adminmob, src)
 	feedback_add_details("admin_verb","ADC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(take_picture, R_DEBUG, "Save PNG", "Opens a dialog to save a PNG of any object in the game.", ADMIN_CATEGORY_DEBUG_MISC, atom/selected_atom in world)
@@ -482,7 +482,17 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 		SM.power = 320
 
 ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singularity and all machines to get power flowing through the station.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/_answer_a5 = verb_ask(user, "a5", args, /datum/om/prompt/choice/alert, message = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Start Singularity", choices = list("Yes","No"))
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_singularity_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(startSinglo_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a5" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_singularity_replay, PROC_REF(startSinglo_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a5", buttons = TRUE, question = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Start Singularity", choices = list("Yes","No"))
+		return
+	var/_answer_a5 = replay_answers["a5"]
 	if(isnull(_answer_a5))
 		return
 	if(_answer_a5 != "Yes")
@@ -505,11 +515,11 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 		TC.update_icon()
 	for(var/obj/structure/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
-		PA.construction_state = 3
+		graph_place(PA, STAGE_PA_CLOSED)
 		PA.update_icon()
 	for(var/obj/machinery/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
-		PA.construction_state = 3
+		graph_place(PA, STAGE_PA_CLOSED)
 		PA.update_icon()
 
 	// /obj/machinery/power/rad_collector was deleted with the ZAS power
@@ -668,7 +678,13 @@ ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the curre
 	log_admin(log)
 
 ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework Override", "Toggles ability for weather fireworks to affect weather on planet of choice.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a10", args, /datum/om/prompt/choice, message = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = SSplanets.planets)
+	var/datum/planet/planet
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	if(istype(resumed, /datum/prompt/choice/admin_firework_override) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(firework_override_answered))
+		planet = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_firework_override, PROC_REF(firework_override_answered), answerer = user.mob, question = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = SSplanets.planets)
+		return
 	if(isnull(planet))
 		return
 	if(istype(planet) && planet.weather_holder)
@@ -788,7 +804,17 @@ ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-
 	feedback_add_details("admin_verb","QNIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the configuration from the default path on the disk, wiping any in-round modifications.", ADMIN_CATEGORY_DEBUG_SERVER)
-	var/_answer_a16 = verb_ask(user, "a16", args, /datum/om/prompt/choice/alert, message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", title = "Really reset?", choices = list("No", "Yes"))
+	// Replay input is only a synchronous answered request from this verb.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/admin_reload_configuration_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(reload_configuration_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a16" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_reload_configuration_replay, PROC_REF(reload_configuration_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a16", buttons = TRUE, question = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", title = "Really reset?", choices = list("No", "Yes"))
+		return
+	var/_answer_a16 = replay_answers["a16"]
 	if(isnull(_answer_a16))
 		return
 	if(_answer_a16 != "Yes")
@@ -928,3 +954,82 @@ CAPABILITIES(/datum/prompt/choice/admin_control_target)
 #else
 	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
 #endif
+
+/datum/prompt/choice/admin_reload_configuration_replay
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_reload_configuration_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_reload_configuration_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_reload_configuration_replay/refusal(given)
+	return null
+
+/datum/admin_verb/reload_configuration/proc/reload_configuration_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_singularity_replay
+	timeout = 0
+	rights = R_DEBUG|R_ADMIN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_singularity_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_singularity_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_singularity_replay/refusal(given)
+	return null
+
+/datum/admin_verb/startSinglo/proc/startSinglo_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_firework_override
+	timeout = 0
+	rights = R_DEBUG|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_firework_override/normalize(given)
+	if(isdatum(given))
+		var/datum/selected = given
+		if(QDELETED(selected))
+			return null
+	return given
+
+/datum/prompt/choice/admin_firework_override/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_firework_override/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/toggle_firework_override/proc/firework_override_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

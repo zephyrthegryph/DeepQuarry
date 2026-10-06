@@ -24,7 +24,7 @@
 /datum/slime_state/New(mob/living/simple_mob/slime/xenobio/owner)
 	if(!owner)
 		stack_trace("slime_state instantiated with no owner")
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(holder), owner)
 	..()

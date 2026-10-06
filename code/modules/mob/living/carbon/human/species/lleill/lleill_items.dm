@@ -182,7 +182,7 @@ CAPABILITIES(/obj/item/glamour_face)
 		return
 	if(h_action == "Recall")
 		act_message(H, null, others = span_infoplain(span_bold("%U%") + " returns to the face."))
-		qdel(H) // the framework clears our homunculus view
+		spent(H) // the framework clears our homunculus view
 		return
 	if(h_action == "Speak Through")
 		open_request(src, /datum/prompt/text, PROC_REF(homunculus_words_entered), answerer = user, title = "Speak Through", question = "What should the homunculus say:", ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
@@ -252,6 +252,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	var/connected_mob
 	var/area_name
 
+// ALLOW(init/INSTANCE_STATE): names itself after the area it is placed in
 /obj/structure/glamour_ring/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)

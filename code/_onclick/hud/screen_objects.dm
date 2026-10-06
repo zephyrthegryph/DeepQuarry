@@ -65,8 +65,12 @@
 /atom/movable/screen/item_action
 	var/obj/item/owner
 
-/atom/movable/screen/item_action/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND item action screen Click supplies its clicking mob through usr at this native boundary
+CAPABILITIES(/atom/movable/screen/item_action)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/item_action/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/item_action/click_with_actor(mob/user, location, control, params)
 	if(!user || !owner())
@@ -98,8 +102,12 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 /atom/movable/screen/storage
 	name = "storage"
 
-/atom/movable/screen/storage/Click()
-	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native storage HUD Click supplies the initiating mob while retaining its no-parent virtual mob click dispatch.
+CAPABILITIES(/atom/movable/screen/storage)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/storage/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/storage/click_with_actor(mob/user, location, control, params)
 	if(!user.checkClickCooldown())
@@ -126,9 +134,11 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 
 CAPABILITIES(/atom/movable/screen/zone_sel)
 	owns_many(nameof(hover_overlays_cache))
+	click_on(PROC_REF(click_input))
 
-/atom/movable/screen/zone_sel/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): native targeting HUD clicks supply the initiating actor without chaining the atom input router
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/zone_sel/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/zone_sel/click_with_actor(mob/user, location, control, params)
 	if(isobserver(user))
@@ -685,8 +695,12 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 					H.hatch() // Hatch.
 	return 1
 
-/atom/movable/screen/inventory/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND inventory screen Click supplies its clicking mob through usr at this native boundary
+CAPABILITIES(/atom/movable/screen/inventory)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/inventory/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/inventory/click_with_actor(mob/user, location, control, params)
 	if(!user)
@@ -740,9 +754,8 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 /atom/movable/screen/component_button
 	var/atom/movable/screen/parent
 
-/atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
-	. = ..()
-	rel_set(src, nameof(parent), new_parent)
+CAPABILITIES(/atom/movable/screen/component_button)
+	param(nameof(parent), pos = 1)
 
 /atom/movable/screen/component_button/Click(params)
 	if(parent())
@@ -815,6 +828,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton)
 	owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton)
 
+// ALLOW(init/CTOR_ARGS): newowner is a constructor argument from whoever builds it
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
 	rel_set(src, nameof(owner), newowner)
@@ -883,6 +897,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	mouse_opacity = 0
 	var/atom/movable/screen/movable/mapper_holder/parent
 
+// ALLOW(init/INSTANCE_STATE): its parent is the atom it is created inside
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(parent), loc)
@@ -927,8 +942,12 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	plane = PLANE_HOLOMAP_FRAME
 	mouse_opacity = 1
 
-/atom/movable/screen/mapper/powbutton/Click()
-	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native mapper control captures its clicking actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/mapper/powbutton)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/mapper/powbutton/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/mapper/powbutton/click_with_actor(mob/user, location, control, params)
 	if(!user.checkClickCooldown())
@@ -948,8 +967,12 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	plane = PLANE_HOLOMAP_FRAME
 	mouse_opacity = 1
 
-/atom/movable/screen/mapper/mapbutton/Click()
-	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native mapper control captures its clicking actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/mapper/mapbutton/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/mapper/mapbutton/click_with_actor(mob/user, location, control, params)
 	if(!user.checkClickCooldown())
@@ -1105,7 +1128,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 
 /atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, image/empty)
 	user.client?.screen -= F
-	qdel(F)
+	spent(F, user)
 	overlays += empty
 
 /// The hud this screen object belongs to (a relation view: null once that is deleted).

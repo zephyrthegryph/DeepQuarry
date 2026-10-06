@@ -162,16 +162,6 @@
 /mob/living/proc/life_radiation_due()
 	return act_wanted(src, /datum/act/live_radiation)
 
-/// Blood volume and bleeding.
-/mob/living/proc/life_blood_rewake()
-	return 0
-
-/mob/living/proc/life_blood(datum/seq_frame/life/F)
-	return
-
-/mob/living/proc/life_blood_due()
-	return FALSE
-
 /// Random episodes (vomiting, ...).
 /mob/living/proc/life_random_events(datum/seq_frame/life/F)
 	return

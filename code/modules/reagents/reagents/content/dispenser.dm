@@ -25,7 +25,7 @@
 /datum/reagent/calcium/affect_ingest(mob/living/carbon/M, alien, removed)
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			if(dq_reagent_knit_fracture(O))
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.status_adjust(EFFECT_WEAKENED, 1)
@@ -604,7 +604,7 @@
 		I.desc = "Looks like this was \an [O] some time ago."
 		for(var/mob/M in viewers(5, O))
 			to_chat(M, span_warning("\The [O] melts."))
-		qdel(O)
+		spent(O)
 		remove_self(meltdose) // 10 units of acid will not melt EVERYTHING on the tile
 
 /datum/reagent/acid/touch_mob(mob/living/L)

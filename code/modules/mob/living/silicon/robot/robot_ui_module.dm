@@ -18,7 +18,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 		var/mob/living/silicon/robot/R = user
 		R.selecting_module = FALSE
 	if(!QDELETED(src))
-		qdel(src)
+		spent(src, user)
 
 /datum/tgui_module/robot_ui_module/ui_opening(mob/user, datum/tgui/ui)
 	..()

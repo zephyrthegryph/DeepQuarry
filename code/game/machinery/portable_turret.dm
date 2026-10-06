@@ -184,6 +184,8 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
 	return !!length(here?.turret_controls)
 
+TRACKED(/obj/machinery/porta_turret, ailock)
+
 /// The firewall (ailock) is down: a silicon over its link may work the window (req_window_usable() asks this only of a remote user).
 /obj/machinery/porta_turret/proc/firewall_open(datum/act/op/A)
 	return !ailock
@@ -270,7 +272,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 			new /obj/item/assembly/prox_sensor(loc)
 	else
 		to_chat(user, span_notice("You remove the turret but did not manage to salvage anything."))
-	qdel(src)
+	spent(src)
 	return OP_OK
 
 /// A blow meant to hurt it: half the force lands, and it gets angry.
@@ -391,7 +393,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	after(src, 1 SECOND, PROC_REF(cover_flick_done), with = list(flick_holder))
 
 /obj/machinery/porta_turret/proc/cover_flick_done(atom/movable/flick_holder)
-	qdel(flick_holder)
+	spent(flick_holder)
 
 /atom/movable/porta_turret_cover
 	icon = 'icons/obj/turrets.dmi'
@@ -1050,7 +1052,7 @@ CAPABILITIES(/obj/machinery/porta_turret/rcd)
 
 /obj/machinery/porta_turret/rcd/die()
 	fx_sparks(src, 5, FALSE)
-	qdel(src) // ALLOW(lifecycle): an RCD-made turret leaves no wreck behind; it is destroyed outright
+	destroyed(src)
 
 #undef TURRET_PRIORITY_TARGET
 #undef TURRET_SECONDARY_TARGET

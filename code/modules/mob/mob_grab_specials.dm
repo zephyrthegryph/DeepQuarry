@@ -162,7 +162,7 @@
 	for(var/datum/diagnosis_finding/F as anything in D?.findings_of(DIAG_FINDING_SIGN))
 		to_chat(user, span_warning(F.name))
 		bad = 1
-	qdel(D)
+	spent(D)
 	var/saturation = H.body?.oxygenation()
 	if(!isnull(saturation) && saturation < 90)
 		to_chat(user, span_warning("[H]'s skin is unusually pale."))
@@ -265,7 +265,7 @@
 
 	attacker.drop_from_inventory(src)
 	src.moveToNullspace()
-	qdel(src)
+	spent(src, attacker)
 	return
 
 /obj/item/grab/proc/dislocate(mob/living/carbon/human/target, mob/living/attacker, target_zone)

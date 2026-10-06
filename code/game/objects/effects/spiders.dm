@@ -11,6 +11,7 @@
 //similar to weeds, but only barfed out by nurses manually
 CAPABILITIES(/obj/effect/spider)
 	op("hit_web", item(/obj/item), then(PROC_REF(interaction_hit_web)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby: any item hits the web (afterattack still follows, as before).
 /obj/effect/spider/proc/interaction_hit_web(datum/act/op/A)
@@ -27,15 +28,17 @@ CAPABILITIES(/obj/effect/spider)
 	receive_weapon_hit(W, user, W.force / 4)
 	return OP_PASS
 
-/obj/effect/spider/welder_act(mob/user, obj/item/tool)
+/obj/effect/spider/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_warning("%U% has been burned with %I% by %T%."), item = tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \
@@ -65,10 +68,12 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
 
-/obj/effect/spider/stickyweb/Initialize(mapload)
-	if(prob(50))
-		icon_state = "stickyweb2"
-	return ..()
+CAPABILITIES(/obj/effect/spider/stickyweb)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/spider/stickyweb/proc/roll_icon_state(datum/roller/R)
+	return R.chance(50) ? "stickyweb2" : icon_state
 
 /obj/effect/spider/stickyweb/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /mob/living/simple_mob/animal/giant_spider))
@@ -91,6 +96,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	var/spider_type = /obj/effect/spider/spiderling
 	var/faction = FACTION_SPIDERS
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
@@ -159,6 +165,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier, \
 			/mob/living/simple_mob/animal/giant_spider/ion))
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/spider/spiderling/Initialize(mapload, atom/parent)
 	. = ..()
 	pixel_x = rand(6,-6)
@@ -168,7 +175,8 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 		amount_grown = 1
 	get_light_and_color(parent)
 
-DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/spider/spiderling)
+	every(2 SECONDS, then(PROC_REF(spiderling_step)))
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -181,7 +189,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 	..()
 
-/obj/effect/spider/spiderling/periodic_step()
+/obj/effect/spider/spiderling/proc/spiderling_step(datum/act/timer/A)
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0
@@ -302,15 +310,12 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 	icon_state = "cocoon1"
 	max_integrity = 15
 
-/obj/effect/spider/cocoon/Initialize(mapload)
-	. = ..()
-	icon_state = pick("cocoon1","cocoon2","cocoon3")
-
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
 CAPABILITIES(/obj/effect/spider/cocoon)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	rolls(nameof(icon_state), pick_one(list("cocoon1", "cocoon2", "cocoon3")))
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

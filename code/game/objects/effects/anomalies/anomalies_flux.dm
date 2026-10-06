@@ -7,6 +7,7 @@
 	var/shockdamage = 20
 	var/emp_zap = FLUX_EMP
 
+// ALLOW(init/CTOR_ARGS): new_lifespan, drops_core and emp_zap are constructor arguments from whoever builds it
 /obj/effect/anomaly/flux/Initialize(mapload, new_lifespan, drops_core, emp_zap = FLUX_EMP)
 	. = ..()
 	src.emp_zap = emp_zap

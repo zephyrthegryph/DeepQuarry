@@ -172,5 +172,5 @@ GLOBAL_VAR_INIT(projectile_pre_reacted, null)
 
 /// The hit destroys the holder outright (an explosion on something with no integrity).
 /atom/proc/damage_reaction_qdel(datum/damage_packet/packet)
-	qdel(src)
+	destroyed(src)
 	return DAMAGE_REACTION_BLOCK

@@ -304,7 +304,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 		var/oamount = min(compressor().gas_contained.total_moles(), (compressor().rpm+100)/35000*compressor().capacity)
 		var/datum/gas_mixture/removed = compressor().gas_contained.remove(oamount)
 		outturf().assume_air(removed)
-		qdel(removed)
+		spent(removed)
 
 	// If it works, put an overlay that it works!
 	if(lastgen > 100)

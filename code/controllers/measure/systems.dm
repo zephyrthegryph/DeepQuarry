@@ -157,7 +157,7 @@
 	)
 	return rows
 
-/// The prefix -> key list km_system_rows() flattens to: "/datum/om/pipeline/life" = "life", ... in row order.
+/// The prefix -> key list km_system_rows() flattens to: "/datum/om/behaviour/observer_upkeep" = "life", ... in row order.
 /proc/km_system_prefixes()
 	var/datum/km_holder/holder = km_holder()
 	if(!length(holder.prefixes))
@@ -170,7 +170,7 @@
 	return holder.prefixes
 
 /// The system key of a behaviour type path (rules 2 and 3 above). Matching is by path prefix at a "/" boundary,
-/// so `/datum/om/pipeline/life` owns `/datum/om/pipeline/life_derive` too (life*) but not `/datum/om/pipeline/lifeboat/x`.
+/// so a `life` row owns `life_derive` too (life*) but not `/datum/om/pipeline/lifeboat/x`.
 /proc/km_system_key_for_path(path)
 	var/text = "[path]"
 	var/list/prefixes = km_system_prefixes()

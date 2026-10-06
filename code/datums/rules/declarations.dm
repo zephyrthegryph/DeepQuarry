@@ -263,7 +263,7 @@
 	effect_proc = /obj/effect/weaversilk/proc/rule_burn_away
 
 /atom/proc/rule_delete(datum/rule/rule)
-	qdel(src)
+	spent(src)
 
 // ---- Integrity breakpoints (damage.md §6) ----
 //

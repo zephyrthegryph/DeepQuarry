@@ -13,7 +13,35 @@
 	icon_screen = "adv_engines_screen"
 	light_color = "#05A6A8"
 
-DECLARE_UI(/obj/machinery/computer/ship/engines, "OvermapEngines")
+// The engines window: one op per button; the two thrust limits are asked in the window's op (asks()), the answer applied by its handler.
+CAPABILITIES(/obj/machinery/computer/ship/engines)
+	interface("OvermapEngines")
+	without("ui_open")
+	op("global_toggle", ui_act("global_toggle"), then(PROC_REF(ui_act_global_toggle)))
+	op("set_global_limit", ui_act("set_global_limit"), asks(/datum/prompt/number/ship_console_global_limit, fields = list("default" = computed(PROC_REF(global_limit_default))), step = "limit"),
+		then(PROC_REF(ui_act_set_global_limit)))
+	op("global_limit", ui_act("global_limit", arg("global_limit", num())), then(PROC_REF(ui_act_global_limit)))
+	op("set_limit", ui_act("set_limit", arg("engine", schema_ref(/datum/ship_engine))), needs(req(PROC_REF(engine_named), silent = TRUE)),
+		asks(/datum/prompt/number, fields = list("question" = "Input new thrust limit (0..100)", "title" = "Thrust limit", "default" = computed(PROC_REF(engine_limit_default)), "max_value" = 100, "timeout" = 0), step = "limit"),
+		then(PROC_REF(ui_act_set_limit)))
+	op("limit", ui_act("limit", arg("engine", schema_ref(/datum/ship_engine)), arg("limit", num())), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_limit)))
+	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_toggle_engine)))
+
+/// A button that names an engine names one.
+/obj/machinery/computer/ship/engines/proc/engine_named(datum/act/op/A)
+	return !isnull(A.args["engine"])
+
+/obj/machinery/computer/ship/engines/proc/global_limit_default(datum/act/op/A)
+	return linked()?.thrust_limit * 100
+
+/obj/machinery/computer/ship/engines/proc/engine_limit_default(datum/act/op/A)
+	var/datum/ship_engine/E = A.args["engine"]
+	return E?.get_thrust_limit()
+
+/// The keyboard under the operator's fingers (a silicon types nothing).
+/obj/machinery/computer/ship/proc/terminal_typed(mob/user)
+	if(!issilicon(user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
 /obj/machinery/computer/ship/engines/ui_prepare(mob/user, datum/tgui/ui)
 	if(!linked())
@@ -25,10 +53,8 @@ DECLARE_UI(/obj/machinery/computer/ship/engines, "OvermapEngines")
 /obj/machinery/computer/ship/engines/ui_title(mob/user)
 	return "[linked().name] Engines Control"
 
-UI_DATA_REPLACE(/obj/machinery/computer/ship/engines, "merge:ui_data_obj_machinery_computer_ship_engines{global_state:num,global_limit:num,engines_info:list,total_thrust:num}")
-
-/// The computed part of /obj/machinery/computer/ship/engines's window data (declared on its UI_DATA row).
-/obj/machinery/computer/ship/engines/proc/ui_data_obj_machinery_computer_ship_engines(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window data.
+/obj/machinery/computer/ship/engines/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["global_state"] = linked().engines_state
 	data["global_limit"] = round(linked().thrust_limit*100)
@@ -54,103 +80,51 @@ UI_DATA_REPLACE(/obj/machinery/computer/ship/engines, "merge:ui_data_obj_machine
 	data["total_thrust"] = total_thrust
 	return data
 
-UI_ACT(/obj/machinery/computer/ship/engines, "global_toggle", ui_act_global_toggle)
-UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_global_toggle)
+/obj/machinery/computer/ship/engines/proc/ui_act_global_toggle(datum/act/op/A)
 	linked().engines_state = !linked().engines_state
 	for(var/datum/ship_engine/E in linked().engines)
 		if(linked().engines_state == !E.is_on())
 			E.toggle()
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/engines, "set_global_limit", ui_act_set_global_limit)
-UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_set_global_limit)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/number/ship_console_global_limit, TYPE_PROC_REF(/datum/tgui, ship_console_global_limit_answered), answerer = ui.user, default = linked().thrust_limit*100)
-
-/obj/machinery/computer/ship/engines/proc/apply_global_limit_answer(datum/tgui/ui, datum/tgui_state/state, newlim)
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return FALSE
+/obj/machinery/computer/ship/engines/proc/ui_act_set_global_limit(datum/act/op/A)
+	var/newlim = A.step_value("limit")
 	linked().thrust_limit = clamp(newlim/100, 0, 1)
 	for(var/datum/ship_engine/E in linked().engines)
 		E.set_thrust_limit(linked().thrust_limit)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/engines, "global_limit", ui_act_global_limit, UI_ARG_NUM("global_limit"))
-UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_global_limit)
-	linked().thrust_limit = clamp(linked().thrust_limit + params["global_limit"], 0, 1)
+/obj/machinery/computer/ship/engines/proc/ui_act_global_limit(datum/act/op/A, global_limit)
+	linked().thrust_limit = clamp(linked().thrust_limit + global_limit, 0, 1)
 	for(var/datum/ship_engine/E in linked().engines)
 		E.set_thrust_limit(linked().thrust_limit)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/engines, "set_limit", ui_act_set_limit, UI_ARG_REF("engine", null, /datum/ship_engine))
-UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_set_limit)
-	var/datum/ship_engine/E = params["engine"]
-	var/newlim = act_ask(ui.user, action, params, ui, "k81", /datum/om/prompt/number, message = "Input new thrust limit (0..100)", title = "Thrust limit", default = E.get_thrust_limit(), max = 100, round_entry = FALSE)
-	if(isnull(newlim))
-		return
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return FALSE
-	var/limit = clamp(newlim/100, 0, 1)
-	if(istype(E))
-		E.set_thrust_limit(limit)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+/obj/machinery/computer/ship/engines/proc/ui_act_set_limit(datum/act/op/A, datum/ship_engine/engine)
+	engine.set_thrust_limit(clamp(A.step_value("limit")/100, 0, 1))
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/engines, "limit", ui_act_limit, UI_ARG_REF("engine", null, /datum/ship_engine), UI_ARG_NUM("limit"))
-UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_limit)
-	var/datum/ship_engine/E = params["engine"]
-	var/limit = clamp(E.get_thrust_limit() + params["limit"], 0, 1)
-	if(istype(E))
-		E.set_thrust_limit(limit)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+/obj/machinery/computer/ship/engines/proc/ui_act_limit(datum/act/op/A, datum/ship_engine/engine, limit)
+	engine.set_thrust_limit(clamp(engine.get_thrust_limit() + limit, 0, 1))
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/engines, "toggle_engine", ui_act_toggle_engine, UI_ARG_REF("engine", null, /datum/ship_engine))
-UI_ACT_PROC(/obj/machinery/computer/ship/engines, ui_act_toggle_engine)
-	var/datum/ship_engine/E = params["engine"]
-	if(istype(E))
-		E.toggle()
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
-
-/datum/tgui/proc/ship_console_global_limit_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/computer/ship/engines/computer = src_object()
-	if(computer.apply_global_limit_answer(src, state(), context.answer.value))
-		SStgui.update_uis(computer)
+/obj/machinery/computer/ship/engines/proc/ui_act_toggle_engine(datum/act/op/A, datum/ship_engine/engine)
+	engine.toggle()
+	terminal_typed(A.actor)
+	return TRUE
 
 /datum/prompt/number/ship_console_global_limit
 	question = "Input new thrust limit (0..100%)"
 	title = "Thrust limit"
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/number/ship_console_global_limit/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, 100, 0, timeout, FALSE, GLOB.tgui_always_state)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
-
-/datum/prompt/number/ship_console_global_limit/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/computer/ship/engines/computer = original_ui.src_object()
-	if(!istype(computer) || QDELETED(computer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!computer.ui_act_allowed(original_ui.user, "set_global_limit", original_ui, original_ui.state()))
-		return "the engine console action is unavailable"
-	return null

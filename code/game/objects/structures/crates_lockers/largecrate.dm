@@ -17,27 +17,23 @@
 		I.forceMove(src)
 	update_icon()
 
-/obj/structure/largecrate/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/largecrate_hand,
-	)
-	..()
-
-/// Old attack_hand: a hint that you need a crowbar.
-/datum/interaction/entry_hand/largecrate_hand
-	id = "largecrate_hand"
-	name = "Use"
-	effect = /obj/structure/largecrate/proc/interaction_hand
+EXTEND_INTERACTIONS(/obj/structure/largecrate, \
+	INTERACT_HAND("Use", PROC_REF(interaction_hand)), \
+)
 
 /obj/structure/largecrate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You need a crowbar to pry this open!"))
 	return TRUE
 
-/obj/structure/largecrate/crowbar_act(mob/user, obj/item/W)
+CAPABILITIES(/obj/structure/largecrate)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+/obj/structure/largecrate/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = get_turf(src)
 	if(!T)
 		to_chat(user, span_notice("You can't open this here!"))
-		return TRUE
+		return OP_OK
 	new /obj/item/stack/material/wood(src)
 
 	for(var/atom/movable/AM in contents)
@@ -53,7 +49,7 @@
 		MSG_OTHERS(span_notice("%U% pries %T% open.")), \
 		MSG_BLIND(span_notice("You hear splitting wood.")))
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/largecrate/mule
 	name = "MULE crate"
@@ -63,7 +59,7 @@
 	desc = "You aren't sure how this crate is so light, but the Wulf Aeronautics logo might be a hint."
 	icon_state = "vehiclecrate"
 
-/obj/structure/largecrate/hoverpod/crowbar_act(mob/user, obj/item/W)
+/obj/structure/largecrate/hoverpod/crowbar_used(datum/act/op/A)
 	var/obj/item/mecha_parts/mecha_equipment/ME
 	var/obj/mecha/working/hoverpod/H = new (loc)
 
@@ -166,7 +162,8 @@
 	name = "Bird crate"
 	desc = "You hear chirping and cawing inside the crate. It sounds like there are a lot of birds in there..."
 
-/obj/structure/largecrate/birds/crowbar_act(mob/user, obj/item/W)
+/obj/structure/largecrate/birds/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	new /obj/item/stack/material/wood(src)
 	new /mob/living/simple_mob/animal/passive/bird (src)
 	new /mob/living/simple_mob/animal/passive/bird/parrot/kea(src)
@@ -197,7 +194,7 @@
 		MSG_OTHERS(span_notice("%U% pries %T% open.")), \
 		MSG_BLIND(span_notice("You hear splitting wood.")))
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/largecrate/animal/pred
 	name = "Predator carrier"
@@ -228,6 +225,7 @@
 	name = "Dangerous Predator carrier"
 	starts_with = list(/mob/living/simple_mob/animal/space/alien)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/dangerous/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/animal/space/carp/large,
 						/mob/living/simple_mob/vore/aggressive/deathclaw,
@@ -249,6 +247,7 @@
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/guardbeast/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security,
 						/mob/living/simple_mob/vore/otie/security/chubby))
@@ -261,6 +260,7 @@
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security/phoron)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/guardmutant/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security/phoron;2,
 						/mob/living/simple_mob/vore/otie/security/phoron/red;0.5,
@@ -275,6 +275,7 @@
 	starts_with = list(/mob/living/simple_mob/vore/otie/cotie)
 	var/taped = 1
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/otie/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie,
 						/mob/living/simple_mob/vore/otie/cotie/chubby))
@@ -285,6 +286,7 @@
 	desc = "VARMAcorp experimental hostile environment adaptive breeding development kit. WARNING, DO NOT RELEASE IN WILD!"
 	starts_with = list(/mob/living/simple_mob/vore/otie/cotie/phoron)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/otie/phoron/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie/phoron;2,
 						/mob/living/simple_mob/vore/otie/red/friendly;0.5,
@@ -314,6 +316,7 @@
 	desc = "Bounces around a lot. Looks messily packaged, were they in a hurry?"
 	starts_with = list(/mob/living/simple_mob/vore/fennec)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/fennec/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/fennec,
 						/mob/living/simple_mob/vore/fennix;0.5))

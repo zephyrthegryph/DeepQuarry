@@ -2,7 +2,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
-	rel_set(modify_robot, nameof(/datum/accessory_stat_modifier::target), target)
+	rel_set(modify_robot, nameof(/datum/eventkit/modify_robot::target), target)
 	modify_robot.selected_ai = target.is_slaved()
 	modify_robot.tgui_interact(user.mob)
 
@@ -239,7 +239,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_select_target(datum/act/op/A, new_target_arg)
 	var/new_target = new_target_arg
 	if(new_target != target())
-		rel_set(src, nameof(/datum/accessory_stat_modifier::target), new_target_arg)
+		rel_set(src, nameof(/datum/eventkit/modify_robot::target), new_target_arg)
 		log_and_message_admins("changed robot modifictation target to [target()]")
 	return TRUE
 
@@ -279,7 +279,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	source.update_icon()
 	source.emag_items = TRUE
 	if(!istype(robot_type, /obj/item/robot_module/robot))
-		own_clear(src, nameof(/datum/admin_rank::source), OWN_DELETE)
+		own_clear(src, nameof(/datum/eventkit/modify_robot::source), OWN_DELETE)
 		return TRUE
 	return TRUE
 
@@ -308,7 +308,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	target().module.modules.Remove(rem_item)
 	rem_item.moveToNullspace()
 	target().hud_used?.update_robot_modules_display()
-	qdel(rem_item)
+	spent(rem_item)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_swap_module(datum/act/op/A)
@@ -410,7 +410,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 	var/obj/item/rem_kit = modkit
 	rel_remove(kin, nameof(/obj/item/gun/energy/kinetic_accelerator::modkits), rem_kit)
-	qdel(rem_kit)
+	spent(rem_kit)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_select_multibelt(datum/act/op/A, multibelt)
@@ -435,7 +435,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
 		var/datum/matter_synth/synth = tool
 		target().module.synths -= synth
-		qdel(synth)
+		spent(synth)
 		target().update_material_multibelts()
 		return TRUE
 	var/obj/item/rem_tool = tool
@@ -445,7 +445,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	multibelt_holder().cyborg_integrated_tools -= rem_tool.type
 	multibelt_holder().integrated_tools_by_name -= rem_tool.name
 	multibelt_holder().integrated_tool_images -= rem_tool.name
-	qdel(rem_tool)
+	spent(rem_tool)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_add_channel(datum/act/op/A, channel)
@@ -490,13 +490,13 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(C.slot == ROBOT_SLOT_POWER)
 		if(!ispath(new_component, /obj/item/cell))
 			return FALSE
-		qdel(target().remove_cell())
+		spent(target().remove_cell())
 		target().set_cell(new new_component(target()))
 		return TRUE
 	if(!ispath(new_component, C.external_type))
 		new_component = C.external_type
 	if(C.wrapped)
-		qdel(C.uninstall())
+		spent(C.uninstall())
 	C.clear_located_damage()
 	C.install(new new_component(target()))
 	return TRUE
@@ -506,9 +506,9 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(!C?.wrapped || C.internal)
 		return FALSE
 	if(C.slot == ROBOT_SLOT_POWER)
-		qdel(target().remove_cell())
+		spent(target().remove_cell())
 		return TRUE
-	qdel(C.uninstall())
+	spent(C.uninstall())
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_adjust_cell_charge(datum/act/op/A, charge)

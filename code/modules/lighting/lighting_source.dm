@@ -186,7 +186,7 @@
 	var/atom/source_atom = src.source_atom
 
 	if (QDELETED(source_atom))
-		qdel(src)
+		spent(src)
 		return
 
 	if (source_atom.light_power != light_power)
@@ -202,7 +202,7 @@
 		update = TRUE
 
 	if (!light_range || !light_power)
-		qdel(src)
+		spent(src)
 		return
 
 	if (isturf(top_atom))

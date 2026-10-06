@@ -41,6 +41,10 @@ CAPABILITIES(/obj/item/flamethrower)
 	op("light", ui_act("light"), then(PROC_REF(ui_act_light)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
 	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/flamethrower/Initialize(mapload)
 	. = ..()
@@ -100,7 +104,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 
 			// suck out fuel and burn it
 			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.return_volume())
-			qdel(used_gas)
+			consumed(used_gas, src)
 			if(!check_fuel())
 				set_lit(FALSE)
 			update_icon()
@@ -119,35 +123,38 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 	return ptank != null && ptank.air_contents.total_moles() > 5 // minimum fuel usage is five moles, for EXTREMELY hot mix or super low pressure
 
 /// Old attackby.
-/obj/item/flamethrower/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/flamethrower/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(user.stat || user.restrained() || user.lying)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(isigniter(W))
 		var/obj/item/assembly/igniter/I = W
-		if(I.secured)	return INTERACTION_HANDLED_PASS
-		if(igniter)		return INTERACTION_HANDLED_PASS
+		if(I.secured)	return OP_PASS
+		if(igniter)		return OP_PASS
 		if(!move_into(src, nameof(src.igniter), I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		update_icon()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W,/obj/item/tank/phoron))
 		if(ptank)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!move_into(src, nameof(src.ptank), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		update_icon()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/flamethrower/wrench_act(mob/user, obj/item/tool)
+/obj/item/flamethrower/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(status || user.stat || user.restrained() || user.lying)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(loc?.release_refusal(src, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/turf/T = get_turf(src)
 	if(weldtool)
 		weldtool.forceMove(T)
@@ -160,23 +167,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		own_take(src, nameof(ptank))
 	new /obj/item/stack/rods(T)
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/flamethrower/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/flamethrower/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!igniter || lit || user.stat || user.restrained() || user.lying)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	status = !status
 	to_chat(user, span_notice("[igniter] is now [status ? "secured" : "unsecured"]!"))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-DECLARE_INTERACTIONS(/obj/item/flamethrower, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/flamethrower/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flamethrower/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || user.restrained() || user.lying)
 		return TRUE
 	tgui_interact(user)

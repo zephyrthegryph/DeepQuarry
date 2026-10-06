@@ -460,13 +460,13 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 /datum/system/contracts/proc/publish_event(datum/contract_event/event)
 	if(!event?.is_valid())
 		events_rejected++
-		qdel(event)
+		spent(event)
 		return FALSE
 	if(event.occurrence_id)
 		var/dedup_key = "[event.event_type]|[event.occurrence_id]"
 		if(seen_event_occurrences[dedup_key])
 			events_deduplicated++
-			qdel(event)
+			spent(event)
 			return FALSE
 		seen_event_occurrences[dedup_key] = TRUE
 		event_occurrence_order += dedup_key
@@ -481,7 +481,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
 		var/datum/contract_event/expired_event = recent_events[1]
 		recent_events.Cut(1, 2)
-		qdel(expired_event)
+		spent(expired_event)
 	observe_opportunity_event(event)
 	var/list/subscribers = event_subscriptions[event.event_type]
 	var/list/listeners = subscribers?.Copy()

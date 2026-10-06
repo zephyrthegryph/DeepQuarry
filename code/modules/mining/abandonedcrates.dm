@@ -8,6 +8,7 @@
 	var/codelen = 4
 	locked = 1
 
+// ALLOW(init/INSTANCE_STATE): rolls its lock code and its loot
 /obj/structure/closet/crate/secure/loot/Initialize(mapload)
 	. = ..()
 	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
@@ -196,7 +197,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 			to_chat(user, span_danger("The crate's anti-tamper system activates!"))
 			var/turf/T = get_turf(src.loc)
 			explosion(T, 0, 0, 1, 2)
-			qdel(src)
+			spent(src)
 	return OP_OK
 
 /// The emag opens the crate.
@@ -417,6 +418,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 		/obj/item/capture_crystal
 	)
 
+// ALLOW(init/INSTANCE_STATE): rolls the capture crystal this pack starts with
 /obj/item/storage/backpack/sport/hyd/catchemall/Initialize(mapload) //gotta have your starter 'mon too (or an improved way to catch one)
 	. = ..()
 	var/path = pick(subtypesof(/obj/item/capture_crystal))

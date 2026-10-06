@@ -109,18 +109,18 @@
 	var/flags = LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING
 	switch(def.drop_policy)
 		if(SLOT_DROP_DELETE)
-			qdel(thing)
+			spent(thing)
 			return
 		if(SLOT_DROP_TO_LATENT)
 			var/atom/movable/target = def.latent_successor(holder)
 			if(target && !QDELETED(target))
 				var/list/blob = dq_stock_blob(thing)
 				if(target.latent_add(thing.type, 1, blob))
-					qdel(thing)
+					spent(thing)
 					return
 			// No successor yet (debris/wreckage not built here): the data
 			// would just be lost either way, so it goes with the holder.
-			qdel(thing)
+			spent(thing)
 			return
 		if(SLOT_DROP_KEEP_WITH)
 			if(successor && !QDELETED(successor))
@@ -139,7 +139,7 @@
 	if(drop && !QDELETED(drop))
 		dq_ledger_force_move(thing, drop, flags)
 	if(thing.loc == holder)
-		qdel(thing)
+		spent(thing)
 
 /// Drop policies for latent entries, as data (damage.md §6): deleted (and
 /// holder-kept) entries are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if

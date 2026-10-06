@@ -118,5 +118,5 @@ DECLARE_SHARED_CACHE(stock_pristine_hash, GLOBAL_PROC_REF(build_stock_pristine_h
 	var/atom/movable/sample = spawn_with_variant(path, null, variant)
 	var/list/blob = dq_stock_blob(sample)
 	if(istype(sample) && !QDELETED(sample))
-		qdel(sample)
+		spent(sample)
 	return blob ? state_hash(blob) : null

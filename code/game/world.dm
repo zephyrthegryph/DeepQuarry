@@ -296,8 +296,7 @@ GLOBAL_VAR(restart_counter)
 	#ifdef UI_TYPES_DUMP
 	// tools/build/lib/ui_types.ts: dump the declared UI tables, then stop.
 	ui_types_dump()
-	// ALLOW(lifecycle): the dump boot ends the world once its file is written, as the autowiki boot does.
-	qdel(world)
+	spent(world)
 	#endif
 
 /world/proc/HandleTestRun()
@@ -696,7 +695,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	world_next_tick(om_callable(null, GLOBAL_PROC_REF(world_finish_test_shutdown)))
 
 /proc/world_finish_test_shutdown()
-	qdel(world) //shut it down
+	spent(world) //shut it down
 
 /// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
 /// whose follow-up must run after they return, including after the MC has shut down.

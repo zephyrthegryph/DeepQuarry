@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 			if(_answer_k78 != "Yes")
 				return
 			if(istype(ghost.mind.current.loc, /obj/item/mmi))
-				qdel(ghost.mind.current.loc)
+				spent(ghost.mind.current.loc)
 		else
 			to_chat(ghost, span_warning("Your body is still alive, you cannot be resleeved."))
 			return

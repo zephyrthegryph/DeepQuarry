@@ -46,6 +46,7 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 2
 
+// ALLOW(init/CTOR_ARGS): my_factory is a constructor argument from whoever builds it
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
 		rel_set(src, nameof(factory), my_factory) // the pair adds us to factory.spores
@@ -112,7 +113,7 @@
 		src.overmind.blob_type.on_spore_lifetick(src)
 
 	if(src.factory && src.z != src.factory.z) // This is to prevent spores getting lost in space and making the factory useless.
-		qdel(src)
+		spent(src)
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE

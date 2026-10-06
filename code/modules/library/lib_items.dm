@@ -31,6 +31,7 @@ CAPABILITIES(/obj/structure/bookcase)
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
 		then(PROC_REF(title_shelf)))
 
+// ALLOW(init/INSTANCE_STATE): gathers the books the map placed on its tile
 /obj/structure/bookcase/Initialize(mapload)
 	. = ..()
 	for(var/obj/item/I in contents_of(loc))
@@ -139,34 +140,27 @@ Book Cart End
 /obj/structure/bookcase/manuals/medical
 	name = "Medical Manuals bookcase"
 
-/obj/structure/bookcase/manuals/medical/Initialize(mapload)
-	new /obj/item/book/manual/medical_cloning(src)
-	new /obj/item/book/manual/wiki/medical_diagnostics_manual(src)
-	new /obj/item/book/manual/wiki/medical_diagnostics_manual(src)
-	new /obj/item/book/manual/wiki/medical_diagnostics_manual(src)
-	. = ..()
-
+CAPABILITIES(/obj/structure/bookcase/manuals/medical)
+	initial_contents(/obj/item/book/manual/medical_cloning)
+	initial_contents(/obj/item/book/manual/wiki/medical_diagnostics_manual, count = 3)
 
 /obj/structure/bookcase/manuals/engineering
 	name = "Engineering Manuals bookcase"
 
-/obj/structure/bookcase/manuals/engineering/Initialize(mapload)
-	new /obj/item/book/manual/wiki/engineering_construction(src)
-	new /obj/item/book/manual/engineering_particle_accelerator(src)
-	new /obj/item/book/manual/wiki/engineering_hacking(src)
-	new /obj/item/book/manual/wiki/engineering_guide(src)
-	new /obj/item/book/manual/atmospipes(src)
-	new /obj/item/book/manual/engineering_singularity_safety(src)
-	new /obj/item/book/manual/evaguide(src)
-	. = ..()
+CAPABILITIES(/obj/structure/bookcase/manuals/engineering)
+	initial_contents(/obj/item/book/manual/wiki/engineering_construction)
+	initial_contents(/obj/item/book/manual/engineering_particle_accelerator)
+	initial_contents(/obj/item/book/manual/wiki/engineering_hacking)
+	initial_contents(/obj/item/book/manual/wiki/engineering_guide)
+	initial_contents(/obj/item/book/manual/atmospipes)
+	initial_contents(/obj/item/book/manual/engineering_singularity_safety)
+	initial_contents(/obj/item/book/manual/evaguide)
 
 /obj/structure/bookcase/manuals/research_and_development
 	name = "R&D Manuals bookcase"
 
-/obj/structure/bookcase/manuals/research_and_development/Initialize(mapload)
-	new /obj/item/book/manual/research_and_development(src)
-	. = ..()
-
+CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
+	initial_contents(/obj/item/book/manual/research_and_development)
 
 /*
  * Book

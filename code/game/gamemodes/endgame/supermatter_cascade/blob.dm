@@ -17,11 +17,11 @@
 	// Consume everything in our turf
 	for(var/atom/movable/A in turf_contents_of_type(src, /atom/movable))
 		if(isliving(A))
-			qdel(A)
+			spent(A)
 			continue
 		if(istype(A,/mob)) // Observers, AI cameras.
 			continue
-		qdel(A)
+		spent(A)
 
 /turf/unsimulated/wall/supermatter/attack_generic(mob/user as mob)
 	return attack_hand(user)
@@ -88,6 +88,6 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 	if(istype(user,/mob/observer))
 		return
 
-	qdel(user)
+	consumed(user)
 
 

@@ -4,7 +4,7 @@
 	organ_tag = O_INTESTINE
 	parent_organ = BP_GROIN
 
-/obj/item/organ/internal/intestine/handle_germ_effects()
+/obj/item/organ/internal/intestine/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

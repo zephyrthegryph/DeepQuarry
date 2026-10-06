@@ -37,7 +37,7 @@
 	L.process_chemicals() // Circulates chemicals throughout the body.
 	if(ishuman(L)) //Specialty human procs.
 		var/mob/living/carbon/human/human_being_pumped = L
-		human_being_pumped.process_organs() //Things like antibiotics will work. And since we're circulating, it makes infections get worse if we don't treat them!
+		human_being_pumped.organs_advance(1) //Things like antibiotics will work. And since we're circulating, it makes infections get worse if we don't treat them!
 		run_step_now(human_being_pumped, TYPE_PROC_REF(/mob/living/carbon/human, life_heartbeat), /datum/sequence/life) //We can hear our own heart being pumped! This makes a pretty neat sound effect.
 
 /datum/body_effect/bloodpump_corpse/on_check(mob/living/L)

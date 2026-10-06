@@ -40,6 +40,7 @@
 	var/obj/effect/alien/weeds/node/linked_node
 	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
+// ALLOW(init/CTOR_ARGS): node and newcolor are constructor arguments from whoever builds it
 /obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
 	. = ..()
 	if(isspace(loc) || delete_me)
@@ -87,7 +88,7 @@
 			if(!(existing.flags & ATOM_INITIALIZED))
 				existing.delete_me = TRUE
 				continue
-			qdel(existing)
+			spent(existing)
 
 	rel_set(src, nameof(linked_node), src)
 
@@ -188,15 +189,20 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return INTERACTION_HANDLED_PASS
 
-/obj/effect/alien/weeds/welder_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/effect/alien/weeds)
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+/obj/effect/alien/weeds/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_danger("%U% have been burned with %I% by %T%."), item = tool)
 	play_sfx(src, SFX_ITEMS_WELDER)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /// Old attack_hand: hulks tear the weeds up; hivenode carriers melt them on harm intent.
@@ -249,6 +255,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 CAPABILITIES(/obj/effect/alien/acid)
 	owns_one(nameof(target), /atom)
 
+// ALLOW(init/CTOR_ARGS): target is a constructor argument from whoever builds it
 /obj/effect/alien/acid/Initialize(mapload, target)
 	. = ..()
 	rel_set(src, nameof(target), target)
@@ -283,7 +290,7 @@ DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
 			var/turf/simulated/floor/T = target
 			T.ex_act(1)
 		else if(isobj(target))
-			qdel(target)
+			spent(target)
 		consume(src)
 		return REPEAT_STOP
 

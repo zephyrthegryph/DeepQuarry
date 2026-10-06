@@ -16,6 +16,7 @@ GLOBAL_LIST_EMPTY(shared_particles)
 	/// See \code\__DEFINES\particles.dm
 	var/particle_flags = NONE
 
+// ALLOW(init/CTOR_ARGS): particle_path and particle_flags are constructor arguments from whoever builds it
 /obj/effect/abstract/shared_particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
 	. = ..()
 	// Shouldn't exist outside of nullspace

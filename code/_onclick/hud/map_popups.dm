@@ -96,7 +96,7 @@
 	for(var/atom/movable/screen/screen_obj in screen_maps[map_name])
 		screen_maps[map_name] -= screen_obj
 		if(screen_obj.del_on_map_removal)
-			qdel(screen_obj)
+			spent(screen_obj)
 	screen_maps -= map_name
 
 /**

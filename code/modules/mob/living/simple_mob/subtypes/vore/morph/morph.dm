@@ -377,6 +377,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	var/datum/mind/prey_mind
 	vore_active = FALSE
 
+// ALLOW(init/CTOR_ARGS): pmind, parent and prey are constructor arguments from whoever builds it
 /mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, datum/mind/pmind, parent, prey)
 	. = ..()
 	if(!pmind)
@@ -430,7 +431,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 		return_bodies()
 		parent_morph.vore_selected.nom_atom(prey_body)
 		log_and_message_admins("and [key_name_admin(parent_morph)] have been returned to their original bodies. [get_area(src)] - [COORD(src)].", prey_body)
-	qdel(src)
+	dissolved(src)
 
 /// Each mind goes home: the morph's into the morph, the prey's into its body.
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/return_bodies()

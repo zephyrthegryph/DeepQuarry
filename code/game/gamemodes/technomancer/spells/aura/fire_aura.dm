@@ -19,7 +19,7 @@
 
 /obj/item/spell/aura/fire/periodic_step()
 	if(!pay_energy(100))
-		qdel(src)
+		spent(src)
 		return
 	var/list/nearby_things = range(round(calculate_spell_power(4)),owner_ref())
 

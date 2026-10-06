@@ -229,14 +229,14 @@ CAPABILITIES(/datum/generated_station_materialization)
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
 	if(transit_area && !QDELETED(transit_area))
-		qdel(transit_area)
+		spent(transit_area)
 	transit_area = null
 	if(maintenance_area())
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
 	if(maintenance_area && !QDELETED(maintenance_area))
-		qdel(maintenance_area)
+		spent(maintenance_area)
 	maintenance_area = null
 	for(var/list/by_id in list(department_areas, module_areas))
 		for(var/id in by_id)
@@ -288,7 +288,7 @@ CAPABILITIES(/datum/generated_station_materializer)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
 	var/datum/generated_station_materialization/materialization = job.execute(new_spec, new_z, origin_x, origin_y)
 	record_job_telemetry(job)
-	qdel(job)
+	spent(job)
 	return materialization
 
 /// materialize() as lane work (object_model_core.md §4.11): its phases run a budgeted slice at
@@ -456,7 +456,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 					intent.floor_type = room_floor_type
 			for(var/datum/generated_station_door_socket/socket in room.door_sockets)
 				tile_plan.claim_door(socket.x, socket.y, node.id, /obj/machinery/door/airlock, socket.direction, department_id)
-			qdel(definition)
+			spent(definition)
 		for(var/datum/generated_station_eva_vestibule/vestibule in node.eva_vestibules)
 			for(var/key in vestibule.tiles)
 				var/list/parts = splittext(key, ",")
@@ -551,7 +551,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			return abort_structural("tile-application")
 		for(var/atom/movable/occupant in contents_of(T))
 			if(!ismob(occupant))
-				qdel(occupant)
+				consumed(occupant, src)
 		switch(intent.structure_kind)
 			if(GENERATED_STATION_TILE_FLOOR)
 				T = T.ChangeTurf(intent.floor_type, tell_universe = FALSE)
@@ -751,7 +751,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 					if(generated_station_is_removable_decor(furnishing))
 						rel_remove(result, nameof(result.furnishings), furnishing)
 						own_take_member(result, nameof(result.owned_furnishing_atoms), furnishing)
-						qdel(furnishing)
+						spent(furnishing)
 						continue
 					// Some functional wall-side machinery is legitimately adjacent
 					// to one of a room's multiple doors. Keep it in place here; the
@@ -800,7 +800,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 					result.degradation_events += "removed [required_blocker.type] from [A.name] to preserve room access"
 					rel_remove(result, nameof(result.furnishings), required_blocker)
 					own_take_member(result, nameof(result.owned_furnishing_atoms), required_blocker)
-					qdel(required_blocker)
+					spent(required_blocker)
 					continue
 				if(install_emergency_room_access(A))
 					continue
@@ -813,7 +813,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				return FALSE
 			rel_remove(result, nameof(result.furnishings), removable)
 			own_take_member(result, nameof(result.owned_furnishing_atoms), removable)
-			qdel(removable)
+			spent(removable)
 			generation_checkpoint("Opening final room circulation", 55)
 	return TRUE
 
@@ -1285,7 +1285,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			if(T)
 				for(var/atom/movable/occupant in turf_contents_of_type(T, /atom/movable))
 					if(!ismob(occupant))
-						qdel(occupant)
+						spent(occupant)
 				T.ChangeTurf(/turf/space, tell_universe = FALSE)
 				ChangeArea(T, space_area)
 		CHECK_TICK

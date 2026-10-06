@@ -107,7 +107,7 @@
 		AM.forceMove(disposal_owner())
 	var/datum/gas_mixture/gas = new()
 	gas.copy_from(packet.gas)
-	qdel(packet)
+	spent(packet)
 	OM_EMIT(disposal_owner(), /datum/om/event/disposal_receive, expelled_items, gas)
 	return TRUE
 

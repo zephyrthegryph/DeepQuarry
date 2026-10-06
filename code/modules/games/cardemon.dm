@@ -7,6 +7,7 @@
 	icon_state = "card_pack_cardemon"
 	parentdeck = "cardemon"
 
+// ALLOW(init/INSTANCE_STATE): rolls the cards in this booster pack
 /obj/item/pack/cardemon/Initialize(mapload)
 	. = ..()
 	var/datum/playingcard/P

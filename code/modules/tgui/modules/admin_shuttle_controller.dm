@@ -7,7 +7,7 @@
 
 /datum/tgui_module/admin_shuttle_controller/tgui_close(mob/user)
 	. = ..()
-	qdel(src)
+	spent(src, user)
 
 CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	ref_one(nameof(moving), /datum/shuttle)

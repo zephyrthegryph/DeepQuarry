@@ -304,6 +304,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	B.selective_preference = DM_DIGEST
 	B.escape_stun = 3
 
+// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/Initialize(mapload)
 	. = ..()
 	color = random_color(TRUE)

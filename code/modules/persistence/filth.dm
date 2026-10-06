@@ -8,6 +8,6 @@
 	anchored = TRUE
 	persistent = TRUE
 
-/obj/effect/decal/cleanable/filth/Initialize(mapload)
-	. = ..()
-	alpha = rand(180,220)
+CAPABILITIES(/obj/effect/decal/cleanable/filth)
+	rolls(nameof(alpha), range_of(180, 220))
+

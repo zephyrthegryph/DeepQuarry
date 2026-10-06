@@ -123,6 +123,7 @@
 	var/pisces = ""
 	var/static/list/zodiacs = list("aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces")
 
+// ALLOW(init/INSTANCE_STATE): rolls this chart's horoscope readings
 /obj/item/entrepreneur/horoscope/Initialize(mapload)
 	. = ..()
 	var/stars = pick(stars_list)
@@ -357,10 +358,6 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 		if(80 to 1000)
 			. += span_info(span_red("The EMF reader is reading extremely high interference, reading [emf]mG."))
 
-/obj/item/entrepreneur/emf/Initialize(mapload)
-	. = ..()
-	emf = rand(1,100)
-
 /obj/item/entrepreneur/emf/periodic_step()
 	if(!ismob(loc))
 		return PROCESS_KILL
@@ -368,6 +365,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 
 CAPABILITIES(/obj/item/entrepreneur/emf)
 	op("scan", in_hand(), label("Read EMF scanner"), then(PROC_REF(emf_scan_requested)))
+	rolls(nameof(emf), range_of(1, 100))
 
 /obj/item/entrepreneur/emf/proc/emf_scan_requested(datum/act/op/A)
 	var/mob/user = A.actor
@@ -527,6 +525,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	icon_state = "crystal_pink"
 	w_class = ITEMSIZE_TINY
 
+// ALLOW(init/INSTANCE_STATE): rolls this crystal's colour
 /obj/item/entrepreneur/crystal/Initialize(mapload)
 	. = ..()
 	var/list/colour_choice = list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple")

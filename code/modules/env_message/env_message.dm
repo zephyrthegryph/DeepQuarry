@@ -119,7 +119,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 		if(answer == "Yes")
 			if(!(src.ckey in EM.message_list) || length(EM.message_list) > 1)
 				log_game("[key_name(src)] deleted an Env Message that contained other players' entries at ([EM.x], [EM.y], [EM.z])")
-			qdel(EM)
+			spent(EM)
 		else if(answer == "Only My Message")
 			clear_env_message(src.ckey)
 	else
@@ -199,7 +199,7 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 	for(var/obj/effect/env_message/env_message in world)
 		if(env_message.combined_message == chosen_message)
 			log_game("[key_name(user)] deleted an Env Message that contained other players' entries at ([env_message.x], [env_message.y], [env_message.z])")
-			qdel(env_message)
+			spent(env_message, user)
 
 /mob/living/proc/environment_create_answered(datum/act/request/context)
 	if(!context.answer)

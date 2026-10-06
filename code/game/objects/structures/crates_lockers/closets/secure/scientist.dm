@@ -13,13 +13,16 @@
 		/obj/item/clothing/suit/storage/hooded/wintercoat/science,
 		/obj/item/clothing/shoes/boots/winter/science)
 
-/obj/structure/closet/secure_closet/scientist/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sci
-	else
-		starts_with += /obj/item/storage/backpack/toxins
-	return ..()
+CAPABILITIES(/obj/structure/closet/secure_closet/scientist)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/scientist/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sci
+	else
+		. += /obj/item/storage/backpack/toxins
 
 /obj/structure/closet/secure_closet/research_director
 	name = "research director's locker"

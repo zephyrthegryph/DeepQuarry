@@ -15,7 +15,7 @@
 	if(existing)
 		LAZYOR(existing.sources, source)
 		existing.source_added(arglist(new_source_args))
-		qdel(src)
+		spent(src)
 		return FALSE
 
 	/* We are the original */

@@ -5,8 +5,10 @@
 
 //Overwrite because we dont want people building rods in space.
 // Old attackby: no building rods in transit space.
-EXTEND_INTERACTIONS(/turf/space/transit, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/space/transit)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
+// ALLOW(init/INSTANCE_STATE): points its transit animation the way the map pushes
 /turf/space/transit/Initialize(mapload)
 	. = ..()
 	toggle_transit(GLOB.reverse_dir[pushdirection])

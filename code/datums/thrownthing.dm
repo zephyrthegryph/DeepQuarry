@@ -220,7 +220,7 @@
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()
 
-	qdel(src)
+	spent(src)
 
 /datum/thrownthing/proc/hit_atom(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)

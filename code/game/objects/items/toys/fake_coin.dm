@@ -17,10 +17,6 @@
 	drop_sound = SFX_ITEMS_DROP_RING
 	pickup_sound = SFX_ITEMS_PICKUP_RING
 
-/obj/item/fake_coin/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
-
 /obj/item/fake_coin/gold
 	name = MAT_GOLD + " coin"
 	desc = "A shiny " + MAT_GOLD + " coin. Just like in the old movies with pirates!"
@@ -108,6 +104,7 @@
 
 CAPABILITIES(/obj/item/fake_coin)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /// Old attack_self.
 /obj/item/fake_coin/proc/interaction_self(datum/act/op/A)

@@ -27,7 +27,7 @@ CAPABILITIES(/datum/player_panel)
 
 /datum/player_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src, user)
 
 /datum/player_panel/proc/snapshot_players()
 	var/list/players = list()

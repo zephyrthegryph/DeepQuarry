@@ -107,10 +107,10 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	name = "offhand"
 
 /obj/item/oldtwohanded/offhand/unwield()
-	qdel(src)
+	spent(src)
 
 /obj/item/oldtwohanded/offhand/wield()
-	qdel(src)
+	spent(src)
 
 APPEARANCE_NONE(/obj/item/oldtwohanded/offhand)
 

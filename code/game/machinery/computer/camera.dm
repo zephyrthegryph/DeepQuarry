@@ -18,6 +18,7 @@
 CAPABILITIES(/obj/machinery/computer/security)
 	owns_one(nameof(camera), /datum/tgui_module/camera)
 
+// ALLOW(init/INSTANCE_STATE): its camera view is built for the networks the map gave it
 /obj/machinery/computer/security/Initialize(mapload)
 	. = ..()
 	if(!LAZYLEN(network))
@@ -104,6 +105,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, R
 
 CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	owns_one(nameof(radio), starts = /obj/item/radio)
+	click_on(PROC_REF(click_input))
 
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
 
@@ -147,9 +149,10 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	else if(operable())
 		radio?.on = TRUE
 
-/obj/machinery/computer/security/telescreen/entertainment/Click(location, control, params)
-	if(!handle_click_with_actor(usr, params)) // ALLOW(sys_usr_outside_verb): Native monitor click captures its actor while preserving conditional parent input routing.
-		..()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/machinery/computer/security/telescreen/entertainment/proc/click_input(datum/act/input/A)
+	if(!handle_click_with_actor(A.actor, A.params))
+		return INPUT_FALLTHROUGH
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/handle_click_with_actor(mob/user, params)
 	var/list/modifiers = params2list(params)

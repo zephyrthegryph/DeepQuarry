@@ -13,6 +13,7 @@
 CAPABILITIES(/obj/structure/AIcore)
 	owns_one(nameof(laws), /datum/ai_laws)
 
+// ALLOW(init/INSTANCE_STATE): a map-placed core starts with the map's default law set
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)
@@ -169,7 +170,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 					for(var/datum/language/L in A.identity().languages)
 						A.add_language(L.name)
 			feedback_inc("cyborg_ais_created",1)
-			qdel(src)
+			destroyed(src, user)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -250,7 +251,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 	if(card)
 		card.clear()
 
-	qdel(src)
+	spent(src, user)
 
 /obj/structure/AIcore/deactivated/proc/check_malf(mob/living/silicon/ai/ai)
 	if(!ai)

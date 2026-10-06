@@ -56,7 +56,17 @@
 	log_world("ToR data update aborted: no data.")
 
 ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", ADMIN_CATEGORY_SERVER_CONFIG)
-	var/task = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "What do you want to do?", title = "Select Option", choices = list("update","toggle","show","remove","remove all","find"))
+	// Replay input is only a synchronous answered request from this verb.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/admin_tor_menu_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(ToRban_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a1" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_tor_menu_replay, PROC_REF(ToRban_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", question = "What do you want to do?", title = "Select Option", choices = list("update","toggle","show","remove","remove all","find"))
+		return
+	var/task = replay_answers["a1"]
 	if(isnull(task))
 		return
 	switch(task)
@@ -136,3 +146,28 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 
 #undef TORFILE
 #undef TOR_UPDATE_INTERVAL
+
+/datum/prompt/choice/admin_tor_menu_replay
+	timeout = 0
+	rights = R_ADMIN|R_SERVER
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_tor_menu_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_tor_menu_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_tor_menu_replay/refusal(given)
+	return null
+
+/datum/admin_verb/ToRban/proc/ToRban_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

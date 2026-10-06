@@ -65,7 +65,7 @@
 				D.open()
 		if(istype(T,/turf/simulated/wall))
 			T.dismantle_wall(1)
-	qdel(src)
+	spent(src)
 
 CAPABILITIES(/obj/item/syndie/c4explosive)
 	op("link_detonator", item(/obj/item/flame/lighter/zippo/c4detonator), passes(), then(PROC_REF(detonator_linked)))
@@ -127,11 +127,16 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 			act_message(user, src, others = span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing."))
 
 
-/obj/item/flame/lighter/zippo/c4detonator/screwdriver_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/flame/lighter/zippo/c4detonator)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+/obj/item/flame/lighter/zippo/c4detonator/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_detonator_mode(!detonator_mode)
 	playsound(src, tool.usesound, 50, 1)
 	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Relation view: bomb (reads null once it is gone).
 /obj/item/flame/lighter/zippo/c4detonator/proc/bomb() as /obj/item/syndie/c4explosive

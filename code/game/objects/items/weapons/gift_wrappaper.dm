@@ -67,14 +67,18 @@ CAPABILITIES(/obj/item/gift)
 		return
 	to_chat(user, span_warning("You can't move."))
 
-/obj/effect/spresent/wirecutter_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/effect/spresent)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+
+/obj/effect/spresent/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You cut open the present."))
 
 	for(var/mob/M in contents_of(src)) //Should only be one but whatever.
 		M.forceMove(src.loc)
 
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction_open_gift)))
 
@@ -147,27 +151,30 @@ DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction
 	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
-DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/wrapping_paper)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/wrapping_paper/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/wrapping_paper/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if (!( locate(/obj/structure/table, src.loc) ))
 		to_chat(user, span_warning("You MUST put the paper on a table!"))
 	if (W.w_class >= ITEMSIZE_LARGE)
 		to_chat(user, span_warning("The object is FAR too large!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/I = user.get_inactive_hand()
 	if(!I?.has_tool_quality(TOOL_WIRECUTTER))
 		to_chat(user, span_warning("You need scissors!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/a_used = 2 ** (src.w_class - 1)
 	if (src.amount < a_used)
 		to_chat(user, span_warning("You need more paper!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/smallDelivery) || istype(W, /obj/item/gift)) //No gift wrapping gifts!
 		to_chat(user, span_warning("You can't wrap something that's already wrapped!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	src.amount -= a_used
 	user.drop_item()
@@ -183,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 
 	if(src.amount <= 0)
 		replace_with(src, /obj/item/c_tube)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/wrapping_paper/examine(mob/user)
 	. = ..()
@@ -221,6 +228,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 	var/chaos
 	special_handling = TRUE
 
+// ALLOW(init/INSTANCE_STATE): icon_state, chaos, name and desc rolled at random for each instance
 /obj/item/a_gift/advanced/Initialize(mapload)
 	. = ..()
 	if(prob(1))

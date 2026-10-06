@@ -163,6 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
 	return gen
 
+// ALLOW(init/CTOR_ARGS): d is a constructor argument from whoever builds it
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(isnum(d))
@@ -567,7 +568,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
 		own_take_member(src, nameof(component_parts), C)
-		qdel(C)
+		spent(C)
 		// Made in nullspace: new(src) already put it inside, and the move then refused ("it is already there").
 		C = new /obj/item/cell/high()
 		move_into(src, CONTAINER_SLOT_INTERNALS, C)
@@ -683,7 +684,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	A.update_desc()
 	A.update_icon()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
-	qdel(src)
+	destroyed(src)
 	return 1
 
 /**

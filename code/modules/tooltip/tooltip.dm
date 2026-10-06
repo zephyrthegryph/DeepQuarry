@@ -41,6 +41,8 @@
 CAPABILITIES(/datum/tooltip)
 	op("dismiss", ui_act(), then(PROC_REF(ui_act_dismiss)))
 	owns_one(nameof(tooltip_window), /datum/tgui_window)
+	interface("Tooltip", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
+	ui_shape(visible = num(), control = schema_text(), title = schema_text(), theme = schema_text(), cursor_params = schema_text(), screen_loc = schema_text(), view_w = num(), view_h = num(), revision = num(), tile_size = any)
 
 /datum/tooltip/New(client/C)
 	if(!C)
@@ -61,12 +63,8 @@ CAPABILITIES(/datum/tooltip)
 		window.close()
 	return ..()
 
-DECLARE_UI_STATE(/datum/tooltip, GLOB.tgui_always_state)
-
-UI_DATA_REPLACE(/datum/tooltip, "merge:ui_data_datum_tooltip{visible:num,control:text,title:text,theme:text,cursor_params:text,screen_loc:text,view_w:num,view_h:num,revision:num,tile_size:unknown}")
-
 /// The computed part of /datum/tooltip's window data (declared on its UI_DATA row).
-/datum/tooltip/proc/ui_data_datum_tooltip(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tooltip/ui_data(datum/act/eval/A)
 	return list(
 		"visible" = _visible,
 		"control" = control,
@@ -81,8 +79,6 @@ UI_DATA_REPLACE(/datum/tooltip, "merge:ui_data_datum_tooltip{visible:num,control
 		// world.icon_size was overridden, so we ship it directly.
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
 	)
-
-DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 
 /// Renders in the client's persistent tooltip browser element.
 /datum/tooltip/ui_window(mob/user)

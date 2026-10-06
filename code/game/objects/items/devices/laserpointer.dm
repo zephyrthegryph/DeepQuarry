@@ -31,6 +31,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 
 TYPE_TABLE_DECLARE(/obj/item/laser_pointer, pointer_forced_diode, null)
 
+// ALLOW(init/CTOR_ARGS): laser_path is a constructor argument from whoever builds it
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	var/forced_diode = TYPE_TABLE_GET(src, pointer_forced_diode)
 	if(forced_diode)
@@ -57,6 +58,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 	op("item", item(/obj/item/stock_parts/micro_laser), label("Install"), then(PROC_REF(interaction_item)))
 	// The battery trickles back while recharging.
 	every(2 SECONDS, then(PROC_REF(laser_pointer_step)), when = nameof(recharging))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/laser_pointer/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -69,13 +71,14 @@ CAPABILITIES(/obj/item/laser_pointer)
 		to_chat(user, span_notice("[src] already has a diode."))
 	return TRUE
 
-/obj/item/laser_pointer/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/laser_pointer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!diode)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
 	own_take(src, nameof(diode))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)
 	if(flag)	//we're placing the object on a table or in backpack

@@ -68,7 +68,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 			else
 				var/D = S.dried_type
 				new D(get_turf(src))
-				qdel(S)
+				spent(S)
 			return
 
 		for(var/obj/item/stack/wetleather/WL in I.instances)

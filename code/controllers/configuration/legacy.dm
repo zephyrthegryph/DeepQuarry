@@ -18,7 +18,7 @@
 				//mode_false_report_weight[M.config_tag] = M.false_report_weight
 				if(M.votable)
 					votable_modes += M.config_tag
-		qdel(M)
+		consumed(M, src)
 	votable_modes += "extended"
 
 /datum/controller/configuration/proc/pick_mode(mode_name)
@@ -39,10 +39,10 @@
 	for(var/T in gamemode_cache)
 		var/datum/game_mode/M = new T()
 		if(!(M.config_tag in modes))
-			qdel(M)
+			spent(M)
 			continue
 		if(probabilities[M.config_tag] <= 0)
-			qdel(M)
+			spent(M)
 			continue
 		if(M.can_start())
 			var/final_weight = probabilities[M.config_tag]

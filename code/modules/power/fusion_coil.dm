@@ -58,7 +58,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/fusion_coil, TYPE_PROC_REF(/atom, appearance_o
 	if(coil_damaged)
 		visible_message(span_danger("\The [src] explodes in a blinding flash!"))
 		explosion(src.loc, 0, 1, 3)
-		qdel(src)
+		destroyed(src)
 		return
 
 	visible_message(span_danger("\The [src] sparks and sputters!"))

@@ -16,7 +16,7 @@
 	for(var/mission_type in GLOB.expedition_mission_types)
 		var/datum/expedition_mission/preview = new mission_type()
 		choices[preview.name] = mission_type
-		qdel(preview)
+		spent(preview, user)
 	var/choice = rerun_ask(user, "k105", PROC_REF(plot_for_vessel), args, /datum/om/prompt/choice, message = "Select an expedition contract", title = "Flight Operations", choices = choices)
 	if(isnull(choice))
 		return
@@ -37,7 +37,7 @@
 	mission.faction_type = expedition_pick_faction(difficulty)
 	var/datum/expedition_site/site = create_site_descriptor(mission, difficulty, vessel.shuttle())
 	if(!site)
-		qdel(mission)
+		spent(mission, user)
 		to_chat(user, span_warning("Flight Operations could not survey a viable destination."))
 		return null
 	rel_set(site, nameof(site.assigned_flight_vessel), vessel)
@@ -63,7 +63,7 @@
 	else
 		if(site.flight_destination_id)
 			SSflight?.unregister_destination(site.flight_destination_id)
-		qdel(site)
+		spent(site, user)
 	to_chat(user, span_notice("The expedition assignment has been abandoned."))
 	return TRUE
 
@@ -122,7 +122,7 @@
 		var/datum/generated_station_planner/planner = new
 		station_spec = planner.plan(attempt_seed)
 		var/planner_error = planner.error_message
-		qdel(planner)
+		spent(planner)
 		if(!station_spec)
 			log_world("Expedition: generated-station planning attempt [attempt] failed on z[z] (seed [attempt_seed]): [planner_error || "no specification"].")
 			continue
@@ -134,12 +134,12 @@
 		materialization_yields += materializer.last_yield_count
 		materialization_elapsed += materializer.last_elapsed_seconds
 		var/materialization_error = materializer.last_failure_details
-		qdel(materializer)
+		spent(materializer)
 		if(station_materialization)
 			generation_seed = attempt_seed
 			break
 		log_world("Expedition: generated-station materialization attempt [attempt] failed on z[z] (seed [attempt_seed]): [materialization_error || "no result"].")
-		qdel(station_spec)
+		spent(station_spec)
 		station_spec = null
 		wipe_z(z)
 	return publish_generated_site(mission, difficulty, assigned_shuttle, origin_console, flight_plan, z, gen_started, t_zalloc, generation_seed, station_spec, station_materialization, materialization_yields, materialization_elapsed)

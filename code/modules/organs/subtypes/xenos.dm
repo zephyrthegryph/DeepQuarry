@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/eggsac/grey/colormatch)
 		/mob/living/carbon/human/proc/transfer_plasma
 		)
 
-/obj/item/organ/internal/xenos/plasmavessel/handle_organ_proc_special()
+/obj/item/organ/internal/xenos/plasmavessel/handle_organ_proc_special(cycles)
 	if(!istype(owner))
 		return
 

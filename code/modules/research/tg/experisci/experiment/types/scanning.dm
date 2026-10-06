@@ -89,7 +89,7 @@
 		else
 			scanned[contributing_index_value] += traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? 1 : ref(target)
 		if(traits & EXPERIMENT_TRAIT_DESTRUCTIVE && !isliving(target))//only qdel things when destructive scanning and they're not living (living things get gibbed)
-			qdel(target)
+			spent(target, user)
 		do_after_experiment(target, contributing_index_value)
 		return TRUE
 

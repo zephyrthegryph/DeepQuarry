@@ -68,7 +68,7 @@
 	dead_icon = null
 	standard_pulse_level = PULSE_NONE
 
-/obj/item/organ/internal/heart/grey/colormatch/slime/periodic_step()
+/obj/item/organ/internal/heart/grey/colormatch/slime/organ_tick(cycles)
 	..()
 	if(!(QDELETED(src)) && !owner)
 		visible_message(span_infoplain(span_bold("\The [src]") + " splatters!"))
@@ -77,7 +77,7 @@
 
 		B.basecolor = src.color
 		B.update_icon()
-		qdel(src)
+		spent(src)
 
 /obj/item/organ/internal/regennetwork
 	name = "pneumoregenesis network"
@@ -114,7 +114,7 @@
 
 	strain = CLAMP(strain + amount, 0, min_broken_damage)
 
-/obj/item/organ/internal/regennetwork/periodic_step()
+/obj/item/organ/internal/regennetwork/organ_tick(cycles)
 	..()
 
 	if(!(QDELETED(src)) && !owner)
@@ -124,7 +124,7 @@
 
 		B.basecolor = src.color
 		B.update_icon()
-		qdel(src)
+		spent(src)
 
 	if(src && !is_bruised())
 		adjust_strain(-0.25 * max(0, (min_broken_damage - damage) / min_broken_damage)) // Decrease the current strain with respect to the current strain level.

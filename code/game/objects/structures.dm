@@ -38,7 +38,7 @@
 /obj/structure/atom_destruction(damage_flag)
 	. = ..()
 	if(!QDELETED(src))
-		qdel(src)
+		destroyed(src)
 
 /obj/structure/proc/can_touch(mob/user)
 	if (!user)

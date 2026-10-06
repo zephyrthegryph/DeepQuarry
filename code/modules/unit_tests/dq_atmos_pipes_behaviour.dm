@@ -28,10 +28,21 @@
 /// Time for a meter to follow its pipe's gas.
 /proc/ap_meter_settle(obj/machinery/meter/M)
 	var/before = M.needle
-	for(var/i in 1 to 60)
+	for(var/i in 1 to 300)
 		SSair.run_gas_frames(1)
 		native_system().drain()
 		if(M.needle != before)
+			break
+		stoplag()
+	am_settle()
+
+/// Time for the algae farm's own work (one service interval of it).
+/proc/ap_algae_tick(obj/machinery/atmospherics/binary/algae_farm/F)
+	var/was = F.working
+	for(var/i in 1 to 300)
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		if(F.working != was)
 			break
 		stoplag()
 	am_settle()
@@ -732,4 +743,132 @@
 	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe_meter) in P.loc, "as its item")
 	for(var/obj/item/pipe_meter/I in P.loc)
 		qdel(I)
+	take_down_lines()
+
+// =====================================================================================================================
+// Pipe fittings
+// =====================================================================================================================
+
+/// A wrench fastens a pipe fitting into its pipe (joined to the pipe beside it), and a meter onto that pipe; a fitting where a pipe already runs
+/// is refused.
+/datum/unit_test/dq_atmos_m/pipes/fitting_fastens
+/datum/unit_test/dq_atmos_m/pipes/fitting_fastens/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/pipe/simple/visible)
+	var/obj/machinery/atmospherics/pipe/right = line[3]
+	var/mob/living/carbon/human/H = person(null, tile(4, 2))
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(4, 2))
+	qdel(locate(/obj/machinery/atmospherics/pipe/cap) in tile(4, 3))
+	am_settle()
+	var/obj/item/pipe/F = new /obj/item/pipe/binary/bendable(tile(4, 3), /obj/machinery/atmospherics/pipe/simple/visible, EAST)
+	F.setPipingLayer(PIPING_LAYER_REGULAR)
+	var/datum/op_result/R = ap_click(H, F, W)
+	TEST_ASSERT(QDELETED(F), "the fitting is fastened ([R?.outcome] [R?.key] [R?.reason])")
+	var/obj/machinery/atmospherics/pipe/simple/visible/built = locate() in tile(4, 3)
+	TEST_ASSERT_NOTNULL(built, "into its pipe")
+	TEST_ASSERT(built.node1 == right || built.node2 == right, "joined to the pipe beside it")
+	var/obj/item/pipe/second = new /obj/item/pipe/binary/bendable(tile(4, 3), /obj/machinery/atmospherics/pipe/simple/visible, EAST)
+	second.setPipingLayer(PIPING_LAYER_REGULAR)
+	ap_click(H, second, W)
+	TEST_ASSERT(!QDELETED(second), "a fitting where a pipe already runs is refused")
+	qdel(second)
+	var/obj/item/pipe_meter/M = new(tile(4, 3))
+	M.setAttachLayer(PIPING_LAYER_REGULAR)
+	ap_click(H, M, W)
+	TEST_ASSERT(QDELETED(M), "a meter item fastens onto the pipe")
+	for(var/obj/machinery/meter/placed in tile(4, 3))
+		qdel(placed)
+	qdel(built)
+	take_down_lines()
+
+// =====================================================================================================================
+// The algae farm
+// =====================================================================================================================
+
+/// Switched on with algae and carbon dioxide on its input, the farm turns the CO2 into oxygen on its output and graphite in its store; out of
+/// CO2 it stops, and new CO2 starts it again.
+/datum/unit_test/dq_atmos_m/pipes/algae_farm_converts
+/datum/unit_test/dq_atmos_m/pipes/algae_farm_converts/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/binary/algae_farm/filled)
+	var/obj/machinery/atmospherics/binary/algae_farm/filled/F = line[2]
+	var/mob/living/carbon/human/H = person()
+	F.air1.adjust_gas(GAS_CO2, 5)
+	gas_touched(F.air1)
+	ap_press(src, H, F, "toggle")
+	TEST_ASSERT_EQUAL(F.use_power, USE_POWER_ACTIVE, "the button switches its grow lights on")
+	for(var/i in 1 to 3)
+		ap_algae_tick(F)
+	TEST_ASSERT(F.air2.get_moles(GAS_O2) > 0.5, "oxygen comes out ([F.air2.get_moles(GAS_O2)])")
+	TEST_ASSERT(F.stored_material[MAT_GRAPHITE] > 0, "graphite is stored")
+	var/algae = F.stored_material[MAT_ALGAE]
+	F.air1.adjust_gas(GAS_CO2, -F.air1.get_moles(GAS_CO2))
+	gas_touched(F.air1)
+	for(var/i in 1 to 3)
+		ap_algae_tick(F)
+	TEST_ASSERT(F.ui_error, "out of CO2 it says so")
+	var/algae_idle = F.stored_material[MAT_ALGAE]
+	ap_algae_tick(F)
+	TEST_ASSERT_EQUAL(F.stored_material[MAT_ALGAE], algae_idle, "and uses no algae")
+	F.air1.adjust_gas(GAS_CO2, 5)
+	gas_touched(F.air1)
+	for(var/i in 1 to 3)
+		ap_algae_tick(F)
+	TEST_ASSERT(F.stored_material[MAT_ALGAE] < algae_idle, "new CO2 starts it again")
+	take_down_lines()
+
+// =====================================================================================================================
+// The gas turbine
+// =====================================================================================================================
+
+/// Bolted down with a pressure head across it, a turbine spins up and its two sides draw together; unbolted, it stops.
+/datum/unit_test/dq_atmos_m/pipes/turbine_spins
+/datum/unit_test/dq_atmos_m/pipes/turbine_spins/run_gate()
+	var/obj/machinery/atmospherics/pipeturbine/T = allocate(/obj/machinery/atmospherics/pipeturbine, tile(3, 3))
+	var/mob/living/carbon/human/H = person(null, tile(2, 3))
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 3))
+	T.air_in.adjust_gas(GAS_N2, 200)
+	heat_set(T.air_in, T20C, HEAT_SOURCE_OTHER)
+	var/head = T.air_in.return_pressure() - T.air_out.return_pressure()
+	ap_click(H, T, W)
+	TEST_ASSERT(T.anchored, "the wrench bolts it down")
+	for(var/i in 1 to 3)
+		am_settle()
+	TEST_ASSERT(T.kin_energy > 0, "the head spins it ([T.kin_energy])")
+	var/after = T.air_in.return_pressure() - T.air_out.return_pressure()
+	TEST_ASSERT(abs(after) < head * 0.1, "and draws its sides together ([head] kPa -> [after] kPa)")
+	ap_click(H, T, W)
+	TEST_ASSERT(!T.anchored, "the wrench frees it")
+
+// =====================================================================================================================
+// Heat-exchanging pipes
+// =====================================================================================================================
+
+/// A run of heat-exchanging pipes whose gas turns hot starts glowing (its sleeping glow watch wakes it), and settles once it shows its gas.
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_glows
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_glows/run_gate()
+	var/list/made = list()
+	for(var/i in 1 to 3)
+		var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tile(i, 3))
+		P.set_dir(EAST)
+		P.init_dir()
+		made += P
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	LAZYADD(ap_lines, made)
+	am_settle()
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/middle = made[2]
+	TEST_ASSERT_NOTNULL(middle.parent, "the run is one pipeline")
+	TEST_ASSERT(!middle.tending, "cool, it has nothing to do")
+	var/datum/gas_mixture/air = middle.parent.air
+	air.adjust_gas(GAS_N2, 20)
+	heat_set(air, 1200, HEAT_SOURCE_OTHER)
+	gas_touched(air)
+	for(var/i in 1 to 60)
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		if(middle.icon_temperature > 500)
+			break
+		stoplag()
+		am_settle()
+	TEST_ASSERT(middle.icon_temperature > 500, "hot, it glows ([middle.icon_temperature] K)")
 	take_down_lines()

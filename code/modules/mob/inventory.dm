@@ -216,7 +216,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		return 0
 	if(W.equip_refusal(src, slot, disable_warning, ignore_obstructions) || !equip_to_slot(W, slot, redraw_mob))
 		if(del_on_fail)
-			qdel(W)
+			spent(W)
 		else if(!disable_warning)
 			to_chat(src, span_red("You are unable to equip that.")) //Only print if del_on_fail is false
 		return 0

@@ -265,7 +265,6 @@
 		"life_breathing",
 		"life_mutations",
 		"life_radiation",
-		"life_blood",
 		"life_random_events",
 		"life_afk",
 		"life_chemicals",
@@ -282,11 +281,9 @@
 		"life_stasis_sleep",
 		"life_fall",
 		"life_changeling",
-		"life_organs",
 		"life_thermoregulation",
 		"life_weight",
 		"life_shock",
-		"life_pain",
 		"life_medical",
 		"life_heartbeat",
 		"life_nif",
@@ -1138,7 +1135,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	seq_run_frame_now(H, LIFE_SEQ)
-	for(var/key in list("life_germs", "life_fall", "life_pulse", "life_pain", "life_stasis_sleep"))
+	for(var/key in list("life_germs", "life_fall", "life_pulse", "life_stasis_sleep"))
 		TEST_ASSERT(key in life_test_steps(H), "a human's table has [key]")
 		TEST_ASSERT(life_test_asleep(H, key), "[key] should sleep on a healthy human")
 

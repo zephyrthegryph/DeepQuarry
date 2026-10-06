@@ -58,7 +58,7 @@
 		return
 	if(len > TGUI_TELEMETRY_MAX_CONNECTIONS)
 		message_admins("[key_name(client())] was kicked for sending a huge telemetry payload")
-		qdel(client())
+		spent(client())
 		return
 
 	var/ckey = client()?.ckey

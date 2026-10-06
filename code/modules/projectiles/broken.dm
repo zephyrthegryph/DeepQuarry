@@ -15,6 +15,7 @@ CAPABILITIES(/obj/item/broken_gun)
 
 TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 
+// ALLOW(init/CTOR_ARGS): path is a constructor argument from whoever builds it
 /obj/item/broken_gun/Initialize(mapload, path)
 	var/forced_type = TYPE_TABLE_GET(src, broken_gun_forced_type)
 	if(forced_type)

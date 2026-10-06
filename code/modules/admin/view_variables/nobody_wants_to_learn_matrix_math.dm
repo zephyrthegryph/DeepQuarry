@@ -17,7 +17,7 @@
 
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_close(mob/user)
-	qdel(src)
+	spent(src, user)
 
 CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 	interface("MatrixMathTester", rights = R_VAREDIT)

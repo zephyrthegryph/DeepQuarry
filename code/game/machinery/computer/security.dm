@@ -287,7 +287,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		return FALSE
 	. = TRUE
 	for(var/datum/data/record/R in GLOB.data_core.security)
-		qdel(R)
+		spent(R)
 	set_temp("All security records deleted.")
 
 /obj/machinery/computer/secure_data/proc/ui_act_del_r(datum/act/op/A)
@@ -297,7 +297,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	. = TRUE
 	if(active2())
 		set_temp("Security record deleted.")
-		qdel(active2())
+		spent(active2())
 
 /obj/machinery/computer/secure_data/proc/ui_act_del_r_2(datum/act/op/A)
 	. = TRUE
@@ -308,10 +308,10 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		set_temp("All records for [active1().fields["name"]] deleted.")
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
-				qdel(R)
-		qdel(active1())
+				spent(R)
+		spent(active1())
 	if(active2())
-		qdel(active2())
+		spent(active2())
 
 /obj/machinery/computer/secure_data/proc/ui_act_sync_r(datum/act/op/A)
 	. = TRUE
@@ -673,7 +673,7 @@ DAMAGE_REACTION(/obj/machinery/computer/secure_data, DAMAGE_EMP, PROC_REF(secure
 			continue
 
 		else if(prob(1))
-			qdel(R)
+			spent(R)
 			continue
 
 /obj/machinery/computer/secure_data/detective_computer

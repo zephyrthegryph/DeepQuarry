@@ -122,7 +122,7 @@
 		item.forceMove(get_turf(src))
 
 	//delete our self
-	qdel(src)
+	destroyed(src)
 
 ///what happens when the obj's integrity reaches zero.
 /// Destruction (damage.md §6): debris entries first, then each slot's drop policy.

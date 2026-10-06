@@ -45,7 +45,7 @@
 /obj/item/tk_grab/equipped(mob/user, slot)
 	..()
 	if( (slot == SLOT_ID_HAND_L) || (slot== SLOT_ID_HAND_R) )	return
-	qdel(src)
+	spent(src, user)
 	return
 
 CAPABILITIES(/obj/item/tk_grab)
@@ -105,7 +105,7 @@ CAPABILITIES(/obj/item/tk_grab)
 				var/obj/item/clothing/gloves/telekinetic/TKG = H_user.get_equipped_item(SLOT_ID_GLOVES)
 				TKG.use_grip_power(user,TRUE)
 				if(!TKG.has_grip_power())
-					qdel(src) // Drop TK
+					spent(src, user) // Drop TK
 	return
 
 /obj/item/tk_grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

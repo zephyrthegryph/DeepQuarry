@@ -123,15 +123,18 @@
 		/obj/item/clothing/accessory/bodycam)
 
 
-/obj/structure/closet/secure_closet/hos/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/security
-	else
-		starts_with += /obj/item/storage/backpack/satchel/sec
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sec
-	return ..()
+CAPABILITIES(/obj/structure/closet/secure_closet/hos)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/hos/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/security
+	else
+		. += /obj/item/storage/backpack/satchel/sec
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sec
 
 /obj/structure/closet/secure_closet/warden
 	name = "warden's locker"
@@ -187,14 +190,18 @@
 
 		)
 
-/obj/structure/closet/secure_closet/warden/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/security
+CAPABILITIES(/obj/structure/closet/secure_closet/warden)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/warden/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/security
 	else
-		starts_with += /obj/item/storage/backpack/satchel/sec
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sec
-	return ..()
+		. += /obj/item/storage/backpack/satchel/sec
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sec
 
 /obj/structure/closet/secure_closet/security
 	name = "security officer's locker"
@@ -228,16 +235,20 @@
 		/obj/item/clothing/mask/gas/sechailer,
 		/obj/item/flashlight/maglight)
 
-/obj/structure/closet/secure_closet/security/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/security
+CAPABILITIES(/obj/structure/closet/secure_closet/security)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/security/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/security
 	else
-		starts_with += /obj/item/storage/backpack/satchel/sec
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sec
-	if(prob(30))
-		starts_with += /obj/item/poster/nanotrasen
-	return ..()
+		. += /obj/item/storage/backpack/satchel/sec
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sec
+	if(R.chance(30))
+		. += /obj/item/poster/nanotrasen
 
 /obj/structure/closet/secure_closet/security/cargo/Initialize(mapload)
 	starts_with += /obj/item/clothing/accessory/armband/cargo
@@ -462,14 +473,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 		/obj/item/clothing/shoes/boots/jackboots,
 		/obj/item/clothing/shoes/boots/jackboots/toeless)
 
-/obj/structure/closet/secure_closet/nanotrasen_security/Initialize(mapload)
-	if(prob(25))
-		starts_with += /obj/item/storage/backpack/security
+CAPABILITIES(/obj/structure/closet/secure_closet/nanotrasen_security)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/nanotrasen_security/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(25))
+		. += /obj/item/storage/backpack/security
 	else
-		starts_with += /obj/item/storage/backpack/satchel/sec
-	if(prob(75))
-		starts_with += /obj/item/storage/backpack/dufflebag/sec
-	return ..()
+		. += /obj/item/storage/backpack/satchel/sec
+	if(R.chance(75))
+		. += /obj/item/storage/backpack/dufflebag/sec
 
 /obj/structure/closet/secure_closet/nanotrasen_commander
 	name = "NanoTrasen commander's locker"
@@ -512,14 +527,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 		/obj/item/clothing/shoes/boots/jackboots/toeless,
 		/obj/item/clothing/under/nanotrasen/security/commander)
 
-/obj/structure/closet/secure_closet/nanotrasen_commander/Initialize(mapload)
-	if(prob(25))
-		starts_with += /obj/item/storage/backpack/security
+CAPABILITIES(/obj/structure/closet/secure_closet/nanotrasen_commander)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/nanotrasen_commander/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(25))
+		. += /obj/item/storage/backpack/security
 	else
-		starts_with += /obj/item/storage/backpack/satchel/sec
-	if(prob(75))
-		starts_with += /obj/item/storage/backpack/dufflebag/sec
-	return ..()
+		. += /obj/item/storage/backpack/satchel/sec
+	if(R.chance(75))
+		. += /obj/item/storage/backpack/dufflebag/sec
 
 /obj/structure/closet/secure_closet/nanotrasen_warden
 	name = "NanoTrasen warden's locker"

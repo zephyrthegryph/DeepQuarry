@@ -131,6 +131,7 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	icon = 'icons/obj/clothing/ranger.dmi'
 	icon_state = "ranger_gloves"
 
+// ALLOW(init/INSTANCE_STATE): its name and sprite follow the glove colour it was given
 /obj/item/clothing/gloves/ranger/Initialize(mapload)
 	. = ..()
 	if(icon_state == "ranger_gloves")

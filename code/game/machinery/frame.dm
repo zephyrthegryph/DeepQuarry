@@ -354,6 +354,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 		var/obj/ct = ct_path
 		req_component_names[ct_path] = initial(ct.name)
 
+// ALLOW(init/CTOR_ARGS): dir, building, type and user are constructor arguments from whoever builds it
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
 	if(building)

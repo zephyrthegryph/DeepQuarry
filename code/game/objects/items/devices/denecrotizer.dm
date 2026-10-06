@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 		D.mind.transfer_to(src)
 	else
 		src.ckey = D.ckey
-	qdel(D)
+	spent(D)
 
 	// Clean up the simplemob
 	ghostjoin = FALSE

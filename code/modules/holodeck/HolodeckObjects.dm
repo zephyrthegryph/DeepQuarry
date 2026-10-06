@@ -111,6 +111,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 	base_icon = 'icons/turf/flooring/asteroid.dmi'
 	initial_flooring = null
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this tile shows rocks
 /turf/simulated/floor/holofloor/desert/Initialize(mapload)
 	. = ..()
 	if(prob(10))
@@ -191,7 +192,7 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 		if(isliving(G?.grab_target()))
 			var/mob/living/M = G?.grab_target()
 			var/state = G.state
-			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
+			consumed(W, src)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
@@ -462,7 +463,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 
 	currentarea = get_area(src.loc) // a location: a plain var
 	if(!currentarea())
-		qdel(src)
+		spent(src, user)
 		return TRUE
 
 	if(eventstarted)
@@ -491,7 +492,7 @@ DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARAN
 	eventstarted = 1
 
 	for(var/obj/structure/window/reinforced/holowindow/disappearing/W in currentarea())
-		qdel(W)
+		spent(W)
 
 	for(var/mob/M in currentarea())
 		to_chat(M, "FIGHT!")

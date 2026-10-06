@@ -129,6 +129,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 	op("auto_eject_dead_on", ui_act("auto_eject_dead_on"), sets(nameof(auto_eject_dead), TRUE))
 	op("auto_eject_dead_off", ui_act("auto_eject_dead_off"), sets(nameof(auto_eject_dead), FALSE))
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -322,7 +323,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 		occupantData["critical"] = occupant.is_critical()
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
-		qdel(D)
+		spent(D)
 		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.body_temperature()
@@ -414,6 +415,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 /obj/machinery/sleeper/survival_pod
 	stasis_rate = 0.01 //Just one setting: complete stasis
 
+// ALLOW(init/INSTANCE_STATE): sizes itself from the parts this pod was built with
 /obj/machinery/sleeper/survival_pod/Initialize(mapload)
 	. = ..()
 	RefreshParts(1)

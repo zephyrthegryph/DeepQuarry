@@ -61,7 +61,7 @@
 	if(buckled && buckled.buckle_require_restraints)
 		buckled.unbuckle_mob()
 
-	qdel(I)
+	spent(I)
 
 /mob/living/carbon/proc/cuff_resist_carbon_failed(obj/item/handcuffs/I)
 	to_chat(src, span_warning("You fail to break [I]."))

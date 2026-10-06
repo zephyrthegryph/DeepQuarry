@@ -25,7 +25,7 @@ GLOBAL_LIST_INIT(modules, list( \
 	var/mneed = GLOB.mods.inmodlist(type)		// find if this type has modules defined
 
 	if(!mneed)		// not found in module list?
-		qdel(src)
+		spent(src)
 		return
 
 	var/needed = GLOB.mods.getbitmask(type)		// get a bitmask for the number of modules in this object

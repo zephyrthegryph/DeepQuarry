@@ -92,7 +92,7 @@
 
 	var/obj/item/material/twohanded/spear/S = result
 	S.set_material(M.material.name)
-	qdel(M)
+	spent(M, user)
 
 /datum/crafting_recipe/surgerytable
 	name = "surgery table"

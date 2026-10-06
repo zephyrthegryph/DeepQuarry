@@ -48,6 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(intera
 	var/bstate = 0
 	var/plaque_contents = "Unnamed alien creature"
 
+// ALLOW(init/INSTANCE_STATE): rolls how many bones it still needs
 /obj/skeleton/Initialize(mapload)
 	. = ..()
 	breq = rand(6)+3
@@ -144,6 +145,10 @@ CAPABILITIES(/datum/prompt/text/skeleton_plaque)
 	desc = "It's fossilised plant remains."
 	animal = 0
 
-/obj/item/fossil/plant/Initialize(mapload)
-	. = ..()
-	icon_state = "plant[rand(1,4)]"
+CAPABILITIES(/obj/item/fossil/plant)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/fossil/plant/proc/roll_icon_state(datum/roller/R)
+	return "plant[R.number(1, 4)]"
+

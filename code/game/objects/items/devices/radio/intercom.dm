@@ -54,6 +54,7 @@ CAPABILITIES(/obj/item/radio/intercom)
 		wait(0), then(PROC_REF(remote_microphone)))
 	op("remote_channel", remote(), gesture(GESTURE_ALT), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the AI channel"),
 		wait(0), then(PROC_REF(remote_channel)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"
@@ -152,16 +153,20 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	add_fingerprint(user)
 	return FALSE
 
-/obj/item/radio/intercom/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/intercom/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	wiresexposed = !wiresexposed
 	to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
 	playsound(src, tool.usesound, 50, TRUE)
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/radio/intercom/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/radio/intercom/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!wiresexposed)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
@@ -177,7 +182,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	frame.update_icon()
 	board.atom_deconstruct(TRUE, src)
 	replace_with(src, /obj/item/stack/cable_coil, 5)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/radio/intercom/receive_range(freq, level)
 	if (!on)

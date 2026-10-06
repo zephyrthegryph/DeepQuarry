@@ -80,7 +80,7 @@ Thus, the two variables affect pump operation are set in New():
 				var/leak_fraction = min(VOLUME_PUMP_LEAK_AMOUNT * moles / air2_total, 1)
 				var/datum/gas_mixture/leaked = air2.remove_ratio(leak_fraction)
 				T.air.merge(leaked)
-				qdel(leaked)
+				spent(leaked)
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
 
@@ -120,14 +120,11 @@ Thus, the two variables affect pump operation are set in New():
 	icon_state = "map_on-aux"
 	use_power = USE_POWER_IDLE
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/volume_pump, "{appearance_running?on:off}")
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_overclocked", list("1" = list(APPEARANCE_OVERLAYS = list(mutable_appearance('icons/atmos/volume_pump_overclock.dmi', "vpumpoverclock")))))
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/appearance_running()
-	return powered() && use_power
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/appearance_overclocked()
-	return powered() && use_power && overclocked
+/obj/machinery/atmospherics/binary/volume_pump/draw(datum/look/look)
+	..()
+	var/running = operable() && use_power
+	look.state(running ? "on" : "off")
+	look.overlay("vpumpoverclock", when = running && overclocked, icon = 'icons/atmos/volume_pump_overclock.dmi')
 
 /obj/machinery/atmospherics/binary/volume_pump/update_underlays()
 	..()
@@ -286,3 +283,4 @@ TRACKED(/obj/machinery/atmospherics/binary/volume_pump, overclocked)
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(transfer_rate), nameof(overclocked))
+	. += drawn_from(nameof(use_power), nameof(overclocked))

@@ -35,7 +35,7 @@ CAPABILITIES(/obj/item/projectile/spell_projectile)
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)
 		carried().prox_cast(targets, src)
-		qdel(src)
+		spent(src)
 	return
 
 /obj/item/projectile/spell_projectile/Bump(atom/A)

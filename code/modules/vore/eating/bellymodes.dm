@@ -131,7 +131,7 @@
 		if(istype(owner))
 			forceMove(owner)
 		else
-			qdel(src)
+			spent(src)
 			return FALSE
 	return TRUE
 
@@ -275,7 +275,7 @@
 
 		//get rid of things like blood drops and gibs that end up in there
 		else if(istype(A, /obj/effect/decal/cleanable))
-			qdel(A)
+			spent(A)
 
 	return list("to_update" = to_update, "touchable_mobs" = touchable_mobs, "digestion_noise_chance" = digestion_noise_chance)
 
@@ -335,9 +335,9 @@
 								vitals_only = FALSE
 								if(!LAZYLEN(E.children))
 									for(var/obj/item/implant/I as anything in E.implants)
-										qdel(I)
+										consumed(I, M)
 									E.droplimb(TRUE, DROPLIMB_EDGE)
-									qdel(E)
+									consumed(E, M)
 									break
 							continue
 						if(vitals_only)

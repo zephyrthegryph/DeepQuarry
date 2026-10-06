@@ -2,9 +2,15 @@
 //TICKET MANAGER
 //
 
-DECLARE_UI(/datum/tickets, "TicketsPanel", UI_TITLE("Tickets"))
-
-DECLARE_UI_STATE(/datum/tickets, GLOB.tgui_mentor_state)
+CAPABILITIES(/datum/tickets)
+	interface("TicketsPanel", title = "Tickets", state = nameof(GLOB.tgui_mentor_state))
+	op("legacy", ui_act("legacy"), asks(/datum/prompt/choice/ticket_list_ui, step = "list"), then(PROC_REF(ui_act_legacy)))
+	op("new_ticket", ui_act("new_ticket"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "Please select the ckey of the user.", "title" = "Select CKEY", "choices" = computed(PROC_REF(ticket_ckey_choices))), step = "ckey"), asks(/datum/prompt/text/ticket_create, fields = list("question" = "What should the initial text be?", "title" = "New Ticket"), step = "text"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "Is this ticket Admin-Level or Mentor-Level?", "title" = "Ticket Level", "choices" = list("Admin", "Mentor"), "buttons" = TRUE), step = "level"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "The player already has a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes", "No"), "buttons" = TRUE), step = "duplicate", when = PROC_REF(ticket_player_has_ticket)), then(PROC_REF(ui_act_new_ticket)))
+	op("pick_ticket", ui_act("pick_ticket", arg("ticket_id", num())), then(PROC_REF(ui_act_pick_ticket)))
+	op("retitle_ticket", ui_act("retitle_ticket"), then(PROC_REF(ui_act_retitle_ticket)))
+	op("reopen_ticket", ui_act("reopen_ticket"), then(PROC_REF(ui_act_reopen_ticket)))
+	op("undock_ticket", ui_act("undock_ticket"), then(PROC_REF(ui_act_undock_ticket)))
+	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096))), then(PROC_REF(ui_act_send_msg)))
 
 /datum/tickets/proc/get_ticket_state(state)
 	var/ticket_state
@@ -21,10 +27,9 @@ DECLARE_UI_STATE(/datum/tickets, GLOB.tgui_mentor_state)
 
 	return ticket_state
 
-UI_DATA_REPLACE(/datum/tickets, "merge:ui_data_datum_tickets{tickets:list,is_admin:num,selected_ticket:unknown}")
-
 /// The computed part of /datum/tickets's window data (declared on its UI_DATA row).
-/datum/tickets/proc/ui_data_datum_tickets(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tickets/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	var/list/tickets = list()
 
@@ -97,25 +102,32 @@ UI_DATA_REPLACE(/datum/tickets, "merge:ui_data_datum_tickets{tickets:list,is_adm
 
 	return data
 
-UI_ACT(/datum/tickets, "legacy", ui_act_legacy)
-UI_ACT_PROC(/datum/tickets, ui_act_legacy)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
+/datum/tickets/proc/ui_act_legacy(datum/act/op/A)
+	var/choice = A.step_value("list")
+	if(!choice)
 		return
-	open_request(ui, /datum/prompt/choice/ticket_list_ui, TYPE_PROC_REF(/datum/tgui, ticket_list_answered), answerer = ui.user)
+	TicketListLegacy(A.actor, choice)
+	return TRUE
 
-UI_ACT(/datum/tickets, "new_ticket", ui_act_new_ticket)
-UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
-	return new_ticket_stage(ui, list(), ui.user)
+/datum/tickets/proc/ui_act_new_ticket(datum/act/op/A)
+	var/list/answers = list("k115" = A.step_value("ckey"), "k128" = A.step_value("text"), "k133" = A.step_value("level"), "k139" = A.step_value("duplicate"))
+	return new_ticket_stage(A.actor, answers, A.actor)
 
-/datum/tickets/proc/new_ticket_stage(datum/tgui/ui, list/answers, mob/token_actor)
-	var/mob/user = ui.user
+/datum/tickets/proc/ticket_ckey_choices(datum/act/op/A)
 	var/list/ckeys = list()
 	for(var/client/C in GLOB.clients)
 		ckeys += C.key
+	return ckeys
 
-	if(!("k115" in answers))
-		open_request(ui, /datum/prompt/choice/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k115", question = "Please select the ckey of the user.", title = "Select CKEY", choices = ckeys)
-		return
+/// The duplicate question opens only when the chosen player already has an open ticket.
+/datum/tickets/proc/ticket_player_has_ticket(datum/act/op/A)
+	var/ckey = lowertext(A.step_value("ckey"))
+	for(var/client/C in GLOB.clients)
+		if(C.ckey == ckey)
+			return !!C.current_ticket()
+	return FALSE
+
+/datum/tickets/proc/new_ticket_stage(mob/user, list/answers, mob/token_actor)
 	var/_answer_k115 = answers["k115"]
 	if(isnull(_answer_k115))
 		return
@@ -129,22 +141,16 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 			player = C
 
 	if(!player)
-		to_chat(ui.user, span_warning("Ckey ([ckey]) not online."))
+		to_chat(user, span_warning("Ckey ([ckey]) not online."))
 		return
 
-	if(!("k128" in answers))
-		open_request(ui, /datum/prompt/text/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k128", question = "What should the initial text be?", title = "New Ticket")
-		return
 	var/ticket_text = answers["k128"]
 	if(isnull(ticket_text))
 		return
 	if(!ticket_text)
-		to_chat(ui.user, span_warning("Ticket message cannot be empty."))
+		to_chat(user, span_warning("Ticket message cannot be empty."))
 		return
 
-	if(!("k133" in answers))
-		open_request(ui, /datum/prompt/choice/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k133", question = "Is this ticket Admin-Level or Mentor-Level?", title = "Ticket Level", choices = list("Admin", "Mentor"), buttons = TRUE)
-		return
 	var/level = answers["k133"]
 	if(isnull(level))
 		return
@@ -153,9 +159,6 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 
 	feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(player.current_ticket())
-		if(!("k139" in answers))
-			open_request(ui, /datum/prompt/choice/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k139", question = "The player already has a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes", "No"), buttons = TRUE)
-			return
 		var/input = answers["k139"]
 		if(isnull(input))
 			return
@@ -164,13 +167,13 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 		if(input == "Yes")
 			if(player.current_ticket())
 				player.current_ticket().MessageNoRecipient(ticket_text)
-				to_chat(ui.user, span_adminnotice("PM to-" + span_bold("Admins") + ": [ticket_text]"))
+				to_chat(user, span_adminnotice("PM to-" + span_bold("Admins") + ": [ticket_text]"))
 				return
 			else
-				to_chat(ui.user, span_warning("Ticket not found, creating new one..."))
+				to_chat(user, span_warning("Ticket not found, creating new one..."))
 		else
-			player.current_ticket().AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
-			player.current_ticket().Close(ui.user)
+			player.current_ticket().AddInteraction("[key_name_admin(user)] opened a new ticket.")
+			player.current_ticket().Close(user)
 
 	// Create a new ticket and handle it. You created it afterall!
 	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level, user, token_actor)
@@ -178,37 +181,16 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 		T.level = 1
 	else
 		T.level = 0
-	T.HandleIssue(ui.user)
+	T.HandleIssue(user)
 	switch(T.level)
 		if (0)
-			ui.user.client.cmd_mentor_pm(player, ticket_text, T)
+			user.client.cmd_mentor_pm(player, ticket_text, T)
 		if (1)
-			ui.user.client.cmd_admin_pm(player, ticket_text, T, token_actor)
+			user.client.cmd_admin_pm(player, ticket_text, T, token_actor)
 	return TRUE
-
-/datum/tgui/proc/ticket_create_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/list/answers = A.answer.captured.Copy()
-	answers[A.answer.step_name] = A.answer.value
-	var/datum/tickets/manager = src_object()
-	if(manager.new_ticket_stage(src, answers, A.request.answerer))
-		SStgui.update_uis(manager)
-
-/proc/ticket_create_refusal(datum/request/ask)
-	var/datum/tgui/original_ui = ask.owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(ask.answerer))
-		return "gone"
-	var/datum/tickets/manager = original_ui.src_object()
-	if(!istype(manager) || QDELETED(manager))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	return manager.ui_act_allowed(original_ui.user, "new_ticket", original_ui, original_ui.state()) ? null : "the ticket action is unavailable"
 
 /datum/prompt/choice/ticket_create
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/choice/ticket_create/normalize(given)
 	return istext(given) ? given : null
@@ -216,52 +198,45 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 /datum/prompt/choice/ticket_create/refusal(given)
 	return null
 
-/datum/prompt/choice/ticket_create/recheck_extra()
-	return ticket_create_refusal(src)
-
 /datum/prompt/text/ticket_create
 	timeout = 0
 	max_len = MAX_MESSAGE_LEN
-	recheck_on_open = TRUE
 
 /datum/prompt/text/ticket_create/normalize(given)
 	return istext(given) ? given : null
 
-/datum/prompt/text/ticket_create/recheck_extra()
-	return ticket_create_refusal(src)
-
-UI_ACT(/datum/tickets, "pick_ticket", ui_act_pick_ticket, UI_ARG_NUM("ticket_id"))
-UI_ACT_PROC(/datum/tickets, ui_act_pick_ticket)
-	var/datum/ticket/T = ID2Ticket(params["ticket_id"], user)
-	ui.user.client.selected_ticket_id = T?.id
+/datum/tickets/proc/ui_act_pick_ticket(datum/act/op/A, ticket_id)
+	var/mob/user = A.actor
+	var/datum/ticket/T = ID2Ticket(ticket_id, user)
+	user.client.selected_ticket_id = T?.id
 	. = TRUE
 
-UI_ACT(/datum/tickets, "retitle_ticket", ui_act_retitle_ticket)
-UI_ACT_PROC(/datum/tickets, ui_act_retitle_ticket)
-	ui.user.client.selected_ticket().Retitle(user)
+/datum/tickets/proc/ui_act_retitle_ticket(datum/act/op/A)
+	var/mob/user = A.actor
+	user.client.selected_ticket().Retitle(user)
 	. = TRUE
 
-UI_ACT(/datum/tickets, "reopen_ticket", ui_act_reopen_ticket)
-UI_ACT_PROC(/datum/tickets, ui_act_reopen_ticket)
-	ui.user.client.selected_ticket().Reopen(ui.user)
+/datum/tickets/proc/ui_act_reopen_ticket(datum/act/op/A)
+	var/mob/user = A.actor
+	user.client.selected_ticket().Reopen(user)
 	. = TRUE
 
-UI_ACT(/datum/tickets, "undock_ticket", ui_act_undock_ticket)
-UI_ACT_PROC(/datum/tickets, ui_act_undock_ticket)
-	ui.user.client.selected_ticket().tgui_interact(ui.user)
-	ui.user.client.selected_ticket_id = null
+/datum/tickets/proc/ui_act_undock_ticket(datum/act/op/A)
+	var/mob/user = A.actor
+	user.client.selected_ticket().tgui_interact(user)
+	user.client.selected_ticket_id = null
 	. = TRUE
 
-UI_ACT(/datum/tickets, "send_msg", ui_act_send_msg, UI_ARG_TEXT("msg"))
-UI_ACT_PROC(/datum/tickets, ui_act_send_msg)
-	if(!params["msg"])
+/datum/tickets/proc/ui_act_send_msg(datum/act/op/A, msg)
+	var/mob/user = A.actor
+	if(!msg)
 		return
 
-	switch(ui.user.client.selected_ticket().level)
+	switch(user.client.selected_ticket().level)
 		if (0)
-			ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
+			user.client.cmd_mentor_pm(user.client.selected_ticket().initiator(), msg, user.client.selected_ticket())
 		if (1)
-			ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
+			user.client.cmd_admin_pm(user.client.selected_ticket().initiator(), msg, user.client.selected_ticket())
 	. = TRUE
 
 /datum/tickets/tgui_fallback(payload, user)
@@ -285,17 +260,24 @@ UI_ACT_PROC(/datum/tickets, ui_act_send_msg)
 //TICKET DATUM
 //
 
-DECLARE_UI(/datum/ticket, "Ticket")
-
 /datum/ticket/ui_title(mob/user)
 	return "Ticket #[id] - [LinkedReplyName("\ref[src]")]"
 
-DECLARE_UI_STATE(/datum/ticket, GLOB.tgui_mentor_state)
-
-UI_DATA_REPLACE(/datum/ticket, "id", "title=name:text", "level:num", "handler:text", "log=_interactions:list", "merge:ui_data_datum_ticket{name:unknown,ticket_ref:text,state:text,opened_at:num,closed_at:num,opened_at_date:unknown,closed_at_date:unknown,actions:num}")
+/datum/ticket/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["id"] = id
+	data["title"] = name
+	data["level"] = level
+	data["handler"] = handler
+	data["log"] = _interactions
+	var/list/merged_1 = ui_data_datum_ticket(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/ticket's window data (declared on its UI_DATA row).
-/datum/ticket/proc/ui_data_datum_ticket(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/ticket/proc/ui_data_datum_ticket(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 
 
@@ -325,33 +307,33 @@ UI_DATA_REPLACE(/datum/ticket, "id", "title=name:text", "level:num", "handler:te
 
 	return data
 
-UI_ACT(/datum/ticket, "retitle", ui_act_retitle)
-UI_ACT_PROC(/datum/ticket, ui_act_retitle)
+/datum/ticket/proc/ui_act_retitle(datum/act/op/A)
+	var/mob/user = A.actor
 	Retitle(user)
 	. = TRUE
 
-UI_ACT(/datum/ticket, "reopen", ui_act_reopen)
-UI_ACT_PROC(/datum/ticket, ui_act_reopen)
-	Reopen(ui.user)
+/datum/ticket/proc/ui_act_reopen(datum/act/op/A)
+	var/mob/user = A.actor
+	Reopen(user)
 	. = TRUE
 
-UI_ACT(/datum/ticket, "legacy", ui_act_legacy)
-UI_ACT_PROC(/datum/ticket, ui_act_legacy)
-	TicketPanelLegacy(ui.user)
+/datum/ticket/proc/ui_act_legacy(datum/act/op/A)
+	var/mob/user = A.actor
+	TicketPanelLegacy(user)
 	. = TRUE
 
-UI_ACT(/datum/ticket, "send_msg", ui_act_send_msg, UI_ARG_TEXT("msg"), UI_ARG_REF("ticket_ref", null, /datum/ticket))
-UI_ACT_PROC(/datum/ticket, ui_act_send_msg)
-	if(!params["msg"] || !params["ticket_ref"])
+/datum/ticket/proc/ui_act_send_msg(datum/act/op/A, msg, ticket_ref)
+	var/mob/user = A.actor
+	if(!msg || !ticket_ref)
 		return
 
-	var/datum/ticket/T = params["ticket_ref"]
+	var/datum/ticket/T = ticket_ref
 
 	switch(level)
 		if (0)
-			ui.user.client.cmd_mentor_pm(T.initiator(), sanitize(params["msg"]), T)
+			user.client.cmd_mentor_pm(T.initiator(), sanitize(msg), T)
 		if (1)
-			ui.user.client.cmd_admin_pm(T.initiator(), sanitize(params["msg"]), T)
+			user.client.cmd_admin_pm(T.initiator(), sanitize(msg), T)
 
 	. = TRUE
 
@@ -423,39 +405,17 @@ UI_ACT_PROC(/datum/ticket, ui_act_send_msg)
 	dq_admin_report_html(user, "[state] Tickets", dat.Join(), src)
 
 // The original ticket-manager UI owns this scalar selection continuation.
-/datum/tgui/proc/ticket_list_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/tickets/manager = src_object()
-	manager.TicketListLegacy(user, context.answer.value)
-	SStgui.update_uis(manager)
-
 /datum/prompt/choice/ticket_list_ui
 	title = "Tickets"
 	question = "Which tickets do you want to list?"
 	choices = list("Active", "Closed", "Resolved")
 	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/ticket_list_ui/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui))
-		return "gone"
-	var/datum/tickets/manager = original_ui.src_object()
-	if(!istype(manager) || QDELETED(manager) || QDELETED(answerer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!manager.ui_act_allowed(original_ui.user, "legacy", original_ui, original_ui.state()))
-		return "the listing action is unavailable"
-	return null
 
 /datum/prompt/choice/ticket_fallback_list
 	question = "Which tickets do you want to list?"
 	title = "Tickets"
 	choices = list("Active", "Closed", "Resolved")
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/choice/ticket_fallback_list/recheck_extra()
 	var/mob/user = answerer

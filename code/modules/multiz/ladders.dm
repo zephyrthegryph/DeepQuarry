@@ -63,17 +63,17 @@ CAPABILITIES(/obj/structure/ladder)
 		A = new /obj/structure/ladder_assembly(target_up.loc)
 		A.state = LADDER_CONSTRUCTION_WELDED
 		A.set_anchored(TRUE)
-		qdel(target_up)
+		destroyed(target_up, user)
 	if(target_down)
 		target_down.visible_message("\The [target_down] deconstructs from above")
 		A = new /obj/structure/ladder_assembly(target_down.loc)
 		A.state = LADDER_CONSTRUCTION_WELDED
 		A.set_anchored(TRUE)
-		qdel(target_down)
+		destroyed(target_down, user)
 	A = new /obj/structure/ladder_assembly(loc)
 	A.state = LADDER_CONSTRUCTION_WRENCHED
 	A.set_anchored(TRUE)
-	qdel(src)
+	destroyed(src, user)
 
 DECLARE_INTERACTIONS(/obj/structure/ladder, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \

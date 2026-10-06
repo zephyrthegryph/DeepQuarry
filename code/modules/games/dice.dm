@@ -11,9 +11,9 @@
 	var/tamper_proof = FALSE //Set to TRUE if the die needs to be unable to be weighted, such as for events
 	attack_verb = list("diced")
 
-/obj/item/dice/Initialize(mapload)
-	. = ..()
-	icon_state = "[name][rand(1,sides)]"
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/dice/proc/roll_icon_state(datum/roller/R)
+	return "[name][R.number(1, sides)]"
 
 /// Old attackby.
 /obj/item/dice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -124,6 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 
 CAPABILITIES(/obj/item/dice)
 	op("roll", in_hand(), label("Roll die"), then(PROC_REF(dice_roll_requested)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /obj/item/dice/proc/dice_roll_requested(datum/act/op/A)
 	rollDice(A.actor, 0)
@@ -197,10 +198,10 @@ CAPABILITIES(/obj/item/dice)
 	drop_sound = SFX_ITEMS_DROP_HAT
 	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
-/obj/item/storage/pill_bottle/dice/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 7)
-		new /obj/item/dice(src)
+/obj/item/storage/pill_bottle/dice
+	starts_with = list(
+		/obj/item/dice = 7,
+	)
 
 /obj/item/storage/pill_bottle/dice_nerd	//DnD dice
 	name = "bag of gaming dice"
@@ -274,10 +275,10 @@ CAPABILITIES(/obj/item/storage/dicecup)
 		revealDice(player)
 
 
-/obj/item/storage/dicecup/loaded/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 5)
-		new /obj/item/dice(src)
+/obj/item/storage/dicecup/loaded
+	starts_with = list(
+		/obj/item/dice = 5,
+	)
 
 /obj/item/dice/d20/cursed
 	name = "d20"

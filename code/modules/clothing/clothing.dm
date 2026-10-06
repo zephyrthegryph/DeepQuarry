@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 		O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 		user.drop_from_inventory(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
-			qdel(O)
+			spent(O)
 			O = src
 	else
 		O = src
@@ -272,6 +272,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 	icon_state = "block"
 	slot_flags = SLOT_EARS | SLOT_TWOEARS
 
+// ALLOW(init/INSTANCE_STATE): copies the look of the item it is made inside
 /obj/item/clothing/ears/offear/Initialize(mapload)
 	. = ..()
 	if(isobj(loc))
@@ -1146,6 +1147,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		return TRUE
 	return FALSE
 
+// ALLOW(init/INSTANCE_STATE): takes the sensor setting its wearer prefers and checks its rolled sprite
 /obj/item/clothing/under/Initialize(mapload)
 	. = ..()
 	if(worn_state)
@@ -1387,9 +1389,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	update_clothing_icon()
 	worn_protection_changed()
 
-/obj/item/clothing/under/rank/Initialize(mapload)
-	sensor_mode = pick(0,1,2,3)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/under/rank)
+	rolls(nameof(sensor_mode), pick_one(list(0, 1, 2, 3)))
 
 /obj/item/clothing/ownership()
 	. = ..()

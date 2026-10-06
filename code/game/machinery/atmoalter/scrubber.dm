@@ -21,12 +21,14 @@
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	climb()
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(scrubber_step)), when = nameof(on))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(scrubber_emp))))
 	interface("PortableScrubber")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("volume_adj", ui_act("volume_adj", arg("vol", num())), then(PROC_REF(ui_act_volume_adj)))
 
+// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)
@@ -39,33 +41,24 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 
 	if(prob(50/A.packet.severity))
 		set_on(!on)
-		if(on)
-			changed(src, CHANGE_MACHINE_SETTINGS)
 	return HOOK_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
-	. = list()
+/obj/machinery/portable_atmospherics/powered/scrubber/draw(datum/look/look)
+	..()
+	look.state((on && cell && cell.charge) ? "pscrubber:1" : "pscrubber:0") // ALLOW(derived_reads): a cell that runs dry calls power_change() and update_icon()
+	look.overlay("scrubber-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
+	look.overlay("scrubber-connector", when = !!connected_port())
 
-	if(on && cell && cell.charge)
-		icon_state = "pscrubber:1"
-	else
-		icon_state = "pscrubber:0"
-
-	if(holding)
-		. += "scrubber-open"
-
-	if(connected_port())
-		. += "scrubber-connector"
-
-	return .
+/obj/machinery/portable_atmospherics/powered/scrubber/derived()
+	. = ..()
+	. += drawn_from(nameof(on))
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
 // process() roster. The body below is unchanged, just relocated to
 // /datum/om/stage/machine/power/portable_scrubber/perform(); it never hibernates on its own (it
 // runs every tick while `on`, exactly as process() did), so idle() there is simply `!on`.
-/obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_step()
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_step(datum/act/A)
 	react_or_update()
 	if(!on)
 		return PROCESS_KILL
@@ -106,13 +99,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 /obj/machinery/portable_atmospherics/powered/scrubber/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/powered/scrubber/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
-	..()
-
 /obj/machinery/portable_atmospherics/powered/scrubber/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["on"] = on ? 1 : 0
@@ -137,9 +123,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_power(datum/act/op/A)
 	set_on(!on)
-	if(on)
-		changed(src, CHANGE_MACHINE_SETTINGS)
-	. = TRUE
+	return OP_OK
 
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
@@ -163,8 +147,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 	anchored = TRUE
 	volume = 500000
 	volume_rate = 7000
-	// Its own machine_step() (anchored/power checks every frame while on), on the machine
-	// pipeline's step/huge_* stage (machine_pipeline.dm) rather than the base portable stages.
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50 // //internal circuitry, friction losses and stuff
@@ -174,9 +156,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 	var/global/gid = 1
 	var/id = 0
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/scrubber/huge, MACHINE_PIPELINE, "on")
 
-/// Switching it keeps the power draw in step (machine_step() no longer runs while off to do it).
+/// Switching it keeps the power draw in step.
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/set_on(value)
 	. = ..()
 	if(.)
@@ -184,6 +165,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/scrubber/hug
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 	without(CAP_CLIMB) // not climbable
+	huge_portable_controls()
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/Initialize(mapload)
 	. = ..(mapload, TRUE)
@@ -194,39 +177,18 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 	name = "[name] (ID [id])"
 
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/scrubber_huge_no_hand,
-		/datum/interaction/machine_item/scrubber_huge_reject_cell_tank,
-	)
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/draw(datum/look/look)
 	..()
+	look.state((on && operable()) ? "scrubber:1" : "scrubber:0")
 
-/// Old attack_hand: always refuses, never calls ..().
-/datum/interaction/machine_hand/ungated/scrubber_huge_no_hand
-	id = "scrubber_huge_no_hand"
-	name = "Use"
-	effect = /obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_no_hand
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/interaction_no_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
-	return TRUE
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/appearance_overlays()
-	. = list()
-
-	if(on && operable())
-		icon_state = "scrubber:1"
-	else
-		icon_state = "scrubber:0"
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
+/// One service interval while it is on: loose or dead, it switches off.
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/huge_step(datum/act/A)
 	if(!anchored || (!operable()))
 		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
 		update_icon()
-		return PROCESS_KILL
+		return
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
 		set_use_power(new_use_power)
@@ -246,26 +208,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/hu
 		use_power(power_draw)
 		update_connected_network()
 
-/// Old attackby: silently swallows cells and tanks (doesn't use power cells or hold tanks); anything else falls through to ..().
-/datum/interaction/machine_item/scrubber_huge_reject_cell_tank
-	id = "scrubber_huge_reject_cell_tank"
-	name = "Use"
-	held_type = list(/obj/item/cell, /obj/item/tank)
-	effect = /atom/proc/interaction_swallow
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/wrench_act(mob/user, obj/item/tool)
-	if(on)
-		to_chat(user, span_warning("Turn \the [src] off first!"))
-		return ITEM_INTERACT_BLOCKING
-	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/screwdriver_act(mob/user, obj/item/tool)
-	return ITEM_INTERACT_BLOCKING
-
-
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary
 	name = "Stationary Air Scrubber"
 
@@ -273,14 +215,5 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/hu
 	. = ..()
 	desc += "This one seems to be tightly secured with large bolts."
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_warning("The bolts are too tight for you to unscrew!"))
-	return ITEM_INTERACT_BLOCKING
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/step_has_work()
-	return on && anchored && operable()
-
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/portable_atmospherics/powered/scrubber/step_start_condition()
-	return on
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary)
+	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))

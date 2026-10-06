@@ -14,6 +14,9 @@
 
 CAPABILITIES(/obj/item/weldpack)
 	owns_one(nameof(nozzle), /obj/item)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/weldpack/Initialize(mapload)
 	. = ..()
@@ -53,7 +56,9 @@ CAPABILITIES(/obj/item/weldpack)
 	nozzle_attached = 1
 
 /// Old attackby.
-/obj/item/weldpack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/weldpack/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/weldingtool/T = W.get_welder()
 	if(T && !(W == nozzle))
 		if(T.welding && prob(50))
@@ -63,36 +68,32 @@ CAPABILITIES(/obj/item/weldpack)
 			explosion(get_turf(src),-1,0,2)
 			if(src)
 				consume(src, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else if(T.status)
 			if(T.welding)
 				to_chat(user, span_danger("That was close!"))
 			src.reagents.trans_to_obj(T, T.max_fuel)
 			to_chat(user, span_notice("Welder refilled!"))
 			play_sfx(src, SFX_EFFECTS_REFILL)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(nozzle)
 		if(nozzle == W)
 			if(!user.unEquip(W))
 				to_chat(user, span_notice("\The [W] seems to be stuck to your hand."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(!nozzle_attached)
 				return_nozzle()
 				to_chat(user, span_notice("You attach \the [W] to the [src]."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 		else
 			to_chat(user, span_notice("The [src] already has a nozzle!"))
 	else
 		to_chat(user, span_warning("The tank scoffs at your insolence. It only provides services to welders."))
-	return INTERACTION_HANDLED_PASS
-
-DECLARE_INTERACTIONS(/obj/item/weldpack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	return OP_PASS
 
 /// Old attack_hand.
-/obj/item/weldpack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/weldpack/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ishuman(user))
 		var/mob/living/carbon/human/wearer = user
 		if(wearer.get_equipped_item(SLOT_ID_BACK) == src)
@@ -102,9 +103,9 @@ DECLARE_INTERACTIONS(/obj/item/weldpack, \
 			else
 				to_chat(user, span_notice("\The [src] does not have a nozzle attached!"))
 		else
-			return FALSE
+			return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/weldpack/afterattack(obj/O as obj, mob/user as mob, proximity)
@@ -119,9 +120,10 @@ DECLARE_INTERACTIONS(/obj/item/weldpack, \
 		to_chat(user, span_warning("The pack is already full!"))
 		return
 
-/obj/item/weldpack/MouseDrop(obj/over_object as obj) //This is terrifying.
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native inventory drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/weldpack/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/weldpack/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)

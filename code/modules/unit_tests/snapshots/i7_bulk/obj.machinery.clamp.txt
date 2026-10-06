@@ -1,4 +1,5 @@
-/obj/machinery/clamp|human|none => clamp_toggle|
-/obj/machinery/clamp|robot|none => clamp_toggle|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/clamp|human|none => |
+/obj/machinery/clamp|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/clamp|ai|none => |
 /obj/machinery/clamp|ghost|none => |
+

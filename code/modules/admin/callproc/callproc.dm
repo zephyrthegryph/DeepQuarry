@@ -65,10 +65,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 		return
 	var/mob/proccall_handler/handler = GLOB.AdminProcCallHandler
 	handler.add_caller(user)
-	var/lastusr = usr
-	usr = handler
-	. = WrapAdminProcCall(target, procname, arguments)
-	usr = lastusr
+	. = with_actor(handler, GLOBAL_PROC, GLOBAL_PROC_REF(WrapAdminProcCall), target, procname, arguments)
 	handler.remove_caller(user)
 
 /**
@@ -83,10 +80,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 		return
 	var/mob/proccall_handler/handler = GLOB.AdminProcCallHandler
 	handler.add_caller(user)
-	var/lastusr = usr
-	usr = handler
-	. = world.SDQL2_query(query_text, user, user, handler)
-	usr = lastusr
+	. = with_actor(handler, world, TYPE_PROC_REF(/world, SDQL2_query), query_text, user, user, handler)
 	handler.remove_caller(user)
 
 ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any datum in the server.", ADMIN_CATEGORY_DEBUG_GAME)

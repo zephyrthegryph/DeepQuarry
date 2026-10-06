@@ -255,6 +255,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	var/can_configure = FALSE
 	var/configured = FALSE
 
+// ALLOW(init/INSTANCE_STATE): stamps when this card was made, for its job switch cooldown
 /obj/item/card/id/Initialize(mapload)
 	. = ..()
 	EXPIRY_STAMP(src, last_job_switch, CLOCK_WORLD)

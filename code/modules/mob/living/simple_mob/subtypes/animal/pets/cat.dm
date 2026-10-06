@@ -149,6 +149,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	gender = NEUTER
 	holder_type = /obj/item/holder/cat/kitten
 
+// ALLOW(init/INSTANCE_STATE): gender rolled at random for each instance
 /mob/living/simple_mob/animal/passive/cat/kitten/Initialize(mapload)
 	if(gender == NEUTER)
 		gender = pick(MALE, FEMALE)

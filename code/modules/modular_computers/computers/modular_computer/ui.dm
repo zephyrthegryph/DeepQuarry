@@ -4,8 +4,6 @@
 		get_asset_datum(/datum/asset/simple/headers)
 	)
 
-DECLARE_UI(/obj/item/modular_computer, "NtosMain", UI_AUTOUPDATE)
-
 /obj/item/modular_computer/ui_prepare(mob/user, datum/tgui/ui)
 	if(!screen_on || !enabled)
 		return FALSE
@@ -25,7 +23,14 @@ DECLARE_UI(/obj/item/modular_computer, "NtosMain", UI_AUTOUPDATE)
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/item/modular_computer, "device_theme:text", "merge:ui_data_obj_item_modular_computer{login:list,removable_media:list,programs:list,has_light:bool,light_on:bool,comp_light_color:unknown}")
+/obj/item/modular_computer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["device_theme"] = device_theme
+	var/list/merged_1 = ui_data_obj_item_modular_computer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/modular_computer's window data (declared on its UI_DATA row).
 /obj/item/modular_computer/proc/ui_data_obj_item_modular_computer(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -71,23 +76,22 @@ UI_DATA_REPLACE(/obj/item/modular_computer, "device_theme:text", "merge:ui_data_
 	return data
 
 // Handles user's GUI input
-UI_ACT(/obj/item/modular_computer, "PC_exit", ui_act_pc_exit)
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_exit)
+/obj/item/modular_computer/proc/ui_act_pc_exit(datum/act/op/A)
+	var/mob/user = A.actor
 	kill_program(FALSE, user)
 	return TRUE
 
-UI_ACT(/obj/item/modular_computer, "PC_shutdown", ui_act_pc_shutdown)
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_shutdown)
+/obj/item/modular_computer/proc/ui_act_pc_shutdown(datum/act/op/A)
 	shutdown_computer()
 	return TRUE
 
-UI_ACT(/obj/item/modular_computer, "PC_minimize", ui_act_pc_minimize)
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_minimize)
-	minimize_program(ui.user)
+/obj/item/modular_computer/proc/ui_act_pc_minimize(datum/act/op/A)
+	var/mob/user = A.actor
+	minimize_program(user)
 
-UI_ACT(/obj/item/modular_computer, "PC_killprogram", ui_act_pc_killprogram, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_killprogram)
-	var/prog = params["name"]
+/obj/item/modular_computer/proc/ui_act_pc_killprogram(datum/act/op/A, name)
+	var/mob/user = A.actor
+	var/prog = name
 	var/datum/computer_file/program/P = null
 	if(hard_drive)
 		P = hard_drive.find_file_by_name(prog)
@@ -96,26 +100,25 @@ UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_killprogram)
 		return
 
 	P.kill_program(1)
-	to_chat(ui.user, span_notice("Program [P.filename].[P.filetype] with PID [rand(100,999)] has been killed."))
+	to_chat(user, span_notice("Program [P.filename].[P.filetype] with PID [rand(100,999)] has been killed."))
 	return TRUE
 
-UI_ACT(/obj/item/modular_computer, "PC_runprogram", ui_act_pc_runprogram, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_runprogram)
-	return run_program(params["name"], user)
+/obj/item/modular_computer/proc/ui_act_pc_runprogram(datum/act/op/A, name)
+	var/mob/user = A.actor
+	return run_program(name, user)
 
-UI_ACT(/obj/item/modular_computer, "PC_setautorun", ui_act_pc_setautorun, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_setautorun)
+/obj/item/modular_computer/proc/ui_act_pc_setautorun(datum/act/op/A, name)
 	if(!hard_drive)
 		return
-	set_autorun(params["name"])
+	set_autorun(name)
 	return TRUE
 
-UI_ACT(/obj/item/modular_computer, "PC_Eject_Disk", ui_act_pc_eject_disk, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_eject_disk)
-	var/param = params["name"]
+/obj/item/modular_computer/proc/ui_act_pc_eject_disk(datum/act/op/A, name)
+	var/mob/user = A.actor
+	var/param = name
 	switch(param)
 		if("ID")
-			proc_eject_id(ui.user)
+			proc_eject_id(user)
 			return TRUE
 
 // Function used by TGUI's to obtain data for header. All relevant entries begin with "PC_"

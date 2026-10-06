@@ -42,7 +42,7 @@
 
 /obj/effect/overmap/visitable/sector/temporary/cleanup()
 	if(is_empty())
-		qdel(src)
+		spent(src)
 
 /proc/get_deepspace(x,y)
 	var/turf/unsimulated/map/overmap_turf = locate(x,y,using_map.overmap_z)
@@ -107,7 +107,7 @@
 
 	if(A.lost_in_space())
 		if(!QDELETED(A))
-			qdel(A)
+			spent(A)
 		return
 
 	var/nx = 1

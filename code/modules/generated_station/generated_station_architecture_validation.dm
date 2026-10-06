@@ -418,15 +418,15 @@
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "unknown-room-definition", "Functional room references an unknown definition.", module.id)
 			continue
 		if(findtext(solution.definition_id, "-micro-"))
-			qdel(definition)
+			destroyed(definition)
 			definition = generated_micro_room_definition_for(module_department_id, module.role)
 		else if(findtext(solution.definition_id, "-compact"))
-			qdel(definition)
+			destroyed(definition)
 			definition = generated_compact_room_definition_for(module_department_id, module.role)
 		var/minimum_usable_tiles = min(definition.min_width * definition.min_height, 21)
 		if(module.footprint_tiles() < minimum_usable_tiles)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "room-below-minimum-size", "[definition.name] has [module.footprint_tiles()] usable tiles, below its [minimum_usable_tiles]-tile content contract.", module.id)
-		qdel(definition)
+		destroyed(definition)
 
 	for(var/obj/machinery/door/door in doors)
 		var/turf/door_turf = get_turf(door)
@@ -615,7 +615,7 @@
 		validation.add(GENERATED_STATION_ISSUE_ERROR, "empty-station", "Materialization produced no station geometry.", station_id)
 	var/datum/generated_station_architecture_metrics/metrics = architecture_metrics()
 	generated_station_validate_aesthetic_metrics(metrics, validation, station_id)
-	qdel(metrics)
+	destroyed(metrics)
 	return validation
 
 /// Produces a self-contained diagnostic map suitable for an admin browser or log artifact.
@@ -828,7 +828,7 @@
 	body += "<details open><summary>Functional machinery and furnishings</summary><pre id='layer-content'>[content_layer]</pre></details>"
 	body += "<details><summary>Structure, doors, and wall adjacency</summary><pre id='layer-structure'>[structure_layer]</pre></details>"
 	body += "<details open><summary>Plan mismatches</summary><pre id='layer-mismatch'>[mismatch_layer]</pre></details></body></html>"
-	qdel(metrics)
+	spent(metrics)
 	return jointext(body, "")
 
 ADMIN_VERB(show_generated_station_architecture, R_DEBUG, "Show Generated Station Architecture", "Show the architecture diagnostic map of the generated station on your z-level.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
@@ -844,7 +844,7 @@ ADMIN_VERB(show_generated_station_architecture, R_DEBUG, "Show Generated Station
 	var/datum/generated_station_validation_result/validation = found_site.station_materialization.validate_architecture(found_site.station_spec)
 	var/html = found_site.station_materialization.diagnostic_minimap_html(validation)
 	user << browse(html, "window=generated_station_architecture;size=1000x800")
-	qdel(validation)
+	spent(validation)
 
 #undef GENERATED_STATION_COMPACTNESS_LIMIT
 #undef GENERATED_STATION_MAX_TRANSIT_FLOOR_RATIO

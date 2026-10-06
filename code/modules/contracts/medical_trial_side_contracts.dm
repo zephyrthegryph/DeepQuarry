@@ -19,11 +19,11 @@
 	. = ..()
 	if(!istype(new_holder))
 		log_runtime("contract_document: cannot attach to [new_holder]; discarded")
-		qdel(src)
+		spent(src)
 		return
 	if(new_holder.contract_document)
 		// Unique: the existing document state is kept.
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(holder), new_holder)
 	rel_set(new_holder, nameof(new_holder.contract_document), src)

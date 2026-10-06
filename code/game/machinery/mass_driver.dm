@@ -22,6 +22,7 @@
 	. = ..()
 	. += rel_key(nameof(id))
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/mass_driver/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

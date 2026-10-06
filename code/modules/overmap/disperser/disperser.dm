@@ -10,6 +10,7 @@
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/disperser/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

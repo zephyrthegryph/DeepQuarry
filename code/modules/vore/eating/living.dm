@@ -724,9 +724,9 @@
 				if(possessed_voice.item_tf)
 					mind.transfer_to(ourmob)
 					own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
-					qdel(src)
+					spent(src)
 					ourmob.forceMove(item_to_destroy.loc)
-					qdel(item_to_destroy)
+					spent(item_to_destroy)
 					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 					return
 				to_chat(src,span_notice("You have no body."))
@@ -737,16 +737,16 @@
 				return
 			src.mind.transfer_to(ourmob)
 			own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
-			qdel(src)
+			spent(src)
 			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 			return
 		if(istype(src.loc, /obj/item/clothing)) //Are they in clothes? Delete the item then revert them.
-			qdel(item_to_destroy)
+			spent(item_to_destroy)
 			log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
 			revert_mob_tf()
 		else //Are they in any other type of object? If qdel is done first, the mob is deleted from the world.
 			forceMove(get_turf(src))
-			qdel(item_to_destroy)
+			spent(item_to_destroy)
 			log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
 			revert_mob_tf()
 
@@ -762,7 +762,7 @@
 	else if(istype(loc, /obj/structure/gargoyle) && loc:was_rayed)
 		var/obj/structure/gargoyle/G = loc
 		G.can_revert = TRUE
-		qdel(G)
+		spent(G)
 		log_and_message_admins("used the OOC escape button to revert back from being petrified.", src)
 
 	//In-shoe OOC escape. Checking voices as precaution if something akin to obj TF or possession happens

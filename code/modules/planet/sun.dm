@@ -95,20 +95,20 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 /atom/movable/sun_visuals/Initialize(mapload)
 	. = ..()
 	LAZYINITLIST(spreads)
-	spreads["1"] = new /atom/movable/sun_visuals_overlap(src, NORTH, "white_gradient")
-	spreads["2"] = new /atom/movable/sun_visuals_overlap(src, SOUTH, "white_gradient")
-	spreads["4"] = new /atom/movable/sun_visuals_overlap(src, EAST, "white_gradient")
-	spreads["8"] = new /atom/movable/sun_visuals_overlap(src, WEST, "white_gradient")
+	spreads["1"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTH, icon_state = "white_gradient")
+	spreads["2"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTH, icon_state = "white_gradient")
+	spreads["4"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = EAST, icon_state = "white_gradient")
+	spreads["8"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = WEST, icon_state = "white_gradient")
 
-	spreads["i5"] = new /atom/movable/sun_visuals_overlap(src, NORTHEAST, "white_inner")
-	spreads["i6"] = new /atom/movable/sun_visuals_overlap(src, SOUTHEAST, "white_inner")
-	spreads["i9"] = new /atom/movable/sun_visuals_overlap(src, NORTHWEST, "white_inner")
-	spreads["i10"] = new /atom/movable/sun_visuals_overlap(src, SOUTHWEST, "white_inner")
+	spreads["i5"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHEAST, icon_state = "white_inner")
+	spreads["i6"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHEAST, icon_state = "white_inner")
+	spreads["i9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_inner")
+	spreads["i10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_inner")
 
-	spreads["o5"] = new /atom/movable/sun_visuals_overlap(src, NORTHEAST, "white_outer")
-	spreads["o6"] = new /atom/movable/sun_visuals_overlap(src, SOUTHEAST, "white_outer")
-	spreads["o9"] = new /atom/movable/sun_visuals_overlap(src, NORTHWEST, "white_outer")
-	spreads["o10"] = new /atom/movable/sun_visuals_overlap(src, SOUTHWEST, "white_outer")
+	spreads["o5"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHEAST, icon_state = "white_outer")
+	spreads["o6"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHEAST, icon_state = "white_outer")
+	spreads["o9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_outer")
+	spreads["o10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_outer")
 
 /atom/movable/sun_visuals/proc/set_color(new_color)
 	src.color = new_color
@@ -199,11 +199,9 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 	alpha = 0
 	color = "#FFFFFF"
 
-/atom/movable/sun_visuals_overlap/Initialize(mapload, newdir, newstate)
-	. = ..()
-	icon_state = newstate
-	dir = newdir
-
+CAPABILITIES(/atom/movable/sun_visuals_overlap)
+	param(nameof(dir), pos = 1)
+	param(nameof(icon_state), pos = 2)
 
 /// Accessor for a shared definition.
 /datum/sun_holder/proc/our_planet() as /datum/planet

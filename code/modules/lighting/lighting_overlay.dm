@@ -15,7 +15,7 @@
 		stack_trace("lighting_object created before SSlighting up!")
 		return
 	if(!isturf(source))
-		qdel(src, force=TRUE)
+		spent(src, force = TRUE)
 		stack_trace("a lighting object was assigned to [source], a non turf! ")
 		return
 	. = ..()
@@ -24,7 +24,7 @@
 
 	affected_turf = source // ALLOW(ownership): lighting engine back ref to the turf this object shades, set once; the object dies with the turf, and a turf index entry per turf would cost the whole map
 	if (affected_turf.lighting_object)
-		qdel(affected_turf.lighting_object, force = TRUE)
+		spent(affected_turf.lighting_object, force = TRUE)
 		stack_trace("a lighting object was assigned to a turf that already had a lighting object!")
 
 	rel_set(affected_turf, nameof(affected_turf.lighting_object), src)

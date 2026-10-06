@@ -597,18 +597,20 @@ GLOBAL_LIST_EMPTY(colored_images)
 // These were previously declared as ui_* procs, so the framework never called them
 // and the panel was dead. Renamed to the fork convention + opened by an admin verb
 // (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
-DECLARE_UI_STATE(/datum/system/air, ADMIN_STATE(R_DEBUG))
+CAPABILITIES(/datum/system/air)
+	interface("AtmosControlPanel", title = "Atmospherics Debug", rights = R_DEBUG)
+	op("move-to-target", ui_act("move-to-target", arg("spot")), then(PROC_REF(ui_move_to_target)))
+	op("toggle-freeze", ui_act("toggle-freeze"), then(PROC_REF(ui_toggle_freeze)))
+	op("toggle_show_all", ui_act("toggle_show_all"), then(PROC_REF(ui_toggle_show_all)))
+	op("toggle_user_display", ui_act("toggle_user_display"), then(PROC_REF(ui_toggle_user_display)))
 
-DECLARE_UI(/datum/system/air, "AtmosControlPanel", UI_TITLE("Atmospherics Debug"))
-
-UI_DATA_REPLACE(/datum/system/air, "frozen=can_fire:num", "fire_count=times_fired:num", "merge:ui_data_datum_controller_subsystem_air{excited_groups:list,active_size:num,hotspots_size:num,excited_size:unknown,conducting_size:num,show_all:unknown,display_max:bool,showing_user:unknown}")
-
-/// The computed part of /datum/system/air's window data (declared on its UI_DATA row).
-/datum/system/air/proc/ui_data_datum_controller_subsystem_air(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data. Excited groups and the active-turf lists live in the Rust arena and aren't enumerable from DM: it shows the per-tick
+/// auxmos counters the binds report back instead.
+/datum/system/air/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	// Excited groups + active-turf/superconduction lists live in the Rust arena
-	// now and aren't enumerable from DM. Surface the per-tick auxmos counters the
-	// binds report back instead of the (deleted) DM lists.
+	data["frozen"] = can_fire
+	data["fire_count"] = times_fired
 	data["excited_groups"] = list()
 	data["active_size"] = num_group_turfs_processed + num_equalize_processed
 	data["hotspots_size"] = hotspots.len
@@ -620,40 +622,30 @@ UI_DATA_REPLACE(/datum/system/air, "frozen=can_fire:num", "fire_count=times_fire
 	#else
 	data["display_max"] = FALSE
 	#endif
-	data["showing_user"] = user.hud_used.atmos_debug_overlays
+	data["showing_user"] = user?.hud_used?.atmos_debug_overlays
 	return data
 
-/datum/system/air/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!user || !check_rights_for(user.client, R_DEBUG))
-		return FALSE
-	return TRUE
-
-UI_ACT(/datum/system/air, "move-to-target", ui_act_move_to_target, UI_ARG_REF("spot", null, /turf))
-UI_ACT_PROC(/datum/system/air, ui_act_move_to_target)
-	var/turf/target = params["spot"]
-	if(!target)
-		return
+/datum/system/air/proc/ui_move_to_target(datum/act/op/A, spot)
+	var/turf/target = locate(spot)
+	if(!istype(target))
+		return OP_FAILED
+	var/mob/user = A.actor
 	user.forceMove(target)
+	return OP_OK
 
-UI_ACT(/datum/system/air, "toggle-freeze", ui_act_toggle_freeze)
-UI_ACT_PROC(/datum/system/air, ui_act_toggle_freeze)
+/datum/system/air/proc/ui_toggle_freeze(datum/act/op/A)
 	can_fire = !can_fire
-	return TRUE
-// toggle_show_group / toggle_show_all removed — excited groups live in the
-// Rust arena and have no DM turf_list to display/hide.
+	return OP_OK
 
-UI_ACT(/datum/system/air, "toggle_show_all", ui_act_toggle_show_all)
-UI_ACT_PROC(/datum/system/air, ui_act_toggle_show_all)
+/datum/system/air/proc/ui_toggle_show_all(datum/act/op/A)
 	display_all_groups = !display_all_groups
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/system/air, "toggle_user_display", ui_act_toggle_user_display)
-UI_ACT_PROC(/datum/system/air, ui_act_toggle_user_display)
+/datum/system/air/proc/ui_toggle_user_display(datum/act/op/A)
+	var/mob/user = A.actor
 	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
 	if(user.hud_used.atmos_debug_overlays)
 		user.client.images += GLOB.colored_images
 	else
 		user.client.images -= GLOB.colored_images
-	return TRUE
+	return OP_OK

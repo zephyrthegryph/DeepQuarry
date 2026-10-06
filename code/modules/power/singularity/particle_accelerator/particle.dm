@@ -19,8 +19,11 @@
 	var/tmp/turf/source
 	var/movetotarget = 1
 
-/// Flies one step every 0.1 s for as long as it exists; move() deletes it when its range runs out.
-DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
+/// Flies one step every 0.1 s for as long as it exists; move() deletes it when its range runs out. A mob that walks into it is hit as if
+/// the particle had hit it.
+CAPABILITIES(/obj/effect/accelerated_particle)
+	every(0.1 SECONDS, then(PROC_REF(move)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /obj/effect/accelerated_particle/weak
 	icon_state = "particle0"
@@ -37,6 +40,7 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 	movement_range = 25
 	energy = 50
 
+// ALLOW(init/CTOR_ARGS): dir is a constructor argument from whoever builds it
 /obj/effect/accelerated_particle/Initialize(mapload, dir = 2)
 	. = ..()
 	set_dir(dir)
@@ -48,8 +52,7 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 			toxmob(A)
 		if(istype(A,/obj/machinery/the_singularitygen))
 			var/obj/machinery/the_singularitygen/G = A
-			G.energy += energy
-			MACHINE_WAKE(G)
+			G.set_energy(G.energy + energy)
 		else if(istype(A,/obj/singularity))
 			var/obj/singularity/G = A
 			G.energy += energy
@@ -63,9 +66,10 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 		// here should be restored.
 
 
-/obj/effect/accelerated_particle/Bumped(atom/A)
-	if(ismob(A))
-		Bump(A)
+/obj/effect/accelerated_particle/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	if(ismob(N.bumper))
+		Bump(N.bumper)
 
 
 /obj/effect/accelerated_particle/singularity_act()
@@ -76,7 +80,7 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 	M.apply_effect((radiation*3),IRRADIATE,0)
 
 
-/obj/effect/accelerated_particle/proc/move()
+/obj/effect/accelerated_particle/proc/move(datum/act/timer/A)
 	if(target())
 		if(movetotarget)
 			if(!step_towards(src,target()) && !particle_force_step(get_step(src, get_dir(src,target()))))
@@ -93,8 +97,7 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 			movement_range = 0 // left the map: fall through to the deletion below
 	movement_range--
 	if(movement_range <= 0)
-		qdel(src)
-		return REPEAT_STOP
+		spent(src)
 
 /// Pushes the particle onto `dest` when a normal step was blocked. At the map edge there is no
 /// turf to push onto: the particle leaves the map (FALSE) and move() deletes it.

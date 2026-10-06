@@ -43,7 +43,7 @@
 	var/obj/item/hand_held = host_item.tethered_handheld()
 	host_item.tether_path = null // no remake
 	if(hand_held)
-		qdel(hand_held)
+		spent(hand_held)
 
 // !!!! IMPORTANT NOTE !!!!
 // The attack_self event is used by ui action hud buttons, as they call attack_self() directly.

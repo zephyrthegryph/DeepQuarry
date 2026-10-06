@@ -49,6 +49,7 @@
 	gen[circuit] = 1
 	return gen
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with before the parent init reads them
 /obj/machinery/protean_reconstitutor/Initialize(mapload)
 	own_take_all(src, nameof(component_parts))
 	RefreshParts()
@@ -266,13 +267,13 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 	if(istype(O,/obj/item/organ/internal/nano/refactory))
 		src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
 		// Deleting the blank detaches it; the salvaged one takes its slot.
-		qdel(O)
+		spent(O)
 		protean_refactory.replaced(P)
 		//cache our mats otherwise they get wiped by the revive
 		materials_cache = protean_refactory.materials.Copy()
 	if(istype(O,/obj/item/organ/internal/nano/orchestrator))
 		src.visible_message(span_notice("\The [src] chirps, \"Linking nanoswarm to orchestrator...\""))
-		qdel(O)
+		spent(O)
 		protean_orchestrator.replaced(P)
 	if(istype(O,/obj/item/organ/internal/mmi_holder/posibrain/nano))
 		src.visible_message(span_notice("\The [src] chirps, \"Synchronizing positronic neural architecture...\""))
@@ -380,7 +381,7 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 			holder.slot_remove(O, src, null, LEDGER_MOVE_FORCED)
 		if(protean_brain && protean_brain.loc != src)
 			protean_brain.forceMove(src)
-		qdel(P)
+		spent(P)
 	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
 	processing_revive = FALSE
 	update_icon()

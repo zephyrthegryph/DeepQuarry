@@ -68,6 +68,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/list/planes_visible
 
 //Constructor comes with a free AR HUD
+// ALLOW(init/CTOR_ARGS): wear and load_data are constructor arguments from whoever builds it
 /obj/item/nif/Initialize(mapload,wear,list/load_data)
 	. = ..()
 

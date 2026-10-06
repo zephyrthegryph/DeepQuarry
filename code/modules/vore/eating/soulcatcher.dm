@@ -35,6 +35,7 @@ CAPABILITIES(/obj/soulgem)
 		saved["linked_belly"] = saved["linked_belly_handle"]
 		saved -= "linked_belly_handle"
 
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
@@ -170,7 +171,7 @@ CAPABILITIES(/obj/soulgem)
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
 		brainmob.transient = TRUE
-		qdel(M) //Bye ghost
+		spent(M) //Bye ghost
 
 	//Give them a flavortext message
 	var/message = span_notice("[capture_message][inside_flavor]")
@@ -213,7 +214,7 @@ CAPABILITIES(/obj/soulgem)
 	self.mind.transfer_to(owner())
 	rel_clear(src, nameof(own_mind))
 	taken_over_name = null
-	qdel(self)
+	spent(self)
 
 // Sets the custom messages depending on the input
 /obj/soulgem/proc/set_custom_message(message, target)
@@ -393,7 +394,7 @@ CAPABILITIES(/obj/soulgem)
 	own_take_member(src, nameof(brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
-	qdel(M)
+	spent(M)
 
 // Funtion to test if the owner's body has been taken over
 /obj/soulgem/proc/is_taken_over()
@@ -484,7 +485,7 @@ CAPABILITIES(/obj/soulgem)
 	own_take_member(src, nameof(brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
-	qdel(M)
+	consumed(M, src)
 
 // Transfers a captured soul to another soulcatcher
 /obj/soulgem/proc/transfer_mob_soulcatcher(mob/living/carbon/brain/caught_soul/vore/M, obj/soulgem/gem)
@@ -536,7 +537,7 @@ CAPABILITIES(/obj/soulgem)
 	to_chat(M, span_notice("[release_message]"))
 	own_take_member(src, nameof(brainmobs), M)
 	M.ghostize(FALSE)
-	qdel(M)
+	spent(M)
 	return TRUE
 
 // Delete section to delete captured souls from the soulcatcher
@@ -574,7 +575,7 @@ CAPABILITIES(/obj/soulgem)
 	own_take_member(src, nameof(brainmobs), M)
 	var/mob/observer/dead/ghost = M.ghostize(FALSE)
 	ghost.abandon_mob()
-	qdel(M)
+	spent(M)
 	return TRUE
 
 /// the own_mind this refers to (a relation view: null once it is deleted).

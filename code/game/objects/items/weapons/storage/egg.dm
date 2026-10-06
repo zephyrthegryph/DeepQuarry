@@ -18,10 +18,7 @@
 
 CAPABILITIES(/obj/item/storage/vore_egg)
 	configure(storage(max_size = 0))
-
-/obj/item/storage/vore_egg/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /obj/item/storage/vore_egg/open(mob/user as mob)
 	if(isobserver(user))

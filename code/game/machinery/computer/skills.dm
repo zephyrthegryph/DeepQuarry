@@ -729,7 +729,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(GLOB.PDA_Manifest)
 		GLOB.PDA_Manifest.Cut()
 	for(var/datum/data/record/R in GLOB.data_core.general)
-		qdel(R)
+		spent(R)
 	set_temp("All employment records deleted.")
 
 /obj/machinery/computer/skills/proc/ui_act_sync_r(datum/act/op/A)
@@ -770,7 +770,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(active1())
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if ((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
-				qdel(R)
+				spent(R)
 		set_temp("Employment record deleted.")
 		var/datum/data/record/deleted_record = active1()
 		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
@@ -968,7 +968,7 @@ DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp)
 			continue
 
 		else if(prob(1))
-			qdel(R)
+			destroyed(R)
 			continue
 
 #undef GENERAL_RECORD_LIST

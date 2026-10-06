@@ -136,17 +136,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/taperoll, TYPE_PROC_REF(/atom, appearance_over
 	update_icon()
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/taperoll, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-)
-
 /// Old attack_hand.
-/obj/item/taperoll/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/taperoll/proc/interaction_hand(datum/act/op/A)
 	update_icon()
-	return FALSE
+	return OP_DECLINE
 
 CAPABILITIES(/obj/item/taperoll)
 	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/item/taperoll/proc/tape_laying_requested(datum/act/op/A)
 	var/mob/user = A.actor
@@ -409,7 +406,7 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 		if(T == src)
 			continue
 		if(T.tape_dir & get_dir(T, src))
-			qdel(T)
+			destroyed(T, user)
 
 	consume(src, user) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
 	return

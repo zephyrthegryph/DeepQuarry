@@ -225,28 +225,31 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/robot_parts/chest)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/robot_parts/chest/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/robot_parts/chest/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(src.cell)
 			to_chat(user, span_warning("You have already inserted a cell!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			if(!move_into(src, nameof(src.cell), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, span_notice("You insert the cell!"))
 	if(istype(W, /obj/item/stack/cable_coil))
 		if(src.wires_const)
 			to_chat(user, span_warning("You have already inserted wire!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			var/obj/item/stack/cable_coil/coil = W
 			coil.use(1)
 			src.wires_const = 1.0
 			to_chat(user, span_notice("You insert the wire!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby's flash branch (declared with the head's other interactions in tvcamera.dm).
 /obj/item/robot_parts/head/proc/head_insert_flash(mob/user, obj/item/W, datum/interaction/interaction)
@@ -272,14 +275,18 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 
 
-DECLARE_EMAG_REPEATABLE(/obj/item/robot_parts, PROC_REF(on_emag), null)
-/obj/item/robot_parts/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/item/robot_parts)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
+/obj/item/robot_parts/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sabotaged)
 		to_chat(user, span_warning("[src] is already sabotaged!"))
 	else
 		to_chat(user, span_warning("You short out the safeties."))
 		sabotaged = 1
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/robot_parts/chest/ownership()
 	. = ..()

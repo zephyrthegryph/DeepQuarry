@@ -2,6 +2,7 @@
 	desc = "It's a decoy!"
 	duration = 15
 
+// ALLOW(init/CTOR_ARGS): mimiced_atom and customappearance are constructor arguments from whoever builds it
 /obj/effect/temp_visual/decoy/Initialize(mapload, atom/mimiced_atom, customappearance)
 	. = ..()
 	alpha = initial(alpha)
@@ -41,10 +42,9 @@
 	plane = PLANE_LIGHTING_ABOVE // So they're visible even in a shootout in maint.
 	duration = 5
 
-/obj/effect/temp_visual/impact_effect/Initialize(mapload, obj/item/projectile/P, x, y)
-	pixel_x = x
-	pixel_y = y
-	return ..()
+CAPABILITIES(/obj/effect/temp_visual/impact_effect)
+	param(nameof(pixel_x), pos = 2)
+	param(nameof(pixel_y), pos = 3)
 
 /obj/effect/temp_visual/impact_effect/red_laser
 	icon_state = "impact_laser"
@@ -72,6 +72,7 @@
 	icon_state = "impact_laser_monochrome"
 	duration = 4
 
+// ALLOW(init/CTOR_ARGS): P, x and y are constructor arguments from whoever builds it
 /obj/effect/temp_visual/impact_effect/monochrome_laser/Initialize(mapload, obj/item/projectile/P, x, y)
 	if(P.light_color)
 		color = P.light_color
@@ -108,10 +109,9 @@
 	icon_state = XENO_CHEM_HEAL
 	duration = 15
 
-/obj/effect/temp_visual/heal/Initialize(mapload)
-	pixel_x = rand(-12, 12)
-	pixel_y = rand(-9, 0)
-	. = ..()
+CAPABILITIES(/obj/effect/temp_visual/heal)
+	rolls(nameof(pixel_x), range_of(-12, 12))
+	rolls(nameof(pixel_y), range_of(-9, 0))
 
 /obj/effect/temp_visual/circle_wave
 	icon = 'icons/effects/64x64.dmi'

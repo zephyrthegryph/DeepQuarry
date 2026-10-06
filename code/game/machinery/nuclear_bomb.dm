@@ -31,6 +31,7 @@ GLOBAL_VAR(bomb_set)
 	var/wire_view = FALSE
 	use_power = USE_POWER_OFF
 
+// ALLOW(init/INSTANCE_STATE): rolls its code and its wire layout for each bomb
 /obj/machinery/nuclearbomb/Initialize(mapload)
 	. = ..()
 	r_code = "[rand(10000, 99999.0)]"//Creates a random code upon object spawn.
@@ -547,7 +548,7 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 	..()
 
 /obj/item/disk/nuclear/touch_map_edge()
-	qdel(src)
+	spent(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/nuclearbomb/step_start_condition()

@@ -42,14 +42,18 @@
 		/obj/item/rcd/advanced/loaded,
 		/obj/item/pipe_dispenser)
 
-/obj/structure/closet/secure_closet/engineering_chief/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/industrial
+CAPABILITIES(/obj/structure/closet/secure_closet/engineering_chief)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/engineering_chief/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/industrial
 	else
-		starts_with += /obj/item/storage/backpack/satchel/eng
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/eng
-	return ..()
+		. += /obj/item/storage/backpack/satchel/eng
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/eng
 
 /obj/structure/closet/secure_closet/engineering_electrical
 	name = "electrical supplies"
@@ -111,15 +115,18 @@
 		/obj/item/reagent_containers/spray/windowsealant,
 		/obj/item/areaeditor/blueprints/engineers)
 
-/obj/structure/closet/secure_closet/engineering_personal/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/industrial
-	else
-		starts_with += /obj/item/storage/backpack/satchel/eng
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/eng
-	return ..()
+CAPABILITIES(/obj/structure/closet/secure_closet/engineering_personal)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/engineering_personal/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/industrial
+	else
+		. += /obj/item/storage/backpack/satchel/eng
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/eng
 
 /obj/structure/closet/secure_closet/atmos_personal
 	name = "technician's locker"
@@ -147,11 +154,16 @@
 		/obj/item/pipe_dispenser,
 		/obj/item/storage/belt/utility/atmostech) // . They don't get a toolbox to fill it from, so why not give a spare one that's full already?
 
-/obj/structure/closet/secure_closet/atmos_personal/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/industrial
+CAPABILITIES(/obj/structure/closet/secure_closet/atmos_personal)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/atmos_personal/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/industrial
 	else
-		starts_with += /obj/item/storage/backpack/satchel/eng
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/eng
-	return ..()
+		. += /obj/item/storage/backpack/satchel/eng
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/eng
+

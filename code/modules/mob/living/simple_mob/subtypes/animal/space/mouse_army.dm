@@ -59,6 +59,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
+// ALLOW(init/INSTANCE_STATE): rolls its number and its rank
 /mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
 	. = ..()
 
@@ -445,7 +446,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body detonates!")))
 		exploded = 1
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-		qdel(src)
+		destroyed(src)
 
 /// Red and black, alternating, one colour per decisecond for `steps` deciseconds.
 /proc/mouse_warning_flash(steps)

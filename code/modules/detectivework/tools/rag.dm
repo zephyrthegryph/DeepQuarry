@@ -188,7 +188,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
 	new /obj/effect/decal/cleanable/ash(T)
-	qdel(src)
+	spent(src)
 
 //rag must have a minimum of 2 units welder fuel or ehtanol based reagents and at least 80% of the reagents must so.
 /obj/item/reagent_containers/glass/rag/proc/can_ignite()
@@ -214,7 +214,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 		var/datum/effect/effect/system/reagents_explosion/e = new()
 		e.set_up(round(reagents.get_reagent_amount(REAGENT_ID_PHORON) / 2.5, 1), get_turf(src), 0, 0)
 		e.start()
-		qdel(src)
+		destroyed(src)
 		return
 
 	set_light(2, null, "#E38F46")
@@ -249,7 +249,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 
 	if(burn_time <= 0)
 		new /obj/effect/decal/cleanable/ash(location)
-		qdel(src)
+		spent(src)
 		return
 
 	reagents.remove_reagent(REAGENT_ID_FUEL, reagents.maximum_volume/25)

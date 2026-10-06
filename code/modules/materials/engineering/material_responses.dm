@@ -57,7 +57,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	. = ..()
 	if(!isitem(new_parent) || !istype(material) || material_build_view(new_parent).response)
 		log_runtime("material_response: cannot attach to [new_parent] ([material]); discarded")
-		qdel(src) // ALLOW(lifecycle): a response that cannot attach discards itself in New()
+		spent(src)
 		return
 	rel_set(src, nameof(parent), new_parent)
 	var/datum/material_build/build = material_build(new_parent)

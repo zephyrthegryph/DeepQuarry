@@ -83,7 +83,7 @@
 	var/list/setup_args = args.Copy(2)
 	if(!S.setup(arglist(setup_args)))
 		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
-		qdel(S)
+		spent(S)
 		return null
 	rel_add(src, nameof(trait_states), S)
 	S.attach()

@@ -15,21 +15,9 @@
 	of = list(
 		/obj/machinery/power/apc,
 		/obj/machinery/firealarm,
-		/obj/machinery/portable_atmospherics/powered/pump,
-		/obj/machinery/portable_atmospherics/powered/scrubber,
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
 		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
-		/obj/machinery/atmospherics/unary/freezer,
-		/obj/machinery/atmospherics/unary/heater,
-		/obj/machinery/atmospherics/unary/heat_exchanger,
-		/obj/machinery/atmospherics/unary/outlet_injector,
-		/obj/machinery/atmospherics/binary/algae_farm,
-		/obj/machinery/atmospherics/portables_connector,
-		/obj/machinery/atmospherics/pipeturbine,
-		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
-		/obj/machinery/power/turbinemotor,
-		/obj/machinery/power/thermoregulator,
 		/obj/machinery/air_sensor,
 		/obj/machinery/computer/general_air_control/fuel_injection,
 		/obj/machinery/portable_atmospherics/hydroponics,
@@ -73,7 +61,6 @@
 		/obj/machinery/embedded_controller,
 		/obj/machinery/exonet_node,
 		/obj/machinery/feeder,
-		/obj/machinery/field_generator,
 		/obj/machinery/floodlight,
 		/obj/machinery/floor_light,
 		/obj/machinery/food_replicator,
@@ -96,16 +83,13 @@
 		/obj/machinery/optable,
 		/obj/machinery/oxygen_pump,
 		/obj/machinery/paradoxrift,
-		/obj/machinery/particle_accelerator/control_box,
 		/obj/machinery/particle_smasher,
 		/obj/machinery/partslathe,
 		/obj/machinery/pda_multicaster,
 		/obj/machinery/pointdefense,
 		/obj/machinery/power/debug_items/infinite_cable_powersink,
 		/obj/machinery/power/debug_items/infinite_generator,
-		/obj/machinery/power/emitter,
 		/obj/machinery/power/fusion_core,
-		/obj/machinery/power/generator,
 		/obj/machinery/power/hydromagnetic_trap,
 		/obj/machinery/power/port_gen,
 		/obj/machinery/power/rtg,
@@ -113,7 +97,6 @@
 		/obj/machinery/power/shield_generator,
 		/obj/machinery/power/singularity_beacon,
 		/obj/machinery/power/solar_control,
-		/obj/machinery/power/supermatter,
 		/obj/machinery/power/supply_beacon,
 		/obj/machinery/power/turbine,
 		/obj/machinery/pump,
@@ -139,7 +122,6 @@
 		/obj/machinery/suit_cycler,
 		/obj/machinery/suspension_gen,
 		/obj/machinery/telecomms,
-		/obj/machinery/the_singularitygen,
 		/obj/machinery/transhuman/synthprinter,
 		/obj/machinery/v_garbosystem,
 		/obj/machinery/vending,
@@ -382,40 +364,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/power/firealarm/idle(obj/machinery/firealarm/M)
 	return !M.timing || (!M.operable())
 
-// ---------------------------------------------------------------- portable pumps and scrubbers
-
-/// Neither device ever hibernates on its own: both keep running every tick while `on`, exactly
-/// as their old process() did (no "target pressure reached" event exists), and idle() is simply
-/// `!on`. `huge` subtypes are NOT migrated (they keep their own real process() override that
-/// checks anchored/power every tick regardless of `on`) and set polls = TRUE back to opt out of
-/// this pipeline's parent-type registration; they still get a (harmless, permanently-idle)
-/// generic /datum/om/stage/machine/power frame alongside their unaffected SSmachines polling.
-/datum/om/stage/machine/power/portable_pump
-	of = /obj/machinery/portable_atmospherics/powered/pump
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED
-	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
-	reads = list("on")
-
-/datum/om/stage/machine/power/portable_pump/perform(obj/machinery/portable_atmospherics/powered/pump/M, datum/om/frame/machine/F)
-	M.pump_step()
-	return STAGE_IDLE
-
-/datum/om/stage/machine/power/portable_pump/idle(obj/machinery/portable_atmospherics/powered/pump/M)
-	return !M.on
-
-/datum/om/stage/machine/power/portable_scrubber
-	of = /obj/machinery/portable_atmospherics/powered/scrubber
-	wake_on = CHANGE_MACHINE_POWER | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_ANCHORED
-	woken_by = "power_change(); atom_break()/atom_fix(); the power toggle; an EMP"
-	reads = list("on")
-
-/datum/om/stage/machine/power/portable_scrubber/perform(obj/machinery/portable_atmospherics/powered/scrubber/M, datum/om/frame/machine/F)
-	M.scrubber_step()
-	return STAGE_IDLE
-
-/datum/om/stage/machine/power/portable_scrubber/idle(obj/machinery/portable_atmospherics/powered/scrubber/M)
-	return !M.on
-
 // ---------------------------------------------------------------- machine_step devices
 
 /// The generic stage for a machine whose DM-side work is one machine_step() (machinery.dm): the
@@ -443,12 +391,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/power/step/idle(obj/machinery/M)
 	return om_watch_armed(M) || !M.step_has_work()
 
-/datum/om/stage/machine/power/step/turbinemotor
-	of = /obj/machinery/power/turbinemotor
-
-/datum/om/stage/machine/power/step/thermoregulator
-	of = /obj/machinery/power/thermoregulator
-
 /datum/om/stage/machine/power/step/air_sensor
 	of = /obj/machinery/air_sensor
 
@@ -456,14 +398,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// commands the injectors) -- the one timed machine_step here; off, it parks.
 /datum/om/stage/machine/power/step/fuel_injection
 	of = /obj/machinery/computer/general_air_control/fuel_injection
-
-/// The stationary "huge" portable pump/scrubber: their own machine_step() (anchored/power checks
-/// every frame while on), not the base portable pump/scrubber stages above.
-/datum/om/stage/machine/power/step/huge_pump
-	of = /obj/machinery/portable_atmospherics/powered/pump/huge
-
-/datum/om/stage/machine/power/step/huge_scrubber
-	of = /obj/machinery/portable_atmospherics/powered/scrubber/huge
 
 /// Hydroponics trays: a frame per growth cycle while something is growing or soaking in; between
 /// cycles the tray parks on its growth timer (schedule_growth_wake()), and reagent or seed changes

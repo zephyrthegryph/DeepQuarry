@@ -234,7 +234,7 @@
 
 	unobserve(action, /datum/notice/qdeleting, src)
 	rel_remove(src, nameof(actions), action)
-	qdel(action)
+	spent(action)
 
 // Check if target is reasonable for us to operate on.
 /obj/item/proc/check_allowed_items(atom/target, not_inside, target_self)
@@ -468,7 +468,7 @@
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
 		OM_EMIT(src, /datum/om/event/item_dropped, user)
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
-			qdel(src)
+			spent(src, user)
 
 	if(item_my_augment(src) && !QDELETED(src))
 		forceMove(item_my_augment(src))

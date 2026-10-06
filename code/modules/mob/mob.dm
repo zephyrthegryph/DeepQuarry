@@ -446,7 +446,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			if(O.target == mind)
 				if(O.owner && O.owner.current)
 					to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
-				qdel(O)
+				spent(O)
 
 		//Resleeving cleanup
 		if(mind)
@@ -460,7 +460,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(length(mind.objectives))
 			// each dying objective leaves mind.objectives on its own (works for the OWN or pair declaration)
 			for(var/datum/objective/O as anything in mind.objectives.Copy())
-				qdel(O)
+				spent(O)
 			mind.special_role = null
 
 		//Cut the PDA manifest (ugh)
@@ -468,13 +468,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			GLOB.PDA_Manifest.Cut()
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if((R.fields["name"] == real_name))
-				qdel(R)
+				spent(R)
 		for(var/datum/data/record/T in GLOB.data_core.security)
 			if((T.fields["name"] == real_name))
-				qdel(T)
+				spent(T)
 		for(var/datum/data/record/G in GLOB.data_core.general)
 			if((G.fields["name"] == real_name))
-				qdel(G)
+				spent(G)
 
 		//This removes them from being 'active' list on join screen
 		mind.assigned_role = null
@@ -496,7 +496,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	var/mob/new_player/M = new /mob/new_player()
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
-		qdel(M)
+		spent(M)
 		M.key = null
 		return
 
@@ -659,7 +659,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 				if(G?.grab_assailant() != src)
 					. = 0
 				else
-					qdel(G)
+					spent(G)
 			if(!.)
 				to_chat(src, span_warning("Somebody has a grip on them!"))
 				return
@@ -900,7 +900,6 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 		if(prob(selection.w_class * 5) && (!affected.is_robotic())) //I'M SO ANEMIC I COULD JUST -DIE-.
 			affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
 			affected.update_damages()
-			H.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			H.custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
 
 		if (ishuman(U))
@@ -1493,7 +1492,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		return
 	to_chat(user, "Removed [rem_organ] from [M].")
 	rem_organ.removed()
-	qdel(rem_organ)
+	consumed(rem_organ, src)
 
 /// A VV AI brain setup: captured scalar answers advance only after each live admin re-check.
 /mob/proc/vv_ai_faction_chosen(datum/act/request/A)

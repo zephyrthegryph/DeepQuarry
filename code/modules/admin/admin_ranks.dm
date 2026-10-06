@@ -28,10 +28,10 @@ GLOBAL_PROTECT(protected_ranks)
 	name = init_name
 	source = init_source
 	if(!source)
-		qdel(src)
+		spent(src)
 		CRASH("Admin rank created without a source.")
 	if(!name)
-		qdel(src)
+		spent(src)
 		CRASH("Admin rank created without name.")
 	if(init_rights)
 		rights = init_rights

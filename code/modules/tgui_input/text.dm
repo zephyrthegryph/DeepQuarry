@@ -50,7 +50,7 @@
 	text_input.wait()
 	if (text_input)
 		. = text_input.entry
-		qdel(text_input)
+		spent(text_input, user)
 
 /**
  * tgui_input_text

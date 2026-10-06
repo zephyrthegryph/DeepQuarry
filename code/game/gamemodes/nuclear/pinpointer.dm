@@ -180,7 +180,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/targetitem = ask.value
 	var/datum/objective/steal/itemlist = new
 	rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
-	qdel(itemlist)
+	spent(itemlist)
 	if(!target_ref())
 		to_chat(user, "Failed to locate [targetitem]!")
 		return

@@ -412,9 +412,12 @@ CAPABILITIES(/obj/item)
 									"analyser_broken",
 									"radio_broken")
 
-/obj/item/broken_device/random/Initialize(mapload)
-	icon_state = pick(possible_icons) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-	. = ..()
+CAPABILITIES(/obj/item/broken_device/random)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/broken_device/random/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_icons)
 
 /obj/item/robot_parts/robot_component
 	icon = 'icons/obj/robot_component.dmi'

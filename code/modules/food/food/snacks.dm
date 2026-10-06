@@ -109,7 +109,7 @@
 			for(var/mob/living/voice/V in possessed_voice)
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				own_take_member(src, nameof(possessed_voice), V)
-				qdel(V)
+				consumed(V, eater)
 			if(!move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, NR, eater))
 				NR.forceMove(get_turf(eater))
 		if(trash)
@@ -120,12 +120,12 @@
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 					own_take_member(src, nameof(possessed_voice), V)
-					qdel(V)
+					consumed(V, eater)
 		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
 				own_take_member(src, nameof(possessed_voice), V)
-				qdel(V)
+				consumed(V, eater)
 		consume(src, feeder || eater)
 
 /obj/item/reagent_containers/food/snacks/examine(mob/user)
@@ -693,6 +693,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly, nul
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/chaos, null, list(REAGENT_ID_SPRINKLES = 1))
 
+// ALLOW(init/INSTANCE_STATE): rolls which filling this donut gets
 /obj/item/reagent_containers/food/snacks/donut/chaos/Initialize(mapload)
 	. = ..()
 	switch(rand(1,10))
@@ -825,6 +826,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledegg, null, list(
 	center_of_mass_y = 16
 	bitesize = 3
 
+// ALLOW(init/INSTANCE_STATE): rolls its protein and toxin content
 /obj/item/reagent_containers/food/snacks/organ/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, rand(3,5))
@@ -1427,6 +1429,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanita_pie, null, lis
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plump_pie, null, list(REAGENT_ID_FUNGI = 2))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether it came out exceptional
 /obj/item/reagent_containers/food/snacks/plump_pie/Initialize(mapload)
 	. = ..()
 	if(prob(10))
@@ -1523,9 +1526,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubancarp, null, list(
 	nutriment_desc = list("popcorn" = 3)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
 
-/obj/item/reagent_containers/food/snacks/popcorn/Initialize(mapload)
-	. = ..()
-	unpopped = rand(1,10)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
+	rolls(nameof(unpopped), range_of(1, 10))
 
 /obj/item/reagent_containers/food/snacks/popcorn/On_Consume(mob/living/M)
 	if(prob(unpopped))	//lol ...what's the point?
@@ -1763,7 +1765,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		var/mob/living/voice/V = possessed_voice[1]
 		V.mind.transfer_to(H)
 		H.set_tf_mob_holder(V.tf_mob_holder)
-		qdel(V)
+		spent(V)
 	replace_with(src, H)
 	return H
 
@@ -2264,6 +2266,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledslimecore, null,
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit, null, list(REAGENT_ID_FUNGI = 1))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether it came out exceptional
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/Initialize(mapload)
 	. = ..()
 	if(prob(10))
@@ -2418,6 +2421,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
+// ALLOW(init/INSTANCE_STATE): rolls which mystery recipe the soup is
 /obj/item/reagent_containers/food/snacks/mysterysoup/Initialize(mapload)
 	. = ..()
 	var/mysteryselect = pick(1,2,3,4,5,6,7,8,9,10)
@@ -2470,6 +2474,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wishsoup, null, list(REAGENT_ID_WATER = 10))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether the wish came true
 /obj/item/reagent_containers/food/snacks/wishsoup/Initialize(mapload)
 	. = ..()
 	if(prob(25))
@@ -2515,9 +2520,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, li
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(REAGENT_ID_BEETSOUP = 10))
 
-/obj/item/reagent_containers/food/snacks/beetsoup/Initialize(mapload)
-	. = ..()
-	name = pick(list("borsch","bortsch","borstch","borsh","borshch","borscht"))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/beetsoup)
+	rolls(nameof(name), pick_one(list("borsch","bortsch","borstch","borsh","borshch","borscht")))
 
 /obj/item/reagent_containers/food/snacks/soup/onion
 	name = "onion soup"
@@ -2657,7 +2661,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearchili, null, list(
 			var/reagent_amount = whole.reagents.total_volume/whole.slices_num
 			whole.reagents.trans_to_obj(src, reagent_amount)
 
-		qdel(whole)
+		spent(whole)
 
 /obj/item/reagent_containers/food/snacks/sliceable/meatbread
 	name = "meatbread loaf"
@@ -3466,9 +3470,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/reagent_containers/food/snacks/sliceable/suppermatter/Initialize(mapload)
-	. = ..()
-	set_light(1.4,2,"#FFFF00")
+/obj/item/reagent_containers/food/snacks/sliceable/suppermatter
+	light_range = 1.4
+	light_power = 2
+	light_color = "#FFFF00"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
 	name = "suppermatter shard"
@@ -3478,9 +3484,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 3
 	trash = null
 
-/obj/item/reagent_containers/food/snacks/suppermattershard/Initialize(mapload)
-	. = ..()
-	set_light(1.4,1.4,"#FFFF00")
+/obj/item/reagent_containers/food/snacks/suppermattershard
+	light_range = 1.4
+	light_power = 1.4
+	light_color = "#FFFF00"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
 	name = "exciting suppermatter"
@@ -3494,9 +3502,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter/Initialize(mapload)
-	. = ..()
-	set_light(1.4,2,"#FF0000")
+/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
+	light_range = 1.4
+	light_power = 2
+	light_color = "#FF0000"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
 	name = "exciting suppermatter shard"
@@ -3506,9 +3516,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 4
 	trash = null
 
-/obj/item/reagent_containers/food/snacks/excitingsuppermattershard/Initialize(mapload)
-	. = ..()
-	set_light(1.4,1.4,"#FF0000")
+/obj/item/reagent_containers/food/snacks/excitingsuppermattershard
+	light_range = 1.4
+	light_power = 1.4
+	light_color = "#FF0000"
+	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
 
@@ -3707,6 +3719,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/open = 0 // Is the box open?
 	var/ismessy = 0 // Fancy mess on the lid
 	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/pizza // Content pizza
+	/// The pizza a box starts with (a subtype or a map edit sets it); made into `pizza` at init.
+	var/pizza_type
 	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
@@ -3714,7 +3728,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
 CAPABILITIES(/obj/item/pizzabox)
-	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza)
+	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
 	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked), because = MSG(pizzabox/stacked))), then(PROC_REF(toggled)))
 	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
 	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
@@ -3874,35 +3888,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	update_icon()
 	return OP_OK
 
-/obj/item/pizzabox/margherita/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+/obj/item/pizzabox/margherita
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 	boxtag = "Margherita Deluxe"
-	. = ..()
 
-/obj/item/pizzabox/vegetable/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+/obj/item/pizzabox/vegetable
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza
 	boxtag = "Gourmet Vegatable"
-	. = ..()
 
-/obj/item/pizzabox/mushroom/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+/obj/item/pizzabox/mushroom
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza
 	boxtag = "Mushroom Special"
-	. = ..()
 
-/obj/item/pizzabox/meat/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+/obj/item/pizzabox/meat
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza
 	boxtag = "Meatlover's Supreme"
-	. = ..()
 
-/obj/item/pizzabox/pineapple/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+/obj/item/pizzabox/pineapple
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple
 	boxtag = "Hawaiian Sunrise"
-	. = ..()
 
-/obj/item/pizzabox/old/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+/obj/item/pizzabox/old
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza
 	boxtag = "Deluxe Gourmet"
-	. = ..()
 
 /obj/item/reagent_containers/food/snacks/dionaroast
 	name = "roast diona"
@@ -4121,9 +4129,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotdog, null, list(REA
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/frostbelle, null, list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5))
 
-/obj/item/reagent_containers/food/snacks/frostbelle/Initialize(mapload)
-	. = ..()
-	set_light(1, 1, "#5dadcf")
+/obj/item/reagent_containers/food/snacks/frostbelle
+	light_range = 1.4
+	light_power = 1
+	light_color = "#5dadcf"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter
 	name = "frostbelle fritters"
@@ -4858,6 +4868,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/truffle, null, list(RE
 	name = "mystery chocolate truffle"
 	desc = "Rich bite-sized chocolate with a mystery filling!"
 
+// ALLOW(init/INSTANCE_STATE): rolls the truffle's filling
 /obj/item/reagent_containers/food/snacks/truffle/random/Initialize(mapload)
 	. = ..()
 	var/reagent_string = pick(list(REAGENT_ID_CREAM,REAGENT_ID_CHERRYJELLY,REAGENT_ID_MINT,REAGENT_ID_FROSTOIL,REAGENT_ID_CAPSAICIN,REAGENT_ID_CREAM,REAGENT_ID_COFFEE,REAGENT_ID_MILKSHAKE))
@@ -5035,6 +5046,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesymash, null, list
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nugget, null, list(REAGENT_ID_PROTEIN = 4))
 
+// ALLOW(init/INSTANCE_STATE): rolls the nugget's shape
 /obj/item/reagent_containers/food/snacks/nugget/Initialize(mapload)
 	. = ..()
 	var/shape = pick("lump", "star", "lizard", "corgi")
@@ -6504,6 +6516,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocobanana, null, lis
 	nutriment_amt = 10
 	bitesize = 3
 	filling_color = "#336b42"
+// ALLOW(init/INSTANCE_STATE): rolls which bad reagent the old food carries
 /obj/item/reagent_containers/food/snacks/old/Initialize(mapload)
 	.=..()
 	reagents.add_reagent(pick(list(
@@ -7111,6 +7124,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greentealeaf, null, li
 	nutriment_desc = list("bread" = 4, "sweetness" = 6)
 	bitesize = 4
 
+// ALLOW(init/INSTANCE_STATE): a one in a hundred roll swaps it for the sequel
 /obj/item/reagent_containers/food/snacks/tastybread/Initialize(mapload)
 	. = ..()
 	if(prob(1))
@@ -7942,6 +7956,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 										"ace" = 3)
 	var/randomize_bowl_color = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls its bowl colour when its type says to
 /obj/item/reagent_containers/food/snacks/ratpackramen/Initialize(mapload)
 	. = ..()
 	if(randomize_bowl_color)
@@ -8092,9 +8107,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5)
 	var/static/list/color_options = list("saucer_pink","saucer_blue","saucer_orange","saucer_green","saucer_yellow")
 
-/obj/item/reagent_containers/food/snacks/saucer/Initialize(mapload)
-	. = ..()
-	icon_state = pick(color_options)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/saucer)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/saucer/proc/roll_icon_state(datum/roller/R)
+	return R.choose(color_options)
 
 /obj/item/storage/box/saucer //This is kinda like the donut box.
 	name = "Desatti Sherbert Saucers"
@@ -8248,9 +8266,12 @@ CAPABILITIES(/obj/item/storage/box/shrimpsandbananas)
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5, PLANT_ROSE = 2, "custard" = 2)
 	var/static/list/color_options = list("rhubarbcustard_1","rhubarbcustard_2")
 
-/obj/item/reagent_containers/food/snacks/rhubarbcustard/Initialize(mapload)
-	. = ..()
-	icon_state = pick(color_options)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/rhubarbcustard/proc/roll_icon_state(datum/roller/R)
+	return R.choose(color_options)
 
 /obj/item/storage/box/rhubarbcustard //This is kinda like the donut box.
 	name = "Desatti Rhubarb and Custards"

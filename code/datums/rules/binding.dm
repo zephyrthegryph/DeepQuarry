@@ -264,7 +264,7 @@ CAPABILITIES(/datum)
 /// Whether the owner is still here; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
 	if(!owner || QDELETED(owner))
-		qdel(src)
+		spent(src)
 		return FALSE
 	return TRUE
 
@@ -360,7 +360,7 @@ CAPABILITIES(/datum)
 		drop(i)
 	rule.fire(owner)
 	if(!QDELETED(src) && !live)
-		qdel(src)
+		spent(src)
 
 #undef RULE_BIT
 #undef RULE_BINDING_MAX_RULES
@@ -390,7 +390,7 @@ CAPABILITIES(/datum)
 						inside.forceMove(T)
 				var/path = op[2]
 				new path(T)
-				qdel(thing)
+				consumed(thing)
 			if(RULE_OP_REMOVE)
-				qdel(thing)
+				consumed(thing)
 

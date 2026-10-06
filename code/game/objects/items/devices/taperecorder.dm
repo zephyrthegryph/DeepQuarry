@@ -22,6 +22,7 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 
 CAPABILITIES(/obj/item/taperecorder)
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()
@@ -182,16 +183,17 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(mytape && recording)
 		mytape.record_noise("[strip_html_properly(recordedtext)]")
 
-DECLARE_EMAG_REPEATABLE(/obj/item/taperecorder, PROC_REF(on_emag), null)
-/obj/item/taperecorder/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/taperecorder/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged == 0)
 		emagged = 1
 		set_recording(0)
 		to_chat(user, span_warning("PZZTTPFFFT"))
 		update_icon()
-		return 1
+		return OP_OK
 	else
 		to_chat(user, span_warning("It is already emagged!"))
+	return OP_DECLINE
 
 /obj/item/taperecorder/proc/explode()
 	var/turf/T = get_turf(loc)
@@ -389,6 +391,7 @@ DECLARE_APPEARANCE(/obj/item/rectape, "ruined", list( \
 CAPABILITIES(/obj/item/rectape)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/rectape/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -432,11 +435,13 @@ CAPABILITIES(/obj/item/rectape)
 		open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "Tape labeling", question = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/rectape/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!ruined)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/rectape/proc/screwdriver_act_tool_done(mob/user)
 	if(!(ruined))
@@ -444,10 +449,12 @@ CAPABILITIES(/obj/item/rectape)
 	to_chat(user, span_notice("You wound the tape back in."))
 	fix()
 
-//Random colour tapes
-/obj/item/rectape/random/Initialize(mapload)
-	. = ..()
-	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+CAPABILITIES(/obj/item/rectape/random)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/rectape/random/proc/roll_icon_state(datum/roller/R)
+	return "tape_[R.choose(list("white", "blue", "red", "yellow", "purple"))]"
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/taperecorder, \

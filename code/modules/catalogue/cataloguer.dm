@@ -156,7 +156,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	update_icon()
 	var/datum/beam/scan_beam = effects[1]
 	if(!QDELETED(scan_beam))
-		qdel(scan_beam)
+		spent(scan_beam, user)
 	if(target)
 		target.filters -= effects[2]
 	if(user?.client) // If for some reason they logged out mid-scan the box will be gone anyways.

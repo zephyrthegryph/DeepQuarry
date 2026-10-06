@@ -68,7 +68,7 @@
 				shake_camera(L, 6, 1)
 				if(!L.has_status(EFFECT_DEAFENED))
 					L << 'sound/effects/explosionfar.ogg'
-	qdel(src)
+	spent(src)
 
 /obj/structure/meteorite
 	resistance_flags = BOMB_PROOF
@@ -81,6 +81,7 @@
 CAPABILITIES(/obj/structure/meteorite)
 	climb()
 
+// ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
 /obj/structure/meteorite/Initialize(mapload)
 	. = ..()
 	icon = turn(icon, 90)
@@ -101,7 +102,7 @@ CAPABILITIES(/obj/structure/meteorite)
 	act_message(M, src, MSG_SELF(span_warning("You break apart %T%.")), MSG_OTHERS(span_warning("%U% breaks apart %T%.")))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(get_turf(src))
-	qdel(src)
+	destroyed(src, M)
 
 DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

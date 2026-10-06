@@ -63,7 +63,7 @@
 /datum/native_watch/proc/fire(list/arguments)
 	var/datum/owner = om_resolve(owner_ref)
 	if(!owner)
-		qdel(src)
+		spent(src)
 		return
 	native_fired(delivery_source)
 	call(owner, callback)(arglist(list(src) + arguments))

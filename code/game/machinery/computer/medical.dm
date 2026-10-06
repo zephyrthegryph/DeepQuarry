@@ -276,7 +276,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		return FALSE
 	. = TRUE
 	for(var/datum/data/record/R in GLOB.data_core.medical)
-		qdel(R)
+		spent(R)
 	set_temp("All medical records deleted.")
 
 /obj/machinery/computer/med_data/proc/ui_act_del_r(datum/act/op/A)
@@ -286,7 +286,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	. = TRUE
 	if(active2())
 		set_temp("Medical record deleted.")
-		qdel(active2())
+		spent(active2())
 
 /obj/machinery/computer/med_data/proc/ui_act_d_rec(datum/act/op/A, d_rec)
 	. = TRUE
@@ -579,7 +579,7 @@ DAMAGE_REACTION(/obj/machinery/computer/med_data, DAMAGE_EMP, PROC_REF(med_data_
 			continue
 
 		else if(prob(1))
-			qdel(R)
+			spent(R)
 			continue
 
 /obj/machinery/computer/med_data/laptop //[TO DO] Change name to PCU and update mapdata to include replacement computers

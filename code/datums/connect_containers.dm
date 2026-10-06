@@ -55,7 +55,7 @@
 
 /datum/connect_containers/proc/handle_tracked_qdel(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	qdel(src)
+	spent(src)
 
 /datum/connect_containers/proc/update_hooks(atom/movable/moved_thing)
 	if(!ismovable(moved_thing.loc) || !listener)

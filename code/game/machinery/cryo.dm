@@ -93,6 +93,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	op("ejectOccupant", ui_act("ejectOccupant"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_not(req(list(/mob/living/simple_mob/slime, /mob/living/silicon/pai), of = ON_ACTOR), because = MSG(cryo_cell/cannot_release))),
 		then(PROC_REF(eject_from_window)), logs(LOG_GAME))
 
+// ALLOW(init/INSTANCE_STATE): its pipe connection follows the direction it was placed in
 /obj/machinery/atmospherics/unary/cryo_cell/Initialize(mapload)
 	. = ..()
 	initialize_directions = dir
@@ -178,7 +179,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	else
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		var/healthy = D?.band == DIAG_BAND_NONE && D.status == DIAG_STATUS_ALIVE
-		qdel(D)
+		consumed(D)
 		if(healthy)
 			release_treated_occupant(occupant)
 			return FALSE
@@ -234,7 +235,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 		occupantData["critical"] = occupant.is_critical()
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
-		qdel(D)
+		spent(D)
 		occupantData["bodyTemperature"] = occupant.body_temperature()
 	data["occupant"] = occupantData
 

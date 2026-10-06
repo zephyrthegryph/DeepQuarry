@@ -10,10 +10,8 @@
 	edge =  TRUE
 	injury_kind = INJURY_CUT
 
-/obj/item/material/star/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-12, 12)
-	pixel_y = rand(-12, 12)
+CAPABILITIES(/obj/item/material/star)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(12))
 
 /obj/item/material/star/throw_impact(atom/hit_atom)
 	..()

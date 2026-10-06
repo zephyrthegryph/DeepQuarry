@@ -99,7 +99,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 
 /obj/machinery/power/port_gen/proc/explode()
 	explosion(src.loc, -1, 3, 5, -1)
-	qdel(src)
+	destroyed(src)
 
 #define TEMPERATURE_DIVISOR 40
 #define TEMPERATURE_CHANGE_MAX 20
@@ -474,7 +474,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	)
 
 	explosion(src.loc, 3, 3, 5, 3)
-	qdel(src)
+	destroyed(src)
 
 /obj/machinery/power/port_gen/pacman/mrs
 	name = "M.R.S.P.A.C.M.A.N.-type Portable Generator"
@@ -496,7 +496,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 /obj/machinery/power/port_gen/pacman/mrs/explode()
 	//no special effects, but the explosion is pretty big (same as a supermatter shard).
 	explosion(src.loc, 3, 6, 12, 16, 1)
-	qdel(src)
+	destroyed(src)
 
 #undef TEMPERATURE_DIVISOR
 #undef TEMPERATURE_CHANGE_MAX
@@ -626,14 +626,14 @@ CAPABILITIES(/obj/machinery/power/rtg)
 			if(isnull(C))
 				break
 			own_take_member(src, nameof(component_parts), C)
-			qdel(C)
+			consumed(C, src)
 	if(locate_in_list(parts_found, /obj/item/stock_parts/micro_laser))
 		while(TRUE)
 			var/obj/item/stock_parts/micro_laser/M = locate_in_list(component_parts, /obj/item/stock_parts/micro_laser)
 			if(isnull(M))
 				break
 			own_take_member(src, nameof(component_parts), M)
-			qdel(M)
+			consumed(M, src)
 
 	// Rebuild from mapper's parts
 	for(var/i = 1, i <= parts_found.len, i++)
@@ -823,7 +823,7 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 	// qdel here only completes that lifecycle; ordinary shell damage enters through
 	// the inherited obj_integrity projectile path before arming the core.
 	if(going_kaboom)
-		qdel(src)
+		spent(src)
 	else
 		asplod()
 	return DAMAGE_REACTION_BLOCK
@@ -879,7 +879,7 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 		span_warningplain("You hear a loud electrical crack!"))
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	var/turf/T = get_turf(src)
-	qdel(src)
+	spent(src)
 	new /obj/singularity(T)
 
 DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_BLOB, PROC_REF(kugelblitz_hit_asplod))
@@ -1160,14 +1160,16 @@ DECLARE_APPEARANCE(/obj/machinery/power/port_gen/large_altevian, "appearance_fue
 	plane = ABOVE_MOB_PLANE
 	layer = ABOVE_MOB_LAYER
 
-/obj/machinery/power/rtg/antimatter_core/Initialize(mapload)
-	. = ..()
-	set_light(3, 6, "#66FFFF")
+/obj/machinery/power/rtg/antimatter_core
+	light_range = 3
+	light_power = 6
+	light_color = "#66FFFF"
+	light_on = TRUE
 
 /obj/machinery/power/rtg/antimatter_core/proc/asplod()
 	visible_message(span_danger("\The [src] ruptures!"), span_danger("You hear a loud reverberating bang!"))
 	var/turf/T = get_turf(src)
-	qdel(src)
+	spent(src)
 	if(T)
 		radiation_pulse(
 			T,

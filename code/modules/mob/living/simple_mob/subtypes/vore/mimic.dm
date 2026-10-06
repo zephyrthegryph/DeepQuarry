@@ -56,7 +56,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	latent_discard()
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 		consume(O)
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
@@ -180,9 +180,9 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 			new_mimic.icon_state = "amimicopen"
 			new_mimic.icon_living = "amimicopen"
 		else
-			qdel(src.loc)
+			spent(src.loc)
 			new/obj/machinery/door/airlock/maintenance/common (src.loc) //Places the Airlock
-			qdel(src)//Deletes the "mimic"
+			spent(src)//Deletes the "mimic"
 			return ..()
 	else
 		return ..()
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
 	rel_clear(src, nameof(real_crate))
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 
@@ -353,11 +353,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 
 /obj/effect/floormimic/proc/awaken(mob/living/L)
 	if(!mimic_active)
-		qdel(src)
+		spent(src, L)
 		return
 	mimic_active = FALSE
 	if(!prob(mimic_chance))
-		qdel(src)
+		spent(src, L)
 		return
 	var/mob/living/simple_mob/vore/aggressive/mimic/floor/new_mimic = new mimic_type(drop_location())
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
@@ -377,7 +377,7 @@ CAPABILITIES(/obj/effect/floormimic)
 
 /// Any blast destroys the mimic outright.
 /obj/effect/floormimic/proc/blasted_away(datum/act/A)
-	qdel(src) // ALLOW(lifecycle): a blast destroys the mimic outright, there is nothing to hand its contents to
+	spent(src)
 	return TRUE
 
 /obj/effect/floormimic/safe
@@ -413,7 +413,7 @@ CAPABILITIES(/obj/effect/floormimic)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 /obj/effect/floormimic/tile

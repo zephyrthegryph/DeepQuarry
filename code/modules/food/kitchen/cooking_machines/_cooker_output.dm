@@ -148,9 +148,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/variable, TYPE_
 	size = 30
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/reagent_containers/food/snacks/variable/cereal/Initialize(mapload)
-	. =..()
-	name = pick(list("flakes", "krispies", "crunch", "pops", "O's", "crisp", "loops", "jacks", "clusters"))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/variable/cereal)
+	rolls(nameof(name), pick_one(list("flakes", "krispies", "crunch", "pops", "O's", "crisp", "loops", "jacks", "clusters")))
 
 /obj/item/reagent_containers/food/snacks/variable/mob
 	desc = "Poor little thing."

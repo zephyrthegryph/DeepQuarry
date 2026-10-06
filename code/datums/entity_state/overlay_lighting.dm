@@ -173,11 +173,11 @@ CAPABILITIES(/datum/overlay_lighting)
 	// The mask, cone and directional atom refuse any delete that isn't
 	// forced (only we may delete them). Phase 4's owned-var sweep qdels
 	// without force, so release them here, forced, before it runs.
-	qdel(visible_mask, TRUE)
+	spent(visible_mask, force = TRUE)
 	own_take(src, nameof(visible_mask))
-	qdel(directional_atom, TRUE)
+	spent(directional_atom, force = TRUE)
 	own_take(src, nameof(directional_atom))
-	qdel(cone, TRUE)
+	spent(cone, force = TRUE)
 	own_take(src, nameof(cone))
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.

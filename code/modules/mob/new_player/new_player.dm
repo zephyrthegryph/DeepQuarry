@@ -192,7 +192,7 @@
 				cryst.bound_mob.capture_caught = TRUE
 				cryst.persist_storable = FALSE
 			cryst.update_icon()
-			qdel(src)
+			spent(src)
 			return
 
 	SSjob.assign_role(src, rank, 1)
@@ -218,8 +218,8 @@
 		AnnounceCyborg(character, rank, "has been transferred to the empty core in \the [character.loc.loc]")
 		SSticker.mode.latespawn(character)
 
-		qdel(C) //Deletes empty core (really?)
-		qdel(src) //Deletes new_player
+		spent(C) //Deletes empty core (really?)
+		spent(src) //Deletes new_player
 		return
 
 	// Equip our custom items only AFTER deploying to spawn points eh?
@@ -287,7 +287,7 @@
 			character.forceMove(gut)
 
 	character.client.init_verbs()
-	qdel(src) // Delete new_player mob
+	spent(src) // Delete new_player mob
 
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)
 	if (SSticker.current_state == GAME_STATE_PLAYING)

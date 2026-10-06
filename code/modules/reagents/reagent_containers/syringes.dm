@@ -338,6 +338,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/syringe, TYPE_PROC_REF(/ato
 	desc = "An old, broken syringe. Are you sure it's a good idea to pick it up without gloves?"
 	mode = NEEDLE_BROKEN
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this old syringe is contaminated
 /obj/item/reagent_containers/syringe/old/Initialize(mapload)
 	. = ..()
 	if(prob(75))

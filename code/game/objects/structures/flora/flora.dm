@@ -59,17 +59,9 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 /obj/structure/flora/proc/get_harvestable_desc()
 	return span_notice("\The [src] seems to have something hanging from it.")
 
-/obj/structure/flora/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/flora_item,
-	)
-	..()
-
-/// Old attackby: harvest, or uproot with the removal tool.
-/datum/interaction/entry_item/flora_item
-	id = "flora_item"
-	name = "Use"
-	effect = /obj/structure/flora/proc/interaction_item
+EXTEND_INTERACTIONS(/obj/structure/flora, \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+)
 
 /obj/structure/flora/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 
@@ -124,9 +116,12 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 	harvest_loot = list(/obj/item/stack/material/fiber = 1)
 	max_harvests = 1
 
-/obj/structure/flora/bush/Initialize(mapload)
-	. = ..()
-	icon_state = "snowbush[rand(1, 6)]"
+CAPABILITIES(/obj/structure/flora/bush)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/bush/proc/roll_icon_state(datum/roller/R)
+	return "snowbush[R.number(1, 6)]"
 
 /obj/structure/flora/pottedplant
 	name = "potted plant"
@@ -175,6 +170,7 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/ausbushes, ausbush_icon_choice, null)
 
+// ALLOW(init/CTOR_ARGS): bush_icon is a constructor argument from whoever builds it
 /obj/structure/flora/ausbushes/Initialize(mapload, bush_icon)
 	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
 	if(icon_choice)

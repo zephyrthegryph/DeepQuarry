@@ -136,7 +136,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && spawn_diona_nymph(get_turf(src)))
-		qdel(src)
+		spent(src)
 
 /obj/item/organ/internal/diona
 	name = "diona nymph"
@@ -152,9 +152,9 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
-		qdel(src)
+		spent(src, user)
 
-/obj/item/organ/internal/diona/periodic_step()
+/obj/item/organ/internal/diona/organ_tick(cycles)
 	return
 
 /obj/item/organ/internal/diona/strata
@@ -236,7 +236,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
-		qdel(src)
+		spent(src, user)
 
 /obj/item/organ/external/head/no_eyes/diona
 	max_damage = 50

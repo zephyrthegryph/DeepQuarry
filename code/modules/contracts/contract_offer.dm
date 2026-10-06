@@ -59,7 +59,7 @@
 	if(length(lifecycle_history) > CONTRACT_LIFECYCLE_HISTORY_LIMIT)
 		var/datum/contract_lifecycle_entry/expired = lifecycle_history[1]
 		lifecycle_history.Cut(1, 2)
-		qdel(expired)
+		spent(expired)
 
 /datum/system/contracts/proc/find_live_offer(offer_key) as /datum/contract
 	if(!offer_key)
@@ -84,7 +84,7 @@
 		return FALSE
 	record_lifecycle("candidate-withdrawn", null, candidate, reason)
 	offer_candidates -= candidate
-	qdel(candidate)
+	spent(candidate)
 	return TRUE
 
 /datum/system/contracts/proc/board_limit(datum/contract_definition/definition)
@@ -234,7 +234,7 @@
 		return null
 	offer_candidates -= candidate
 	record_lifecycle("offered", contract, candidate, reason)
-	qdel(candidate)
+	spent(candidate)
 	offers_materialized++
 	notify_contract(contract, "New [contract.offer_kind] contract: [contract.title].")
 	return contract

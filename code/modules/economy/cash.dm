@@ -95,7 +95,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_ove
 			update_icon()
 		return worth
 	else
-		qdel(src)
+		spent(src)
 		return 0
 
 /obj/item/spacecash/proc/set_worth(new_worth = 0, update = 1)

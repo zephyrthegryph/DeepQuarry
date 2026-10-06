@@ -42,7 +42,7 @@
 	. = ..()
 
 	if(isanimal(owner))
-		qdel(src)
+		consumed(src)
 		return
 
 	rel_set(src, nameof(owner), new_owner)
@@ -52,17 +52,17 @@
 		var/datum/status_effect/fire_handler/enemy_effect = owner.has_status_effect(enemy_type)
 		if(enemy_effect)
 			if(forced)
-				qdel(enemy_effect)
+				consumed(enemy_effect)
 				continue
 
 			var/cur_stacks = stacks
 			adjust_stacks(-abs(enemy_effect.stacks * enemy_effect.stack_modifier / stack_modifier))
 			enemy_effect.adjust_stacks(-abs(cur_stacks * stack_modifier / enemy_effect.stack_modifier))
 			if(enemy_effect.stacks <= 0)
-				qdel(enemy_effect)
+				consumed(enemy_effect)
 
 			if(stacks <= 0)
-				qdel(src)
+				consumed(src)
 				return
 
 	if(!forced)
@@ -75,18 +75,18 @@
 		if(LAZYLEN(merge_effects))
 			for(var/datum/status_effect/fire_handler/merge_effect in merge_effects)
 				merge_effect.adjust_stacks(stacks * stack_modifier / merge_effect.stack_modifier / LAZYLEN(merge_effects))
-			qdel(src)
+			spent(src)
 			return
 
 	for(var/override_type in override_types)
 		var/datum/status_effect/fire_handler/override_effect = owner.has_status_effect(override_type)
 		if(override_effect)
 			if(forced)
-				qdel(override_effect)
+				consumed(override_effect)
 				continue
 
 			adjust_stacks(override_effect.stacks)
-			qdel(override_effect)
+			consumed(override_effect)
 
 /**
  * Setter and adjuster procs for firestacks
@@ -163,7 +163,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 /datum/status_effect/fire_handler/fire_stacks/tick(seconds_between_ticks)
 	if(stacks <= 0)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	if(!on_fire)
@@ -173,12 +173,12 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	adjust_stacks(owner.fire_stack_decay_rate * decay_multiplier * seconds_between_ticks)
 
 	if(stacks <= 0)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	var/datum/gas_mixture/air = owner.loc.return_air()
 	if(LINDA_GAS_AMT(air, GAS_O2) < 1)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	deal_damage(seconds_between_ticks)
@@ -364,7 +364,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	var/decay = has_trait(owner, TRAIT_WET_FOR_LONGER) ? -0.035 : -0.5
 	adjust_stacks(decay * seconds_between_ticks)
 	if(stacks <= 0)
-		qdel(src)
+		spent(src)
 
 // /datum/status_effect/fire_handler/wet_stacks/check_basic_mob_immunity(mob/living/basic/basic_owner)
 // 	return !(basic_owner.basic_mob_flags & IMMUNE_TO_GETTING_WET)

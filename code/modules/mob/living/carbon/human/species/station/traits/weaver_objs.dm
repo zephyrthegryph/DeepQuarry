@@ -12,7 +12,7 @@ CAPABILITIES(/obj/effect/weaversilk)
 
 /// Any blast destroys the silk outright.
 /obj/effect/weaversilk/proc/blasted_away(datum/act/A)
-	qdel(src) // ALLOW(lifecycle): a blast destroys the silk outright, there is nothing to hand its contents to
+	spent(src)
 	return TRUE
 
 EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
@@ -39,7 +39,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 /obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
-	qdel(src)
+	destroyed(src)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
 	if(damage)
@@ -56,9 +56,12 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	plane = DIRTY_PLANE
 	layer = DIRTY_LAYER
 
-/obj/effect/weaversilk/floor/Initialize(mapload)
-	. = ..()
-	icon_state = pick(possible_icon_states) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+CAPABILITIES(/obj/effect/weaversilk/floor)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/weaversilk/floor/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_icon_states)
 
 /obj/effect/weaversilk/wall
 	name = "weaversilk web wall"
@@ -67,9 +70,12 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	var/possible_icon_states = list("wallweb1", "wallweb2", "wallweb3")
 	density = TRUE
 
-/obj/effect/weaversilk/wall/Initialize(mapload)
-	. = ..()
-	icon_state = pick(possible_icon_states) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+CAPABILITIES(/obj/effect/weaversilk/wall)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/weaversilk/wall/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_icon_states)
 
 /obj/effect/weaversilk/wall/CanPass(atom/movable/mover, turf/target)
 	var/mob/living/L = mover

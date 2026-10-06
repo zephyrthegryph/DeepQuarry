@@ -138,7 +138,7 @@
 	var/datum/generated_station_materialization/result = end_run()
 	materializer().record_job_telemetry(src)
 	var/list/callback = on_done
-	qdel(src)
+	spent(src)
 	om_run(callback, result)
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL

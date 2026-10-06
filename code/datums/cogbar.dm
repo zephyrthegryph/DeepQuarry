@@ -29,11 +29,11 @@
 	offset_y = icon_offsets["y"]
 	if(isnull(cogicon))
 		stack_trace("/datum/cogbar was created with a null icon.")
-		qdel(src)
+		spent(src, user)
 		return
 	if(isnull(cogiconstate))
 		stack_trace("/datum/cogbar was created with a null icon state.")
-		qdel(src)
+		spent(src, user)
 		return
 
 	add_cog_to_user()
@@ -75,7 +75,7 @@
 /// Removes the cog from the user
 /datum/cogbar/proc/remove()
 	if(isnull(cog()))
-		qdel(src)
+		spent(src)
 		return
 
 	animate(cog(), alpha = 0, time = COGBAR_ANIMATION_TIME)
@@ -86,7 +86,7 @@
 /datum/cogbar/proc/on_user_delete(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 
-	qdel(src)
+	spent(src)
 
 #undef COGBAR_ANIMATION_TIME
 

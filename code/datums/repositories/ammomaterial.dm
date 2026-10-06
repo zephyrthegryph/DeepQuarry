@@ -14,6 +14,6 @@ GLOBAL_DATUM_INIT(ammo_repository, /datum/repository/ammomaterial, new)
 		ammotypes += ammo_type
 		var/obj/item/ammo_casing/temp = new ammo_type
 		ammotypes[ammo_type] = temp.material_totals()
-		qdel(temp)
+		spent(temp)
 
 	return ammotypes[ammo_type]

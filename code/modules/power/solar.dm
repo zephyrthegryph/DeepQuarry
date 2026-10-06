@@ -38,6 +38,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 CAPABILITIES(/obj/machinery/power/solar)
 	climb()
 
+// ALLOW(init/CTOR_ARGS): glass_type is a constructor argument from whoever builds it
 /obj/machinery/power/solar/Initialize(mapload, glass_type)
 	. = ..()
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
@@ -486,7 +487,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		A.state = 3
 		A.icon_state = "computer_3"
 		A.set_anchored(TRUE)
-		qdel(src)
+		spent(src, user)
 	else
 		to_chat(user, span_blue("You disconnect the monitor."))
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
@@ -498,7 +499,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		A.state = 4
 		A.icon_state = "computer_4"
 		A.set_anchored(TRUE)
-		qdel(src)
+		spent(src, user)
 
 /obj/machinery/power/solar_control/machine_step()
 	if(!operable())

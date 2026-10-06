@@ -130,10 +130,8 @@ CAPABILITIES(/obj/item/reagent_containers/blood)
 	name = "Ration BloodPack"
 	desc = "A standard issue BloodPack Ration given to crew that require blood to be sustained!"
 
-/obj/item/reagent_containers/blood/random_bloodsucker/Initialize(mapload)
-	blood_type = pick("A+", "A-", "B+", "B-", "O-", "O+", "AB+", "AB-")
-	. = ..()
-
+CAPABILITIES(/obj/item/reagent_containers/blood/random_bloodsucker)
+	rolls(nameof(blood_type), pick_one(list("A+", "A-", "B+", "B-", "O-", "O+", "AB+", "AB-")))
 
 /// Drunk from in a hostile stance: a tenth of it, if it is blood.
 /obj/item/reagent_containers/blood/proc/drunk(datum/act/op/A)

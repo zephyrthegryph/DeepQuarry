@@ -102,6 +102,7 @@ CAPABILITIES(/obj/item/gps)
 	op("stopTrack", ui_act("stopTrack", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_stoptrack)))
 	op("startTrack", ui_act("startTrack", arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_starttrack)))
 	op("trackColor", ui_act("trackColor", arg("color", schema_text(4096)), arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_trackcolor)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
@@ -192,11 +193,8 @@ DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
 	"working" = list(APPEARANCE_OVERLAYS = list("working")) \
 ))
 
-DECLARE_INTERACTIONS(/obj/item/gps, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
-/obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gps/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
 		return FALSE
 

@@ -132,7 +132,7 @@
 						spawned_obj.desc += " It is made of [source_material]."
 					else
 						spawned_obj.desc = "It is made of [source_material]."
-				qdel(source_material)
+				spent(source_material)
 
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
@@ -239,6 +239,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	//So if xenoarch isn't careful and is just shoving items willy-nilly without taking the proper precautions they can end up in a bit of trouble!
 
 
+// ALLOW(init/INSTANCE_STATE): rolls its control buttons and what each one makes
 /obj/machinery/replicator/vore/Initialize(mapload) //This replicator turns people into mobs!
 	. = ..() //TODO: Someone can replace the 'alien' interface with something neater sometime. It is simply out of my abilities at the current moment.
 
@@ -530,6 +531,7 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 	) 	// Currently: 3 gloves, 5 undersuits, 3 oversuits, 5 plushies, 5 headwear, 7 shoes, 7 misc. = 35
 		//Fishing hat was going to be added, but it was simply too powerful for this world.
 
+// ALLOW(init/INSTANCE_STATE): rolls its control buttons and what each one makes
 /obj/machinery/replicator/clothing/Initialize(mapload) //The specific thing about the VORE replicator is that it will only contain obj/items. Only things that can be picked up, used, and worn!
 	. = ..() //TODO: Someone can replace the 'alien' interface with something neater sometime. It is simply out of my abilities at the current moment.
 

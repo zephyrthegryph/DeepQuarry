@@ -30,12 +30,16 @@
 		/obj/item/ammo_magazine/clip/c762/hunter = 9,
 		/obj/item/gun/projectile/shotgun/pump/rifle = 2)
 
-/obj/structure/closet/secure_closet/guncabinet/rifle/Initialize(mapload)
-	if(prob(85))
-		starts_with += /obj/item/gun/projectile/shotgun/pump/rifle
+CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/guncabinet/rifle/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(85))
+		. += /obj/item/gun/projectile/shotgun/pump/rifle
 	else
-		starts_with += /obj/item/gun/projectile/shotgun/pump/rifle/lever
-	return ..()
+		. += /obj/item/gun/projectile/shotgun/pump/rifle/lever
 
 /obj/structure/closet/secure_closet/guncabinet/phase
 	name = "explorer weapon cabinet" //CHOMP explo keep
@@ -79,14 +83,18 @@
 		/obj/item/reagent_containers/food/snacks/liquidprotein,
 		/obj/item/cataloguer)
 
-/obj/structure/closet/secure_closet/explorer/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/explorer
+CAPABILITIES(/obj/structure/closet/secure_closet/explorer)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/explorer/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/explorer
 	else
-		starts_with += /obj/item/storage/backpack/satchel/explorer
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/explorer
-	return ..()
+		. += /obj/item/storage/backpack/satchel/explorer
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/explorer
 
 /*
  * Pathfinder
@@ -126,14 +134,18 @@
 		/obj/item/mapping_unit,
 		/obj/item/personal_shield_generator/belt/melee/loaded)
 
-/obj/structure/closet/secure_closet/pathfinder/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/explorer
+CAPABILITIES(/obj/structure/closet/secure_closet/pathfinder)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/pathfinder/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/explorer
 	else
-		starts_with += /obj/item/storage/backpack/satchel/explorer
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/explorer // STOP
-	return ..()
+		. += /obj/item/storage/backpack/satchel/explorer
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/explorer
 
 /*
  * SAR/Field Medic
@@ -179,14 +191,18 @@
 		/obj/item/cataloguer/compact,
 		/obj/item/personal_shield_generator/belt/medical/loaded)
 
-/obj/structure/closet/secure_closet/sar/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/medic
+CAPABILITIES(/obj/structure/closet/secure_closet/sar)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/sar/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/medic
 	else
-		starts_with += /obj/item/storage/backpack/satchel/med
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/med
-	return ..()
+		. += /obj/item/storage/backpack/satchel/med
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/med
 
 /*
  * Pilot/Navigator
@@ -225,12 +241,16 @@
 		/obj/item/emergency_beacon
 		)
 
-/obj/structure/closet/secure_closet/pilot/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack
+CAPABILITIES(/obj/structure/closet/secure_closet/pilot)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/pilot/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack
 	else
-		starts_with += /obj/item/storage/backpack/satchel/norm
-	return ..()
+		. += /obj/item/storage/backpack/satchel/norm
 
 /*
  * Exotic Seeds

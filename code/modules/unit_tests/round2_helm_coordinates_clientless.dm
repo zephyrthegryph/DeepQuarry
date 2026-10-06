@@ -25,8 +25,7 @@
 	TEST_ASSERT(helm.operable(), "Real constructor on the actual ship area supplies an operable helm without power mutations")
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, surface)
 	TEST_ASSERT_NULL(user.client, "Actual human is genuinely clientless for the production status gate")
-	var/datum/ui_decl/decl = ui_decl_of(helm)
-	var/datum/tgui/editor = allocate(/datum/tgui, user, helm, decl?.interface)
+	var/datum/tgui/editor = allocate(/datum/tgui, user, helm, helm.ui_interface(user))
 	TEST_ASSERT_EQUAL(editor.src_object(), helm, "Actual UI constructor binds the real mapped helm")
 	TEST_ASSERT_EQUAL(editor.status, STATUS_INTERACTIVE, "Actual UI starts normally without a status mutation")
 	TEST_ASSERT_EQUAL(editor.state(), GLOB.tgui_default_state, "Actual editor uses the production default state")
@@ -35,19 +34,19 @@
 	var/original_y = helm.dy
 	var/set_x = request_case != "y_denied"
 	input_submit(new /datum/input_event/ui_act(user, editor, "setcoord", list("setx" = set_x, "sety" = TRUE), editor.state()))
-	var/datum/prompt/number/helm_coordinates/question = SSrequests.open_for(user)
-	TEST_ASSERT(istype(question) && question.owner == editor, "Actual public coordinate UI entry opens a native question on its original window")
-	TEST_ASSERT_EQUAL(question.step_name, set_x ? "x" : "y", "Actual captured flags choose the correct first coordinate stage")
-	TEST_ASSERT_EQUAL(question.default, (set_x ? original_x : original_y) || 0, "Actual numeric request presents an unset coordinate as zero, matching the original numeric window")
-	TEST_ASSERT_EQUAL(question.captured["setx"], set_x, "Actual request captures original X-selection flag")
-	TEST_ASSERT(question.captured["sety"], "Actual request retains original Y-selection flag")
+	// The button is the setcoord op: its first question is the first coordinate the flags ask for (asks(..., when =)).
+	var/datum/prompt/number/question = SSrequests.open_for(user)
+	TEST_ASSERT(istype(question), "Actual public coordinate UI entry opens a number question")
+	TEST_ASSERT_EQUAL(question.question, set_x ? "Input new destiniation x coordinate" : "Input new destiniation y coordinate", "The flags choose the first coordinate asked")
+	TEST_ASSERT_EQUAL(question.default, (set_x ? original_x : original_y) || 0, "The question offers the current coordinate (an unset one as zero)")
 	if(request_case == "cancelled")
 		test_answer(user, null, REQ_CANCELLED)
 	else
 		var/original_axis = set_x ? original_x : original_y
 		var/new_axis = original_axis == 1 ? 2 : 1
 		test_answer(user, new_axis)
-		TEST_ASSERT_EQUAL(question.captured["late_refusal"], "the helm window is not interactive", "Actual client-required status query refuses a valid different coordinate")
+		if(set_x)
+			test_answer(user, new_axis) // the y question, if the window still lets the op ask it
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Actual denial or cancellation retires the request without opening another stage")
 	TEST_ASSERT_EQUAL(helm.dx, original_x, "Actual denial/cancellation preserves exact original X coordinate")
 	TEST_ASSERT_EQUAL(helm.dy, original_y, "Actual denial/cancellation preserves exact original Y coordinate")

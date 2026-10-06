@@ -18,6 +18,10 @@
 
 CAPABILITIES(/obj/item/ghost_trap)
 	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("release_occupant_effect", menu(), label("Relase Entity"), needs(req_adjacent(), req_capable()), then(PROC_REF(release_occupant_effect)))
+	op("ghost_trap_hidden_vore_effect", menu(), label("Eat Entity"), needs(req_adjacent(), req_capable()), then(PROC_REF(ghost_trap_hidden_vore_effect)))
 
 ///The entity we currently have captured (a relation view).
 OM_FIELD_VIEW(/obj/item/ghost_trap, mob, captured_entity, CHANGE_EXPLICIT)
@@ -50,7 +54,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 		our_entity.forceMove(get_turf(src))
 	..()
 
-/obj/item/ghost_trap/proc/release_occupant_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ghost_trap/proc/release_occupant_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	release_entity(user)
 
 /obj/item/ghost_trap/proc/release_entity(mob/living/user)
@@ -114,7 +119,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	return (user.IsAdvancedToolUser() && !isAI(user) && !user.stat && !user.restrained())
 
 /// Old attack_self.
-/obj/item/ghost_trap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ghost_trap/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
@@ -154,13 +160,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
 	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
 /// Old attack_hand.
-/obj/item/ghost_trap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ghost_trap/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_buckled_mobs() && can_use(user))
 		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free something from %T%.")), \
 			MSG_OTHERS(span_notice("%U% begins freeing something from %T%.")))
@@ -172,7 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
@@ -239,7 +241,8 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		update_icon()
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 
-/obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	eat_entity(user)
 
 /obj/item/ghost_trap/proc/eat_entity(mob/living/user)
@@ -262,7 +265,3 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	return
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/ghost_trap, \
-	INTERACT_VERB("Relase Entity", PROC_REF(release_occupant_effect)), \
-	INTERACT_VERB("Eat Entity", PROC_REF(ghost_trap_hidden_vore_effect)), \
-)

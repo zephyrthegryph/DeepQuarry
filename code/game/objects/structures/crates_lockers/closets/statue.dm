@@ -16,6 +16,7 @@
 	var/original_int = 100
 	var/timer = 240 //eventually the person will be freed
 
+// ALLOW(init/CTOR_ARGS): L is a constructor argument from whoever builds it
 /obj/structure/closet/statue/Initialize(mapload, mob/living/L)
 	. = ..()
 	var/found_target = FALSE

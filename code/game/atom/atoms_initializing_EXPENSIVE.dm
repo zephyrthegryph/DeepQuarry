@@ -47,7 +47,7 @@
 		if (INITIALIZE_HINT_NORMAL)
 			EMPTY_BLOCK_GUARD // Pass
 		if(INITIALIZE_HINT_QDEL)
-			qdel(A)
+			spent(A)
 			qdeleted = TRUE
 		else
 			BadInitializeCalls[the_type] |= BAD_INIT_NO_HINT
@@ -103,10 +103,15 @@
 	if(GLOB.use_preloader && src.type == GLOB._preloader_path)//in case the instantiated atom is creating other atoms in New()
 		world.preloader_load(src)
 
+	// make() records and param(pos =) arguments write the instance's params before anything of the type runs (code/engine/lifeforms/params.dm).
+	var/list/init_args = args
+	if(length(args) > 1 && lifeform_new_args(src, args))
+		init_args = args.Copy()
+		init_args.Cut(2, 3) // the make() record is not an Initialize() argument
 	var/do_initialize = SSatoms.atom_initialized
 	if(do_initialize != INITIALIZATION_INSSATOMS)
-		args[1] = do_initialize == INITIALIZATION_INNEW_MAPLOAD
-		if(SSatoms.InitAtom(src, FALSE, args))
+		init_args[1] = do_initialize == INITIALIZATION_INNEW_MAPLOAD
+		if(SSatoms.InitAtom(src, FALSE, init_args))
 			//we were deleted
 			return
 

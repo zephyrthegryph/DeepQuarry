@@ -436,6 +436,7 @@
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
+// ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
 /obj/item/spell/construct/Initialize(mapload)
 	. = ..(mapload, TRUE)
 	if(!owner_ref())
@@ -542,7 +543,7 @@
 
 /obj/item/spell/construct/projectile/proc/shot_unmark(datum/om/task/timed/construct_shot/task)
 	task.marked?.cut_overlay(task.marker)
-	qdel(task.marker)
+	spent(task.marker)
 
 /obj/item/spell/construct/projectile/proc/shot_charged(datum/om/task/timed/construct_shot/task)
 	shot_unmark(task)
@@ -709,7 +710,7 @@
 	var/attack_message = task.attack_message
 	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
-	qdel(src)
+	spent(src)
 
 
 ////////////////////////////
@@ -994,7 +995,7 @@
 				H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
 				H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
 
-			for(var/obj/item/organ/E in H.bad_external_organs)
+			for(var/obj/item/organ/E in H.damaged_limbs())
 				var/obj/item/organ/external/affected = E
 				if(affected.is_fractured())
 					affected.mend_fracture()

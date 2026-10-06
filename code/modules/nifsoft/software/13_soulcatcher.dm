@@ -274,7 +274,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
 		brainmob.transient = TRUE
-		qdel(M) //Bye ghost
+		spent(M) //Bye ghost
 
 	//Give them a flavortext message
 	var/message = span_notice("Your vision fades in a haze of static, before returning.") + "\n\
@@ -329,7 +329,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/brain/caught_soul/life_type_pre(datum/seq_frame/life/F)
 	if(!src.mind || !src.key)
-		qdel(src)
+		spent(src)
 		return F.abort()
 	return ..()
 
@@ -346,7 +346,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 	if(!src.client)
 		if(++src.client_missing == 300)
-			qdel(src)
+			spent(src)
 		return
 	else
 		src.client_missing = 0
@@ -448,6 +448,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	icon_state = "beacon"
 	var/tmp/mob/living/parent_human
 
+// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
 /mob/observer/eye/ar_soul/Initialize(mapload, human)
 	. = ..()
 	var/mob/brainmob = loc

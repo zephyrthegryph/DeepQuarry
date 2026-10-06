@@ -13,6 +13,7 @@
 	dynamic_lighting = FALSE
 	init_from_table = FALSE
 
+// ALLOW(init/INSTANCE_STATE): icon_state taken from where this instance is placed
 /turf/unsimulated/fake_space/Initialize(mapload)
 	. = ..()
 	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"

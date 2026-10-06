@@ -74,6 +74,7 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 	micro_stuffed_messages(user, living_mob)
 	return OP_OK
 
+// ALLOW(init/INSTANCE_STATE): rolls its pixel offset when it has a centre of mass and no map offset
 /obj/item/reagent_containers/food/Initialize(mapload)
 	. = ..()
 	if ((center_of_mass_x || center_of_mass_y) && !pixel_x && !pixel_y)

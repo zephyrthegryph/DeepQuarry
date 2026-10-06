@@ -7,6 +7,7 @@
 	var/child_names_txt
 	var/list/child_names
 
+// ALLOW(init/INSTANCE_STATE): splits the map-edited child names and tags into its lookup
 /obj/machinery/embedded_controller/radio/docking_port_multi/Initialize(mapload)
 	. = ..()
 	var/list/names = splittext(child_names_txt, ";")

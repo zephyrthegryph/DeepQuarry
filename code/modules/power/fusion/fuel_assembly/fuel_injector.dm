@@ -184,4 +184,4 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "i
 
 /obj/machinery/fusion_fuel_injector/proc/blitz_boom()
 	explosion(loc,2,3,4,8)
-	qdel(src)
+	spent(src)

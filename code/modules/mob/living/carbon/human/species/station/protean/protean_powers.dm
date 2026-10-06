@@ -102,6 +102,7 @@ CAPABILITIES(/datum/protean_power)
 	icon = 'icons/mob/species/protean/protean_powers.dmi'
 	var/datum/protean_power/power
 
+// ALLOW(init/CTOR_ARGS): new_power is a constructor argument from whoever builds it
 /obj/effect/protean_power_button/Initialize(mapload, datum/protean_power/new_power)
 	. = ..()
 	rel_set(src, nameof(power), new_power)
@@ -383,7 +384,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
 	if(oldlimb)
 		oldlimb.removed()
-		qdel(oldlimb)
+		spent(oldlimb)
 	var/list/limblist = H.species.has_limbs[choice]
 	var/limbpath = limblist["path"]
 	var/obj/item/organ/external/new_eo = new limbpath(H) // joins onto its parent limb

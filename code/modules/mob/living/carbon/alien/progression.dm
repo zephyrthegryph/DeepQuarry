@@ -52,7 +52,7 @@
 	for(var/datum/language/L in languages)
 		adult.add_language(L.name)
 
-	qdel(src)
+	spent(src)
 
 /mob/living/carbon/alien/proc/update_progression()
 	if(amount_grown < max_grown)

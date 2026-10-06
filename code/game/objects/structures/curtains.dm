@@ -67,11 +67,16 @@
 	name = "Toggle"
 	effect = /obj/structure/curtain/proc/interaction_toggle
 
-/obj/structure/curtain/wirecutter_act(mob/user, obj/item/P)
+CAPABILITIES(/obj/structure/curtain)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+
+/obj/structure/curtain/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	playsound(src, P.usesound, 50, 1)
 	to_chat(user, span_notice("You start to cut the shower curtains."))
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/curtain/proc/wirecutter_act_timed_done(mob/user)
 	to_chat(user, span_notice("You cut the shower curtains."))

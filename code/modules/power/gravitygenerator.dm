@@ -53,12 +53,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 // You aren't allowed to move.
 /obj/machinery/gravity_generator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	qdel(src)
+	spent(src)
 
 // a broken part takes the whole generator down.
 /obj/machinery/gravity_generator/part/on_destroy(force)
 	if(main_part())
-		qdel(main_part())
+		destroyed(main_part())
 	atom_break()
 	..()
 

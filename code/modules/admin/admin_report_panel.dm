@@ -68,7 +68,7 @@ CAPABILITIES(/datum/admin_report)
 
 /datum/admin_report/proc/ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src)
 	return OP_OK
 
 /// Show a report with a list of preformatted lines.

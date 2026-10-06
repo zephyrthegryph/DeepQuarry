@@ -33,6 +33,7 @@
 		/obj/item/stack/cable_coil = 5,
 	)
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/food_replicator/Initialize(mapload)
 	. = ..()
 
@@ -97,7 +98,7 @@
 	var/obj/item/reagent_containers/foodItem = new product_path
 
 	var/total = foodItem.reagents.total_volume
-	qdel(foodItem)
+	spent(foodItem)
 
 	if(!container)
 		to_chat(user, span_warning("There is no container!"))

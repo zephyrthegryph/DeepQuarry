@@ -48,6 +48,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1
 
+// ALLOW(init/INSTANCE_STATE): level taken from where this instance is placed
 /obj/machinery/atmospherics/pipe/Initialize(mapload)
 	if(istype(get_turf(src), /turf/simulated/wall) || istype(get_turf(src), /turf/simulated/shuttle/wall) || istype(get_turf(src), /turf/unsimulated/wall))
 		level = 1
@@ -121,7 +122,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/proc/burst_from_pressure()
 	visible_message(span_danger("\The [src] bursts!"))
 	play_sfx(src, SFX_EFFECTS_BANG, 0.5)
-	qdel(src)
+	destroyed(src)
 
 /obj/machinery/atmospherics/pipe/return_air()
 	if(QDELETED(src))
@@ -136,7 +137,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		return
 	if(line.network?.rust_authoritative)
 		return
-	qdel(line)
+	spent(line)
 
 /obj/machinery/atmospherics/pipe/return_network(obj/machinery/atmospherics/reference)
 	if(QDELETED(src))
@@ -163,7 +164,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 			rel_remove(old_parent, nameof(old_parent.leaks), src)
 	else
 		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
-		qdel(old_parent)
+		spent(old_parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
 		own_clear(src, nameof(air_temporary), OWN_DELETE)
@@ -171,18 +172,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /// A stable leak sleeps: it watches both mixtures either side of it (Rust reports their changes) and wakes only once they no longer match,
 /// which is when the network's leak transaction has something to move.
 /obj/machinery/atmospherics/pipe/proc/hibernate_stable_leak()
-	clear_leak_gas_dependencies()
-	var/datum/gas_mixture/environment = loc?.return_air()
-	var/datum/gas_mixture/pipe_air = parent?.air
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(environment, pipe_air))
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	for(var/id in mixture_ids)
-		var/datum/native_watch/gas/W = gas_dependency_watch(src, id, GAS_DEPENDENCY_ALL, PROC_REF(leak_heard))
-		if(W)
-			rel_add(src, nameof(leak_watches), W)
+	gas_watch_many(src, nameof(leak_watches), list(loc?.return_air(), parent?.air), GAS_DEPENDENCY_ALL, PROC_REF(leak_heard))
 
 /// Rust reported a change of one side of a sleeping leak.
 /obj/machinery/atmospherics/pipe/proc/leak_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
@@ -193,7 +183,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())
 
 /obj/machinery/atmospherics/pipe/proc/clear_leak_gas_dependencies()
-	own_clear(src, nameof(leak_watches), OWN_DELETE)
+	gas_watch_many_clear(src, nameof(leak_watches))
 
 /obj/machinery/atmospherics/pipe/proc/wake_from_leak()
 	clear_leak_gas_dependencies()
@@ -247,7 +237,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	if(released_capacity > 0 && material_sorbed_thermal_energy > 0)
 		heat_set(released, material_sorbed_thermal_energy / released_capacity)
 	environment.merge(released)
-	qdel(released)
+	spent(released)
 	material_sorbed_moles = 0
 	material_sorbed_thermal_energy = 0
 

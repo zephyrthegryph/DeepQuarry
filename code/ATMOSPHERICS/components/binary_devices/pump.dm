@@ -222,10 +222,13 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
 	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appearance_running?on:off}")
+/obj/machinery/atmospherics/binary/pump/draw(datum/look/look)
+	..()
+	look.state("[base_icon]-[running_state()]")
 
-/obj/machinery/atmospherics/binary/pump/proc/appearance_running()
-	return powered() && use_power
+/// "on" while it works and runs, else "off".
+/obj/machinery/atmospherics/binary/pump/proc/running_state()
+	return (operable() && use_power) ? "on" : "off"
 
 /obj/machinery/atmospherics/binary/pump/update_underlays()
 	..()
@@ -288,10 +291,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 	init_on = TRUE
 	icon_state = "map_on"
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appearance_running?on:off}")
+/obj/machinery/atmospherics/binary/pump/high_power/draw(datum/look/look)
+	..()
+	look.state(running_state())
 
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev))
+	. += drawn_from(nameof(use_power))

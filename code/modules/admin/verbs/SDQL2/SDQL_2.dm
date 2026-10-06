@@ -187,7 +187,18 @@ Example: USING PROCCALL = BLOCKING, SELECT = FORCE_NULLS, PRIORITY = HIGH SELECT
 		CRASH("SDQL2 fatal error");};
 
 ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATEGORY_DEBUG_GAME, query_text as message)
-	var/prompt = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Run SDQL2 Query?", title = "SDQL2", choices = list("Yes", "Cancel"))
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if((istype(resumed, /datum/prompt/choice/admin_sdql_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(sdql2_query_replay_answered) && query_text == resumed.captured["original_query_text"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a1" in replay_answers))
+		replay_answers["original_query_text"] = args[2]
+		open_request(src, /datum/prompt/choice/admin_sdql_replay, PROC_REF(sdql2_query_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", buttons = TRUE, question = "Run SDQL2 Query?", title = "SDQL2", choices = list("Yes", "Cancel"))
+		return
+	var/prompt = replay_answers["a1"]
 	if(isnull(prompt))
 		return
 	if (prompt != "Yes")
@@ -382,9 +393,9 @@ CAPABILITIES(/datum/SDQL2_query)
 	if(!allow_admin_interact)
 		return
 	if(!delete_click)
-		rel_set(src, nameof(delete_click), new /obj/effect/statclick/SDQL2_delete(null, "INITIALIZING", src))
+		rel_set(src, nameof(delete_click), make(/obj/effect/statclick/SDQL2_delete, at = null, name = "INITIALIZING", target = src))
 	if(!action_click)
-		rel_set(src, nameof(action_click), new /obj/effect/statclick/SDQL2_action(null, "INITIALIZNG", src))
+		rel_set(src, nameof(action_click), make(/obj/effect/statclick/SDQL2_action, at = null, name = "INITIALIZNG", target = src))
 	var/list/L = list()
 	L[++L.len] = list("[id] ", "[delete_click.update("DELETE QUERY | STATE : [text_state()] | ALL/ELIG/FIN \
 	[islist(obj_count_all)? length(obj_count_all) : (isnull(obj_count_all)? "0" : obj_count_all)]/\
@@ -424,7 +435,7 @@ CAPABILITIES(/datum/SDQL2_query)
 	var/msg = "[key_name(user)] has stopped + deleted query #[id]"
 	message_admins(msg)
 	log_admin(msg)
-	qdel(src)
+	spent(src, user)
 
 /datum/SDQL2_query/proc/set_option(name, value)
 	switch(name)
@@ -492,7 +503,7 @@ CAPABILITIES(/datum/SDQL2_query)
 				dq_admin_report_html(showmob, "SDQL Result", text)
 		show_next_to_key = null
 	if(qdel_on_finish)
-		qdel(src)
+		spent(src)
 
 /datum/SDQL2_query/proc/PreSearch()
 	SDQL2_HALT_CHECK
@@ -905,7 +916,7 @@ CAPABILITIES(/datum/SDQL2_query)
 			query_tree += val
 		pos++
 
-	qdel(parser)
+	spent(parser, user)
 	return querys
 
 /proc/SDQL_testout(list/query_tree, indent = 0, mob/user = null)
@@ -1151,3 +1162,28 @@ CAPABILITIES(/datum/SDQL2_query)
 #undef SDQL2_TICK_CHECK
 
 #undef SDQL2_STAGE_SWITCH_CHECK
+
+/datum/prompt/choice/admin_sdql_replay
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_sdql_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_sdql_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_sdql_replay/refusal(given)
+	return null
+
+/datum/admin_verb/sdql2_query/proc/sdql2_query_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_query_text"], A.answer)

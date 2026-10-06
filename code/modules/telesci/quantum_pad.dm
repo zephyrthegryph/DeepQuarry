@@ -21,6 +21,7 @@
 	var/map_pad_id = null as text //what's my name
 	var/map_pad_link_id = null as text //who's my friend
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/power/quantumpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

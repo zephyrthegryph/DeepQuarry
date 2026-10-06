@@ -396,7 +396,7 @@
 	// Handle machines that have allocated default parts in thier constructor.
 	if(new_machine.component_parts)
 		for(var/CP in new_machine.component_parts)
-			qdel(CP)
+			spent(CP, user)
 		own_take_all(new_machine, nameof(new_machine.component_parts))
 	else
 		own_take_all(new_machine, nameof(new_machine.component_parts))

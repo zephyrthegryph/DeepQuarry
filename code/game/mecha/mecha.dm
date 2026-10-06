@@ -203,6 +203,21 @@ CAPABILITIES(/obj/mecha)
 	owns_one(nameof(phasing_action), /datum/action/innate/mecha/mech_toggle_phasing, starts = /datum/action/innate/mecha/mech_toggle_phasing)
 	owns_one(nameof(cloak_action), /datum/action/innate/mecha/mech_toggle_cloaking, starts = /datum/action/innate/mecha/mech_toggle_cloaking)
 	owns_one(nameof(smoke_system), /datum/effect/effect/system/smoke_spread, starts = /datum/effect/effect/system/smoke_spread)
+	interface("MechaInterface", autoupdate = TRUE)
+	without("ui_open")
+	op("rfreq", ui_act("rfreq", arg("delta", num())), then(PROC_REF(ui_act_rfreq)))
+	op("drop_from_cargo", ui_act("drop_from_cargo", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_drop_from_cargo)))
+	op("detach_equipment", ui_act("detach_equipment", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_detach_equipment)))
+	op("equip_interact", ui_act("equip_interact", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_equip_interact)))
+	op("view_main", ui_act("view_main"), then(PROC_REF(ui_act_view_main)))
+	op("ai_use_equipment", ui_act("ai_use_equipment", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_ai_use_equipment)))
+	op("access_add", ui_act("access_add", arg("id", num())), then(PROC_REF(ui_act_access_add)))
+	op("access_del", ui_act("access_del", arg("id", num())), then(PROC_REF(ui_act_access_del)))
+	op("access_finish", ui_act("access_finish"), then(PROC_REF(ui_act_access_finish)))
+	op("maint_req_access", ui_act("maint_req_access"), then(PROC_REF(ui_act_maint_req_access)))
+	op("maint_protocol", ui_act("maint_protocol"), then(PROC_REF(ui_act_maint_protocol)))
+	op("maint_set_air", ui_act("maint_set_air"), then(PROC_REF(ui_act_maint_set_air)))
+	op("maint_remove_passenger", ui_act("maint_remove_passenger"), then(PROC_REF(ui_act_maint_remove_passenger)))
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
@@ -396,7 +411,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/component/C = internal_components[slot]
 			if(istype(C))
 				C.detach()
-				qdel(C)
+				destroyed(C)
 	rel_clear(src, nameof(equipment))
 
 	GLOB.mech_destroyed_roundstat++
@@ -473,7 +488,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 				if(t_air)
 					t_air.merge(removed)
 				else //just delete the cabin gas, we're in space or some shit
-					qdel(removed)
+					spent(removed)
 
 // Inertial movement in space.
 // Called every process() tick (5 deciseconds).
@@ -1008,7 +1023,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		fx_sparks(src, 2, FALSE)
 	else
 		wrecked = TRUE
-		qdel(src)
+		destroyed(src)
 	return
 
 // Pilot Menu entries (old "Exosuit Interface" verbs): the pilot is inside the mech, which
@@ -1825,12 +1840,18 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/atom/active_caller
 	var/active_attack_target_name = ""
 
-DECLARE_UI(/obj/mecha, "MechaInterface", UI_AUTOUPDATE)
-
-UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merge:ui_data_obj_mecha{title:text,log_entries:unknown,ai_target_name:bool,ai_targets:list,access_current:list,access_available:list,maint_can_req_access:bool,maint_can_maint_access:bool,maint_can_set_air:bool,maint_can_remove_passenger:bool,damage_reports:list,high_pressure:bool,has_armor:bool,armor_percent:num,has_hull:bool,hull_percent:num,integrity_percent:num,cell_percent:unknown,use_internal_tank:bool,tank_pressure:unknown,tank_temp_k:unknown,tank_temp_c:unknown,cabin_pressure:num,cabin_temp_k:num,cabin_temp_c:num,lights:bool,dna_lock:bool,defence_mode_possible:bool,defence_mode:bool,overload_possible:bool,overload:bool,smoke_possible:bool,thrusters_possible:bool,thrusters:bool,cargo:list,radio_mic:bool,radio_spk:bool,radio_freq:text,airtank_disconnect:bool,airtank_connect:bool,id_upload_locked:bool,maint_access:bool,equipment:list,slots:list,can_eject:bool}")
+/obj/mecha/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["view"] = tgui_subview
+	data["smoke_reserve"] = smoke_reserve
+	var/list/merged_1 = ui_data_obj_mecha(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/mecha's window data (declared on its UI_DATA row).
-/obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 	data["title"] = "[name]"
 	switch(tgui_subview)
@@ -1959,9 +1980,8 @@ UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merg
 	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
 	return data
 
-/obj/mecha/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/mecha/proc/ui_gate(datum/act/op/A)
+	var/action = A.window_action()
 	var/static/list/static_routes = list(
 		"toggle_lights" = "toggle_lights",
 		"rmictoggle" = "rmictoggle",
@@ -1983,26 +2003,32 @@ UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merg
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/mecha, "rfreq", ui_act_rfreq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/mecha, ui_act_rfreq)
-	Topic(null, list("rfreq" = params["delta"]))
+/obj/mecha/proc/ui_act_rfreq(datum/act/op/A, delta)
+	if(!ui_gate(A))
+		return FALSE
+	Topic(null, list("rfreq" = delta))
 	return TRUE
 
-UI_ACT(/obj/mecha, "drop_from_cargo", ui_act_drop_from_cargo, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/mecha, ui_act_drop_from_cargo)
-	Topic(null, list("drop_from_cargo" = params["ref"]))
+/obj/mecha/proc/ui_act_drop_from_cargo(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	Topic(null, list("drop_from_cargo" = ref))
 	return TRUE
 
-UI_ACT(/obj/mecha, "detach_equipment", ui_act_detach_equipment, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
-UI_ACT_PROC(/obj/mecha, ui_act_detach_equipment)
-	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+/obj/mecha/proc/ui_act_detach_equipment(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/mecha_parts/mecha_equipment/W = ref
 	if(W in equipment)
 		W.detach()
 	return TRUE
 
-UI_ACT(/obj/mecha, "equip_interact", ui_act_equip_interact, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
-UI_ACT_PROC(/obj/mecha, ui_act_equip_interact)
-	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+/obj/mecha/proc/ui_act_equip_interact(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/mecha_parts/mecha_equipment/W = ref
 	if(W && (W in equipment))
 		if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
 			W.Topic(null, list("view_stats" = "1"))
@@ -2010,15 +2036,20 @@ UI_ACT_PROC(/obj/mecha, ui_act_equip_interact)
 			W.Topic(null, list("show_reagents" = "1"))
 	return TRUE
 
-UI_ACT(/obj/mecha, "view_main", ui_act_view_main)
-UI_ACT_PROC(/obj/mecha, ui_act_view_main)
+/obj/mecha/proc/ui_act_view_main(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	tgui_subview = "main"
 	return TRUE
 // Attack-AI sub-view
 
-UI_ACT(/obj/mecha, "ai_use_equipment", ui_act_ai_use_equipment, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
-UI_ACT_PROC(/obj/mecha, ui_act_ai_use_equipment)
-	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+/obj/mecha/proc/ui_act_ai_use_equipment(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/mecha_parts/mecha_equipment/W = ref
 	var/atom/target = active_caller
 	if(W && (W in equipment))
 		W.action(target, null, user)
@@ -2026,47 +2057,54 @@ UI_ACT_PROC(/obj/mecha, ui_act_ai_use_equipment)
 	return TRUE
 // Access sub-view
 
-UI_ACT(/obj/mecha, "access_add", ui_act_access_add, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/mecha, ui_act_access_add)
-	var/a = params["id"]
+/obj/mecha/proc/ui_act_access_add(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/a = id
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
 		operation_req_access += a
 	return TRUE
 
-UI_ACT(/obj/mecha, "access_del", ui_act_access_del, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/mecha, ui_act_access_del)
-	var/a = params["id"]
+/obj/mecha/proc/ui_act_access_del(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/a = id
 	if(a in operation_req_access)
 		operation_req_access -= a
 	return TRUE
 
-UI_ACT(/obj/mecha, "access_finish", ui_act_access_finish)
-UI_ACT_PROC(/obj/mecha, ui_act_access_finish)
+/obj/mecha/proc/ui_act_access_finish(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	add_req_access = 0
 	tgui_subview = "main"
 	return TRUE
 // Maint sub-view
 
-UI_ACT(/obj/mecha, "maint_req_access", ui_act_maint_req_access)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_req_access)
+/obj/mecha/proc/ui_act_maint_req_access(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card)
 		tgui_subview = "access"
 	return TRUE
 
-UI_ACT(/obj/mecha, "maint_protocol", ui_act_maint_protocol)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_protocol)
+/obj/mecha/proc/ui_act_maint_protocol(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	Topic(null, list("maint_access" = "1"))
 	return TRUE
 
-UI_ACT(/obj/mecha, "maint_set_air", ui_act_maint_set_air)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_set_air)
+/obj/mecha/proc/ui_act_maint_set_air(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	Topic(null, list("set_internal_tank_valve" = "1"))
 	return TRUE
 
-UI_ACT(/obj/mecha, "maint_remove_passenger", ui_act_maint_remove_passenger)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
+/obj/mecha/proc/ui_act_maint_remove_passenger(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	Topic(null, list("remove_passenger" = "1"))
 	return TRUE
 

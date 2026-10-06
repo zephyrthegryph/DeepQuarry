@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "1d1c61d72c9d9c37"
+#define VERDIGRIS_ABI "08d23410af0f6540"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -250,6 +250,10 @@
 
 // verdigris/domains/gas/src/reaction_energy.rs
 #define GAS_REACTION_STERILIZATION 5
+
+/// Extent: the crystal's device energy; the deltas are the phoron and oxygen it exhales.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_SUPERMATTER 22
 
 // verdigris/domains/gas/src/reaction_energy.rs
 #define GAS_REACTION_TRITIUM_FIRE 3
@@ -517,6 +521,11 @@
 // verdigris/core/src/units.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
 
+/// The supermatter's exhaust, per unit of its device energy (its power times
+/// its reaction power modifier): the heat it releases into the gas it took.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define SUPERMATTER_THERMAL_RELEASE 10000.0
+
 /// 0 degrees Celsius, K.
 // verdigris/core/src/units.rs
 #define T0C 273.15
@@ -622,6 +631,42 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:add_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
+
+/// Members placed, over every kind (diagnostics, tests).
+// /proc/vg_adjacency_count (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_count()
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_count_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Places (or moves) `handle` of `kind` on `(x, y, z)`, looking on `dirs`. Returns the handles whose neighbour
+/// sets changed: the member itself first (empty when nothing moved).
+// /proc/vg_adjacency_place (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_place(kind_id, handle, x, y, z, dirs)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_place_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle, x, y, z, dirs)
+
+/// Removes `handle` from `kind`. Returns the neighbours whose sets changed.
+// /proc/vg_adjacency_remove (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_remove(kind_id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle)
+
+/// Drops every member (DM's round start).
+// /proc/vg_adjacency_reset (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_reset()
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_reset_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// The neighbours `handle` sees in `kind`: `[handle, junction bit, ...]`.
+// /proc/vg_adjacency_seen (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_seen(kind_id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_seen_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle)
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
 // /datum/gas_mixture/proc/adjust_heat (verdigris/ffi/src/gas/binds.rs)

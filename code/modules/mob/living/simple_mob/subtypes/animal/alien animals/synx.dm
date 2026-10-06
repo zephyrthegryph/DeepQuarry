@@ -889,9 +889,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	faction = "SYN"
 
 
-/mob/living/simple_mob/animal/synx/ai/pet/greed/synth/Initialize(mapload)
-	. = ..()
-	name = "SYN-KinC-([rand(100,999)])"
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
+	rolls(nameof(name), PROC_REF(roll_name))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/mob/living/simple_mob/animal/synx/ai/pet/greed/synth/proc/roll_name(datum/roller/R)
+	return "SYN-KinC-([R.number(100, 999)])"
 
 /mob/living/simple_mob/animal/synx/ai/pet/greed/synth/goodboy
 	faction = "neutral"

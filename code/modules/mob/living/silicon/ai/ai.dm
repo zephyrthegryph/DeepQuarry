@@ -128,6 +128,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
 	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
 
+// ALLOW(init/CTOR_ARGS): is_decoy, L, B and safety are constructor arguments from whoever builds it
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
@@ -266,7 +267,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	QDEL_NULL(eyeobj)
 	for(var/mob/observer/eye/other as anything in eyes_list())
 		if(!QDELETED(other))
-			qdel(other) // ALLOW(lifecycle): the AI's extra eyes are linked by an OM relation (eye_of), not a declared var
+			destroyed(other)
 	destroy_eyeobj()
 	..()
 
@@ -345,6 +346,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
+// ALLOW(init/INSTANCE_STATE): binds to the AI it is made inside and stands where that AI is
 /obj/machinery/ai_powersupply/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(powered_ai), loc)
@@ -360,10 +362,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 /obj/machinery/ai_powersupply/machine_step()
 	if(!powered_ai || powered_ai.stat == DEAD)
-		qdel(src)
+		spent(src)
 		return
 	if(powered_ai.psupply != src) // For some reason, the AI has different powersupply object. Delete this one, it's no longer needed.
-		qdel(src)
+		spent(src)
 		return
 	if(powered_ai.APU_power)
 		set_use_power(USE_POWER_OFF)
@@ -654,8 +656,8 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/hologram_from_dummy(mob/living/carbon/human/dummy/dummy)
 	dummy.regenerate_icons()
 	var/new_holo = getHologramIcon(getCompoundIcon(dummy))
-	qdel(holo_icon)
-	qdel(dummy)
+	spent(holo_icon)
+	spent(dummy)
 	holo_icon = new_holo
 
 /mob/living/silicon/ai/proc/ai_hologram_change()
@@ -743,13 +745,13 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	if(!targets[input])
 		return
 	var/new_holo = getHologramIcon(getCompoundIcon(targets[input]))
-	qdel(holo_icon)
+	spent(holo_icon)
 	holo_icon = new_holo
 
 /mob/living/silicon/ai/proc/hologram_premade_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	qdel(holo_icon)
+	spent(holo_icon)
 	switch(A.answer.value)
 		if("default")
 			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
@@ -982,7 +984,7 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 /mob/living/silicon/ai/proc/core_blast(datum/act/hit/explosion/A)
 	if(A.packet.severity != 1)
 		return HOOK_DECLINE
-	qdel(src)
+	destroyed(src)
 	return TRUE
 
 DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -1111,7 +1113,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	life_set = LIFE_SET_DELIST
 
 /mob/living/silicon/ai/announcer/life_delist(datum/seq_frame/life/F)
-	qdel(src?.active_eye())
+	spent(src?.active_eye())
 
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO

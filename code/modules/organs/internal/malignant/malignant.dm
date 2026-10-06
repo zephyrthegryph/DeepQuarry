@@ -9,6 +9,7 @@
 	var/cooldownmin = 0
 	var/cooldownmax = 0
 
+// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
 /obj/item/organ/internal/malignant/Initialize(mapload, internal, force_location = null, forcetag = null)
 	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
 	if(forcetag)
@@ -70,7 +71,7 @@
 		return TRUE
 
 	// welp, clean up.
-	qdel(neworgan)
+	spent(neworgan)
 	return FALSE
 
 
@@ -97,7 +98,7 @@
 	var/feedmodmin = 1
 	var/feedmodmax = 2
 
-/obj/item/organ/internal/malignant/parasite/periodic_step()
+/obj/item/organ/internal/malignant/parasite/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -169,7 +170,7 @@
 	cooldownmin = 15
 	cooldownmax = 25
 
-/obj/item/organ/internal/malignant/tumor/cancer/periodic_step()
+/obj/item/organ/internal/malignant/tumor/cancer/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -227,7 +228,7 @@
 	cooldownmax = 35
 	supply_conversion_value = 10
 
-/obj/item/organ/internal/malignant/tumor/potato/periodic_step()
+/obj/item/organ/internal/malignant/tumor/potato/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -277,7 +278,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 	name = "pinata gland"
 	icon_state = "pinata"
 
-/obj/item/organ/internal/malignant/tumor/pinata/periodic_step()
+/obj/item/organ/internal/malignant/tumor/pinata/organ_tick(cycles)
 	. = ..()
 
 	if(stage_progress == 0)
@@ -349,7 +350,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	if(!turf_clear(T))
 		T = get_turf(src)
 	new /obj/effect/decal/cleanable/confetti(T)
-	qdel(src)
+	spent(src)
 */
 
 
@@ -362,7 +363,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	cooldownmax = 65
 	supply_conversion_value = 50
 
-/obj/item/organ/internal/malignant/tumor/bluespace/periodic_step()
+/obj/item/organ/internal/malignant/tumor/bluespace/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -407,7 +408,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	cooldownmax = 95
 	supply_conversion_value = 50
 
-/obj/item/organ/internal/malignant/tumor/beerbelly/periodic_step()
+/obj/item/organ/internal/malignant/tumor/beerbelly/organ_tick(cycles)
 	. = ..()
 
 	if(!owner)
@@ -439,7 +440,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	var/thalers = 0
 	supply_conversion_value = 25
 
-/obj/item/organ/internal/malignant/tumor/moneyorgan/periodic_step()
+/obj/item/organ/internal/malignant/tumor/moneyorgan/organ_tick(cycles)
 	. = ..()
 
 	if(!owner)
@@ -526,7 +527,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 		thalers -= 1
 		spawn_money(1, T)
 
-	qdel(src)
+	spent(src)
 */
 
 
@@ -615,11 +616,10 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 	var/chem_target = null
 	supply_conversion_value = 0
 
-/obj/item/organ/internal/malignant/engineered/lattice/Initialize(mapload, internal, force_location = null, forcetag = null)
-	growth_trigger = rand(150,200)
-	return ..(mapload, internal, force_location, forcetag)
+CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
+	rolls(nameof(growth_trigger), range_of(150, 200))
 
-/obj/item/organ/internal/malignant/engineered/lattice/periodic_step()
+/obj/item/organ/internal/malignant/engineered/lattice/organ_tick(cycles)
 	. = ..()
 	if(cooldown > 0)
 		cooldown--
@@ -639,7 +639,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 					var/ourowner = owner
 					var/ourloc = parent_organ
 					var/ourtag = organ_tag
-					qdel(src)
+					spent(src)
 					new newpath(ourowner, TRUE, ourloc, ourtag)
 			cooldown = rand(2,5)
 		else
@@ -721,7 +721,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 	var/deg_intensity = 1
 	var/side_effect_multiplier = 1
 
-/obj/item/organ/internal/malignant/engineered/chemorgan/periodic_step()
+/obj/item/organ/internal/malignant/engineered/chemorgan/organ_tick(cycles)
 	. = ..()
 	if(cooldown > 0)
 		cooldown--

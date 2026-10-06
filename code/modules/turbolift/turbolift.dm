@@ -214,7 +214,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 				var/mob/living/M = AM
 				M.gib()
 			else if(AM.simulated && !(istype(AM, /mob/observer)) && !(AM.is_incorporeal()))
-				qdel(AM)
+				spent(AM)
 
 	origin.move_contents_to(destination)
 

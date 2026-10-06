@@ -73,8 +73,6 @@
 			return M.life_alien_growth(F)
 		if("life_chemicals")
 			return life_chemicals(F)
-		if("life_blood")
-			return life_blood(F)
 		if("life_random_events")
 			return life_random_events(F)
 		if("life_voice")
@@ -89,9 +87,6 @@
 		if("life_changeling")
 			var/mob/living/carbon/human/M = src
 			return M.life_changeling(F)
-		if("life_organs")
-			var/mob/living/carbon/human/M = src
-			return M.life_organs(F)
 		if("life_thermoregulation")
 			var/mob/living/carbon/human/M = src
 			return M.life_thermoregulation(F)
@@ -101,9 +96,6 @@
 		if("life_shock")
 			var/mob/living/carbon/human/M = src
 			return M.life_shock(F)
-		if("life_pain")
-			var/mob/living/carbon/human/M = src
-			return M.life_pain(F)
 		if("life_medical")
 			var/mob/living/carbon/human/M = src
 			return M.life_medical(F)
@@ -243,10 +235,6 @@
 			return life_chemicals_due()
 		if("life_chemicals_rewake")
 			return life_chemicals_rewake()
-		if("life_blood_due")
-			return life_blood_due()
-		if("life_blood_rewake")
-			return life_blood_rewake()
 		if("life_random_events_due")
 			return life_random_events_due()
 		if("life_voice_rewake")
@@ -264,12 +252,6 @@
 		if("life_changeling_rewake")
 			var/mob/living/carbon/human/M = src
 			return M.life_changeling_rewake()
-		if("life_organs_due")
-			var/mob/living/carbon/human/M = src
-			return M.life_organs_due()
-		if("life_organs_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_organs_rewake()
 		if("life_thermoregulation_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_thermoregulation_due()
@@ -288,9 +270,6 @@
 		if("life_shock_rewake")
 			var/mob/living/carbon/human/M = src
 			return M.life_shock_rewake()
-		if("life_pain_due")
-			var/mob/living/carbon/human/M = src
-			return M.life_pain_due()
 		if("life_medical_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_medical_due()

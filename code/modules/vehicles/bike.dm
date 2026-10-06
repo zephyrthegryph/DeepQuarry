@@ -44,9 +44,12 @@ CAPABILITIES(/obj/vehicle/bike)
 	. = ..()
 	own_clear(src, nameof(cell), OWN_DELETE)
 
-/obj/vehicle/bike/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/bike/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/bike/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)), \

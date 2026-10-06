@@ -53,6 +53,9 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	op("rem_laser", ui_act("rem_laser"), then(PROC_REF(ui_act_rem_laser)))
 	op("rem_cap", ui_act("rem_cap"), then(PROC_REF(ui_act_rem_cap)))
 	op("rem_bin", ui_act("rem_bin"), then(PROC_REF(ui_act_rem_bin)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(medigun_backpack_emp)))
 
 //backpack item
 /obj/item/medigun_backpack/cmo
@@ -320,23 +323,20 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()
 
-DAMAGE_REACTION(/obj/item/medigun_backpack, DAMAGE_EMP, PROC_REF(medigun_backpack_emp))
 /// The pulse reaches the cell.
-/obj/item/medigun_backpack/proc/medigun_backpack_emp(datum/damage_packet/packet)
+/obj/item/medigun_backpack/proc/medigun_backpack_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(bcell)
 		bcell.emp_act(packet.severity)
 
-DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/medigun_backpack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/medigun_backpack/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	// See important note in code/datums/behaviours/tethered_item.dm
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/medigun_backpack/MouseDrop()
 	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
@@ -353,9 +353,11 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 		M.put_in_any_hand_if_possible(src)
 
 /// Old attackby.
-/obj/item/medigun_backpack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/medigun_backpack/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(refill_reagent(W, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/bork_medigun/medigun = get_medigun()
 
@@ -390,20 +392,20 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 		if(!maintenance)
 			maintenance = TRUE
 			to_chat(user, span_notice("You open the maintenance hatch on \the [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		maintenance = FALSE
 		to_chat(user, span_notice("You close the maintenance hatch on \the [src]."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W, /obj/item/cell))
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
 		if(!move_into(src, nameof(src.ccell), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(maintenance)
 		if(istype(W, /obj/item/stock_parts/scanning_module))
@@ -411,39 +413,39 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				to_chat(user, span_notice("\The [src] already has a scanning module."))
 			else
 				if(!move_into(src, nameof(src.smodule), W, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
 				update_icon()
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/manipulator))
 			if(smanipulator)
 				to_chat(user, span_notice("\The [src] already has a manipulator."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(!move_into(src, nameof(src.smanipulator), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			smaniptier = smanipulator.get_rating()
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/micro_laser))
 			if(slaser)
 				to_chat(user, span_notice("\The [src] already has a micro laser."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(!move_into(src, nameof(src.slaser), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/capacitor))
 			if(scapacitor)
 				to_chat(user, span_notice("\The [src] already has a capacitor."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(!move_into(src, nameof(src.scapacitor), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
@@ -473,14 +475,14 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/matter_bin))
 			if(sbin)
 				to_chat(user, span_notice("\The [src] already has a matter bin."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(!move_into(src, nameof(src.sbin), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
 				chemcap = 300
@@ -502,9 +504,9 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				toxcharge = tankmax
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/medigun_backpack/proc/refill_reagent(obj/item/container, mob/user)
 	. = FALSE

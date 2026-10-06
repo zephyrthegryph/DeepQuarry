@@ -14,7 +14,7 @@
 		H.forceMove(newloc)
 		if(prob(25))
 			H.take_damage(rand(10,30), BRUTE, null, FALSE)
-	qdel(src)
+	destroyed(src)
 
 /// Below integrity_failure the computer ceases to operate.
 /obj/item/modular_computer/proc/computer_broken()

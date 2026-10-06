@@ -20,7 +20,7 @@
 		if(O.icon_state)
 			if(!istates.Find(O.icon_state))
 				text += "[O.type] is missing normal icon called \"[O.icon_state]\" in \"[O.icon]\".\n"
-		qdel(O)
+		spent(O)
 	if(text)
 		var/F = file("broken_icons.txt")
 		fdel(F)

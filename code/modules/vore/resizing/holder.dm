@@ -68,4 +68,4 @@ EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(
 
 /obj/item/holder/proc/delete_if_dropped()
 	if(!throwing && isturf(loc))
-		qdel(src)
+		spent(src)

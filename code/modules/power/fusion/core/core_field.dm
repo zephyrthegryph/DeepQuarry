@@ -48,6 +48,7 @@
 CAPABILITIES(/obj/effect/fusion_em_field)
 	owns_many(nameof(particle_catchers))
 
+// ALLOW(init/CTOR_ARGS): new_owned_core is a constructor argument from whoever builds it
 /obj/effect/fusion_em_field/Initialize(mapload, obj/machinery/power/fusion_core/new_owned_core)
 	. = ..()
 
@@ -126,7 +127,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 /obj/effect/fusion_em_field/periodic_step()
 	//make sure the field generator is still intact
 	if(!owned_core || QDELETED(owned_core))
-		qdel(src)
+		spent(src)
 		return
 
 	// Take some gas up from our environment.
@@ -618,7 +619,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
 		after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, with = list(things_in_range)) // the core's clock: the field is gone by then
-	qdel(src)
+	spent(src)
 	return
 
 /obj/effect/fusion_em_field/proc/QuantumFluxCascade() //spews hot phoron and oxygen in a radius around the RUST. Will probably set fire to things
@@ -638,7 +639,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 			TT.assume_air(plasma)
 			TT.hotspot_expose(plasma_temperature)
 			plasma = null
-	qdel(src)
+	spent(src)
 	return
 
 /obj/effect/fusion_em_field/proc/MagneticQuench() //standard hard shutdown. dumps hot oxygen/phoron into the core's area and releases an EMP in the area around the core.
@@ -655,7 +656,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		TT.hotspot_expose(plasma_temperature)
 		plasma = null
 	owned_core.Shutdown()
-	qdel(src)
+	spent(src)
 	return
 
 /obj/effect/fusion_em_field/proc/BluespaceQuenchEvent() //!!FUN!! causes a number of explosions in an area around the core. Will likely destory or heavily damage the reactor.
@@ -672,7 +673,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		explosion(pick(things_in_range), -1, 5, 5, 5)
 		empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	owned_core.Shutdown()
-	qdel(src)
+	spent(src)
 	return
 
 #undef FUSION_ENERGY_PER_K

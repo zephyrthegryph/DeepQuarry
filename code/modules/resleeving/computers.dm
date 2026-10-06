@@ -129,18 +129,14 @@
 		get_asset_datum(/datum/asset/simple/cloning/resleeving),
 	)
 
-DECLARE_UI(/obj/machinery/computer/transhuman/resleeving, "ResleevingConsole", UI_TITLE("Resleeving Console"))
-
 /obj/machinery/computer/transhuman/resleeving/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
 		return FALSE
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/computer/transhuman/resleeving, "merge:ui_data_obj_machinery_computer_transhuman_resleeving{menu:unknown,pods:list,spods:list,sleevers:list,coredumped:unknown,emergency:unknown,temp:unknown,selected_pod:text,selected_printer:text,selected_sleever:text,bodyrecords:list,mindrecords:list,active_b_rec:map,active_m_rec:map}")
-
 /// The computed part of /obj/machinery/computer/transhuman/resleeving's window data (declared on its UI_DATA row).
-/obj/machinery/computer/transhuman/resleeving/proc/ui_data_obj_machinery_computer_transhuman_resleeving(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/transhuman/resleeving/ui_data(datum/act/eval/A)
 	var/data[0]
 	data["menu"] = menu
 
@@ -242,26 +238,23 @@ UI_DATA_REPLACE(/obj/machinery/computer/transhuman/resleeving, "merge:ui_data_ob
 	disk().forceMove(get_turf(src))
 	own_take(src, nameof(disk))
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "view_b_rec", ui_act_view_b_rec, UI_ARG_VALUE("ref"))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_view_b_rec)
-	view_b_rec(params["ref"])
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_view_b_rec(datum/act/op/A, ref)
+	view_b_rec(ref)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_clear_b_rec(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
 	return OP_OK
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "view_m_rec", ui_act_view_m_rec, UI_ARG_VALUE("ref"))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_view_m_rec)
-	view_m_rec(params["ref"])
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_view_m_rec(datum/act/op/A, ref)
+	view_m_rec(ref)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_clear_m_rec(datum/act/op/A)
 	rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 	return OP_OK
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "coredump", ui_act_coredump)
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_coredump)
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_coredump(datum/act/op/A)
 	if(disk())
 		our_db().core_dump(disk())
 		after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
@@ -278,30 +271,32 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_coredump)
 	resleeve_create_body()
 	return OP_OK
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectpod", ui_act_selectpod, UI_ARG_REF("ref", "pods", /obj/machinery/clonepod))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectpod)
-	var/obj/machinery/clonepod/selected = params["ref"]
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_selectpod(datum/act/op/A, ref)
+	if(!isnull(ref) && !(ref in src.pods))
+		return FALSE
+	var/obj/machinery/clonepod/selected = ref
 	if(selected)
-		rel_set(src, nameof(/obj/machinery/computer/cloning::selected_pod), selected)
+		rel_set(src, nameof(selected_pod), selected)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectprinter", ui_act_selectprinter, UI_ARG_REF("ref", "spods", /obj/machinery/transhuman/synthprinter))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectprinter)
-	var/obj/machinery/transhuman/synthprinter/selected = params["ref"]
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_selectprinter(datum/act/op/A, ref)
+	if(!isnull(ref) && !(ref in src.spods))
+		return FALSE
+	var/obj/machinery/transhuman/synthprinter/selected = ref
 	if(selected)
 		rel_set(src, nameof(/obj/machinery/computer/transhuman/resleeving::selected_printer), selected)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "selectsleever", ui_act_selectsleever, UI_ARG_REF("ref", "sleevers", /obj/machinery/transhuman/resleever))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_selectsleever)
-	var/obj/machinery/transhuman/resleever/selected = params["ref"]
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_selectsleever(datum/act/op/A, ref)
+	if(!isnull(ref) && !(ref in src.sleevers))
+		return FALSE
+	var/obj/machinery/transhuman/resleever/selected = ref
 	if(selected)
 		rel_set(src, nameof(/obj/machinery/computer/transhuman/resleeving::selected_sleever), selected)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "menu", ui_act_menu, UI_ARG_NUM("num", MENU_MAIN, MENU_MIND))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_menu)
-	menu = params["num"]
+/obj/machinery/computer/transhuman/resleeving/proc/ui_act_menu(datum/act/op/A, num_arg)
+	menu = num_arg
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_genereset(datum/act/op/A)
@@ -383,8 +378,12 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_menu)
 
 /// "sleeve": put the selected mind record into the selected resleever's body (mode 1) or a card (mode 2).
 /// Prompts re-run the action with the same params.
-UI_ACT(/obj/machinery/computer/transhuman/resleeving, "sleeve", act_sleeve, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
+/obj/machinery/computer/transhuman/resleeving/proc/act_sleeve(datum/act/op/A, mode)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	return sleeve_request_stage(ui, mode)
+
+/obj/machinery/computer/transhuman/resleeving/proc/sleeve_request_stage(datum/tgui/ui, mode, atom/selected_body, consent)
 	. = TRUE
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(!istype(active_mr))
@@ -395,7 +394,6 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 		set_temp("Error: No sleevers detected.", "danger")
 		rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 		return
-	var/mode = params["mode"]
 	var/override
 	var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
 	if(!istype(sleever))
@@ -417,7 +415,10 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 				subtargets += H
 			if(subtargets.len)
 				var/oc_sanity = sleever.get_occupant()
-				var/_answer_k417 = act_ask(ui.user, action, params, ui, "k417", /datum/om/prompt/choice, message = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", title = "Resleeving Target", choices = subtargets)
+				if(isnull(selected_body))
+					open_request(ui, /datum/prompt/choice/resleeving_body, TYPE_PROC_REF(/datum/tgui, resleeving_body_answered), answerer = ui.user, choices = subtargets, question = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", captured = list("mode" = mode, "consent" = consent))
+					return
+				var/_answer_k417 = selected_body
 				if(isnull(_answer_k417))
 					return
 				override = _answer_k417
@@ -434,7 +435,10 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 
 	//Body to sleeve into, but mind is in another living body.
 	if(active_mr.mind_ref.current && active_mr.mind_ref.current.stat < DEAD) //Mind is in a body already that's alive
-		var/answer = act_ask(active_mr.mind_ref.current, action, params, ui, "k431", /datum/om/prompt/choice/alert, message = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)", title = "Resleeving", choices = list("No","Yes"))
+		if(isnull(consent))
+			open_request(ui, /datum/prompt/choice/resleeving_consent, TYPE_PROC_REF(/datum/tgui, resleeving_consent_answered), answerer = active_mr.mind_ref.current, subject = selected_body, choices = list("No", "Yes"), buttons = TRUE, captured = list("mode" = mode))
+			return
+		var/answer = consent
 		if(isnull(answer))
 			return
 		//They declined to be moved.
@@ -447,6 +451,52 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 	sleever.putmind(active_mr, mode, override, db_key = db_key)
 	set_temp("Initiating resleeving...")
 	rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
+
+/datum/tgui/proc/resleeving_body_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/computer/transhuman/resleeving/console = src_object()
+	if(console.sleeve_request_stage(src, A.answer.captured["mode"], A.answer.value, A.answer.captured["consent"]))
+		SStgui.update_uis(console)
+
+/datum/tgui/proc/resleeving_consent_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/computer/transhuman/resleeving/console = src_object()
+	if(console.sleeve_request_stage(src, A.answer.captured["mode"], A.answer.subject, A.answer.value))
+		SStgui.update_uis(console)
+
+/datum/prompt/choice/resleeving_body
+	title = "Resleeving Target"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/resleeving_body/normalize(given)
+	return isatom(given) ? given : null
+
+/datum/prompt/choice/resleeving_body/refusal(given)
+	return null
+
+/datum/prompt/choice/resleeving_body/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/transhuman/resleeving/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!console.ui_act_allowed(original_ui.user, "sleeve", original_ui, original_ui.state()))
+		return "the sleeve action is unavailable"
+	return null
+
+/datum/prompt/choice/resleeving_consent
+	parent_type = /datum/prompt/choice/resleeving_body
+	question = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)"
+	title = "Resleeving"
+
+/datum/prompt/choice/resleeving_consent/normalize(given)
+	return istext(given) ? given : null
 
 /// Why `active_mr` can't be sleeved into the resleever's occupant, or null when it can.
 /obj/machinery/computer/transhuman/resleeving/proc/sleeve_body_error(obj/machinery/transhuman/resleever/sleever, datum/transhuman/mind_record/active_mr)
@@ -542,7 +592,7 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 	if(istype(active_br))
 		if(isnull(active_br.mydna))
 			if(!QDELETED(active_br))
-				qdel(active_br)
+				spent(active_br)
 				rel_clear(src, nameof(current_br))
 			set_temp("Error: Record corrupt.", "danger")
 		else
@@ -572,7 +622,7 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 	if(istype(active_mr))
 		if(isnull(active_mr.ckey))
 			if(!QDELETED(active_mr))
-				qdel(active_mr)
+				spent(active_mr)
 				rel_clear(src, nameof(current_mr))
 			set_temp("Error: Record corrupt.", "danger")
 		else
@@ -630,3 +680,13 @@ CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
 	ref_many(nameof(spods))
 	ref_many(nameof(sleevers))
 	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
+	interface("ResleevingConsole", title = "Resleeving Console")
+	without("ui_open")
+	op("view_b_rec", ui_act("view_b_rec", arg("ref")), then(PROC_REF(ui_act_view_b_rec)))
+	op("view_m_rec", ui_act("view_m_rec", arg("ref")), then(PROC_REF(ui_act_view_m_rec)))
+	op("coredump", ui_act("coredump"), then(PROC_REF(ui_act_coredump)))
+	op("selectpod", ui_act("selectpod", arg("ref", schema_ref(/obj/machinery/clonepod))), then(PROC_REF(ui_act_selectpod)))
+	op("selectprinter", ui_act("selectprinter", arg("ref", schema_ref(/obj/machinery/transhuman/synthprinter))), then(PROC_REF(ui_act_selectprinter)))
+	op("selectsleever", ui_act("selectsleever", arg("ref", schema_ref(/obj/machinery/transhuman/resleever))), then(PROC_REF(ui_act_selectsleever)))
+	op("menu", ui_act("menu", arg("num", num(1, 3))), then(PROC_REF(ui_act_menu)))
+	op("sleeve", ui_act("sleeve", arg("mode", num())), then(PROC_REF(act_sleeve)))

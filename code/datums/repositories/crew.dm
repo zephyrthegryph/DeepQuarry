@@ -54,7 +54,7 @@ CAPABILITIES(/datum/repository/crew)
 						crewmemberData["heartRate"] = D.heart_rate
 						crewmemberData["oxygenation"] = D.oxygenation
 						crewmemberData["temperature"] = D.temperature
-						qdel(D)
+						spent(D)
 
 				if(C.sensor_mode >= SUIT_SENSOR_TRACKING)
 					var/area/A = get_area(H)

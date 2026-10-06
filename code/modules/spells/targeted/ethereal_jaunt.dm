@@ -63,8 +63,8 @@
 					break
 	target.canmove = 1
 	target.reset_perspective() // Fixes a blackscreen
-	qdel(animation)
-	qdel(holder)
+	spent(animation)
+	spent(holder)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
 	animation.icon_state = "liquify"
@@ -89,6 +89,7 @@
 	anchored = TRUE
 	var/tmp/turf/last_valid_turf
 
+// ALLOW(init/INSTANCE_STATE): remembers the turf it started on
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(last_valid_turf), get_turf(loc))

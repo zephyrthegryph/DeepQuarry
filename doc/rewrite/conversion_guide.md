@@ -308,3 +308,48 @@ lint is a hard ban). Converting a machine:
 9. **Mob bodies** are not machines: Life's environment stage calls `set_surroundings(air, surface, sky_area)` (W/K, W/K, m²) and the body's
    links to the plume of air, the floor, the walls and the sky follow it when it moves. Don't add a `heat_link()` to a mob for its
    environment; add to `set_surroundings()`.
+
+## 11. Lifecycle forms: what replaces Initialize() overrides, qdel(src) and usr
+
+Nine declaration forms (`code/engine/lifeforms/`, `doc/rewrite/final_api.html` section 6 "Lifecycle forms", one test file each:
+`code/modules/unit_tests/dq_lifeform_*_tests.dm`) take over what an `Initialize()` override, a `qdel(src)` or a read of `usr` did by hand. The
+codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py`) do the mechanical half; the table says what to write by hand.
+
+| Old shape | Write instead |
+|---|---|
+| `pixel_x = rand(-8, 8); pixel_y = rand(-8, 8)` / `randpixel_xy()` in `Initialize()` | `rolls(ROLL_PIXEL, PIXEL_JITTER(8))` |
+| `icon_state = pick("a", "b")`, `amount = rand(2, 5)`, `if(prob(30)) broken = TRUE` | `rolls(nameof(icon_state), pick_one(list("a", "b")))`, `rolls(nameof(amount), range_of(2, 5))`, `rolls(nameof(broken), chance(30))` |
+| `pickweight(list(...))` into a var | `rolls(nameof(v), pick_weighted(list(a = 3, b = 1)))` |
+| a roll that reads another roll | `rolls(nameof(desc), PROC_REF(roll_desc), from = list(nameof(kind)))`, `roll_desc(datum/roller/R)` draws with `R.number()`, `R.choose()`, `R.chance()` |
+| `Initialize(mapload, charge)` that stores `charge` | `param(nameof(charge), int(0, 100), pos = 1)`; callers `make(/T, at = loc, charge = 5)` (a positional `new /T(loc, 5)` still lands in `pos = 1`) |
+| `Initialize(mapload, list/parts)` of a machine built from a frame | `built_from(nameof(component_parts))`; the frame calls `make(/T, at = loc, parts = ...)` |
+| `GLOB.x += src` / `LAZYADD(GLOB.x, src)` with a matching removal | `registry(REGISTRY_X)`; keyed: `registry(REGISTRY_X, key = nameof(id_tag), by = REG_Z)`, readers `registry_get()` / `registry_all()` |
+| `set_frequency(frequency)` in `Initialize()` and a hand-written retune | `radio_listen(freq = nameof(frequency), filter = RADIO_X)`; the frequency var must be `TRACKED` |
+| `update_neighbours()` / `update_connections(1)` in `Initialize()` and `on_destroy()` | `adjacency(ADJ_KIND_X, into = nameof(connections), changed = PROC_REF(update_icon))` |
+| an `Initialize()` that builds the same list for every instance | `per_type(nameof(table), PROC_REF(build_table))` |
+| `new /obj/item/x(src)` in `Initialize()` | `initial_contents(/obj/item/x)`, `initial_contents(/obj/item/x, count = 3)`, `initial_contents(/obj/item/x, slot = SLOT_X)` |
+| `new /obj/item/x(src, src)` (the child told its owner) | `starts_args = list(OWNER)` on the `owns_one`, or `initial_contents(/obj/item/x, args = list(OWNER))` |
+| `add_language(LANGUAGE_X)` in a mob's `Initialize()` | `knows(LANGUAGE_X)` |
+| `open()` / `toggle()` in a mapped variant's `Initialize()` | `starts_as("door.open")` (an op key) or `starts_as(COVER_OPEN)` (a state key) |
+| a var recomputed in every setter of what it reads | `derives(nameof(v), PROC_REF(compute), from = list(nameof(a), nameof(b)))`; the inputs must be `TRACKED` |
+| a window, request or condition deleted by its host's `on_destroy()` | `lives_while(nameof(host))`, `lives_while(PROC_REF(still_wanted), watches = list(nameof(answered)))`, `on_ending(PROC_REF(x))` |
+| `qdel(src)` after the last charge, bite, dissolve or break | `spent(src, user)`, `consumed(src, eater)`, `dissolved(src)`, `destroyed(src, user, BRUTE)`; timed: `expire(delay)`; transform: `replace_with(/T)` |
+| `Click()` / `MouseDrop()` overrides reading `usr` | `click_on(PROC_REF(x))` / `drag_onto(PROC_REF(x), onto = /T)`; `x(datum/act/input/A)` reads `A.actor`; an op key binds the op |
+| `MouseEntered()` / `MouseExited()` with `openToolTip(usr, ...)` | `tooltip(PROC_REF(x))`, `x(mob/user)` answers `list(title, content)`; `hover(PROC_REF(x))` for anything else |
+| admin or callback code that sets `usr` to call a proc as someone | `with_actor(admin_mob, target, PROC_REF(x), args...)` (or a `CALLBACK` where the core allows one) |
+
+What to know:
+
+* **Order.** Params, `per_type` tables and rolls run at the root of the `Initialize()` chain, before the type's code after `..()`; a value a
+  map edit, a param or `make()` gave suppresses its roll. `initial_contents()`, `knows()`, `starts_as()`, `derives()`, registries, radio, adjacency
+  and scopes run with the capabilities' init. A plain datum runs the same from `New()` (the generator sets `lifeform_declared`).
+* **Seeds.** A roll draws from a stream seeded by the round seed and the map position, or by its creator's stream. `rolls_fix_seed(n)` in a
+  test makes a map roll the same twice. The distributions do not change; the realisation does (`intended_changes.md`).
+* **Watched vars publish.** A registry key, a radio frequency, a `derives()` input, a `lives_while()` watch and an `adjacency(when =)` var are
+  followed through their writes: declare them `TRACKED` (or write through a setter that calls `tracked_changed()`).
+* **Endings carry a cause.** Every ending publishes `/datum/notice/ended` with `cause` (`END_SPENT`, `END_CONSUMED`, ...) and `by`; a type's
+  `on_ending(PROC_REF(x))` runs `x(cause, by)` before the teardown. `qdel()` is the engine's; the `escape_hatches` lint counts what content still
+  calls it and bans it once the count reaches 0.
+* **Checks.** `analyze` rejects a `make()` naming a param its type does not declare or leaving out a required one, a write to a `per_type` var
+  outside its build proc, and an ALLOW whose reason describes one of these forms (`lifeforms` lint). `escape_hatches` keeps the count of the
+  remaining `ALLOW(init/...)`, `ALLOW(lifecycle)`, `ALLOW(sys_usr_outside_verb)`, content `qdel(` and content `usr` sites, which only falls.
