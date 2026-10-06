@@ -733,3 +733,38 @@
 	for(var/obj/item/pipe_meter/I in P.loc)
 		qdel(I)
 	take_down_lines()
+
+// =====================================================================================================================
+// Pipe fittings
+// =====================================================================================================================
+
+/// A wrench fastens a pipe fitting into its pipe (joined to the pipe beside it), and a meter onto that pipe; a fitting where a pipe already runs
+/// is refused.
+/datum/unit_test/dq_atmos_m/pipes/fitting_fastens
+/datum/unit_test/dq_atmos_m/pipes/fitting_fastens/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/pipe/simple/visible)
+	var/obj/machinery/atmospherics/pipe/right = line[3]
+	var/mob/living/carbon/human/H = person(null, tile(4, 2))
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(4, 2))
+	qdel(locate(/obj/machinery/atmospherics/pipe/cap) in tile(4, 3))
+	am_settle()
+	var/obj/item/pipe/F = new /obj/item/pipe/binary/bendable(tile(4, 3), /obj/machinery/atmospherics/pipe/simple/visible, EAST)
+	F.setPipingLayer(PIPING_LAYER_REGULAR)
+	var/datum/op_result/R = ap_click(H, F, W)
+	TEST_ASSERT(QDELETED(F), "the fitting is fastened ([R?.outcome] [R?.key] [R?.reason])")
+	var/obj/machinery/atmospherics/pipe/simple/visible/built = locate() in tile(4, 3)
+	TEST_ASSERT_NOTNULL(built, "into its pipe")
+	TEST_ASSERT(built.node1 == right || built.node2 == right, "joined to the pipe beside it")
+	var/obj/item/pipe/second = new /obj/item/pipe/binary/bendable(tile(4, 3), /obj/machinery/atmospherics/pipe/simple/visible, EAST)
+	second.setPipingLayer(PIPING_LAYER_REGULAR)
+	ap_click(H, second, W)
+	TEST_ASSERT(!QDELETED(second), "a fitting where a pipe already runs is refused")
+	qdel(second)
+	var/obj/item/pipe_meter/M = new(tile(4, 3))
+	M.setAttachLayer(PIPING_LAYER_REGULAR)
+	ap_click(H, M, W)
+	TEST_ASSERT(QDELETED(M), "a meter item fastens onto the pipe")
+	for(var/obj/machinery/meter/placed in tile(4, 3))
+		qdel(placed)
+	qdel(built)
+	take_down_lines()

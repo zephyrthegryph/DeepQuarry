@@ -1450,3 +1450,17 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
+
+## Pipe construction: fittings, the dispenser, the pipe layer (rewrite/pipenet-full)
+
+Pinned by the generated pins `snapshots/pins/obj.item.pipe*.txt`, `obj.machinery.pipedispenser.txt`, `obj.machinery.pipelayer.txt` and
+`dq_atmos_m/pipes/fitting_fastens`.
+
+- A fitting's use-in-hand (rotate), its "Flip Pipe" verb (now a menu op), its material liner and its wrench are ops; the wrench's tile check is
+  a requirement with the old refusal texts (the shared init-direction cache is filled when the fitting is made, so the check only reads it). The
+  meter and gas-sensor items fasten with wrench ops. `fasten()` is the one way a fitting becomes its device (the pipe layer calls it instead of
+  faking a wrench `attackby()`).
+- The dispenser's "put back" (a fitting or a meter item), its wrench (2 s to bolt, 4 s to unbolt, tracked `unwrenched`) and the disposal
+  dispenser's drag-in are ops.
+- The pipe layer's hand switch (empty hand only), its metal eject (asks yes/no with `asks()`), pipe recycling, steel loading, pipe-type choice
+  (wrench), auto-dismantle and dismantle (crowbar) are ops; its RPED is `part_replacement()` and its status is an `examine_line()`.

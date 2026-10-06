@@ -175,6 +175,7 @@ CAPABILITIES(/datum/material_build)
 
 /// O's build record to read: the shared pristine record when it has none (never write through it).
 /proc/material_build_view(obj/O)
+	READS_FROM() // an item's build record is asked when it is used, never cached
 	RETURN_TYPE(/datum/material_build)
 	var/static/datum/material_build/pristine = new
 	return O?.cap_data?[/datum/material_build] || pristine
@@ -203,6 +204,7 @@ CAPABILITIES(/datum/material_build)
 
 /// The material an item was engineered from (the /obj/item compatibility field), or null.
 /proc/material_engineered_id(obj/item/I)
+	READS_FROM() // an item's build record is asked when it is used, never cached
 	return material_build_view(I).engineered_id
 
 /// Sets it. An item with no build record keeps none for a null id.

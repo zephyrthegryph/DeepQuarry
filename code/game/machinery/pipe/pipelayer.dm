@@ -22,8 +22,35 @@
 		"heat exchange pipes" = /obj/machinery/atmospherics/pipe/simple/heat_exchanging
 	)
 
+TRACKED(/obj/machinery/pipelayer, a_dis)
+
+MSG_DEF_SELF(pipelayer/no_metal, "It doesn't work without metal.")
+MSG_DEF_SELF(pipelayer/empty, "It is empty.")
+MSG_DEF_SELF(pipelayer/thin_pipe, "It doesn't contain enough steel to recycle.")
+MSG_DEF_SELF(pipelayer/full, "It is full.")
+MSG_DEF_SELF(pipelayer/not_steel, "It only takes steel.")
+MSG_DEF(pipelayer/recycled, "You recycle %I%.", "%U% recycles %I%.")
+MSG_DEF(pipelayer/loaded, "You load metal into %T%.", "%U% has loaded metal into %T%.")
+MSG_DEF(pipelayer/switched, "You switch %T%.", "%U% switches %T%.")
+MSG_DEF(pipelayer/dismantling, "You switch its auto-dismantling.", "%U% switches the auto-dismantling of %T%.")
+
 CAPABILITIES(/obj/machinery/pipelayer)
 	owns_one(nameof(W), starts = /obj/item/tool/wrench)
+	part_replacement()
+	examine_line(PROC_REF(status_text))
+	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(panel_shut)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(can_run), because = MSG(pipelayer/no_metal))),
+		says(MSG(pipelayer/switched)), then(PROC_REF(toggled)))
+	op("eject", hand(), label("Eject metal"), priority(OP_PRIORITY_PART), when(PROC_REF(panel_is_open)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(has_metal), because = MSG(pipelayer/empty))),
+		asks(/datum/prompt/yes_no, fields = list("question" = "Do you want to eject all the metal?", "title" = "Eject?", "timeout" = 0)), then(PROC_REF(eject_answered)))
+	op("recycle", item(/obj/item/pipe), label("Recycle pipe"), wait(0),
+		needs(req(PROC_REF(pipe_has_steel), because = MSG(pipelayer/thin_pipe)), req(PROC_REF(room_for_pipe), because = MSG(pipelayer/full))),
+		says(MSG(pipelayer/recycled)), then(PROC_REF(recycled)))
+	op("load", item(/obj/item/stack/material), label("Load metal"), wait(0), needs(req(PROC_REF(held_steel), because = MSG(pipelayer/not_steel)), req(PROC_REF(room_for_sheet), because = MSG(pipelayer/full))),
+		says(MSG(pipelayer/loaded)), then(PROC_REF(loaded)))
+	op("pipe_type", tool(TOOL_WRENCH), label("Choose pipe type"), wait(0), when(PROC_REF(panel_shut)),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose pipe type", "title" = "Pipe type", "choices" = computed(PROC_REF(pipe_choices)), "timeout" = 0)), then(PROC_REF(pipe_type_chosen)))
+	op("auto_dismantle", tool(TOOL_CROWBAR), label("Toggle auto-dismantling"), wait(0), when(PROC_REF(panel_shut)), toggles(nameof(a_dis)), says(MSG(pipelayer/dismantling)))
+	op("dismantle", tool(TOOL_CROWBAR), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(PROC_REF(panel_is_open)), then(PROC_REF(dismantled)))
 
 /obj/machinery/pipelayer/Initialize(mapload)
 	. = ..()
@@ -50,121 +77,72 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	rel_set(src, nameof(old_turf), loc)
 	old_dir = turn(direction, 180)
 
-/obj/machinery/pipelayer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/pipelayer_recycle_pipe,
-		/datum/interaction/machine_item/pipelayer_load_metal,
-		/datum/interaction/machine_hand/pipelayer_toggle,
-	)
-	..()
+/obj/machinery/pipelayer/proc/panel_shut(datum/act/op/A)
+	return !panel_open
 
-/datum/interaction/machine_hand/pipelayer_toggle
-	id = "pipelayer_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/pipelayer/proc/can_toggle))
-	effect = /obj/machinery/pipelayer/proc/interaction_toggle
+/obj/machinery/pipelayer/proc/panel_is_open(datum/act/op/A)
+	return panel_open
 
-/// Requirement: it can't be switched on without metal (an open panel ejects metal instead).
-/obj/machinery/pipelayer/proc/can_toggle(mob/user, atom/target, obj/item/held)
-	if(!panel_open && !metal && !on)
-		return "it doesn't work without metal"
-	return TRUE
+/// It runs only with metal (switching it off always works).
+/obj/machinery/pipelayer/proc/can_run(datum/act/A)
+	return on || metal // ALLOW(reads): the store is read when it is switched, never from a cached menu
 
-/obj/machinery/pipelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(panel_open)
-		if(metal < 1)
-			to_chat(user, "\The [src] is empty.")
-			return TRUE
-		open_request(src, /datum/prompt/yes_no, PROC_REF(eject_answered), answerer = user, question = "Do you want to eject all the metal in \the [src]?", title = "Eject?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-		return TRUE
+/obj/machinery/pipelayer/proc/has_metal(datum/act/A)
+	return metal >= 1 // ALLOW(reads): the store is read when it is touched, never from a cached menu
+
+/obj/machinery/pipelayer/proc/toggled(datum/act/op/A)
 	set_on(!on)
 	rel_set(src, nameof(old_turf), get_turf(src))
 	old_dir = dir
-	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/pipelayer/proc/eject_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/mob/user = A.request.answerer
-	if(panel_open)
-		var/amount_ejected = eject_metal()
-		act_message(user, src, MSG_SELF(span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from %T%.")), \
-			MSG_OTHERS(span_notice("%U% removes [amount_ejected] sheet\s of [MAT_STEEL] from %T%.")))
-	return TRUE
+/obj/machinery/pipelayer/proc/eject_answered(datum/act/op/A)
+	var/datum/prompt/yes_no/answer = A.answer
+	if(!answer?.value)
+		return OP_OK
+	var/amount_ejected = eject_metal()
+	to_chat(A.actor, span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from [src]."))
+	return OP_OK
 
-/// Recycle a pipe into internal metal storage.
-/datum/interaction/machine_item/pipelayer_recycle_pipe
-	id = "pipelayer_recycle_pipe"
-	name = "Recycle pipe"
-	held_type = /obj/item/pipe
-	effect = /obj/machinery/pipelayer/proc/interaction_recycle_pipe
+/// A pipe is worth its steel (a free dispenser pipe is not: no infinite steel).
+/obj/machinery/pipelayer/proc/pipe_has_steel(datum/act/op/A)
+	var/obj/item/pipe/P = A.held
+	return istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 
-/obj/machinery/pipelayer/proc/interaction_recycle_pipe(mob/user, obj/item/W, datum/interaction/interaction)
-	// NOTE - We must check for matter, otherwise the (free) pipe dispenser can be used to get infinite steel.
-	if(W.get_material_total() < pipe_cost * SHEET_MATERIAL_AMOUNT)
-		to_chat(user, span_warning("\The [W] doesn't contain enough [MAT_STEEL] to recycle."))
-	else if(metal + pipe_cost > max_metal)
-		to_chat(user, span_notice("\The [src] is full."))
-	else
-		var/pipe_name = "\the [W]"
-		if(!consume(W, user))
-			return TRUE
-		metal += pipe_cost
-		to_chat(user, span_notice("You recycle [pipe_name]."))
-	return TRUE
+/obj/machinery/pipelayer/proc/room_for_pipe(datum/act/A)
+	return metal + pipe_cost <= max_metal // ALLOW(reads): the store is read when a pipe is fed in, never from a cached menu
 
-/// Load steel stacks into internal storage.
-/datum/interaction/machine_item/pipelayer_load_metal
-	id = "pipelayer_load_metal"
-	name = "Load metal"
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_HELD, /obj/item/stack/material/proc/is_steel_stack, null))
-	effect = /obj/machinery/pipelayer/proc/interaction_load_metal
+/obj/machinery/pipelayer/proc/recycled(datum/act/op/A)
+	if(!consume(A.held, A.actor))
+		return OP_FAILED
+	metal += pipe_cost
+	return OP_OK
 
-/obj/item/stack/material/proc/is_steel_stack(mob/actor, atom/target, obj/item/held)
-	return get_material_name() == MAT_STEEL
+/obj/machinery/pipelayer/proc/held_steel(datum/act/op/A)
+	return istype(A.held, /obj/item/stack/material/steel)
 
-/obj/machinery/pipelayer/proc/interaction_load_metal(mob/user, obj/item/stack/material/W, datum/interaction/interaction)
-	var/result = load_metal(W)
-	if(isnull(result))
-		to_chat(user, span_warning("Unable to load [W] - no metal found."))
-	else if(!result)
-		to_chat(user, span_notice("\The [src] is full."))
-	else
-		act_message(user, src, MSG_SELF(span_notice("You load metal into %T%")), MSG_OTHERS(span_notice("%U% has loaded metal into %T%.")))
-	return TRUE
+/obj/machinery/pipelayer/proc/room_for_sheet(datum/act/A)
+	return round(metal) < max_metal // ALLOW(reads): the store is read when sheets are fed in, never from a cached menu
 
-/obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
-	if(panel_open)
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/choice, PROC_REF(pipe_type_chosen), answerer = user, question = "Choose pipe type", title = "Pipe type", choices = Pipes, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/pipelayer/proc/loaded(datum/act/op/A)
+	load_metal(A.held)
+	return OP_OK
 
-/obj/machinery/pipelayer/proc/pipe_type_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
-	P_type_t = choice
+/obj/machinery/pipelayer/proc/pipe_choices(datum/act/A)
+	return Pipes
+
+/obj/machinery/pipelayer/proc/pipe_type_chosen(datum/act/op/A)
+	var/datum/prompt/choice/answer = A.answer
+	P_type_t = answer.value
 	P_type = Pipes[P_type_t]
-	act_message(user, src, MSG_SELF(span_notice("You set %T% to manufacture [P_type_t].")), \
-		MSG_OTHERS(span_notice("%U% has set %T% to manufacture [P_type_t].")))
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, span_notice("You set [src] to manufacture [P_type_t]."))
+	return OP_OK
 
-/obj/machinery/pipelayer/crowbar_act(mob/user, obj/item/tool)
-	if(panel_open)
-		return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-	a_dis = !a_dis
-	act_message(user, null, MSG_SELF(span_notice("You [!a_dis?"de":""]activate auto-dismantling.")), \
-		MSG_OTHERS(span_notice("%U% has [!a_dis?"de":""]activated auto-dismantling.")))
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/pipelayer/proc/dismantled(datum/act/op/A)
+	return dismantle() ? OP_OK : OP_FAILED
 
-/obj/machinery/pipelayer/examine(mob/user)
-	. = ..()
-	. += "[src] has [metal] sheet\s, is set to produce [P_type_t], and auto-dismantling is [!a_dis?"de":""]activated."
+/obj/machinery/pipelayer/proc/status_text(datum/act/eval/A)
+	return "[src] has [metal] sheet\s, is set to produce [P_type_t], and auto-dismantling is [!a_dis?"de":""]activated."
 
 /obj/machinery/pipelayer/proc/reset()
 	set_on(0)
@@ -225,7 +203,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	P.setPipingLayer(p_layer)
 	// We used metal to make these, so should be reclaimable!
 	P.material_total = pipe_cost * SHEET_MATERIAL_AMOUNT
-	P.attackby(W , src)
+	P.fasten(null)
 
 	return 1
 
