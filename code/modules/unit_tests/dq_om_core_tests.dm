@@ -129,6 +129,20 @@
 /datum/om/behaviour/test/derived_watcher
 	wake_on = CHANGE_DATUM_D
 
+// Effect rows of the OM store's own tests (the library keeps only what game code uses).
+#define EFFECT_TEST_FLAG "test_flag"
+#define EFFECT_TEST_SUM "test_sum"
+#define EFFECT_TEST_PRODUCT "test_product"
+#define EFFECT_TEST_ARMOR "test_armor"
+
+/datum/om/bundle/test_effects
+	effects = list(
+		EFFECT_TEST_FLAG = list("combine" = COMBINE_ANY),
+		EFFECT_TEST_SUM = list("combine" = COMBINE_SUM),
+		EFFECT_TEST_PRODUCT = list("combine" = COMBINE_MULTIPLY),
+		EFFECT_TEST_ARMOR = list("combine" = COMBINE_SUM),
+	)
+
 /datum/om/behaviour/test/holder
 	every = 1 SECONDS
 	holds = TRUE
@@ -136,7 +150,7 @@
 /datum/om/behaviour/test/holder/tick(datum/om_test_entity/E, dt)
 	E.ticks++
 	if(E.enabled)
-		om_hold(E, EFFECT_UNPUSHABLE, E)
+		om_hold(E, EFFECT_TEST_FLAG, E)
 
 /datum/om/behaviour/test/handler
 	handles = list(/datum/om/event/test)
@@ -170,7 +184,7 @@
 
 /datum/om/relation/test_contributing
 	name = "test armour"
-	contributes = list(EFFECT_ARMOR_MELEE = FROM_VAR("weight"))
+	contributes = list(EFFECT_TEST_ARMOR = FROM_VAR("weight"))
 	grants_occupant = list(GRANT_ABILITY = "test_ability")
 	active_if = /datum/om/check/test_enabled
 
@@ -799,18 +813,18 @@
 	var/datum/om_test_entity/wearer = entity(made)
 	armour.weight = 4
 	om_link(armour, wearer, /datum/om/relation/test_contributing)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 4, "contributes a FROM_VAR value to the target")
+	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "contributes a FROM_VAR value to the target")
 	TEST_ASSERT(om_has_grant(armour, GRANT_ABILITY, "test_ability"), "grants_occupant go to the source")
 	armour.enabled = FALSE
 	changed(armour, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 0, "active_if failing releases")
+	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "active_if failing releases")
 	armour.enabled = TRUE
 	changed(armour, CHANGE_DATUM_B)
 	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 4, "active_if passing re-applies")
+	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 4, "active_if passing re-applies")
 	om_unlink(armour, wearer, /datum/om/relation/test_contributing)
-	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_ARMOR_MELEE), 0, "unlinking releases")
+	TEST_ASSERT_EQUAL(om_value_of(wearer, EFFECT_TEST_ARMOR), 0, "unlinking releases")
 	TEST_ASSERT(!om_has_grant(armour, GRANT_ABILITY, "test_ability"), "and revokes")
 
 // ---------------------------------------------------------------- E: contributions
@@ -821,21 +835,21 @@
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/src_a = entity(made)
 	var/datum/om_test_entity/src_b = entity(made)
-	om_apply(E, EFFECT_UNPUSHABLE, src_a, 1 SECONDS)
-	TEST_ASSERT(om_has(E, EFFECT_UNPUSHABLE), "applied")
-	om_apply(E, EFFECT_UNPUSHABLE, src_a, 3 SECONDS)
+	om_apply(E, EFFECT_TEST_FLAG, src_a, 1 SECONDS)
+	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "applied")
+	om_apply(E, EFFECT_TEST_FLAG, src_a, 3 SECONDS)
 	scheduler_advance(2)
-	TEST_ASSERT(om_has(E, EFFECT_UNPUSHABLE), "a re-apply keeps the longer expiry")
+	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "a re-apply keeps the longer expiry")
 	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(E, EFFECT_UNPUSHABLE), "expired through the deadline wheel")
-	om_hold(E, EFFECT_SLOWED, src_a, 2)
-	om_hold(E, EFFECT_SLOWED, src_b, 3)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_SLOWED), 5, "COMBINE_SUM")
-	om_release(E, EFFECT_SLOWED, src_a)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_SLOWED), 3, "release")
-	om_hold(E, EFFECT_MOVE_SPEED, src_a, 0.5)
-	om_hold(E, EFFECT_MOVE_SPEED, src_b, 0.5)
-	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_MOVE_SPEED), 0.25, "COMBINE_MULTIPLY")
+	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "expired through the deadline wheel")
+	om_hold(E, EFFECT_TEST_SUM, src_a, 2)
+	om_hold(E, EFFECT_TEST_SUM, src_b, 3)
+	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_SUM), 5, "COMBINE_SUM")
+	om_release(E, EFFECT_TEST_SUM, src_a)
+	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_SUM), 3, "release")
+	om_hold(E, EFFECT_TEST_PRODUCT, src_a, 0.5)
+	om_hold(E, EFFECT_TEST_PRODUCT, src_b, 0.5)
+	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_TEST_PRODUCT), 0.25, "COMBINE_MULTIPLY")
 
 /// Regression: overrides never outlive their source.
 /datum/unit_test/om/regression_no_stuck_overrides
@@ -843,25 +857,25 @@
 /datum/unit_test/om/regression_no_stuck_overrides/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/source = entity(made)
-	om_hold(E, EFFECT_HUD_VITALS, source)
+	om_hold(E, EFFECT_TEST_FLAG, source)
 	om_grant(E, GRANT_LANGUAGE, "test_language", source)
-	TEST_ASSERT(om_has(E, EFFECT_HUD_VITALS), "held")
+	TEST_ASSERT(om_has(E, EFFECT_TEST_FLAG), "held")
 	qdel(source)
-	TEST_ASSERT(!om_has(E, EFFECT_HUD_VITALS), "a hold dies with its source")
+	TEST_ASSERT(!om_has(E, EFFECT_TEST_FLAG), "a hold dies with its source")
 	TEST_ASSERT(!om_has_grant(E, GRANT_LANGUAGE, "test_language"), "so does a grant")
 	// Holds made from a hook last only while the hook keeps making them.
 	var/datum/om_test_entity/H = entity(made)
 	om_attach(H, /datum/om/behaviour/test/holder)
 	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_UNPUSHABLE), "hook hold made")
+	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "hook hold made")
 	H.enabled = FALSE
 	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(H, EFFECT_UNPUSHABLE), "not re-held: released on return")
+	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "not re-held: released on return")
 	H.enabled = TRUE
 	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_UNPUSHABLE), "held again")
+	TEST_ASSERT(om_has(H, EFFECT_TEST_FLAG), "held again")
 	om_detach(H, /datum/om/behaviour/test/holder)
-	TEST_ASSERT(!om_has(H, EFFECT_UNPUSHABLE), "stopping the behaviour releases its holds")
+	TEST_ASSERT(!om_has(H, EFFECT_TEST_FLAG), "stopping the behaviour releases its holds")
 
 /datum/unit_test/om/grants_vocabulary
 

@@ -55,10 +55,8 @@
 #define VISIBLE_NAME_FORCED 3
 
 // ---- from signals_mob_living.dm
-#define COMPONENT_NO_STUN (1<<0) //For all of them: cancels the increase
 #define COMPONENT_BLOCK_LIVING_RADIATION (1<<0)
 #define COMPONENT_BLOCK_IRRADIATION (1<<0)
-#define COMPONENT_BLOCK_LIVING_MUTATIONS (1<<0)
 #define COMPONENT_LIVING_BLOCK_TURF_COLLISION (1<<0)
 
 // ---- from signals_mob_main.dm

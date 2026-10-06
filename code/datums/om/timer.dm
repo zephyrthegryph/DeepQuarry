@@ -521,15 +521,6 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			state[3] = e
 	state[1] = FALSE
 
-/// The live datums a list of OM handles names, in order, skipping any that have been deleted.
-/// For an instance list keyed by om_handle() (LC-refs: lists, lifecycle.md sec 4) that is iterated.
-/proc/om_resolve_all(list/handles)
-	. = list()
-	for(var/h in handles)
-		var/datum/D = om_resolve(h)
-		if(D)
-			. += D
-
 
 // ---------------------------------------------------------------- weak arguments
 //

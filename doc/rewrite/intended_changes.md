@@ -2141,16 +2141,20 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the OM timers and cadences read the stat;
   `suspended_changed()` resumes them. No behaviour change intended. `life_sweep` after both: h512 149.8 ms/s for 3413
   frames, mix 33.4 ms/s.
+- **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
+  `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
+  (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
+  nothing outside the OM tests did. The unused `stasis_occupant` relation is deleted.
+- **Mob alpha and push blocking are stats.** `alpha_mult` (PRODUCT, base 1, a source re-holding replaces its value) and
+  `unpushable` (ANY) on `/mob/living`, held under `SRC_ALPHA_*` / `SRC_PUSH_*` source ids (or a datum). The unused OM
+  effect rows (slowed, armour, insulation, move speed, power draw, vitals HUD) and the vitals HUD behaviour are deleted.
+  No behaviour change intended.
 - **Grave markers ask, then carve at once**: the screwdriver asks the name and then the epitaph as op steps and carves both together
   (the legacy carving took the material's hardness per line, after the questions; a tool op's wait always comes before its questions,
   so the wait is gone rather than put in front of them). The item marker no longer also strikes after asking (its proc returned NONE).
 - **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
   out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
   door's catch-all for held items.
-- **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
-  `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
-  (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
-  nothing outside the OM tests did. The unused `stasis_occupant` relation is deleted.
 - **DECLARE_EMAG is gone from code/game/objects and code/game/turfs** (ceiling 0). The sleevemate's sequencer asks what to make of it as
   an op step and spends a card use only when a hack is picked (the legacy one spent it when it asked). Pinned by `dq_items_emag_ops`.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
@@ -2180,3 +2184,9 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
   shared handlers, key clashes), 55 tool procs (handlers that open a request, call `..()` or return an expression), and the ten machines whose
   conversion would have opened a request from an op effect (cable layer, floor layer, holoposter, mass driver, point defence, protean
   reconstitutor, requests console, fax machine, conveyor and its switch).
+## Life's OM events are actions (rewrite/om-life)
+
+- The status increase events (stun, weaken, paralyze, sleep, blind) were refusable OM events no handler ever refused;
+  they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
+  (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
+  listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).

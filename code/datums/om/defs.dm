@@ -260,11 +260,6 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// One end changed in a way the relation cares about (its watched channels): re-derive views.
-/datum/om/relation/proc/on_end_changed(datum/source, datum/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
-	return
-
 /// One edge, held by both ends' recs.
 /datum/om/edge
 	var/datum/om/relation/rel

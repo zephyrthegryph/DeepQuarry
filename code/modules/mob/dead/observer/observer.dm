@@ -165,7 +165,7 @@ Works together with spawning an observer, noted above.
 	if(!loc || !client)
 		return
 
-	OM_EMIT(src, /datum/om/event/mob_handle_vision) // a ghost's sight listeners (remote view) follow its upkeep
+	PUBLISH(src, mob_handle_vision) // a ghost's sight listeners (remote view) follow its upkeep
 	check_area()	//RS Port #658
 
 //RS Port #658 Start

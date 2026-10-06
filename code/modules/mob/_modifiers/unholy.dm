@@ -34,10 +34,10 @@
 
 
 /datum/body_effect/ambush/on_start(mob/living/L)
-	L.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
+	L.set_alpha_source(SRC_ALPHA_AMBUSH, 30/255)
 
 /datum/body_effect/ambush/on_end(mob/living/L, expired)
-	L.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
+	L.clear_alpha_source(SRC_ALPHA_AMBUSH)
 
 ////////// On-hit
 /datum/body_effect/deep_wounds

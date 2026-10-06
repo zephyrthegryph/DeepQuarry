@@ -205,13 +205,6 @@
 	src.pulse_information = pulse_information
 	src.insulation_to_target = insulation_to_target
 
-/// From /datum/om/event/before/living_status_sleep.
-/datum/notice/living_status_sleep
-	var/amount
-
-/datum/notice/living_status_sleep/fill(amount)
-	src.amount = amount
-
 /// From /datum/om/event/before/living_turf_collision.
 /datum/notice/living_turf_collision
 	var/t
@@ -503,34 +496,6 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/om/event/living_status_blind.
-/datum/notice/living_status_blind
-	var/amount
-
-/datum/notice/living_status_blind/fill(amount)
-	src.amount = amount
-
-/// From /datum/om/event/living_status_paralyze.
-/datum/notice/living_status_paralyze
-	var/amount
-
-/datum/notice/living_status_paralyze/fill(amount)
-	src.amount = amount
-
-/// From /datum/om/event/living_status_stun.
-/datum/notice/living_status_stun
-	var/amount
-
-/datum/notice/living_status_stun/fill(amount)
-	src.amount = amount
-
-/// From /datum/om/event/living_status_weaken.
-/datum/notice/living_status_weaken
-	var/amount
-
-/datum/notice/living_status_weaken/fill(amount)
-	src.amount = amount
-
 /// From /datum/om/event/machinery_broken.
 /datum/notice/machinery_broken
 	var/damage_flag
@@ -659,12 +624,6 @@
 
 /datum/notice/mob_granted_action/fill(action)
 	src.action = action
-
-/// From /datum/om/event/mob_handle_hud_darksight.
-/datum/notice/mob_handle_hud_darksight
-
-/// From /datum/om/event/mob_handle_vision.
-/datum/notice/mob_handle_vision
 
 /// From /datum/om/event/mob_login.
 /datum/notice/mob_login

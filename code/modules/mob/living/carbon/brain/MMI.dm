@@ -9,7 +9,7 @@
 	req_access = list(ACCESS_ROBOTICS)
 
 	// The occupant (the mind's view mob) belongs to this MMI's mind host
-	// component (code/datums/entity_state/mind_host.dm); its status is read from
+	// component (code/modules/mob/mind_host.dm); its status is read from
 	// `brainobj` when there is one.
 
 	var/locked = 0

@@ -16,11 +16,11 @@
 	factors = alist(BF_SLOWDOWN = -1.0, BF_ACCURACY = -50, BF_EVASION = 30, BF_MELEE_DAMAGE = 0.75, BF_SIEMENS = 1.5)
 
 /datum/body_effect/underwater_stealth/on_start(mob/living/L)
-	L.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
+	L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 50/255)
 	return
 
 /datum/body_effect/underwater_stealth/on_end(mob/living/L, expired)
-	L.clear_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH)
+	L.clear_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH)
 	return
 
 /datum/body_effect/underwater_stealth/on_tick(mob/living/L)
@@ -33,9 +33,9 @@
 			L.end_body_effect(type, FALSE)
 			return
 		if(water_floor.depth > 1)
-			L.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
+			L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 50/255)
 		else
-			L.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 65/255)
+			L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 65/255)
 	else
 		L.end_body_effect(type, FALSE)
 
