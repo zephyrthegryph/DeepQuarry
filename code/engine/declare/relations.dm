@@ -14,6 +14,8 @@
 			return OWN_SPILL
 		if(ON_DESTROY_PRIVATE_COPY)
 			return OWN_PRIVATE_COPY
+		if(ON_DESTROY_HAND_OVER)
+			return OWN_HAND_OVER
 	return OWN_DELETE
 
 /// The legacy own entries one type's compiled table declares, in declaration order: what build_own_table() adds beside the type's
@@ -37,7 +39,7 @@
 				if(policy == OWN_PRIVATE_COPY)
 					. += proto(E.args["var"])
 				else
-					. += owns(E.args["var"], policy = policy, type = E.args["type"], starts = starts, is_list = (E.kind == ENTRY_OWNS_MANY))
+					. += owns(E.args["var"], policy = policy, type = E.args["type"], starts = starts, is_list = (E.kind == ENTRY_OWNS_MANY), if_var = E.args["only_if"], else_policy = relation_policy(E.args["otherwise"]), successor = E.args["successor"], successor_var = E.args["successor_var"])
 
 /// The starts = of an owns_* entry as the legacy table keeps it: a type, a list, a var name, or a starts spec entry (pick_one, a proc,
 /// when(), with starts_args) that own_init_starts() resolves at init.

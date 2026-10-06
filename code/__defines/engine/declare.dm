@@ -46,6 +46,8 @@
 #define ON_DESTROY_DELETE 1
 #define ON_DESTROY_SPILL 2
 #define ON_DESTROY_PRIVATE_COPY 3
+/// Handed to a successor: owns_one(nameof(cell), on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(wreck), successor_var = nameof(crowbar_salvage)). With no successor it is deleted.
+#define ON_DESTROY_HAND_OVER 4
 
 // ---- Value schemas (section 4, X5) ----
 /// on_invalid: what a failed write does.

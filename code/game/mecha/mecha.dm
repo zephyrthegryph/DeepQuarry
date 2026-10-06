@@ -72,6 +72,8 @@
 	/// Set when the mech is destroyed in play (integrity ran out), not merely deleted: only then
 	/// does on_destroy() leave `wreckage`.
 	var/tmp/wrecked = FALSE
+	/// The wreckage a mech destroyed in play leaves (made in on_destroy()): where its cell and tank are handed over.
+	var/tmp/obj/effect/decal/mecha_wreckage/wreck
 
 	// ALLOW(instance_list): d: mech equipment list; many call sites index and edit it directly
 	var/list/equipment = list()		//This lists holds what stuff you bolted onto your baby ride
@@ -183,8 +185,17 @@ CAPABILITIES(/obj/mecha)
 	// Temperature control: a heat pump between the cabin air and the air outside, toward 20 C, paid from the cell (process_preserve_temp()).
 	when(nameof(cabin_regulating), heat_pump(nameof(cabin_air), HEAT_AIR, MECHA_CABIN_REGULATOR_WATTS, T20C, HEAT_PUMP_BOTH, TRUE, power_draw = FALSE))
 	owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY)
-	owns_one(nameof(cell), /obj/item/cell)
-	owns_one(nameof(internal_tank), /obj/item/tank)
+	// A mech destroyed in play leaves wreckage (on_destroy() makes it): its cell and tank become the wreckage's salvage. A plain qdel leaves none, and they are
+	// deleted with the mech. (The components detach from the mech as they go, so on_destroy() hands those over itself.)
+	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(wreck), successor_var = nameof(wreck.crowbar_salvage))
+	owns_one(nameof(internal_tank), /obj/item/tank, on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(wreck), successor_var = nameof(wreck.crowbar_salvage))
+	// The equipment lists are views of what is bolted on: they are cleared with the mech (the equipment itself is handled in on_destroy()).
+	ref_many(nameof(equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(hull_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(weapon_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(utility_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(universal_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(special_equipment), /obj/item/mecha_parts/mecha_equipment)
 	owns_one(nameof(minihud), /datum/mini_hud/mech)
 	owns_many(nameof(internal_components))
 	owns_one(nameof(radio), /obj/item/radio)
@@ -371,11 +382,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		rel_clear(src, nameof(hull_equipment))
-		rel_clear(src, nameof(weapon_equipment))
-		rel_clear(src, nameof(utility_equipment))
-		rel_clear(src, nameof(universal_equipment))
-		rel_clear(src, nameof(special_equipment))
+		wreck = WR // ALLOW(ownership): names the successor the declared hand-over below uses; a dying holder takes no new relation and the wreckage owns itself
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
 				rel_add(WR, nameof(WR.crowbar_salvage), E)
@@ -393,16 +400,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				rel_add(WR, nameof(WR.crowbar_salvage), C)
 				C.forceMove(WR)
 
-		// cell and tank leave our ownership and become the wreck's salvage.
-		var/obj/item/cell/salvaged_cell = rel_take(src, nameof(cell))
-		if(salvaged_cell)
-			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_cell)
-			salvaged_cell.forceMove(WR)
-			salvaged_cell.charge = rand(0, salvaged_cell.charge)
-		var/obj/item/tank/salvaged_tank = rel_take(src, nameof(internal_tank))
-		if(salvaged_tank)
-			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_tank)
-			salvaged_tank.forceMove(WR)
+		// the cell and tank are handed to `wreck` by their declared policy (CAPABILITIES): the cell comes out part spent.
+		if(cell)
+			cell.charge = rand(0, cell.charge)
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			E.detach(loc)
@@ -412,7 +412,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(istype(C))
 				C.detach()
 				ended_with(C, src)
-	rel_clear(src, nameof(equipment))
 
 	GLOB.mech_destroyed_roundstat++
 

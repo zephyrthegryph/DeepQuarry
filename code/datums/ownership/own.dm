@@ -154,6 +154,15 @@
 	switch(policy)
 		if(OWN_KEEP)
 			return // released above: it outlives the holder
+		if(OWN_HAND_OVER)
+			var/list/hand_to = own_entry_successor(entry)
+			var/datum/successor = hand_to ? holder.vars[hand_to[1]] : null
+			if(isdatum(successor) && !QDELETED(successor) && (hand_to[2] in successor.vars))
+				var/atom/movable/moving = value
+				if(ismovable(moving) && isatom(successor) && moving.loc != successor)
+					moving.forceMove(successor)
+				rel_add(successor, hand_to[2], value)
+				return
 		if(OWN_CONTAINED)
 			// A contained thing belongs to the holder's ledger slot: in the holder's teardown the
 			// slot has already resolved it (phase 3), and one that left the contents is no longer
