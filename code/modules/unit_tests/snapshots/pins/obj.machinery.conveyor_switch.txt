@@ -14,14 +14,18 @@ human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a scre
 human|/obj/item/tool/crowbar menu: Toggle
 human|/obj/item/tool/crowbar click: Click: Toggle
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/tool/wrench menu: Set one-way
 human|/obj/item/tool/wrench menu: Toggle
 human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Adjust speed (refused: )
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Toggle
 human|/obj/item/tool/wirecutters click: Click: Toggle
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/multitool menu: Set ID (refused: )
 human|/obj/item/multitool menu: Toggle
 human|/obj/item/multitool click: Click: Toggle
+human|/obj/item/weldingtool menu: Deconstruct (refused: )
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool menu: Toggle
 human|/obj/item/weldingtool click: Click: Toggle
@@ -35,5 +39,5 @@ human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
-keys: conveyor_switch_toggle, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: conveyor_switch_toggle, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_multitool, use_welder, use_wirecutter, use_wrench
 

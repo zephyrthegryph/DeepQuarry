@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert", inputs(item(/obj/item/paper), item(/obj/item/photo), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
-	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 1), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
+	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
 	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /// The window data.

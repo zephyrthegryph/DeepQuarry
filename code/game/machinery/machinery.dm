@@ -827,3 +827,7 @@ READS_AS(/obj/machinery/proc/slot_occupant, OCCUPANT_KEY)
 /// that must not reach into an open machine.
 /obj/machinery/proc/maintenance_panel_shut(datum/act/op/A)
 	return !panel_open
+
+/// The machine's maintenance panel is open (a legacy machine panel): an op that works on what is behind it.
+/obj/machinery/proc/maintenance_panel_open(datum/act/op/A)
+	return panel_open

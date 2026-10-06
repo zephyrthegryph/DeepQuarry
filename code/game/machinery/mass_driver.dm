@@ -27,23 +27,20 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/mass_driver/multitool_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/number, PROC_REF(driver_id_entered), answerer = user, title = "[src] ID]", question = "[src] has an id of \"[id]\". What would you like it to be?", default = id, max_value = 9999, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/mass_driver/proc/id_title(datum/act/A)
+	return "[src] ID]"
 
-/obj/machinery/mass_driver/proc/driver_id_entered(datum/act/request/A)
-	var/mob/user = A.request.answerer
-	if(!A.answer)
-		to_chat(user, "No input found please hang up and try your call again.")
-		return
-	var/new_id = A.answer.value
+/obj/machinery/mass_driver/proc/id_question(datum/act/A)
+	return "[src] has an id of \"[id]\". What would you like it to be?"
+
+/// The multitool's answer: the driver's new id (the keyed buttons and consoles follow it).
+/obj/machinery/mass_driver/proc/driver_id_entered(datum/act/op/A)
+	var/new_id = A.answer?.value
 	if(!new_id)
-		to_chat(user, "No input found please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
+		to_chat(A.actor, "No input found please hang up and try your call again.")
+		return OP_OK
 	keyed_set_id(src, nameof(id), new_id) // re-links the keyed buttons and consoles
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/mass_driver/proc/drive(amount)
 	if(!operable())
@@ -65,6 +62,10 @@
 
 CAPABILITIES(/obj/machinery/mass_driver)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
+	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(id_title)), "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_value" = 9999, "timeout" = 0)),
+		then(PROC_REF(driver_id_entered)))
 
 /// An EMP fires the driver.
 /obj/machinery/mass_driver/proc/mass_driver_emp(datum/act/hit/emp/A)

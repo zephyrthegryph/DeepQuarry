@@ -19,6 +19,9 @@
 CAPABILITIES(/obj/machinery/cablelayer)
 	op("cablelayer_load", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Load cable"), then(PROC_REF(interaction_load)))
 	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Cut cable"), needs(req_full(nameof(cable), because = MSG(cablelayer/no_cable))),
+		asks(/datum/prompt/number/cablelayer_cut, fields = list("default" = computed(PROC_REF(cut_default)))),
+		then(PROC_REF(cable_length_entered)))
 	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(has_cable_or_on_holds), because = PROC_REF(has_cable_or_on_refusal))), then(PROC_REF(interaction_toggle)))
 
 /// Requirement (was REQ_* has_cable_or_on): the legacy check answers TRUE to pass.
@@ -50,48 +53,31 @@ CAPABILITIES(/obj/machinery/cablelayer)
 	act_message(user, src, MSG_SELF("You switch %T% [on? "on" : "off"]"), MSG_OTHERS("%U% [!on?"dea":"a"]ctivates %T%."))
 	return OP_OK
 
-/obj/machinery/cablelayer/wirecutter_act(mob/user, obj/item/tool)
-	if(!cable || !cable.get_amount())
-		to_chat(user, span_warning("There's no more cable on the reel."))
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/number/cablelayer_cut, PROC_REF(cable_length_entered), answerer = user, default = min(cable.get_amount(), 30), tool = tool)
-	return ITEM_INTERACT_SUCCESS
-
-/// How much cable to cut off the layer's reel. Re-checked: next to the layer and able.
+/// How much cable to cut off the layer's reel. Asked by the wirecutter op (an asks() step: the hand and the place are kept while it is open).
 /datum/prompt/number/cablelayer_cut
 	title = "Cut cable"
 	question = "Please specify the length of cable to cut"
-	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 	timeout = 0
 	step = 1
-	var/obj/item/tool
 
-CAPABILITIES(/datum/prompt/number/cablelayer_cut)
-	ref_one(nameof(tool), /obj/item)
+MSG_DEF_SELF(cablelayer/no_cable, "There's no more cable on the reel.")
 
-/datum/prompt/number/cablelayer_cut/prepare(datum/act/A)
-	..()
-	var/obj/item/captured_tool = tool
-	rel_clear(src, nameof(tool))
-	rel_set(src, nameof(tool), captured_tool)
+/// The question's starting value: up to 30 lengths.
+/obj/machinery/cablelayer/proc/cut_default(datum/act/A)
+	return min(cable?.get_amount(), 30)
 
-/datum/prompt/number/cablelayer_cut/recheck_extra()
-	return QDELETED(tool) ? "gone" : null
-
-/obj/machinery/cablelayer/proc/cable_length_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/number/cablelayer_cut/ask = A.answer
-	var/obj/item/tool = ask.tool
-	if(!cable)
-		return
-	var/amount = min(ask.value, cable.get_amount(), 30)
-	if(amount)
+/// The wirecutter's answer: that much cable comes off the reel.
+/obj/machinery/cablelayer/proc/cable_length_entered(datum/act/op/A)
+	var/obj/item/tool = A.held
+	if(!cable || !isnum(A.answer?.value))
+		return OP_OK
+	var/amount = min(A.answer.value, cable.get_amount(), 30)
+	if(amount > 0)
 		playsound(src, tool.usesound, 50, TRUE)
 		use_cable(amount)
 		var/obj/item/stack/cable_coil/cut_cable = new(get_turf(src))
 		cut_cable.set_amount(amount)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/cablelayer/examine(mob/user)
 	. = ..()

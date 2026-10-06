@@ -113,6 +113,10 @@ DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full",
 
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
 	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Remove component"),
+		needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy)), req(PROC_REF(has_components), because = MSG(protean_reconstitutor/no_components))),
+		asks(/datum/prompt/choice, fields = list("title" = "Remove Component", "question" = "What component would you like to remove?", "choices" = computed(PROC_REF(component_choices)), "timeout" = 0)),
+		then(PROC_REF(component_chosen)))
 	op("reconstitutor_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/processing_revive))), then(PROC_REF(reconstitutor_interaction_hand)))
 
 MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle currently in progress, please wait")
@@ -162,32 +166,26 @@ MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle curr
 	update_icon()
 	return OP_DECLINE
 
-/obj/machinery/protean_reconstitutor/wrench_act(mob/user, obj/item/tool)
-	if(processing_revive)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return ITEM_INTERACT_BLOCKING
-	if(!protean_brain && !protean_orchestrator && !protean_refactory)
-		to_chat(user, "\The [src] does not have any protean components you can retrieve.")
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/choice/protean_component, PROC_REF(component_chosen), answerer = user, title = "Remove Component", question = "What component would you like to remove?", choices = list(protean_brain, protean_orchestrator, protean_refactory), tool = tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(protean_reconstitutor/busy, "%T% is busy. Please wait for completion of previous operation.")
+MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean components you can retrieve.")
 
-/// Which component to take out: the tool is kept on the question.
-/datum/prompt/choice/protean_component
-	var/obj/item/tool
+/// Requirement of the wrench: a component to take out.
+/obj/machinery/protean_reconstitutor/proc/has_components(datum/act/op/A)
+	return protean_brain || protean_orchestrator || protean_refactory
 
-CAPABILITIES(/datum/prompt/choice/protean_component)
-	ref_one(nameof(tool), /obj/item)
+/// The components the wrench's question offers.
+/obj/machinery/protean_reconstitutor/proc/component_choices(datum/act/A)
+	. = list()
+	for(var/atom/movable/part in list(protean_brain, protean_orchestrator, protean_refactory))
+		. += part
 
-/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/protean_component/R = A.request
-	var/mob/user = R.answerer
-	var/atom/movable/choice = A.answer.value
-	var/obj/item/tool = R.tool
-	if(processing_revive || choice.loc != src)
-		return
+/// The wrench's answer: that component comes out.
+/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/choice = A.answer?.value
+	var/obj/item/tool = A.held
+	if(!istype(choice) || processing_revive || choice.loc != src)
+		return OP_OK
 	to_chat(user, "You fish \the [choice] out of \the [src].")
 	choice.forceMove(get_turf(src))
 	playsound(src, tool.usesound, 50, TRUE)
@@ -197,7 +195,7 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		own_take(src, nameof(protean_refactory))
 	else if(choice == protean_orchestrator)
 		own_take(src, nameof(protean_orchestrator))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/protean_reconstitutor/screwdriver_act(mob/user, obj/item/tool)
 	if(processing_revive)

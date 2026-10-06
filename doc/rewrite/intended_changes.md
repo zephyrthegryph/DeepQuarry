@@ -2329,3 +2329,16 @@ input takes the next tier down, so the legacy declaration order still decides.
 - **The waste processor's drops** check their silent guard in the effect and decline, like the centrifuge; **the resleever's drag** is
   offered to humans and cyborgs only (a `when()` on the actor) and needs the machine panel shut (`maintenance_panel_shut()`); **a
   cyborg's item click on a conveyor** is its own op that takes the click and does nothing (the module never drops), ahead of the drop.
+- **The ten prompt machines ask on the op** (`asks()` steps; the question opens before any effect, and the hand and place are kept while it
+  is open): the cable layer's wirecutters (cut length), the floor layer's wrench (work mode), crowbar (tiles to remove) and screwdriver
+  (tile type), the holoposter's multitool (poster), the mass driver's, conveyor's, conveyor switch's and fax machine's multitools (id or
+  department, behind an open panel: with the panel shut the click is taken and nothing happens, as before), both point defence multitools
+  (ident tag), the protean reconstitutor's wrench (component), and the requests console's multitool (department) and its window's write
+  and announcement buttons (the write question opens only for a department name that reads as text). Their prompt subtypes lose the tool
+  they kept (the op keeps the hand). The holoposter's fingerprint and click sound come with the answer, not before the question. A floor
+  layer with nothing in it opens no tile question (it said "is empty").
+- **The conveyor switch's tools are ops**: the welder takes the switch apart behind an open panel after 2 s (a lit welder, no fuel), the
+  wrench flips one-way operation, the wirecutters change speed behind an open panel.
+- **The fax machine's staff request form is one op**, the window's button and the menu's verb, with four questions (confirm, job, reason,
+  confirm) as `asks()` steps whose later steps read the earlier answers (`step_value()`); a "No" or a closed question ends it with
+  nothing sent. It needs a human or silicon actor, beside the fax from the menu. A silicon's touch logs it in by its own op.
