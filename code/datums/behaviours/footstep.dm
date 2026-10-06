@@ -1,10 +1,13 @@
 #define SHOULD_DISABLE_FOOTSTEPS(source)
 
 ///Footstep behaviour (was /datum/element/footstep). Plays footsteps at the mob's location
-///when it is appropriate. A shared behaviour singleton handling /datum/om/event/moved; the
-///per-mob settings and step counter live on the mob. Attach with L.enable_footsteps().
-/datum/om/behaviour/footstep
-	handles = list(/datum/om/event/moved)
+///when it is appropriate. A capability hooked on the moved notice; the per-mob settings and step
+///counter live on the mob. L.enable_footsteps() grants it.
+CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
+/datum/capability/footstep
+
+/datum/capability/footstep/entries()
+	return list(on_notice(/datum/notice/moved, then(CAP_PROC(footstep_moved))))
 
 /mob/living
 	///FOOTSTEP_MOB_*: which kind of sounds the footstep behaviour chooses (non-humans).
@@ -24,18 +27,19 @@
 	footstep_e_range = e_range
 	footstep_vary = vary
 	footstep_steps = 0
-	om_attach(src, /datum/om/behaviour/footstep)
+	grant(src, /datum/capability/footstep, src)
 
 /mob/living/proc/disable_footsteps()
-	om_detach(src, /datum/om/behaviour/footstep)
+	revoke(src, /datum/capability/footstep, src)
 
-/datum/om/behaviour/footstep/on_moved(mob/living/source, datum/om/event/moved/event)
+/datum/capability/footstep/proc/footstep_moved(datum/act/A)
+	var/mob/living/source = A.holder
 	if(ishuman(source))
 		play_humanstep(source)
 	else
 		play_simplestep(source)
 
-/datum/om/behaviour/footstep/proc/check_footstep_type(footstep_type)
+/datum/capability/footstep/proc/check_footstep_type(footstep_type)
 	var/footstep_ret
 	switch(footstep_type)
 		if(FOOTSTEP_MOB_TESHARI)
@@ -59,7 +63,7 @@
 	return footstep_ret
 
 ///Prepares a footstep for living mobs. Determines if it should get played. Returns the turf it should get played on. Note that it is always a /turf/simulated
-/datum/om/behaviour/footstep/proc/prepare_step(mob/living/source)
+/datum/capability/footstep/proc/prepare_step(mob/living/source)
 	var/volume = source.footstep_volume
 	var/sound_vary = source.footstep_vary
 	var/turf/simulated/turf = get_turf(source)
@@ -104,13 +108,12 @@
 		STEP_SOUND_PRIORITY = STEP_SOUND_NO_PRIORITY
 		)
 
-	var/overriden = OM_EMIT(turf, /datum/om/event/before/turf_prepare_step_sound, .) & FOOTSTEP_OVERRIDEN
-	//The turf has no footstep sound (e.g. open space) and none of the objects on that turf (e.g. catwalks) overrides it
-	if(!overriden && isnull(turf.footstep))
+	//The turf has no footstep sound (e.g. open space)
+	if(isnull(turf.footstep))
 		return null
 	return .
 
-/datum/om/behaviour/footstep/proc/play_simplestep(mob/living/source)
+/datum/capability/footstep/proc/play_simplestep(mob/living/source)
 	var/volume = source.footstep_volume
 	var/e_range = source.footstep_e_range
 	var/sound_vary = source.footstep_vary
@@ -135,7 +138,7 @@
 		return
 	playsound(source.loc, pick(footstep_sounds[turf_footstep][1]), footstep_sounds[turf_footstep][2] * volume, TRUE, footstep_sounds[turf_footstep][3] + e_range, falloff = 1, vary = sound_vary)
 
-/datum/om/behaviour/footstep/proc/play_humanstep(mob/living/carbon/human/source)
+/datum/capability/footstep/proc/play_humanstep(mob/living/carbon/human/source)
 	var/volume = source.footstep_volume
 	var/e_range = source.footstep_e_range
 	var/sound_vary = source.footstep_vary
@@ -170,7 +173,7 @@
 	// we are barefoot
 	play_barefoot_sound(source, prepared_steps, volume_multiplier, range_adjustment)
 
-/datum/om/behaviour/footstep/proc/play_barefoot_sound(mob/living/carbon/human/source, list/prepared_steps, volume_multiplier, range_adjustment)
+/datum/capability/footstep/proc/play_barefoot_sound(mob/living/carbon/human/source, list/prepared_steps, volume_multiplier, range_adjustment)
 	var/volume = source.footstep_volume
 	var/e_range = source.footstep_e_range
 	var/sound_vary = source.footstep_vary

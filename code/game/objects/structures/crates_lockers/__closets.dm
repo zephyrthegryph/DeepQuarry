@@ -277,8 +277,7 @@ CAPABILITIES(/obj/structure/closet)
 	if(initial(density))
 		set_density(!density)
 	animate_door(TRUE)
-	if(om_wants(src, /datum/om/event/closet_closed))
-		om_emit(src, new /datum/om/event/closet_closed)
+	PUBLISH_LEGACY(src, /datum/notice/closet_closed)
 	return 1
 
 // Each store_* proc moves what it finds on the turf into the interior slot and

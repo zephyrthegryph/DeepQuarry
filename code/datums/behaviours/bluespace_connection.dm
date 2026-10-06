@@ -1,10 +1,16 @@
 /// Bluespace connection. Makes lockers into
-/// portals: close one with something inside and it comes out of a connected exit. A shared
-/// OM behaviour on the closet_closed and hitby events; the exits live on the closet as a
-/// relation list view, or, on the permanent network, are GLOB.bslockers.
+/// portals: close one with something inside and it comes out of a connected exit. A capability
+/// hooked on the closet_closed and hitby notices; the exits live on the closet as a relation list
+/// view, or, on the permanent network, are GLOB.bslockers.
 /// Connect with C.connect_bluespace(exits) or C.join_bluespace_network().
-/datum/om/behaviour/bluespace_connection
-	handles = list(/datum/om/event/closet_closed, /datum/om/event/hitby)
+CAPABILITY_TYPE(bluespace_connection, CAP_BLUESPACE_CONNECTION, /datum/capability/bluespace_connection, key = NONE)
+/datum/capability/bluespace_connection
+
+/datum/capability/bluespace_connection/entries()
+	return list(
+		on_notice(/datum/notice/closet_closed, then(CAP_PROC(bluespace_closed))),
+		on_notice(/datum/notice/hitby, then(CAP_PROC(bluespace_hit))),
+	)
 
 #define BLUESPACE_EXIT_SOUND 'sound/effects/clang.ogg'
 #define BLUESPACE_THROW_RANGE 3
@@ -22,19 +28,20 @@
 	for(var/atom/exit_point as anything in exits)
 		if(!QDELETED(exit_point))
 			rel_add(src, nameof(bluespace_exit_points), exit_point)
-	om_attach(src, /datum/om/behaviour/bluespace_connection)
+	grant(src, /datum/capability/bluespace_connection, src)
 
 /// Joins the permanent network of bluespace lockers (GLOB.bslockers).
 /obj/structure/closet/proc/join_bluespace_network()
 	bluespace_permanent = TRUE
-	om_attach(src, /datum/om/behaviour/bluespace_connection)
+	grant(src, /datum/capability/bluespace_connection, src)
 
 /obj/structure/closet/proc/bluespace_exits()
 	if(bluespace_permanent)
 		return GLOB.bslockers.Copy()
 	return bluespace_exit_points ? bluespace_exit_points.Copy() : list()
 
-/datum/om/behaviour/bluespace_connection/on_closet_closed(obj/structure/closet/assigned_closet, datum/om/event/closet_closed/event)
+/datum/capability/bluespace_connection/proc/bluespace_closed(datum/act/A)
+	var/obj/structure/closet/assigned_closet = A.holder
 	if(isemptylist(assigned_closet.contents))
 		return
 	var/list/exits = assigned_closet.bluespace_exits()
@@ -84,7 +91,8 @@
 		if(!isbelly(exit_point))
 			AM.throw_at(target, BLUESPACE_THROW_RANGE, 1)
 
-/datum/om/behaviour/bluespace_connection/on_hitby(obj/structure/closet/assigned_closet, datum/om/event/hitby/event)
+/datum/capability/bluespace_connection/proc/bluespace_hit(datum/act/A)
+	var/obj/structure/closet/assigned_closet = A.holder
 	if(assigned_closet.opened)
 		assigned_closet.close()
 
@@ -97,7 +105,7 @@
 		rel_remove(src, nameof(bluespace_exit_points), removed_exit)
 	if(!length(bluespace_exits())) // No exit points left, bluespace connection severed.
 		rel_clear(src, nameof(bluespace_exit_points))
-		om_detach(src, /datum/om/behaviour/bluespace_connection)
+		revoke(src, /datum/capability/bluespace_connection, src)
 	return TRUE
 
 /obj/structure/closet/proc/bluespace_sparks()
@@ -108,18 +116,6 @@
 #undef BLUESPACE_THROW_RANGE
 #undef BLUESPACE_THROW_RANGE_X
 #undef BLUESPACE_THROW_RANGE_Y
-
-// ---------------------------------------------------------------- events
-
-/// Notification: the closet closed.
-/datum/om/event/closet_closed
-	coalesce = FALSE
-
-/datum/om/event/closet_closed/dispatch(datum/om/behaviour/B, datum/E)
-	return B.on_closet_closed(E, src)
-
-/datum/om/behaviour/proc/on_closet_closed(datum/E, datum/om/event/closet_closed/event)
-	return
 
 /obj/structure/closet/relations()
 	. = ..()

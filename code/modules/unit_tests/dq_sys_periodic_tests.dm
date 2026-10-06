@@ -60,22 +60,22 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 
 /datum/unit_test/om/sys_periodic_repeat/run_om(list/made)
 	var/datum/sys_periodic_test_entity/E = entity(made, /datum/sys_periodic_test_entity)
-	TEST_ASSERT(!om_timer_slot_pending(E, "sys_repeat:pulse"), "not armed while the field is false")
+	TEST_ASSERT(!after_pending(E, "sys_repeat:pulse"), "not armed while the field is false")
 	E.set_pulsing(TRUE)
 	scheduler_advance(0.1)
-	TEST_ASSERT(om_timer_slot_pending(E, "sys_repeat:pulse"), "armed once the field holds")
+	TEST_ASSERT(after_pending(E, "sys_repeat:pulse"), "armed once the field holds")
 	scheduler_advance(4.5)
 	TEST_ASSERT_EQUAL(E.pulses, 2, "runs every delay while the field holds")
 	E.set_pulsing(FALSE)
 	scheduler_advance(0.1)
-	TEST_ASSERT(!om_timer_slot_pending(E, "sys_repeat:pulse"), "the field going false cancels it")
+	TEST_ASSERT(!after_pending(E, "sys_repeat:pulse"), "the field going false cancels it")
 	scheduler_advance(5)
 	TEST_ASSERT_EQUAL(E.pulses, 2, "no runs while the field is false")
 	E.stop_at = 3
 	E.set_pulsing(TRUE)
 	scheduler_advance(7)
 	TEST_ASSERT_EQUAL(E.pulses, 3, "REPEAT_STOP ends the loop")
-	TEST_ASSERT(!om_timer_slot_pending(E, "sys_repeat:pulse"), "and nothing is left pending")
+	TEST_ASSERT(!after_pending(E, "sys_repeat:pulse"), "and nothing is left pending")
 
 /// The declaration table: fields resolved to their channels, subtypes inherit.
 /datum/unit_test/sys_periodic_table

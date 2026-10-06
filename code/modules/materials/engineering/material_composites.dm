@@ -26,7 +26,7 @@
 /// registered when it got its cache id takes its registry id from now on.
 /datum/material/proc/material_facts_changed()
 	shared_cache_uid = null
-	OM_EMIT_WORLD(/datum/om/event/material_facts_changed)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/material_facts_changed)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

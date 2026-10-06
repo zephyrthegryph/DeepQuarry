@@ -190,7 +190,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 		attempting = 0
 		update_icon()
 		return
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body

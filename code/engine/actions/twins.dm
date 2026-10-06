@@ -16,6 +16,9 @@ GLOBAL_LIST_EMPTY(notice_twin_event)
 GLOBAL_VAR_INIT(notice_twin_built, FALSE)
 
 /proc/notice_twin_row(notice_type)
+	// During global init (a datum deleted while the globals are still being made) the tables may not exist yet: no twin.
+	if(!islist(GLOB.notice_twin_event) || !islist(GLOB.event_twin_notice))
+		return null
 	if(!GLOB.notice_twin_built)
 		GLOB.notice_twin_built = TRUE
 		for(var/event_type in GLOB.event_twin_notice)

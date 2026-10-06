@@ -232,7 +232,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 /// and deletion all end it on their own (a deleted machine's handle stops resolving).
 /obj/machinery/proc/first_wake_pending()
 	// rel_names(): the boot queue holds every machine, so a list scan here made the bulk pass quadratic.
-	return om_timer_slot_pending(src, "first_wake") || rel_names(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), src)
+	return after_pending(src, "first_wake") || rel_names(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), src)
 
 /// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
 /obj/machinery/proc/arm_wakes()
@@ -644,7 +644,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/proc/dismantle()
-	OM_EMIT(src, /datum/om/event/obj_deconstruct, FALSE)
+	PUBLISH_LEGACY(src, /datum/notice/obj_deconstruct, FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
@@ -730,7 +730,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	..()
 	if(!flipped)
 		return FALSE
-	OM_EMIT(src, /datum/om/event/machinery_broken, damage_flag)
+	PUBLISH_LEGACY(src, /datum/notice/machinery_broken, damage_flag)
 	update_icon()
 	return TRUE
 

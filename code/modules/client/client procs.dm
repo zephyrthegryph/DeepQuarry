@@ -935,7 +935,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			return
 	// Clients cannot be hooked: the click event is emitted on the client's mob.
 	if(mob)
-		OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
+		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, usr)
 	. = ..()
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)

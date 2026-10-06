@@ -4198,10 +4198,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.detectTime = 0
 	C.stat_remove(NOPOWER)
 	C.schedule_camera_timer()
-	TEST_ASSERT(!om_timer_slot_pending(C, "camera_timer_token"), "idle motion camera kept a timer")
+	TEST_ASSERT(!after_pending(C, "camera_timer_token"), "idle motion camera kept a timer")
 	var/mob/living/carbon/human/H = new(test_turf)
 	C.newTarget(H)
-	TEST_ASSERT(om_timer_slot_pending(C, "camera_timer_token"), "motion target did not schedule its camera's alarm timer")
+	TEST_ASSERT(after_pending(C, "camera_timer_token"), "motion target did not schedule its camera's alarm timer")
 	qdel(H)
 	qdel(C)
 
@@ -4420,11 +4420,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
 	D.receive_signal(blank)
-	TEST_ASSERT(!om_timer_slot_pending(D, "refresh_token"), "blank status display kept a refresh timer")
+	TEST_ASSERT(!after_pending(D, "refresh_token"), "blank status display kept a refresh timer")
 	var/datum/signal/time_signal = new
 	time_signal.data["command"] = "time"
 	D.receive_signal(time_signal)
-	TEST_ASSERT(om_timer_slot_pending(D, "refresh_token") || D.has_stat(NOPOWER), "time signal did not schedule the clock's next redraw")
+	TEST_ASSERT(after_pending(D, "refresh_token") || D.has_stat(NOPOWER), "time signal did not schedule the clock's next redraw")
 	qdel(D)
 	qdel(canister)
 	qdel(C)

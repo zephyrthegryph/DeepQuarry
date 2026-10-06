@@ -472,7 +472,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		if(id)
 			slot_vacated(id, item_dropping)
 		has_unequipped(item_dropping, FALSE)
-	OM_EMIT(src, /datum/om/event/mob_unequipped_item, item_dropping, target)
+	PUBLISH_LEGACY(src, /datum/notice/mob_unequipped_item, item_dropping, target)
 	on_equipment_changed()
 	return TRUE
 

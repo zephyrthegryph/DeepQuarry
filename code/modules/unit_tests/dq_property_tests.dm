@@ -27,17 +27,18 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 /mob/dq_property_test/get_equipped_items()
 	return test_equipped ? test_equipped.Copy() : list()
 
-/datum/om/behaviour/dq_property_test
+CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_property_test, key = NONE)
+/datum/capability/dq_property_test
 	var/extra_mass = 2
 
-/datum/om/behaviour/dq_property_test/property_value(datum/E, id)
+/datum/capability/dq_property_test/property_value(datum/E, id)
 	if(id == PROP_MASS)
 		return extra_mass
 
 /datum/property_provider/behaviour/dq_test_mass
 	property = PROP_MASS
 	unit = PROP_UNIT_KILOGRAMS
-	behaviour_type = /datum/om/behaviour/dq_property_test
+	behaviour_type = /datum/capability/dq_property_test
 
 // Test-only definitions and providers, skipped by the global registry.
 
@@ -355,9 +356,9 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 3) < 0.0001, "instance matter drives instance mass")
 	TEST_ASSERT(!HAS_TAG(item, TAG_FLAMMABLE), "without cardboard the instance is not flammable")
 
-	// Behaviour contributors fold in with the aggregator.
-	om_attach(item, /datum/om/behaviour/dq_property_test)
-	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 5) < 0.0001, "the behaviour adds 2 kg, got [PROPERTY(item, PROP_MASS)]")
+	// Capability contributors fold in with the aggregator.
+	grant(item, /datum/capability/dq_property_test, item)
+	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 5) < 0.0001, "the capability adds 2 kg, got [PROPERTY(item, PROP_MASS)]")
 
 	// Equipment contributors: a mob's mass sums what it holds.
 	var/mob/dq_property_test/M = allocate(/mob/dq_property_test)

@@ -116,7 +116,7 @@ SETTER(/atom, rad_insulation)
 /// Only used for uranium (false/tram)walls to spread their radiation pulses
 /atom/proc/propagate_radiation_pulse()
 	for(var/atom/atom in orange(1,src))
-		OM_EMIT(atom, /datum/om/event/atom_propagate_rad_pulse, src)
+		PUBLISH_LEGACY(atom, /datum/notice/atom_propagate_rad_pulse, src)
 
 #undef MEDIUM_RADIATION_THRESHOLD_RANGE
 #undef EXTREME_RADIATION_CHANCE

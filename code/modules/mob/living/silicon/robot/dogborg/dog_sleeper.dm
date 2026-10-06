@@ -645,7 +645,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			var/datum/experiment_handler/handler = get_experiment_handler()
 			if(analyzer && handler)
 				techweb_item_generate_points(T, handler.linked_web())
-				OM_EMIT(src, /datum/om/event/machinery_destructive_scan, T)
+				PUBLISH_LEGACY(src, /datum/notice/machinery_destructive_scan, T)
 			if(is_trash)
 				hound.adjust_nutrition(digested)
 			else

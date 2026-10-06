@@ -91,7 +91,7 @@
 		if(om_wants(src, /datum/om/event/living_shield_injury))
 			before = amount
 			var/list/amount_ref = list(amount)
-			OM_EMIT(src, /datum/om/event/living_shield_injury, kind, amount_ref, zone, source, flags)
+			PUBLISH_LEGACY(src, /datum/notice/living_shield_injury, kind, amount_ref, zone, source, flags)
 			amount = max(0, amount_ref[1])
 			if(explain)
 				explain += list(list(INJURY_STAGE_SHIELD, before, amount, "energy shield"))
@@ -121,7 +121,7 @@
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
 	body.on_status_changed()
-	OM_EMIT(src, /datum/om/event/living_injured, kind, ., zone, source, flags)
+	PUBLISH_LEGACY(src, /datum/notice/living_injured, kind, ., zone, source, flags)
 
 /// Apply several kinds at once: alist(INJURY_BLUNT = 10, INJURY_BURN = 5).
 /// (alist, because DM forbids numeric keys in a plain list literal.)
@@ -155,7 +155,7 @@
 /// breakdown and shows it to the admins tracing this mob.
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)
-	OM_EMIT(src, /datum/om/event/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
+	PUBLISH_LEGACY(src, /datum/notice/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
 	if(!injury_trace)
 		return
 	var/list/parts = list()

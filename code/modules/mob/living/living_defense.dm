@@ -92,8 +92,7 @@
 //Handles the effects of "stun" weapons
 /mob/living/proc/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	flash_pain()
-	if(om_wants(src, /datum/om/event/stun_effect))
-		om_emit(src, new /datum/om/event/stun_effect(stun_amount, agony_amount, def_zone, used_weapon, electric))
+	PUBLISH_LEGACY(src, /datum/notice/stun_effect, stun_amount, agony_amount, def_zone, used_weapon, electric)
 
 	if (stun_amount)
 		status_at_least(STAT_STUNNED, stun_amount)

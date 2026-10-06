@@ -41,11 +41,11 @@
 	DERIVED_EVAL_BEGIN
 	var/want = !!D.should_run()
 	DERIVED_EVAL_END
-	var/pending = om_timer_slot_pending(D, "periodic_interval")
+	var/pending = after_pending(D, "periodic_interval")
 	if(want && !pending)
 		after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
 	else if(!want && pending)
-		om_cancel_timer_slot(D, "periodic_interval")
+		cancel_after(D, "periodic_interval")
 
 /// One custom-interval step; re-arms while should_run() holds (the framework's timer, not game code).
 /proc/periodic_interval_fire(datum/D)

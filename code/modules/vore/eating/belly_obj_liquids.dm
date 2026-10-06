@@ -42,7 +42,7 @@
 						continue
 					if(reagents.total_volume)
 						reagents.trans_to(I, affecting_amt, 1, FALSE)
-		OM_EMIT(src, /datum/om/event/before/belly_update_vore_fx, reagents.total_volume) // Signals vore_fx() reagents updates.
+		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 		for(var/mob/living/L in contents)
 			vore_fx(L, reagents.total_volume)
 	if(owner.previewing_belly == src)
@@ -60,7 +60,7 @@
 	if(count_liquid_for_sprite)
 		owner.handle_belly_update() //This is run whenever a belly's contents are changed.
 	if(LAZYLEN(belly_surrounding))
-		OM_EMIT(src, /datum/om/event/before/belly_update_vore_fx, reagents.total_volume) // Signals vore_fx() reagents updates.
+		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 
 //////////////////////////// REAGENT_DIGEST ////////////////////////
 
@@ -328,7 +328,7 @@
 
 /obj/belly/proc/update_internal_overlay()
 	if(LAZYLEN(belly_surrounding))
-		OM_EMIT(src, /datum/om/event/before/belly_update_vore_fx, reagents.total_volume) // Signals vore_fx() to listening atoms. Atoms must handle appropriate isliving() checks.
+		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 	for(var/A in belly_surrounding)
 		if(isliving(A))
 			vore_fx(A)

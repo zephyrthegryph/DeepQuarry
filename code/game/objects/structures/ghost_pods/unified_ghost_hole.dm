@@ -132,7 +132,7 @@
 			if(is_lang_whitelisted(M, chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
 	new_character.regenerate_icons()
 

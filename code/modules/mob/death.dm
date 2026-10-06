@@ -121,8 +121,8 @@
 	set_respawn_timer()
 
 	// 5. Signals.
-	OM_EMIT(src, /datum/om/event/mob_death, gibbed)
-	OM_EMIT_WORLD(/datum/om/event/world_mob_death, src, gibbed)
+	PUBLISH_LEGACY(src, /datum/notice/mob_death, gibbed)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_death, src, gibbed)
 
 	// 6. Subtype contributions.
 	on_death(gibbed)
@@ -140,7 +140,7 @@
 
 	// 9. Final: every side effect is done. The destroy framework's delete_on_death hangs here
 	// (lifecycle_on_death_finalized(), code/datums/lifecycle/verbs.dm), after the listeners.
-	OM_EMIT(src, /datum/om/event/living_death_final, gibbed)
+	PUBLISH_LEGACY(src, /datum/notice/living_death_final, gibbed)
 	if(isliving(src) && !QDELETED(src))
 		var/mob/living/finalized = src
 		finalized.lifecycle_on_death_finalized()

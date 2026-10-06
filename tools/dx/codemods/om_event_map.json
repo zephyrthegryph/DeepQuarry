@@ -423,21 +423,6 @@
   "target": "/datum/notice/belly_update_vore_fx",
   "tests": []
  },
- "/datum/om/event/before/catch_throw": {
-  "emits": [
-   "code/modules/mob/living/carbon/human/human_defense.dm"
-  ],
-  "fields": [
-   "source",
-   "speed"
-  ],
-  "listeners": [
-   "code/datums/behaviours/omen.dm"
-  ],
-  "reads_result": true,
-  "target": "op",
-  "tests": []
- },
  "/datum/om/event/before/click_alt": {
   "emits": [
    "code/_onclick/click_alt.dm"
@@ -452,22 +437,6 @@
   ],
   "reads_result": true,
   "target": "/datum/notice/click_alt",
-  "tests": []
- },
- "/datum/om/event/before/dice_roll": {
-  "emits": [
-   "code/modules/games/dice.dm"
-  ],
-  "fields": [
-   "dice",
-   "silent",
-   "roll_result"
-  ],
-  "listeners": [
-   "code/datums/behaviours/omen.dm"
-  ],
-  "reads_result": false,
-  "target": "review",
   "tests": []
  },
  "/datum/om/event/before/in_range_of_irradiation": {
@@ -635,26 +604,6 @@
   "target": "/datum/notice/body_part_detached",
   "tests": []
  },
- "/datum/om/event/carbon_slip": {
-  "emits": [
-   "code/modules/mob/living/carbon/carbon.dm"
-  ],
-  "fields": [
-   "slipped_on",
-   "stun_duration"
-  ],
-  "listeners": [
-   "code/datums/behaviours/omen.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [
-   "slipped_on",
-   "stun_duration"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/carbon_slip",
-  "tests": []
- },
  "/datum/om/event/click": {
   "emits": [
    "code/engine/parts/inputs.dm"
@@ -701,20 +650,6 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/client_click",
-  "tests": []
- },
- "/datum/om/event/closet_closed": {
-  "emits": [
-   "code/game/objects/structures/crates_lockers/__closets.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/datums/behaviours/bluespace_connection.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [],
-  "reads_result": false,
-  "target": "/datum/notice/closet_closed",
   "tests": []
  },
  "/datum/om/event/disposal_link": {
@@ -1727,24 +1662,6 @@
    "code/modules/unit_tests/dx_reactions_work_tests.dm"
   ]
  },
- "/datum/om/event/moved_down_stairs": {
-  "emits": [
-   "code/modules/multiz/stairs.dm"
-  ],
-  "fields": [
-   "old_loc"
-  ],
-  "listeners": [
-   "code/datums/behaviours/omen.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [
-   "old_loc"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/moved_down_stairs",
-  "tests": []
- },
  "/datum/om/event/obj_deconstruct": {
   "emits": [
    "code/game/machinery/machinery.dm",
@@ -1861,24 +1778,6 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/observer_turf_entered",
-  "tests": []
- },
- "/datum/om/event/picked_up_item": {
-  "emits": [
-   "code/game/objects/items.dm"
-  ],
-  "fields": [
-   "item"
-  ],
-  "listeners": [
-   "code/datums/behaviours/omen.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [
-   "item"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/picked_up_item",
   "tests": []
  },
  "/datum/om/event/popup_cleared": {
@@ -2048,32 +1947,6 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/slot_removed",
-  "tests": []
- },
- "/datum/om/event/stun_effect": {
-  "emits": [
-   "code/modules/mob/living/living_defense.dm"
-  ],
-  "fields": [
-   "stun_amount",
-   "agony_amount",
-   "def_zone",
-   "used_weapon",
-   "electric"
-  ],
-  "listeners": [
-   "code/datums/behaviours/omen.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [
-   "stun_amount",
-   "agony_amount",
-   "def_zone",
-   "used_weapon",
-   "electric"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/stun_effect",
   "tests": []
  },
  "/datum/om/event/techweb_add_design": {

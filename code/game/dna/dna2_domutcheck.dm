@@ -66,4 +66,4 @@
 					M.update_icon = 1
 	M.update_mutations()
 	// Inform anything attached of our mutation
-	OM_EMIT(M, /datum/om/event/mob_dna_mutation)
+	PUBLISH_LEGACY(M, /datum/notice/mob_dna_mutation)

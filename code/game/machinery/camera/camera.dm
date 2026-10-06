@@ -136,7 +136,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		cancel_after(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
-		om_attach(src, /datum/om/behaviour/sleeper/timed)
+		sleep_audit_join(src)
 		after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired), key = "camera_timer_token")
 
 /obj/machinery/camera/proc/camera_timer_fired()
@@ -149,7 +149,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	check_motion_alarm()
 	schedule_camera_timer()
 
-/obj/machinery/camera/om_sleep_violation()
+/obj/machinery/camera/sleep_violation()
 	var/deadline = next_camera_deadline()
 	if(deadline && (!after_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"

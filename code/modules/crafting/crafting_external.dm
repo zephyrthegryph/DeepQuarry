@@ -27,7 +27,7 @@
 				L.unEquip(M, target = src)
 			else
 				M.forceMove(src)
-			OM_EMIT(M, /datum/om/event/atom_used_in_craft, src)
+			PUBLISH_LEGACY(M, /datum/notice/atom_used_in_craft, src)
 
 		var/list/L = parts_list["reagents"]
 		if(LAZYLEN(L))

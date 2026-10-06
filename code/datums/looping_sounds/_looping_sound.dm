@@ -108,8 +108,8 @@
 	loop_started_at = null
 
 /datum/looping_sound/proc/cancel_loop_timer()
-	if(om_timer_slot_pending(src, "loop_token"))
-		om_cancel_timer_slot(src, "loop_token")
+	if(after_pending(src, "loop_token"))
+		cancel_after(src, "loop_token")
 
 /// Arms the loop's one timer (the next loop, the start delay or the dormant recheck).
 /datum/looping_sound/proc/set_loop_timer(delay)
@@ -125,17 +125,14 @@
 		sound_loop()
 
 /// A player moved near a dormant loop (its chunk watches).
-/datum/om/behaviour/sleeper/looping_sound
-	name = "looping sound"
+/datum/looping_sound/proc/chunk_woke(datum/mob_chunk/C, bits)
+	if(running && dormant_chunk_tokens)
+		wake_from_dormancy(FALSE)
 
-/datum/om/behaviour/sleeper/looping_sound/on_wake(datum/looping_sound/L, changes)
-	if(L.running && L.dormant_chunk_tokens)
-		L.wake_from_dormancy(FALSE)
-
-/datum/looping_sound/om_sleep_violation()
-	if(running && !om_timer_slot_pending(src, "loop_token") && !dormant_chunk_tokens)
+/datum/looping_sound/sleep_violation()
+	if(running && !after_pending(src, "loop_token") && !dormant_chunk_tokens)
 		return "running with no loop timer and no chunk keys"
-	if(dormant_chunk_tokens && !om_timer_slot_pending(src, "loop_token"))
+	if(dormant_chunk_tokens && !after_pending(src, "loop_token"))
 		return "dormant without its recheck timer"
 	return null
 
@@ -178,15 +175,15 @@
 			continue
 		seen[source_turf] = TRUE
 		tokens |= mob_chunks_around(source_turf, max_distance)
-	om_attach(src, /datum/om/behaviour/sleeper/looping_sound)
-	dormant_chunk_tokens = watch_mob_chunks(src, tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/looping_sound)
+	sleep_audit_join(src)
+	dormant_chunk_tokens = watch_mob_chunks(src, tokens, CHANGE_CHUNK_PLAYER, PROC_REF(chunk_woke))
 	set_loop_timer(LOOPING_SOUND_DORMANT_RECHECK)
 
 /// Drops the chunk keys. TRUE if the loop was dormant.
 /datum/looping_sound/proc/leave_dormancy()
 	if(isnull(dormant_chunk_tokens))
 		return FALSE
-	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/looping_sound)
+	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, CHANGE_CHUNK_PLAYER)
 	return TRUE
 
 /// A player moved nearby, or the recheck fired. A chunk wake with still nobody in range

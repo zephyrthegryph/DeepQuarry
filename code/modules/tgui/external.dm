@@ -103,7 +103,7 @@
  */
 /datum/proc/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	SHOULD_CALL_PARENT(TRUE)
-	OM_EMIT(src, /datum/om/event/ui_act, ui.user, action)
+	PUBLISH_LEGACY(src, /datum/notice/ui_act, ui.user, action)
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		return TRUE

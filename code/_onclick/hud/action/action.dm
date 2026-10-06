@@ -96,7 +96,7 @@ CAPABILITIES(/datum/action)
 			return
 		Remove(owner)
 
-	OM_EMIT(grant_to, /datum/om/event/mob_granted_action, src)
+	PUBLISH_LEGACY(grant_to, /datum/notice/mob_granted_action, src)
 	om_link(src, grant_to, /datum/om/relation/action_granted_to)
 
 	GiveAction(grant_to)
@@ -118,7 +118,7 @@ CAPABILITIES(/datum/action)
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
 	var/mob/owner = action_owner() || remove_from
 	if(owner)
-		OM_EMIT(owner, /datum/om/event/mob_removed_action, src)
+		PUBLISH_LEGACY(owner, /datum/notice/mob_removed_action, src)
 		om_unlink(src, owner, /datum/om/relation/action_granted_to)
 
 /// Actually triggers the effects of the action.

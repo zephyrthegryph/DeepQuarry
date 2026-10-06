@@ -325,7 +325,7 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 			if(def_lang)
 				P.default_language = def_lang
 
-		OM_EMIT(P, /datum/om/event/human_dna_finalized)
+		PUBLISH_LEGACY(P, /datum/notice/human_dna_finalized)
 
 		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")

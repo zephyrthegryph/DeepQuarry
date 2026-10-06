@@ -54,7 +54,7 @@ CAPABILITIES(/obj/structure/toilet)
 	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
 	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(toilet_reflux)))
 	if(trunk)
-		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
+		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 
 // non-basic bins, the teleplumb crystal and flushed objects drop out
 // (before phase 4 deletes the owned bin).

@@ -209,12 +209,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	if(isobserver(passing_entity))
 		to_chat(passing_entity, span_info("((You are incapable of moving or 'jumping' to turf by clicking, but can still escape via teleport or orbit!))"))
 
-	OM_EMIT(src, /datum/om/event/world_ghost_captured, passing_entity)
+	PUBLISH_LEGACY(src, /datum/notice/world_ghost_captured, passing_entity)
 
 /obj/item/ghost_trap/Crossed(atom/movable/AM)
 
 	if(istype(AM, /obj/effect/shadow_wight))
-		OM_EMIT(src, /datum/om/event/world_wight_captured, AM)
+		PUBLISH_LEGACY(src, /datum/notice/world_wight_captured, AM)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src] and into [AM], capturing and disintegrating it!"))
 		return
 

@@ -1971,7 +1971,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 	is_genetrait = FALSE
 	hidden = FALSE
 	custom_only = FALSE
-	added_behaviour_path = /datum/om/behaviour/slip_prone
+	added_capability = /datum/capability/slip_prone
 	excludes = list(/datum/trait/negative/unlucky/major, /datum/trait/negative/unlucky)
 
 

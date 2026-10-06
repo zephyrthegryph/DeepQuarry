@@ -506,6 +506,7 @@
 #include "code\controllers\kernel\sequence.dm"
 #include "code\controllers\kernel\sequence_state.dm"
 #include "code\controllers\kernel\sequence_table.dm"
+#include "code\controllers\kernel\sleep_audit.dm"
 #include "code\controllers\kernel\system.dm"
 #include "code\controllers\kernel\urgent.dm"
 #include "code\controllers\kernel\waiter.dm"
@@ -933,6 +934,7 @@
 #include "code\datums\ownership\shared.dm"
 #include "code\datums\reactions\delivery.dm"
 #include "code\datums\reactions\guard.dm"
+#include "code\datums\reactions\legacy_notices.dm"
 #include "code\datums\reactions\notices.dm"
 #include "code\datums\reactions\reactions.dm"
 #include "code\datums\reactions\state.dm"
@@ -942,7 +944,6 @@
 #include "code\datums\ownership\transfer.dm"
 #include "code\datums\om_events\atom_events.dm"
 #include "code\datums\om_events\signal_events.dm"
-#include "code\datums\behaviours\cleaning.dm"
 #include "code\datums\behaviours\rotatable.dm"
 #include "code\datums\behaviours\bluespace_connection.dm"
 #include "code\datums\behaviours\burning.dm"
@@ -5781,7 +5782,6 @@
 #include "code\engine\_generated\stats.dm"
 #include "code\engine\_generated\actions.dm"
 #include "code\engine\_generated\event_twins.dm"
-#include "code\_generated\om_notices.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES
 // END_INCLUDE

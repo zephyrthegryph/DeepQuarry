@@ -135,7 +135,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				// guard refuses new ownership, relations, timers, hooks and tasks on D.
 				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 				D.datum_flags |= DF_DESTROYING
-				OM_EMIT(D, /datum/om/event/qdeleting, force)
+				PUBLISH_LEGACY(D, /datum/notice/qdeleting, force)
 				ending_begin(D) // on_ending() hooks, lives_while() scopes, the ended notice with its cause (code/engine/lifeforms/lifetimes.dm)
 			if(DESTROY_STEP_LEAVE_REGISTRIES)
 				dq_lifecycle_leave_registries(D)

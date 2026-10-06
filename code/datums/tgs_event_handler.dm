@@ -31,8 +31,8 @@
 				to_chat(world, span_boldannounce("TGS updated to v[new_version.deprefixed_parameter]"))
 			else
 				message_admins("TGS: Back online")
-			if(om_timer_slot_pending(src, "reattach_timer"))
-				om_cancel_timer_slot(src, "reattach_timer")
+			if(after_pending(src, "reattach_timer"))
+				cancel_after(src, "reattach_timer")
 		if(TGS_EVENT_WATCHDOG_SHUTDOWN)
 			to_chat_immediate(world, span_boldannounce("Server is shutting down!"))
 

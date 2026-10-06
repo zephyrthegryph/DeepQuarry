@@ -110,8 +110,8 @@
 /// reference behind -- the hard-delete trap QDEL_IN() works around with a
 /// handle. expire(null) only disarms (a ghost whose player came back).
 /atom/movable/proc/expire(after)
-	if(om_timer_slot_pending(src, "lifecycle_lifetime_timer"))
-		om_cancel_timer_slot(src, "lifecycle_lifetime_timer")
+	if(after_pending(src, "lifecycle_lifetime_timer"))
+		cancel_after(src, "lifecycle_lifetime_timer")
 	if(isnull(after) || QDELETED(src))
 		return
 	after(src, max(after, 0), PROC_REF(lifecycle_expire_now), key = "lifecycle_lifetime_timer")

@@ -9,7 +9,7 @@
 	TEST_ASSERT(length(beam.elements) > 0, "the live beam draws actual owned segments")
 	var/list/segments = beam.elements.Copy()
 	scheduler_advance(0.01 SECONDS)
-	TEST_ASSERT(om_timer_slot_pending(beam, "sys_repeat:beam_tick"), "the live beam has an actual pending repeat")
+	TEST_ASSERT(after_pending(beam, "sys_repeat:beam_tick"), "the live beam has an actual pending repeat")
 	beam.End()
 	beam.beam_tick()
 	TEST_ASSERT(QDELETED(beam), "ending the beam deletes its non-movable controller immediately")

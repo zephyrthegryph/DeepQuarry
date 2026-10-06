@@ -1,5 +1,5 @@
 /mob/Logout()
-	OM_EMIT(src, /datum/om/event/mob_logout)
+	PUBLISH_LEGACY(src, /datum/notice/mob_logout)
 	SStgui.on_logout(src) // Cleanup any TGUIs the user has open
 	registry_leave(REGISTRY_PLAYERS, src)
 	disconnect_time = world.realtime // ition: logging when we disappear.

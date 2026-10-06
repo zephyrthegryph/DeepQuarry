@@ -516,7 +516,7 @@
 			break
 	if(!original_routine)
 		original_routine = trial_terms_definition.create_contract(list("offer_key" = "dq-medical-rotation-test", "board_key" = "[CONTRACT_SCOPE_DEPARTMENT]:[DEPARTMENT_MEDICAL]", "offer_kind" = CONTRACT_OFFER_STANDING))
-	TEST_ASSERT(om_timer_slot_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
+	TEST_ASSERT(after_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
 	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")

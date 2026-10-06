@@ -72,7 +72,7 @@ CAPABILITIES(/obj/structure/lattice)
 
 /// Redraws next tick; requests before then share the one pending redraw.
 /obj/structure/lattice/proc/updateOverlays()
-	if(om_timer_slot_pending(src, "overlays"))
+	if(after_pending(src, "overlays"))
 		return
 	after(src, 0.1 SECONDS, PROC_REF(update_overlays_now), key = "overlays")
 

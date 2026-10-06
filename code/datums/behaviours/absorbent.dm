@@ -1,9 +1,13 @@
-/// Absorbent: cleans what the barefoot mob walks over and
-/// feeds on it. A shared OM behaviour on the moved event; attached by the Absorbent trait.
-/datum/om/behaviour/absorbent
-	handles = list(/datum/om/event/moved)
+/// Absorbent: cleans what the barefoot mob walks over and feeds on it. A capability hooked on the moved notice, granted by the
+/// Absorbent trait (added_capability).
+CAPABILITY_TYPE(absorbent, CAP_ABSORBENT, /datum/capability/absorbent, key = NONE)
+/datum/capability/absorbent
 
-/datum/om/behaviour/absorbent/on_moved(mob/living/carbon/human/H, datum/om/event/moved/event)
+/datum/capability/absorbent/entries()
+	return list(on_notice(/datum/notice/moved, then(CAP_PROC(absorb_step))))
+
+/datum/capability/absorbent/proc/absorb_step(datum/act/A)
+	var/mob/living/carbon/human/H = A.holder
 	if(!istype(H))
 		return
 	var/turf/T = get_turf(H)

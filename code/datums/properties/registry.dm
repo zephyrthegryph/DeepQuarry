@@ -130,8 +130,8 @@
 			out += "[label] contributes to [def.id], which has no aggregator"
 		if(provider.source == PROP_SOURCE_BEHAVIOUR)
 			var/datum/property_provider/behaviour/beh = provider
-			if(!ispath(beh.behaviour_type, /datum/om/behaviour))
-				out += "[label] names [beh.behaviour_type], which is not a behaviour"
+			if(!ispath(beh.behaviour_type, /datum/capability))
+				out += "[label] names [beh.behaviour_type], which is not a capability"
 	// Conflicting base providers: two answering for the same types.
 	for(var/id in base_providers)
 		var/list/bases = LAZYACCESS(base_providers, id)

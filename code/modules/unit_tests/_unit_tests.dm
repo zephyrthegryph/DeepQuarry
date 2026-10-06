@@ -134,6 +134,7 @@
 #include "dx_cap_checks_tests.dm"
 #include "dx_cap_library_api_tests.dm"
 #include "dq_items_emag_ops.dm"
+#include "dq_retired_behaviour_pins.dm"
 #include "dq_test_overrides_tests.dm"
 #include "dq_metrics_tests.dm"
 #include "focus_only_tests.dm"

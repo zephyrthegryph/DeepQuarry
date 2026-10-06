@@ -47,6 +47,7 @@ ACTION(slash, mob/living/slasher, FIXED)
 // result to give back (a flag word, a name) reads ACT_REPLY of the hook that took it over. See doc/rewrite/codemod_rules.md "om_hook residue".
 ACTION(attackby, obj/item/item, mob/user, params, notice = /datum/notice/attacked_by)
 ACTION(attack_hand, mob/user, notice = /datum/notice/hand_attacked)
+ACTION(attack_self, mob/user, notice = /datum/notice/self_attacked)
 ACTION(tool_act, tool_quality, secondary, mob/user, obj/item/tool, notice = /datum/notice/tool_acted)
 ACTION(pre_attack, atom/target_, mob/user, params, notice = /datum/notice/pre_attacked)
 ACTION(pre_move, direction, atom/destination, notice = /datum/notice/pre_moved)
@@ -77,3 +78,5 @@ ACTION(living_status_sleep, amount, FIXED, notice = /datum/notice/living_status_
 ACTION(living_status_blind, amount, FIXED, notice = /datum/notice/living_status_blind)
 ACTION(mob_handle_vision, FIXED, notice = /datum/notice/mob_handle_vision)
 ACTION(mob_handle_hud_darksight, FIXED, notice = /datum/notice/mob_handle_hud_darksight)
+/// A shuttle's schedule (departure, arrival, ETA) changed: status displays redraw.
+ACTION(shuttle_schedule_change, FIXED, notice = /datum/notice/shuttle_schedule_changed)

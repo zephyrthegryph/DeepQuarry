@@ -19,9 +19,7 @@
 /datum/ai_brain/proc/lose_target()
 	lose_threat_at = 0
 	if(primary_threat)
-		var/old = primary_threat
 		rel_clear(src, nameof(primary_threat))
-		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 		if(active_behavior_type)
 			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 		invalidate_selection()
@@ -109,9 +107,7 @@
 	if(model && ismob(attacker))
 		model.record_damage(0, INJURY_BLUNT, attacker)
 	if(!primary_threat)
-		var/mob/old = primary_threat
 		rel_set(src, nameof(primary_threat), attacker)
-		OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------

@@ -41,7 +41,7 @@
 	if(E.driven)
 		return op_resolve_click_with_params(actor, target, E.held, E.gesture, E.origin || ORIGIN_CLICK, E.params)
 	// The click event (hooks on the target see it), then the new resolver when something of the click has an op, else the mob's click handling.
-	OM_EMIT(E.target, /datum/om/event/click, E.location, E.control, E.params, E.actor)
+	PUBLISH_LEGACY(E.target, /datum/notice/click, E.location, E.control, E.params, E.actor)
 	var/gesture = op_gesture_of_params(E.params)
 	var/obj/item/held = actor?.held_for_ops()
 	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held) || op_has_click_ops(actor)))

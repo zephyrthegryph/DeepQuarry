@@ -1,11 +1,15 @@
 /**
  * Like unlucky, but only has a chance of slipping into someone!
- * A shared OM behaviour on the moved event; attached by the Slip Prone trait.
+ * A capability hooked on the moved notice, granted by the Slip Prone trait (added_capability).
  */
-/datum/om/behaviour/slip_prone
-	handles = list(/datum/om/event/moved)
+CAPABILITY_TYPE(slip_prone, CAP_SLIP_PRONE, /datum/capability/slip_prone, key = NONE)
+/datum/capability/slip_prone
 
-/datum/om/behaviour/slip_prone/on_moved(atom/movable/our_guy, datum/om/event/moved/event)
+/datum/capability/slip_prone/entries()
+	return list(on_notice(/datum/notice/moved, then(CAP_PROC(slip_step))))
+
+/datum/capability/slip_prone/proc/slip_step(datum/act/A)
+	var/atom/movable/our_guy = A.holder
 
 	if(!isliving(our_guy) || isbelly(our_guy.loc))
 		return

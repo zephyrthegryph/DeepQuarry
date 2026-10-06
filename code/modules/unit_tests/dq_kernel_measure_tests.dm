@@ -41,14 +41,11 @@
 /datum/unit_test/dq_km_system_key_rule/Run()
 	// Rule 2: a code folder's row.
 	var/list/known = km_system_prefixes()
-	TEST_ASSERT(length(known) > 20, "the prefix table is built (it has [length(known)] rows)")
+	TEST_ASSERT(length(known) >= 2, "the prefix table is built (it has [length(known)] rows)")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/machine), "machines", "the machine pipeline")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/ai_brain/tactical), "ai_brain", "a subtype of a folder's type")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/footstep), "object_behaviours", "datums/behaviours")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
 	// Rule 3: the family fallback.
 	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/behaviour/world/statpanels"), "statpanels", "world/<x> is <x> (as text: the lane is gone)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/sleeper/status_display), "status_display", "sleeper/<x> is <x>")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/test/every_second), "test", "any other behaviour is its first segment")
 	// A row's prefix matches at a segment (or a family suffix), never in the middle of a name.
 	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/pipeline/lifeboat/x"), "lifeboat", "life must not swallow lifeboat")

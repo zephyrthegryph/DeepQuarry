@@ -314,7 +314,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	// once that lands (medical_frameworks.md).
 	dq_latent_touch(thing)
 	holder.on_slot_changed(id, thing, TRUE)
-	OM_EMIT(holder, /datum/om/event/slot_inserted, thing, id)
+	PUBLISH_LEGACY(holder, /datum/notice/slot_inserted, thing, id)
 	om_slot_entered(holder, thing, def)
 	activations_slot_enter(thing, holder, id)
 	if(thing.has_slot_hooks)
@@ -340,7 +340,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(thing.move_hooks)
 		adjust_hooked(-1)
 	holder.on_slot_changed(id, thing, FALSE)
-	OM_EMIT(holder, /datum/om/event/slot_removed, thing, id)
+	PUBLISH_LEGACY(holder, /datum/notice/slot_removed, thing, id)
 	om_slot_left(holder, thing, def)
 	activations_slot_exit(thing, holder, id)
 	if(thing.has_slot_hooks)
@@ -363,7 +363,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(old_def?.keyed)
 		unindex_key(old_id, entry[LEDGER_E_KEY], thing)
 	holder.on_slot_changed(old_id, thing, FALSE)
-	OM_EMIT(holder, /datum/om/event/slot_removed, thing, old_id)
+	PUBLISH_LEGACY(holder, /datum/notice/slot_removed, thing, old_id)
 	om_slot_left(holder, thing, old_def)
 	activations_slot_exit(thing, holder, old_id)
 	if(thing.has_slot_hooks)
@@ -380,7 +380,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	new_things += thing
 	used[new_id] += entry[LEDGER_E_COST]
 	holder.on_slot_changed(new_id, thing, TRUE)
-	OM_EMIT(holder, /datum/om/event/slot_inserted, thing, new_id)
+	PUBLISH_LEGACY(holder, /datum/notice/slot_inserted, thing, new_id)
 	om_slot_entered(holder, thing, def)
 	activations_slot_enter(thing, holder, new_id)
 	if(thing.has_slot_hooks)

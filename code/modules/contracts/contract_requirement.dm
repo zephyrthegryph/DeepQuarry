@@ -366,7 +366,7 @@ CAPABILITIES(/datum/contract_requirement/sustained_event)
 
 /datum/contract_requirement/sustained_event/proc/cancel_pending_timers()
 	for(var/entity_key in pending_tokens)
-		om_cancel_timer_slot(src, "pending:[entity_key]")
+		cancel_after(src, "pending:[entity_key]")
 	if(pending_tokens)
 		pending_tokens.Cut()
 
@@ -384,10 +384,10 @@ CAPABILITIES(/datum/contract_requirement/sustained_event)
 	// which loses required integrity must cancel its EER timer just as surely as
 	// one whose EER itself falls below the threshold.
 	if(!filter.matches(event, contract) || !contract_evidence_compare(event.value(numeric_field), comparator, threshold))
-		om_cancel_timer_slot(src, "pending:[entity_key]")
+		cancel_after(src, "pending:[entity_key]")
 		pending_tokens -= entity_key
 		return FALSE
-	if(om_timer_slot_pending(src, "pending:[entity_key]"))
+	if(after_pending(src, "pending:[entity_key]"))
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
@@ -451,7 +451,7 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 
 /datum/contract_requirement/staged_sustained_event/proc/cancel_pending_timers()
 	for(var/key in pending_tokens)
-		om_cancel_timer_slot(src, "pending:[key]")
+		cancel_after(src, "pending:[key]")
 	if(pending_tokens)
 		pending_tokens.Cut()
 	if(pending_stage_indices)
@@ -467,7 +467,7 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 	if(!filter.matches(event, contract))
 		for(var/stage_index in 1 to length(stages))
 			var/stage_key = "[entity_value]:[stage_index]"
-			if(om_cancel_timer_slot(src, "pending:[stage_key]"))
+			if(cancel_after(src, "pending:[stage_key]"))
 				pending_tokens -= stage_key
 				pending_stage_indices -= stage_key
 				changed = TRUE
@@ -481,12 +481,12 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 	var/list/stage = stages[stage_index]
 	var/qualifies = contract_evidence_compare(event.value(numeric_field), comparator, stage["threshold"])
 	if(!qualifies)
-		if(om_cancel_timer_slot(src, "pending:[stage_key]"))
+		if(cancel_after(src, "pending:[stage_key]"))
 			pending_tokens -= stage_key
 			pending_stage_indices -= stage_key
 			changed = TRUE
 		return changed
-	if(om_timer_slot_pending(src, "pending:[stage_key]"))
+	if(after_pending(src, "pending:[stage_key]"))
 		return changed
 	var/token = event.id
 	pending_tokens[stage_key] = token
@@ -503,7 +503,7 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 		if(pending_stage_indices[other_key] != stage_index)
 			continue
 		if(other_key != stage_key)
-			om_cancel_timer_slot(src, "pending:[other_key]")
+			cancel_after(src, "pending:[other_key]")
 		pending_tokens -= other_key
 		pending_stage_indices -= other_key
 	var/list/stage = stages[stage_index]
