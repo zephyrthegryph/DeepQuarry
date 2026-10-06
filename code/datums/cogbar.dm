@@ -86,7 +86,7 @@
 /datum/cogbar/proc/on_user_delete(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 
-	spent(src)
+	ended_with(src)
 
 #undef COGBAR_ANIMATION_TIME
 

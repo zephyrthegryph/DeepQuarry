@@ -75,7 +75,7 @@
 		// was already applied by stun_effect_act above; on_hit skips it for
 		// taser_effect projectiles so it is not applied twice.
 		P.on_hit(src, absorb, def_zone)
-		destroyed(P)
+		spent(P, src)
 		return
 
 	P.inflict_injury(src, def_zone)

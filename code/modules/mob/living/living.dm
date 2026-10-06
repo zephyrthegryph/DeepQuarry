@@ -53,10 +53,10 @@
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
 		if(isdatum(OR))
-			destroyed(OR)
+			ended_with(OR, src)
 	for(var/OR in internal_organ_list())
 		if(isdatum(OR))
-			destroyed(OR)
+			ended_with(OR, src)
 
 	GLOB.cultnet.updateVisibility(src, 0)
 	..()

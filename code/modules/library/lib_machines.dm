@@ -707,7 +707,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	b.dat = source_paper.info
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
-	spent(source_paper)
+	consumed(source_paper, src)
 
 /obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
 	src.visible_message("[src] whirs as it prints and binds a new book.")
@@ -719,7 +719,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		P.forceMove(b)
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
-	spent(source_bundle)
+	consumed(source_bundle, src)
 
 /// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner

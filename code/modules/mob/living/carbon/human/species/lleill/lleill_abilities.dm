@@ -808,7 +808,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 				continue
 			src.drop_from_inventory(W)
 
-	spent(src)
+	replaced_by(src)
 
 //Hanner variant
 

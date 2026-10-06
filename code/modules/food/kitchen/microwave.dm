@@ -637,7 +637,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	for(var/obj/item/holder/H in contents_of(container))
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))
-			spent(H.held_mob)
+			destroyed(H.held_mob, src, BURN)
 			rel_clear(H, nameof(H.held_mob))
 			spent(H)
 

@@ -75,7 +75,7 @@ CAPABILITIES(/datum/pipe_network)
 /// One reconciliation pass for a dirty network, run by SSair's pipenet phase (SSair.dm
 /// process_pipenets()) only while the network is queued (mark_topology_dirty()/mark_leak_dirty()): engineered
 /// pipe materials and the batched leak exchange (vg_batch_mingle_hook). Gas flow itself is Rust.
-/// Returns PROCESS_KILL once settled, which dequeues it.
+/// Once settled it takes itself off the queue (STOP_PROCESSING_PIPENET).
 /datum/pipe_network/proc/reconcile()
 	var/needs_leak_followup = FALSE
 	//Equalize gases amongst pipe if called for
@@ -116,7 +116,6 @@ CAPABILITIES(/datum/pipe_network)
 	// an empty reconciliation pass forever.
 	if(!update && !needs_leak_followup)
 		STOP_PROCESSING_PIPENET(src)
-		return PROCESS_KILL
 
 	//Give pipelines their process call for pressure checking and what not. Have to remove pressure checks for the time being as pipes dont radiate heat - Mport
 	//for(var/datum/pipeline/line_member in line_members)

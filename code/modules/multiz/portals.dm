@@ -227,4 +227,4 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	var/obj/other = target
 	..()
 	if(other && !QDELETED(other))
-		destroyed(other)
+		ended_with(other, src)

@@ -132,7 +132,7 @@
 /mob/living/simple_mob/ysbryd/replace_death(gibbed)
 	if(chosen_target)
 		disconnect_target()
-	consumed(src)
+	dissolved(src)
 	return TRUE
 
 /mob/living/simple_mob/ysbryd/life_type_pre_due()

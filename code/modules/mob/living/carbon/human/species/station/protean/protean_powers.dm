@@ -384,7 +384,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
 	if(oldlimb)
 		oldlimb.removed()
-		spent(oldlimb)
+		replaced_by(oldlimb, H)
 	var/list/limblist = H.species.has_limbs[choice]
 	var/limbpath = limblist["path"]
 	var/obj/item/organ/external/new_eo = new limbpath(H) // joins onto its parent limb

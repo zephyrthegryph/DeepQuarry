@@ -481,7 +481,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
 		var/datum/contract_event/expired_event = recent_events[1]
 		recent_events.Cut(1, 2)
-		spent(expired_event)
+		lapsed(expired_event)
 	observe_opportunity_event(event)
 	var/list/subscribers = event_subscriptions[event.event_type]
 	var/list/listeners = subscribers?.Copy()

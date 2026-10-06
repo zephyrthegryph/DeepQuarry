@@ -419,14 +419,14 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		rel_clear(holder, nameof(holder.owner))
 		GLOB.admins -= src
 	if(skybox)
-		destroyed(skybox)
+		ended_with(skybox, src)
 		skybox = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(fakeConversations)
-		destroyed(fakeConversations)
+		ended_with(fakeConversations, src)
 		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
 	// panel, interaction menu, keybind editor, ...) is owned by the session.
-	destroyed(session)
+	ended_with(session, src)
 	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW

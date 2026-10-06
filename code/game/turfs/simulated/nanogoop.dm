@@ -296,7 +296,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			targetcarbon.mind?.vore_death = TRUE
 			GLOB.prey_digested_roundstat++
 			targetcarbon.ghostize() //prevent runtimes
-			consumed(targetcarbon)	//glorp
+			dissolved(targetcarbon, src)	//glorp
 			return
 		targetcarbon.injure(INJURY_DIGESTION, damage, null, src)
 		var/how_much = (damage * targetcarbon.size_multiplier) * targetcarbon.get_digestion_nutrition_modifier()
@@ -317,7 +317,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			if(!targetmob.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			nutrients += how_much
-			consumed(targetmob) //gloop
+			dissolved(targetmob, src) //gloop
 			return
 		targetmob.injure(INJURY_DIGESTION, damage, null, src)
 		var/how_much = (damage * targetmob.size_multiplier) * targetmob.get_digestion_nutrition_modifier()

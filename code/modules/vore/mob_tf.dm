@@ -117,7 +117,7 @@
 		rel_set(ourmob, nameof(ourmob.tf_form), src)
 		src.forceMove(ourmob)
 	else
-		spent(src)
+		replaced_by(src)
 
 /// Continuous only for a transformed mob holding its original body.
 /mob/living/proc/life_tf_holder_due()

@@ -1718,6 +1718,26 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
   handled and goes on, as before.
+- `interface(pressed = PROC_REF(x))`: a holder reacts to every button pressed in its window, its own ops' and the forwarded ones. The PDA's click, fingerprint and clown honk use it; before this they ran in its `ui_act_allowed()`.
+- PDA power app: forwards to its power monitor through `interface(null, forwards = nameof(power_monitor))`.
+- PDA status display, notekeeper, contracts; borg hypo recipe save; wiki donation; secrets menu: their questions are `asks()` steps. The status lines, the red-contract opt-in, the vetting question, the recipe-overwrite question and the shuttle-jump transition questions open only when they apply (`when =`). The wiki pin question now opens for any human's donation while the terminal works, and the handler uses the pin only for a card that needs one. The secrets menu's questions are now asked of the pressing admin's mob instead of their client.
+- Spellbook: `choose_spell()` no longer takes the unused params/window.
+- Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
+- Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
+
+## Ending causes audited (rewrite/lifecycle-forms-2)
+
+- The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
+  list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
+  before. The reviewed state is `tools/ci/ending_causes_snapshot.txt` (`ending_sites.py --update/--check`).
+- Three verbs join spent/consumed/destroyed/dissolved: `lapsed(thing, by)` (END_EXPIRED now: a status effect's duration, a capped history,
+  an animation or flash), `replaced_by(thing, successor)` (END_REPLACED for a transformation whose successor the caller already made: mob
+  transforms, evolutions, soulstone constructs, organ and limb swaps, a turf change) and `ended_with(thing, owner)` (END_OWNER for an
+  owner's teardown: `on_destroy()` loops, a container's leftovers, windows and huds whose host is gone).
+- Digestion, stomach acid, cleaning reagents and acid melting are `dissolved`; eating, feeding, grinding, recipes and machines that take an
+  item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
+  `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
+  they are `spent` (a discarded temporary) or `replaced_by`.
 
 ## Atmospherics looks (rewrite/pipenet-full)
 

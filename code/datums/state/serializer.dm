@@ -455,7 +455,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			batch += existing
 		removed += batch
 		for(var/atom/movable/existing as anything in batch)
-			consumed(existing)
+			spent(existing)
 	while(length(batch))
 	// Vars still pointing at the removed contents were set by Initialize; the
 	// delta sets them again if the saved object had them.

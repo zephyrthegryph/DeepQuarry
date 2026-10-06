@@ -270,7 +270,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 			cell.update_icon()
 			own_take(src, nameof(cell))
 
-	destroyed(src)
+	destroyed(src, null, "explosion")
 
 /obj/vehicle/atom_destruction(damage_flag)
 	. = ..()

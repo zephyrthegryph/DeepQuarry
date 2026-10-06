@@ -96,7 +96,7 @@
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
-	spent(src)
+	ended_with(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
 /datum/progressbar/proc/clean_user_client(datum/act/notice/N)

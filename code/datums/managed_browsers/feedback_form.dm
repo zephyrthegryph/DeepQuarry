@@ -144,7 +144,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 		return TRUE
 
 	SStgui.close_uis(src)
-	consumed(src)
+	spent(src)
 	return TRUE
 
 

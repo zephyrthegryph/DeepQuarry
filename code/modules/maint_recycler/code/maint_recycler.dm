@@ -364,7 +364,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?
 	else
-		spent(recycled, user)
+		consumed(recycled, src)
 	set_screen_state("screen_cashout",10)
 	door_locked = FALSE
 	open_door(user)

@@ -684,7 +684,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	A.update_desc()
 	A.update_icon()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
-	destroyed(src)
+	destroyed(src, null, "deconstructed")
 	return 1
 
 /**

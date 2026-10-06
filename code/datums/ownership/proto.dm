@@ -79,4 +79,4 @@
 	if(private)
 		own_unstamp(value)
 		if(!QDELETED(value))
-			spent(value)
+			ended_with(value, holder)

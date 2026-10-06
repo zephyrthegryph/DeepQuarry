@@ -87,7 +87,7 @@
 
 /mob/living/proc/instability_flash_clear(image/instability_flash)
 	cut_overlay(instability_flash)
-	spent(instability_flash)
+	lapsed(instability_flash)
 
 /mob/living/silicon/instability_effects()
 	if(instability)

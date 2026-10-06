@@ -433,7 +433,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
 		om_task_periodic_stop(src)
 		if(!QDELETED(src))
-			spent(src)
+			ended_with(src)
 			return
 
 	var/turf/L = holder().loc

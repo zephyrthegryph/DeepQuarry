@@ -67,6 +67,15 @@ CAPABILITIES(/obj/item/pda)
 	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
 	owns_one(nameof(pai), /obj/item/paicard)
 	drag_onto(PROC_REF(mousedrop_input))
+	interface("Pda", title = "Personal Data Assistant", state = nameof(GLOB.tgui_inventory_state), forwards = nameof(current_app), pressed = PROC_REF(pda_pressed))
+	without("ui_open")
+	op("Home", ui_act("Home"), then(PROC_REF(ui_act_home)))
+	op("StartProgram", ui_act("StartProgram", arg("program", schema_ref(/datum/data/pda/app))), then(PROC_REF(ui_act_startprogram)))
+	op("Eject", ui_act("Eject"), then(PROC_REF(ui_act_eject)))
+	op("Authenticate", ui_act("Authenticate"), then(PROC_REF(ui_act_authenticate)))
+	op("Retro", ui_act("Retro"), then(PROC_REF(ui_act_retro)))
+	op("TouchSounds", ui_act("TouchSounds"), then(PROC_REF(ui_act_touchsounds)))
+	op("Ringtone", ui_act("Ringtone"), then(PROC_REF(ui_act_ringtone)))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()
@@ -309,7 +318,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		j = prob(10)
 
 	if(j && detonate) //This kills the PDA
-		destroyed(P)
+		destroyed(P, null, "explosion")
 		if(message)
 			message += "It melts in a puddle of plastic."
 		else

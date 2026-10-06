@@ -1221,7 +1221,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 		if(dog.client)
 			var/mob/thrower = I.throwing?.get_thrower()
 			to_chat(dog, span_notice("[thrower ? "\The [thrower]" : "Someone"] feeds \the [I] to you!"))
-		spent(I)
+		consumed(I, dog)
 		GLOB.items_digested_roundstat++
 
 /obj/effect/dog_teleporter/reciever
@@ -1379,7 +1379,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 				linked_mob.adjust_nutrition(how_much)
 				H.mind?.vore_death = TRUE
 				GLOB.prey_digested_roundstat++
-			consumed(H)	//glorp
+			dissolved(H, src)	//glorp
 			return
 		H.burn_skin(damage)
 		if(linked_mob)
@@ -1400,7 +1400,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 				if(!L.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
-			consumed(L) //gloop
+			dissolved(L, src) //gloop
 			return
 		L.injure(INJURY_DIGESTION, damage, source = src)
 		if(linked_mob)

@@ -228,7 +228,7 @@ DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
 
 /obj/item/slime_grinder/proc/grind_core(mob/living/simple_mob/slime/S, mob/living/user)
 	if(!S.cores)
-		spent(S, user)
+		consumed(S, src)
 		processing = FALSE
 		return
 	play_sfx(src, SFX_MACHINES_JUICER)
@@ -242,7 +242,7 @@ DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
 
 /obj/item/slime_grinder/proc/grind_monkey(mob/living/carbon/human/M)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
-	spent(M)
+	consumed(M, src)
 	monkeys_recycled++
 	set_cube_making(TRUE)
 

@@ -42,7 +42,7 @@
 	. = ..()
 
 	if(isanimal(owner))
-		consumed(src)
+		spent(src)
 		return
 
 	rel_set(src, nameof(owner), new_owner)
@@ -52,17 +52,17 @@
 		var/datum/status_effect/fire_handler/enemy_effect = owner.has_status_effect(enemy_type)
 		if(enemy_effect)
 			if(forced)
-				consumed(enemy_effect)
+				replaced_by(enemy_effect, src)
 				continue
 
 			var/cur_stacks = stacks
 			adjust_stacks(-abs(enemy_effect.stacks * enemy_effect.stack_modifier / stack_modifier))
 			enemy_effect.adjust_stacks(-abs(cur_stacks * stack_modifier / enemy_effect.stack_modifier))
 			if(enemy_effect.stacks <= 0)
-				consumed(enemy_effect)
+				spent(enemy_effect, src)
 
 			if(stacks <= 0)
-				consumed(src)
+				spent(src)
 				return
 
 	if(!forced)
@@ -82,11 +82,11 @@
 		var/datum/status_effect/fire_handler/override_effect = owner.has_status_effect(override_type)
 		if(override_effect)
 			if(forced)
-				consumed(override_effect)
+				replaced_by(override_effect, src)
 				continue
 
 			adjust_stacks(override_effect.stacks)
-			consumed(override_effect)
+			consumed(override_effect, src)
 
 /**
  * Setter and adjuster procs for firestacks

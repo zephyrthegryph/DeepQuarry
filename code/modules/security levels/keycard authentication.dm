@@ -52,7 +52,7 @@
 	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/keycard_auth/declare_interactions(list/into)

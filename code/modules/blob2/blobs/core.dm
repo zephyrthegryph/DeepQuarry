@@ -131,7 +131,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	..()
 	new /obj/item/blobcore_chunk(get_turf(src), overmind?.blob_type)
 	if(overmind)
-		destroyed(overmind)
+		ended_with(overmind, src)
 
 DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/blob/core/appearance_overlays()
@@ -179,7 +179,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 	COOLDOWN_START(src, overmind_get_delay, 15 SECONDS) //if this fails, we'll try again in 15 seconds
 
 	if(overmind)
-		consumed(overmind)
+		replaced_by(overmind)
 
 	var/client/C = null
 	if(!new_overmind)

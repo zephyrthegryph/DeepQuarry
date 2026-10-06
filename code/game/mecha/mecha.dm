@@ -411,7 +411,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/component/C = internal_components[slot]
 			if(istype(C))
 				C.detach()
-				destroyed(C)
+				ended_with(C, src)
 	rel_clear(src, nameof(equipment))
 
 	GLOB.mech_destroyed_roundstat++
