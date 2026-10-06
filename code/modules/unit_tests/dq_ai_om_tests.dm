@@ -41,16 +41,16 @@
 	hunter.ai_brain.give_target(target, TRUE)
 	TEST_ASSERT(om_attached(hunter, /datum/om/behaviour/ai_brain/strategic), "strategic loop not attached")
 	TEST_ASSERT(om_attached(hunter, /datum/om/behaviour/ai_brain/tactical), "tactical loop not attached")
-	if(om_relevance(hunter) != RELEVANCE_NONE)
+	if(stat_value(hunter, STAT_RELEVANCE) != RELEVANCE_NONE)
 		TEST_NOTICE(src, "the test z-level holds a living player; parking was not exercised")
 		return
 	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/om/behaviour/ai_brain/strategic), "strategic loop ran with no player on the z-level")
 	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/om/behaviour/ai_brain/tactical), "tactical loop ran with no player on the z-level")
 	var/datum/observer = allocate(/datum)
-	om_observe(hunter, observer, RELEVANCE_NEAR)
+	hold(hunter, STAT_RELEVANCE, RELEVANCE_NEAR, observer)
 	TEST_ASSERT(dq_ai_test_on_ring(hunter, /datum/om/behaviour/ai_brain/strategic), "strategic loop did not resume when relevant")
 	TEST_ASSERT(dq_ai_test_on_ring(hunter, /datum/om/behaviour/ai_brain/tactical), "tactical loop did not resume when relevant")
-	om_unobserve(hunter, observer)
+	release(hunter, STAT_RELEVANCE, observer)
 	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/om/behaviour/ai_brain/strategic), "strategic loop did not park again")
 
 /// Hibernating calm brains leave the strategic ring; being attacked wakes them and gives them

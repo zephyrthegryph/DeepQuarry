@@ -111,13 +111,8 @@
 #define OM_EFFECT_PLAIN 0
 #define OM_EFFECT_CLOCK_MULT 1
 #define OM_EFFECT_CLOCK_INHIBIT 2
-#define OM_EFFECT_RELEVANCE 3
-#define OM_EFFECT_SUSPEND 4
-/// A timed status (units, wear rate, immunity, hooks): status.dm.
 
 // Built-in effect ids (library.dm defines the rest).
-#define EFFECT_RELEVANCE "om_relevance"
-#define EFFECT_SUSPENDED "om_suspended"
 
 // Grant kinds (effects with COMBINE_SUM_PER_KEY).
 #define GRANT_ABILITY "grant_ability"
@@ -173,8 +168,6 @@
 #define CLOCK_BIO "bio"
 #define CLOCK_MACHINE "machine"
 #define CLOCK_CHEM "chem"
-#define EFFECT_CLOCK_BIO_MULT "clock:bio:mult"
-#define EFFECT_CLOCK_BIO_INHIBIT "clock:bio:inhibit"
 #define EFFECT_CLOCK_MACHINE_MULT "clock:machine:mult"
 #define EFFECT_CLOCK_MACHINE_INHIBIT "clock:machine:inhibit"
 #define EFFECT_CLOCK_CHEM_MULT "clock:chem:mult"

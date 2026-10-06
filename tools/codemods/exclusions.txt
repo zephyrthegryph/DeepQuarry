@@ -3,12 +3,6 @@
 # type and quality, /type/quality), interact (tools/dx/codemods/interact_declare.py), lower (interaction_datums.py).
 #
 # A question opened from the handler (open_request): the op asks it instead (asks()), by hand.
-tool_act /obj/item/personal_shield_generator/screwdriver request_in_effect
-tool_act /obj/item/personal_shield_generator/multitool request_in_effect
-tool_act /obj/item/material/gravemarker/screwdriver request_in_effect
-tool_act /obj/structure/gravemarker/screwdriver request_in_effect
-tool_act /obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool request_in_effect
-tool_act /obj/machinery/button/windowtint/multitool request_in_effect
 interact /obj/item/uav request_in_effect
 interact /obj/item/robot_parts/robot_suit request_in_effect
 interact /obj/item/melee/energy request_in_effect
@@ -53,3 +47,4 @@ interact /obj/item/capture_crystal request_in_effect
 interact /obj/item/taperecorder unknown_read
 interact /obj/structure/girder unknown_read
 lower /obj/structure/girder unknown_read
+tool_act /obj/machinery/button/windowtint/multitool request_in_effect

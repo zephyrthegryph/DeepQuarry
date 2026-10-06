@@ -20,47 +20,22 @@
 	. = ..()
 	default_apply_parts()
 
-/// Appearance reader: TRUE while an analysis task holds the analyzer.
-/obj/machinery/chemical_analyzer/proc/appearance_working()
-	return om_busy(src) ? TRUE : FALSE
-
-APPEARANCE_TEMPLATE(/obj/machinery/chemical_analyzer, "chem_analyzer{appearance_working?-working:}")
-
-/obj/machinery/chemical_analyzer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/chemical_analyzer_scan,
-		/datum/interaction/machine_hand/ungated/chemical_analyzer_open_ui,
-	)
+/// The analyzer draws its working state while an analysis claims it.
+/obj/machinery/chemical_analyzer/draw(datum/look/look)
 	..()
+	look.state(op_claimed(src) ? "chem_analyzer-working" : "chem_analyzer")
 
-/datum/interaction/machine_item/chemical_analyzer_scan
-	id = "chemical_analyzer_scan"
-	name = "Analyze"
-	held_type = /obj/item/reagent_containers
-	effect = /obj/machinery/chemical_analyzer/proc/interaction_scan
+MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 
-/obj/machinery/chemical_analyzer/proc/interaction_scan(mob/user, obj/item/held, datum/interaction/interaction)
-	update_icon()
-	to_chat(user, span_notice("Analyzing \the [held], please stand by..."))
-
-	om_task_start(/datum/om/task/timed/chemical_analyzer_scan, user, src, receiver = src, held_arg = held)
-	return TRUE
-
-/obj/machinery/chemical_analyzer/proc/scan_failed(datum/om/task/timed/chemical_analyzer_scan/task)
-	var/mob/user = task.actor
-	to_chat(user, span_warning("Sample moved outside of scan range, please try again and remain still."))
+/// The sample left the scan before it was done.
+/obj/machinery/chemical_analyzer/proc/scan_failed(datum/act/op/A)
+	to_chat(A.actor, span_warning("Sample moved outside of scan range, please try again and remain still."))
 	update_icon()
 
-/datum/om/task/timed/chemical_analyzer_scan
-	duration = 2 SECONDS
-	claims = TRUE
-	complete_proc = /obj/machinery/chemical_analyzer/proc/scan_done
-	cancel_proc = /obj/machinery/chemical_analyzer/proc/scan_failed
-	var/obj/item/held_arg
-
-/obj/machinery/chemical_analyzer/proc/scan_done(datum/om/task/timed/chemical_analyzer_scan/task)
-	var/mob/user = task.actor
-	var/obj/item/held = task.held_arg
+/// Two seconds later: identify a chemical mystery and show what the container holds.
+/obj/machinery/chemical_analyzer/proc/scan_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	// First, identify it if it isn't already.
 	if(!held.is_identified(IDENTITY_FULL))
 		var/datum/identification/ID = held.identity
@@ -69,7 +44,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/chemical_analyzer, "chem_analyzer{appearance_
 
 	// Now tell us everything that is inside.
 	if(held.reagents && held.reagents.reagent_list.len)
-		found_reagents.Cut()
+		found_reagents = list() // a fresh list per analysis (the old Cut() ran on a list nothing had made)
 		for(var/datum/reagent/R in held.reagents.reagent_list)
 			if(!R.name)
 				continue
@@ -79,28 +54,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/chemical_analyzer, "chem_analyzer{appearance_
 		to_chat(user, span_warning("Nothing detected in [held]"))
 
 	update_icon()
-
-/obj/machinery/chemical_analyzer/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/chemical_analyzer/crowbar_act(mob/user, obj/item/tool)
-	return ..()
-
-/datum/interaction/machine_hand/ungated/chemical_analyzer_open_ui
-	id = "chemical_analyzer_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/chemical_analyzer/proc/has_results, null))
-	effect = /obj/machinery/chemical_analyzer/proc/interaction_open_ui_impl
-
-/obj/machinery/chemical_analyzer/proc/has_results(mob/actor, atom/target, obj/item/held)
-	return length(found_reagents) > 0
-
-/obj/machinery/chemical_analyzer/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user) // Show last analysis
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/chemical_analyzer)
+	op("analyze", item(/obj/item/reagent_containers), label("Analyze"), begins(MSG(chemical_analyzer/analyzing)), wait(2 SECONDS), claims(),
+		on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_done)))
 	interface("ChemAnalyzerPro")
 	ui_shape(scannedReagents = list_of(row()), beakerTotal = num(), beakerMax = num())
 

@@ -1163,7 +1163,7 @@
 
 	// nutrition decrease, for the biological time since the last one (the stage idles between
 	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
-	var/bio_now = om_clock_now(src, CLOCK_BIO)
+	var/bio_now = clock_now(src, CLOCK_BIO)
 	var/hunger_cycles = src.nutrition_drained_at ? clamp((bio_now - src.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
 	src.nutrition_drained_at = bio_now
 	if(src.nutrition > 0 && src.stat != DEAD)
@@ -1202,7 +1202,7 @@
 	return
 
 /mob/living/carbon/human
-	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the last nutrition drain.
+	/// Biological time (clock_now(CLOCK_BIO), ds) of the last nutrition drain.
 	var/nutrition_drained_at = 0
 
 /// Idle with nothing to metabolise and no digestion noises due; reagent changes invalidate the

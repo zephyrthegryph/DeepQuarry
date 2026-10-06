@@ -131,15 +131,6 @@
 		animate(target, pixel_x = initial(target.pixel_x), pixel_y = initial(target.pixel_y), 4, 1, LINEAR_EASING)
 		target.reset_plane_and_layer()
 
-/// mob -> stasis machine. Inhibits the occupant's biological clock while the machine is powered.
-/datum/om/relation/stasis_occupant
-	name = "stasis bed"
-	source_single = TRUE
-	target_single = TRUE
-	conflict = OM_REL_REFUSE
-	active_if = /datum/om/check/powered
-	include = list(/datum/om/bundle/stasis)
-
 /// An atom/movable (almost always a mob, but a wheelchair also puts itself in
 /// as source -- relaymove(), stool_bed_chair_nest/wheelchair.dm) -> the
 /// atom/movable it is pulling. Both sides are exclusive (source_single/
@@ -259,10 +250,6 @@
 
 /datum/om/bundle/powered_vehicle
 	include = list(/datum/om/bundle/powered_machine)
-
-/// For relations: the source (occupant) has its biological clock stopped.
-/datum/om/bundle/stasis
-	source_contributes = list(EFFECT_CLOCK_BIO_INHIBIT = 1)
 
 /datum/om/bundle/hud_on_vitals
 	behaviours = list(/datum/om/behaviour/hud_on_vitals)

@@ -12,57 +12,39 @@
 	var/epitaph = ""		//A quick little blurb
 
 
-/obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	open_request(src, /datum/prompt/text/gravemarker_carving, PROC_REF(grave_name_chosen), answerer = user, title = "Gravestone Naming", question = "Who is \the [src.name] for?", subject = W)
-	return NONE
+/// The name and the epitaph are asked, then carved.
+/obj/item/material/gravemarker/proc/name_question(datum/act/A)
+	return "Who is \the [src.name] for?"
 
-/// A carving for a grave marker (the name, then the epitaph). Re-checked on the answer: the tool (the subject) is still in hand.
-/datum/prompt/text/gravemarker_carving
-	max_len = MAX_NAME_LEN
-	name_text = TRUE
-	encode = FALSE
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	timeout = 0
-	/// The name given at the first step.
-	var/carved_name
+/obj/item/material/gravemarker/proc/epitaph_question(datum/act/A)
+	return "What message should \the [src.name] have?"
 
-/obj/item/material/gravemarker/proc/grave_name_chosen(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.value))
-		return
-	open_request(src, /datum/prompt/text/gravemarker_carving, PROC_REF(carvings_chosen), answerer = A.request.answerer, title = "Epitaph Carving", question = "What message should \the [src.name] have?", subject = A.request.subject, carved_name = A.answer.value)
-
-/obj/item/material/gravemarker/proc/carvings_chosen(datum/act/request/A)
-	if(!A.answer || isnull(A.answer.value))
-		return
-	var/datum/prompt/text/gravemarker_carving/prompt = A.answer
-	var/mob/user = A.request.answerer
-	var/obj/item/W = A.request.subject
-	var/carving_1 = sanitizeSafe(prompt.carved_name, MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
+/// The answers are carved in.
+/obj/item/material/gravemarker/proc/carved(datum/act/op/A)
+	var/datum/prompt/name_answer = A.step_answer("name")
+	var/datum/prompt/epitaph_answer = A.step_answer("epitaph")
+	var/carving_1 = sanitizeSafe(name_answer?.value, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(epitaph_answer?.value, MAX_NAME_LEN)
+	if(!carving_1 && !carving_2)
+		return OP_OK
+	act_message(A.actor, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
 	if(carving_1)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
+		grave_name += carving_1
 	if(carving_2)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
-
-/obj/item/material/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
-	act_message(user, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
-	grave_name += carving_1
+		epitaph += carving_2
 	update_icon()
-/obj/item/material/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
-	act_message(user, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
-	epitaph += carving_2
-	update_icon()
+	return OP_OK
 
 /obj/item/material/gravemarker/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, start_self = "You start carving 	he [src.name].", start_others = "[user] starts carving 	he [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return OP_DECLINE
 
 /obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
 	var/datum/material/refund_material = material
 	var/turf/location = get_turf(src)
-	var/marker_name = "\the [src]"
+	var/marker_name = "	he [src]"
 	if(!consume(src, user))
 		return
 	refund_material.place_dismantled_product(location)
@@ -92,6 +74,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, app
 
 CAPABILITIES(/obj/item/material/gravemarker)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
+		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
+		asks(/datum/prompt/text, fields = list("title" = "Epitaph Carving", "question" = computed(PROC_REF(epitaph_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "epitaph"),
+		then(PROC_REF(carved)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /// Old attack_self.
@@ -106,7 +92,7 @@ CAPABILITIES(/obj/item/material/gravemarker)
 		to_chat(user, span_warning("There's already something there."))
 		return TRUE
 	else
-		to_chat(user, span_notice("You begin to place \the [src.name]."))
+		to_chat(user, span_notice("You begin to place 	he [src.name]."))
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
 	return TRUE
 
@@ -114,7 +100,7 @@ CAPABILITIES(/obj/item/material/gravemarker)
 	if(!isturf(user.loc) || locate(/obj/structure/gravemarker, user.loc))
 		return
 	var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
-	to_chat(user, span_notice("You place \the [src.name]."))
+	to_chat(user, span_notice("You place 	he [src.name]."))
 	G.grave_name = grave_name
 	G.epitaph = epitaph
 	G.add_fingerprint(user)

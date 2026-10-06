@@ -371,7 +371,7 @@
 	M.set_transforming(TRUE)
 	seq_run_frame_now(M, LIFE_SEQ)
 	TEST_ASSERT_EQUAL(counter.runs_on(M), 1, "steps no condition gates run while transforming")
-	TEST_ASSERT(!om_value_of(M, EFFECT_SUSPENDED), "transforming is not a suspension")
+	TEST_ASSERT(!stat_value(M, STAT_SUSPENDED), "transforming is not a suspension")
 	M.set_transforming(FALSE)
 
 /// A trait state's step joins the table while the state is attached.
@@ -561,12 +561,12 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
 	life_test_advance(LIFE_CYCLE_SECONDS)
-	om_suspend(H, H)
-	TEST_ASSERT(om_value_of(H, EFFECT_SUSPENDED), "suspended")
+	hold(H, STAT_SUSPENDED, TRUE, H)
+	TEST_ASSERT(stat_value(H, STAT_SUSPENDED), "suspended")
 	var/before = life_test_frames(H)
 	life_test_advance(LIFE_CYCLE_SECONDS * 5)
 	TEST_ASSERT_EQUAL(life_test_frames(H), before, "a suspended mob runs no frame")
-	om_unsuspend(H, H)
+	release(H, STAT_SUSPENDED, H)
 	life_test_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT(life_test_frames(H) > before, "a resumed mob runs again")
 
@@ -578,7 +578,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NEAR, "a mob that isn't low priority keeps itself relevant")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NEAR, "a mob that isn't low priority keeps itself relevant")
 	H.set_low_priority(TRUE)
 	var/z = get_z(H)
 	var/datum/life_z_presence/P = life_z_presence(z)
@@ -587,7 +587,7 @@
 		TEST_NOTICE(src, "the test z-level has a living player; relevance by presence not checked")
 		H.set_low_priority(FALSE)
 		return
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NONE, "a low-priority mob on a z-level without players is not relevant")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NONE, "a low-priority mob on a z-level without players is not relevant")
 	life_test_advance(LIFE_CYCLE_SECONDS)
 	var/before = life_test_frames(H)
 	life_test_advance(LIFE_CYCLE_SECONDS * 3)
@@ -595,11 +595,11 @@
 	GLOB.living_players_by_zlevel[z] += H
 	defer_cleanup(null, GLOBAL_PROC_REF(life_test_drop_living_player), z, H)
 	life_z_occupancy_changed(z)
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NEAR, "a living player arriving makes the z-level's low-priority mobs relevant")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NEAR, "a living player arriving makes the z-level's low-priority mobs relevant")
 	life_test_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT(life_test_frames(H) > before, "so they run again")
 	life_test_drop_living_player(z, H)
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NONE, "and the last one leaving takes them out of the sweep")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NONE, "and the last one leaving takes them out of the sweep")
 	H.set_low_priority(FALSE)
 	TEST_ASSERT(!(H in P.members), "a mob that isn't low priority leaves the presence")
 
@@ -611,7 +611,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/deep, src)
-	TEST_ASSERT(abs(om_clock_rate_of(H, CLOCK_BIO) - 0.1) < 0.001, "deep stasis holds the biology clock at 0.1, got [om_clock_rate_of(H, CLOCK_BIO)]")
+	TEST_ASSERT(abs(H.clock_rate_bio - 0.1) < 0.001, "deep stasis holds the biology clock at 0.1, got [H.clock_rate_bio]")
 	var/biology = 0
 	var/frames_before = life_test_frames(H)
 	for(var/i in 1 to 20)
@@ -621,7 +621,7 @@
 	TEST_ASSERT_EQUAL(biology, 2, "deep stasis runs biology on 2 frames in 20")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames_before + 20, "the frame itself keeps running in stasis")
 	H.set_stasis(/datum/body_effect/stasis/total, src)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(H, CLOCK_BIO), 0, "total stasis stops the biology clock")
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 0, "total stasis stops the biology clock")
 	biology = 0
 	for(var/i in 1 to 10)
 		seq_run_frame_now(H, LIFE_SEQ)
@@ -629,7 +629,7 @@
 			biology++
 	TEST_ASSERT_EQUAL(biology, 0, "total stasis never runs biology")
 	H.set_stasis(null, src)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(H, CLOCK_BIO), 1, "leaving stasis restores the clock")
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 1, "leaving stasis restores the clock")
 	seq_run_frame_now(H, LIFE_SEQ)
 	TEST_ASSERT(!H.body.stasis_paused, "biology runs every frame again")
 
@@ -987,7 +987,7 @@
 /datum/unit_test/life_om/status_raises_once/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	om_suspend(H, H) // no frames (raises are counted while the mob listens for its own changes)
+	hold(H, STAT_SUSPENDED, TRUE, H) // no frames (raises are counted while the mob listens for its own changes)
 	sched.test_raises = list()
 	H.status_at_least(STAT_STUNNED, 2)
 	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "starting a stun raises the status channel once")
@@ -1120,11 +1120,11 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.germ_level = 0
-	H.germs_rolled_at = om_clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE
+	H.germs_rolled_at = clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE
 	H.life_germs()
 	TEST_ASSERT(H.germ_level >= 5 && H.germ_level <= 7, "20 cycles at 30% should give 6 germs, gave [H.germ_level]")
 	var/datum/stasis_source = new
-	om_hold(H, EFFECT_CLOCK_BIO_INHIBIT, stasis_source, 1)
+	hold(H, STAT_CLOCK_RATE_BIO, 0, stasis_source, clock = HOLD_CLOCK_WORLD)
 	var/level = H.germ_level
 	life_test_advance(LIFE_CYCLE_SECONDS * 20)
 	H.life_germs()
