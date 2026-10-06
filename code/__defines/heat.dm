@@ -39,7 +39,7 @@
 /// Small-arms propellant cooks off here.
 #define AMMO_COOK_OFF_TEMPERATURE (T0C + 180)
 
-// ---- Burning (code/datums/entity_state/burning.dm) ----
+// ---- Burning (code/datums/behaviours/burning.dm) ----
 /// Heat a burning object releases, W. With BURN_ENERGY_PER_INTEGRITY this is
 /// the old flat 10 integrity per second.
 #define BURN_POWER 10000

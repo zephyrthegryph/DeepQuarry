@@ -52,7 +52,7 @@
 
 // --- Trait systems ------------------------------------------------------------------------------
 
-// Per-trait Life work is contributed: a trait state (code/datums/entity_state/traits/_trait_state.dm) declares its
+// Per-trait Life work is contributed: a trait state (code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm) declares its
 // step in its own life_steps() and joins the mob's Life table while attached (seq_extra_add()).
 
 // --- Upkeep ---------------------------------------------------------------------------------------

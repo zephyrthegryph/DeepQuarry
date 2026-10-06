@@ -126,4 +126,5 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | V Life events | landed | status announcements, vision and darksight are FIXED actions (`world_actions.dm`); the mutations veto is deleted; Life has no OM_EMIT left |
 | M machine pipeline | owned by `rewrite/machines-full` and `rewrite/pipenet-full` | they move machines off `machine_step()`; the pipeline goes with their last wave |
 | `OM_EMIT` / `om_hook` | Phase C codemod track | needs `ACTION()` declarations for `publish_<x>()` |
-| I internals, E, D | open | relations and slots, timed actions, scheduler, clocks, contribution store, prompts and flows, io |
+| E entity_state | landed | every file moved to its module (`git mv` only, DME lines in place); `code/datums/entity_state` is gone. Left in the moved content: one `om_task_timed` (weaver, B4), the changeling/crafting/hose/material OM forms (their tracks) |
+| I internals, D | open | relations and slots, timed actions, scheduler, clocks, contribution store, prompts and flows, io |
