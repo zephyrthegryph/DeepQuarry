@@ -25,6 +25,7 @@ CAPABILITIES(/obj/item/defib_kit)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Load"), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(drop_input))
 
 /obj/item/defib_kit/get_cell()
 	return bcell
@@ -69,9 +70,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 		return TRUE
 	return OP_DECLINE
 
-/obj/item/defib_kit/MouseDrop()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
-	drag_backpack_with_actor(user)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/defib_kit/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
 
 /obj/item/defib_kit/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))

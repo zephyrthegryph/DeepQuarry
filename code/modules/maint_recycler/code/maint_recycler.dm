@@ -414,7 +414,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appe
 TGUI PROCS
 */
 
-/// The computed part of /obj/machinery/maint_recycler's window data (declared on its UI_DATA row).
+/// /obj/machinery/maint_recycler's window data.
 /obj/machinery/maint_recycler/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

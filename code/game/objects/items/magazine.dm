@@ -69,16 +69,9 @@
 		"JOINING THE NAVY? HERE'S 15 EXPERT TIPS FOR AVOIDING BRAIN PARASITES"
 	)
 
-// ALLOW(init/INSTANCE_STATE): pixel_x, icon_state, headline and name rolled at random for each instance
-/obj/item/tabloid/Initialize(mapload)
-	. = ..()
-
-	pixel_x = 5-rand(10)
-	pixel_x = 5-rand(10)
-
-	icon_state = pick(icon_states_fast('icons/obj/magazine.dmi')) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-	headline =   pick(tabloid_headlines)
-	name =       pick(tabloid_publishers)
+/// Rolled before init (rolls()): one of the magazine sheet's covers.
+/obj/item/tabloid/proc/roll_icon_state(datum/roller/R)
+	return R.choose(icon_states_fast('icons/obj/magazine.dmi'))
 
 /obj/item/tabloid/examine(mob/user, distance)
 	. = ..()
@@ -87,6 +80,10 @@
 
 CAPABILITIES(/obj/item/tabloid)
 	op("read", in_hand(), label("Read tabloid"), then(PROC_REF(tabloid_read_requested)))
+	rolls(nameof(pixel_x), range_of(-5, 5))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(nameof(headline), pick_one(tabloid_headlines))
+	rolls(nameof(name), pick_one(tabloid_publishers))
 
 /obj/item/tabloid/proc/tabloid_read_requested(datum/act/op/A)
 	var/mob/user = A.actor

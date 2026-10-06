@@ -543,8 +543,6 @@
 // the named arguments set its vars, as in om_ask().
 /// In a Topic() handler.
 #define topic_ask(user, href_list, key, prompt, fields...) om_topic_ask(user, href_list, key, prompt, list(fields))
-/// In a tgui_act() action.
-#define act_ask(user, action, act_params, ui, key, prompt, fields...) om_act_ask(user, action, act_params, ui, key, prompt, list(fields))
 /// In an ADMIN_VERB body (`verb_args`: the verb's args).
 #define verb_ask(user, key, verb_args, prompt, fields...) om_verb_ask(user, key, verb_args, prompt, list(fields))
 /// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.

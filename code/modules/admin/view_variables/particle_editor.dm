@@ -103,7 +103,7 @@ CAPABILITIES(/datum/particle_editor)
 		data["drift"] = drift
 	return data
 
-/// The computed part of /datum/particle_editor's window data (declared on its UI_DATA row).
+/// /datum/particle_editor's window data.
 /datum/particle_editor/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

@@ -1188,7 +1188,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data (declared on its UI_DATA row).
+/// /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data.
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["target_size"] = "code"
@@ -1267,7 +1267,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data (declared on its UI_DATA row).
+/// /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data.
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["target_size"] = "locked"

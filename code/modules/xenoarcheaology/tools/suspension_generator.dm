@@ -84,7 +84,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspens
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/suspension_gen's window data (declared on its UI_DATA row).
+/// /obj/machinery/suspension_gen's window data.
 /obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

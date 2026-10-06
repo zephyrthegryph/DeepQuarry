@@ -115,12 +115,17 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 	var/see_dark = FALSE
 
-// ALLOW(init/CTOR_ARGS): network_id and darkvis are constructor arguments from whoever builds it
-/obj/machinery/camera/intcircuit/Initialize(mapload, network_id, darkvis)
+CAPABILITIES(/obj/machinery/camera/intcircuit)
+	param(nameof(network_id), pos = 1)
+	param(nameof(see_dark), pos = 2)
+
+/// The network a circuit camera is made on (its constructor param).
+/obj/machinery/camera/intcircuit/var/network_id
+
+// ALLOW(init/INSTANCE_STATE): a circuit camera is numbered and joins the camera net
+/obj/machinery/camera/intcircuit/Initialize(mapload)
 	if(network_id)
 		network = list(network_id)
-	if(darkvis)
-		see_dark = TRUE
 	// Skip the parent Initialize's assembly creation and network checks
 	c_tag = "IC Camera #[rand(1000, 9999)]"
 	name = c_tag

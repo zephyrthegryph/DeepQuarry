@@ -53,15 +53,14 @@ CAPABILITIES(/mob/observer)
 	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF
 	see_invisible = SEE_INVISIBLE_OBSERVER
 
-// ALLOW(init/CTOR_ARGS): aghost is a constructor argument from whoever builds it
-/mob/observer/dead/Initialize(mapload, aghost = FALSE)
+// ALLOW(init/INSTANCE_STATE): a ghost copies the look, name and place of the body it leaves (its loc) before its init
+/mob/observer/dead/Initialize(mapload)
 
 	appearance = loc
 	invisibility = initial(invisibility)
 	layer = initial(layer)
 	plane = initial(plane)
 	alpha = initial(alpha)
-	admin_ghosted = aghost
 
 	see_in_dark = world.view //I mean. I don't even know if byond has occlusion culling... but...
 
@@ -671,14 +670,16 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	S.tgui_interact(src)
 
 //This is called when a ghost is drag clicked to something.
-/mob/observer/dead/MouseDrop(atom/over)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob; pass that actor to the confirmation helper.
-	if(!user || !over) return
-	if (isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(over))
-		if (user.client.holder.cmd_ghost_drag(src, over, user))
-			return
-
-	return ..()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). An admin ghost dragging a ghost
+/// onto a body offers to put it in; anything else is the native drop.
+/mob/observer/dead/proc/drop_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(!user || !A.over)
+		return TRUE
+	if(isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(A.over))
+		if(user.client.holder.cmd_ghost_drag(src, A.over, user))
+			return TRUE
+	return INPUT_FALLTHROUGH
 
 //Used for drawing on walls with blood puddles as a spooky ghost.
 /mob/observer/dead/verb/bloody_doodle()

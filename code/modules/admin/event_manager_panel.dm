@@ -41,7 +41,7 @@ CAPABILITIES(/datum/event_manager_panel)
 	SStgui.close_uis(src)
 	spent(src, user)
 
-/// The computed part of /datum/event_manager_panel's window data (declared on its UI_DATA row).
+/// /datum/event_manager_panel's window data.
 /datum/event_manager_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)

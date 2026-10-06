@@ -276,13 +276,17 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 		updateSilicate()
 		update_nearby_tiles(need_rebuild=1)
 
-// ALLOW(init/CTOR_ARGS): start_dir and constructed are constructor arguments from whoever builds it
-/obj/structure/window/Initialize(mapload, start_dir=null, constructed=0)
+CAPABILITIES(/obj/structure/window)
+	param(nameof(dir), pos = 1)
+	param(nameof(constructed), pos = 2)
+
+/// A window a player built (its constructor param).
+/obj/structure/window/var/constructed = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a window insulates, starts loose when built, turns, and updates its tiles and the tables beside it
+/obj/structure/window/Initialize(mapload)
 	. = ..()
 	update_rad_insulation()
-
-	if (start_dir)
-		set_dir(start_dir)
 
 	//player-constructed windows
 	if (constructed)

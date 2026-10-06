@@ -34,12 +34,14 @@
 	if(burnt > 0)
 		take_damage(burnt * 10, BURN, FIRE, FALSE)
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/Initialize(mapload, material_name)
-	. = ..()
-	set_material(material_name)
+/// The material the door is made of (its constructor param; a subtype's default).
+/obj/structure/simple_door/var/material_name = MAT_STEEL
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A door of no known material is not made.
+/obj/structure/simple_door/proc/make_of(material_key)
+	set_material(material_key)
 	if(!material)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
 
 /obj/structure/simple_door/proc/set_material(material_name)
 	if(!material_name)
@@ -71,6 +73,7 @@ CAPABILITIES(/obj/structure/simple_door)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	// those aren't machinery, they're slabs of a mineral: a cyborg beside it opens it, the AI can't
 	op("silicon_open", remote(), label("Open"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), needs(req_adjacent()), then(PROC_REF(interaction_hand)))
+	param(nameof(material_name), pos = 1, apply = PROC_REF(make_of))
 
 /// Something walked into it (the bump action's notice).
 /obj/structure/simple_door/proc/bumped_into(datum/act/A)
@@ -234,26 +237,22 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 		strength = rad
 	)
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/iron/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_IRON)
+/obj/structure/simple_door/iron
+	material_name = MAT_IRON
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/silver/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_SILVER)
+/obj/structure/simple_door/silver
+	material_name = MAT_SILVER
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/gold/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_GOLD)
+/obj/structure/simple_door/gold
+	material_name = MAT_GOLD
 
 /obj/structure/simple_door/uranium
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/uranium/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_URANIUM)
+/obj/structure/simple_door/uranium
+	material_name = MAT_URANIUM
 
 DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 
@@ -281,74 +280,59 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/sandstone/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_SANDSTONE)
+/obj/structure/simple_door/sandstone
+	material_name = MAT_SANDSTONE
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/phoron/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_PHORON)
+/obj/structure/simple_door/phoron
+	material_name = MAT_PHORON
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/diamond/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_DIAMOND)
+/obj/structure/simple_door/diamond
+	material_name = MAT_DIAMOND
 
 //I was going to give wooden doors RAD_VERY_LIGHT_INSULATION but they need a proper parent instead of this garbage.
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/wood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_WOOD)
+/obj/structure/simple_door/wood
+	material_name = MAT_WOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/hardwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_HARDWOOD)
+/obj/structure/simple_door/hardwood
+	material_name = MAT_HARDWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/sifwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_SIFWOOD)
+/obj/structure/simple_door/sifwood
+	material_name = MAT_SIFWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/birchwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_BIRCHWOOD)
+/obj/structure/simple_door/birchwood
+	material_name = MAT_BIRCHWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/pinewood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_PINEWOOD)
+/obj/structure/simple_door/pinewood
+	material_name = MAT_PINEWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/oakwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_OAKWOOD)
+/obj/structure/simple_door/oakwood
+	material_name = MAT_OAKWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/acaciawood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_ACACIAWOOD)
+/obj/structure/simple_door/acaciawood
+	material_name = MAT_ACACIAWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/redwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_REDWOOD)
+/obj/structure/simple_door/redwood
+	material_name = MAT_REDWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/resin/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_RESIN)
+/obj/structure/simple_door/resin
+	material_name = MAT_RESIN
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/cult/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_CULT)
+/obj/structure/simple_door/cult
+	material_name = MAT_CULT
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/glamour/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_GLAMOUR)
+/obj/structure/simple_door/glamour
+	material_name = MAT_GLAMOUR
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/snowbrick/Initialize(mapload, material_name)
-	. = ..(mapload, material_name || MAT_SNOWBRICK)
+/obj/structure/simple_door/snowbrick
+	material_name = MAT_SNOWBRICK
 
 /obj/structure/simple_door/cult/TryToSwitchState(atom/user)
 	if(isliving(user))
@@ -415,5 +399,5 @@ CAPABILITIES(/obj/structure/simple_door/resin)
 	icon = 'icons/goonstation/featherzone.dmi'
 	icon_state = "flockdoor"
 
-/obj/structure/simple_door/flock/Initialize(mapload, newmat)
-	. = ..(mapload, MAT_FLOKIUM)
+/obj/structure/simple_door/flock
+	material_name = MAT_FLOKIUM

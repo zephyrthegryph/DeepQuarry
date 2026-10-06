@@ -14,8 +14,15 @@
 
 	var/atom/parent
 
-// ALLOW(init/CTOR_ARGS): particle_path and particle_flags are constructor arguments from whoever builds it
-/obj/effect/abstract/particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
+CAPABILITIES(/obj/effect/abstract/particle_holder)
+	param(nameof(particle_path), pos = 1)
+	param(nameof(particle_flags), pos = 2)
+
+/// The particles a holder shows (its constructor param).
+/obj/effect/abstract/particle_holder/var/particle_path = /particles/smoke
+
+// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
+/obj/effect/abstract/particle_holder/Initialize(mapload)
 	. = ..()
 	if(!loc)
 		stack_trace("particle holder was created with no loc!")
@@ -30,7 +37,6 @@
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	src.particle_flags = particle_flags
 	particles = new particle_path()
 	// /atom doesn't have vis_contents, /turf and /atom/movable do
 	var/atom/movable/lie_about_areas = get_parent()

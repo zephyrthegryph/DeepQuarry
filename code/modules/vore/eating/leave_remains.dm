@@ -138,19 +138,26 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE   //not organic bones, so they get different sounds
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
-// ALLOW(init/CTOR_ARGS): pred and prey are constructor arguments from whoever builds it
-/obj/item/digestion_remains/Initialize(mapload, mob/living/pred, mob/living/prey)
-	. = ..()
-	if(!mapload)
-		pred_ckey = pred?.ckey
-		pred_name = pred?.name
-		if(prey && isliving(prey) && prey.size_multiplier != 1)
-			icon_scale_x = prey.size_multiplier
-			icon_scale_y = prey.size_multiplier
-			update_transform()
+/// Who digested whom (its constructor params, dropped once noted).
+/obj/item/digestion_remains/var/tmp/mob/living/pred_at_make
+/obj/item/digestion_remains/var/tmp/mob/living/prey_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The remains note their predator and keep the prey's size.
+/obj/item/digestion_remains/proc/note_meal(mob/living/prey)
+	var/mob/living/pred = pred_at_make
+	if(!pred && !prey)
+		return
+	pred_ckey = pred?.ckey
+	pred_name = pred?.name
+	if(prey && isliving(prey) && prey.size_multiplier != 1)
+		icon_scale_x = prey.size_multiplier
+		icon_scale_y = prey.size_multiplier
+		update_transform()
 
 CAPABILITIES(/obj/item/digestion_remains)
 	op("remains_crumble_self", in_hand(), stance(I_HURT), label("Crumble"), then(PROC_REF(remains_crumble_self)))
+	param(nameof(pred_at_make), pos = 1, keep = FALSE)
+	param(nameof(prey_at_make), pos = 2, apply = PROC_REF(note_meal), keep = FALSE)
 
 /// Old attack_self: squeezed in combat mode, the remains crumble away.
 /obj/item/digestion_remains/proc/remains_crumble_self(datum/act/op/A)

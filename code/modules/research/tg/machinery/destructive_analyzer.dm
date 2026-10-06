@@ -203,7 +203,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 // Handling deconstruction
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/// The computed part of /obj/machinery/rnd/destructive_analyzer's window data (declared on its UI_DATA row).
+/// /obj/machinery/rnd/destructive_analyzer's window data.
 /obj/machinery/rnd/destructive_analyzer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["server_connected"] = !!stored_research

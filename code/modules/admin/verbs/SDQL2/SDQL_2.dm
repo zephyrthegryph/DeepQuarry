@@ -1130,13 +1130,23 @@ CAPABILITIES(/datum/SDQL2_query)
 /proc/is_proper_datum(thing)
 	return istype(thing, /datum) || istype(thing, /client)
 
-/obj/effect/statclick/SDQL2_delete/Click()
-	var/datum/SDQL2_query/Q = target
-	Q.delete_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query deletion.
+CAPABILITIES(/obj/effect/statclick/SDQL2_delete)
+	click_on(PROC_REF(click_input))
 
-/obj/effect/statclick/SDQL2_action/Click()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/SDQL2_delete/proc/click_input(datum/act/input/A)
 	var/datum/SDQL2_query/Q = target
-	Q.action_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query execution.
+	Q.delete_click(A.actor)
+	return TRUE
+
+CAPABILITIES(/obj/effect/statclick/SDQL2_action)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/SDQL2_action/proc/click_input(datum/act/input/A)
+	var/datum/SDQL2_query/Q = target
+	Q.action_click(A.actor)
+	return TRUE
 
 /obj/effect/statclick/SDQL2_VV_all
 	name = "VIEW VARIABLES"

@@ -21,11 +21,13 @@
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
 /// Old attackby.
-/obj/item/plastique/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/plastique/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
 		wires_open(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/plastique/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -45,8 +47,6 @@
 	wires_open(src, user)
 	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 TRACKED(/obj/item/plastique, timer)
 
 
@@ -65,6 +65,7 @@ CAPABILITIES(/obj/item/plastique)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// ASK_HELD used either actual hand, not the input event's saved held reference.
 /obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)
@@ -139,11 +140,12 @@ CAPABILITIES(/obj/item/plastique)
 	blast_light = 4
 	blast_flash = 7
 
-EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(seismic_interaction_item)))
 
 /// Old attackby: it ran the parent's body first (its ..()), so this does too.
-/obj/item/plastique/seismic/proc/seismic_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = interaction_item(user, I, interaction)
+/obj/item/plastique/seismic/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = ..()
 	if(open_panel)
 		if(istype(I, /obj/item/stock_parts/micro_laser))
 			var/obj/item/stock_parts/SP = I

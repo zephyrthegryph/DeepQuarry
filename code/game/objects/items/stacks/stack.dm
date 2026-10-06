@@ -43,14 +43,19 @@ CAPABILITIES(/obj/item/stack)
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
+	param(nameof(amount_at_make), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
-/obj/item/stack/Initialize(mapload, starting_amount)
+/// The amount a stack is made with (its constructor param): null for its own, negative for a full stack.
+/obj/item/stack/var/amount_at_make
+
+// ALLOW(init/INSTANCE_STATE): a stack sets its starting amount (a negative one is a full stack), its in-hand sprite and its sale
+/obj/item/stack/Initialize(mapload)
 	. = ..()
 	if(!stacktype)
 		stacktype = type
 	if(!no_variants)
 		item_state = initial(icon_state) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
+	var/starting_amount = amount_at_make
 	if(!isnull(starting_amount)) // Could be 0
 		// Negative numbers are 'give full stack', like -1
 		if(starting_amount < 0)

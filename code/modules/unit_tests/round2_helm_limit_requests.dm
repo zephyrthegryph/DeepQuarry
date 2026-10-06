@@ -15,8 +15,7 @@
 		return
 	var/original_limit = limit_action == "speedlimit" ? helm.speedlimit : helm.accellimit
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, get_turf(helm))
-	var/datum/ui_decl/decl = ui_decl_of(helm)
-	var/datum/tgui/editor = allocate(/datum/tgui, user, helm, decl?.interface)
+	var/datum/tgui/editor = allocate(/datum/tgui, user, helm, helm.ui_interface(user))
 	exercise_limit(user, helm, editor, original_limit)
 	// Restore via the same actual UI request, not a direct field/gate write.
 	input_submit(new /datum/input_event/ui_act(user, editor, limit_action, list(), editor.state()))

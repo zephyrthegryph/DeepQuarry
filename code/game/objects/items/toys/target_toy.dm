@@ -8,7 +8,10 @@
 /obj/item/paper/target
 	name = "target notice"
 
-// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
-/obj/item/paper/target/Initialize(mapload)
-	. = ..()
-	info = "Your target is " + span_bold("[random_name(pick(MALE,FEMALE))]") + ". Make sure they don't get out of there alive."
+CAPABILITIES(/obj/item/paper/target)
+	rolls(nameof(info), PROC_REF(roll_info))
+
+/// Rolled before init (rolls()): the target's name.
+/obj/item/paper/target/proc/roll_info(datum/roller/R)
+	return "Your target is " + span_bold("[random_name(R.choose(list(MALE, FEMALE)))]") + ". Make sure they don't get out of there alive."
+

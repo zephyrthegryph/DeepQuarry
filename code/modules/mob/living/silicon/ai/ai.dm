@@ -120,6 +120,9 @@ CAPABILITIES(/mob/living/silicon/ai)
 	owns_one(nameof(aiMulti), starts = /obj/item/multitool)
 	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam, starts = /obj/item/camera/siliconcam/ai_camera)
 	op("ai_interaction_card", item(/obj/item/aicard), label("Transfer to card"), then(PROC_REF(ai_interaction_card)))
+	param(nameof(laws), /datum/ai_laws, pos = 2)
+	param(nameof(brain_at_make), pos = 3, keep = FALSE)
+	param(nameof(spawn_safety), pos = 4)
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
@@ -129,8 +132,13 @@ CAPABILITIES(/mob/living/silicon/ai)
 	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
 	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
 
-// ALLOW(init/CTOR_ARGS): is_decoy, L, B and safety are constructor arguments from whoever builds it
-/mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
+/// The brain an AI is made from (its constructor param, read before its parents' init).
+/mob/living/silicon/ai/var/tmp/obj/item/mmi/brain_at_make
+/// Made by AIize(): no brain is needed (its constructor param).
+/mob/living/silicon/ai/var/spawn_safety = FALSE
+
+// ALLOW(init/INSTANCE_STATE): an AI sets up its announcement, name, radio, laws and languages before its parents' init, and leaves an empty core when made with no brain
+/mob/living/silicon/ai/Initialize(mapload)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
 	rel_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
@@ -160,10 +168,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 
 	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 
-	if(L)
-		if (istype(L, /datum/ai_laws))
-			rel_set(src, nameof(laws), L)
-	else
+	if(!laws)
 		rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
 
 	rel_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
@@ -200,12 +205,12 @@ CAPABILITIES(/mob/living/silicon/ai)
 	add_language(LANGUAGE_DRUDAKAR, 1)
 	add_language(LANGUAGE_TAVAN, 1)
 
-	if(!safety)//Only used by AIize() to successfully spawn an AI.
-		if (!B)//If there is no player/brain inside.
+	if(!spawn_safety)//Only used by AIize() to successfully spawn an AI.
+		if (!brain_at_make)//If there is no player/brain inside.
 			registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
 			return INITIALIZE_HINT_QDEL //Delete AI.
 
-		var/datum/mind_host/host = get_mind_host(B)
+		var/datum/mind_host/host = get_mind_host(brain_at_make)
 		host?.release_mind(src, "AI core activated")
 
 		on_mob_init()

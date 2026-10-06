@@ -91,6 +91,7 @@ TRACKED(/obj/effect/overmap/visitable/ship, under_way)
 /// Under way (not still).
 CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
+	drag_onto(PROC_REF(drop_input))
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
 	return under_way
@@ -288,8 +289,10 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 #undef SANITIZE_SPEED
 #undef CHANGE_SPEED_BY
 
-/obj/effect/overmap/visitable/ship/MouseDrop(atom/over)
-	return offer_ingestion_with_actor(over, usr) // ALLOW(sys_usr_outside_verb): Native ship drag captures its initiating actor before recipient-owned prompts resume.
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/effect/overmap/visitable/ship/proc/drop_input(datum/act/input/A)
+	offer_ingestion_with_actor(A.over, A.actor)
+	return TRUE
 
 /obj/effect/overmap/visitable/ship/proc/offer_ingestion_with_actor(atom/over, mob/user)
 	if(!isliving(over) || !Adjacent(over) || !Adjacent(user))

@@ -116,38 +116,49 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, TYPE_PROC_REF(/atom, app
 		I.color = padding_material.icon_colour
 		. += I
 
-/obj/structure/bed/chair/comfy/brown/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BROWN)
+/obj/structure/bed/chair/comfy/brown
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BROWN
 
-/obj/structure/bed/chair/comfy/red/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CARPET)
+/obj/structure/bed/chair/comfy/red
+	material_key = MAT_STEEL
+	padding_key = MAT_CARPET
 
-/obj/structure/bed/chair/comfy/teal/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_TEAL)
+/obj/structure/bed/chair/comfy/teal
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_TEAL
 
-/obj/structure/bed/chair/comfy/black/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BLACK)
+/obj/structure/bed/chair/comfy/black
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BLACK
 
-/obj/structure/bed/chair/comfy/green/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_GREEN)
+/obj/structure/bed/chair/comfy/green
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_GREEN
 
-/obj/structure/bed/chair/comfy/purp/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_PURPLE)
+/obj/structure/bed/chair/comfy/purp
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_PURPLE
 
-/obj/structure/bed/chair/comfy/blue/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BLUE)
+/obj/structure/bed/chair/comfy/blue
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BLUE
 
-/obj/structure/bed/chair/comfy/beige/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BEIGE)
+/obj/structure/bed/chair/comfy/beige
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BEIGE
 
-/obj/structure/bed/chair/comfy/lime/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_LIME)
+/obj/structure/bed/chair/comfy/lime
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_LIME
 
-/obj/structure/bed/chair/comfy/yellow/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_YELLOW)
+/obj/structure/bed/chair/comfy/yellow
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_YELLOW
 
-/obj/structure/bed/chair/comfy/orange/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_ORANGE)
+/obj/structure/bed/chair/comfy/orange
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_ORANGE
 
 /obj/structure/bed/chair/comfy/rounded
 	name = "rounded chair"
@@ -156,38 +167,49 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, TYPE_PROC_REF(/atom, app
 	icon = 'icons/obj/furniture.dmi' //These need to be base dmi, chomp's does not have them.
 	base_icon = "roundedchair"
 
-/obj/structure/bed/chair/comfy/rounded/brown/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BROWN)
+/obj/structure/bed/chair/comfy/rounded/brown
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BROWN
 
-/obj/structure/bed/chair/comfy/rounded/red/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CARPET)
+/obj/structure/bed/chair/comfy/rounded/red
+	material_key = MAT_STEEL
+	padding_key = MAT_CARPET
 
-/obj/structure/bed/chair/comfy/rounded/teal/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_TEAL)
+/obj/structure/bed/chair/comfy/rounded/teal
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_TEAL
 
-/obj/structure/bed/chair/comfy/rounded/black/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BLACK)
+/obj/structure/bed/chair/comfy/rounded/black
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BLACK
 
-/obj/structure/bed/chair/comfy/rounded/green/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_GREEN)
+/obj/structure/bed/chair/comfy/rounded/green
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_GREEN
 
-/obj/structure/bed/chair/comfy/rounded/purple/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_PURPLE)
+/obj/structure/bed/chair/comfy/rounded/purple
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_PURPLE
 
-/obj/structure/bed/chair/comfy/rounded/blue/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BLUE)
+/obj/structure/bed/chair/comfy/rounded/blue
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BLUE
 
-/obj/structure/bed/chair/comfy/rounded/beige/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BEIGE)
+/obj/structure/bed/chair/comfy/rounded/beige
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BEIGE
 
-/obj/structure/bed/chair/comfy/rounded/lime/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_LIME)
+/obj/structure/bed/chair/comfy/rounded/lime
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_LIME
 
-/obj/structure/bed/chair/comfy/rounded/yellow/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_YELLOW)
+/obj/structure/bed/chair/comfy/rounded/yellow
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_YELLOW
 
-/obj/structure/bed/chair/comfy/rounded/orange/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_ORANGE)
+/obj/structure/bed/chair/comfy/rounded/orange
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_ORANGE
 
 /obj/structure/bed/chair/office
 	anchored = FALSE
@@ -258,8 +280,8 @@ APPEARANCE_NONE(/obj/structure/bed/chair/office)
 
 APPEARANCE_NONE(/obj/structure/bed/chair/wood)
 
-/obj/structure/bed/chair/wood/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD)
+/obj/structure/bed/chair/wood
+	material_key = MAT_WOOD
 
 /obj/structure/bed/chair/wood/wings
 	icon_state = "wooden_chair_wings"
@@ -564,17 +586,21 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, TYPE_PROC_REF(/ato
 	icon_state = "sofacornerOLD"
 	base_icon = "sofacornerOLD"
 
-/obj/structure/bed/chair/sofa/sif_ora/Initialize(mapload,newmaterial)
-	. = ..(mapload,MAT_SIFWOOD,MAT_CARPET_ORANGE)
+/obj/structure/bed/chair/sofa/sif_ora
+	material_key = MAT_SIFWOOD
+	padding_key = MAT_CARPET_ORANGE
 
-/obj/structure/bed/chair/sofa/left/sif_ora/Initialize(mapload,newmaterial)
-	. = ..(mapload,MAT_SIFWOOD,MAT_CARPET_ORANGE)
+/obj/structure/bed/chair/sofa/left/sif_ora
+	material_key = MAT_SIFWOOD
+	padding_key = MAT_CARPET_ORANGE
 
-/obj/structure/bed/chair/sofa/right/sif_ora/Initialize(mapload,newmaterial)
-	. = ..(mapload,MAT_SIFWOOD,MAT_CARPET_ORANGE)
+/obj/structure/bed/chair/sofa/right/sif_ora
+	material_key = MAT_SIFWOOD
+	padding_key = MAT_CARPET_ORANGE
 
-/obj/structure/bed/chair/sofa/corner/sif_ora/Initialize(mapload,newmaterial)
-	. = ..(mapload,MAT_SIFWOOD,MAT_CARPET_ORANGE)
+/obj/structure/bed/chair/sofa/corner/sif_ora
+	material_key = MAT_SIFWOOD
+	padding_key = MAT_CARPET_ORANGE
 
 
 // === merged from chairs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -722,45 +748,35 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appea
 	base_icon = "bay_chair"
 	buckle_movable = 1
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/red/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CARPET)
+/obj/structure/bed/chair/bay/chair/padded/red
+	padding_key = MAT_CARPET
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/brown/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BROWN)
+/obj/structure/bed/chair/bay/chair/padded/brown
+	padding_key = MAT_CLOTH_BROWN
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/teal/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_TEAL)
+/obj/structure/bed/chair/bay/chair/padded/teal
+	padding_key = MAT_CLOTH_TEAL
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/black/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BLACK)
+/obj/structure/bed/chair/bay/chair/padded/black
+	padding_key = MAT_CLOTH_BLACK
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/green/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_GREEN)
+/obj/structure/bed/chair/bay/chair/padded/green
+	padding_key = MAT_CLOTH_GREEN
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/purple/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_PURPLE)
+/obj/structure/bed/chair/bay/chair/padded/purple
+	padding_key = MAT_CLOTH_PURPLE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/blue/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BLUE)
+/obj/structure/bed/chair/bay/chair/padded/blue
+	padding_key = MAT_CLOTH_BLUE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/beige/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BEIGE)
+/obj/structure/bed/chair/bay/chair/padded/beige
+	padding_key = MAT_CLOTH_BEIGE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/lime/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_LIME)
+/obj/structure/bed/chair/bay/chair/padded/lime
+	padding_key = MAT_CLOTH_LIME
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/chair/padded/yellow/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_YELLOW)
+/obj/structure/bed/chair/bay/chair/padded/yellow
+	padding_key = MAT_CLOTH_YELLOW
 
 /obj/structure/bed/chair/bay/comfy
 	name = "comfy mounted chair"
@@ -768,45 +784,35 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appea
 	icon_state = "bay_comfychair_preview"
 	base_icon = "bay_comfychair"
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/red/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CARPET)
+/obj/structure/bed/chair/bay/comfy/red
+	padding_key = MAT_CARPET
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/brown/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BROWN)
+/obj/structure/bed/chair/bay/comfy/brown
+	padding_key = MAT_CLOTH_BROWN
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/teal/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_TEAL)
+/obj/structure/bed/chair/bay/comfy/teal
+	padding_key = MAT_CLOTH_TEAL
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/black/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BLACK)
+/obj/structure/bed/chair/bay/comfy/black
+	padding_key = MAT_CLOTH_BLACK
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/green/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_GREEN)
+/obj/structure/bed/chair/bay/comfy/green
+	padding_key = MAT_CLOTH_GREEN
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/purple/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_PURPLE)
+/obj/structure/bed/chair/bay/comfy/purple
+	padding_key = MAT_CLOTH_PURPLE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/blue/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BLUE)
+/obj/structure/bed/chair/bay/comfy/blue
+	padding_key = MAT_CLOTH_BLUE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/beige/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_BEIGE)
+/obj/structure/bed/chair/bay/comfy/beige
+	padding_key = MAT_CLOTH_BEIGE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/lime/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_LIME)
+/obj/structure/bed/chair/bay/comfy/lime
+	padding_key = MAT_CLOTH_LIME
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/chair/bay/comfy/yellow/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, new_material, MAT_CLOTH_YELLOW)
+/obj/structure/bed/chair/bay/comfy/yellow
+	padding_key = MAT_CLOTH_YELLOW
 
 /obj/structure/bed/chair/bay/comfy/captain
 	name = "captain chair"
@@ -823,8 +829,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, TYPE_PROC_RE
 	I.layer = ABOVE_MOB_LAYER
 	. += I
 
-/obj/structure/bed/chair/bay/comfy/captain/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BLUE)
+/obj/structure/bed/chair/bay/comfy/captain
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH_BLUE
 
 /obj/structure/bed/chair/bay/shuttle
 	name = "shuttle seat"
@@ -835,8 +842,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, TYPE_PROC_RE
 	var/buckling_sound = SFX_EFFECTS_METAL_CLOSE
 	var/padding = MAT_CLOTH_BLUE
 
-/obj/structure/bed/chair/bay/shuttle/Initialize(mapload, new_material, new_padding_material)
-	. = ..(mapload, MAT_STEEL, padding)
+/obj/structure/bed/chair/bay/shuttle
+	padding_key = MAT_CLOTH_BLUE
 
 /obj/structure/bed/chair/bay/shuttle/post_buckle_mob()
 	playsound(src,buckling_sound,75,1)

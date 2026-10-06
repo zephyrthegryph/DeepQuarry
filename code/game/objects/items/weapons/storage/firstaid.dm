@@ -18,12 +18,9 @@
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-// ALLOW(init/INSTANCE_STATE): icon_state and icon_variety rolled at random for each instance
-/obj/item/storage/firstaid/Initialize(mapload)
-	. = ..()
-	if(icon_variety)
-		icon_state = pick(icon_variety) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-		icon_variety = null
+/// Rolled before init (rolls()): a kit with several looks picks one.
+/obj/item/storage/firstaid/proc/roll_icon_state(datum/roller/R)
+	return R.choose(icon_variety)
 
 /obj/item/storage/firstaid/fire
 	name = "fire first aid kit"

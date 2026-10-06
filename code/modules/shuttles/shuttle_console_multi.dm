@@ -14,8 +14,7 @@
 			// "engines_charging" = ((shuttle.last_move + (shuttle.cooldown SECONDS)) > world.time), // Replaced by longer warmup_time
 		)
 
-/obj/machinery/computer/shuttle_control/multi/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
+/obj/machinery/computer/shuttle_control/multi/console_gate(mob/user)
 	if(!..())
 		return FALSE
 	var/datum/shuttle/autodock/multi/shuttle = SSshuttles.shuttles[shuttle_tag]
@@ -57,7 +56,7 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/multi)
 	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/multi/console = src_object()
-	var/allowed = console.ui_act_allowed(user, "pick", src, state())
+	var/allowed = console.console_gate(user)
 	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
 	if(request_recheck(A.request))
 		return

@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/depth_scanner)
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/// The computed part of /obj/item/depth_scanner's window data (declared on its UI_DATA row).
+/// /obj/item/depth_scanner's window data.
 /obj/item/depth_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
@@ -298,7 +298,7 @@ CAPABILITIES(/obj/item/beacon_locator)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/beacon_locator's window data (declared on its UI_DATA row).
+/// /obj/item/beacon_locator's window data.
 /obj/item/beacon_locator/proc/ui_data_obj_item_beacon_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

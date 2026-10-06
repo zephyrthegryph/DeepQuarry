@@ -51,7 +51,7 @@ CAPABILITIES(/datum/admin_report)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/admin_report's window data (declared on its UI_DATA row).
+/// /datum/admin_report's window data.
 /datum/admin_report/proc/ui_data_datum_admin_report(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["lines"] = lines || list()
@@ -117,7 +117,7 @@ CAPABILITIES(/datum/dq_stock_chart_panel)
 /datum/dq_stock_chart_panel/ui_title(mob/user)
 	return "Share Value: [stock_name]"
 
-/// The computed part of /datum/dq_stock_chart_panel's window data (declared on its UI_DATA row).
+/// /datum/dq_stock_chart_panel's window data.
 /datum/dq_stock_chart_panel/ui_data(datum/act/eval/A)
 	return list(
 		"stock_name" = stock_name,

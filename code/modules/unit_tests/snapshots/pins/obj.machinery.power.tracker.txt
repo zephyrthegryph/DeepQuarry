@@ -8,7 +8,8 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Lay cable (refused: needs a cable coil)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Take the glass off
+human|/obj/item/tool/crowbar click: Click: Take the glass off
 human|/obj/item/tool/wrench menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Lay cable (refused: needs a cable coil)
@@ -24,5 +25,5 @@ human|/obj/item/stack/material/steel menu: Lay cable (refused: needs a cable coi
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, remove_glass
 

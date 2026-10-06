@@ -17,6 +17,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	owns_many(nameof(side_effects), /datum/medical_effect)
 	owns_many(nameof(teleporters))
 	owns_one(nameof(crafting), starts = /datum/personal_crafting)
+	param(nameof(species_at_make), pos = 1)
 
 CAPABILITIES(/mob/living/silicon/robot)
 	remote_interface(reach = BORG_INTERFACE_REACH)

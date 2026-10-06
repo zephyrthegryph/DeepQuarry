@@ -40,7 +40,19 @@
 	var/winner
 	var/ships_have_been_placed = NONE
 
-DECLARE_UI(/datum/board_game/space_battle, "SpaceBattle")
+CAPABILITIES(/datum/board_game/space_battle)
+	interface("SpaceBattle", state = nameof(GLOB.tgui_board_game_state))
+	op("be_player_one", ui_act("be_player_one"), then(PROC_REF(ui_act_be_player_one)))
+	op("be_player_two", ui_act("be_player_two"), then(PROC_REF(ui_act_be_player_two)))
+	op("swap_players", ui_act("swap_players"), then(PROC_REF(ui_act_swap_players)))
+	op("clear_game", ui_act("clear_game"), then(PROC_REF(ui_act_clear_game)))
+	op("prepare_game", ui_act("prepare_game"), then(PROC_REF(ui_act_prepare_game)))
+	op("start_game", ui_act("start_game"), then(PROC_REF(ui_act_start_game)))
+	op("play_again", ui_act("play_again"), then(PROC_REF(ui_act_play_again)))
+	op("play_again_swapped", ui_act("play_again_swapped"), then(PROC_REF(ui_act_play_again_swapped)))
+	op("place_ship", ui_act("place_ship", arg("ship")), then(PROC_REF(ui_act_place_ship)))
+	op("remove_ship", ui_act("remove_ship", arg("loc_x", num()), arg("loc_y", num()), arg("player", num())), then(PROC_REF(ui_act_remove_ship)))
+	op("game_action", ui_act("game_action", arg("action", schema_text(4096)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
 /datum/board_game/space_battle/tgui_static_data(mob/user)
 	return list(
@@ -48,21 +60,20 @@ DECLARE_UI(/datum/board_game/space_battle, "SpaceBattle")
 		"total_ships" = total_ships
 	)
 
-UI_DATA_REPLACE(/datum/board_game/space_battle, "merge:ui_data_datum_board_game_space_battle{}")
-
-/// The computed part of /datum/board_game/space_battle's window data (declared on its UI_DATA row).
-/datum/board_game/space_battle/proc/ui_data_datum_board_game_space_battle(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/board_game/space_battle's window data.
+/datum/board_game/space_battle/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one
 	var/mob/player_two_mob = player_two
 
 	var/list/visible_ships = list()
-	if(ui.user == player_one_mob || game_state == GAME_OVER)
+	if(user == player_one_mob || game_state == GAME_OVER)
 		visible_ships += ships_placed_pone
-	if(ui.user == player_two_mob || game_state == GAME_OVER)
+	if(user == player_two_mob || game_state == GAME_OVER)
 		visible_ships += ships_placed_ptwo
 
 	return list(
-		"current_player" = ui.user,
+		"current_player" = user,
 		"player_one" = player_one_mob,
 		"player_two" = player_two_mob,
 		"all_placed" = ships_have_been_placed,
@@ -75,48 +86,45 @@ UI_DATA_REPLACE(/datum/board_game/space_battle, "merge:ui_data_datum_board_game_
 		"ship_count_ptwo" = (ship_count_ptwo || list()),
 		"game_state" = game_state,
 		"winner" = winner,
-		"has_won" = winner == ui.user.name
+		"has_won" = winner == user.name
 	)
 
-UI_ACT(/datum/board_game/space_battle, "be_player_one", ui_act_be_player_one)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_be_player_one)
+/datum/board_game/space_battle/proc/ui_act_be_player_one(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_one == ui.user)
-		rel_clear(src, nameof(/datum/board_game/checkers::player_one))
+	if(player_one == user)
+		rel_clear(src, nameof(player_one))
 		return TRUE
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), ui.user)
+	rel_set(src, nameof(player_one), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "be_player_two", ui_act_be_player_two)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_be_player_two)
+/datum/board_game/space_battle/proc/ui_act_be_player_two(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_two == ui.user)
-		rel_clear(src, nameof(/datum/board_game/checkers::player_two))
+	if(player_two == user)
+		rel_clear(src, nameof(player_two))
 		return TRUE
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), ui.user)
+	rel_set(src, nameof(player_two), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "swap_players", ui_act_swap_players)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_swap_players)
+/datum/board_game/space_battle/proc/ui_act_swap_players(datum/act/op/A)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
 	var/mob/temp_player = player_one
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
+	rel_set(src, nameof(player_one), player_two)
+	rel_set(src, nameof(player_two), temp_player)
 
-UI_ACT(/datum/board_game/space_battle, "clear_game", ui_act_clear_game)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_clear_game)
+/datum/board_game/space_battle/proc/ui_act_clear_game(datum/act/op/A)
 	if(game_state == GAME_SETUP)
 		return FALSE
 	reset(TRUE)
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "prepare_game", ui_act_prepare_game)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_prepare_game)
+/datum/board_game/space_battle/proc/ui_act_prepare_game(datum/act/op/A)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	var/mob/player_one_mob = player_one
@@ -128,8 +136,7 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_prepare_game)
 	ship_count_ptwo = get_remaining_ships(2)
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "start_game", ui_act_start_game)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_start_game)
+/datum/board_game/space_battle/proc/ui_act_start_game(datum/act/op/A)
 	if(game_state != GAME_PLACE_SHIPS)
 		return FALSE
 	if(!(ships_have_been_placed == (PLAYER_ONE_PLACED_SHIPS | PLAYER_TWO_PLACED_SHIPS)))
@@ -143,8 +150,7 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_start_game)
 	game_state = GAME_PLAYER_ONE
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "play_again", ui_act_play_again)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_play_again)
+/datum/board_game/space_battle/proc/ui_act_play_again(datum/act/op/A)
 	if(game_state < GAME_OVER)
 		return FALSE
 	if(!player_one || !player_two)
@@ -152,20 +158,21 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_play_again)
 	reset()
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "play_again_swapped", ui_act_play_again_swapped)
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_play_again_swapped)
+/datum/board_game/space_battle/proc/ui_act_play_again_swapped(datum/act/op/A)
 	if(game_state < GAME_OVER)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
 	reset()
 	var/mob/temp_player = player_one
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
+	rel_set(src, nameof(player_one), player_two)
+	rel_set(src, nameof(player_two), temp_player)
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "place_ship", ui_act_place_ship, UI_ARG_LIST("ship"))
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_place_ship)
+/datum/board_game/space_battle/proc/ui_act_place_ship(datum/act/op/A, ship)
+	var/mob/user = A.actor
+	if(!isnull(ship) && !islist(ship))
+		return FALSE
 	if(game_state != GAME_PLACE_SHIPS)
 		return FALSE
 	var/mob/player_one_mob = player_one
@@ -173,7 +180,7 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_place_ship)
 	if(!player_one_mob || !player_two_mob)
 		return FALSE
 
-	var/list/ship_data = params["ship"]
+	var/list/ship_data = ship
 	if(!ship_data["name"] || !ship_data["coords"])
 		return FALSE
 
@@ -181,9 +188,9 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_place_ship)
 	if(!player)
 		return FALSE
 
-	if(player == 1 && ui.user != player_one_mob)
+	if(player == 1 && user != player_one_mob)
 		return FALSE
-	if(player == 2 && ui.user != player_two_mob)
+	if(player == 2 && user != player_two_mob)
 		return FALSE
 
 	var/allowed = total_ships[ship_data["name"]]
@@ -225,8 +232,8 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_place_ship)
 
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "remove_ship", ui_act_remove_ship, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"), UI_ARG_NUM("player"))
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_remove_ship)
+/datum/board_game/space_battle/proc/ui_act_remove_ship(datum/act/op/A, loc_x_arg, loc_y_arg, player_arg)
+	var/mob/user = A.actor
 	if(game_state != GAME_PLACE_SHIPS)
 		return FALSE
 	var/mob/player_one_mob = player_one
@@ -234,10 +241,10 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_remove_ship)
 	if(!player_one_mob || !player_two_mob)
 		return FALSE
 
-	var/player = params["player"]
-	if(player == 1 && ui.user != player_one_mob)
+	var/player = player_arg
+	if(player == 1 && user != player_one_mob)
 		return FALSE
-	if(player == 2 && ui.user != player_two_mob)
+	if(player == 2 && user != player_two_mob)
 		return FALSE
 
 	var/list/ships
@@ -246,8 +253,8 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_remove_ship)
 	else
 		ships = ships_placed_ptwo
 
-	var/loc_x = params["loc_x"]
-	var/loc_y = params["loc_y"]
+	var/loc_x = loc_x_arg
+	var/loc_y = loc_y_arg
 	for(var/i in length(ships) to 1 step -1)
 		var/list/ship = ships[i]
 		for(var/list/coord in ship["coords"])
@@ -260,19 +267,21 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_remove_ship)
 				return TRUE
 	return FALSE
 
-UI_ACT(/datum/board_game/space_battle, "game_action", ui_act_game_action, UI_ARG_TEXT("action"), UI_ARG_LIST("data"))
-UI_ACT_PROC(/datum/board_game/space_battle, ui_act_game_action)
-	if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
-		if(params["data"]["player"] == 1)
+/datum/board_game/space_battle/proc/ui_act_game_action(datum/act/op/A, action_arg, data)
+	var/mob/user = A.actor
+	if(!isnull(data) && !islist(data))
+		return FALSE
+	if(user == player_one && game_state == GAME_PLAYER_ONE)
+		if(data["player"] == 1)
 			return FALSE
-		if(ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
+		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
 				game_state = GAME_PLAYER_TWO
 			return TRUE
-	if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
-		if(params["data"]["player"] == 2)
+	if(user == player_two && game_state == GAME_PLAYER_TWO)
+		if(data["player"] == 2)
 			return FALSE
-		if(ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
+		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
 				game_state = GAME_PLAYER_ONE
 			return TRUE
@@ -296,8 +305,7 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_game_action)
 	else
 		game_state = GAME_PLACE_SHIPS
 
-UI_SUBACT(/datum/board_game/space_battle, "game", "fire_shot", game_fire_shot, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_PROC(/datum/board_game/space_battle, game_fire_shot)
+/datum/board_game/space_battle/proc/game_fire_shot(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
 	if(!validated_data)
 		return FALSE
@@ -440,3 +448,11 @@ UI_SUBACT_PROC(/datum/board_game/space_battle, game_fire_shot)
 #undef GRID_SIZE
 #undef PLAYER_ONE_PLACED_SHIPS
 #undef PLAYER_TWO_PLACED_SHIPS
+
+/// /datum/board_game/space_battle's "game" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/board_game/space_battle/game_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("fire_shot")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? game_fire_shot(user, typed, extra) : FALSE
+	return ..()

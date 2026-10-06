@@ -175,7 +175,7 @@ CAPABILITIES(/obj/structure/lift/panel)
 	op("toggle_doors", ui_act("toggle_doors"), then(PROC_REF(ui_act_toggle_doors)))
 	op("emergency_stop", ui_act("emergency_stop"), then(PROC_REF(ui_act_emergency_stop)))
 
-/// The computed part of /obj/structure/lift/panel's window data (declared on its UI_DATA row).
+/// /obj/structure/lift/panel's window data.
 /obj/structure/lift/panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

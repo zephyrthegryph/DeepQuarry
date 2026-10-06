@@ -274,15 +274,16 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 
 	var/mob/living/carbon/human/hume
 
-// ALLOW(init/CTOR_ARGS): H is a constructor argument from whoever builds it
-/obj/item/cell/standin/Initialize(mapload, mob/living/carbon/human/H)
-	. = ..()
-	if(!istype(H))
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(hume), H)
-	charge = H.nutrition
-	maxcharge = initial(H.nutrition)
+CAPABILITIES(/obj/item/cell/standin)
+	param(nameof(hume), pos = 1)
 
+// ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds
+/obj/item/cell/standin/Initialize(mapload)
+	. = ..()
+	if(!istype(hume))
+		return INITIALIZE_HINT_QDEL
+	charge = hume.nutrition
+	maxcharge = initial(hume.nutrition)
 	expire(20 SECONDS)
 
 

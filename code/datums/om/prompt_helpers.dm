@@ -14,7 +14,6 @@
 //		return
 //
 //   topic_ask(user, href_list, key, prompt, ...)             a Topic() handler
-//   act_ask(user, action, params, ui, key, prompt, ...)      a tgui_act() action (params["om_reentry"] is set on a re-run)
 //   verb_ask(user, key, args, prompt, ...)                   an ADMIN_VERB body (the verb's rights are re-checked)
 //   client_ask(key, PROC_REF(this proc), args, rights, prompt, ...)   a /client proc (`rights`: R_* re-checked)
 //   rerun_ask(user, key, PROC_REF(this proc), args, prompt, ...)      any datum proc
@@ -80,34 +79,6 @@
 	// who it already is, but say so for answers delivered any other way.
 	usr = actor
 	topic_dispatch(target, actor, href_list)
-
-// ---------------------------------------------------------------- tgui_act() handlers
-//
-// The answer re-runs the UI_ACT row with params[key] set while the window is still open and
-// interactive (ui_dispatch_typed() checks). The handler passes its typed params; the answer and
-// om_reentry are added server-side, so a client can never send an answer key itself (undeclared
-// keys are dropped by ui_parse_args()). params["om_reentry"] is set on a re-run, for
-// actions that log or charge once.
-
-/datum/proc/om_act_ask(mob/user, action, list/params, datum/tgui/ui, key, prompt, list/fields)
-	var/answer_key = "om_answer_[key]"
-	if(!isnull(params[answer_key]))
-		return params[answer_key]
-	om_rerun_begin(/datum/om/flow/rerun/act, user, src, answer_key, prompt, fields, list("action" = action, "act_params" = params.Copy(), "ui" = ui))
-	return null
-
-/datum/om/flow/rerun/act
-	var/action
-	var/list/act_params
-	var/datum/tgui/ui
-
-/datum/om/flow/rerun/act/rerun(answer)
-	act_params[answer_key] = answer
-	act_params["om_reentry"] = TRUE
-	usr = actor // UI_ACT handlers may read usr, as they do when the user clicks.
-	// act_params are the handler's already-typed params: re-run the row without re-parsing.
-	if(ui_dispatch_typed(target, action, act_params, ui, ui.state()))
-		SStgui.update_uis(target)
 
 // ---------------------------------------------------------------- re-runs keeping their answers
 //

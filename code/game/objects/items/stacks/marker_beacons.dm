@@ -129,10 +129,13 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	op("pick_up", hand(), ungated(), then(PROC_REF(picked_up_by_hand)))
 	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), then(PROC_REF(picked_up_into_stack)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
+	param(nameof(color_at_make), pos = 1, apply = PROC_REF(light_beacon))
 
-// ALLOW(init/CTOR_ARGS): set_color is a constructor argument from whoever builds it
-/obj/structure/marker_beacon/Initialize(mapload, set_color)
-	. = ..()
+/// The colour a beacon is set down with (its constructor param).
+/obj/structure/marker_beacon/var/color_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A beacon set down takes its colour, or the one it was mapped with.
+/obj/structure/marker_beacon/proc/light_beacon(set_color)
 	if(set_color)
 		set_picked_color(set_color)
 	else if(mapped_in_color)

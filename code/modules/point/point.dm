@@ -60,14 +60,15 @@
 	plane = ABOVE_PLANE
 	duration = POINT_TIME
 
-// ALLOW(init/CTOR_ARGS): set_invis is a constructor argument from whoever builds it
-/obj/effect/temp_visual/point/Initialize(mapload, set_invis = 0)
-	. = ..()
+CAPABILITIES(/obj/effect/temp_visual/point)
+	param(nameof(invisibility), pos = 1, apply = PROC_REF(settle_on_turf))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The pointer is drawn on the turf, offset as the thing pointed at.
+/obj/effect/temp_visual/point/proc/settle_on_turf(set_invis)
 	var/atom/old_loc = loc
 	abstract_move(get_turf(src))
 	pixel_x = old_loc.pixel_x
 	pixel_y = old_loc.pixel_y
-	invisibility = set_invis
 
 #undef POINT_TIME
 

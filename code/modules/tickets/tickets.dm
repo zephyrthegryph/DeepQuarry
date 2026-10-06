@@ -216,9 +216,12 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 CAPABILITIES(/obj/effect/statclick/ticket_list)
 	param(nameof(current_state), pos = 2)
+	click_on(PROC_REF(click_input))
 
-/obj/effect/statclick/ticket_list/Click()
-	GLOB.tickets.BrowseTickets(current_state, usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/ticket_list/proc/click_input(datum/act/input/A)
+	GLOB.tickets.BrowseTickets(current_state, A.actor)
+	return TRUE
 
 //
 //TICKET DATUM
@@ -670,12 +673,15 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 CAPABILITIES(/obj/effect/statclick/ticket)
 	param(nameof(ticket_datum), pos = 1)
+	click_on(PROC_REF(click_input))
 
 /obj/effect/statclick/ticket/update()
 	return ..(ticket_datum().name)
 
-/obj/effect/statclick/ticket/Click()
-	ticket_datum().TicketPanel(usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/ticket/proc/click_input(datum/act/input/A)
+	ticket_datum().TicketPanel(A.actor)
+	return TRUE
 
 //
 // LOGGING

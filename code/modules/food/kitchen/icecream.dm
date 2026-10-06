@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = LAZYACCESS(product_types, entry), "ingredients" = get_ingredient_list(entry)))
 	return ice_data
 
-/// The computed part of /obj/machinery/icecream_vat's window data (declared on its UI_DATA row).
+/// /obj/machinery/icecream_vat's window data.
 /obj/machinery/icecream_vat/ui_data(datum/act/eval/A)
 	var/list/reagent_data = list()
 	for(var/datum/reagent/current_reagent in reagents.reagent_list)

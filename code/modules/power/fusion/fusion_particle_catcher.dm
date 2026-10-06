@@ -9,9 +9,8 @@
 	light_color = COLOR_BLUE
 
 // The field owns its catchers (rel_add in fusion_em_field/Initialize()); a catcher names its field.
-/obj/effect/fusion_particle_catcher/relations()
-	. = ..()
-	. += rel_one(nameof(parent))
+CAPABILITIES(/obj/effect/fusion_particle_catcher)
+	ref_one(nameof(parent), /obj/effect/fusion_em_field)
 
 /obj/effect/fusion_particle_catcher/proc/SetSize(newsize)
 	name = "collector [newsize]"

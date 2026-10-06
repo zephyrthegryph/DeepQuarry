@@ -3,8 +3,15 @@
 	icon_name = ""
 	dislocated = -1
 
-// ALLOW(init/CTOR_ARGS): internal and limb are constructor arguments from whoever builds it
-/obj/item/organ/external/stump/Initialize(mapload, internal, obj/item/organ/external/limb)
+CAPABILITIES(/obj/item/organ/external/stump)
+	param(nameof(stump_of), pos = 2, keep = FALSE)
+
+/// The limb the stump replaces (its constructor param, dropped after init).
+/obj/item/organ/external/stump/var/tmp/obj/item/organ/external/stump_of
+
+// ALLOW(init/INSTANCE_STATE): a stump takes the place, joint and damage of the limb it replaces, robotic when both are
+/obj/item/organ/external/stump/Initialize(mapload, internal)
+	var/obj/item/organ/external/limb = stump_of
 	if(istype(limb))
 		organ_tag = limb.organ_tag
 		body_part = limb.body_part

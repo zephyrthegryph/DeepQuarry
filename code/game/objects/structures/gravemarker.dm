@@ -20,19 +20,21 @@
 CAPABILITIES(/obj/structure/gravemarker)
 	climb()
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	param(nameof(marker_material), pos = 1, apply = PROC_REF(build_of))
 
 CAPABILITIES(/datum/prompt/text/grave_carving)
 	ref_one(nameof(tool), /obj/item)
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/gravemarker/Initialize(mapload, material_name)
-	. = ..()
-	if(!material_name)
-		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
+/// The marker's material (its constructor param).
+/obj/structure/gravemarker/var/marker_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/gravemarker/proc/build_of(material_name)
+	material = get_material_by_name("[material_name || MAT_WOOD]")
 	if(!material)
 		stack_trace("Material of type: [material_name] does not exist.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	color = material.icon_colour
 	make_rotatable()
 

@@ -12,7 +12,7 @@
 #define DEAD        2
 
 // Bitflags defining which status effects could be or are inflicted on a mob.
-// Status immunities are effects (EFFECT_IMMUNE_*, statuses.dm), not flags.
+// Status immunities are stats (STAT_IMMUNE(STAT_X), code/library/mob/statuses.dm), not flags.
 #define CANPUSH		0x8
 #define LEAPING		0x10
 #define HIDING		0x20

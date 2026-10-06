@@ -64,7 +64,7 @@ CAPABILITIES(/datum/access_viewer)
 	data["access_list"] = access_list
 	return data
 
-/// The computed part of /datum/access_viewer's window data (declared on its UI_DATA row).
+/// /datum/access_viewer's window data.
 /datum/access_viewer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	// Check if the object still exists

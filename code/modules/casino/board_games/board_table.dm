@@ -57,7 +57,8 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
-DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
+CAPABILITIES(/datum/board_game)
+	op("invite_player", ui_act("invite_player"), asks(/datum/prompt/choice, fields = list("question" = "Invite a nearby player to the game.", "title" = "Invite Player", "choices" = computed(PROC_REF(invitable_players)), "timeout" = 0), step = "k83"), then(PROC_REF(ui_act_invite_player)))
 
 /datum/board_game/New(atom/holder)
 	. = ..()
@@ -66,20 +67,30 @@ DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
 /datum/board_game/tgui_host(mob/user)
 	return parent()
 
-UI_ACT(/datum/board_game, "invite_player", ui_act_invite_player)
-UI_ACT_PROC(/datum/board_game, ui_act_invite_player)
-	var/list/possible_mobs = ui.user.living_mobs_in_view(1, TRUE, TRUE)
-	for(var/obj/belly/our_belly in ui.user.vore_organs)
-		for(var/mob/living/prey in contents_of(our_belly))
-			if(prey.client)
-				possible_mobs += prey
-	var/mob/living/new_player = act_ask(ui.user, action, params, ui, "k83", /datum/om/prompt/choice, message = "Invite a nearby player to the game.", title = "Invite Player", choices = possible_mobs)
-	if(isnull(new_player))
-		return
-	if(!new_player)
+/datum/board_game/proc/ui_act_invite_player(datum/act/op/A)
+	var/mob/living/new_player = A.step_value("k83")
+	if(!istype(new_player))
 		return FALSE
 	tgui_interact(new_player)
 	return TRUE
+
+/// The players the inviter can see (or holds in a belly), offered by the invite question.
+/datum/board_game/proc/invitable_players(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/possible_mobs = user.living_mobs_in_view(1, TRUE, TRUE)
+	for(var/obj/belly/our_belly in user.vore_organs)
+		for(var/mob/living/prey in contents_of(our_belly))
+			if(prey.client)
+				possible_mobs += prey
+	return possible_mobs
+
+/// The game's sub-actions (a move and its data, sent inside "game_action"): each game routes its own; null for one it has not.
+/datum/board_game/proc/game_subaction(action, list/data, mob/user, extra)
+	return null
+
+/// The setup sub-actions (sent inside "setup_action"), routed the same way.
+/datum/board_game/proc/setup_subaction(action, list/data, mob/user, extra)
+	return null
 
 /// The table this game sits on (a relation view: null once it is deleted).
 /datum/board_game/proc/parent() as /atom
