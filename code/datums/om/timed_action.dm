@@ -102,7 +102,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 			progbar.animate_fill(duration)
 		if(!hidden && duration >= 1 SECONDS)
 			rel_set(src, nameof(cog), new /datum/cogbar(user, icon, iconstate))
-	OM_EMIT(user, /datum/om/event/do_after_began)
+	PUBLISH_LEGACY(user, /datum/notice/do_after_began)
 
 /// A repeating timed action (steps) shows a fresh bar for each step.
 /datum/om/task/timed/on_rescheduled(delay)
@@ -190,7 +190,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 		else
 			LAZYREMOVE(user.do_afters, interaction_key)
 	if(captured)
-		OM_EMIT(user, /datum/om/event/do_after_ended)
+		PUBLISH_LEGACY(user, /datum/notice/do_after_ended)
 
 // ---------------------------------------------------------------- om_task_timed: the zero-state shape
 
