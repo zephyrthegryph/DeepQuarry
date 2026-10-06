@@ -5694,7 +5694,7 @@
 #include "code\engine\present\outputs.dm"
 #include "code\engine\present\prompt_windows.dm"
 #include "code\engine\present\prompt_modals.dm"
-#include "code\engine\library\spaces.dm"
+#include "code\engine\parts\spaces.dm"
 #include "code\library\mob\hands.dm"
 #include "code\library\mob\statuses.dm"
 #include "code\library\mob\silicon.dm"
