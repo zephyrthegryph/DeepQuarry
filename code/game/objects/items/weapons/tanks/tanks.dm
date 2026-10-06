@@ -59,6 +59,8 @@ CAPABILITIES(/obj/item/tank)
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("tank_item", item(/obj/item), label("Tank item"), then(PROC_REF(tank_item)))
 
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
@@ -152,7 +154,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
 /// Old attackby (its ..() ran first; the base item handling now follows the pass).
-/obj/item/tank/proc/tank_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/tank/proc/tank_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(src.loc, /obj/item/assembly))
 		icon = src.loc
 
@@ -174,7 +178,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 			om_task_start(/datum/om/task/timed/tank_attackby, user, src, receiver = src, W = W)
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /datum/om/task/timed/tank_attackby
 	duration = 5 SECONDS
@@ -278,13 +282,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 			update_integrity(max_integrity)
 		heat_add(src.air_contents, rand(2000,50000), HEAT_SOURCE_OTHER)
 
-DECLARE_INTERACTIONS(/obj/item/tank, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(tank_item)), \
-)
-
 /// Old attack_self.
-/obj/item/tank/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if (!(src.air_contents))
 		return TRUE
