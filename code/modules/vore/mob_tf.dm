@@ -117,7 +117,7 @@
 		rel_set(ourmob, nameof(ourmob.tf_form), src)
 		src.forceMove(ourmob)
 	else
-		spent(src)
+		replaced_by(src)
 
 /datum/om/stage/life/tf_holder
 	reads = list("tf_mob_holder")

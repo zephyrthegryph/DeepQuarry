@@ -789,7 +789,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		AM.forceMove(T)
 	//..() //*cough
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
-	destroyed(src) //Parent above should do this, but that's not a thing as of writing this.
+	destroyed(src, null, "deconstructed") //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them

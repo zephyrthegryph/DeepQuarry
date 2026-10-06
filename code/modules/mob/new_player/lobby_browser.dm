@@ -16,19 +16,22 @@
 
 	tgui_interact(src)
 
-DECLARE_UI(/mob/new_player, "LobbyMenu", UI_PINNED, UI_PREINITIALIZED)
-
 /// Renders in the lobby browser element (initialized when the lobby opens).
 /mob/new_player/ui_window(mob/user)
 	return lobby_window
-
-DECLARE_UI_STATE(/mob/new_player, GLOB.tgui_always_state)
 
 /mob/new_player/ui_assets(mob/user)
 	. = ..()
 	. += get_asset_datum(/datum/asset/simple/lobby_files)
 
-UI_DATA(/mob/new_player, "ready:num", "merge:ui_data_mob_new_player{server_name:text,map:unknown,station_time:text,display_loading:bool,round_start:bool,round_time:text,new_news:unknown,can_submit_feedback:unknown,show_station_news:unknown,new_station_news:bool,new_changelog:bool,can_start_now:bool,immediate_start:bool}")
+/mob/new_player/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["ready"] = ready
+	var/list/merged_1 = ui_data_mob_new_player(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /mob/new_player's window data (declared on its UI_DATA row).
 /mob/new_player/proc/ui_data_mob_new_player(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -62,13 +65,11 @@ UI_DATA(/mob/new_player, "ready:num", "merge:ui_data_mob_new_player{server_name:
 
 	return data
 
-UI_ACT(/mob/new_player, "character_setup", ui_act_character_setup)
-UI_ACT_PROC(/mob/new_player, ui_act_character_setup)
+/mob/new_player/proc/ui_act_character_setup(datum/act/op/A)
 	client.prefs.ShowChoices(src)
 	return TRUE
 
-UI_ACT(/mob/new_player, "ready", ui_act_ready)
-UI_ACT_PROC(/mob/new_player, ui_act_ready)
+/mob/new_player/proc/ui_act_ready(datum/act/op/A)
 	if(!ready && client?.login_hold_refuses()) // the login gate is still checking them
 		return TRUE
 	if(!SSticker || SSticker.current_state <= GAME_STATE_PREGAME)
@@ -77,13 +78,12 @@ UI_ACT_PROC(/mob/new_player, ui_act_ready)
 		ready = 0
 	return TRUE
 
-UI_ACT(/mob/new_player, "manifest", ui_act_manifest)
-UI_ACT_PROC(/mob/new_player, ui_act_manifest)
+/mob/new_player/proc/ui_act_manifest(datum/act/op/A)
 	ViewManifest()
 	return TRUE
 
-UI_ACT(/mob/new_player, "late_join", ui_act_late_join)
-UI_ACT_PROC(/mob/new_player, ui_act_late_join)
+/mob/new_player/proc/ui_act_late_join(datum/act/op/A)
+	var/mob/user = A.actor
 	if(client?.login_hold_refuses())
 		return TRUE
 	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
@@ -99,8 +99,7 @@ UI_ACT_PROC(/mob/new_player, ui_act_late_join)
 	LateChoices()
 	return TRUE
 
-UI_ACT(/mob/new_player, "observe", ui_act_observe)
-UI_ACT_PROC(/mob/new_player, ui_act_observe)
+/mob/new_player/proc/ui_act_observe(datum/act/op/A)
 	if(QDELETED(src))
 		return FALSE
 	if(client?.login_hold_refuses())
@@ -108,11 +107,11 @@ UI_ACT_PROC(/mob/new_player, ui_act_observe)
 	if(!SSticker || SSticker.current_state == GAME_STATE_STARTUP)
 		to_chat(src, span_warning("The game is still setting up, please try again later."))
 		return TRUE
-	open_request(src, /datum/prompt/choice/lobby_observe, PROC_REF(observe_confirmed), answerer = src, title = "Observe Round?", question = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.")
-	return TRUE
+	if(A.step_value("observe") != "Yes")
+		return TRUE
+	return observe_apply()
 
-UI_ACT(/mob/new_player, "give_feedback", ui_act_give_feedback)
-UI_ACT_PROC(/mob/new_player, ui_act_give_feedback)
+/mob/new_player/proc/ui_act_give_feedback(datum/act/op/A)
 	if(!SSsqlite.can_submit_feedback(persistent_client.client()))
 		return
 
@@ -122,25 +121,23 @@ UI_ACT_PROC(/mob/new_player, ui_act_give_feedback)
 		rel_set(client, nameof(/client::feedback_form), new /datum/managed_browser/feedback_form(client)) // the client owns its form
 	return TRUE
 
-UI_ACT(/mob/new_player, "open_station_news", ui_act_open_station_news)
-UI_ACT_PROC(/mob/new_player, ui_act_open_station_news)
+/mob/new_player/proc/ui_act_open_station_news(datum/act/op/A)
 	show_latest_news(GLOB.news_data.station_newspaper())
 	return TRUE
 
-UI_ACT(/mob/new_player, "open_changelog", ui_act_open_changelog)
-UI_ACT_PROC(/mob/new_player, ui_act_open_changelog)
+/mob/new_player/proc/ui_act_open_changelog(datum/act/op/A)
 	write_preference_directly(/datum/preference/text/lastchangelog, GLOB.changelog_hash)
 	client.changes()
 	return TRUE
 
-UI_ACT(/mob/new_player, "keyboard", ui_act_keyboard)
-UI_ACT_PROC(/mob/new_player, ui_act_keyboard)
-	playsound_local(ui.user, get_sfx(SFX_KEYBOARD), vol = 20)
+/mob/new_player/proc/ui_act_keyboard(datum/act/op/A)
+	var/mob/user = A.actor
+	playsound_local(user, get_sfx(SFX_KEYBOARD), vol = 20)
 	return TRUE
 
-UI_ACT(/mob/new_player, "start_immediately", ui_act_start_immediately)
-UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
-	if(!ui.user.client.is_localhost() || !check_rights_for(ui.user.client, R_SERVER))
+/mob/new_player/proc/ui_act_start_immediately(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user.client.is_localhost() || !check_rights_for(user.client, R_SERVER))
 		return FALSE
 
 	SSticker.start_immediately = TRUE
@@ -152,10 +149,10 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 	buttons = TRUE
 	timeout = 0
 
-/mob/new_player/proc/observe_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.value != "Yes")
-		return
-	return observe_apply()
+/// The observe question opens once the round is set up (the handler says why not otherwise).
+/mob/new_player/proc/round_observable(datum/act/op/A)
+	var/datum/system/ticker/service = SSticker
+	return service && service.current_state != GAME_STATE_STARTUP
 
 /mob/new_player/proc/observe_apply()
 	if(!spawning)
@@ -194,8 +191,8 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 
 		observer.set_respawn_timer(time_till_respawn()) // Will keep their existing time if any, or return 0 and pass 0 into set_respawn_timer which will use the defaults
 		observer.client.init_verbs()
-		consumed(mind, src) // mind is a relation view: the framework clears it as the mind dies
-		spent(src)
+		ended_with(mind, src) // mind is a relation view: the framework clears it as the mind dies
+		replaced_by(src)
 
 		// pAI notify if we have be pAI invite on
 		SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round

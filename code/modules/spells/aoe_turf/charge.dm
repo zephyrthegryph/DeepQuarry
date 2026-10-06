@@ -48,7 +48,7 @@
 		var/obj/item/spellbook/oneuse/I = target
 		if(prob(50))
 			I.visible_message(span_warning("[I] catches fire!"))
-			spent(I)
+			destroyed(I, null, BURN)
 		else
 			I.used = 0
 			charged_item = I

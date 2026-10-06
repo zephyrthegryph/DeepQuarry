@@ -101,5 +101,5 @@ DAMAGE_REACTION(/obj/item/stack/material/supermatter, DAMAGE_EXPLOSION, PROC_REF
 			strength = amount * 10
 			)
 		explosion(get_turf(src),round(amount / 12) , round(amount / 6), round(amount / 3), round(amount / 25))
-		destroyed(src)
+		destroyed(src, null, "explosion")
 		return DAMAGE_REACTION_BLOCK

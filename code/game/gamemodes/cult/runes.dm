@@ -1164,7 +1164,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 					to_chat(M, span_danger("Blood suddenly ignites, burning you!"))
 					var/turf/T = get_turf(B)
 					T.hotspot_expose(700,125)
-					destroyed(B)
+					destroyed(B, null, BURN)
 		consume(src)
 
 //////////             Rune 24 (counting burningblood, which kinda doesnt work yet.)

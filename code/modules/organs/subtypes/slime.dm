@@ -68,7 +68,7 @@
 	dead_icon = null
 	standard_pulse_level = PULSE_NONE
 
-/obj/item/organ/internal/heart/grey/colormatch/slime/periodic_step()
+/obj/item/organ/internal/heart/grey/colormatch/slime/organ_tick(cycles)
 	..()
 	if(!(QDELETED(src)) && !owner)
 		visible_message(span_infoplain(span_bold("\The [src]") + " splatters!"))
@@ -114,7 +114,7 @@
 
 	strain = CLAMP(strain + amount, 0, min_broken_damage)
 
-/obj/item/organ/internal/regennetwork/periodic_step()
+/obj/item/organ/internal/regennetwork/organ_tick(cycles)
 	..()
 
 	if(!(QDELETED(src)) && !owner)

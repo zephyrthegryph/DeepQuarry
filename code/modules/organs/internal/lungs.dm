@@ -5,7 +5,7 @@
 	organ_tag = O_LUNGS
 	parent_organ = BP_TORSO
 
-/obj/item/organ/internal/lungs/periodic_step()
+/obj/item/organ/internal/lungs/organ_tick(cycles)
 	..()
 
 	if(!owner)
@@ -43,7 +43,7 @@
 			owner.custom_pain("You feel a stabbing pain in your [parent.name]!", 50)
 	damage_to_at_least(min_bruised_damage, /datum/affliction/lesion/perforation) // a ruptured lung is a perforated one
 
-/obj/item/organ/internal/lungs/handle_germ_effects()
+/obj/item/organ/internal/lungs/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!. || !owner) return
 

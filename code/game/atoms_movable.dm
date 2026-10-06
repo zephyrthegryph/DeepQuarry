@@ -152,7 +152,7 @@
 	// (moveToNullspace), which makes DM's for-in skip members — skipped ones
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
-		destroyed(AM)
+		ended_with(AM, src)
 	own_clear(src, nameof(ledger), OWN_DELETE)
 
 	moveToNullspace()

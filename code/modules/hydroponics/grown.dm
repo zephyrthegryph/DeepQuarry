@@ -164,7 +164,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 			M.status_at_least(EFFECT_STUNNED, 8)
 			M.status_at_least(EFFECT_WEAKENED, 5)
 			seed().thrown_at(src,M)
-			destroyed(src, M)
+			destroyed(src, M, BRUTE)
 			return
 
 /obj/item/reagent_containers/food/snacks/grown/throw_impact(atom/hit_atom)

@@ -61,7 +61,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	if(mind)
 		src.mind.transfer_to(L)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
-	spent(src)
+	replaced_by(src, L)
 
 /mob/living/simple_mob/vore/spacecritter/proc/duplicate()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% splits into two!")))

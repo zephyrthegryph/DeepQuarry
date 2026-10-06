@@ -41,7 +41,12 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	return every(BODY_CLOCK_STEP, then(TYPE_PROC_REF(/mob/living/carbon/human, body_clock_step)), when = active)
 
 /mob/living/carbon/human/proc/body_clock_step(datum/act/timer/A)
-	body_clock_advance(A.dt)
+	body_clock_advance(body_clock_span(A.dt))
+
+/// The span a clock step integrates: the time since its last run, but never more than one step. A clock that was parked
+/// (nothing healing or bleeding) and starts again must not integrate the idle time it slept through.
+/proc/body_clock_span(dt)
+	return clamp(dt, 0, BODY_CLOCK_STEP)
 
 /// Advances the wounds and the blood by `dt` deciseconds of body time.
 /mob/living/carbon/human/proc/body_clock_advance(dt)
@@ -270,3 +275,44 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(bleeding <= 0)
 		return INFINITY
 	return 30.01 / species.bloodloss_rate / bleeding
+
+// --- Organs (slice 3) ------------------------------------------------------------------------
+// Each organ's work is organ_tick(cycles), scaled by the body time that passed: the liver straining under toxin load,
+// withdrawal, a parasite growing, a tumour's effects. The clock runs while some organ has work (life_step_idle() is
+// FALSE) or a limb carries germs or chemical traces; the body raises it when its organs, factors or chemicals change.
+// What an organ *does for* the body is read where it is used: the heart's condition is the physiology's pump, the
+// lungs' its gas exchange (physiology.dm); the kidneys clear toxin at a rate (kidney_clearance()).
+
+/// TRUE while an organ has work on the body clock: the body holds it.
+STAT(/mob/living/carbon/human, organs_active, ANY)
+
+/// The organ clock's entries, for the human's CAPABILITIES block: `active` is STAT_ORGANS_ACTIVE.
+/proc/organ_clock(active)
+	return every(LIFE_CYCLE, then(TYPE_PROC_REF(/mob/living/carbon/human, organs_step)), when = active)
+
+/mob/living/carbon/human/proc/organs_step(datum/act/timer/A)
+	organs_advance(body_clock_span(A.dt) / LIFE_CYCLE)
+
+/// Runs every organ's work for `cycles` Life cycles of body time (also a CPR cycle's extra circulation).
+/mob/living/carbon/human/proc/organs_advance(cycles)
+	if(cycles > 0 && is_alive())
+		for(var/obj/item/organ/I as anything in internal_organ_list())
+			I.organ_tick(cycles)
+		for(var/obj/item/organ/external/E as anything in organs)
+			if(E.germ_level || LAZYLEN(E.trace_chemicals))
+				E.organ_tick(cycles)
+	organs_refresh()
+
+/mob/living/carbon/human/proc/organs_refresh()
+	if(QDELETED(src))
+		return
+	body_hold_flag(STAT_ORGANS_ACTIVE, is_alive() && organs_have_work())
+
+/mob/living/carbon/human/proc/organs_have_work()
+	for(var/obj/item/organ/E as anything in organs)
+		if(E.germ_level || LAZYLEN(E.trace_chemicals))
+			return TRUE
+	for(var/obj/item/organ/I as anything in internal_organ_list())
+		if(!I.life_step_idle())
+			return TRUE
+	return FALSE

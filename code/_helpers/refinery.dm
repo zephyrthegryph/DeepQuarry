@@ -41,7 +41,7 @@
 				var/list/ore_components = GLOB.ore_reagents[D.type]
 				if(remaining_volume >= REAGENTS_PER_ORE)
 					holdingitems -= D
-					spent(D)
+					consumed(D, R.my_atom)
 					if(islist(ore_components))
 						var/amount_to_take = (REAGENTS_PER_ORE/(ore_components.len))
 						for(var/i in ore_components)
@@ -54,14 +54,14 @@
 			O.reagents.trans_to_obj(R.my_atom, min(O.reagents.total_volume, remaining_volume))
 			if(O.reagents.total_volume == 0)
 				holdingitems -= O
-				spent(O)
+				consumed(O, R.my_atom)
 			if (R.total_volume >= R.maximum_volume)
 				break
 
 		else
 			// Cronch
 			holdingitems -= O
-			spent(O)
+			consumed(O, R.my_atom)
 
 	return (R.total_volume > start_volume)
 
@@ -77,7 +77,7 @@
 			strength = 15 + (regrets * 4),
 		)
 		explosion(get_turf(our_atom), round(regrets / 12) , round(regrets / 6), round(regrets / 3), round(regrets / 25))
-		spent(our_atom)
+		destroyed(our_atom, null, "explosion")
 		return
 
 	else // If you added supermatter but didn't try grinding it, or somehow this is negative.

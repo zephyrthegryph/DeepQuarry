@@ -1451,6 +1451,9 @@ focused tests of the touched windows (the tests that called a handler with its o
   op (the event manager's from the old `act_ask()` calls). The library upload confirmation is asked even with nothing scanned (the
   handler then does nothing); a feedback submission that is empty or too long is not confirmed (the handler says why). A guard in a
   handler that stood above its question now runs after the answer.
+* **interface() takes the legacy window options**: `window_var = nameof(x)` (a window named by a var each subtype sets: the appliances,
+  the inventory panel, a rig, the entity narrator), `autoupdate`, `pinned` (the lobby, the tooltip, the media player) and
+  `preinitialized`. `ui_types` leaves a var-named window untyped.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
@@ -1637,6 +1640,8 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   examine line while the panel is open; installing the super I/O coil is a 30 s op.
 - Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
   the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
+- Mecha UI: the window helpers' tgui parameters are renamed so the body's `state` reads the mech's maintenance state again (before this, the parameter shadowed it).
+- Lobby "Observe": the confirmation is now an `asks()` step on the observe op and opens only once the round has finished setting up. The handler still checks login holds and the round state when the answer comes back.
 - **Emags on items are the emag library** (`emag(then(PROC_REF(on_emag)), repeatable =, powered = FALSE)`): a sequencer that
   works now also says the library's "You subvert X with Y" line, and pays one use (the legacy handlers' counts were 0 or 1).
   A handler that did nothing declines: the card goes on to its other uses. The defib kit works its paddles' emag by key.
@@ -1669,6 +1674,9 @@ The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle 
 * **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
   override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
   the previous `usr` even when the callback throws (the hand-written swaps left it set).
+- Laptop vendor: the legacy handlers' tgui `state` parameter shadowed the vendor's order state, so "pick device" always refused and the hardware buttons were open in every state. The handlers now read the vendor's own order state.
+- Ticket windows: the data helpers no longer shadow the ticket's `state` (the panel shows open/resolved/closed again). "New ticket" asks its questions (ckey, text, level, and duplicate only when the player already has a ticket) as `asks()` steps before the handler runs, so an offline ckey is reported after all the answers instead of after the first. "List tickets" is an `asks()` step.
+- Circuit export window: its data reads the assembly's data through `tgui_data(user)`.
 ## The gas turbine and its motor (rewrite/pipenet-full)
 
 Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
@@ -1710,6 +1718,64 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
   handled and goes on, as before.
+- `interface(pressed = PROC_REF(x))`: a holder reacts to every button pressed in its window, its own ops' and the forwarded ones. The PDA's click, fingerprint and clown honk use it; before this they ran in its `ui_act_allowed()`.
+- PDA power app: forwards to its power monitor through `interface(null, forwards = nameof(power_monitor))`.
+- PDA status display, notekeeper, contracts; borg hypo recipe save; wiki donation; secrets menu: their questions are `asks()` steps. The status lines, the red-contract opt-in, the vetting question, the recipe-overwrite question and the shuttle-jump transition questions open only when they apply (`when =`). The wiki pin question now opens for any human's donation while the terminal works, and the handler uses the pin only for a card that needs one. The secrets menu's questions are now asked of the pressing admin's mob instead of their client.
+- Spellbook: `choose_spell()` no longer takes the unused params/window.
+- Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
+- Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
+
+## Ending causes audited (rewrite/lifecycle-forms-2)
+
+- The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
+  list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
+  before. The reviewed state is `tools/ci/ending_causes_snapshot.txt` (`ending_sites.py --update/--check`).
+- Three verbs join spent/consumed/destroyed/dissolved: `lapsed(thing, by)` (END_EXPIRED now: a status effect's duration, a capped history,
+  an animation or flash), `replaced_by(thing, successor)` (END_REPLACED for a transformation whose successor the caller already made: mob
+  transforms, evolutions, soulstone constructs, organ and limb swaps, a turf change) and `ended_with(thing, owner)` (END_OWNER for an
+  owner's teardown: `on_destroy()` loops, a container's leftovers, windows and huds whose host is gone).
+- Digestion, stomach acid, cleaning reagents and acid melting are `dissolved`; eating, feeding, grinding, recipes and machines that take an
+  item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
+  `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
+  they are `spent` (a discarded temporary) or `replaced_by`.
+
+## Atmospherics looks (rewrite/pipenet-full)
+
+- Every `APPEARANCE_TEMPLATE`, `DECLARE_APPEARANCE` and `DECLARE_APPEARANCE_PROC` in the pipe network and its devices is a `draw(look)` with
+  `drawn_from()` reads: valves (`open` is tracked), three-way and shutoff valves, trinary and omni filters and mixers, the heater and freezer,
+  the heat exchanger, the injector, the pumps (the overclock overlay drawn from its icon), the regulator (`flowing` is tracked), the algae farm,
+  the tanks (a `tank_state` per gas), simple, manifold, four-way and universal pipes and the pipe vent. The looks read `operable()` / the NOPOWER
+  bit where they read the area's `powered()`.
+- A look has no underlays: manifolds and universal adapters build their pipe stubs in `update_underlays()` (also when a floor tile over them
+  changes, through `hide()`), and the omni devices set theirs when their port icons change. No appearance proc writes `icon_state`, `dir` or
+  `underlays` as a side effect any more.
+## Body migration, slice 3: internal organs on the organ clock (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`liver_toxin_overload`, `kidneys_clear_toxin`, `healthy_organs_idle`; green on the old code first).
+Every organ's `periodic_step()` is `organ_tick(cycles)`, run by one `every(LIFE_CYCLE)` per human gated by `STAT_ORGANS_ACTIVE` (held while an
+organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURACY` are gone. Loose organs keep one cycle per periodic step.
+
+* **Burst work became per-cycle rates with the same mean.** The liver's every-tenth-cycle strain (x10) runs every cycle (x1); the spleen's
+  every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
+  horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
+  (`ORGAN_LEGACY_BURST`).
+* **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
+  falls to below 8 within thirty cycles (old run 8 -> 6.6).
+* "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
+
+## Body migration, slice 4: germs as rates; pain messages on the body (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`antibiotics_clear_germs`, `necrosis_kills_limb`, `hurt_limb_pain`; green on the old code first).
+Germ procs take `cycles` (`handle_germ_effects`, `handle_antibiotics`, `handle_rejection`, `update_germs`, `handle_germ_sync`); the Life `pain` stage
+is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while the body carries afflictions).
+
+* **Germ growth is exponential by rate**: germ_level / 600 a cycle above half of level one without antibiotics (was prob(germ_level / 6) of +1,
+  the same mean); level-three growth 7.5 a cycle (was rand(5, 10)); antibiotic clearance and every spread step scale by the elapsed cycles.
+* **Transplant rejection** grows `rejecting` by elapsed cycles and spreads its every-tenth-cycle germ and toxin bursts over each cycle at the same mean.
+* **Chemical traces** on limbs fade 0.1 a cycle (was 1 every tenth Life tick).
+* **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
+  first-step overshoot found while pinning).
+* `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
 - **Silicon uses are `remote()` ops** (`INTERACT_SILICON`; `INTERACT_ROBOT` adds `when(req(/mob/living/silicon/robot, of = ON_ACTOR))`).
   The curtain, the simple doors and the mirror: a cyborg beside it uses it (`needs(req_adjacent())`); the AI is not offered what it could
   not do. The fire axe cabinet asks the actor's kind in its ops' `when()`, not in its handlers. The resin door replaces the base door's

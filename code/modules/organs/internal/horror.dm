@@ -9,12 +9,12 @@
 	. = ..()
 	adjust_scale(1.5,1.5)
 
-/obj/item/organ/internal/appendix/horror/periodic_step()
+/obj/item/organ/internal/appendix/horror/organ_tick(cycles)
 	..()
 	if(!owner) return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	if(owner.life_tick % 60 == 0 && prob(10))
+	if(prob((10) * cycles / 60))
 		to_chat(owner, span_cult("You hear a whispering coming from your torso... " + pick("'You should come back'", "'Come back'", "'We're so empty without you'", "'You could stay forever'", "'Become one with us'")))
 
 /obj/item/organ/internal/eyes/horror
@@ -26,7 +26,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/eyes/horror/periodic_step()
+/obj/item/organ/internal/eyes/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
@@ -35,7 +35,7 @@
 	//Get our spooky vision
 	if(!owner.has_body_effect(/datum/body_effect/redsight))
 		owner.apply_body_effect(/datum/body_effect/redsight)
-	if(owner.life_tick % 60 == 0 && prob(5))
+	if(prob((5) * cycles / 60))
 		owner.drip(1)
 		to_chat(owner, span_cult("Your eyes tear up and blood drips down your face."))
 		owner.automatic_custom_emote(VISIBLE_MESSAGE, "blinks, a drop of blood trailing from their eye!", check_stat = FALSE)
@@ -49,16 +49,15 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/heart/horror/periodic_step()
+/obj/item/organ/internal/heart/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	if(owner.life_tick % 20 == 0 && prob(5))
+	if(prob((5) * cycles / 20))
 		owner.reagents.add_reagent(REAGENT_ID_NUMBENZYME, 0.2) //Lasts for 20 ticks. Their health hud will randomly go '?'
-	if(owner.life_tick % 60 == 0)
-		owner.reagents.add_reagent(REAGENT_ID_SPACEACILLIN, 1) //Keeping its host alive. 1u = 20 ticks
+	owner.reagents.add_reagent(REAGENT_ID_SPACEACILLIN, cycles / 60) //Keeping its host alive: 1u every 60 cycles
 
 /obj/item/organ/internal/intestine/horror
 	name = "mass"
@@ -73,7 +72,7 @@
 	/// The vent we're escaping into: a relation view, null once it is deleted.
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 
-/obj/item/organ/internal/intestine/horror/periodic_step()
+/obj/item/organ/internal/intestine/horror/organ_tick(cycles)
 	..()
 	if(!owner && !escaping) return
 	if(is_bruised()) //They heal theirselves.
@@ -112,7 +111,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/kidneys/horror/periodic_step()
+/obj/item/organ/internal/kidneys/horror/organ_tick(cycles)
 	..()
 	if(!owner) return
 	if(is_bruised()) //They heal theirselves.
@@ -132,7 +131,7 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/liver/horror/periodic_step()
+/obj/item/organ/internal/liver/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
@@ -153,13 +152,13 @@
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
-/obj/item/organ/internal/lungs/horror/periodic_step()
+/obj/item/organ/internal/lungs/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	if(owner.life_tick % 60 == 0 && prob(10))
+	if(prob((10) * cycles / 60))
 		to_chat(owner, span_cult("You feel something quivering in your chest, making breathing impossible!"))
 		owner.AdjustLosebreath(10)
 		owner.automatic_custom_emote(VISIBLE_MESSAGE, "gasps for air!", check_stat = TRUE)
@@ -173,7 +172,7 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 	spleen_efficiency = 5
 
-/obj/item/organ/internal/spleen/horror/periodic_step()
+/obj/item/organ/internal/spleen/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
@@ -191,13 +190,13 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 	var/spider_chance = 10 //for admemes
 
-/obj/item/organ/internal/stomach/horror/periodic_step()
+/obj/item/organ/internal/stomach/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	if(owner.life_tick % 60 == 0 && prob(spider_chance))
+	if(prob((spider_chance) * cycles / 60))
 		var/turf/T = get_turf(owner)
 		if(T)
 			to_chat(owner, span_cult("You feel something quivering in your chest!"))
@@ -231,13 +230,13 @@
 	target.add_language(LANGUAGE_REDSPACE)
 	target.default_language = redspace
 
-/obj/item/organ/internal/voicebox/horror/periodic_step()
+/obj/item/organ/internal/voicebox/horror/organ_tick(cycles)
 	..()
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	if(owner.life_tick % 10 == 0 && prob(speak_chance))
+	if(prob((speak_chance) * cycles / 10))
 		if(prob(5)) //1/20 on a 1/4 chance. 1/80 chance every 10 ticks.
 			owner.say(pick("; Accept our gift.", "; Become one with us.", "; Join our embrace.", "; Come to us.", "; We welcome all that can hear.", "; You can be just like us."))
 

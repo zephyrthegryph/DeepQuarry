@@ -900,7 +900,6 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 		if(prob(selection.w_class * 5) && (!affected.is_robotic())) //I'M SO ANEMIC I COULD JUST -DIE-.
 			affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
 			affected.update_damages()
-			H.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			H.custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
 
 		if (ishuman(U))
@@ -1493,7 +1492,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		return
 	to_chat(user, "Removed [rem_organ] from [M].")
 	rem_organ.removed()
-	consumed(rem_organ, src)
+	spent(rem_organ, src)
 
 /// A VV AI brain setup: captured scalar answers advance only after each live admin re-check.
 /mob/proc/vv_ai_faction_chosen(datum/act/request/A)

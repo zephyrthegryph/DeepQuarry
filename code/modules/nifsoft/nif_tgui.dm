@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/nif)
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/act/notice/A)
 	EVENT_HANDLER
-	spent(src)
+	ended_with(src)
 
 /datum/nif_menu/proc/on_client_login(datum/act/notice/A)
 	EVENT_HANDLER

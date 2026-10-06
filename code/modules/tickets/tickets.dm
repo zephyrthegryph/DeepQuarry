@@ -32,9 +32,11 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/list/closed_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 	var/list/resolved_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 
-	var/obj/effect/statclick/ticket_list/astatclick = new(null, null, AHELP_ACTIVE)
-	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
-	var/obj/effect/statclick/ticket_list/rstatclick = new(null, null, AHELP_RESOLVED)
+	// The stat-panel buttons, made on the first stat_entry(): a statclick takes its state as a param(), which the lifecycle forms cannot apply
+	// while the globals (this singleton among them) are still being made.
+	var/obj/effect/statclick/ticket_list/astatclick
+	var/obj/effect/statclick/ticket_list/cstatclick
+	var/obj/effect/statclick/ticket_list/rstatclick
 
 //private
 /// Adopts `new_ticket` (unowned, or owned by another of our lists) into the list for its
@@ -95,6 +97,10 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 /datum/tickets/proc/stat_entry(client/target)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(!astatclick)
+		astatclick = new(null, null, AHELP_ACTIVE) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
+		cstatclick = new(null, null, AHELP_CLOSED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
+		rstatclick = new(null, null, AHELP_RESOLVED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
 	var/list/L = list()
 	var/num_adm_tickets_disconnected = 0
 	var/num_men_tickets_disconnected = 0
@@ -243,6 +249,11 @@ CAPABILITIES(/obj/effect/statclick/ticket_list)
 
 CAPABILITIES(/datum/ticket)
 	owns_one(nameof(statclick), /obj/effect/statclick/ticket)
+	interface("Ticket", state = nameof(GLOB.tgui_mentor_state))
+	op("retitle", ui_act("retitle"), then(PROC_REF(ui_act_retitle)))
+	op("reopen", ui_act("reopen"), then(PROC_REF(ui_act_reopen)))
+	op("legacy", ui_act("legacy"), then(PROC_REF(ui_act_legacy)))
+	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096)), arg("ticket_ref", schema_ref(/datum/ticket))), then(PROC_REF(ui_act_send_msg)))
 
 /**
  * public

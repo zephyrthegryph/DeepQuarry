@@ -164,6 +164,14 @@ def plan_override(proc):
             return None, "multiline"
         s.code = f.lines[s.first].lstrip()[: len(s.code)]
     plan = Plan(proc)
+    whole = block_roll(f, proc, rest)
+    if whole:
+        var, body = whole
+        plan.procs.append(("roll_%s" % var, body))
+        plan.entries.append("rolls(nameof(%s), PROC_REF(roll_%s))" % (var, var))
+        if [p for p in params[1:] if p != "..."]:
+            return None, "ctor_arg_used"
+        return plan, None
     pixel = {}
     i = 0
     rolled = []
@@ -314,6 +322,49 @@ def plan_override(proc):
     if not plan.entries:
         return None, "nothing"
     return plan, None
+
+
+def block_roll(f, proc, rest):
+    """(var, roll proc body) when every statement is a random branch (if/else if/else on prob/rand/pick) or a write of one var (=, +=, -=)
+    from a safe expression: the whole body becomes that var's roll, drawing through R. None otherwise."""
+    target = None
+    has_random = False
+    lines = []
+    for s in rest:
+        code = s.code
+        tail = None
+        c = cond_split(code)
+        if c:
+            if not safe_expr(c[1]) or not RANDOM.search(c[1]):
+                return None
+            has_random = True
+            tail = c[2]
+            head = "%s(%s)" % (c[0], to_roller(c[1]))
+        elif code == "else" or code.startswith("else "):
+            tail = code[4:].strip()
+            head = "else"
+        else:
+            head = None
+            tail = code
+        if tail:
+            m = re.match(r"^(?:src\.)?([a-z_]\w*)\s*(\+=|-=|=)\s*(?!=)(.+)$", tail)
+            if not m or not safe_expr(m.group(3)) or m.group(1) in SKIP_VARS:
+                return None
+            if target and m.group(1) != target:
+                return None
+            target = m.group(1)
+            if RANDOM.search(m.group(3)):
+                has_random = True
+            if re.search(r"(?<![\w.])%s(?!\w)" % re.escape(target), m.group(3)):
+                return None
+            write = ". %s %s" % (m.group(2), to_roller(m.group(3)))
+            text = (head + " " + write) if head else write
+        else:
+            text = head
+        lines.append("\t" * int(s.indent) + text)
+    if not target or not has_random:
+        return None
+    return target, ["\t. = islist(%s) ? list() + %s : %s" % (target, target, target)] + lines
 
 
 def stored_target(code, a):
