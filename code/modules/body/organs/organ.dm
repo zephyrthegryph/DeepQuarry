@@ -575,14 +575,14 @@ CAPABILITIES(/obj/item/organ)
 	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))
-	op("bite", in_hand(), stance(I_HELP), label("Bite"), when(PROC_REF(bite_offered)), then(PROC_REF(bite_op)))
-	op("butcher", item(/obj/item), label("Butcher"), priority(above("revive")), when(PROC_REF(butcher_offered)), begins(MSG(organ/butcher_begin)), wait(PROC_REF(butcher_wait)), on_interrupt(PROC_REF(butcher_failed)), then(PROC_REF(butcher_op_done)))
-	op("revive", item(/obj/item/reagent_containers), label("Revive"), when(PROC_REF(revive_offered)), then(PROC_REF(revive_op)))
+	op("bite", in_hand(), stance(I_HELP), label("Bite"), when(req(PROC_REF(bite_offered))), then(PROC_REF(bite_op)))
+	op("butcher", item(/obj/item), label("Butcher"), when(req(PROC_REF(butcher_offered))), begins(MSG(organ/butcher_begin)), wait(PROC_REF(butcher_wait)), on_interrupt(PROC_REF(butcher_failed)), then(PROC_REF(butcher_op_done)))
+	op("revive", item(/obj/item/reagent_containers), label("Revive"), then(PROC_REF(revive_op)))
 
 /// The organ can be bitten: flesh, and the eater aims at the mouth.
 /obj/item/organ/proc/bite_offered(datum/act/op/A)
 	var/mob/user = A.actor
-	return !is_robotic() && user?.zone_sel?.selecting == O_MOUTH
+	return !is_robotic() && user?.zone_sel?.selecting == O_MOUTH // ALLOW(reads): the eater's aim is read when the bite is tried, never from a cached menu
 
 /obj/item/organ/proc/bite_op(datum/act/op/A)
 	bitten(A.actor)
@@ -597,20 +597,17 @@ CAPABILITIES(/obj/item/organ)
 
 /obj/item/organ/proc/butcher_failed(datum/act/op/A)
 	var/mob/living/user = A.actor
-	to_chat(user, span_notice("You reconsider butchering 	he [src]..."))
+	to_chat(user, span_notice("You reconsider butchering \the [src]..."))
 	act_message(user, src, others = span_notice("%U% reconsiders butchering %T%!"))
 
 /obj/item/organ/proc/butcher_op_done(datum/act/op/A)
 	butcher_done(A.actor)
 
-/// Peridaxon (5 units) in the held container.
-/obj/item/organ/proc/revive_offered(datum/act/op/A)
-	var/obj/item/reagent_containers/container = A.held
-	return istype(container) && container.reagents?.has_reagent(REAGENT_ID_PERIDAXON, 5)
-
 /obj/item/organ/proc/revive_op(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/container = A.held
+	if(!container.reagents?.has_reagent(REAGENT_ID_PERIDAXON, 5))
+		return OP_DECLINE // five units of peridaxon or nothing: the click goes on as before
 	if(is_beyond_repair())
 		to_chat(user, span_warning("\The [src] is dead beyond any revival."))
 		return
@@ -622,10 +619,10 @@ CAPABILITIES(/obj/item/organ)
 		set_damage(damage - 1)
 	//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
 	container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
-	to_chat(user, "You use the [container] to revive 	he [src]")
+	to_chat(user, "You use the [container] to revive \the [src]")
 
 /obj/item/organ/proc/can_butcher(obj/item/O, mob/living/user)
-	if(butcherable && meat_type)
+	if(butcherable && meat_type) // ALLOW(reads): the organ's meat is read when the butchery is tried, never from a cached menu
 
 		if(istype(O, /obj/machinery/gibber))	// The great equalizer.
 			return TRUE

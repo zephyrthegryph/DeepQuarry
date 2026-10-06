@@ -194,24 +194,23 @@ CAPABILITIES(/obj/item/organ/external)
 	after_init(0, then(PROC_REF(icon_after_init)))
 	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)
-	op("pull_embedded", in_hand(), label("Pull out"), priority(above("bite")), when(PROC_REF(has_embedded)), then(PROC_REF(pull_embedded)))
-	op("bench_incise", item(/obj/item/surgical/scalpel), label("Cut open"), when(PROC_REF(at_stage_0)), then(PROC_REF(bench_incise)))
-	op("bench_retract", item(/obj/item/surgical/retractor), label("Crack open"), when(PROC_REF(at_stage_1)), then(PROC_REF(bench_retract)))
-	op("bench_cauterize", item(/obj/item/surgical/cautery), label("Close"), when(PROC_REF(at_stage_1)), then(PROC_REF(bench_cauterize)))
-	op("bench_extract", item(/obj/item/surgical/hemostat), label("Extract"), when(PROC_REF(at_stage_2)),
+	op("pull_embedded", in_hand(), label("Pull out"), priority(OP_PRIORITY_PART), when(req(PROC_REF(has_embedded))), then(PROC_REF(pull_embedded)))
+	op("bench_scalpel", item(/obj/item/surgical/scalpel), label("Cut"), when(req(PROC_REF(at_scalpel_stage))), then(PROC_REF(bench_scalpel)))
+	op("bench_retract", item(/obj/item/surgical/retractor), label("Crack open"), when(req(PROC_REF(at_stage_1))), then(PROC_REF(bench_retract)))
+	op("bench_cauterize", item(/obj/item/surgical/cautery), label("Close"), when(req(PROC_REF(at_stage_1))), then(PROC_REF(bench_cauterize)))
+	op("bench_extract", item(/obj/item/surgical/hemostat), label("Extract"), when(req(PROC_REF(at_stage_2))),
 		asks(/datum/prompt/choice, fields = list("question" = "What would you like to remove?", "title" = "Extraction", "choices" = computed(PROC_REF(extraction_names)), "timeout" = 20 SECONDS),
 			step = "extract", when = PROC_REF(has_contents)),
 		then(PROC_REF(bench_extract)))
-	op("bench_fixovein", item(/obj/item/surgical/FixOVein), label("Partially close"), when(PROC_REF(at_stage_2)), then(PROC_REF(bench_fixovein)))
-	op("bench_necrosis", item(/obj/item/surgical/scalpel), label("Cut necrotic tissue"), priority(above("bench_incise")), when(PROC_REF(at_stage_2)), then(PROC_REF(bench_necrosis)))
-	op("bench_rejuvenate", item(/obj/item/surgical/bioregen), label("Rejuvenate"), when(PROC_REF(at_stage_3)), then(PROC_REF(bench_rejuvenate)))
+	op("bench_fixovein", item(/obj/item/surgical/FixOVein), label("Partially close"), when(req(PROC_REF(at_stage_2))), then(PROC_REF(bench_fixovein)))
+	op("bench_rejuvenate", item(/obj/item/surgical/bioregen), label("Rejuvenate"), when(req(PROC_REF(at_stage_3))), then(PROC_REF(bench_rejuvenate)))
 	// A patch on a robotic limb takes a second with the tool in hand; the welder or the cable says what it patches (robo_repair()).
 	op("robo_repair", ai(), wait(1 SECOND, keeps = HELD | ALIVE | STAY), on_interrupt(PROC_REF(robo_repair_failed)), then(PROC_REF(robo_repair_done)))
 
 /// What can be pulled out of this limb and the limbs attached to it: anything but organs.
 /obj/item/organ/external/proc/embedded_objects()
 	. = list()
-	for(var/obj/item/organ/external/E in (contents + src))
+	for(var/obj/item/organ/external/E in (contents + src)) // ALLOW(reads): what is stuck in the limb is read when the limb is used, never from a cached menu
 		for(var/obj/item/I in contents_of(E))
 			if(istype(I,/obj/item/organ))
 				continue
@@ -231,14 +230,21 @@ CAPABILITIES(/obj/item/organ/external)
 		user.put_in_hands(I)
 	act_message(user, src, others = span_danger("%U% rips %I% out of %T%!"), item = I)
 
-/obj/item/organ/external/proc/at_stage_0(datum/act/op/A)
-	return stage == 0
+/// The scalpel cuts a closed limb open, or the necrotic tissue off a fully open one.
+/obj/item/organ/external/proc/at_scalpel_stage(datum/act/op/A)
+	return stage == 0 || stage == 2 // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
 /obj/item/organ/external/proc/at_stage_1(datum/act/op/A)
-	return stage == 1
+	return stage == 1 // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
 /obj/item/organ/external/proc/at_stage_2(datum/act/op/A)
-	return stage == 2
+	return stage == 2 // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
 /obj/item/organ/external/proc/at_stage_3(datum/act/op/A)
-	return stage == 3
+	return stage == 3 // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+
+/obj/item/organ/external/proc/bench_scalpel(datum/act/op/A)
+	if(stage == 2)
+		bench_necrosis(A)
+	else
+		bench_incise(A)
 
 /obj/item/organ/external/proc/bench_incise(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts %T% open with [A.held]!"))
@@ -253,7 +259,7 @@ CAPABILITIES(/obj/item/organ/external)
 	stage--
 
 /obj/item/organ/external/proc/has_contents(datum/act/op/A)
-	return LAZYLEN(contents) > 0
+	return LAZYLEN(contents) > 0 // ALLOW(reads): the extraction question is asked from what the limb holds when the hemostat goes in
 
 /// The things in the limb, by a name each (a repeated name gets its place in the list).
 /obj/item/organ/external/proc/extraction_choices()

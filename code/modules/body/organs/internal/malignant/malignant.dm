@@ -253,23 +253,19 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 
 // A knife cuts the mimetic potato into sticks; five lengths of cable make it a battery.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
-	op("cut", item(/obj/item/material/knife), label("Cut"), priority(above("butcher")), then(PROC_REF(potato_cut)))
-	op("wire", item(/obj/item/stack/cable_coil), label("Wire"), when(PROC_REF(enough_cable)), then(PROC_REF(potato_wired)))
+	op("cut", item(/obj/item/material/knife), label("Cut"), priority(OP_PRIORITY_PART), then(PROC_REF(potato_cut)))
+	op("wire", item(/obj/item/stack/cable_coil), label("Wire"), then(PROC_REF(potato_wired)))
 
 /obj/item/organ/internal/malignant/tumor/potato/proc/potato_cut(datum/act/op/A)
 	new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 	to_chat(A.actor, span_notice("You cut the mimetic potato."))
 	consume(src, A.actor)
 
-/obj/item/organ/internal/malignant/tumor/potato/proc/enough_cable(datum/act/op/A)
-	var/obj/item/stack/cable_coil/C = A.held
-	return istype(C) && C.get_amount() >= 5
-
 /obj/item/organ/internal/malignant/tumor/potato/proc/potato_wired(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/stack/cable_coil/C = A.held
 	if(!C.use(5))
-		return
+		return OP_DECLINE // five lengths or nothing: the click goes on as before
 	//TODO: generalize this.
 	to_chat(user, span_notice("You add some cable to the [src.name] and slide it inside the battery casing."))
 	var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
@@ -327,7 +323,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 
 // Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
-	op("pop", item(/obj/item), label("Pop"), priority(above("butcher")), when(PROC_REF(punctured_by)), then(PROC_REF(popped)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req(PROC_REF(punctured_by))), then(PROC_REF(popped)))
 
 /obj/item/organ/internal/malignant/tumor/pinata/proc/punctured_by(datum/act/op/A)
 	return can_puncture(A.held)
@@ -502,7 +498,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 
 // Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
-	op("pop", item(/obj/item), label("Pop"), priority(above("butcher")), when(PROC_REF(punctured_by)), then(PROC_REF(popped)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req(PROC_REF(punctured_by))), then(PROC_REF(popped)))
 
 /obj/item/organ/internal/malignant/tumor/moneyorgan/proc/punctured_by(datum/act/op/A)
 	return can_puncture(A.held)

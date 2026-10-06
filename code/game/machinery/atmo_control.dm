@@ -38,6 +38,7 @@
 	var/datum/radio_frequency/radio_connection
 
 APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
+TRACKED(/obj/machinery/air_sensor, output)
 
 /// What the sensor reports from `air_sample`, at the resolution it broadcasts.
 /obj/machinery/air_sensor/proc/sensor_readings(datum/gas_mixture/air_sample)
@@ -187,7 +188,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 			rel_set(M, nameof(M.connectable), src)
 			to_chat(user, span_notice("You save [src] into [M]'s buffer."))
 		return
-	output ^= choice
+	set_output(output ^ choice)
 	broadcast_readings()
 
 
@@ -243,7 +244,12 @@ CAPABILITIES(/obj/machinery/computer/general_air_control)
 
 /// The multitool menu of a console (a console with ports adds Inlet and Outlet).
 /obj/machinery/computer/general_air_control/proc/control_options(datum/act/op/A)
-	return list("Sensors", "Frequency", "Cancel")
+	return TYPE_TABLE_GET(src, air_control_menu)
+
+/// The multitool menu's choices (constant per type).
+TYPE_TABLE_DECLARE(/obj/machinery/computer/general_air_control, air_control_menu, list("Sensors", "Frequency", "Cancel"))
+TYPE_TABLE(/obj/machinery/computer/general_air_control/large_tank_control, air_control_menu, list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel"))
+TYPE_TABLE(/obj/machinery/computer/general_air_control/supermatter_core, air_control_menu, list("Inlet", "Outlet", "Sensors", "Frequency"))
 
 /obj/machinery/computer/general_air_control/proc/control_question(datum/act/op/A)
 	return "[src] has a frequency of [frequency]. What would you like to change?"
@@ -462,8 +468,6 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	return TRUE
 
-/obj/machinery/computer/general_air_control/large_tank_control/control_options(datum/act/op/A)
-	return list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
 
 /obj/machinery/computer/general_air_control/large_tank_control/configure_outlet(mob/living/user, obj/item/multitool/tool)
 	ask_control_port(user, tool, "outlet", PROC_REF(outlet_choice_made))
@@ -617,8 +621,6 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	return TRUE
 
-/obj/machinery/computer/general_air_control/supermatter_core/control_options(datum/act/op/A)
-	return list("Inlet", "Outlet", "Sensors", "Frequency")
 
 /obj/machinery/computer/general_air_control/supermatter_core/configure_outlet(mob/living/user, obj/item/multitool/tool)
 	ask_control_port(user, tool, "outlet", PROC_REF(outlet_choice_made))

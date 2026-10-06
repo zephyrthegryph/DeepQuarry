@@ -22,7 +22,7 @@
 
 CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
 	owns_one(nameof(core), /obj/item/assembly/signaler/anomaly)
-	op("install_core", item(/obj/item/assembly/signaler/anomaly), label("Install core"), when(PROC_REF(core_fits)), needs(req(PROC_REF(core_missing), because = MSG(anomalock/core_in))), wait(3 SECONDS), then(PROC_REF(install_core)))
+	op("install_core", item(/obj/item/assembly/signaler/anomaly), label("Install core"), when(req(PROC_REF(core_fits))), needs(req(PROC_REF(core_missing), because = MSG(anomalock/core_in))), wait(3 SECONDS), then(PROC_REF(install_core)))
 	op("remove_core", tool(TOOL_SCREWDRIVER), label("Remove core"), needs(req(PROC_REF(core_present), because = MSG(anomalock/no_core)), req(PROC_REF(core_loose), because = MSG(anomalock/core_fixed))), begins(MSG(anomalock/removing)), wait(3 SECONDS), on_interrupt(PROC_REF(remove_core_interrupted)), then(PROC_REF(remove_core)))
 
 MSG_DEF_SELF(anomalock/core_in, "core already in!")
@@ -127,7 +127,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	balloon_alert(user, "core removed")
 	var/obj/item/removed_core = own_take(src, nameof(core)) // unowned before it goes to the hands
 	removed_core.forceMove(drop_location())
-	if(Adjacent(user) && !issilicon(user))
+	if(Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS))
 		user.put_in_hands(removed_core)
 	update_icon()
 

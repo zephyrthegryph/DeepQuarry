@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/space_heater)
 		needs(req(PROC_REF(hatch_open), because = MSG(space_heater/hatch_closed)), req(PROC_REF(no_cell_installed), because = MSG(space_heater/cell_present))),
 		then(PROC_REF(interaction_insert_cell)))
 	part_replacement()
-	op("use", hand(), ungated(), label("Use"), priority(below("ui_open")), then(PROC_REF(interaction_hand_interact)))
+	op("use", hand(), ungated(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand_interact)))
 	op("hatch", tool(TOOL_SCREWDRIVER), wait(0), label("Open hatch"), then(PROC_REF(hatch_toggled)))
 	// A heat pump on the room's air toward the thermostat: it heats resistively, one joule of heat per joule drawn, and cools by
 	// pumping into the station's heat-rejection loop at a Carnot-bounded COP. Its work is paid from the cell (work_step()).
