@@ -1,5 +1,5 @@
-/obj/machinery/gravity_generator/part|human|none => gravity_part_forward_hand|gravity_part_forward_item:needs an item
-/obj/machinery/gravity_generator/part|robot|none => gravity_part_forward_hand|gen_robot_interaction_swallow:not possible right now,gravity_part_forward_item:needs an item
+/obj/machinery/gravity_generator/part|human|none => |
+/obj/machinery/gravity_generator/part|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/gravity_generator/part|ai|none => |
 /obj/machinery/gravity_generator/part|ghost|none => |
-/obj/machinery/gravity_generator/part|human|/obj/item => gravity_part_forward_item,gravity_part_forward_hand|
+

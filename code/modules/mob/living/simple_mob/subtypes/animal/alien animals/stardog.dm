@@ -937,9 +937,8 @@ CAPABILITIES(/obj/structure/control_pod)
 	pixel_y = -16
 	clicksound = SFX_VORE_SQUISH1
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, \
-	INTERACT_ITEM("Use", TYPE_PROC_REF(/atom, interaction_swallow)), \
-)
+CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
@@ -1530,7 +1529,6 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
 APPEARANCE_TEMPLATE(/obj/structure/auto_flesh_door, "flesh-{state?open:closed}")
-
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)

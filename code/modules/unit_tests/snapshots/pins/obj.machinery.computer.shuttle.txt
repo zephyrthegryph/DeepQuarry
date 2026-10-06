@@ -49,5 +49,10 @@ human|/obj/item/card menu: Climb
 human|/obj/item/card menu: Use
 human|/obj/item/card menu: Use item
 human|/obj/item/card click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Use (refused: needs a card)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
 keys: climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_insert_interaction_authorize, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
 

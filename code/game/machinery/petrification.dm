@@ -154,9 +154,6 @@ CAPABILITIES(/obj/machinery/petrification)
 	SStgui.update_uis(src)
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/machinery/petrification, \
-)
-
 /obj/machinery/petrification/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/h = rgb2num(tint)
@@ -278,7 +275,6 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 		return
 	rel_set(src, nameof(target), H)
 	SStgui.update_uis(src)
-
 
 /obj/machinery/petrification/proc/ui_act_set_option(datum/act/op/A, option)
 	var/mob/user = A.actor

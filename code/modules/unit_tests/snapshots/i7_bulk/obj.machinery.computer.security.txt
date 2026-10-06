@@ -1,4 +1,5 @@
-/obj/machinery/computer/security|human|none => security_open_ui,security_station_map|
-/obj/machinery/computer/security|robot|none => gen_robot_security_robot_use,security_open_ui,security_station_map|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/security|human|none => |
+/obj/machinery/computer/security|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/security|ai|none => |
 /obj/machinery/computer/security|ghost|none => |
+

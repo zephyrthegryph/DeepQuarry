@@ -88,10 +88,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PR
 	update_icon()
 	return TRUE
 
-/obj/machinery/reagent_refinery/waste/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
 
 /// Busy while it holds waste: it burns it off at random.
 /obj/machinery/reagent_refinery/waste_processor/refinery_busy()
 	return reagents.total_volume > 0
+
+CAPABILITIES(/obj/machinery/reagent_refinery/waste)
+	without("reagent_refinery_set_transfer_amount")

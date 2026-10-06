@@ -1,6 +1,5 @@
-/obj/machinery/chem_master|human|none => chem_master_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,chem_master_load_beaker:needs a   or a Container,chem_master_load_pill_bottle:needs a pill bottle
-/obj/machinery/chem_master|robot|none => chem_master_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,chem_master_load_beaker:needs a   or a Container,chem_master_load_pill_bottle:needs a pill bottle
+/obj/machinery/chem_master|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/chem_master|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chem_master|ai|none => |
 /obj/machinery/chem_master|ghost|none => |
-/obj/machinery/chem_master|human|/obj/item/reagent_containers/glass => chem_master_load_beaker,chem_master_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,chem_master_load_pill_bottle:needs a pill bottle
-/obj/machinery/chem_master|human|/obj/item/storage/pill_bottle => chem_master_load_pill_bottle,chem_master_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,chem_master_load_beaker:needs a   or a Container
+

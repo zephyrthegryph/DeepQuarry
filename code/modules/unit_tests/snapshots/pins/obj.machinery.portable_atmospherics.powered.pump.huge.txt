@@ -28,5 +28,11 @@ human|/obj/item/stack/material/steel menu: Climb (refused: There's a material pr
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id click: nothing
+human|/obj/item/cell menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Use
+human|/obj/item/tank menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tank menu: Use
+human|/obj/item/tank click: Click: Use
 keys: anchor, climb.climb, climb.climb_menu, console_only, direction, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power, pressure, swallow_cell, swallow_tank
 

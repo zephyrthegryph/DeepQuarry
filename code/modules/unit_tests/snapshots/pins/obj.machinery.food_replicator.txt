@@ -69,5 +69,31 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/storage/part_replacer menu: Eject Beaker
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer menu: Unsecure (refused: needs a wrench)
+human|/obj/item/storage/part_replacer menu: Use
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/reagent_containers/food menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/reagent_containers/food menu: Eject Beaker
+human|/obj/item/reagent_containers/food menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/reagent_containers/food menu: Rename food
+human|/obj/item/reagent_containers/food menu: Scan food
+human|/obj/item/reagent_containers/food menu: Unsecure (refused: needs a wrench)
+human|/obj/item/reagent_containers/food menu: Use
+human|/obj/item/reagent_containers/food click: Click: Scan food
+human|/obj/item/reagent_containers/glass menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/reagent_containers/glass menu: Eject Beaker
+human|/obj/item/reagent_containers/glass menu: Insert container
+human|/obj/item/reagent_containers/glass menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Unsecure (refused: needs a wrench)
+human|/obj/item/reagent_containers/glass menu: Use
+human|/obj/item/reagent_containers/glass click: Click: Insert container
 keys: eject_beaker, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert_container, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement, scan, use
 

@@ -95,6 +95,13 @@ human|/obj/item/clothing/suit/space/void menu: Put in cycler (refused: needs a g
 human|/obj/item/clothing/suit/space/void menu: Ui open
 human|/obj/item/clothing/suit/space/void menu: Use
 human|/obj/item/clothing/suit/space/void click: Click: Ui open
+human|/obj/item/card/emag menu: Eject Cycler
+human|/obj/item/card/emag menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/card/emag menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/card/emag menu: Put in cycler (refused: needs a grab)
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 wires: Electrification, ID Scan, Safety
 keys: apply_paintjob, department, dispense, eject_guy, emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_hand_interaction_use, gen_insert_interaction_insert_grab, gen_insert_interaction_insert_helmet, gen_insert_interaction_insert_suit, gen_robot_interaction_swallow, gen_verb_interaction_leave, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, radlevel, repair_suit, species, ui_open, use_screwdriver, uv
 

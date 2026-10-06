@@ -25,6 +25,52 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 /proc/req_operable()
 	return req_is(STAT_OPERABLE, because = MSG(machine/inoperable))
 
+/// The actor stands on the holder's turf (a machine worked from inside its own tile: a holomap, a pad). Followed through both
+/// movements, so a cached menu updates when either moves.
+/proc/req_on_holder_turf(because = null)
+	return part_make(/datum/entry/part/req/on_holder_turf, list("because" = because))
+
+/datum/entry/part/req/on_holder_turf
+	part_name = "req_on_holder_turf"
+	default_reason = /datum/msg/op/unreachable
+
+/datum/entry/part/req/on_holder_turf/read_keys(datum/act/op/A)
+	. = list()
+	if(A.actor)
+		. += list(list(A.actor, OP_KEEP_MOVED))
+	if(A.holder)
+		. += list(list(A.holder, OP_KEEP_MOVED))
+
+/datum/entry/part/req/on_holder_turf/holds(datum/act/op/A)
+	var/atom/movable/holder = A.holder
+	var/mob/actor = A.actor
+	return istype(holder) && istype(actor) && !isnull(holder.loc) && actor.loc == holder.loc
+
+/// The held item can leave what holds it (nothing keeps it there: a sticky trait, a ledger slot that refuses): the item() op that puts
+/// it somewhere says why it can't before it is tried. The reason is the release refusal itself.
+/proc/req_held_releasable()
+	return part_make(/datum/entry/part/req/held_releasable)
+
+/datum/entry/part/req/held_releasable
+	part_name = "req_held_releasable"
+	default_reason = /datum/msg/req_wrong_item
+
+/datum/entry/part/req/held_releasable/read_keys(datum/act/op/A)
+	return A.actor ? list(list(A.actor, OP_KEEP_HAND)) : list()
+
+/datum/entry/part/req/held_releasable/holds(datum/act/op/A)
+	return isnull(held_release_reason(A))
+
+/datum/entry/part/req/held_releasable/refusal(datum/act/op/A)
+	return held_release_reason(A) || ..()
+
+/// Why A.held can't leave what holds it (the actor's hand, a bag, a slot), or null.
+/proc/held_release_reason(datum/act/op/A)
+	READS_FROM(A)
+	if(!A.held)
+		return /datum/msg/req_wrong_item
+	return A.held.loc?.release_refusal(A.held, A.actor)
+
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
 /obj/machinery/proc/stat_is_broken(datum/act/A)
 	return has_stat(BROKEN)

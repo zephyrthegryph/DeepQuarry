@@ -2,3 +2,4 @@
 /obj/machinery/hyperpad|robot|none => hyperpad_delegate|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/hyperpad|ai|none => |
 /obj/machinery/hyperpad|ghost|none => gen_observer_hyperpad_ghost_use|
+

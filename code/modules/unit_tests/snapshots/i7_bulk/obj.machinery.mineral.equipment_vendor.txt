@@ -1,7 +1,5 @@
-/obj/machinery/mineral/equipment_vendor|human|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device,equipment_vendor_voucher:needs a mining voucher,equipment_vendor_insert_id:needs an identification card
-/obj/machinery/mineral/equipment_vendor|robot|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,machine_part_replacement:needs a rapid part exchange device,equipment_vendor_voucher:needs a mining voucher,equipment_vendor_insert_id:needs an identification card
+/obj/machinery/mineral/equipment_vendor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/mineral/equipment_vendor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/mineral/equipment_vendor|ai|none => |
 /obj/machinery/mineral/equipment_vendor|ghost|none => |
-/obj/machinery/mineral/equipment_vendor|human|/obj/item/storage/part_replacer => machine_part_replacement,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,equipment_vendor_voucher:needs a mining voucher,equipment_vendor_insert_id:needs an identification card
-/obj/machinery/mineral/equipment_vendor|human|/obj/item/mining_voucher => equipment_vendor_voucher,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device,equipment_vendor_insert_id:needs an identification card
-/obj/machinery/mineral/equipment_vendor|human|/obj/item/card/id => equipment_vendor_insert_id,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device,equipment_vendor_voucher:needs a mining voucher
+

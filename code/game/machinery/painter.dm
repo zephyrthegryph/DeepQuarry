@@ -61,29 +61,23 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	op("set_hue", ui_act("set_hue", arg("buildhue", num(0, 360))), then(PROC_REF(ui_act_set_hue)))
 	op("set_sat", ui_act("set_sat", arg("buildsat", num(-10, 10))), then(PROC_REF(ui_act_set_sat)))
 	op("set_val", ui_act("set_val", arg("buildval", num(-10, 10))), then(PROC_REF(ui_act_set_val)))
+	op("gear_painter_insert", inputs(item(/obj/item/clothing), item(/obj/item/storage/backpack), item(/obj/item/storage/belt), item(/obj/item/toy), item(/obj/item/stack/material)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(gear_painter_operable_holds))), needs(req(PROC_REF(gear_painter_empty_holds), because = PROC_REF(gear_painter_empty_refusal))), then(PROC_REF(interaction_insert)))
+	op("gear_painter_alt_drop", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove item"), passes(), then(PROC_REF(interaction_alt_drop)))
 
-/obj/machinery/gear_painter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/gear_painter_insert,
-		/datum/interaction/machine_hand/open_ui,
-		/datum/interaction/machine_alt/gear_painter_alt_drop,
-	)
-	..()
+/// Requirement (was REQ_* gear_painter_empty): the legacy check answers TRUE to pass.
+/obj/machinery/gear_painter/proc/gear_painter_empty_holds(datum/act/op/A)
+	var/answer = gear_painter_empty(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/// Old attackby: insert an item of an allowed type into the Color Mate.
-/datum/interaction/machine_item/gear_painter_insert
-	id = "gear_painter_insert"
-	name = "Insert"
-	held_type = list(
-		/obj/item/clothing,
-		/obj/item/storage/backpack,
-		/obj/item/storage/belt,
-		/obj/item/toy,
-		/obj/item/stack/material,
-	)
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/gear_painter/proc/gear_painter_operable, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/gear_painter/proc/gear_painter_empty, "the machine is already loaded"))
-	effect = /obj/machinery/gear_painter/proc/interaction_insert
+/// Why gear_painter_empty_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/gear_painter/proc/gear_painter_empty_refusal(datum/act/op/A)
+	var/answer = gear_painter_empty(A.actor, src, A.held)
+	return istext(answer) ? answer : "the machine is already loaded"
+
+/// Requirement (was REQ_* gear_painter_operable): the legacy check answers TRUE to pass.
+/obj/machinery/gear_painter/proc/gear_painter_operable_holds(datum/act/op/A)
+	var/answer = gear_painter_operable(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
 /obj/machinery/gear_painter/proc/gear_painter_operable(mob/actor, atom/target, obj/item/held)
 	return operable()
@@ -91,14 +85,16 @@ CAPABILITIES(/obj/machinery/gear_painter)
 /obj/machinery/gear_painter/proc/gear_painter_empty(mob/actor, atom/target, obj/item/held)
 	return !inserted
 
-/obj/machinery/gear_painter/proc/interaction_insert(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/gear_painter/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
-		return TRUE
+		return OP_OK
 	act_message(user, null, others = span_notice("%U% inserts %I% into the Color Mate receptable."), item = I)
 	if(!move_into(src, nameof(src.inserted), I, user))
-		return TRUE
+		return OP_OK
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/gear_painter/proc/insert_mob(mob/victim, mob/user)
 	if(inserted)
@@ -117,15 +113,11 @@ CAPABILITIES(/obj/machinery/gear_painter)
  * original, which is not expected to matter here — drop_item() and the base alt-click
  * default don't interact).
  */
-/datum/interaction/machine_alt/gear_painter_alt_drop
-	id = "gear_painter_alt_drop"
-	name = "Remove item"
-	consumes_input = FALSE
-	effect = /obj/machinery/gear_painter/proc/interaction_alt_drop
 
-/obj/machinery/gear_painter/proc/interaction_alt_drop(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/gear_painter/proc/interaction_alt_drop(datum/act/op/A)
+	var/mob/user = A.actor
 	drop_item(user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/gear_painter/proc/drop_item(mob/user)
 	if(!oview(1,src))

@@ -2,3 +2,4 @@
 /obj/machinery/firealarm|robot|none => firealarm_trigger,firealarm_use|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/firealarm|ai|none => |
 /obj/machinery/firealarm|ghost|none => |
+

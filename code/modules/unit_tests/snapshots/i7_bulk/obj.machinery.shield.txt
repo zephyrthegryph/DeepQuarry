@@ -1,5 +1,5 @@
-/obj/machinery/shield|human|none => |shield_hit:needs an item
-/obj/machinery/shield|robot|none => |gen_robot_interaction_swallow:not possible right now,shield_hit:needs an item
+/obj/machinery/shield|human|none => |
+/obj/machinery/shield|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shield|ai|none => |
 /obj/machinery/shield|ghost|none => |
-/obj/machinery/shield|human|/obj/item => shield_hit|
+

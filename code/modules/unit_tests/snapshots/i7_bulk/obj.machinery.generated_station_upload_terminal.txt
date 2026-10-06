@@ -1,4 +1,5 @@
-/obj/machinery/generated_station_upload_terminal|human|none => generated_station_upload|
-/obj/machinery/generated_station_upload_terminal|robot|none => generated_station_upload|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/generated_station_upload_terminal|human|none => gen_hand_ungated_interaction_upload|
+/obj/machinery/generated_station_upload_terminal|robot|none => gen_hand_ungated_interaction_upload|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/generated_station_upload_terminal|ai|none => |
 /obj/machinery/generated_station_upload_terminal|ghost|none => |
+

@@ -2190,3 +2190,33 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
   they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
   (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
   listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).
+
+## Machinery, round 2: the residue onto ops (rewrite/machinery-2)
+
+`tools/codemods/machine_ops.py` converts what the first sweep left on machine types in one step: a `declare_interactions()` override listing
+machine datum interactions or compact specs, or an `EXTEND_INTERACTIONS` row, becomes ops of the type's `CAPABILITIES` block (the same table as
+`interact_declare.py`, plus the datum fields `held_type`, `requires`, `also_requires`, `offered_when`, `stance` and `consumes_input`). Converted
+ops answer after the ops the type already had (`priority(OP_PRIORITY_DEFAULT - 1)`, as in the first sweep); a second op of the type on the same
+input takes the next tier down, so the legacy declaration order still decides.
+
+- **A type whose legacy override dropped `..()` (a replacement) gets `without()`** for each parent op it never had: the ghost jukebox takes no
+  touch or item, the refinery's furnace, grinder, mixer, pipe, splitter, vat and waste drop the parent's transfer-amount verb (`into -=`).
+- **A held list of item types is one op with `inputs(item(A), item(B))`** (`held_type = list(...)`): the menu lists it only for those items.
+- **The alien VR pod's own scan answers before the VR pod's** (`vr_sleeper_scan` is a tier lower), and the microwave's grab-stance pAI eject
+  before its plain touch, as the legacy order had them.
+- **Verbs (`menu()`) need `req_adjacent()` and `req_capable()`** in place of the per-type `dq_actor_can_act` wrappers: a living actor who is
+  not incapacitated, beside the machine.
+- **Requirements read tracked state**: the claw machine's `gamepaid`, the item bank's `busy_bank`, the emergency shield generator's
+  `is_open` and `malfunction`, the shield wall generator's `power` and the storefront's `department_id` are `TRACKED`; the records console's
+  ID slot is `req_empty(nameof(scan))`; the DNA analyzer's sample is a `ref_one()` relation and its slot `req_empty(nameof(bloodsamp))`, its
+  busy check `req_is(nameof(scanning), FALSE)`; the holomap's watcher check is `req_is(nameof(watching_mob), FALSE)` (a watcher touching it
+  again is told someone is watching, where it did nothing) and "stand in front" is the new library `req_on_holder_turf()`; the refinery drain
+  is `req_reagents(0, more = TRUE)`; the cryopod's occupied checks read `slot_occupant()`, which follows `OCCUPANT_KEY`.
+- **A held item that can't be let go** (a sticky trait, a slot that refuses) is refused by the new library `req_held_releasable()` with the
+  release refusal as the reason: the DNA analyzer refuses a stuck swab, used or not (an unused stuck swab was taken and then rejected).
+- **The centrifuge's trolley drop** checks its silent guard (the actor can reach both, is free and able) in the effect and declines, as the
+  old `MouseDrop_T` did, instead of a cached condition on the actor's position.
+- **The security camera console's cyborg use** declines for an AI shell (it interfaces as the AI) from the op instead of asking `isrobot()`;
+  the robotics console's cyborg use declines when the cyborg has access (the window answers), as before.
+- **Conversion pins probe each item an op binds** (`item(T)`), not only the items legacy interactions named, so a converted type keeps the
+  rows its legacy interactions had; pins of types converted earlier gained those rows.

@@ -1,6 +1,7 @@
-/obj/machinery/honey_extractor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,honey_extractor_load_frame:needs a beehive frame,honey_extractor_collect:needs a  
-/obj/machinery/honey_extractor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,honey_extractor_load_frame:needs a beehive frame,honey_extractor_collect:needs a  
+/obj/machinery/honey_extractor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_honey_extractor_load_frame:needs a beehive frame,gen_insert_interaction_honey_extractor_collect:needs a  
+/obj/machinery/honey_extractor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_honey_extractor_load_frame:needs a beehive frame,gen_insert_interaction_honey_extractor_collect:needs a  
 /obj/machinery/honey_extractor|ai|none => |
 /obj/machinery/honey_extractor|ghost|none => |
-/obj/machinery/honey_extractor|human|/obj/item/honey_frame => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,honey_extractor_load_frame:The beehive frame is empty, put it into a beehive,honey_extractor_collect:needs a  
-/obj/machinery/honey_extractor|human|/obj/item/reagent_containers/glass => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,honey_extractor_load_frame:needs a beehive frame,honey_extractor_collect:there is no honey in it
+/obj/machinery/honey_extractor|human|/obj/item/honey_frame => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_honey_extractor_load_frame:The beehive frame is empty, put it into a beehive,gen_insert_interaction_honey_extractor_collect:needs a  
+/obj/machinery/honey_extractor|human|/obj/item/reagent_containers/glass => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_honey_extractor_load_frame:needs a beehive frame,gen_insert_interaction_honey_extractor_collect:there is no honey in it
+

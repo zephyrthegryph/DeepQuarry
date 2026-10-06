@@ -106,5 +106,22 @@ human|/obj/item menu: Use
 human|/obj/item menu: Use (refused: hold Disarm)
 human|/obj/item menu: Use (refused: hold Grab)
 human|/obj/item click: Click: Swallow
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Open (refused: Access denied.)
+human|/obj/item/card/emag menu: Strike (refused: combat mode is off)
+human|/obj/item/card/emag menu: Swallow
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use (refused: hold Disarm)
+human|/obj/item/card/emag menu: Use (refused: hold Grab)
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/stack/material/plasteel menu: Open
+human|/obj/item/stack/material/plasteel menu: Open (refused: Access denied.)
+human|/obj/item/stack/material/plasteel menu: Repair (refused: It is already fully repaired.)
+human|/obj/item/stack/material/plasteel menu: Strike (refused: combat mode is off)
+human|/obj/item/stack/material/plasteel menu: Swallow
+human|/obj/item/stack/material/plasteel menu: Use
+human|/obj/item/stack/material/plasteel menu: Use (refused: hold Disarm)
+human|/obj/item/stack/material/plasteel menu: Use (refused: hold Grab)
+human|/obj/item/stack/material/plasteel click: Click: Repair
 keys: doors.close, doors.open, emag.subvert, emag.use, enter_code, force_generic, force_xeno, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, mend, pry, pry_broken, puzzle_door_touch, puzzle_door_use_disarm, puzzle_door_use_grab, puzzle_door_use_harm, puzzle_door_use_help, repair, strike, swallow
 

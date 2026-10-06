@@ -1,11 +1,9 @@
 human|none menu: Ui open
 human|none menu: Use
-human|none menu: Use (refused: needs an item)
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
 robot|none menu: Use
-robot|none menu: Use (refused: needs an item)
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
@@ -41,5 +39,5 @@ human|/obj/item/card/id click: Click: Ui open
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
-keys: cancel_wanted, censor_channel_author, censor_channel_story_author, censor_channel_story_body, cleartemp, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_open, gen_insert_interaction_as_touch, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print_paper, set_attachment, set_channel_lock, set_channel_name, set_channel_receiving, set_new_message, set_new_title, set_wanted_desc, show_channel, submit_new_channel, submit_new_message, submit_wanted, toggle_d_notice, ui_open
+keys: as_touch, cancel_wanted, censor_channel_author, censor_channel_story_author, censor_channel_story_body, cleartemp, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open, print_paper, set_attachment, set_channel_lock, set_channel_name, set_channel_receiving, set_new_message, set_new_title, set_wanted_desc, show_channel, submit_new_channel, submit_new_message, submit_wanted, toggle_d_notice, ui_open
 

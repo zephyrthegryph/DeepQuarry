@@ -15,9 +15,6 @@
 	. = ..()
 	GLOB.atmosphere_alarm.unregister_alarm(src)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/atmos_alert, \
-)
-
 /obj/machinery/computer/atmos_alert/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 

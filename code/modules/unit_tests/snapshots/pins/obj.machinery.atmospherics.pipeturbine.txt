@@ -26,5 +26,8 @@ human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id click: nothing
+human|/obj/item/pipe_painter menu: Climb
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter click: Click: Painter
 keys: anchor, climb.climb, climb.climb_menu, fit_material, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, painter
 

@@ -17,6 +17,12 @@
 
 CAPABILITIES(/obj/machinery/smart_centrifuge)
 	reagents(CARGOTANKER_VOLUME)
+	op("centrifuge_attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), when(nameof(working)), then(PROC_REF(interaction_attackby)))
+	op("centrifuge_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("centrifuge_isolate_reagents", menu(), label("Isolate Reagents Automatically"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_isolate_reagents)))
+	op("centrifuge_isolate_reagents_bottle", menu(), label("Isolate Reagents To Bottles"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_isolate_reagents_bottle)))
+	op("centrifuge_isolate_reagents_canisters", menu(), label("Isolate Reagents To Canisters"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_isolate_reagents_canisters)))
+	op("centrifuge_drain_tank", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), then(PROC_REF(interaction_drain_tank)))
 OM_FIELD(/obj/machinery/smart_centrifuge, working, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reagent_seperate, "working")
 
@@ -25,70 +31,28 @@ DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reage
 	flags |= OPENCONTAINER
 	default_apply_parts()
 
-/obj/machinery/smart_centrifuge/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/centrifuge_attackby,
-		/datum/interaction/machine_hand/ungated/centrifuge_use,
-		/datum/interaction/machine_verb/centrifuge_isolate_reagents,
-		/datum/interaction/machine_verb/centrifuge_isolate_reagents_bottle,
-		/datum/interaction/machine_verb/centrifuge_isolate_reagents_canisters,
-		/datum/interaction/machine_drag/centrifuge_drain_tank,
-	)
-	..()
-
-/// Old attackby: while working, refuses; else falls through to ..().
-/datum/interaction/machine_item/centrifuge_attackby
-	id = "centrifuge_attackby"
-	name = "Use"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/smart_centrifuge/proc/is_working, null))
-	effect = /obj/machinery/smart_centrifuge/proc/interaction_attackby
-
-/// No side effects.
-/obj/machinery/smart_centrifuge/proc/is_working(mob/actor, atom/target, obj/item/held)
-	return working
-
-/obj/machinery/smart_centrifuge/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/smart_centrifuge/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "<span class='notice'>\The [src] is still spinning.</span>")
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/centrifuge_use
-	id = "centrifuge_use"
-	name = "Use"
-	effect = /obj/machinery/smart_centrifuge/proc/interaction_use
-
-/obj/machinery/smart_centrifuge/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/smart_centrifuge/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	spin_reagents(user,FALSE)
-	return TRUE
+	return OP_OK
 
-/// Old object verb: `set src in view(1)`.
-/datum/interaction/machine_verb/centrifuge_isolate_reagents
-	id = "centrifuge_isolate_reagents"
-	name = "Isolate Reagents Automatically"
-	effect = /obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents
-
-/obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents(datum/act/op/A)
+	var/mob/user = A.actor
 	spin_reagents(user,FALSE,FALSE)
 	return TRUE
 
-/// Old object verb: `set src in view(1)`.
-/datum/interaction/machine_verb/centrifuge_isolate_reagents_bottle
-	id = "centrifuge_isolate_reagents_bottle"
-	name = "Isolate Reagents To Bottles"
-	effect = /obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents_bottle
-
-/obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents_bottle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents_bottle(datum/act/op/A)
+	var/mob/user = A.actor
 	spin_reagents(user,TRUE,FALSE)
 	return TRUE
 
-/// Old object verb: `set src in view(1)`.
-/datum/interaction/machine_verb/centrifuge_isolate_reagents_canisters
-	id = "centrifuge_isolate_reagents_canisters"
-	name = "Isolate Reagents To Canisters"
-	effect = /obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents_canisters
-
-/obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents_canisters(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/smart_centrifuge/proc/interaction_isolate_reagents_canisters(datum/act/op/A)
+	var/mob/user = A.actor
 	spin_reagents(user,FALSE,TRUE)
 	return TRUE
 
@@ -144,24 +108,20 @@ DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reage
 		CD.pixel_y = rand(-7, 7)
 		break
 
-/// Old MouseDrop_T: only trolley tanks are handled; anything else, or a failed guard, falls through to ..().
-/datum/interaction/machine_drag/centrifuge_drain_tank
-	id = "centrifuge_drain_tank"
-	name = "Drain"
-	held_type = /obj/vehicle/train/trolley_tank
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/smart_centrifuge/proc/can_drop_drain, null))
-	effect = /obj/machinery/smart_centrifuge/proc/interaction_drain_tank
-
-/// No side effects.
+/// Whether the drop was a deliberate one (the actor can reach both). No side effects.
 /obj/machinery/smart_centrifuge/proc/can_drop_drain(mob/actor, atom/target, atom/movable/held)
 	if(actor?.buckled_to() || actor.stat || actor.restrained() || !target.Adjacent(actor) || !actor.Adjacent(held) || (actor == held && !actor.canmove))
 		return FALSE
 	return TRUE
 
-/obj/machinery/smart_centrifuge/proc/interaction_drain_tank(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/smart_centrifuge/proc/interaction_drain_tank(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
+	if(!can_drop_drain(user, src, dropping)) // the old MouseDrop_T's silent guard: the drop goes on to whatever else takes it
+		return OP_DECLINE
 	dropping.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, dropping, others = "%U% drains %T% into \the [src].")
-	return TRUE
+	return OP_OK
 
 /obj/machinery/smart_centrifuge/examine(mob/user, infix, suffix)
 	. = ..()

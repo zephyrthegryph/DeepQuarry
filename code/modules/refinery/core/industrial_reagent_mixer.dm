@@ -114,9 +114,6 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
 		got_input = TRUE
 		update_icon()
 
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
 
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()
@@ -127,3 +124,6 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
 	if(!(locate_within(get_step(src, angle2dir(mixer_angle)), /obj/machinery/reagent_refinery)))
 		return TRUE
 	return got_input
+
+CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	without("reagent_refinery_set_transfer_amount")

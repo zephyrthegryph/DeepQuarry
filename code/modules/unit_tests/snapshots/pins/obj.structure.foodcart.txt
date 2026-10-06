@@ -12,5 +12,8 @@ human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id click: nothing
+human|/obj/item/reagent_containers/food menu: Rename food
+human|/obj/item/reagent_containers/food menu: Use
+human|/obj/item/reagent_containers/food click: Click: Use
 keys: gen_drag_interaction_drag_buckle, grab_food, stock
 

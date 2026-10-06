@@ -81,5 +81,55 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item menu: Collect (refused: needs a storage)
+human|/obj/item menu: Customise (refused: needs an item)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pick up
+human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item click: nothing
+human|/obj/item/reagent_containers menu: Collect (refused: needs a storage)
+human|/obj/item/reagent_containers menu: Customise (refused: needs an item)
+human|/obj/item/reagent_containers menu: Move To Top
+human|/obj/item/reagent_containers menu: Pick up
+human|/obj/item/reagent_containers menu: Revive
+human|/obj/item/reagent_containers menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/reagent_containers click: Click: Revive
+human|/obj/item/surgical/scalpel menu: Collect (refused: needs a storage)
+human|/obj/item/surgical/scalpel menu: Customise (refused: needs an item)
+human|/obj/item/surgical/scalpel menu: Cut
+human|/obj/item/surgical/scalpel menu: Move To Top
+human|/obj/item/surgical/scalpel menu: Pick up
+human|/obj/item/surgical/scalpel menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/surgical/scalpel click: Click: Cut
+human|/obj/item/surgical/retractor menu: Collect (refused: needs a storage)
+human|/obj/item/surgical/retractor menu: Customise (refused: needs an item)
+human|/obj/item/surgical/retractor menu: Move To Top
+human|/obj/item/surgical/retractor menu: Pick up
+human|/obj/item/surgical/retractor menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/surgical/retractor click: nothing
+human|/obj/item/surgical/cautery menu: Collect (refused: needs a storage)
+human|/obj/item/surgical/cautery menu: Customise (refused: needs an item)
+human|/obj/item/surgical/cautery menu: Move To Top
+human|/obj/item/surgical/cautery menu: Pick up
+human|/obj/item/surgical/cautery menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/surgical/cautery click: nothing
+human|/obj/item/surgical/hemostat menu: Collect (refused: needs a storage)
+human|/obj/item/surgical/hemostat menu: Customise (refused: needs an item)
+human|/obj/item/surgical/hemostat menu: Move To Top
+human|/obj/item/surgical/hemostat menu: Pick up
+human|/obj/item/surgical/hemostat menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/surgical/hemostat click: nothing
+human|/obj/item/surgical/FixOVein menu: Collect (refused: needs a storage)
+human|/obj/item/surgical/FixOVein menu: Customise (refused: needs an item)
+human|/obj/item/surgical/FixOVein menu: Move To Top
+human|/obj/item/surgical/FixOVein menu: Pick up
+human|/obj/item/surgical/FixOVein menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/surgical/FixOVein click: nothing
+human|/obj/item/surgical/bioregen menu: Collect (refused: needs a storage)
+human|/obj/item/surgical/bioregen menu: Customise (refused: needs an item)
+human|/obj/item/surgical/bioregen menu: Move To Top
+human|/obj/item/surgical/bioregen menu: Pick up
+human|/obj/item/surgical/bioregen menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/surgical/bioregen click: nothing
 keys: bench_cauterize, bench_extract, bench_fixovein, bench_rejuvenate, bench_retract, bench_scalpel, bite, butcher, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, pull_embedded, revive, robo_repair
 

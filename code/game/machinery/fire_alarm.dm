@@ -75,7 +75,6 @@ CAPABILITIES(/obj/machinery/firealarm)
 	rel_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
 	rel_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 
-
 // a sounding alarm is reset for its area.
 /obj/machinery/firealarm/on_destroy(force)
 	reset()
@@ -126,7 +125,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	if(seclevel)
 		. += mutable_appearance(icon, "overlay_[seclevel]")
 		. += emissive_appearance(icon, "overlay_[seclevel]")
-
 
 /// Heat behaviour rule: the detector trips above 200 C.
 /obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)
@@ -271,24 +269,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 
 // TGUI migration. PartyAlarm.tsx handles both clear-text
 // (humans/AI) and scrambled (everyone else) display via a data flag.
-/obj/machinery/partyalarm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/partyalarm_use,
-	)
-	..()
 
-/datum/interaction/machine_hand/ungated/partyalarm_use
-	id = "partyalarm_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/partyalarm/proc/interaction_partyalarm_use
-
-/obj/machinery/partyalarm/proc/interaction_partyalarm_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/partyalarm/proc/interaction_partyalarm_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || !operable())
-		return TRUE
+		return OP_OK
 	user.set_machine(src)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/partyalarm)
 	interface("PartyAlarm", title = "Party Button")
@@ -297,6 +285,7 @@ CAPABILITIES(/obj/machinery/partyalarm)
 	op("time", ui_act("time", arg("value", num())), then(PROC_REF(ui_act_time)))
 	op("tp", ui_act("tp", arg("value", num())), then(PROC_REF(ui_act_tp)))
 	extend(TAG_UI, needs(req(PROC_REF(button_usable), because = MSG(partyalarm/unusable))))
+	op("partyalarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_partyalarm_use)))
 
 MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 
@@ -330,7 +319,6 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	ASSERT(isarea(A))
 	A.partyalert()
 	return
-
 
 /obj/machinery/partyalarm/proc/ui_act_reset(datum/act/op/A)
 	reset()

@@ -1,5 +1,6 @@
-/obj/machinery/computer/specops_shuttle|human|none => |emag:needs a cryptographic sequencer,specops_shuttle_open_ui:access denied
-/obj/machinery/computer/specops_shuttle|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,specops_shuttle_open_ui:access denied
+/obj/machinery/computer/specops_shuttle|human|none => |emag:needs a cryptographic sequencer,gen_hand_interaction_open_ui_impl:access denied
+/obj/machinery/computer/specops_shuttle|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,gen_hand_interaction_open_ui_impl:access denied
 /obj/machinery/computer/specops_shuttle|ai|none => |
 /obj/machinery/computer/specops_shuttle|ghost|none => |
-/obj/machinery/computer/specops_shuttle|human|/obj/item/card/emag => emag|specops_shuttle_open_ui:access denied
+/obj/machinery/computer/specops_shuttle|human|/obj/item/card/emag => emag|gen_hand_interaction_open_ui_impl:access denied
+

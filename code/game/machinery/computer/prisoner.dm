@@ -15,9 +15,6 @@
 	var/stop = 0.0
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/prisoner, \
-)
-
 CAPABILITIES(/obj/machinery/computer/prisoner)
 	interface("PrisonerManagement")
 	op("inject", ui_act("inject", arg("imp"), arg("val", num())), then(PROC_REF(ui_act_inject)))

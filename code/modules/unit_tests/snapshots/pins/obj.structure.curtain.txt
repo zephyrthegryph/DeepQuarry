@@ -24,5 +24,7 @@ human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Toggle
+human|/obj/item click: Click: Toggle
 keys: gen_drag_interaction_drag_buckle, silicon_toggle, toggle, use_wirecutter
 

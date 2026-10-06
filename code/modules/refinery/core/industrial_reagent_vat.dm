@@ -117,10 +117,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, TYPE_PROC_REF(/atom
 	update_icon()
 	return TRUE
 
-/obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
 
 /// Busy while someone is buckled in to soak.
 /obj/machinery/reagent_refinery/vat/refinery_busy()
 	return length(src?.buckled_mob_list()) && reagents.total_volume > 0
+
+CAPABILITIES(/obj/machinery/reagent_refinery/vat)
+	without("reagent_refinery_set_transfer_amount")

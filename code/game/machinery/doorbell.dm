@@ -34,13 +34,10 @@
 APPEARANCE_TEMPLATE(/obj/machinery/doorbell_chime, "dbchime-{id_tag?standby:red}")
 DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("dbchime-open"))))
 
-EXTEND_INTERACTIONS(/obj/machinery/doorbell_chime, \
-	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_fingerprint), "Touch"), \
-	INTERACT_INSERT(/obj/item/storage/part_replacer, TYPE_PROC_REF(/obj/machinery, interaction_part_replacement), "Replace parts"), \
-)
-
 CAPABILITIES(/obj/machinery/doorbell_chime)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
 /obj/machinery/doorbell_chime/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor

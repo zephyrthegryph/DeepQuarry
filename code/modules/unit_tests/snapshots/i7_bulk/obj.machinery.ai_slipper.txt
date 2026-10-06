@@ -1,4 +1,5 @@
-/obj/machinery/ai_slipper|human|none => ai_slipper_toggle_lock,ai_slipper_use|
-/obj/machinery/ai_slipper|robot|none => ai_slipper_toggle_lock,ai_slipper_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/ai_slipper|human|none => |
+/obj/machinery/ai_slipper|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/ai_slipper|ai|none => |
 /obj/machinery/ai_slipper|ghost|none => |
+

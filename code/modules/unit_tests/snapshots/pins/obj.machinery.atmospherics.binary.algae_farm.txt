@@ -48,5 +48,22 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/pipe_painter menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/pipe_painter menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Ui open
+human|/obj/item/pipe_painter click: Click: Painter
+human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer menu: Ui open
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/stack/material menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/material menu: Insert materials
+human|/obj/item/stack/material menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/stack/material menu: Ui open
+human|/obj/item/stack/material click: Click: Insert materials
 keys: ejectMaterial, fit_material, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load, machine_anchor, machine_deconstruct, machine_panel, machine_repair, painter, part_replacement.replace, toggle, ui_open
 

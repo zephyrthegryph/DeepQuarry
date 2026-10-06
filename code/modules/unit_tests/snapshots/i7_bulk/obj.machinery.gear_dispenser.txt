@@ -1,4 +1,5 @@
-/obj/machinery/gear_dispenser|human|none => gear_dispenser_use|
-/obj/machinery/gear_dispenser|robot|none => gear_dispenser_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/gear_dispenser|human|none => gen_hand_ungated_interaction_use|
+/obj/machinery/gear_dispenser|robot|none => gen_hand_ungated_interaction_use|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/gear_dispenser|ai|none => |
 /obj/machinery/gear_dispenser|ghost|none => |
+

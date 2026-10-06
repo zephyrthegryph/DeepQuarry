@@ -1,5 +1,5 @@
-/obj/machinery/account_database|human|none => account_database_open_ui|account_database_insert_card:needs an identification card
-/obj/machinery/account_database|robot|none => account_database_open_ui|gen_robot_interaction_swallow:not possible right now,account_database_insert_card:needs an identification card
+/obj/machinery/account_database|human|none => |
+/obj/machinery/account_database|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/account_database|ai|none => |
 /obj/machinery/account_database|ghost|none => |
-/obj/machinery/account_database|human|/obj/item/card/id => account_database_insert_card,account_database_open_ui|
+

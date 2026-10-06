@@ -49,5 +49,17 @@ human|/obj/item/card/id menu: Climb (refused: There's a material processor in th
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/cell menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/cell menu: Insert power cell (refused: the hatch must be open to insert a power cell)
+human|/obj/item/cell menu: Ui open
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert power cell
+human|/obj/item/storage/part_replacer menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer menu: Ui open
+human|/obj/item/storage/part_replacer menu: Use
+human|/obj/item/storage/part_replacer click: Click: Replace parts
 keys: cellinstall, cellremove, climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, hatch, insert_cell, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, temp, ui_open, use
 

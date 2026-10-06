@@ -82,6 +82,13 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item/encryptionkey menu: Collect (refused: needs a storage)
+human|/obj/item/encryptionkey menu: Customise (refused: needs an item)
+human|/obj/item/encryptionkey menu: Insert key
+human|/obj/item/encryptionkey menu: Move To Top
+human|/obj/item/encryptionkey menu: Pick up
+human|/obj/item/encryptionkey menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/encryptionkey click: Click: Insert key
 wires: Receiver, Signal, Transmitter
 keys: broadcast, channel, controls, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, item, listen, setFrequency, specFreq, subspace, toggleLoudspeaker, use_screwdriver
 

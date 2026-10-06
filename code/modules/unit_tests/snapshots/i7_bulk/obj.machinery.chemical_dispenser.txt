@@ -1,6 +1,5 @@
-/obj/machinery/chemical_dispenser|human|none => chemical_dispenser_use|machine_anchor:needs a wrench,chemical_dispenser_add_cartridge:needs a chemical dispenser cartridge,chemical_dispenser_set_container:needs a   or a Container
-/obj/machinery/chemical_dispenser|robot|none => chemical_dispenser_use|machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,chemical_dispenser_add_cartridge:needs a chemical dispenser cartridge,chemical_dispenser_set_container:needs a   or a Container
+/obj/machinery/chemical_dispenser|human|none => |machine_anchor:needs a wrench
+/obj/machinery/chemical_dispenser|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chemical_dispenser|ai|none => |
 /obj/machinery/chemical_dispenser|ghost|none => gen_observer_chemical_dispenser_ghost_view|
-/obj/machinery/chemical_dispenser|human|/obj/item/reagent_containers/chem_disp_cartridge => chemical_dispenser_add_cartridge,chemical_dispenser_use|machine_anchor:needs a wrench,chemical_dispenser_set_container:needs a   or a Container
-/obj/machinery/chemical_dispenser|human|/obj/item/reagent_containers/glass => chemical_dispenser_set_container,chemical_dispenser_use|machine_anchor:needs a wrench,chemical_dispenser_add_cartridge:needs a chemical dispenser cartridge
+

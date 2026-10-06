@@ -5,3 +5,4 @@
 /obj/machinery/atm|human|/obj/item/card => atm_insert_card,atm_use|emag_gated:needs a cryptographic sequencer,atm_deposit_cash:needs a 0 Thaler
 /obj/machinery/atm|human|/obj/item/spacecash => atm_use|emag_gated:needs a cryptographic sequencer,atm_insert_card:needs a card,atm_deposit_cash:not possible right now
 /obj/machinery/atm|human|/obj/item/card/emag => emag_gated,atm_insert_card,atm_use|atm_deposit_cash:needs a 0 Thaler
+

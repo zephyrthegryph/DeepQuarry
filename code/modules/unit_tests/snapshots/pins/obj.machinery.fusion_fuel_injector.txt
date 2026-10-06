@@ -88,5 +88,31 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Secure (refused: needs a wrench)
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: nothing
+human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Rotate Clockwise
+human|/obj/item/storage/part_replacer menu: Rotate Counter Clockwise
+human|/obj/item/storage/part_replacer menu: Secure (refused: needs a wrench)
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer menu: Turn Around
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/fuel_assembly menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/fuel_assembly menu: Insert fuel rod
+human|/obj/item/fuel_assembly menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/fuel_assembly menu: Rotate Clockwise
+human|/obj/item/fuel_assembly menu: Rotate Counter Clockwise
+human|/obj/item/fuel_assembly menu: Secure (refused: needs a wrench)
+human|/obj/item/fuel_assembly menu: Turn Around
+human|/obj/item/fuel_assembly click: Click: Insert fuel rod
+human|/obj/item/fuel_assembly/blitz menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/fuel_assembly/blitz menu: Insert fuel rod
+human|/obj/item/fuel_assembly/blitz menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/fuel_assembly/blitz menu: Rotate Clockwise
+human|/obj/item/fuel_assembly/blitz menu: Rotate Counter Clockwise
+human|/obj/item/fuel_assembly/blitz menu: Secure (refused: needs a wrench)
+human|/obj/item/fuel_assembly/blitz menu: Turn Around
+human|/obj/item/fuel_assembly/blitz click: Click: Insert fuel rod
 keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert, insert_blitz, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_id, take, use_crowbar, use_screwdriver, use_wrench
 

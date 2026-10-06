@@ -57,6 +57,8 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
+	op("interact", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_interact)))
 
 // ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
 /obj/machinery/media/jukebox/Initialize(mapload)
@@ -114,11 +116,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	if(hacked == newhacked)
 		return
 	hacked = newhacked
-
-EXTEND_INTERACTIONS(/obj/machinery/media/jukebox, \
-	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_fingerprint), "Use"), \
-	INTERACT_HAND_UNGATED("Use", TYPE_PROC_REF(/atom, interaction_interact)), \
-)
 
 /obj/machinery/media/jukebox/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -359,6 +356,9 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 	owns_many(nameof(custom_tracks))
+	// its legacy interactions replaced the jukebox's (no ..()): a ghost jukebox takes no touch or item
+	without("fingerprint")
+	without("interact")
 
 // Just junk to make it sneaky - I wish a lot more stuff was on /obj/machinery/media instead of /jukebox so I could use that.
 /obj/machinery/media/jukebox/ghost/is_incorporeal()
@@ -506,9 +506,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
 	return current_track
 
-
 // ---- the wires ----
-
 
 /// The lights hint at the state each wire drives.
 /obj/machinery/media/jukebox/proc/wire_lights()

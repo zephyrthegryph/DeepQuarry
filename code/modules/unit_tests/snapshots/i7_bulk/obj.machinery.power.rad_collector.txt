@@ -1,7 +1,5 @@
-/obj/machinery/power/rad_collector|human|none => rad_collector_toggle|rad_collector_load_tank:needs a phoron tank,rad_collector_lock:needs an identification card or a PDA,power_cable_place:needs a cable coil
-/obj/machinery/power/rad_collector|robot|none => rad_collector_toggle|gen_robot_interaction_swallow:not possible right now,rad_collector_load_tank:needs a phoron tank,rad_collector_lock:needs an identification card or a PDA,power_cable_place:needs a cable coil
+/obj/machinery/power/rad_collector|human|none => |
+/obj/machinery/power/rad_collector|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/rad_collector|ai|none => |
 /obj/machinery/power/rad_collector|ghost|none => |
-/obj/machinery/power/rad_collector|human|/obj/item/tank/phoron => rad_collector_toggle|rad_collector_load_tank:it needs to be secured to the floor first,rad_collector_lock:needs an identification card or a PDA,power_cable_place:needs a cable coil
-/obj/machinery/power/rad_collector|human|/obj/item/card/id => rad_collector_lock,rad_collector_toggle|rad_collector_load_tank:needs a phoron tank,power_cable_place:needs a cable coil
-/obj/machinery/power/rad_collector|human|/obj/item/stack/cable_coil => rad_collector_toggle,power_cable_place|rad_collector_load_tank:needs a phoron tank,rad_collector_lock:needs an identification card or a PDA
+

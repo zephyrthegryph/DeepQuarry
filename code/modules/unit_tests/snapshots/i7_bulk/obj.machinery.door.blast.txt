@@ -2,3 +2,4 @@
 /obj/machinery/door/blast|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/door/blast|ai|none => |
 /obj/machinery/door/blast|ghost|none => |
+

@@ -4,3 +4,4 @@
 /obj/machinery/requests_console|ghost|none => |
 /obj/machinery/requests_console|human|/obj/item/card/id => requests_console_id,machine_open_ui|requests_console_stamp:needs a rubber stamp
 /obj/machinery/requests_console|human|/obj/item/stamp => requests_console_stamp,machine_open_ui|requests_console_id:needs an identification card
+

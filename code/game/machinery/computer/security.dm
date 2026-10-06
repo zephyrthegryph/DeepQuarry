@@ -51,13 +51,8 @@
 		"criminal" = list("*Arrest*", "Incarcerated", "Parolled", "Released", "None"),
 	)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/secure_data, \
-	INTERACT_VERB("Eject ID Card", PROC_REF(interaction_secure_data_eject_id), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-	INTERACT_INSERT(/obj/item/card/id, PROC_REF(interaction_secure_data_insert_id), "Insert ID", OFFERED_WHEN(REQ_ON(PRED_TARGET, /obj/machinery/computer/secure_data/proc/has_free_slot, null))), \
-	INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint)), \
-)
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(datum/act/op/A)
+	var/mob/user = A.actor
 	if(scan)
 		to_chat(user, "You remove \the [scan] from \the [src].")
 		scan.forceMove(get_turf(src))
@@ -68,15 +63,14 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/secure_data, \
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
 
-/obj/machinery/computer/secure_data/proc/has_free_slot(mob/actor, atom/target, obj/item/held)
-	return !scan
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!move_into(src, nameof(src.scan), held, user))
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
@@ -105,6 +99,9 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
+	op("secure_data_eject_id", menu(), label("Eject ID Card"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_secure_data_eject_id)))
+	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
+	op("open_ui_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui_fingerprint)))
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

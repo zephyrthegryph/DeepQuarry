@@ -3,3 +3,4 @@
 /obj/machinery/microscope|ai|none => |
 /obj/machinery/microscope|ghost|none => |
 /obj/machinery/microscope|human|/obj/item => microscope_insert_sample,microscope_remove_sample|microscope_examine:the microscope has no sample to examine
+

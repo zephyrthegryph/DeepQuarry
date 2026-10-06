@@ -1,7 +1,5 @@
-/obj/machinery/power/rtg/reg|human|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,reg_pixel_fix:needs an item,machine_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
-/obj/machinery/power/rtg/reg|robot|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,reg_pixel_fix:needs an item,machine_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
+/obj/machinery/power/rtg/reg|human|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/power/rtg/reg|robot|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/rtg/reg|ai|none => |
 /obj/machinery/power/rtg/reg|ghost|none => |
-/obj/machinery/power/rtg/reg|human|/obj/item => reg_pixel_fix,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
-/obj/machinery/power/rtg/reg|human|/obj/item/storage/part_replacer => reg_pixel_fix,machine_part_replacement,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,power_cable_place:needs a cable coil
-/obj/machinery/power/rtg/reg|human|/obj/item/stack/cable_coil => reg_pixel_fix,power_cable_place,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device
+

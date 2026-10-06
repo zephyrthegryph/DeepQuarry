@@ -1,4 +1,5 @@
-/obj/machinery/artifact_harvester|human|none => artifact_harvester_use_item,artifact_harvester_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/artifact_harvester|robot|none => artifact_harvester_use_item,artifact_harvester_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/artifact_harvester|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/artifact_harvester|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/artifact_harvester|ai|none => |
 /obj/machinery/artifact_harvester|ghost|none => |
+

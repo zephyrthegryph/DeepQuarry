@@ -1,43 +1,35 @@
-human|none menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|none menu: Climb
 human|none click: nothing
-robot|none menu: Bind (refused: needs a sheet of paper or a paper bundle)
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/tool/screwdriver menu: Climb
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/stack/cable_coil menu: Climb
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Bind (refused: needs a sheet of paper or a paper bundle)
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id click: nothing
 human|/obj/item/paper menu: Bind
 human|/obj/item/paper menu: Climb
-human|/obj/item/paper click: nothing
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_insert_interaction_bind, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+human|/obj/item/paper click: Click: Bind
+human|/obj/item/paper_bundle menu: Bind
+human|/obj/item/paper_bundle menu: Climb
+human|/obj/item/paper_bundle click: Click: Bind
+keys: bind, climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

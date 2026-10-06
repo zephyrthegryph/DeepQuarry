@@ -3,3 +3,4 @@
 /obj/machinery/floorlayer|ai|none => |
 /obj/machinery/floorlayer|ghost|none => |
 /obj/machinery/floorlayer|human|/obj/item/stack/tile => floorlayer_toggle,floorlayer_load_tile|
+

@@ -1,5 +1,5 @@
-/obj/machinery/computer/stockexchange|human|none => stockexchange_use|stockexchange_attackby:needs an item
-/obj/machinery/computer/stockexchange|robot|none => stockexchange_use|gen_robot_interaction_swallow:not possible right now,stockexchange_attackby:needs an item
+/obj/machinery/computer/stockexchange|human|none => |
+/obj/machinery/computer/stockexchange|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/stockexchange|ai|none => |
 /obj/machinery/computer/stockexchange|ghost|none => |
-/obj/machinery/computer/stockexchange|human|/obj/item => stockexchange_attackby,stockexchange_use|
+

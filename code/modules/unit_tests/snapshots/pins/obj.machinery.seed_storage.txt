@@ -53,6 +53,18 @@ human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Ui open
+human|/obj/item/seeds menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/seeds menu: Insert seeds
+human|/obj/item/seeds menu: Ui open
+human|/obj/item/seeds menu: Use
+human|/obj/item/seeds click: Click: Ui open
+human|/obj/item/storage/bag/plants menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/storage/bag/plants menu: Empty contents
+human|/obj/item/storage/bag/plants menu: Empty seed bag
+human|/obj/item/storage/bag/plants menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/bag/plants menu: Ui open
+human|/obj/item/storage/bag/plants menu: Use
+human|/obj/item/storage/bag/plants click: Click: Ui open
 wires: Contraband, Electrification, Lockdown, Smart
 keys: emag_gated, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_repair, purge, ui_open, use, use_screwdriver, use_wrench, vend
 

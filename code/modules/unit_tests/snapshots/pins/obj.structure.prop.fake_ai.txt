@@ -23,5 +23,8 @@ human|/obj/item/stack/material/steel menu: Use (refused: not possible right now)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Use (refused: not possible right now)
 human|/obj/item/card/id click: nothing
+human|/obj/item/aicard menu: Use
+human|/obj/item/aicard menu: Use (refused: not possible right now)
+human|/obj/item/aicard click: Click: Use
 keys: gen_drag_interaction_drag_buckle, item, prop_hand
 

@@ -1,6 +1,6 @@
-/obj/machinery/computer/shuttle_control/web|human|none => |emag:needs a cryptographic sequencer,shuttle_control_web_register_helmet:needs a pilot helmet,shuttle_control_open_ui:access denied
-/obj/machinery/computer/shuttle_control/web|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,shuttle_control_web_register_helmet:needs a pilot helmet,shuttle_control_open_ui:access denied
+/obj/machinery/computer/shuttle_control/web|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/computer/shuttle_control/web|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/shuttle_control/web|ai|none => |
 /obj/machinery/computer/shuttle_control/web|ghost|none => |
-/obj/machinery/computer/shuttle_control/web|human|/obj/item/clothing/head/pilot => |emag:needs a cryptographic sequencer,shuttle_control_web_register_helmet:not possible right now,shuttle_control_open_ui:access denied
-/obj/machinery/computer/shuttle_control/web|human|/obj/item/card/emag => emag|shuttle_control_web_register_helmet:needs a pilot helmet,shuttle_control_open_ui:access denied
+/obj/machinery/computer/shuttle_control/web|human|/obj/item/card/emag => emag|
+

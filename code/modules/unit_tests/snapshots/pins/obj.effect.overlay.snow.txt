@@ -12,5 +12,11 @@ human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id click: nothing
+human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap click: Click: Insert a soap
+human|/obj/item/shovel menu: Shovel
+human|/obj/item/shovel click: Click: Shovel
 keys: gen_drag_interaction_drag_buckle, pass_insert, pass_insert_2, shovel_snow
 

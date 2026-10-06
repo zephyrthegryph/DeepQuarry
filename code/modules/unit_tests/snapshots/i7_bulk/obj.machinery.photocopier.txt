@@ -1,7 +1,5 @@
-/obj/machinery/photocopier|human|none => machine_open_ui_ungated,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,photocopier_insert:needs a sheet of paper, a photo, or a paper bundle,photocopier_toner:needs a toner cartridge,photocopier_catchall:needs an item
-/obj/machinery/photocopier|robot|none => machine_open_ui_ungated,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,photocopier_insert:needs a sheet of paper, a photo, or a paper bundle,photocopier_toner:needs a toner cartridge,photocopier_catchall:needs an item
+/obj/machinery/photocopier|human|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/photocopier|robot|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/photocopier|ai|none => |
 /obj/machinery/photocopier|ghost|none => |
-/obj/machinery/photocopier|human|/obj/item/paper => machine_open_ui_ungated,photocopier_insert,photocopier_catchall,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,photocopier_toner:needs a toner cartridge
-/obj/machinery/photocopier|human|/obj/item/toner => machine_open_ui_ungated,photocopier_toner,photocopier_catchall,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,photocopier_insert:needs a sheet of paper, a photo, or a paper bundle
-/obj/machinery/photocopier|human|/obj/item => machine_open_ui_ungated,photocopier_catchall,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,photocopier_insert:needs a sheet of paper, a photo, or a paper bundle,photocopier_toner:needs a toner cartridge
+

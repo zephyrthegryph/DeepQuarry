@@ -33,24 +33,14 @@ APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser{appearance_on?_
 // TGUI migration. The old attack_hand opened AiSlipper.tsx; the
 // Topic-driven toggle/fire actions move to tgui_act. The old attackby kept the
 // ID-swipe lock/unlock behavior and just closed the UI on lock.
-/obj/machinery/ai_slipper/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/ai_slipper_toggle_lock,
-		/datum/interaction/machine_hand/ungated/ai_slipper_use,
-	)
-	..()
 
-/datum/interaction/machine_item/ai_slipper_toggle_lock
-	id = "ai_slipper_toggle_lock"
-	name = "Swipe ID"
-	effect = /obj/machinery/ai_slipper/proc/interaction_toggle_lock
-
-/obj/machinery/ai_slipper/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/ai_slipper/proc/interaction_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 	if(istype(user, /mob/living/silicon))
 		attack_hand(user)
-		return TRUE
+		return OP_OK
 	if(allowed(user))
 		set_locked(!locked)
 		to_chat(user, "You [ locked ? "lock" : "unlock"] the device.")
@@ -60,30 +50,27 @@ APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser{appearance_on?_
 			attack_hand(user)
 	else
 		to_chat(user, span_warning("Access denied."))
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/ai_slipper_use
-	id = "ai_slipper_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/ai_slipper/proc/interaction_use
-
-/obj/machinery/ai_slipper/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/ai_slipper/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 	if(get_dist(src, user) > 1 && !istype(user, /mob/living/silicon))
 		to_chat(user, "Too far away.")
 		user.unset_machine()
 		SStgui.close_uis(src)
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/ai_slipper)
 	interface("AiSlipper", title = "AI Liquid Dispenser")
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 	op("toggle_use", ui_act("toggle_use"), then(PROC_REF(ui_act_toggle_use)))
 	extend(TAG_UI, needs(req(PROC_REF(panel_unlocked), because = MSG(ai_slipper/panel_locked))))
+	op("ai_slipper_toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
+	op("ai_slipper_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 
@@ -103,7 +90,6 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	data["uses"] = uses
 	data["cooldown_timeleft"] = cooldown_timeleft
 	return data
-
 
 /obj/machinery/ai_slipper/proc/ui_act_toggle_on(datum/act/op/A)
 	disabled = !disabled

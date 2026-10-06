@@ -1,6 +1,7 @@
-/obj/machinery/wheel_of_fortune|human|none => wheel_of_fortune_use,wheel_of_fortune_setinterval|wheel_of_fortune_id:needs an identification card or a PDA,wheel_of_fortune_cash:needs a broken casino chip
-/obj/machinery/wheel_of_fortune|robot|none => wheel_of_fortune_use,wheel_of_fortune_setinterval|gen_robot_interaction_swallow:not possible right now,wheel_of_fortune_id:needs an identification card or a PDA,wheel_of_fortune_cash:needs a broken casino chip
+/obj/machinery/wheel_of_fortune|human|none => gen_hand_ungated_interaction_use,gen_verb_interaction_setinterval_verb|gen_insert_interaction_id:needs an identification card or a PDA,gen_insert_interaction_cash:needs a broken casino chip
+/obj/machinery/wheel_of_fortune|robot|none => gen_hand_ungated_interaction_use,gen_verb_interaction_setinterval_verb|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_id:needs an identification card or a PDA,gen_insert_interaction_cash:needs a broken casino chip
 /obj/machinery/wheel_of_fortune|ai|none => |
 /obj/machinery/wheel_of_fortune|ghost|none => |
-/obj/machinery/wheel_of_fortune|human|/obj/item/card/id => wheel_of_fortune_use,wheel_of_fortune_setinterval|wheel_of_fortune_id:access denied,wheel_of_fortune_cash:needs a broken casino chip
-/obj/machinery/wheel_of_fortune|human|/obj/item/spacecasinocash => wheel_of_fortune_use,wheel_of_fortune_setinterval|wheel_of_fortune_id:needs an identification card or a PDA,wheel_of_fortune_cash:lottery sales are currently disabled
+/obj/machinery/wheel_of_fortune|human|/obj/item/card/id => gen_hand_ungated_interaction_use,gen_verb_interaction_setinterval_verb|gen_insert_interaction_id:access denied,gen_insert_interaction_cash:needs a broken casino chip
+/obj/machinery/wheel_of_fortune|human|/obj/item/spacecasinocash => gen_hand_ungated_interaction_use,gen_verb_interaction_setinterval_verb|gen_insert_interaction_id:needs an identification card or a PDA,gen_insert_interaction_cash:lottery sales are currently disabled
+

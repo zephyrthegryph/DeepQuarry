@@ -34,18 +34,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 // update the icon_state
 APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}")
 
-EXTEND_INTERACTIONS(/obj/machinery/navbeacon, \
-	INTERACT_ITEM("Swipe ID", PROC_REF(interaction_toggle_lock)), \
-	INTERACT_HAND_UNGATED("Use", TYPE_PROC_REF(/atom, interaction_open_ui), REQ_ON(PRED_ACTOR, /obj/machinery/navbeacon/proc/actor_has_dexterity, "you don't have the dexterity")), \
-)
-
-/obj/machinery/navbeacon/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/navbeacon/proc/interaction_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/turf/T = loc
 	if(!T.is_plating())
-		return TRUE		// prevent intraction when T-scanner revealed
+		return OP_OK		// prevent intraction when T-scanner revealed
 	if(held.GetID())
 		togglelock(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/navbeacon/proc/actor_has_dexterity(mob/actor, atom/target, obj/item/held)
 	return actor.IsAdvancedToolUser()
@@ -88,6 +85,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	op("trans_add_code", ui_act("trans_add_code", arg("new_key", schema_text(4096)), arg("new_val", schema_text(4096))), then(PROC_REF(ui_act_trans_add_code)))
 	op("trans_del", ui_act("trans_del", arg("code", schema_text(4096))), then(PROC_REF(ui_act_trans_del)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
 
 /obj/machinery/navbeacon/ui_prepare(mob/user, datum/tgui/ui)
 	var/turf/T = loc
@@ -178,7 +176,6 @@ CAPABILITIES(/obj/machinery/navbeacon)
 		return FALSE
 	LAZYREMOVE(codes, codekey)
 	return TRUE
-
 
 //
 // Nav Beacon Mapping

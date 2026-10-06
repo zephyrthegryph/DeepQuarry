@@ -94,9 +94,6 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	balloon_alert(user, "saved to multitool buffer")
 	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/machinery/ore_silo, \
-)
-
 /obj/machinery/ore_silo/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)

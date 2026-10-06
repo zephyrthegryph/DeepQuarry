@@ -1,5 +1,5 @@
-/obj/machinery/pump|human|none => pump_use|machine_anchor:needs a wrench,pump_insert_cell:needs a power cell
-/obj/machinery/pump|robot|none => gen_silicon_pump_silicon_toggle,pump_use|machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,pump_insert_cell:needs a power cell
-/obj/machinery/pump|ai|none => gen_silicon_pump_silicon_toggle|
+/obj/machinery/pump|human|none => |machine_anchor:needs a wrench
+/obj/machinery/pump|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/pump|ai|none => |
 /obj/machinery/pump|ghost|none => |
-/obj/machinery/pump|human|/obj/item/cell => pump_use|machine_anchor:needs a wrench,pump_insert_cell:the battery panel is watertight and cannot be opened without a crowbar
+

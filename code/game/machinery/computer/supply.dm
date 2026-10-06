@@ -29,9 +29,18 @@
 	circuit = /obj/item/circuitboard/supplycomp/control
 	authorization = SUP_SEND_SHUTTLE | SUP_ACCEPT_ORDERS
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/supplycomp, \
-	INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui), REQ_ON(PRED_TARGET, /obj/machinery/computer/supplycomp/proc/lets_in, "you don't have the required access to use this console")), \
-)
+CAPABILITIES(/obj/machinery/computer/supplycomp)
+	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(TYPE_PROC_REF(/atom, op_open_ui)))
+
+/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/obj/machinery/computer/supplycomp/proc/lets_in_holds(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/supplycomp/proc/lets_in_refusal(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return istext(answer) ? answer : "you don't have the required access to use this console"
 
 /obj/machinery/computer/supplycomp/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
@@ -64,7 +73,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 		return FALSE
 	var/obj/item/card/id/id_card = human_user.GetIdCard()
 	return id_card && ((ACCESS_CARGO in id_card.access) || (ACCESS_HEADS in id_card.access) || can_manage_budget(user, DEPARTMENT_CARGO))
-
 
 // TGUI (doc/rewrite/dx_conventions.md §5): tgui_data() and one act_<action> proc per action.
 /obj/machinery/computer/supplycomp/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
@@ -212,7 +220,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	data["supply_packs"] = pack_list
 	data["categories"] = GLOB.all_supply_groups
 	return data
-
 
 /obj/machinery/computer/supplycomp/ui_allowed(mob/user, action)
 	if(!SSsupply)

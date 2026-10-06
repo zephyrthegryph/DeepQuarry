@@ -1,4 +1,5 @@
-/obj/machinery/computer/power_monitor|human|none => power_monitor_use|
-/obj/machinery/computer/power_monitor|robot|none => power_monitor_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/power_monitor|human|none => |
+/obj/machinery/computer/power_monitor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/power_monitor|ai|none => |
 /obj/machinery/computer/power_monitor|ghost|none => |
+

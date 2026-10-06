@@ -2,3 +2,4 @@
 /obj/structure/bed|robot|none => gen_drag_interaction_drag_buckle|
 /obj/structure/bed|ai|none => |
 /obj/structure/bed|ghost|none => |
+

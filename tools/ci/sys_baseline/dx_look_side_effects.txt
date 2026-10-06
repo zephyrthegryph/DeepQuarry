@@ -341,6 +341,7 @@ dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	desc = "A wall of t
 dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	desc = initial(desc)
 dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	name = "[base_name] [overmind.blob_type.name]"
 dx_appearance_side_effect	code/modules/blob2/blobs/shield.dm	name = "inert [base_name] blob"
+dx_appearance_side_effect	code/modules/body/organs/organ_icon.dm	damage_state = n_is
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(0)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light_on(FALSE)
 dx_appearance_side_effect	code/modules/casino/slots.dm	set_light(2)
@@ -570,7 +571,6 @@ dx_appearance_side_effect	code/modules/modular_computers/NTNet/NTNet_relay.dm	no
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(0)
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(light_strength)
 dx_appearance_side_effect	code/modules/modular_computers/computers/subtypes/dev_laptop.dm	set_light(0) // No glow from closed laptops
-dx_appearance_side_effect	code/modules/body/organs/organ_icon.dm	damage_state = n_is
 dx_appearance_side_effect	code/modules/overmap/ships/computers/helm.dm	set_light(0)
 dx_appearance_side_effect	code/modules/overmap/ships/computers/helm.dm	set_light(light_range_on, light_power_on)
 dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	dir = angle2dir(round(heading, 90))

@@ -1,5 +1,5 @@
-/obj/machinery/gear_painter|human|none => machine_open_ui,gear_painter_alt_drop|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gear_painter_insert:needs a you should not see this..., a backpack, a belt, or an item
-/obj/machinery/gear_painter|robot|none => machine_open_ui,gear_painter_alt_drop|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,gear_painter_insert:needs a you should not see this..., a backpack, a belt, or an item
+/obj/machinery/gear_painter|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/gear_painter|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/gear_painter|ai|none => |
 /obj/machinery/gear_painter|ghost|none => |
-/obj/machinery/gear_painter|human|/obj/item/clothing => gear_painter_insert,machine_open_ui,gear_painter_alt_drop|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+

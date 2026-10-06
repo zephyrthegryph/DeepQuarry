@@ -1,4 +1,5 @@
-/obj/machinery/artifact_analyser|human|none => artifact_analyser_use|
-/obj/machinery/artifact_analyser|robot|none => artifact_analyser_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/artifact_analyser|human|none => |
+/obj/machinery/artifact_analyser|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/artifact_analyser|ai|none => |
 /obj/machinery/artifact_analyser|ghost|none => |
+

@@ -40,6 +40,10 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 wires: Hack, Next, Prev, Primary Power, Reverse, Speeddown, Speedup, Start, Stop
 keys: add_new_track, change_track, climb.climb, climb.climb_menu, emag.subvert, emag.use, gen_observer_ghost_jukebox_observer_use, loopmode, play, remove_new_track, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
 

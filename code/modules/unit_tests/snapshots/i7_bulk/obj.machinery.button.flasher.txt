@@ -1,5 +1,6 @@
-/obj/machinery/button/flasher|human|none => flasher_button_trigger,button_press|button_press_item:needs an item
-/obj/machinery/button/flasher|robot|none => flasher_button_trigger,button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
+/obj/machinery/button/flasher|human|none => button_press|button_press_item:needs an item
+/obj/machinery/button/flasher|robot|none => button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
 /obj/machinery/button/flasher|ai|none => |
 /obj/machinery/button/flasher|ghost|none => |
-/obj/machinery/button/flasher|human|/obj/item => flasher_button_trigger,button_press,button_press_item|
+/obj/machinery/button/flasher|human|/obj/item => button_press,button_press_item|
+

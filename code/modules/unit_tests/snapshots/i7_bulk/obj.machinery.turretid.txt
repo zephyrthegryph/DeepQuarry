@@ -2,3 +2,4 @@
 /obj/machinery/turretid|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/turretid|ai|none => |
 /obj/machinery/turretid|ghost|none => |
+

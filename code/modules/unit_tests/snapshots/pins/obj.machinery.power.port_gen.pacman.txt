@@ -39,5 +39,18 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id click: nothing
+human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/card/emag menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/card/emag menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/stack/material menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/material menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/stack/material click: nothing
 keys: add_fuel, anchor.toggle, cable_place, eject, emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, higher_power, lower_power, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, toggle_power, ui_open, use_crowbar, use_screwdriver
 

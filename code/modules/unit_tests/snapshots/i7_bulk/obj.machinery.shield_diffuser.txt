@@ -1,5 +1,5 @@
-/obj/machinery/shield_diffuser|human|none => shield_diffuser_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device
-/obj/machinery/shield_diffuser|robot|none => shield_diffuser_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,machine_part_replacement:needs a rapid part exchange device
+/obj/machinery/shield_diffuser|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/shield_diffuser|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shield_diffuser|ai|none => |
 /obj/machinery/shield_diffuser|ghost|none => |
-/obj/machinery/shield_diffuser|human|/obj/item/storage/part_replacer => shield_diffuser_toggle,machine_part_replacement|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

@@ -11,6 +11,7 @@
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
+	without("reagent_refinery_set_transfer_amount")
 	climb()
 
 /obj/machinery/reagent_refinery/pipe/Initialize(mapload)
@@ -46,6 +47,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/ato
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SINGLEOUTPUT|REFINERY_TUTORIAL_NOPOWER, .)
 
-/obj/machinery/reagent_refinery/pipe/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

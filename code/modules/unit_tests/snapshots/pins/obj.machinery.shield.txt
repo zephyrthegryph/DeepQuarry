@@ -22,5 +22,7 @@ human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel click: Click: Hit
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id click: Click: Hit
+human|/obj/item menu: Hit
+human|/obj/item click: Click: Hit
 keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, hit, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

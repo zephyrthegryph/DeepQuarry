@@ -1,4 +1,5 @@
-/obj/machinery/computer/fusion_core_control|human|none => fusion_core_control_open_ui|fusion_core_control_multitool:needs a multitool
-/obj/machinery/computer/fusion_core_control|robot|none => fusion_core_control_open_ui|gen_robot_interaction_swallow:not possible right now,fusion_core_control_multitool:needs a multitool
+/obj/machinery/computer/fusion_core_control|human|none => |
+/obj/machinery/computer/fusion_core_control|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/fusion_core_control|ai|none => |
 /obj/machinery/computer/fusion_core_control|ghost|none => |
+

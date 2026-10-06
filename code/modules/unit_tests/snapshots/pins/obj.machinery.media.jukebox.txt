@@ -3,7 +3,6 @@ human|none menu: Deconstruct (refused: needs a crowbar)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
 human|none menu: Ui open
 human|none menu: Use
-human|none menu: Use (refused: needs an item)
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
@@ -11,7 +10,6 @@ robot|none menu: Deconstruct (refused: needs a crowbar)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
 robot|none menu: Ui open
 robot|none menu: Use
-robot|none menu: Use (refused: needs an item)
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
@@ -75,6 +73,12 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/card/emag menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item menu: Climb
 human|/obj/item menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
@@ -82,5 +86,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
 wires: Hack, Next, Prev, Primary Power, Reverse, Speeddown, Speedup, Start, Stop
-keys: add_new_track, change_track, climb.climb, climb.climb_menu, emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_interact, gen_insert_interaction_fingerprint, gen_robot_interaction_swallow, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_repair, play, remove_new_track, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
+keys: add_new_track, change_track, climb.climb, climb.climb_menu, emag.subvert, emag.use, fingerprint, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, interact, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_repair, play, remove_new_track, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
 

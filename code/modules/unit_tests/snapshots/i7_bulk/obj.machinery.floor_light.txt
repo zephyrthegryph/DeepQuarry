@@ -2,3 +2,4 @@
 /obj/machinery/floor_light|robot|none => |gen_robot_interaction_swallow:not possible right now,floor_light_use:it must be screwed down first,floor_light_harm:combat mode is off,floor_light_smash:combat mode is off
 /obj/machinery/floor_light|ai|none => |
 /obj/machinery/floor_light|ghost|none => |
+

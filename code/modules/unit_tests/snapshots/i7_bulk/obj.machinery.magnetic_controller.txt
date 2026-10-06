@@ -1,4 +1,5 @@
-/obj/machinery/magnetic_controller|human|none => magnetic_controller_open|
-/obj/machinery/magnetic_controller|robot|none => magnetic_controller_open|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/magnetic_controller|human|none => |
+/obj/machinery/magnetic_controller|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/magnetic_controller|ai|none => |
 /obj/machinery/magnetic_controller|ghost|none => |
+

@@ -154,9 +154,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/
 	// Grinder forbids input
 	return 0
 
-/obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
 
 /// Busy while it holds items to grind or an operating conveyor feeds it.
 /obj/machinery/reagent_refinery/grinder/refinery_busy()
@@ -167,3 +164,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/
 		if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D])
 			return TRUE
 	return FALSE
+
+CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
+	without("reagent_refinery_set_transfer_amount")

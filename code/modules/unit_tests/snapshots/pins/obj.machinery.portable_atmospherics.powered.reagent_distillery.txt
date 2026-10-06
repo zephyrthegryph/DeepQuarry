@@ -48,5 +48,22 @@ human|/obj/item/card/id menu: Start Distillery Mixing
 human|/obj/item/card/id menu: Toggle Distillery Heating
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/tank menu: Insert tank
+human|/obj/item/tank menu: Start Distillery Mixing
+human|/obj/item/tank menu: Toggle Distillery Heating
+human|/obj/item/tank menu: Use
+human|/obj/item/tank click: Click: Insert tank
+human|/obj/item/cell menu: Insert power cell
+human|/obj/item/cell menu: Start Distillery Mixing
+human|/obj/item/cell menu: Toggle Distillery Heating
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert power cell
+human|/obj/item/reagent_containers/glass menu: Install beaker
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Start Distillery Mixing
+human|/obj/item/reagent_containers/glass menu: Toggle Distillery Heating
+human|/obj/item/reagent_containers/glass menu: Use
+human|/obj/item/reagent_containers/glass click: Click: Install beaker
 keys: cell_in, cell_out, distillery_install_beaker, distillery_radial, distillery_toggle_mixing, distillery_toggle_power, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, tank_bay.holding.insert
 

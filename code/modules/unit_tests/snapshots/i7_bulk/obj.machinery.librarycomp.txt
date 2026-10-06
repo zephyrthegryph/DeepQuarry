@@ -4,3 +4,4 @@
 /obj/machinery/librarycomp|ghost|none => gen_observer_librarycomp_ghost_admin_view|
 /obj/machinery/librarycomp|human|/obj/item/barcodescanner => librarycomp_link_scanner,librarycomp_open_ui|emag:needs a cryptographic sequencer
 /obj/machinery/librarycomp|human|/obj/item/card/emag => emag,librarycomp_open_ui|librarycomp_link_scanner:needs a barcode scanner
+

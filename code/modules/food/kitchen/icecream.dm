@@ -45,16 +45,10 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		else
 			return "vanilla"
 
-
 /obj/machinery/icecream_vat/Initialize(mapload)
 	. = ..()
 	while(length(product_types) < 6)
 		LAZYADD(product_types, 5)
-
-EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
-	INTERACT_ITEM(null, PROC_REF(icecream_vat_interaction_item)), \
-)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
 	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
@@ -63,6 +57,7 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
 	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
 	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))
+	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(icecream_vat_interaction_item)))
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
 	var/ice_data = list()
@@ -127,9 +122,11 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	return TRUE
 
 /// Old attackby.
-/obj/machinery/icecream_vat/proc/icecream_vat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/icecream_vat/proc/icecream_vat_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(default_part_replacement(user, O))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(O, /obj/item/reagent_containers/food/snacks/icecream))
 		var/obj/item/reagent_containers/food/snacks/icecream/I = O
 		if(!I.ice_creamed)
@@ -143,10 +140,10 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 				to_chat(user, span_warning("There is not enough icecream left!"))
 		else
 			to_chat(user, span_notice("[O] already has icecream in it."))
-		return 1
+		return OP_OK
 	else if(O.is_open_container())
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/machinery/icecream_vat/proc/make(mob/user, make_type, amount)
 	for(var/R in get_ingredient_list(make_type))

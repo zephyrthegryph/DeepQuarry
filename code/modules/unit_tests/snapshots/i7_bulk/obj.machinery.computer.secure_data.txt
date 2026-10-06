@@ -1,5 +1,5 @@
-/obj/machinery/computer/secure_data|human|none => secure_data_eject_id,secure_data_use|secure_data_insert_id:needs an identification card
-/obj/machinery/computer/secure_data|robot|none => secure_data_eject_id,secure_data_use|gen_robot_interaction_swallow:not possible right now,secure_data_insert_id:needs an identification card
+/obj/machinery/computer/secure_data|human|none => |
+/obj/machinery/computer/secure_data|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/secure_data|ai|none => |
 /obj/machinery/computer/secure_data|ghost|none => |
-/obj/machinery/computer/secure_data|human|/obj/item/card/id => secure_data_eject_id,secure_data_insert_id,secure_data_use|
+

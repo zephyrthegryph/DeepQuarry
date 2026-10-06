@@ -1,6 +1,5 @@
-/obj/machinery/power/port_gen/large_altevian|human|none => large_altevian_toggle,port_gen_touch|large_altevian_add_sheets:needs an item,power_cable_place:needs a cable coil
-/obj/machinery/power/port_gen/large_altevian|robot|none => gen_silicon_large_altevian_silicon_toggle,large_altevian_toggle,port_gen_touch|gen_robot_interaction_swallow:not possible right now,large_altevian_add_sheets:needs an item,power_cable_place:needs a cable coil
-/obj/machinery/power/port_gen/large_altevian|ai|none => gen_silicon_large_altevian_silicon_toggle|
+/obj/machinery/power/port_gen/large_altevian|human|none => |
+/obj/machinery/power/port_gen/large_altevian|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/power/port_gen/large_altevian|ai|none => |
 /obj/machinery/power/port_gen/large_altevian|ghost|none => |
-/obj/machinery/power/port_gen/large_altevian|human|/obj/item/stack/material => large_altevian_toggle,port_gen_touch|large_altevian_add_sheets:not possible right now,power_cable_place:needs a cable coil
-/obj/machinery/power/port_gen/large_altevian|human|/obj/item/stack/cable_coil => large_altevian_toggle,port_gen_touch,power_cable_place|large_altevian_add_sheets:needs an item
+

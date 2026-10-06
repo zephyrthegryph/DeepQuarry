@@ -10,6 +10,8 @@
 	var/busy_bank = FALSE
 	var/static/list/item_takers = list()
 
+TRACKED(/obj/machinery/item_bank, busy_bank)
+
 /obj/machinery/item_bank/proc/persist_item_savefile_path(mob/user)
 	return "data/player_saves/[copytext(user.ckey, 1, 2)]/[user.ckey]/persist_item.sav"
 
@@ -51,11 +53,19 @@
 		F["persist name"] >> persist_name
 		return persist_name
 
+CAPABILITIES(/obj/machinery/item_bank)
+	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req(PROC_REF(can_store_holds), because = PROC_REF(can_store_refusal))), then(PROC_REF(interaction_store)))
 
-EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_store), "Store", REQ_TARGET_STATE(/obj/machinery/item_bank/proc/can_store)), \
-)
+/// Requirement (was REQ_* can_store): the legacy check answers TRUE to pass.
+/obj/machinery/item_bank/proc/can_store_holds(datum/act/op/A)
+	var/answer = can_store(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_store_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/item_bank/proc/can_store_refusal(datum/act/op/A)
+	var/answer = can_store(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /**
  * Old attack_hand: `. = ..()` but never checked `.` before continuing, so the gate never
@@ -63,15 +73,16 @@ EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
  * checks, which is what the gate would otherwise have caught. Any message or side effect
  * the base gated attack_hand used to produce is no longer shown; note in the I7 report.
  */
-/obj/machinery/item_bank/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/item_bank/proc/interaction_use(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!ishuman(user))
-		return TRUE
+		return OP_OK
 	if(istype(user) && Adjacent(user))
 		if(!operable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
 		else
 			start_using(user)
-	return TRUE
+	return OP_OK
 
 /// The questions re-run this proc; the bank is only taken (busy) once the retrieval starts.
 /obj/machinery/item_bank/proc/start_using(mob/living/user)
@@ -106,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
 			return
 		if(!choice || choice == "No" || !Adjacent(user) || !operable() || panel_open || busy_bank)
 			return
-		busy_bank = TRUE
+		set_busy_bank(TRUE)
 		icon_state = "item_bank_o"
 		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(retrieve_done), done_args = list(user, I), on_fail = PROC_REF(bank_interrupted))
 		return
@@ -153,7 +164,7 @@ EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
 	world.push_usr(completed.answerer, new /datum/callback(src, PROC_REF(retrieval_stage)), completed.answerer, retrieval_answers)
 
 /obj/machinery/item_bank/proc/bank_interrupted()
-	busy_bank = FALSE
+	set_busy_bank(FALSE)
 	icon_state = "item_bank"
 
 /obj/machinery/item_bank/proc/retrieve_done(mob/living/user, I)
@@ -171,7 +182,7 @@ EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
 	F["persist name"] << null
 	fdel(path)
 	item_takers += user.ckey
-	busy_bank = FALSE
+	set_busy_bank(FALSE)
 	icon_state = "item_bank"
 
 /// Requirement: TRUE, or why nothing can be stored right now (a non-human is refused silently by the effect).
@@ -190,34 +201,36 @@ EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
 	act_message(user, src, MSG_SELF(span_notice("You stored %I% in %T%.")), MSG_OTHERS(span_notice("%U% stores %I% in %T%.")), item = O)
 	log_admin("[key_name_admin(user)] stored [O] in the item bank.")
 	consume(O, user)
-	busy_bank = FALSE
+	set_busy_bank(FALSE)
 	icon_state = "item_bank"
 
-/obj/machinery/item_bank/proc/interaction_store(mob/living/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/item_bank/proc/interaction_store(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/O = A.held
 	if(!ishuman(user))
-		return TRUE
+		return OP_OK
 	if(busy_bank) // re-entered after the confirm prompt (rerun_ask): the bank may have been claimed meanwhile
-		return TRUE
+		return OP_OK
 	var/I = persist_item_savefile_load(user, "type")
 	if(!istool(O) && O.persist_storable)
 		if(ispath(I))
 			to_chat(user, span_warning("You cannot store \the [O]. You already have something stored."))
-			return TRUE
+			return OP_OK
 		var/choice = rerun_ask(user, "store", PROC_REF(interaction_store), args, /datum/om/prompt/choice/alert, message = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", title = "[src]", choices = list("Store", "Cancel"), timeout = 10 SECONDS)
 		if(!choice || choice == "Cancel" || !Adjacent(user) || !operable() || panel_open || busy_bank || O.loc != user)
-			return TRUE
+			return OP_OK
 		for(var/obj/item/check in contents_of(O))
 			if(!check.persist_storable || check?.tether_host())
 				to_chat(user, span_warning("\The [src] buzzes. \The [O] contains [check], which cannot be stored. Please remove this item before attempting to store \the [O]. As a reminder, any contents of \the [O] will be lost if you store it with contents."))
-				return TRUE
-		busy_bank = TRUE
+				return OP_OK
+		set_busy_bank(TRUE)
 		act_message(user, src, MSG_SELF(span_notice("You begin storing %I% in %T%.")), MSG_OTHERS(span_notice("%U% begins storing %I% in %T%.")), item = O)
 		icon_state = "item_bank_o"
 		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
-		return TRUE
+		return OP_OK
 	else
 		to_chat(user, span_warning("You cannot store \the [O]. \The [src] either does not accept that, or it has already been retrieved from storage this shift."))
-	return TRUE
+	return OP_OK
 
 /////STORABLE ITEMS AND ALL THAT JAZZ/////
 //I am only really intending this to be used for single items. Mostly stuff you got right now, but can't/don't want to use right now.

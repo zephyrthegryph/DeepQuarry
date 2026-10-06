@@ -1,5 +1,6 @@
-/obj/machinery/computer/borgupload|human|none => |borgupload_install:needs a AI module,borgupload_select_borg:no free cyborgs detected
-/obj/machinery/computer/borgupload|robot|none => |gen_robot_interaction_swallow:not possible right now,borgupload_install:needs a AI module,borgupload_select_borg:no free cyborgs detected
+/obj/machinery/computer/borgupload|human|none => |gen_insert_interaction_install:needs a AI module,gen_hand_ungated_interaction_select_borg:no free cyborgs detected
+/obj/machinery/computer/borgupload|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_install:needs a AI module,gen_hand_ungated_interaction_select_borg:no free cyborgs detected
 /obj/machinery/computer/borgupload|ai|none => |
 /obj/machinery/computer/borgupload|ghost|none => gen_observer_interaction_swallow|
-/obj/machinery/computer/borgupload|human|/obj/item/aiModule => borgupload_install|borgupload_select_borg:no free cyborgs detected
+/obj/machinery/computer/borgupload|human|/obj/item/aiModule => gen_insert_interaction_install|gen_hand_ungated_interaction_select_borg:no free cyborgs detected
+

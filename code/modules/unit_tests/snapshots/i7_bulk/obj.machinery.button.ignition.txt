@@ -1,5 +1,6 @@
-/obj/machinery/button/ignition|human|none => ignition_button_trigger,button_press|button_press_item:needs an item
-/obj/machinery/button/ignition|robot|none => ignition_button_trigger,button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
+/obj/machinery/button/ignition|human|none => button_press|button_press_item:needs an item
+/obj/machinery/button/ignition|robot|none => button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
 /obj/machinery/button/ignition|ai|none => |
 /obj/machinery/button/ignition|ghost|none => |
-/obj/machinery/button/ignition|human|/obj/item => ignition_button_trigger,button_press,button_press_item|
+/obj/machinery/button/ignition|human|/obj/item => button_press,button_press_item|
+

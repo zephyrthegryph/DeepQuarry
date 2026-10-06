@@ -1,6 +1,6 @@
-/obj/machinery/shield_gen|human|none => shield_gen_open_ui|emag:needs a cryptographic sequencer,shield_gen_swipe_id:needs an identification card
-/obj/machinery/shield_gen|robot|none => shield_gen_open_ui|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,shield_gen_swipe_id:needs an identification card
+/obj/machinery/shield_gen|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/shield_gen|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shield_gen|ai|none => |
 /obj/machinery/shield_gen|ghost|none => |
-/obj/machinery/shield_gen|human|/obj/item/card/id => shield_gen_swipe_id,shield_gen_open_ui|emag:needs a cryptographic sequencer
-/obj/machinery/shield_gen|human|/obj/item/card/emag => emag,shield_gen_open_ui|shield_gen_swipe_id:needs an identification card
+/obj/machinery/shield_gen|human|/obj/item/card/emag => emag|
+

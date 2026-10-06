@@ -3,3 +3,4 @@
 /obj/machinery/keycard_auth|ai|none => gen_silicon_keycard_auth_silicon_refuse|
 /obj/machinery/keycard_auth|ghost|none => |
 /obj/machinery/keycard_auth|human|/obj/item => keycard_auth_swipe,keycard_auth_open_ui|
+

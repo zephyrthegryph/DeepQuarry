@@ -57,5 +57,10 @@ human|/obj/item/card/id menu: Medical stand interaction item
 human|/obj/item/card/id menu: Set IV transfer amount
 human|/obj/item/card/id menu: Toggle IV Mode
 human|/obj/item/card/id click: Click: Medical stand interaction item
+human|/obj/item menu: Medical stand interaction hand
+human|/obj/item menu: Medical stand interaction item
+human|/obj/item menu: Set IV transfer amount
+human|/obj/item menu: Toggle IV Mode
+human|/obj/item click: Click: Medical stand interaction item
 keys: gen_drag_interaction_drag_buckle, medical_stand_interaction_hand, medical_stand_interaction_item, set_iv_transfer, toggle_iv_mode, use_wrench
 

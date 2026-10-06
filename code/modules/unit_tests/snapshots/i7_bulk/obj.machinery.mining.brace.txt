@@ -1,5 +1,5 @@
-/obj/machinery/mining/brace|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,brace_attackby:needs an item
-/obj/machinery/mining/brace|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,brace_attackby:needs an item
+/obj/machinery/mining/brace|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/mining/brace|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/mining/brace|ai|none => |
 /obj/machinery/mining/brace|ghost|none => |
-/obj/machinery/mining/brace|human|/obj/item => brace_attackby|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+
