@@ -205,7 +205,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		to_chat(user, span_blue("You empty the bag."))
 		for(var/obj/item/O in T.slot_contents())
 			T.remove_from_storage(O,src)
-		T.update_icon()
 		update_icon()
 		return TRUE
 
@@ -782,7 +781,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	var/obj/structure/disposalconstruct/C = new (src.loc/*null, SOUTH, FALSE, src*/)
 	transfer_fingerprints_to(C)
 	C.ptype = 6 // 6 = disposal unit
-	C.update_icon()
 	C.set_anchored(TRUE)
 	C.set_density(TRUE)
 	//End of "temporary" code

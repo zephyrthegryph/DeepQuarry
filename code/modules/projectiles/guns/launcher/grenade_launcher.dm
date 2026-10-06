@@ -40,7 +40,6 @@
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
 		to_chat(user, span_warning("You pump [src], but the magazine is empty."))
-	update_icon()
 
 /obj/item/gun/launcher/grenade/examine(mob/user)
 	. = ..()

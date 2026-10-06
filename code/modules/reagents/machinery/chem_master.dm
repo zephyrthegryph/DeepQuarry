@@ -46,7 +46,6 @@
 	if(!move_into(src, nameof(src.beaker), B, user))
 		return OP_OK
 	to_chat(user, "You add \the [B] to the machine.")
-	update_icon()
 	return OP_OK
 
 /// The pill bottle slot is free.
@@ -432,7 +431,6 @@ CAPABILITIES(/obj/machinery/chem_master)
 		P.pixel_y = rand(-7, 7)
 		P.icon_state = "bottle-[bottlesprite]" || "bottle-1"
 		reagents.trans_to_obj(P, amount_per_bottle)
-		P.update_icon()
 	return TRUE
 
 /obj/machinery/chem_master/proc/modal_change_bottle_style(datum/act/op/A, list/arguments)
@@ -522,7 +520,6 @@ CAPABILITIES(/obj/machinery/chem_master)
 		user.put_in_hands(beaker)
 	rel_take(src, nameof(beaker))
 	reagents.clear_reagents()
-	update_icon()
 
 /obj/machinery/chem_master/proc/ui_act_create_condi_bottle(datum/act/op/A)
 	add_fingerprint(A.actor)

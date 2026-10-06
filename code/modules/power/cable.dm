@@ -476,7 +476,6 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	. = ..()
 	apply_blueprint_effects()
 	material_engineered_id_set(src, material_id)
-	update_icon()
 	update_wclass()
 	if(material_engineered_id(src))
 		var/datum/material/material = get_material_by_name(material_engineered_id(src))
@@ -610,12 +609,10 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 
 /obj/item/stack/cable_coil/use()
 	. = ..()
-	update_icon()
 	return
 
 /obj/item/stack/cable_coil/add()
 	. = ..()
-	update_icon()
 	return
 
 ///////////////////////////////////////////////
@@ -779,7 +776,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	set_amount(rand(1,2), TRUE)
 	pixel_x = rand(-2,2)
 	pixel_y = rand(-2,2)
-	update_icon()
 	update_wclass()
 
 /obj/item/stack/cable_coil/yellow
@@ -906,7 +902,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 			embed_chance = force/w_class
 		else
 			embed_chance = force/(w_class*3)
-	update_icon()
 
 /// An alien spool always shows its own state.
 /obj/item/stack/cable_coil/alien/look_state()
@@ -952,7 +947,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/alien)
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)
 			CC.set_amount(N, TRUE)
-			CC.update_icon()
 			to_chat(user,span_blue("You take [N] units of wire from the [src]."))
 			if (CC)
 				user.put_in_hands(CC)

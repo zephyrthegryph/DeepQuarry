@@ -40,7 +40,6 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = null
 			part.powered = 0
-			part.update_icon()
 		rel_clear(src, nameof(connected_parts))
 		return
 	if(!part_scan())
@@ -67,7 +66,6 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 /obj/machinery/particle_accelerator/control_box/proc/strength_change()
 	for(var/obj/structure/particle_accelerator/part in connected_parts)
 		part.strength = strength
-		part.update_icon()
 
 /obj/machinery/particle_accelerator/control_box/proc/add_strength(mob/user, s)
 	if(assembled)
@@ -174,13 +172,11 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = src.strength
 			part.powered = 1
-			part.update_icon()
 	else
 		set_use_power(USE_POWER_IDLE)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = null
 			part.powered = 0
-			part.update_icon()
 	return 1
 
 /// Its window answers only when it is built and its interface wire is whole.
@@ -203,12 +199,10 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 		return
 	toggle_power(user)
 	. = TRUE
-	update_icon()
 
 /obj/machinery/particle_accelerator/control_box/proc/ui_act_scan(datum/act/op/A)
 	part_scan()
 	. = TRUE
-	update_icon()
 
 /obj/machinery/particle_accelerator/control_box/proc/ui_act_add_strength(datum/act/op/A)
 	var/mob/user = A.actor
@@ -216,7 +210,6 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 		return
 	add_strength(user)
 	. = TRUE
-	update_icon()
 
 /obj/machinery/particle_accelerator/control_box/proc/ui_act_remove_strength(datum/act/op/A)
 	var/mob/user = A.actor
@@ -224,7 +217,6 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 		return
 	remove_strength(user)
 	. = TRUE
-	update_icon()
 
 /obj/machinery/particle_accelerator/control_box/pre_mapped
 	assembled = TRUE

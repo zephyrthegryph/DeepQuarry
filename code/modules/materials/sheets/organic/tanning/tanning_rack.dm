@@ -24,7 +24,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leat
 	drying().set_wetness(max(drying().wetness - 1, 0))
 	if(!drying().wetness)
 		visible_message("The [drying()] is dry!")
-		update_icon()
 
 /obj/structure/tanning_rack/examine(mob/user)
 	. = ..()
@@ -48,7 +47,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leat
 		else // Drying something, add if possible
 			var/obj/item/stack/wetleather/W = A
 			W.transfer_to(drying(), W.get_amount(), TRUE)
-		update_icon()
 		return TRUE
 	return FALSE
 
@@ -73,7 +71,6 @@ DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
 		else
 			S.forceMove(get_turf(src))
 		rel_clear(src, nameof(drying))
-		update_icon()
 	return TRUE
 
 /obj/structure/tanning_rack

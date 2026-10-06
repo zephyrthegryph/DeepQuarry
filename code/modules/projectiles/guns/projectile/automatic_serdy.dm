@@ -1483,7 +1483,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 	desc += " The barrel seems to be crudely sawn in half."
 	icon_state = "sawnshotgun[shotgun_variant]"
 	icon_expected_width = 32
-	update_icon()
 	update_transform()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn //Default sawn shotgun needs it's old icon path back
@@ -1491,7 +1490,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 /obj/item/gun/projectile/shotgun/doublebarrel/Initialize(mapload)
 	. = ..()
 	update_transform()
-	update_icon()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/update_transform()
 	. = ..()

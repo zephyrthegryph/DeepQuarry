@@ -18,4 +18,3 @@
 /obj/machinery/artifact_scanpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()

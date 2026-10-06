@@ -77,7 +77,6 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 		else
 			if(!move_into(src, nameof(src.beaker), O, user))
 				return TRUE
-			update_icon()
 			return TRUE
 
 	if(holdingitems && length(holdingitems) >= limit)
@@ -210,5 +209,4 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 		rel_take(src, nameof(beaker))
 	if(new_beaker)
 		move_into(src, nameof(src.beaker), new_beaker, user)
-	update_icon()
 	return TRUE

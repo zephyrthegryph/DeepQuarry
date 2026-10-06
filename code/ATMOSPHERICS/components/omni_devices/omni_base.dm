@@ -131,7 +131,6 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 				overlays_on[ref_layer] = null
 
 	underlays = underlays_current // the pipe stubs under its ports (a look has no underlays)
-	update_icon()
 
 /obj/machinery/atmospherics/omni/proc/select_port_icons(datum/omni_port/P)
 	if(!istype(P))

@@ -530,7 +530,6 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	. = ..()
 	var/list/colour_choice = list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple")
 	icon_state = pick(colour_choice)
-	update_icon()
 
 /obj/item/reagent_containers/glass/bottle/essential_oil
 	name = "essential oils"

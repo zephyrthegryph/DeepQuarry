@@ -17,7 +17,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)

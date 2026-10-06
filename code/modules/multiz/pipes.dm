@@ -54,7 +54,6 @@
 /obj/machinery/atmospherics/pipe/zpipe/hide(i)
 	if(istype(loc, /turf/simulated))
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/zpipe/check_pressure(pressure)
 	var/datum/gas_mixture/environment = loc.return_air()

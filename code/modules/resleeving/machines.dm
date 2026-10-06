@@ -342,7 +342,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 	. = ..()
 	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
-	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
 /// the occupant's environment, same as before the ledger tracked it.

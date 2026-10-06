@@ -122,7 +122,6 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 /obj/machinery/rnd/destructive_analyzer/proc/analyze_finish()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	update_icon()
 	reset_busy()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +235,6 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	if(!current_item)
 		return FALSE
 	current_item.forceMove(drop_location())
-	update_icon()
 	return TRUE
 
 /**
@@ -262,7 +260,6 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		destroy_item_individual(thing_destroying, gain_research_points)
 	// feedback
 	play_sfx(src, SFX_MACHINES_DESTRUCTIVE_ANALYZER)
-	update_icon()
 	return TRUE
 
 /**

@@ -86,7 +86,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 		return TRUE
 	if(!move_into(src, nameof(src.beaker), O, user))
 		return TRUE
-	update_icon()
 	return TRUE
 
 /// The small injector rack has room.
@@ -107,7 +106,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	var/obj/item/E = A.held
 	count_small_injector = count_small_injector + 1
 	consume(E, user)
-	update_icon()
 	return TRUE
 
 /// An empty large injector goes on its rack.
@@ -116,7 +114,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	var/obj/item/E = A.held
 	count_large_injector = count_large_injector + 1
 	consume(E, user)
-	update_icon()
 	return TRUE
 
 /// Plastic sheets in hand: asks how many go in. Any other material is not taken: the click goes on (to the swallow below), as before.
@@ -142,7 +139,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	else
 		S.use(input_amount)
 		count_plastic = count_plastic + plastic_input
-		update_icon()
 	return TRUE
 
 /// The old adjacency/consciousness checks were silent (no message), so they stay in the effect.
@@ -169,7 +165,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	else
 		plastic_stack.use(input_amount)
 		count_plastic = count_plastic + plastic_input
-		update_icon()
 	return TRUE
 
 /// A beaker is in.
@@ -184,7 +179,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	else
 		beaker.forceMove(drop_location())
 	rel_take(src, nameof(beaker))
-	update_icon()
 	return OP_PASS
 
 /obj/machinery/injector_maker/examine(mob/user)
@@ -236,7 +230,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 			else
 				beaker.forceMove(drop_location())
 			rel_take(src, nameof(beaker))
-			update_icon()
 
 
 		if("small injector")
@@ -282,7 +275,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 				if(isnull(name))
 					return
 				make_injector("small injector", injector_amount, name, material, user)
-				update_icon()
 
 
 		if("large injector")
@@ -328,7 +320,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 				if(isnull(name))
 					return
 				make_injector("large injector", injector_amount, name, material,user)
-				update_icon()
 
 
 /obj/machinery/injector_maker/proc/make_injector(size, amount, new_name, material, mob/user)

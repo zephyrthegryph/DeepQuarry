@@ -372,6 +372,7 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_look_pins.dm"
 #include "dq_interaction_entry_tests.dm"
 #include "dx_cap_anchor_tests.dm"
 #include "dx_cap_assembly_tests.dm"

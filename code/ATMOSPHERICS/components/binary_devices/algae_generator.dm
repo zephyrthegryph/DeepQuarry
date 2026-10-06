@@ -61,7 +61,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 		last_power_draw = idle_power_usage
 	else
 		last_power_draw = 0
-	update_icon()
 
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
@@ -71,7 +70,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	rel_set(src, nameof(internal), new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
-	update_icon()
 	// TODO - Make these in actual icon states so its not silly like this
 	var/image/I = image(icon = icon, icon_state = "algae-pipe-overlay", dir = dir)
 	I.color = PIPE_COLOR_BLUE
@@ -105,12 +103,10 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	// STEP 1 - Check material resources
 	if(stored_material[MAT_ALGAE] < algae_per_mole)
 		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
-		update_icon()
 		reconsider()
 		return
 	if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
 		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
-		update_icon()
 		reconsider()
 		return
 	var/moles_to_convert = min(moles_per_tick,\
@@ -128,7 +124,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	var/co2_moles = LINDA_GAS_AMT(internal, input_gas)
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
 		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
-		update_icon()
 		reconsider()
 		return
 
@@ -145,7 +140,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	gas_touched(air2)
 	recent_moles_transferred = converted_moles
 	ui_error = null // Success!
-	update_icon()
 
 /obj/machinery/atmospherics/binary/algae_farm/draw(datum/look/look)
 	..()

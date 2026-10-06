@@ -148,7 +148,6 @@
 
 	var/turf/T = loc
 	if(level == 1 && !T.is_plating()) hide(1)
-	update_icon()
 	handle_leaking()
 
 /obj/machinery/atmospherics/pipe/simple/disconnect(obj/machinery/atmospherics/reference)
@@ -162,7 +161,6 @@
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node2))
 
-	update_icon()
 	handle_leaking()
 
 	return null

@@ -205,7 +205,6 @@ Thus, the two variables affect pump operation are set in New():
 		return //do not update_icon
 
 	broadcast_status()
-	update_icon()
 	return
 
 MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits.")
@@ -235,7 +234,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 /// The multitool lifts the pump's pressure limiter, or puts it back.
 /obj/machinery/atmospherics/binary/volume_pump/proc/overclock_toggled(datum/act/op/A)
 	set_overclocked(!overclocked)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/overclock_message(datum/act/A)
@@ -259,7 +257,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 		if("set")
 			var/new_rate = A.step_value("k269")
 			set_transfer_rate(between(0, new_rate, max_transfer_rate))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)

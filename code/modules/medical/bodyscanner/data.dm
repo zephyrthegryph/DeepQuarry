@@ -19,7 +19,6 @@
 		data["occupant"] = list()
 		return data
 
-	update_icon()
 	var/mob/living/carbon/human/H = occupant
 	var/list/occupantData = list()
 

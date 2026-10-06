@@ -395,7 +395,6 @@ CAPABILITIES(/obj/item/book/bundle)
 /obj/item/book/bundle/proc/interaction_read_bundle(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	update_icon()
 	tgui_interact(user)
 
 /obj/item/book/bundle/ui_data(datum/act/eval/A)

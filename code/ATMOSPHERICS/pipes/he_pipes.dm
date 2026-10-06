@@ -161,7 +161,6 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tending)
 		spent(src)
 		return
 
-	update_icon()
 	handle_leaking()
 	return
 
@@ -251,6 +250,5 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tending)
 		spent(src)
 		return
 
-	update_icon()
 	handle_leaking()
 	return

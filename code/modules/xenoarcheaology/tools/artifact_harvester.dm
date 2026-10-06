@@ -37,7 +37,6 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	if(!owned_scanner())
 		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 	default_apply_parts()
-	update_icon()
 
 /obj/machinery/artifact_harvester/RefreshParts(limited = 0)
 	harvesting_speed = 0

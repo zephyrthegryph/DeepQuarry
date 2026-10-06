@@ -204,7 +204,6 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 			return INTERACTION_HANDLED_PASS
 		else
 			src.forceMove(SC)
-			SC.update_icon()
 			to_chat(user, span_notice("You store \the [src] in \the [SC]."))
 	return INTERACTION_HANDLED_PASS
 

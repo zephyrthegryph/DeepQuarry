@@ -515,7 +515,6 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 
 /obj/effect/fusion_em_field/bullet_act(obj/item/projectile/Proj)
 	AddEnergy(Proj.damage)
-	update_icon()
 	return 0
 //All procs below this point are called in _core.dm, starting at line 41.
 //Stability monitoring. Gives radio annoucements if field stability is below 80%

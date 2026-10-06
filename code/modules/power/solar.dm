@@ -53,7 +53,6 @@ CAPABILITIES(/obj/machinery/power/solar)
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
 		max_integrity *= 2
 		update_integrity(max_integrity)
-	update_icon()
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
@@ -149,7 +148,6 @@ CAPABILITIES(/obj/machinery/power/solar)
 
 /obj/machinery/power/solar/proc/broken()
 	unset_control()
-	update_icon()
 	climb_shake_off(src, null)
 	return
 
@@ -190,7 +188,6 @@ CAPABILITIES(/obj/machinery/power/solar)
 /obj/machinery/power/solar/proc/update_power_generation(obj/machinery/power/solar_control/SC)
 	adir = SC.cdir //instantly rotates the panel
 	occlusion()//and
-	update_icon() //update it
 	var/sgen = get_power_supplied()
 	controller_supply = sgen
 	return sgen
@@ -553,7 +550,6 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		sum += S.update_power_generation(src)
 	connected_power = sum
 	set_power_supply(connected_power)
-	update_icon()
 
 //
 // MISC

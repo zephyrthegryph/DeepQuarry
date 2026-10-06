@@ -43,7 +43,6 @@
 	src.product_potion = O.product_potion
 	user.drop_item()
 	O.forceMove(src)
-	update_icon()
 	to_chat(user, span_notice("You place the [O] in the alembic."))
 	return TRUE
 
@@ -56,7 +55,6 @@
 	src.base_reagent = O
 	user.drop_item()
 	O.forceMove(src)
-	update_icon()
 	to_chat(user, span_notice("You place the [O] in the alembic."))
 	return TRUE
 
@@ -71,7 +69,6 @@
 	spawn_potion()
 	potion_reagent = 0
 	base_reagent = 0
-	update_icon()
 
 /obj/machinery/alembic/proc/interaction_brew(datum/act/op/A)
 	var/mob/user = A.actor
@@ -80,7 +77,6 @@
 		return TRUE
 	else if(potion_reagent != 0 && base_reagent != 0 && !bubbling) //if there is something in there and it's not bubbling yet
 		bubbling = 1
-		update_icon()
 		to_chat(user, span_notice("The alembic begins boiling the [potion_reagent] in the [base_reagent]."))
 		after(src, 3 SECONDS, PROC_REF(brew_done), with = list(user))
 		return TRUE
@@ -98,7 +94,6 @@
 		if(!user.incapacitated() && Adjacent(user))
 			user.put_in_hands(potion_reagent)
 			potion_reagent = 0
-			update_icon()
 		else
 			return TRUE
 	else if(bubbling)

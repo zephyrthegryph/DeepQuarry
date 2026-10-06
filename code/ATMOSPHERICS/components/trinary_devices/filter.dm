@@ -165,12 +165,10 @@ CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
 		. = TRUE
 	if(.)
 		set_set_flow_rate(clamp(rate, 0, air1.return_volume()))
-	update_icon()
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_filter(datum/act/op/A, filterset)
 	. = TRUE
 	set_filter_type(filterset)
-	update_icon()
 
 //
 // Mirrored Orientation - Flips the output dir to opposite side from normal.

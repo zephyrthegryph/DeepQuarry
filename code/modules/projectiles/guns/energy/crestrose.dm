@@ -27,7 +27,6 @@
 
 /obj/item/gun/projectile/automatic/fluff/crestrose/switch_firemodes(mob/user)
 	if(..())
-		update_icon()
 		update_held_icon()
 
 

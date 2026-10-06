@@ -44,7 +44,6 @@ CAPABILITIES(/obj/item/generic_item)
 			icon_state = icon_state_on
 			if(user)
 				user.visible_message(span_notice("[text_activated]"))
-			update_icon()
 			if(effect == 1)
 				fx_sparks(src, 3)
 			if(effect == 2)
@@ -97,7 +96,6 @@ CAPABILITIES(/obj/item/generic_item)
 				icon = 'icons/obj/props/items.dmi'
 			if(user)
 				user.visible_message(span_notice("[text_deactivated]"))
-			update_icon()
 	return TRUE
 
 ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable item with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)
@@ -324,7 +322,6 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 	P.icon_on = s_icon2
 	if(s_icon)
 		P.icon = s_icon
-	P.update_icon()
 
 /datum/admin_verb/generic_item/proc/generic_setup_answered(datum/act/request/context)
 	if(!context.answer)

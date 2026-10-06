@@ -475,7 +475,6 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 		else if(L.m_intent == I_RUN)
 			act_message(L, src, MSG_SELF(span_danger("You step in %T%!")), MSG_OTHERS(span_danger("%U% steps in %T%.")), MSG_BLIND(span_hear(span_bold("You hear a strange rustling!"))))
 			attack_mob(L)
-			update_icon()
 	..()
 
 /obj/effect/ant_structure/trap/proc/attack_mob(mob/living/L)

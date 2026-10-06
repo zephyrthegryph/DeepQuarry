@@ -148,7 +148,6 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		message_admins("Emitter turned on by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 		log_game("EMITTER([x],[y],[z]) ON by [key_name(user)]")
 		investigate_log("turned " + span_green("on") + " by [user?.key]","singulo")
-	update_icon()
 
 /// The ladder moved: welded, it joins the cable network on its tile; loose or bolted, it leaves it. The sprite flicks between the rungs.
 /obj/machinery/power/emitter/proc/rung_moved(datum/act/op/A)
@@ -159,7 +158,6 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	if(state != previous_state)
 		flick("emitterflick-[previous_state][state]", src)
 		previous_state = state
-	update_icon()
 
 /// One step while it is on (every machine service interval): it must still be welded and wired; it charges, and fires when its shot is ready
 /// and it holds the energy for it.
@@ -177,13 +175,11 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	if(material_stored_energy < required_energy)
 		if(powered)
 			powered = 0
-			update_icon()
 			log_game("EMITTER([x],[y],[z]) Lost power and was ON.")
 			investigate_log("lost power and turned" + span_red("off"),"singulo")
 		return
 	if(!powered)
 		powered = 1
-		update_icon()
 		log_game("EMITTER([x],[y],[z]) Regained power and is ON.")
 		investigate_log("regained power and turned " + span_green("on"),"singulo")
 

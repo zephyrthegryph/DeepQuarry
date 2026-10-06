@@ -803,7 +803,6 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			cook_container.food_items--
 			if(!LAZYLEN(cook_container.food_items)) //Empty.
 				cook_container.food_items = 0
-			cook_container.update_icon()
 	else
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it automatically ejects its contents!"))
 		if(cooked_sound)

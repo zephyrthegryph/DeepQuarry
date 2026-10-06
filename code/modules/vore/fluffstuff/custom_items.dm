@@ -1385,12 +1385,10 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 	if(open)
 		return
 	set_open(TRUE)
-	update_icon()
 	..()
 
 /obj/item/storage/fancy/fluff/charlotte/close(mob/user as mob)
 	set_open(FALSE)
-	update_icon()
 	..()
 
 //Ashling - Antoinette deKaultieste

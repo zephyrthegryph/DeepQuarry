@@ -169,7 +169,6 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	else
 		set_use_power(USE_POWER_OFF)
 	wake_for_state_change()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/omni/mixer/proc/ui_configure(datum/act/op/A)
@@ -177,7 +176,6 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	if(configuring)
 		set_use_power(USE_POWER_OFF)
 	wake_for_state_change()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/omni/mixer/proc/set_flow_rate_question(datum/act/op/A)
@@ -186,19 +184,16 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 /obj/machinery/atmospherics/omni/mixer/proc/ui_set_flow_rate(datum/act/op/A)
 	set_set_flow_rate(between(0, A.step_value("rate"), max_flow_rate))
 	wake_for_state_change()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/omni/mixer/proc/ui_switch_mode(datum/act/op/A, dir, mode)
 	switch_mode(dir_flag(dir), mode)
 	wake_for_state_change()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/omni/mixer/proc/ui_switch_conlock(datum/act/op/A, dir)
 	con_lock(dir_flag(dir))
 	wake_for_state_change()
-	update_icon()
 	return OP_OK
 
 // ---- an input's share ----
@@ -235,7 +230,6 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 /obj/machinery/atmospherics/omni/mixer/proc/ui_switch_con(datum/act/op/A, dir)
 	set_share(dir_flag(dir), A.step_value("share") / 100)
 	wake_for_state_change()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/omni/mixer/proc/switch_mode(port = NORTH, mode = ATM_NONE)

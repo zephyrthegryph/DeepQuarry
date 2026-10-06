@@ -60,7 +60,6 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 		return
 	set_active(FALSE)
 	set_power_supply(0)
-	update_icon()
 	handleInactive()
 
 /obj/machinery/power/port_gen/draw(datum/look/look)
@@ -229,7 +228,6 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 		overheat()
 	else if (overheating > 0)
 		overheating--
-		update_icon() //Port RS PR #484
 
 /// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
 /obj/machinery/power/port_gen/pacman/proc/cooling_temperature()
@@ -263,7 +261,6 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 
 	if(overheating)
 		overheating--
-		update_icon() //Port RS PR #484
 	return temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
@@ -698,13 +695,11 @@ CAPABILITIES(/obj/machinery/power/rtg/abductor)
 	A.actor.put_in_active_hand(taken)
 	state_change = TRUE
 	RefreshParts()
-	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return OP_OK
 
 /obj/machinery/power/rtg/abductor/proc/cell_inserted(datum/act/op/A)
 	RefreshParts()
-	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return OP_OK
 
@@ -855,7 +850,6 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 			runner_process(L)
 	else
 		power_gen = 0
-	update_icon()
 
 /obj/machinery/power/rtg/reg/proc/runner_process(mob/living/runner)
 	if(runner.stat != CONSCIOUS)

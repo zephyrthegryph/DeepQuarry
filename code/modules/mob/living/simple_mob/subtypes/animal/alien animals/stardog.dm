@@ -622,7 +622,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	if(product && product_amount)
 		var/obj/item/stack/material/fur/F = new product(get_turf(src), product_amount)
 		F.color = color
-		F.update_icon()
 	visible_message(span_notice("\The [src] is felled!"))
 	if(prob(mob_chance))
 		if(!mob_list.len)
