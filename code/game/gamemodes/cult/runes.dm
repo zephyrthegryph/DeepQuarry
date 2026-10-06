@@ -306,7 +306,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
 				H.set_sdisabilities(H.sdisabilities & (~BLIND))
-		for(var/obj/item/organ/E in H.bad_external_organs)
+		for(var/obj/item/organ/E in H.damaged_limbs())
 			var/obj/item/organ/external/affected = E
 			if(affected.is_fractured())
 				affected.mend_fracture()

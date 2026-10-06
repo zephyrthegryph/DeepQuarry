@@ -105,7 +105,7 @@
 		//We're good!
 		var/mob/living/carbon/human/S = nif().human
 		var/HP_percent = 2 * S.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
-		if(!length(nif().human.bad_external_organs))
+		if(!length(nif().human.damaged_limbs()))
 			if(mode || active)
 				nif().notify("User Status: NORMAL. Medichines deactivating.")
 //Needs fixing W << 'sound/voice/nifmedsynth_normal.ogg'
@@ -117,7 +117,7 @@
 //Needs fixing W << 'sound/voice/nifmedsynth_injured.ogg'
 			activate()
 
-		for(var/obj/item/organ/external/EO as anything in nif().human.bad_external_organs)
+		for(var/obj/item/organ/external/EO as anything in nif().human.damaged_limbs())
 			for(var/datum/affliction/wound/W as anything in EO.get_wounds())
 				if(W.damage <= 30)
 					W.heal_damage(0.1)

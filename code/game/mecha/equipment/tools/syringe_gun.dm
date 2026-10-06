@@ -465,8 +465,8 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		if(ishuman(L) && bone_heal)
 			var/mob/living/carbon/human/H = L
 
-			if(H.bad_external_organs.len)
-				for(var/obj/item/organ/external/E in H.bad_external_organs)
+			if(length(H.damaged_limbs()))
+				for(var/obj/item/organ/external/E in H.damaged_limbs())
 					if(prob(bone_heal))
 						E.mend_fracture()
 

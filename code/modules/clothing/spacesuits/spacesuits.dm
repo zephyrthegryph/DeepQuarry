@@ -124,7 +124,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 		return
 
 	if(user.get_equipped_item(SLOT_ID_SUIT) == src)
-		for(var/obj/item/organ/external/E in user.bad_external_organs)
+		for(var/obj/item/organ/external/E in user.damaged_limbs())
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 				rel_add(src, nameof(supporting_limbs), E)
