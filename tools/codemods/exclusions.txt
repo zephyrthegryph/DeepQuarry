@@ -54,3 +54,5 @@ emag /obj/item/sleevemate request_in_effect
 interact /obj/item/vac_attachment request_in_effect
 interact /obj/item/capture_crystal request_in_effect
 interact /obj/item/taperecorder unknown_read
+interact /obj/structure/girder unknown_read
+lower /obj/structure/girder unknown_read

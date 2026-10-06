@@ -1,5 +1,5 @@
-/obj/structure/reflector|human|none => reflector_item|reflector_alt:not possible right now
-/obj/structure/reflector|robot|none => reflector_item|reflector_alt:not possible right now
+/obj/structure/reflector|human|none => |
+/obj/structure/reflector|robot|none => |
 /obj/structure/reflector|ai|none => |
 /obj/structure/reflector|ghost|none => |
 

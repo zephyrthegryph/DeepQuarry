@@ -1,5 +1,5 @@
-/obj/structure/coatrack|human|none => coatrack_item|coatrack_hand:not possible right now
-/obj/structure/coatrack|robot|none => coatrack_item|coatrack_hand:not possible right now
+/obj/structure/coatrack|human|none => |
+/obj/structure/coatrack|robot|none => |
 /obj/structure/coatrack|ai|none => |
 /obj/structure/coatrack|ghost|none => |
 
