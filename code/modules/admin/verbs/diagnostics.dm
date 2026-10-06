@@ -5,7 +5,7 @@
 // the high-pressure delta queue (spacewind).
 ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos stats.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	if(!SSair.initialized)
-		tgui_alert_async(user, "SSair not ready.", "Air Report")
+		open_request(user.mob, /datum/prompt/choice/air_report_notification, null, answerer = user.mob, question = "SSair not ready.", title = "Air Report", choices = list("Ok"))
 		return
 
 	// Active turfs / excited groups live in the Rust arena now and aren't
@@ -96,3 +96,12 @@ ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This se
 	title = "Job Filter"
 	recheck_on_open = TRUE
 
+
+/// An independent acknowledgement; it neither resumes nor replaces an admin action.
+/datum/prompt/choice/air_report_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/air_report_notification/recheck_extra()
+	return answerer?.client ? null : "gone"
