@@ -134,6 +134,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/overheating = 0		//if this gets high enough the generator explodes
 
 TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
+TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 
 /obj/machinery/power/port_gen/pacman/Initialize(mapload)
 	. = ..()
@@ -152,7 +153,7 @@ TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
 /obj/machinery/power/port_gen/pacman/RefreshParts()
 	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 	if(bin_rating)
-		max_sheets = bin_rating * bin_rating * 50
+		set_max_sheets(bin_rating * bin_rating * 50)
 	var/temp_rating = get_part_rating(/obj/item/stock_parts/micro_laser) + get_part_rating(/obj/item/stock_parts/capacitor)
 
 	power_gen = round(initial(power_gen) * (max(2, temp_rating) / 2))
@@ -347,7 +348,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	op("higher_power", ui_act("higher_power"), then(PROC_REF(ui_act_higher_power)))
 
 /obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
-	var/mob/user = A.actor
 	var/list/data = list()
 	data["anchored"] = anchored
 	data["temperature_current"] = temperature
@@ -355,12 +355,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	data["temperature_overheat"] = overheating
 	data["active"] = active
 
-	if(isAI(user))
-		data["is_ai"] = TRUE
-	else if(isrobot(user) && !Adjacent(user))
-		data["is_ai"] = TRUE
-	else
-		data["is_ai"] = FALSE
+	data["is_ai"] = !A.actor?.Adjacent(src) // worked from afar (a silicon's link): no hands on the hopper
 
 	data["sheet_name"] = capitalize(sheet_name)
 	data["fuel_stored"] = round((sheets * 1000) + (sheet_left * 1000))
@@ -968,6 +963,7 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 		sheet_left -= needed_sheets
 
 TRACKED(/obj/machinery/power/port_gen/large_altevian, sheets)
+TRACKED(/obj/machinery/power/port_gen/large_altevian, max_sheets)
 
 // The altevian reactor: its sheets, a hand (or a silicon's touch) that switches it, and its fuel gauge.
 CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
