@@ -38,9 +38,12 @@
 
 /// Time for the algae farm's own work (one service interval of it).
 /proc/ap_algae_tick(obj/machinery/atmospherics/binary/algae_farm/F)
-	for(var/i in 1 to 10)
+	var/was = F.working
+	for(var/i in 1 to 60)
 		SSair.run_gas_frames(1)
 		native_system().drain()
+		if(F.working != was)
+			break
 		stoplag()
 	am_settle()
 
