@@ -381,10 +381,7 @@
 /datum/om/event/world_wight_captured/New(shadow_wight)
 	src.shadow_wight = shadow_wight
 
-/// Non TG signals: From the disabilities life system.
-/datum/om/event/handle_disabilities
-	sync = TRUE
-
+/// Non TG signals.
 /// From the mutations life system
 /datum/om/event/before/handle_mutations
 	accumulate = TRUE

@@ -1,8 +1,9 @@
-/// Was /datum/component/coprolalia_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/coprolalia
+/// Was /datum/component/coprolalia_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(coprolalia_disability, CAP_DISABILITY_COPROLALIA, /datum/capability/disability/coprolalia, key = NONE)
+/datum/capability/disability/coprolalia
 	required_type = /mob/living/carbon/human
 
-/datum/om/behaviour/disability/coprolalia/disability_tick(mob/living/carbon/human/owner)
+/datum/capability/disability/coprolalia/disability_tick(mob/living/carbon/human/owner)
 
 	if(QDELETED(owner))
 		return

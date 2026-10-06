@@ -1,5 +1,6 @@
-/// Was /datum/component/gibbing_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/gibbing
+/// Was /datum/component/gibbing_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(gibbing_disability, CAP_DISABILITY_GIBBING, /datum/capability/disability/gibbing, key = NONE)
+/datum/capability/disability/gibbing
 
 /mob/living
 	/// Gibbing disability: pressure built up so far (was the component's gutdeathpressure).
@@ -7,7 +8,7 @@
 	/// Gibbing disability: 0 until the end starts, then counts the final emotes (was death_time).
 	var/disability_death_time = FALSE
 
-/datum/om/behaviour/disability/gibbing/disability_tick(mob/living/owner)
+/datum/capability/disability/gibbing/disability_tick(mob/living/owner)
 
 	if(QDELETED(owner))
 		return

@@ -1,8 +1,9 @@
-/// Was /datum/component/rotting_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/rotting
+/// Was /datum/component/rotting_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(rotting_disability, CAP_DISABILITY_ROTTING, /datum/capability/disability/rotting, key = NONE)
+/datum/capability/disability/rotting
 	required_type = /mob/living/carbon/human
 
-/datum/om/behaviour/disability/rotting/disability_tick(mob/living/carbon/human/owner)
+/datum/capability/disability/rotting/disability_tick(mob/living/carbon/human/owner)
 
 	if(QDELETED(owner))
 		return

@@ -117,6 +117,8 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | F1 `OM_FIELD` | started | `tools/dx/codemods/om_field_to_tracked.py`: a field nothing names by string becomes a var + `TRACKED_BRIDGED` (same channel); fields named by a periodic gate, `OM_DERIVE_FIELD` input or stage `reads` wait for those to move |
 | F4 `om_ask` | with the flows | all 32 sites are flow-bound or prompt subtypes (`analyze codemod om_ask` leaves them as residue) |
 | P mob repeats | landed | the mob `DECLARE_REPEAT`s are type-level `every()` gated on a tracked var (`dq_mob_every_tests.dm`); the dizzy/jittery OM behaviours are gone |
+| P disabilities | landed | trait disabilities are capabilities with `every(LIFE_CYCLE)`, granted by their trait (`added_capability`); the `handle_disabilities` event is gone |
+| P observer upkeep | landed | `every(OBSERVER_UPKEEP_INTERVAL)` in `CAPABILITIES(/mob/observer)`; the OM decl and behaviour are gone |
 | M machine pipeline | owned by `rewrite/machines-full` and `rewrite/pipenet-full` | they move machines off `machine_step()`; the pipeline goes with their last wave |
 | `OM_EMIT` / `om_hook` | Phase C codemod track | needs `ACTION()` declarations for `publish_<x>()` |
 | I internals, E, D | open | relations and slots, timed actions, scheduler, clocks, contribution store, prompts and flows, io |

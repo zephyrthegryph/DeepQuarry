@@ -20,7 +20,12 @@
 
 	integrated_object_type = /obj/item/gun/energy/laser/mounted/augment
 
-/obj/item/organ/internal/augment/armmounted/screwdriver_act(mob/user, obj/item/tool)
+// A screwdriver swaps the servos to the other side's mount.
+CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
+	op("swap_mount", tool(TOOL_SCREWDRIVER), wait(0), label("Swap mount"), then(PROC_REF(swap_mount)))
+
+/obj/item/organ/internal/augment/armmounted/proc/swap_mount(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(organ_tag)
 		if(O_AUG_L_FOREARM)
 			organ_tag = O_AUG_R_FOREARM
@@ -31,7 +36,6 @@
 			parent_organ = BP_L_ARM
 			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the lower [parent_organ] mount."))
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/organ/internal/augment/armmounted/taser
 	name = "taser implant"
@@ -66,7 +70,8 @@
 
 	integrated_object_type = null
 
-/obj/item/organ/internal/augment/armmounted/hand/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/organ/internal/augment/armmounted/hand/swap_mount(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(organ_tag)
 		if(O_AUG_L_HAND)
 			organ_tag = O_AUG_R_HAND
@@ -77,7 +82,6 @@
 			parent_organ = BP_L_HAND
 			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/organ/internal/augment/armmounted/hand/sword
 	name = "energy blade implant"
@@ -109,7 +113,8 @@
 
 	integrated_object_type = null
 
-/obj/item/organ/internal/augment/armmounted/shoulder/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/organ/internal/augment/armmounted/shoulder/swap_mount(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(organ_tag)
 		if(O_AUG_L_UPPERARM)
 			organ_tag = O_AUG_R_UPPERARM
@@ -120,7 +125,6 @@
 			parent_organ = BP_L_ARM
 			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/organ/internal/augment/armmounted/shoulder/surge
 	name = "muscle overclocker"
@@ -176,7 +180,7 @@
 	var/list/synths
 
 CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
-	owns_many(nameof(synths))
+	owns_many(nameof(synths), starts = PROC_REF(starting_synths))
 	owns_many(nameof(integrated_tools), starts = PROC_REF(starting_tools))
 
 /// The stowed tools: tool path -> its instance, for every carried tool the deployed object is not already.
@@ -186,6 +190,12 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
 		if(integrated_object_type && ispath(integrated_object_type, path))
 			continue
 		.[path] = new path(src)
+
+/// The matter synthesizers feeding the stack tools.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/starting_synths()
+	. = list()
+	for(var/datumpath in TYPE_TABLE_GET(src, synth_types))
+		. += new datumpath
 
 /// The tools this augment carries (constant per type).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, tool_types, list( \
@@ -209,10 +219,6 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 		return
 
 	integrated_tool_images = list()
-
-	var/list/synth_paths = TYPE_TABLE_GET(src, synth_types)
-	for(var/datumpath in synth_paths)
-		rel_add(src, nameof(synths), new datumpath)
 
 	for(var/obj/item/I as anything in tools)
 		I.canremove = FALSE

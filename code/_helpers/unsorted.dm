@@ -1042,11 +1042,12 @@ GLOBAL_LIST_INIT(common_tools, list(
 
 //Whether or not the given item counts as sharp in terms of dealing damage
 /proc/is_sharp(obj/item/O)
+	READS_FROM(O)
 	if(!isitem(O))
 		return FALSE
-	if(O.sharp)
+	if(O.sharp) // ALLOW(reads): a helper a butchery condition asks about the held thing; the click asks again
 		return TRUE
-	if(O.edge)
+	if(O.edge) // ALLOW(reads): a helper a butchery condition asks about the held thing; the click asks again
 		return TRUE
 	return FALSE
 

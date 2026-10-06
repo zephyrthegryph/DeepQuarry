@@ -359,9 +359,6 @@
 /// From /datum/om/event/ghost_query_complete.
 /datum/notice/ghost_query_complete
 
-/// From /datum/om/event/handle_disabilities.
-/datum/notice/handle_disabilities
-
 /// From /datum/om/event/hitby.
 /datum/notice/hitby
 	var/source_

@@ -1,5 +1,5 @@
-/obj/structure/sign/double/barsign|human|none => barsign_item|
-/obj/structure/sign/double/barsign|robot|none => barsign_item|
+/obj/structure/sign/double/barsign|human|none => |
+/obj/structure/sign/double/barsign|robot|none => |
 /obj/structure/sign/double/barsign|ai|none => |
 /obj/structure/sign/double/barsign|ghost|none => |
 

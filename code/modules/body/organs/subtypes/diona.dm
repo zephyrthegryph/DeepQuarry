@@ -136,7 +136,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && spawn_diona_nymph(get_turf(src)))
-		spent(src)
+		replaced_by(src) // a nymph splits off in its place
 
 /obj/item/organ/internal/diona
 	name = "diona nymph"
@@ -152,7 +152,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
-		spent(src, user)
+		replaced_by(src) // a nymph splits off in its place
 
 /obj/item/organ/internal/diona/organ_tick(cycles)
 	return
@@ -236,7 +236,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
-		spent(src, user)
+		replaced_by(src) // a nymph splits off in its place
 
 /obj/item/organ/external/head/no_eyes/diona
 	max_damage = 50

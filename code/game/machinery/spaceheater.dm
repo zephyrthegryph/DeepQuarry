@@ -44,15 +44,25 @@
 // Rows by state: SHEATER_OFF, SHEATER_STANDBY, SHEATER_HEAT, SHEATER_COOL.
 DECLARE_APPEARANCE(/obj/machinery/space_heater, "state", list( 	"0" = list(APPEARANCE_ICON_STATE = "sheater0"), 	"1" = list(APPEARANCE_ICON_STATE = "sheater1"), 	"2" = list(APPEARANCE_ICON_STATE = "sheater2"), 	"3" = list(APPEARANCE_ICON_STATE = "sheater3") ))
 DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sheater-open"))))
-// Regulates the air while switched on (any state but SHEATER_OFF).
-DECLARE_PERIODIC_WHILE(/obj/machinery/space_heater, MACHINE_PIPELINE, "state")
-
 TRACKED(/obj/machinery/space_heater, pumping)
+
+MSG_DEF(space_heater/cell_in, span_notice("You insert the power cell into %T%."), span_notice("%U% inserts a power cell into %T%."))
+MSG_DEF_SELF(space_heater/hatch_closed, "the hatch must be open to insert a power cell")
+MSG_DEF_SELF(space_heater/cell_present, "there is already a power cell inside")
 
 CAPABILITIES(/obj/machinery/space_heater)
 	climb()
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
+	// Regulates the air while switched on (any state but SHEATER_OFF); a step with no charge left switches it off and stops the work.
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(state))
+	op("insert_cell", item(/obj/item/cell), label("Insert power cell"), wait(0),
+		needs(req(PROC_REF(hatch_open), because = MSG(space_heater/hatch_closed)), req(PROC_REF(no_cell_installed), because = MSG(space_heater/cell_present))),
+		then(PROC_REF(interaction_insert_cell)))
+	part_replacement()
+	op("use", hand(), ungated(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand_interact)))
+	op("hatch", tool(TOOL_SCREWDRIVER), wait(0), label("Open hatch"), then(PROC_REF(hatch_toggled)))
 	// A heat pump on the room's air toward the thermostat: it heats resistively, one joule of heat per joule drawn, and cools by
-	// pumping into the station's heat-rejection loop at a Carnot-bounded COP. Its work is paid from the cell (machine_step()).
+	// pumping into the station's heat-rejection loop at a Carnot-bounded COP. Its work is paid from the cell (work_step()).
 	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
 	interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state))
 	op("temp", ui_act("temp", arg("newtemp", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
@@ -115,52 +125,28 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		return 1
 	return 0
 
-/obj/machinery/space_heater/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/space_heater_insert_cell,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/ungated/space_heater_interact,
-	)
-	..()
-
-/// Old attackby: insert a power cell through the open hatch.
-/datum/interaction/machine_item/space_heater_insert_cell
-	id = "space_heater_insert_cell"
-	name = "Insert power cell"
-	held_type = /obj/item/cell
-	requires = list(REQ_INTERACTION_REACH,
-		REQ_ON(PRED_TARGET, /obj/machinery/space_heater/proc/hatch_open, "the hatch must be open to insert a power cell"),
-		REQ_ON(PRED_TARGET, /obj/machinery/space_heater/proc/no_cell_installed, "there is already a power cell inside"))
-	effect = /obj/machinery/space_heater/proc/interaction_insert_cell
-
-/obj/machinery/space_heater/proc/hatch_open(mob/actor, atom/target, obj/item/held)
+/obj/machinery/space_heater/proc/hatch_open(datum/act/op/A)
 	return panel_open
 
-/obj/machinery/space_heater/proc/no_cell_installed(mob/actor, atom/target, obj/item/held)
+/obj/machinery/space_heater/proc/no_cell_installed(datum/act/op/A)
 	return !cell
 
-/obj/machinery/space_heater/proc/interaction_insert_cell(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/cell/C = held
+/obj/machinery/space_heater/proc/interaction_insert_cell(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/cell/C = A.held
 	if(!move_into(src, nameof(src.cell), C, user))
-		return TRUE
+		return
 	C.add_fingerprint(user)
 	act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))
 	power_change()
-	return TRUE
 
-/// Old attack_hand: `add_fingerprint(user); interact(user)`, no gate (never called ..()).
-/datum/interaction/machine_hand/ungated/space_heater_interact
-	id = "space_heater_interact"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/space_heater/proc/interaction_hand_interact
+/obj/machinery/space_heater/proc/interaction_hand_interact(datum/act/op/A)
+	add_fingerprint(A.actor)
+	interact(A.actor)
 
-/obj/machinery/space_heater/proc/interaction_hand_interact(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	interact(user)
-	return TRUE
-
-/obj/machinery/space_heater/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/space_heater/proc/hatch_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_panel_open(!panel_open)
 	playsound(src, tool.usesound, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the hatch on %T%.")), \
@@ -169,7 +155,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 	if(!panel_open && user.check_current_machine(src))
 		SStgui.close_uis(src)
 		user.unset_machine()
-	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/space_heater/interact(mob/user as mob)
 	if(panel_open)
@@ -178,6 +163,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
 		if(state == SHEATER_OFF)
 			set_pumping(FALSE)
+		else
+			work_start(src)
 		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")),
 			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 	return
@@ -244,7 +231,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		. = TRUE
 
 /// The heat pump (its CAPABILITIES entry) works the air in Rust; the step pays its work from the cell and shows what it does.
-/obj/machinery/space_heater/machine_step()
+/obj/machinery/space_heater/proc/work_step(datum/act/timer/A)
 	if(!cell || !cell.charge)
 		set_pumping(FALSE)
 		set_state(SHEATER_OFF)
@@ -266,7 +253,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 /obj/machinery/space_heater/power_change()
 	. = ..()
 	if(. && state && cell?.charge)
-		MACHINE_WAKE(src)
+		work_start(src)
 
 #undef SHEATER_OFF
 #undef SHEATER_STANDBY
@@ -276,7 +263,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
 
-
-/obj/machinery/space_heater/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = nameof(cell_type))

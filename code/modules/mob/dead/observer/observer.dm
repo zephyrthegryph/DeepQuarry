@@ -7,6 +7,7 @@
 
 CAPABILITIES(/mob/observer)
 	owns_one(nameof(body_backup), /mob/living)
+	every(OBSERVER_UPKEEP_INTERVAL, then(PROC_REF(upkeep_step)))
 
 /mob/observer/dead
 	name = "ghost"

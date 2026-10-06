@@ -18,14 +18,11 @@
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
 		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
-		/obj/machinery/air_sensor,
-		/obj/machinery/computer/general_air_control/fuel_injection,
 		/obj/machinery/portable_atmospherics/hydroponics,
 		/obj/machinery/portable_atmospherics/powered/reagent_distillery,
 		// Every other machine with machine_step() work (roadmap S5: the old SSmachines roster).
 		// Each joins asleep: one frame at Initialize to find out whether it has work, then it
 		// parks until MACHINE_WAKE() (tools/ci/pollers_lint.py checks this list is complete).
-		/obj/machinery/space_heater,
 		/obj/machinery/telecomms,
 		/obj/machinery/vending,
 	)
@@ -291,14 +288,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// with work and no armed watch is a lost wake, which the OM audit reports.
 /datum/om/stage/machine/power/step/idle(obj/machinery/M)
 	return om_watch_armed(M) || !M.step_has_work()
-
-/datum/om/stage/machine/power/step/air_sensor
-	of = /obj/machinery/air_sensor
-
-/// Runs every frame while its automation is on (it re-reads the latest sensor broadcasts and
-/// commands the injectors) -- the one timed machine_step here; off, it parks.
-/datum/om/stage/machine/power/step/fuel_injection
-	of = /obj/machinery/computer/general_air_control/fuel_injection
 
 /// Hydroponics trays: a frame per growth cycle while something is growing or soaking in; between
 /// cycles the tray parks on its growth timer (schedule_growth_wake()), and reagent or seed changes

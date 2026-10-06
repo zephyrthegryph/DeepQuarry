@@ -1,6 +1,5 @@
-/obj/machinery/space_heater|human|none => space_heater_interact|space_heater_insert_cell:needs a power cell,machine_part_replacement:needs a rapid part exchange device
-/obj/machinery/space_heater|robot|none => space_heater_interact|gen_robot_interaction_swallow:not possible right now,space_heater_insert_cell:needs a power cell,machine_part_replacement:needs a rapid part exchange device
+/obj/machinery/space_heater|human|none => |
+/obj/machinery/space_heater|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/space_heater|ai|none => |
 /obj/machinery/space_heater|ghost|none => |
-/obj/machinery/space_heater|human|/obj/item/cell => space_heater_interact|space_heater_insert_cell:the hatch must be open to insert a power cell,machine_part_replacement:needs a rapid part exchange device
-/obj/machinery/space_heater|human|/obj/item/storage/part_replacer => machine_part_replacement,space_heater_interact|space_heater_insert_cell:needs a power cell
+
