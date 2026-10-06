@@ -23,7 +23,11 @@
 	. = ..()
 	update_integrity(max_integrity/2) // Half health, it's not suposed to resist much.
 
-/obj/machinery/shield/malfai/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/shield/malfai)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/shield/malfai/proc/work_step(datum/act/timer/A)
 	take_damage(0.5, sound_effect = FALSE) // Slowly lose integrity over time
 
 // A depleted shield dissipates.
@@ -117,11 +121,10 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 	idle_power_usage = 0
 
 CAPABILITIES(/obj/machinery/shieldgen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))
 	climb()
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
-
-DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)
@@ -166,7 +169,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 /obj/machinery/shieldgen/proc/collapse_shields()
 	own_clear(src, nameof(deployed_shields), OWN_DELETE)
 
-/obj/machinery/shieldgen/machine_step()
+/obj/machinery/shieldgen/proc/work_step(datum/act/timer/A)
 	if(cell && cell.charge)
 		var/power_usage = 0
 		for(var/obj/machinery/shield/shield_tile in deployed_shields)

@@ -104,11 +104,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 				if(modifier)	code = modifier
 			if("toggle-power")
 				set_on(!on)
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /// Clamps its settings and reconciles its power draw and icon: after every command, and on
 /// every power or break change.
-/obj/machinery/magnetic_module/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/magnetic_module)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(nameof(stat)))
+
+/obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
 		set_on(0)
 
@@ -195,7 +199,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 		filter_path() // renders rpath
 
 /// Autolinks once at Initialize (its one frame) if Initialize found no magnets yet.
-/obj/machinery/magnetic_controller/machine_step()
+/obj/machinery/magnetic_controller/proc/work_step(datum/act/timer/A)
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
@@ -333,7 +337,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 
 		// there doesn't HAVE to be separators but it makes paths syntatically visible
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/magnetic_module/step_start_condition()
 	return TRUE // its power draw
 

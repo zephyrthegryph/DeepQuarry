@@ -24,7 +24,7 @@
 	if(possible_species && possible_species.len)
 		produce_species = pick(possible_species)
 
-/obj/machinery/vr_sleeper/alien/machine_step()
+/obj/machinery/vr_sleeper/alien/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(has_stat(BROKEN))
 		if(occupant)

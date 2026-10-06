@@ -31,7 +31,11 @@
 	desc = "An experimental power generator capable of generating massive amounts of energy from subspace vacuum."
 	var/power_generation_rate = 1000000
 
-/obj/machinery/power/debug_items/infinite_generator/machine_step()
+CAPABILITIES(/obj/machinery/power/debug_items/infinite_generator)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(generate)))
+
+/// Every machine service interval it supplies its rate for the next power step.
+/obj/machinery/power/debug_items/infinite_generator/proc/generate(datum/act/timer/A)
 	add_avail(power_generation_rate)
 
 /obj/machinery/power/debug_items/infinite_generator/show_info(mob/user)
@@ -46,7 +50,11 @@
 	var/power_usage_rate = 0
 	var/last_used = 0
 
-/obj/machinery/power/debug_items/infinite_cable_powersink/machine_step()
+CAPABILITIES(/obj/machinery/power/debug_items/infinite_cable_powersink)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sink)))
+
+/// Every machine service interval it draws its rate.
+/obj/machinery/power/debug_items/infinite_cable_powersink/proc/sink(datum/act/timer/A)
 	last_used = draw_power(power_usage_rate)
 
 /obj/machinery/power/debug_items/infinite_cable_powersink/show_info(mob/user)
@@ -66,12 +74,3 @@
 	. += span_filter_notice("Dummy load is using [num2text(active_power_usage, 20)] W")
 	. += span_filter_notice("Powered: [powered() ? "YES" : "NO"]")
 
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/debug_items/infinite_generator/step_start_condition()
-	return TRUE
-
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/debug_items/infinite_cable_powersink/step_start_condition()
-	return TRUE

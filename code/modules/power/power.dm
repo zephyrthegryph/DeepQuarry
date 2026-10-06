@@ -66,30 +66,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		power_warn(power_region)
 		return power_draw(power_region, amount, src)
 
-/// Supply for the next power step only (pulse sources: coils, collectors,
-/// fusion). A producer that runs every tick calls it every tick, as before.
-/obj/machinery/power/proc/add_avail(amount)
-	if(!power_region || amount <= 0 || !vg_entity)
-		return FALSE
-	native_write(src, NATIVE_PRODUCER_PULSE, amount)
-	return TRUE
-
-/// A persistent supply rate (W): it stays until changed, so a steady
-/// generator can sleep. Repeating the same rate is free.
-/obj/machinery/power/proc/set_power_supply(amount)
-	amount = max(amount, 0)
-	if(amount == power_supply_rate)
-		return
-	power_supply_rate = amount
-	if(vg_entity)
-		native_write(src, NATIVE_PRODUCER_SUPPLY, amount)
-
-/obj/machinery/power/proc/clear_power_supply()
-	set_power_supply(0)
-
-/obj/machinery/power/proc/draw_power(amount)
-	return power_draw(power_region, amount, src)
-
 /obj/machinery/power/proc/surplus()
 	return power_netexcess(power_region)
 

@@ -36,6 +36,7 @@ STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(nameof(stat)))
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
@@ -98,7 +99,11 @@ CAPABILITIES(/obj/machinery/smartfridge)
 /obj/machinery/smartfridge/proc/accept_check(obj/item/O)
 	return FALSE
 
-/obj/machinery/smartfridge/machine_step()
+/// Whether a step may run now (a drying rack works only powered and whole).
+/obj/machinery/smartfridge/proc/step_gate(datum/act/A)
+	return TRUE
+
+/obj/machinery/smartfridge/proc/work_step(datum/act/timer/A)
 	if(!operable())
 		soundloop.stop()
 		playing_sound = FALSE
@@ -122,9 +127,9 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		else
 			soundloop?.start()
 			playing_sound = TRUE
-			// machine_step() sleeps on NOPOWER; resume pending work on restore.
+			// work_step(null) sleeps on NOPOWER; resume pending work on restore.
 			if(has_pending_work())
-				MACHINE_WAKE(src)
+				work_start(src)
 
 /// TRUE when process() still has time-dependent work to do once powered.
 /obj/machinery/smartfridge/proc/has_pending_work()
@@ -263,7 +268,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	return null
 
 /obj/machinery/smartfridge/proc/stock(obj/item/O)
-	MACHINE_WAKE(src)
+	work_start(src)
 	var/datum/stored_item/I = find_record(O)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
@@ -458,7 +463,7 @@ CAPABILITIES(/obj/machinery/smartfridge/secure)
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/smartfridge/step_start_condition()
 	return operable() // its hum
 

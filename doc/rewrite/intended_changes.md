@@ -1936,6 +1936,28 @@ steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` 
 Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
 from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
 `DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).
+
+
+## The machines still on machine_step(): started work (rewrite/power-plants)
+
+Every machine outside atmospherics that still had a `machine_step()` (90 types: medical, kitchen, mining, shields, xenoarchaeology, cargo,
+recycling, overmap consoles, the singularity beacon, ...) runs its step on `started_work()` (`code/library/machine/started_work.dm`): an
+`every(MACHINE_SERVICE_INTERVAL)` that runs while its STARTED_WORK_ACTIVE key holds. The step's PROCESS_KILL stops it; `MACHINE_WAKE()` /
+`MACHINE_SLEEP()` and `sleep_until_powered()` route to `work_start()` / `work_stop()` / `work_wait_for_power()`; a `DECLARE_PERIODIC_WHILE`
+gate became the work's `when` (tracked vars) or `gate` (computed procs, asked before each step), with `wakes_on` the vars the gate read; a
+`step_start_condition()` became `starts =`. The machines left the machine pipeline roster. Conversion pins were recorded for every type
+before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged: no interaction moved.
+
+- **Work no longer sleeps on change keys.** The disposal unit, the point defense turret and the shield capacitor slept on watched keys
+  (`sleep_until_keys()`) and were woken by the pipeline: the disposal unit now stops (PROCESS_KILL) and is started by what changes it (an
+  insertion, a flush, its gas watch, as before); the turret looks for meteors every step while it is active; the capacitor asks its grid
+  again every step while it is short of charge. Their `om_sleep_violation()` audits and the key-sleep tests are gone.
+- A machine whose gate is a computed proc (an occupied pod, a cooker keeping its heat, a powered drying rack) no longer parks while the gate
+  is false: its started work skips the step instead, so the gate is asked every 2 s. The cooker's and the drying rack's gates are virtual
+  (`needs_step()`, `step_gate()`) so the subtype's rule replaces its parent's.
+- `..()` calls into the base `machine_step()` (which only answered PROCESS_KILL) are gone; the nuclear bomb's step answers PROCESS_KILL itself.
+- The legacy tests that read the pipeline (`machine_stepping()`, `sys_periodic_allows()`) read the work (`test_work_allowed()`,
+  `test_machine_idle()`, `test_step_machine()` in `dq_sys_periodic_tests.dm`); `dq_started_work_waits_for_power` tests the library.
 - **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
   to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
   runs it through a thin `<verb>_op(A)` effect.

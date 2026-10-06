@@ -8,8 +8,6 @@
 OM_FIELD_VIEW(/obj/machinery/feeder, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
 OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE_MACHINE_OCCUPANT)
 /// Feeds while a patient and a container are attached.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/feeder, MACHINE_PIPELINE, list("attached", "beaker"))
-
 DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/feeder/appearance_overlays()
 	. = list()
@@ -39,6 +37,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 			. += filling
 
 CAPABILITIES(/obj/machinery/feeder)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
 	drag_onto(PROC_REF(drop_input))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
@@ -114,7 +113,7 @@ CAPABILITIES(/obj/machinery/feeder)
 	destroyed(src, user, "deconstructed")
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
-/obj/machinery/feeder/machine_step()
+/obj/machinery/feeder/proc/work_step(datum/act/timer/A)
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")

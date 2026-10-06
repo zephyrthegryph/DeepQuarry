@@ -29,13 +29,12 @@
 OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
 /// Moves what sits on it while running and operable (the declaration also picks the machine
 /// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("operating", "operable"))
-
 /obj/machinery/conveyor/centcom_auto
 	id = "round_end_belt"
 
 	// create a conveyor
 CAPABILITIES(/obj/machinery/conveyor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
 
@@ -66,7 +65,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
@@ -130,7 +129,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 
 	// machine process
 	// move items to the target location
-/obj/machinery/conveyor/machine_step()
+/obj/machinery/conveyor/proc/work_step(datum/act/timer/timer)
 	var/list/movable_contents = list()
 	for(var/atom/movable/A in contents_of(loc))
 		if(A == src || A.anchored || istype(A, /obj/effect/abstract) || A.is_incorporeal())
@@ -253,9 +252,8 @@ CAPABILITIES(/obj/machinery/conveyor)
 
 /// TRUE when just operated: one step pushes the position to the linked conveyors.
 OM_FIELD(/obj/machinery/conveyor_switch, operated, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operated")
-
 CAPABILITIES(/obj/machinery/conveyor_switch)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
 	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
 
@@ -285,7 +283,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 // timed process
 // if the switch changed, update the linked conveyors
 
-/obj/machinery/conveyor_switch/machine_step()
+/obj/machinery/conveyor_switch/proc/work_step(datum/act/timer/timer)
 	set_operated(FALSE)
 
 	for(var/obj/machinery/conveyor/C in conveyors)

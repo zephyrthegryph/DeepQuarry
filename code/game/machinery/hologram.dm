@@ -47,6 +47,7 @@ Possible to do for anyone motivated enough:
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
 CAPABILITIES(/obj/machinery/hologram/holopad)
+	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(masters))
 	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
 
@@ -184,7 +185,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	flick("holopadload", src)
 	rel_set(A, nameof(A.holo), src)
 	if(LAZYLEN(masters))
-		MACHINE_WAKE(src)
+		work_start(src)
 
 	// Let the AI experience area ambiences too
 	var/area/ar = get_area(hologram.loc)
@@ -203,7 +204,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		icon_state = "holopad0"
 	return 1
 
-/obj/machinery/hologram/holopad/machine_step()
+/obj/machinery/hologram/holopad/proc/work_step(datum/act/timer/A)
 	for (var/mob/living/silicon/ai/master in masters)
 		var/active_ai = (master && !master.stat && master.client && master?.active_eye())//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
 		if((has_stat(NOPOWER)) || !active_ai)
@@ -211,7 +212,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 			continue
 
 		use_power(power_per_hologram)
-	if(..() == PROCESS_KILL && !LAZYLEN(masters))
+	if(!LAZYLEN(masters))
 		return PROCESS_KILL
 
 /obj/machinery/hologram/holopad/proc/move_hologram(mob/living/silicon/ai/user)

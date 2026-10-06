@@ -188,8 +188,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 /// 0 stopped, 1 idle drain, 2 active drain.
 OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "draining")
-
 // ALLOW(init/INSTANCE_STATE): rolls its power use and binds to the grub it is made inside
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
@@ -199,7 +197,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "
 	rel_set(src, nameof(grub), loc)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
-/obj/machinery/abstract_grub_machine/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/abstract_grub_machine)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(draining), wakes_on = list(nameof(draining)))
+
+/obj/machinery/abstract_grub_machine/proc/work_step(datum/act/timer/timer)
 	var/area/A = get_area(src)
 	if(!A)
 		return
