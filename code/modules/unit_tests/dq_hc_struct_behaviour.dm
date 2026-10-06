@@ -9,7 +9,7 @@
 /datum/unit_test/dq_hc_struct/Run()
 	test_driver_begin()
 	test_rng(23)
-	om_scheduler().test_prompts = list()
+	test_prompts_reset()
 	run_gate()
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		own_turf_contents(T)
@@ -39,9 +39,6 @@
 /datum/unit_test/dq_hc_struct/proc/asked(mob/actor)
 	if(SSrequests.open_for(actor))
 		return TRUE
-	for(var/datum/om/prompt/P as anything in om_scheduler().test_prompts)
-		if(!P.answered && P.peek("answerer") == actor)
-			return TRUE
 	return FALSE
 
 /// A window button pressed as `actor`, and time passes.

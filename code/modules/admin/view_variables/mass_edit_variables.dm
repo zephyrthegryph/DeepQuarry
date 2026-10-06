@@ -1,7 +1,7 @@
 /client/proc/cmd_mass_modify_object_variables(datum/target, var_name)
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(cmd_mass_modify_object_variables), args)
-	if(flow_ask(mob, "mass:sure", /datum/om/prompt/choice/alert, message = "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", title = "Slow down, chief!", choices = list("Yes", "No"), timeout = 60 SECONDS) != "Yes")
+	if(flow_ask(mob, "mass:sure", /datum/prompt/choice, question = "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", title = "Slow down, chief!", choices = list("Yes", "No"), timeout = 60 SECONDS, buttons = TRUE) != "Yes")
 		return
 
 	if(!admin_require(src, R_VAREDIT, "cmd_mass_modify_object_variables", TRUE))
@@ -31,7 +31,7 @@
 
 		names = sortList(names)
 
-		variable = flow_ask(mob, "mass:var", /datum/om/prompt/choice, message = "Which var?", title = "Var", choices = names)
+		variable = flow_ask(mob, "mass:var", /datum/prompt/choice, question = "Which var?", title = "Var", choices = names)
 	else
 		variable = var_name
 
@@ -52,7 +52,7 @@
 	if(variable in GLOB.VVpixelmovement)
 		if(!admin_require(src, R_DEBUG, "massmodify_variables", TRUE))
 			return
-		var/prompt = flow_ask(mob, "mass:gliding", /datum/om/prompt/choice/alert, message = "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", title = "DANGER", choices = list("ABORT ", "Continue", " ABORT"))
+		var/prompt = flow_ask(mob, "mass:gliding", /datum/prompt/choice, question = "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", title = "DANGER", choices = list("ABORT ", "Continue", " ABORT"), buttons = TRUE)
 		if (prompt != "Continue")
 			return
 
@@ -120,7 +120,7 @@
 			var/pre_processing = new_value
 			var/unique
 			if (varsvars?.len)
-				unique = flow_ask(mob, "mass:unique", /datum/om/prompt/choice/alert, message = "Process vars unique to each instance, or same for all?", title = "Variable Association", choices = list("Unique", "Same"))
+				unique = flow_ask(mob, "mass:unique", /datum/prompt/choice, question = "Process vars unique to each instance, or same for all?", title = "Variable Association", choices = list("Unique", "Same"), buttons = TRUE)
 				if(isnull(unique))
 					return
 				if(unique == "Unique")
@@ -149,7 +149,7 @@
 				CHECK_TICK
 
 		if (VV_NEW_TYPE)
-			var/many = flow_ask(mob, "mass:many", /datum/om/prompt/choice/alert, message = "Create only one [value["type"]] and assign each or a new one for each thing", title = "How Many", choices = list("One", "Many", "Cancel"))
+			var/many = flow_ask(mob, "mass:many", /datum/prompt/choice, question = "Create only one [value["type"]] and assign each or a new one for each thing", title = "How Many", choices = list("One", "Many", "Cancel"), buttons = TRUE)
 			if (isnull(many) || many == "Cancel")
 				return
 			if (many == "Many")

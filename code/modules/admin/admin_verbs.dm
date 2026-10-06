@@ -861,7 +861,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 
 	var/datum/marked_datum = user.holder.marked_datum()
 	if(marked_datum)
-		var/_answer_a25 = verb_ask(user, "a25", args, /datum/om/prompt/choice/alert, message = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", title = "Orbit", choices = list("Center", "Orbiter", "Neither"))
+		var/_answer_a25 = verb_ask(user, "a25", args, /datum/prompt/choice, question = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", title = "Orbit", choices = list("Center", "Orbiter", "Neither"), buttons = TRUE)
 		if(isnull(_answer_a25))
 			return
 		input = _answer_a25
@@ -878,13 +878,13 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		if(isobj(T))
 			possible_things |= T
 	if(!center)
-		var/_answer_a26 = verb_ask(user, "a26", args, /datum/om/prompt/choice, message = "What should act as the center of the orbit?", title = "Center", choices = possible_things)
+		var/_answer_a26 = verb_ask(user, "a26", args, /datum/prompt/choice, question = "What should act as the center of the orbit?", title = "Center", choices = possible_things)
 		if(isnull(_answer_a26))
 			return
 		center = _answer_a26
 		possible_things -= center
 	if(!orbiter)
-		var/_answer_a27 = verb_ask(user, "a27", args, /datum/om/prompt/choice, message = "What should act as the orbiter of the orbit?", title = "Orbiter", choices = possible_things)
+		var/_answer_a27 = verb_ask(user, "a27", args, /datum/prompt/choice, question = "What should act as the orbiter of the orbit?", title = "Orbiter", choices = possible_things)
 		if(isnull(_answer_a27))
 			return
 		orbiter = _answer_a27
@@ -897,13 +897,13 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 	if(isturf(orbiter))
 		to_chat(user, span_warning("The orbiter cannot be a turf. It can only be used as a center."))
 		return
-	var/distance = verb_ask(user, "a28", args, /datum/om/prompt/number, message = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", title = "Orbit Radius", default = 32)
+	var/distance = verb_ask(user, "a28", args, /datum/prompt/number, question = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", title = "Orbit Radius", default = 32)
 	if(isnull(distance))
 		return
-	var/speed = verb_ask(user, "a29", args, /datum/om/prompt/number, message = "How fast will they orbit (negative numbers spin clockwise)", title = "Orbit Speed", default = 20)
+	var/speed = verb_ask(user, "a29", args, /datum/prompt/number, question = "How fast will they orbit (negative numbers spin clockwise)", title = "Orbit Speed", default = 20)
 	if(isnull(speed))
 		return
-	var/segments = verb_ask(user, "a30", args, /datum/om/prompt/number, message = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", title = "Orbit Segments", default = 36)
+	var/segments = verb_ask(user, "a30", args, /datum/prompt/number, question = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", title = "Orbit Segments", default = 36)
 	if(isnull(segments))
 		return
 	var/clock = FALSE
@@ -916,7 +916,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		speed *= -1
 	if(!segments)
 		segments = 36
-	var/_answer_a31 = verb_ask(user, "a31", args, /datum/om/prompt/choice/alert, message = "\The [orbiter] will orbit around [center]. Is this okay?", title = "Confirm Orbit", choices = list("Yes", "No"))
+	var/_answer_a31 = verb_ask(user, "a31", args, /datum/prompt/choice, question = "\The [orbiter] will orbit around [center]. Is this okay?", title = "Confirm Orbit", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(_answer_a31))
 		return
 	if(_answer_a31 == "Yes")

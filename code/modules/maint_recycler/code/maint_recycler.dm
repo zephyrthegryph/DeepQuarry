@@ -483,7 +483,7 @@ UTILITY PROCS
 /obj/machinery/maint_recycler/proc/mob_consent_check(mob/probable_victim, proc_name, list/proc_args)
 	if(probable_victim.key)
 		if(probable_victim.client) //sanity check to make sure they are alright with getting squished to death
-			var/answer = rerun_ask(probable_victim, "consent", proc_name, proc_args, /datum/om/prompt/choice/alert, message = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", title = "Welcome to the Hydralulic Press Prompt", choices = list("OSHA is for chumps", "what the fuck? get me outta here!"), cancel_answer = "what the fuck? get me outta here!")
+			var/answer = rerun_ask(probable_victim, "consent", proc_name, proc_args, /datum/prompt/choice, question = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", title = "Welcome to the Hydralulic Press Prompt", choices = list("OSHA is for chumps", "what the fuck? get me outta here!"), cancel_answer = "what the fuck? get me outta here!", buttons = TRUE)
 			return isnull(answer) ? null : (answer == "OSHA is for chumps")
 		else return FALSE //no logged out users
 	else return TRUE //mindless mobs that've never felt the gentle touch of a client are fine

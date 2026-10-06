@@ -138,10 +138,10 @@ TOPIC_ACTION(/datum/dq_topic_probe/child, "pick", PROC_REF(topic_child_pick), TO
 
 /datum/unit_test/dq_sys_topic_ask_unwraps/Run()
 	var/datum/dq_topic_probe/P = new
-	var/list/href = list("set" = "1", "om_answer_k1" = "42")
+	var/list/href = list("set" = "1", "rerun_answer_k1" = "42")
 	var/list/handler_args = list()
 	handler_args[TOPIC_HREF] = href
-	TEST_ASSERT_EQUAL(P.om_topic_ask(null, handler_args, "k1", /datum/om/prompt/number, list()), "42", "a re-run answer is read from the raw href_list")
+	TEST_ASSERT_EQUAL(P.topic_rerun_ask(null, handler_args, "k1", /datum/prompt/number, list()), "42", "a re-run answer is read from the raw href_list")
 	qdel(P)
 
 /// admin_can() is the single rights primitive: a null or holder-less subject holds no rights, check_rights_for()

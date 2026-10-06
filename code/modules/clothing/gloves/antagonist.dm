@@ -17,103 +17,103 @@
 	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
-/// Pickpocketing is one flow: a second's rummage, then by the touch's stance either opening their bag
-/// (help) or swapping a pocket (disarm: left, grab: right) as take-theirs, give-yours.
-/datum/om/flow/pickpocket
+/// Pickpocketing is a chain of timed tasks: a second's rummage, then by the touch's stance either opening their bag (help) or swapping a
+/// pocket (disarm: left, grab: right) as take-theirs, give-yours. Each wait is a task carrying the chain's state into the next.
+/datum/task/timed/pickpocket
 	name = "pickpocket"
+	complete_proc = /datum/task/timed/pickpocket/proc/phase_done
+	cancel_proc = /datum/task/timed/pickpocket/proc/phase_interrupted
+	/// Which wait this is: "rummage", "open", "take" or "give".
+	var/phase = "rummage"
 	/// The stance of the touch that started it (I_HELP, I_DISARM, I_GRAB or I_HURT).
 	var/stance = I_HURT
 	/// The pocket being swapped (slot id and equip slot).
 	var/slot_id
 	var/slot
-	/// What was taken from them, and the user's own pocket item being slipped in.
+	/// What was taken from them, what is being taken, and the user's own pocket item being slipped in.
 	var/obj/item/took
 	var/obj/item/theirs
 	var/obj/item/mine
-	/// TRUE while giving: an interrupted give still keeps what was taken.
-	var/giving = FALSE
+	unheld = list("took")
 
-/datum/om/flow/pickpocket/start()
-	wait(1 SECOND, PROC_REF(rummaged))
+/// The next wait of the chain, with this one's state.
+/datum/task/timed/pickpocket/proc/next_phase(next, wait, progress = TRUE)
+	task_start(/datum/task/timed/pickpocket, actor, target, duration = wait, progress = progress, phase = next, stance = stance, slot_id = slot_id, slot = slot, took = took, theirs = theirs, mine = mine)
 
-/datum/om/flow/pickpocket/proc/rummaged()
+/datum/task/timed/pickpocket/proc/phase_done()
 	var/mob/living/carbon/human/user = actor
 	var/mob/living/carbon/human/victim = target
-	if(stance != I_HURT && (turn(victim.dir, 180) == get_dir(user, victim)))
-		to_chat(victim, span_warning("[user] rifles in your pockets!"))
-	if(stance == I_HELP)
-		if(istype(victim.get_equipped_item(SLOT_ID_BACK), /obj/item/storage))
-			slot_id = SLOT_ID_BACK
-			wait(3 SECONDS, PROC_REF(open_storage), progress = FALSE)
-		else if(istype(victim.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
-			slot_id = SLOT_ID_BELT
-			wait(5 SECONDS, PROC_REF(open_storage))
-		return
-	if(stance == I_DISARM)
-		slot_id = SLOT_ID_POCKET_L
-		slot = SLOT_ID_POCKET_L
-	else if(stance == I_GRAB)
-		slot_id = SLOT_ID_POCKET_R
-		slot = SLOT_ID_POCKET_R
-	else
-		return
-	rel_set(src, nameof(theirs), victim.get_equipped_item(slot_id))
-	if(istype(theirs))
-		wait(1 SECOND, PROC_REF(take))
-	else
-		rel_clear(src, nameof(theirs))
-		give()
-
-/datum/om/flow/pickpocket/proc/open_storage()
-	var/mob/living/carbon/human/victim = target
-	var/obj/item/storage/S = victim.get_equipped_item(slot_id)
-	if(istype(S))
-		S.open(actor)
-
-/datum/om/flow/pickpocket/proc/take()
-	var/mob/living/carbon/human/victim = target
-	if(victim.get_equipped_item(slot_id) != theirs)
-		return
-	victim.drop_from_inventory(theirs)
-	rel_set(src, nameof(took), theirs)
-	rel_clear(src, nameof(theirs))
-	give()
+	switch(phase)
+		if("rummage")
+			if(stance != I_HURT && (turn(victim.dir, 180) == get_dir(user, victim)))
+				to_chat(victim, span_warning("[user] rifles in your pockets!"))
+			if(stance == I_HELP)
+				if(istype(victim.get_equipped_item(SLOT_ID_BACK), /obj/item/storage))
+					slot_id = SLOT_ID_BACK
+					next_phase("open", 3 SECONDS, FALSE)
+				else if(istype(victim.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
+					slot_id = SLOT_ID_BELT
+					next_phase("open", 5 SECONDS)
+				return
+			if(stance == I_DISARM)
+				slot_id = SLOT_ID_POCKET_L
+				slot = SLOT_ID_POCKET_L
+			else if(stance == I_GRAB)
+				slot_id = SLOT_ID_POCKET_R
+				slot = SLOT_ID_POCKET_R
+			else
+				return
+			var/obj/item/pocketed = victim.get_equipped_item(slot_id)
+			if(istype(pocketed))
+				theirs = pocketed
+				next_phase("take", 1 SECOND)
+			else
+				give()
+		if("open")
+			var/obj/item/storage/S = victim.get_equipped_item(slot_id)
+			if(istype(S))
+				S.open(user)
+		if("take")
+			if(victim.get_equipped_item(slot_id) != theirs)
+				return
+			victim.drop_from_inventory(theirs)
+			took = theirs
+			theirs = null
+			give()
+		if("give")
+			swapped(TRUE)
 
 /// Slipping your own pocket item into theirs: a second of holding still.
-/datum/om/flow/pickpocket/proc/give()
+/datum/task/timed/pickpocket/proc/give()
 	var/mob/living/carbon/human/user = actor
-	rel_set(src, nameof(mine), user.get_equipped_item(slot_id))
-	if(!istype(mine))
-		rel_clear(src, nameof(mine))
+	var/obj/item/own_pocket = user.get_equipped_item(slot_id)
+	if(!istype(own_pocket))
 		swapped(FALSE)
 		return
-	giving = TRUE
-	wait(1 SECOND, PROC_REF(gave))
+	mine = own_pocket
+	next_phase("give", 1 SECOND)
 
-/datum/om/flow/pickpocket/proc/gave()
-	swapped(TRUE)
-
-/datum/om/flow/pickpocket/ended(reason)
-	if(giving)
+/// An interrupted give still keeps what was taken.
+/datum/task/timed/pickpocket/proc/phase_interrupted()
+	if(phase == "give")
 		swapped(FALSE)
 
-/datum/om/flow/pickpocket/proc/swapped(gave)
+/datum/task/timed/pickpocket/proc/swapped(gave)
 	var/mob/living/carbon/human/user = actor
 	var/mob/living/carbon/human/victim = target
-	giving = FALSE
-	if(!user)
+	if(!user || QDELETED(user))
 		return
 	// Taking something leaves the user's own pocket item in bluespace: it drops.
 	if(mine && (gave || took))
 		user.drop_from_inventory(mine)
-	if(took)
+	if(took && !QDELETED(took))
 		user.equip_to_slot(took, slot)
-	if(gave && victim)
+	if(gave && victim && !QDELETED(victim))
 		victim.equip_to_slot(mine, slot)
 
 /obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT, mob/user)
 	if(proximity && ishuman(user) && ishuman(A))
-		om_flow_start(/datum/om/flow/pickpocket, user, A, stance = stance)
+		task_start(/datum/task/timed/pickpocket, user, A, duration = 1 SECOND, stance = stance)
 		return 1
 	return 0
 

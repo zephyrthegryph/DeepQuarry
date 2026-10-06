@@ -309,7 +309,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/nametag
 	var/new_dir = SOUTH
 	var/new_disposal_path
-	var/result = rerun_ask(user, "k266", PROC_REF(alter_bin_type), args, /datum/om/prompt/choice, message = "What do you want to reconfigure the disposal bin to?", title = "Multitool-Disposal interface", choices = list( "Standard", "Wall", "Resleeving Deposit", "Wall Resleeving Deposit", "Hazard Bin", "Wall Hazard Bin", "Turn-In Bin", "Wall Turn-In Bin", "Mail Destination", "Wall Mail Destination" ))
+	var/result = rerun_ask(user, "k266", PROC_REF(alter_bin_type), args, /datum/prompt/choice, question = "What do you want to reconfigure the disposal bin to?", title = "Multitool-Disposal interface", choices = list( "Standard", "Wall", "Resleeving Deposit", "Wall Resleeving Deposit", "Hazard Bin", "Wall Hazard Bin", "Turn-In Bin", "Wall Turn-In Bin", "Mail Destination", "Wall Mail Destination" ))
 	if(isnull(result))
 		return
 	if(!result)
@@ -343,14 +343,14 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		// White
 		if("Mail Destination")
 			new_disposal_path = /obj/machinery/disposal/mail_reciever
-			var/_answer_k298 = rerun_ask(user, "k298", PROC_REF(alter_bin_type), args, /datum/om/prompt/text, message = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", title = "Mail Destination")
+			var/_answer_k298 = rerun_ask(user, "k298", PROC_REF(alter_bin_type), args, /datum/prompt/text, question = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", title = "Mail Destination")
 			if(isnull(_answer_k298))
 				return
 			nametag = _answer_k298
 		if("Wall Mail Destination")
 			new_disposal_path = /obj/machinery/disposal/wall/mail_reciever
 			new_dir = reverse_direction(user.dir)
-			var/_answer_k302 = rerun_ask(user, "k302", PROC_REF(alter_bin_type), args, /datum/om/prompt/text, message = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", title = "Mail Destination")
+			var/_answer_k302 = rerun_ask(user, "k302", PROC_REF(alter_bin_type), args, /datum/prompt/text, question = "Name this mail destination. This name has no effect on the disposal sorting junction, and is only for crew convenience.", title = "Mail Destination")
 			if(isnull(_answer_k302))
 				return
 			nametag = _answer_k302

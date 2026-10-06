@@ -171,10 +171,12 @@ Variables you may want to make use of are:
 
 /datum/species/event1/proc/choose_limbset()
 	var/static/list/limb_sets = list("Normal" = 1, "Unbreakable" = 2, "Unseverable" = 3, "Indestructible" = 4)
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
+	open_request(src, /datum/prompt/choice, PROC_REF(limbset_chosen), answerer = usr, question = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets, timeout = 0)
 
-/datum/species/event1/proc/limbset_chosen(datum/om/prompt/choice/ask)
-	set_limbset(ask.choices[ask.choice])
+/datum/species/event1/proc/limbset_chosen(datum/act/request/A)
+	var/datum/prompt/choice/asked = A.answer
+	if(asked)
+		set_limbset(asked.choices[asked.value])
 
 /datum/species/event1/proc/toggle_thermal()
 	vision_flags ^= SEE_MOBS

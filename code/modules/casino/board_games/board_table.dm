@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 /obj/structure/casino_table/board_game/proc/pick_game(mob/user)
 	if(game_ui?.game_state != GAME_SETUP)
 		return
-	var/datum/board_game/new_game = rerun_ask(user, "k42", PROC_REF(pick_game), args, /datum/om/prompt/choice, message = "Pick the game to play", title = "Choose Game", choices = possible_games)
+	var/datum/board_game/new_game = rerun_ask(user, "k42", PROC_REF(pick_game), args, /datum/prompt/choice, question = "Pick the game to play", title = "Choose Game", choices = possible_games)
 	if(isnull(new_game))
 		return
 	if(!new_game)

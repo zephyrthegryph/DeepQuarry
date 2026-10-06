@@ -17,13 +17,13 @@
 		var/datum/expedition_mission/preview = new mission_type()
 		choices[preview.name] = mission_type
 		spent(preview, user)
-	var/choice = rerun_ask(user, "k105", PROC_REF(plot_for_vessel), args, /datum/om/prompt/choice, message = "Select an expedition contract", title = "Flight Operations", choices = choices)
+	var/choice = rerun_ask(user, "k105", PROC_REF(plot_for_vessel), args, /datum/prompt/choice, question = "Select an expedition contract", title = "Flight Operations", choices = choices)
 	if(isnull(choice))
 		return
 	if(!choice || !CanInteract(user, GLOB.tgui_default_state))
 		return null
 	var/list/threat_bands = GLOB.expedition_threat_bands
-	var/threat_band = rerun_ask(user, "k109", PROC_REF(plot_for_vessel), args, /datum/om/prompt/choice, message = "Select a threat band", title = "Flight Operations", choices = threat_bands)
+	var/threat_band = rerun_ask(user, "k109", PROC_REF(plot_for_vessel), args, /datum/prompt/choice, question = "Select a threat band", title = "Flight Operations", choices = threat_bands)
 	if(isnull(threat_band))
 		return
 	if(!threat_band || !CanInteract(user, GLOB.tgui_default_state))

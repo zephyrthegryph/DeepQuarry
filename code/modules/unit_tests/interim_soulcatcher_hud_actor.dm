@@ -34,28 +34,28 @@
 
 /// The real captured-soul speech/emote handlers open typed prompts for the explicit HUD actor.
 /datum/unit_test/om/interim_soulcatcher_hud_prompt_actor/run_om(list/made)
-	sched.test_prompts = list()
+	test_prompts_reset()
 	var/mob/living/carbon/brain/caught_soul/actor = allocate(/mob/living/carbon/brain/caught_soul, run_loc_floor_bottom_left)
 	var/mob/living/carbon/brain/caught_soul/bystander = allocate(/mob/living/carbon/brain/caught_soul, run_loc_floor_bottom_left)
 	var/atom/movable/screen/nifsc/nme/emote_button = allocate(/atom/movable/screen/nifsc/nme)
 	var/atom/movable/screen/nifsc/nsay/speech_button = allocate(/atom/movable/screen/nifsc/nsay)
 	km_synthetic_click(actor, emote_button)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the actual native emote click opens one real typed prompt")
-	var/datum/om/prompt/text/emote_ask = sched.test_prompts[1]
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the actual native emote click opens one real typed prompt")
+	var/datum/prompt/text/emote_ask = GLOB.test_prompts[1]
 	made += emote_ask
-	TEST_ASSERT_EQUAL(emote_ask.peek("answerer"), actor, "the actual emote prompt retains the exact native actor")
-	TEST_ASSERT_EQUAL(om_prompt_answer(emote_ask, null, TRUE), "no answer", "the real typed emote cancellation is delivered")
+	TEST_ASSERT_EQUAL(emote_ask.answerer, actor, "the actual emote prompt retains the exact native actor")
+	TEST_ASSERT_EQUAL(test_prompt_answer(emote_ask, null, TRUE), "no answer", "the real typed emote cancellation is delivered")
 	speech_button.click_with_actor(bystander, null, null, null)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 2, "a separate explicit soul opens its real speech prompt")
-	var/datum/om/prompt/text/speech_ask = sched.test_prompts[2]
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "a separate explicit soul opens its real speech prompt")
+	var/datum/prompt/text/speech_ask = GLOB.test_prompts[2]
 	made += speech_ask
-	TEST_ASSERT_EQUAL(speech_ask.peek("answerer"), bystander, "the actual speech prompt belongs to the explicit other soul")
-	TEST_ASSERT_EQUAL(om_prompt_answer(speech_ask, null, TRUE), "no answer", "the real typed speech cancellation is delivered")
+	TEST_ASSERT_EQUAL(speech_ask.answerer, bystander, "the actual speech prompt belongs to the explicit other soul")
+	TEST_ASSERT_EQUAL(test_prompt_answer(speech_ask, null, TRUE), "no answer", "the real typed speech cancellation is delivered")
 	var/mob/living/carbon/human/unsupported = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/list/buttons = list(emote_button, speech_button)
 	for(var/atom/movable/screen/nifsc/button as anything in buttons)
 		button.click_with_actor(unsupported, null, null, null)
 		button.click_with_actor(null, null, null, null)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 2, "unsupported and null actors open no captured-soul prompts")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "unsupported and null actors open no captured-soul prompts")
 	TEST_ASSERT_NULL(actor.active_eye(), "actual cancellation creates no projection for the first soul")
 	TEST_ASSERT_NULL(bystander.active_eye(), "actual cancellation creates no projection for the other soul")

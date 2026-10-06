@@ -12,13 +12,13 @@
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
-	om_ask_begin(null, usr, /datum/om/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), list(receiver = usr.client, subject = target, title = "Spawn Artifact", message = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list"))
+	open_request(usr.client, /datum/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), answerer = usr, subject = target, title = "Spawn Artifact", question = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", timeout = 0)
 
-/client/proc/artifact_spawn_debug_chosen(datum/om/prompt/number/ask)
-	var/mob/target = ask.subject
-	if(isnull(ask.number) || !target?.loc)
+/client/proc/artifact_spawn_debug_chosen(datum/act/request/A)
+	var/mob/target = A.request.subject
+	if(!A.answer || isnull(A.answer.value) || !target?.loc)
 		return
-	new /obj/item/archaeological_find(target.loc, ask.number)
+	new /obj/item/archaeological_find(target.loc, A.answer.value)
 
 CAPABILITIES(/obj/item/archaeological_find)
 	param(nameof(find_type), pos = 1)

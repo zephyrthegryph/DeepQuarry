@@ -106,9 +106,6 @@
 /proc/p2cl_has_question(mob/user)
 	if(SSrequests.open_for(user))
 		return TRUE
-	for(var/datum/om/prompt/P as anything in om_scheduler().test_prompts)
-		if(!P.answered && P.peek("answerer") == user)
-			return TRUE
 	return FALSE
 
 /// The text of the closet's examine.
@@ -141,7 +138,7 @@
 
 /// Lets the prompts a type asks the legacy way be answered by the test (they are collected instead of shown). Call once the kernel is on its test clock.
 /proc/p2cl_capture_prompts()
-	om_scheduler().test_prompts = list()
+	test_prompts_reset()
 
 /// Answers the question `actor` was asked: the engine's request first, else the legacy prompt the click collected. `value` is a text for a text
 /// question, TRUE or FALSE for a confirmation.
@@ -149,15 +146,6 @@
 	var/datum/op_result/result = test_answer(actor, value, cancel ? REQ_CANCELLED : REQ_ANSWERED)
 	if(!isnull(result))
 		return result
-	var/list/prompts = om_scheduler().test_prompts
-	for(var/i in length(prompts) to 1 step -1)
-		var/datum/om/prompt/P = prompts[i]
-		if(!P.answered && P.peek("answerer") == actor)
-			var/answer = value
-			if(istype(P, /datum/om/prompt/confirm))
-				var/datum/om/prompt/confirm/C = P
-				answer = value ? C.yes_text : C.no_text
-			return om_prompt_answer(P, cancel ? null : answer, cancel)
 	return null
 
 // ---------------------------------------------------------------------------------------------------------------------

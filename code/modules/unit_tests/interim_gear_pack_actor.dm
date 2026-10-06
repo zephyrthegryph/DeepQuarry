@@ -17,7 +17,7 @@
 
 /// Direct VV-handler coverage chains the actual rights refusal; it does not claim native admin authorization.
 /datum/unit_test/om/interim_gear_pack_actor_refusal/run_om(list/made)
-	sched.test_prompts = list()
+	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
@@ -40,7 +40,7 @@
 	TEST_ASSERT_EQUAL(probe.result, TRUE, "the actual VV wrapper preserves its handled return")
 	TEST_ASSERT_EQUAL(dispenser.admin_calls, 1, "the actual VV wrapper invokes the inherited guarded helper once")
 	TEST_ASSERT_EQUAL(dispenser.admin_actor, actor, "the actual VV wrapper forwards the supplied actor instead of the native bystander")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 0, "the actual rights refusal opens no gear-pack prompt")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "the actual rights refusal opens no gear-pack prompt")
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, original_flags, "the actual refusal preserves all dispenser busy/dispensing flags")
 	TEST_ASSERT_EQUAL(length(dispenser.dispenses), length(original_catalog), "the actual rights refusal preserves the catalog size")
 	for(var/name in original_catalog)
@@ -55,7 +55,7 @@
 	dispenser.admin_add(null)
 	TEST_ASSERT_EQUAL(dispenser.admin_calls, 2, "the actual missing-actor helper reaches its real guard")
 	TEST_ASSERT_NULL(dispenser.admin_actor, "the absent actor stays absent instead of adopting ambient state")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 0, "an absent actor opens no gear-pack prompt")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent actor opens no gear-pack prompt")
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, original_flags, "an absent actor changes no actual dispenser flags")
 	for(var/name in original_catalog)
 		var/datum/gear_disp/gear = original_catalog[name]

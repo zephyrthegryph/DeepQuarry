@@ -93,7 +93,7 @@
 		if(A.density && user.Adjacent(A) && !istype(A, /mob))
 			things_to_smash_on += A
 
-	var/atom/choice = rerun_ask(user, "k104", PROC_REF(smash_bottle_effect), args, /datum/om/prompt/choice, message = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
+	var/atom/choice = rerun_ask(user, "k104", PROC_REF(smash_bottle_effect), args, /datum/prompt/choice, question = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
 	if(isnull(choice))
 		return
 	if(!choice)

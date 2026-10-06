@@ -20,7 +20,7 @@
 		to_chat(usr, "Error: you are not an admin!")
 		return
 
-	var/response = rerun_ask(usr, "k23", PROC_REF(setup_supermatter), args, /datum/om/prompt/choice, message = "Are you sure? This will start up the engine with selected gas as coolant.", title = "Engine setup", choices = list("N2", "CO2", "PH", "Abort"))
+	var/response = rerun_ask(usr, "k23", PROC_REF(setup_supermatter), args, /datum/prompt/choice, question = "Are you sure? This will start up the engine with selected gas as coolant.", title = "Engine setup", choices = list("N2", "CO2", "PH", "Abort"))
 	if(isnull(response))
 		return
 	if(!response || response == "Abort")

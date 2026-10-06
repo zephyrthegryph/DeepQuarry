@@ -432,7 +432,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
 		remove_preview(user, preview_render, 0)
 		preview_render = preview_template(user, deploy_location, show_doors = TRUE)
-		var/_answer_k433 = rerun_ask(user, "k433", PROC_REF(survivalcapsule_self), args, /datum/om/prompt/choice/alert, message = "Confirm location. (The shelter's exterior doors are highlighted in green!)", title = "Shelter Deploy Confirm", choices = list("No","Yes"))
+		var/_answer_k433 = rerun_ask(user, "k433", PROC_REF(survivalcapsule_self), args, /datum/prompt/choice, question = "Confirm location. (The shelter's exterior doors are highlighted in green!)", title = "Shelter Deploy Confirm", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k433))
 			return TRUE
 		if(_answer_k433 == "Yes")

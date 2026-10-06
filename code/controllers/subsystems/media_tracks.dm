@@ -77,13 +77,13 @@ SYSTEM_DEF(media_tracks)
 	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
-	om_flow_start(/datum/om/flow/media_track_add, user, null, tracks = src)
+	var/datum/media_track_add/adding = new
+	adding.ask_text(user, TYPE_PROC_REF(/datum/media_track_add, url_entered), "Track URL", "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", TRUE)
 
-/// An admin adds a media track: the URL (or pasted JSON, which ends the questions), then the
-/// title, duration, artist, genre and the secret/lobby/casino marks. A cancel ends it.
-/datum/om/flow/media_track_add
-	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-	var/datum/system/media_tracks/tracks
+/// An admin adds a media track: the URL (or pasted JSON, which ends the questions), then the title, duration, artist, genre and the
+/// secret/lobby/casino marks. Each question is a request this record owns (the open request keeps it, and its answerer is the admin);
+/// a cancel, or an admin who lost the rights, ends it.
+/datum/media_track_add
 	var/url
 	var/title
 	var/duration
@@ -93,15 +93,27 @@ SYSTEM_DEF(media_tracks)
 	var/lobby
 
 /// The admin-only text questions of adding a track.
-/datum/om/prompt/text/media_track
-	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-	max_length = MAX_TGUI_INPUT
+/datum/prompt/text/media_track
+	max_len = MAX_TGUI_INPUT
+	timeout = 0
+	rights = R_DEBUG|R_FUN
+	recheck_on_open = TRUE
 
-/datum/om/flow/media_track_add/start()
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(url_entered), title = "Track URL", message = "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", multiline = TRUE)
+/// The admin-only choices of adding a track.
+/datum/prompt/choice/media_track
+	buttons = TRUE
+	timeout = 0
+	rights = R_DEBUG|R_FUN
+	recheck_on_open = TRUE
 
-/datum/om/flow/media_track_add/proc/url_entered(datum/om/prompt/text/media_track/ask)
-	url = ask.text
+/datum/media_track_add/proc/ask_text(mob/user, handler, title, question, multiline = FALSE)
+	open_request(src, /datum/prompt/text/media_track, handler, answerer = user, title = title, question = question, multiline = multiline)
+
+/datum/media_track_add/proc/ask_mark(mob/user, handler, title, question)
+	open_request(src, /datum/prompt/choice/media_track, handler, answerer = user, title = title, question = question, choices = list("Yes", "Cancel", "No"))
+
+/datum/media_track_add/proc/url_entered(datum/act/request/A)
+	url = A.answer?.value
 	if(!url)
 		return
 	var/json
@@ -109,46 +121,53 @@ SYSTEM_DEF(media_tracks)
 		json = json_decode(url)
 	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 	if(islist(json))
-		tracks.manual_track_entered(actor, src)
+		SSmedia_tracks.manual_track_entered(A.request.answerer, src)
 		return
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(title_entered), title = "Track Title", message = "REQUIRED: Provide title for track")
+	ask_text(A.request.answerer, PROC_REF(title_entered), "Track Title", "REQUIRED: Provide title for track")
 
-/datum/om/flow/media_track_add/proc/title_entered(datum/om/prompt/text/media_track/ask)
-	title = ask.text
+/datum/media_track_add/proc/title_entered(datum/act/request/A)
+	title = A.answer?.value
 	if(!title)
 		return
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
+	open_request(src, /datum/prompt/number, PROC_REF(duration_entered), answerer = A.request.answerer, title = "Track Duration", question = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", timeout = 0, rights = R_DEBUG|R_FUN, recheck_on_open = TRUE)
 
-/datum/om/flow/media_track_add/proc/duration_entered(datum/om/prompt/number/ask)
-	duration = ask.number
+/datum/media_track_add/proc/duration_entered(datum/act/request/A)
+	duration = A.answer?.value
 	if(!duration)
 		return
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(artist_entered), title = "Track Artist", message = "Optional: Provide artist for track")
+	ask_text(A.request.answerer, PROC_REF(artist_entered), "Track Artist", "Optional: Provide artist for track")
 
-/datum/om/flow/media_track_add/proc/artist_entered(datum/om/prompt/text/media_track/ask)
-	artist = ask.text
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(genre_entered), title = "Track Genre", message = "Optional: Provide genre for track (try to match an existing one)")
-
-/datum/om/flow/media_track_add/proc/genre_entered(datum/om/prompt/text/media_track/ask)
-	genre = ask.text
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(secret_chosen), title = "Track Secret", message = "Optional: Mark track as secret?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
-
-/datum/om/flow/media_track_add/proc/secret_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/media_track_add/proc/artist_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	secret = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(lobby_chosen), title = "Track Lobby", message = "Optional: Mark track as lobby music?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
+	artist = A.answer.value
+	ask_text(A.request.answerer, PROC_REF(genre_entered), "Track Genre", "Optional: Provide genre for track (try to match an existing one)")
 
-/datum/om/flow/media_track_add/proc/lobby_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/media_track_add/proc/genre_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	lobby = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(casino_chosen), title = "Track Casino", message = "Optional: Mark track as casino music?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
+	genre = A.answer.value
+	ask_mark(A.request.answerer, PROC_REF(secret_chosen), "Track Secret", "Optional: Mark track as secret?")
 
-/datum/om/flow/media_track_add/proc/casino_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/media_track_add/proc/secret_chosen(datum/act/request/A)
+	var/choice = A.answer?.value
+	if(!choice || choice == "Cancel")
 		return
-	tracks.manual_track_entered(actor, src, ask.choice == "Yes")
+	secret = (choice == "Yes")
+	ask_mark(A.request.answerer, PROC_REF(lobby_chosen), "Track Lobby", "Optional: Mark track as lobby music?")
+
+/datum/media_track_add/proc/lobby_chosen(datum/act/request/A)
+	var/choice = A.answer?.value
+	if(!choice || choice == "Cancel")
+		return
+	lobby = (choice == "Yes")
+	ask_mark(A.request.answerer, PROC_REF(casino_chosen), "Track Casino", "Optional: Mark track as casino music?")
+
+/datum/media_track_add/proc/casino_chosen(datum/act/request/A)
+	var/choice = A.answer?.value
+	if(!choice || choice == "Cancel")
+		return
+	SSmedia_tracks.manual_track_entered(A.request.answerer, src, choice == "Yes")
 
 /**
  * Alternatively to using a series of inputs, you can use json and paste it in.
@@ -163,7 +182,7 @@ SYSTEM_DEF(media_tracks)
  * "lobby": plays in the lobby (true/false)
  * "casino": plays in the casino (true/false)
  */
-/datum/system/media_tracks/proc/manual_track_entered(mob/user, datum/om/flow/media_track_add/answers, casino = FALSE)
+/datum/system/media_tracks/proc/manual_track_entered(mob/user, datum/media_track_add/answers, casino = FALSE)
 	var/url = answers.url
 	if(!url)
 		return
@@ -206,11 +225,11 @@ SYSTEM_DEF(media_tracks)
 	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
-	om_ask(user, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
+	open_request(src, /datum/prompt/text/media_track, PROC_REF(manual_track_removal_entered), answerer = user, title = "Remove Track", question = "Input track title or URL to remove (must be exact)")
 
-/datum/system/media_tracks/proc/manual_track_removal_entered(datum/om/prompt/text/media_track/ask)
-	var/mob/user = ask.answerer
-	var/track = ask.text
+/datum/system/media_tracks/proc/manual_track_removal_entered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	var/track = A.answer?.value
 	if(!track)
 		return
 

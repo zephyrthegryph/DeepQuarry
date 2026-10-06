@@ -86,7 +86,7 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 /client/proc/vv_topic_add_behaviour(mob/user, list/args)
 	var/datum/target = args[VV_HK_TARGET]
 	var/list/names = sortList(subtypesof(/datum/capability), GLOBAL_PROC_REF(cmp_typepaths_asc))
-	var/result = flow_ask(mob, "behaviour:add", /datum/om/prompt/choice, message = "Choose a capability to grant", title = "Grant Capability", choices = names)
+	var/result = flow_ask(mob, "behaviour:add", /datum/prompt/choice, question = "Choose a capability to grant", title = "Grant Capability", choices = names)
 	if(isnull(result) || !user)
 		return
 	if(QDELETED(target))
@@ -113,7 +113,7 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 	if(!length(names))
 		to_chat(user, "[target] has no capabilities granted through VV.")
 		return
-	var/path = flow_ask(mob, "behaviour:remove", /datum/om/prompt/choice, message = "Choose a capability to revoke", title = "Revoke Capability", choices = names)
+	var/path = flow_ask(mob, "behaviour:remove", /datum/prompt/choice, question = "Choose a capability to revoke", title = "Revoke Capability", choices = names)
 	if(isnull(path) || !user)
 		return
 	if(QDELETED(target))
@@ -124,7 +124,7 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 		var/method = vv_subtype_prompt(target.type, "behaviour")
 		if(isnull(method))
 			return
-		if(flow_ask(mob, "behaviour:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-revoke [path] on [target.type]?", title = "Mass Revoke Confirmation", choices = list("Yes", "No")) != "Yes")
+		if(flow_ask(mob, "behaviour:mass", /datum/prompt/choice, question = "Are you sure you want to mass-revoke [path] on [target.type]?", title = "Mass Revoke Confirmation", choices = list("Yes", "No"), buttons = TRUE) != "Yes")
 			return
 		targets_to_remove_from = get_all_of_type(target.type, method)
 	for(var/datum/target_to_remove_from as anything in targets_to_remove_from)

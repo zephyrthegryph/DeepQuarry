@@ -27,7 +27,7 @@
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "run:a,run:a,run:a,done:first:second", "the second answer finished it with both stored answers")
 	TEST_ASSERT(!io_job_count(), "no jobs left")
-	TEST_ASSERT(!length(GLOB.om_rerun_answers), "the re-run's answers are cleared")
+	TEST_ASSERT(!length(GLOB.rerun_answers), "the re-run's answers are cleared")
 
 /datum/unit_test/om/flow_io_error_is_an_answer
 

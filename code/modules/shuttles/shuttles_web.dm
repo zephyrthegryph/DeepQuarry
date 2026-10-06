@@ -415,13 +415,13 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	if(MS.skip_docking_checks() || MS.check_undocked())
 		return 1
 
-	var/choice = rerun_ask(user, "k398", PROC_REF(check_docking), args, /datum/om/prompt/choice/alert, message = "The shuttle is currently docked! Please undock before continuing.", title = "Error", choices = list("Cancel","Force Launch"))
+	var/choice = rerun_ask(user, "k398", PROC_REF(check_docking), args, /datum/prompt/choice, question = "The shuttle is currently docked! Please undock before continuing.", title = "Error", choices = list("Cancel","Force Launch"), buttons = TRUE)
 	if(isnull(choice))
 		return
 	if(!choice || choice == "Cancel")
 		return 0
 
-	var/_answer_k402 = rerun_ask(user, "k402", PROC_REF(check_docking), args, /datum/om/prompt/choice/alert, message = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", title = "Force Launch", choices = list("Force Launch", "Cancel"))
+	var/_answer_k402 = rerun_ask(user, "k402", PROC_REF(check_docking), args, /datum/prompt/choice, question = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", title = "Force Launch", choices = list("Force Launch", "Cancel"), buttons = TRUE)
 	if(isnull(_answer_k402))
 		return
 	choice = _answer_k402

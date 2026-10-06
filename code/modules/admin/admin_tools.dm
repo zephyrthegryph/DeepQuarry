@@ -116,10 +116,10 @@ CAPABILITIES(/datum/player_log_viwer)
 /datum/player_log_viwer/proc/refresh_data()
 	if(!CONFIG_GET(flag/database_logging))
 		return
-	om_sql_view(src, "dialog", "SELECT mid,time,ckey,mob,area,color,type,message from erro_dialog WHERE ckey = :t_ckey", list("t_ckey" = target_ckey), PROC_REF(sql_rows_arrived))
+	sql_view(src, "dialog", "SELECT mid,time,ckey,mob,area,color,type,message from erro_dialog WHERE ckey = :t_ckey", list("t_ckey" = target_ckey), PROC_REF(sql_rows_arrived))
 
 /datum/player_log_viwer/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	if(!length(open_tguis)) // closed meanwhile
 		return
 	if(error)

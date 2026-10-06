@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 
 /// Old attack_self.
 /obj/item/disk/nifsoft/compliance/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/newlaws = rerun_ask(user, "k271", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Please Input Laws", title = "Compliance Laws", default = laws, max_length = 2048, multiline = TRUE)
+	var/newlaws = rerun_ask(user, "k271", PROC_REF(interaction_self), args, /datum/prompt/text, question = "Please Input Laws", title = "Compliance Laws", default = laws, max_len = 2048, multiline = TRUE, name_text = ((2048) <= MAX_NAME_LEN))
 	if(isnull(newlaws))
 		return TRUE
 	if(newlaws)

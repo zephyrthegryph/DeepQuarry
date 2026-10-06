@@ -238,3 +238,58 @@
 	rel_set(boxes, nameof(boxes.prompt), src)
 	boxes.tgui_interact(user)
 	return boxes
+
+/// The ColorMate window: `preview` is the atom painted in place, or a path (a preview is made for the window and deleted with it). The
+/// answer is the colour matrix.
+/datum/prompt/colormatrix
+	question = "Pick a color matrix."
+	timeout = 30 MINUTES
+	var/preview
+	var/list/default
+	var/matrix_only = FALSE
+	/// The tgui state the window uses (null: always).
+	var/datum/tgui_state/ui_state
+
+/datum/prompt/colormatrix/present(mob/user)
+	if(!ispath(preview) && !isatom(preview))
+		return null
+	var/was_path = ispath(preview)
+	var/atom/movable/shown = was_path ? new preview : preview
+	var/list/start = length(default) ? default : DEFAULT_COLORMATRIX
+	if(length(start) < 12)
+		start = start.Copy()
+		start.len = 12
+	var/datum/tgui_input_colormatrix/prompt/window = new(user, question, title || "Matrix Recolor", shown, start, matrix_only, timeout || 30 MINUTES, ui_state || GLOB.tgui_always_state, was_path)
+	rel_set(window, nameof(window.prompt), src)
+	window.tgui_interact(user)
+	return window
+
+/datum/prompt/colormatrix/refusal(given)
+	return islist(given) ? null : "that is not a colour matrix"
+
+/// kind colormatrix: the ColorMate window answers its matrix.
+/datum/tgui_input_colormatrix/prompt
+	var/datum/prompt/prompt
+
+CAPABILITIES(/datum/tgui_input_colormatrix/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
+
+/datum/tgui_input_colormatrix/prompt/set_entry(entry)
+	. = ..()
+	if(prompt && !isnull(src.entry))
+		var/datum/prompt/P = prompt
+		rel_clear(src, nameof(prompt))
+		prompt_window_answer(P, src.entry)
+
+/datum/tgui_input_colormatrix/prompt/tgui_close(mob/user)
+	. = ..()
+	if(prompt)
+		var/datum/prompt/P = prompt
+		rel_clear(src, nameof(prompt))
+		prompt_window_closed(P)
+	spent(src, user)
+
+/datum/tgui_input_colormatrix/prompt/on_destroy(force)
+	if(was_path && target())
+		destroyed(target())
+	..()

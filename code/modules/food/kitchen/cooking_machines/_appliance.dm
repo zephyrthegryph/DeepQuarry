@@ -750,7 +750,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			if (CI.container())
 				menuoptions[CI.container().label(menuoptions.len)] = CI
 
-		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/om/prompt/choice, message = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
+		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
 		if(isnull(selection))
 			return
 		if (selection)

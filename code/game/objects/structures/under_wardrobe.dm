@@ -146,20 +146,20 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	var/datum/gear_tweak/gt = ui_ref(tweak, null, /datum/gear_tweak)
 	if(!gt)
 		return TRUE
-	gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/underwear(underwear, gt), PROMPT_USABLE)
+	gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/ask_sequence/gear_tweak/underwear(underwear, gt), list("usable_state" = "default"))
 	return TRUE
 
 /// An underwear gear tweak change: which underwear category and tweak it is for.
-/datum/om/flow/ask_sequence/gear_tweak/underwear
+/datum/ask_sequence/gear_tweak/underwear
 	var/category
 	var/datum/gear_tweak/tweak
 
-/datum/om/flow/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
+/datum/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
 	..()
 	src.category = category
 	rel_set(src, nameof(tweak), tweak)
 
-/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/gear_tweak/underwear/seq)
+/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/ask_sequence/gear_tweak/underwear/seq)
 	var/underwear = seq.category
 	var/datum/gear_tweak/gt = seq.tweak
 	if(!istype(H) || !(underwear in H.all_underwear))

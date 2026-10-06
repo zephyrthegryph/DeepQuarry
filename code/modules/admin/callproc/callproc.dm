@@ -98,7 +98,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 	var/targetselected = FALSE
 	var/returnval
 
-	switch(flow_ask(mob, "[key]:owned", /datum/om/prompt/choice/alert, message = "Proc owned by something?", choices = list("Yes","No")))
+	switch(flow_ask(mob, "[key]:owned", /datum/prompt/choice, question = "Proc owned by something?", choices = list("Yes","No"), buttons = TRUE))
 		if("Yes")
 			targetselected = TRUE
 			var/list/value = vv_get_value(default_class = VV_ATOM_REFERENCE, classes = list(VV_ATOM_REFERENCE, VV_DATUM_REFERENCE, VV_MOB_REFERENCE, VV_CLIENT, VV_MARKED_DATUM, VV_TEXT_LOCATE, VV_PROCCALL_RETVAL), key = "[key]:target")
@@ -114,7 +114,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		else
 			return
 
-	var/procpath = flow_ask(mob, "[key]:path", /datum/om/prompt/text, message = "Proc path, eg: /proc/fake_blood", title = "Path:")
+	var/procpath = flow_ask(mob, "[key]:path", /datum/prompt/text, question = "Proc path, eg: /proc/fake_blood", title = "Path:")
 	if(!procpath)
 		return
 
@@ -237,7 +237,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 		return prompt_flow(src, PROC_REF(callproc_datum), args)
 	if(!admin_require(src, R_DEBUG, "callproc.datum"))
 		return
-	var/procname = flow_ask(mob, "datumcall:name", /datum/om/prompt/text, message = "Proc name, eg: fake_blood", title = "Proc:")
+	var/procname = flow_ask(mob, "datumcall:name", /datum/prompt/text, question = "Proc name, eg: fake_blood", title = "Proc:")
 	if(!procname)
 		return
 	if(!hascall(thing, procname))
@@ -263,14 +263,14 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 
 /// The arguments for a proc call, asked inside a prompt flow: null until all are given.
 /client/proc/get_callproc_args(key = "args")
-	var/argnum = flow_ask(mob, "[key]:count", /datum/om/prompt/number, message = "Number of arguments", title = "Number:", default = 0)
+	var/argnum = flow_ask(mob, "[key]:count", /datum/prompt/number, question = "Number of arguments", title = "Number:", default = 0)
 	if(isnull(argnum))
 		return
 
 	. = list()
 	var/list/named_args = list()
 	for(var/i in 1 to argnum)
-		var/named_arg = flow_ask(mob, "[key]:[i]:name", /datum/om/prompt/text, message = "Leave blank for positional argument. Positional arguments will be considered as if they were added first.", title = "Named argument")
+		var/named_arg = flow_ask(mob, "[key]:[i]:name", /datum/prompt/text, question = "Leave blank for positional argument. Positional arguments will be considered as if they were added first.", title = "Named argument")
 		if(isnull(named_arg))
 			return null
 		var/value = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = "[key]:[i]")

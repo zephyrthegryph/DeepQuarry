@@ -41,7 +41,7 @@ EXTEND_INTERACTIONS(/obj/effect/overmap/bluespace_rift, INTERACT_OBSERVER("Trave
 /// Old attack_ghost: staff make a partner rift, or the ghost travels through; else the default.
 /obj/effect/overmap/bluespace_rift/proc/bluespace_rift_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!partner && check_rights_for(user?.client, R_HOLDER))
-		var/response = rerun_ask(user, "k42", PROC_REF(bluespace_rift_ghost_use), args, /datum/om/prompt/choice/alert, message = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", title = "Bluespace Rift", choices = list("Cancel","Make Here"))
+		var/response = rerun_ask(user, "k42", PROC_REF(bluespace_rift_ghost_use), args, /datum/prompt/choice, question = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", title = "Bluespace Rift", choices = list("Cancel","Make Here"), buttons = TRUE)
 		if(isnull(response))
 			return TRUE
 		if(response == "Make Here")

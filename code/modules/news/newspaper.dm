@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/newspaper)
 		if(scribble_page == curr_page)
 			to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
 		else
-			var/s = rerun_ask(user, "k108", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write something", title = "Newspaper")
+			var/s = rerun_ask(user, "k108", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write something", title = "Newspaper")
 			if(isnull(s))
 				return TRUE
 			if(!s)

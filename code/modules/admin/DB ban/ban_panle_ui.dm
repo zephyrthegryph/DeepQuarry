@@ -190,10 +190,10 @@ CAPABILITIES(/datum/tgui_ban_panel)
 				bantypesearch += "'PERMABAN' "
 
 
-	om_sql_view(src, "bans", "SELECT id, bantime, bantype, reason, job, duration, expiration_time, ckey, a_ckey, unbanned, unbanned_ckey, unbanned_datetime, edits, ip, computerid FROM erro_ban WHERE 1 [playersearch] [adminsearch] [ipsearch] [cidsearch] [bantypesearch] ORDER BY bantime DESC LIMIT 100", search_params, PROC_REF(sql_rows_arrived))
+	sql_view(src, "bans", "SELECT id, bantime, bantype, reason, job, duration, expiration_time, ckey, a_ckey, unbanned, unbanned_ckey, unbanned_datetime, edits, ip, computerid FROM erro_ban WHERE 1 [playersearch] [adminsearch] [ipsearch] [cidsearch] [bantypesearch] ORDER BY bantime DESC LIMIT 100", search_params, PROC_REF(sql_rows_arrived))
 
 /datum/tgui_ban_panel/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	if(!holder() || !check_rights_for(holder(), R_BAN))
 		return
 	var/list/all_bans = list()

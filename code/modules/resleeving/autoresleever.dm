@@ -46,13 +46,13 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
-		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_interaction_ghost), args, /datum/om/prompt/choice/alert, message = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"))
+		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_interaction_ghost), args, /datum/prompt/choice, question = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k54))
 			return
 		if(_answer_k54 == "Yes")
 			autoresleeve(user)
 	else if(ghost_spawns)
-		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_interaction_ghost), args, /datum/om/prompt/choice/alert, message = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"))
+		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_interaction_ghost), args, /datum/prompt/choice, question = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k57))
 			return
 		if(_answer_k57 == "Yes")
@@ -74,7 +74,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	var/mob/living/body = ghost.mind?.current
 	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && stat_value(body, STAT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
-			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"))
+			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/prompt/choice, question = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"), buttons = TRUE)
 			if(isnull(_answer_k78))
 				return
 			if(_answer_k78 != "Yes")
@@ -124,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 
 	var/slot = ghost.client.prefs.default_slot
-	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"))
+	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/prompt/choice, question = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"), buttons = TRUE)
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")

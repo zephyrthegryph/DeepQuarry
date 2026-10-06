@@ -59,25 +59,6 @@
 	complete_proc = /datum/om_test_entity/proc/task_completed
 	cancel_proc = /datum/om_test_entity/proc/task_cancelled
 
-/// Passes while the target's `enabled` is set.
-/datum/om/check/test_target_enabled
-
-/datum/om/check/test_target_enabled/why_not(datum/actor, datum/om_test_entity/target)
-	if(!istype(target) || !target.enabled)
-		return "disabled"
-
-/datum/om/prompt/confirm/test_recheck
-	message = "go?"
-	requires = list(/datum/om/check/test_target_enabled)
-
-/datum/om/prompt/confirm/test_recheck/refused(reason)
-	var/datum/om_test_entity/E = subject
-	if(E)
-		LAZYADD(E.log, "refused:[reason]")
-
-/datum/om_test_entity/proc/prompt_answered(datum/om/prompt/confirm/test_recheck/ask)
-	LAZYADD(log, "answer:[ask.yes ? "Yes" : "No"]")
-
 // ---------------------------------------------------------------- om_after
 
 /datum/unit_test/om/timer_cancel_on_delete
@@ -263,34 +244,6 @@
 	TEST_ASSERT_NULL(WS.thing, "and clears the var, so on_cancel never sees a deleted datum")
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "cancel:gone", "no step runs after")
-
-// ---------------------------------------------------------------- prompts
-
-/datum/unit_test/om/prompt_rechecks
-
-/datum/unit_test/om/prompt_rechecks/run_om(list/made)
-	sched.test_prompts = list()
-	var/datum/om_test_entity/E = entity(made)
-	var/datum/om_test_entity/user = entity(made)
-	var/datum/om/prompt/P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
-	TEST_ASSERT(istype(P), "om_ask returns the pending prompt")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the test scheduler collected it")
-	E.enabled = FALSE
-	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "disabled", "the requires are re-checked when the answer arrives")
-	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "refused:disabled", "on_answer did not run; on_refused did")
-	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "answered", "a prompt is answered once")
-
-	E.enabled = TRUE
-	LAZYCLEARLIST(E.log)
-	var/datum/om/prompt/P2 = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
-	TEST_ASSERT_NULL(om_prompt_answer(P2, "Yes"), "a passing re-check delivers the answer")
-	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "answer:Yes", "on_answer ran with the answer")
-
-	LAZYCLEARLIST(E.log)
-	var/datum/om/prompt/P3 = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
-	qdel(user)
-	TEST_ASSERT_EQUAL(om_prompt_answer(P3, "Yes"), "gone", "an answer after the user is deleted does nothing")
-	TEST_ASSERT_EQUAL(length(E.log), 0, "nothing ran")
 
 // ---------------------------------------------------------------- handles
 

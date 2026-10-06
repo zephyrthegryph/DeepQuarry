@@ -12,7 +12,7 @@ DECLARE_INTERACTIONS(/obj/structure/signpost, 	INTERACT_HAND_UNGATED(null, PROC_
 
 /// Old attack_hand.
 /obj/structure/signpost/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k11 = rerun_ask(user, "k11", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "Travel back to ss13?", title = "Return?", choices = list("Yes","No"))
+	var/_answer_k11 = rerun_ask(user, "k11", PROC_REF(interaction_hand), args, /datum/prompt/choice, question = "Travel back to ss13?", title = "Return?", choices = list("Yes","No"), buttons = TRUE)
 	if(isnull(_answer_k11))
 		return TRUE
 	if(_answer_k11 == "Yes")

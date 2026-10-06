@@ -11,7 +11,7 @@
 /datum/unit_test/dq_hc_silicon/Run()
 	test_driver_begin()
 	test_rng(13)
-	om_scheduler().test_prompts = list()
+	test_prompts_reset()
 	run_gate()
 	for(var/obj/item/paicard/card as anything in linked_cards)
 		card.removePersonality() // the card lets go of its pAI before the block is swept, so no spark outlives the test

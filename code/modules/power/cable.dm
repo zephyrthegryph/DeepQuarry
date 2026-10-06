@@ -567,7 +567,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		w_class = ITEMSIZE_SMALL
 
 /obj/item/stack/cable_coil/multitool_act(mob/user, obj/item/W)
-	var/selected_type = rerun_ask(user, "k530", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Pick new colour.", title = "Cable Colour", choices = GLOB.possible_cable_coil_colours)
+	var/selected_type = rerun_ask(user, "k530", TYPE_PROC_REF(/atom, multitool_act), args, /datum/prompt/choice, question = "Pick new colour.", title = "Cable Colour", choices = GLOB.possible_cable_coil_colours)
 	if(isnull(selected_type))
 		return ITEM_INTERACT_BLOCKING
 	set_cable_color(selected_type, user)

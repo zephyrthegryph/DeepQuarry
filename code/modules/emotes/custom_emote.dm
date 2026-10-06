@@ -8,7 +8,7 @@
 
 	var/input
 	if(!message)
-		var/_answer_k11 = rerun_ask(src, "k11", PROC_REF(custom_emote), args, /datum/om/prompt/text, message = "Choose an emote to display.")
+		var/_answer_k11 = rerun_ask(src, "k11", PROC_REF(custom_emote), args, /datum/prompt/text, question = "Choose an emote to display.")
 		if(isnull(_answer_k11))
 			return
 		input = _answer_k11

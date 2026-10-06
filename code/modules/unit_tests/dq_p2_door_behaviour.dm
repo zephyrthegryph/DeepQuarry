@@ -138,7 +138,7 @@
 /// Lets the prompts a type asks the legacy way be answered by the test (they are collected instead of shown). Call once the kernel
 /// is on its test clock.
 /proc/p2_door_capture_prompts()
-	om_scheduler().test_prompts = list()
+	test_prompts_reset()
 
 /// Answers the question `actor` was asked (TRUE: yes, FALSE: no, `cancel`: closes it). The engine's request answers first; a question
 /// asked the legacy way is answered through its collected prompt.
@@ -146,15 +146,6 @@
 	var/datum/op_result/result = test_answer(actor, value, cancel ? REQ_CANCELLED : REQ_ANSWERED)
 	if(!isnull(result))
 		return result
-	var/list/prompts = om_scheduler().test_prompts
-	for(var/i in length(prompts) to 1 step -1)
-		var/datum/om/prompt/P = prompts[i]
-		if(!P.answered && P.peek("answerer") == actor)
-			var/answer = value ? "Yes" : "No"
-			if(istype(P, /datum/om/prompt/confirm))
-				var/datum/om/prompt/confirm/C = P
-				answer = value ? C.yes_text : C.no_text
-			return om_prompt_answer(P, cancel ? null : answer, cancel)
 	return null
 
 /// Time for a click or a window button to play out: far longer than any tool action, shorter than a door's own autoclose.

@@ -427,7 +427,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		return
 
 	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	om_ask(src, /datum/om/prompt/colormatrix, null, title = "Animal Recolor", message = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
+	open_request(src, /datum/prompt/colormatrix, null, answerer = src, title = "Animal Recolor", question = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 
 //Thermal vision adding
 

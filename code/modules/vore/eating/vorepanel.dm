@@ -1128,7 +1128,7 @@ CAPABILITIES(/datum/vore_look)
 			if(params["option"] in list("Examine","Help Out","Devour"))
 				intent = params["option"]
 			else
-				var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_inside), args, /datum/om/prompt/choice/alert, message = "What do you want to do to them?", title = "Query", choices = list("Examine","Help Out","Devour"))
+				var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_inside), args, /datum/prompt/choice, question = "What do you want to do to them?", title = "Query", choices = list("Examine","Help Out","Devour"), buttons = TRUE)
 				if(isnull(_answer_a1))
 					return
 				intent = _answer_a1
@@ -1137,7 +1137,7 @@ CAPABILITIES(/datum/vore_look)
 			if(params["option"] in list("Examine","Use Hand"))
 				intent = params["option"]
 			else
-				var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_inside), args, /datum/om/prompt/choice/alert, message = "What do you want to do to that?", title = "Query", choices = list("Examine","Use Hand"))
+				var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_inside), args, /datum/prompt/choice, question = "What do you want to do to that?", title = "Query", choices = list("Examine","Use Hand"), buttons = TRUE)
 				if(isnull(_answer_a2))
 					return
 				intent = _answer_a2
@@ -1255,7 +1255,7 @@ CAPABILITIES(/datum/vore_look)
 	if((params["option"] in available_options))
 		intent = params["option"]
 	else
-		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "What would you like to do with [target]?", title = "Vore Pick", choices = available_options)
+		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_outside), args, /datum/prompt/choice, question = "What would you like to do with [target]?", title = "Vore Pick", choices = available_options)
 		if(isnull(_answer_a1))
 			return
 		intent = _answer_a1
@@ -1348,7 +1348,7 @@ CAPABILITIES(/datum/vore_look)
 		return TRUE
 	var/obj/belly/choice = params["targetBelly"]
 	if(!(choice in host().vore_organs))
-		var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
+		var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
 		if(isnull(_answer_a2))
 			return
 		choice = _answer_a2
@@ -1375,7 +1375,7 @@ CAPABILITIES(/datum/vore_look)
 	if(!viable_candidates.len)
 		to_chat(user, span_notice("There are no viable candidates around you!"))
 		return TRUE
-	var/_answer_a3 = rerun_ask(user, "a3", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Who do you want to receive the target?", title = "Select Predator", choices = viable_candidates)
+	var/_answer_a3 = rerun_ask(user, "a3", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Who do you want to receive the target?", title = "Select Predator", choices = viable_candidates)
 	if(isnull(_answer_a3))
 		return
 	belly_owner = _answer_a3
@@ -1383,7 +1383,7 @@ CAPABILITIES(/datum/vore_look)
 	if(!belly_owner || !(belly_owner in range(1, host())))
 		return TRUE
 
-	var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
+	var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
 	if(isnull(choice))
 		return
 	if(!choice || !(target in host().vore_selected) || !belly_owner || !(belly_owner in range(1, host())))
@@ -1391,7 +1391,7 @@ CAPABILITIES(/datum/vore_look)
 
 	if(belly_owner != host())
 		to_chat(user, span_vnotice("Transfer offer sent. Await their response."))
-		var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice/alert, message = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"))
+		var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"), buttons = TRUE)
 		if(isnull(accepted))
 			return
 		if(accepted != "Yes")
@@ -1444,7 +1444,7 @@ CAPABILITIES(/datum/vore_look)
 		to_chat(user,span_warning("They don't seem to be reformable!"))
 		return TRUE
 
-	var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
+	var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(accepted))
 		return
 	if(accepted != "Yes")
@@ -1486,7 +1486,7 @@ CAPABILITIES(/datum/vore_look)
 	if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
 		to_chat(user,span_warning("They don't seem to be reformable!"))
 		return TRUE
-	var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
+	var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(accepted))
 		return
 	if(accepted != "Yes")
@@ -1541,7 +1541,7 @@ CAPABILITIES(/datum/vore_look)
 		to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
 		return FALSE
 
-	var/ourchoice = rerun_ask(user, "a8", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", title = "Instant Process", choices = process_options)
+	var/ourchoice = rerun_ask(user, "a8", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", title = "Instant Process", choices = process_options)
 	if(isnull(ourchoice))
 		return
 	if(!ourchoice)

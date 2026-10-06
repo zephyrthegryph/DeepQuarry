@@ -128,47 +128,55 @@
 		to_chat(user, span_notice("[C] needs a collar before you can attach a leash to it."))
 		return ITEM_INTERACT_FAILURE
 
-	om_flow_start(/datum/om/flow/leash, user, C, leash = src)
+	var/mob/living/carbon/human/human_pet = C
+	var/leashtime = (istype(human_pet) && human_pet.get_equipped_item(SLOT_ID_HANDCUFFED)) ? 0.5 SECONDS : 3.5 SECONDS
+	act_message(C, null, MSG_SELF(span_danger("\The [user] tries to put a leash on you")), MSG_OTHERS(span_danger("\The [user] is attempting to put the leash on %U%!")))
+	add_attack_logs(user, C, "Leashed (attempt)")
+	task_start(/datum/task/timed/leash_attempt, user, C, duration = leashtime, leash = src)
 	return TRUE
 
-/// Putting a leash on: the holder (actor) works on the pet (target), the pet agrees, the leash
-/// clicks on. Every step after the first re-checks valid(): the holder still has the leash and
-/// the pet isn't leashed by someone else meanwhile.
-/datum/om/flow/leash
+/// Putting a leash on: the holder works on the pet, the pet agrees, the leash clicks on. Each step re-checks leash_refusal(): the holder
+/// still has the leash and the pet isn't leashed by someone else meanwhile.
+/datum/task/timed/leash_attempt
 	name = "leash"
+	complete_proc = /obj/item/leash/proc/leash_offer
 	var/obj/item/leash/leash
 
-/datum/om/flow/leash/valid()
-	var/mob/living/pet = target
-	if(leash.loc != actor)
+/datum/task/timed/leash_attempt/check_reason()
+	return leash?.leash_refusal(actor, target)
+
+/// Null while `holder` may leash `pet` with this leash, else why not.
+/obj/item/leash/proc/leash_refusal(mob/living/holder, mob/living/pet)
+	if(QDELETED(holder) || QDELETED(pet))
+		return "gone"
+	if(loc != holder)
 		return "not holding the leash"
 	if(pet.leash_item())
 		return "already leashed"
 	return null
 
-/datum/om/flow/leash/start()
-	var/mob/living/pet = target
-	var/mob/living/carbon/human/human_pet = pet
-	var/leashtime = (istype(human_pet) && human_pet.get_equipped_item(SLOT_ID_HANDCUFFED)) ? 0.5 SECONDS : 3.5 SECONDS
-	act_message(pet, null, MSG_SELF(span_danger("\The [actor] tries to put a leash on you")), MSG_OTHERS(span_danger("\The [actor] is attempting to put the leash on %U%!")))
-	add_attack_logs(actor, pet, "Leashed (attempt)")
-	wait(leashtime, PROC_REF(offer))
-
-/datum/om/flow/leash/proc/offer()
-	om_ask(target, /datum/om/prompt/confirm/leash_offer, PROC_REF(accepted))
-
-/datum/om/flow/leash/proc/accepted(datum/om/prompt/confirm/leash_offer/ask)
-	leash.attach(target, actor)
-
-/// The pet is asked (asker: the holder, from the flow). Re-checked on the answer: still face to face.
-/datum/om/prompt/confirm/leash_offer
+/// The pet is asked. Re-checked on the answer: still face to face.
+/datum/prompt/yes_no/leash_offer
 	title = "Become Leashed"
 	no_first = TRUE
+	timeout = 0
 	ask_flags = ASK_FACE_TO_FACE
 
-/datum/om/prompt/confirm/leash_offer/prepare()
-	message = "Would you like to be leashed by [asker]? You can OOC escape to escape"
-	return TRUE
+/obj/item/leash/proc/leash_offer(datum/task/timed/leash_attempt/T)
+	var/mob/living/pet = T.target
+	var/mob/living/holder = T.actor
+	if(leash_refusal(holder, pet))
+		return
+	open_request(src, /datum/prompt/yes_no/leash_offer, PROC_REF(leash_accepted), answerer = pet, asker = holder, question = "Would you like to be leashed by [holder]? You can OOC escape to escape")
+
+/obj/item/leash/proc/leash_accepted(datum/act/request/A)
+	if(!A.answer?.value)
+		return
+	var/mob/living/pet = A.request.answerer
+	var/mob/living/holder = A.request.asker
+	if(leash_refusal(holder, pet))
+		return
+	attach(pet, holder)
 
 /// Links the leash between `pet` and `holder`. This leash may still be on someone else: that one ends here.
 /obj/item/leash/proc/attach(mob/living/pet, mob/living/holder)

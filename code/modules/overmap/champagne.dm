@@ -27,7 +27,7 @@
 		return
 
 	act_message(user, src, others = span_notice("%U% lifts %T% bottle over [comp]!"))
-	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/om/prompt/text, message = "Choose a name for the shuttle", title = "New Shuttle Name")
+	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/prompt/text, question = "Choose a name for the shuttle", title = "New Shuttle Name")
 	if(isnull(shuttle_name))
 		return TRUE
 	if(!shuttle_name || QDELETED(src) || QDELETED(comp) || comp.shuttle_tag || user.incapacitated())

@@ -123,7 +123,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	return effects
 
 /datum/artifact_master/proc/add_effect()
-	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
+	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/prompt/choice, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
 	if(isnull(effect_type))
 		return
 	if(effect_type)
@@ -134,7 +134,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 			own_remove(src, nameof(my_effects), my_effect)
 
 /datum/artifact_master/proc/remove_effect()
-	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/om/prompt/choice, message = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
+	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/prompt/choice, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
 	if(isnull(to_remove_effect))
 		return
 

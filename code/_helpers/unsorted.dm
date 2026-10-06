@@ -362,7 +362,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/list/borgs = free_borg_choices()
 	if(!borgs.len)
 		return
-	var/select = rerun_ask_on(asker, user, "borg", proc_name, proc_args, /datum/om/prompt/choice, message = "Unshackled borg signals detected:", title = "Borg selection", choices = borgs)
+	var/select = rerun_ask_on(asker, user, "borg", proc_name, proc_args, /datum/prompt/choice, question = "Unshackled borg signals detected:", title = "Borg selection", choices = borgs)
 	if(select)
 		return borgs[select]
 
@@ -404,7 +404,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		return
 	if(!user || !asker)
 		return pick(ais)
-	var/mob/living/silicon/ai/picked = rerun_ask_on(asker, user, "ai", proc_name, proc_args, /datum/om/prompt/choice, message = "AI signals detected:", title = "AI selection", choices = ais)
+	var/mob/living/silicon/ai/picked = rerun_ask_on(asker, user, "ai", proc_name, proc_args, /datum/prompt/choice, question = "AI signals detected:", title = "AI selection", choices = ais)
 	return (picked in active_ais()) ? picked : null
 
 //Returns a list of all mobs with their name
@@ -1336,7 +1336,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /// (flow_ask()): null until answered. `key` keeps its answers apart.
 /proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path", mob/user)
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
-		value = flow_ask(user, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
+		value = flow_ask(user, "[key]:filter", /datum/prompt/text, question = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 		if (isnull(value))
 			return
 	value = trim(value)
@@ -1350,7 +1350,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(matches.len==1)
 		chosen = matches[1]
 	else
-		chosen = flow_ask(user, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
+		chosen = flow_ask(user, "[key]:pick", /datum/prompt/choice, question = "Select a type", title = "Pick Type", choices = matches)
 		if(!chosen || !(chosen in matches))
 			return
 	chosen = matches[chosen]

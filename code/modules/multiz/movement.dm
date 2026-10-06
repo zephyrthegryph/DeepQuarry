@@ -832,14 +832,14 @@
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = rerun_ask(H, "k824", PROC_REF(climb_wall), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+			var/sure = rerun_ask(H, "k824", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 			if(isnull(sure))
 				return
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!L.can_climb)
-		var/sure = rerun_ask(L, "k829", PROC_REF(climb_wall), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+		var/sure = rerun_ask(L, "k829", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 		if(isnull(sure))
 			return
 		if(!sure || sure == "Stay grounded") return
@@ -852,7 +852,7 @@
 	if(istype(L, /mob/living/simple_mob/vore/alienanimals/catslug))
 		var/obj/O = L.get_active_hand()
 		if(istype(O, /obj/item/material/twohanded/spear))
-			var/choice = rerun_ask(L, "k840", PROC_REF(climb_wall), args, /datum/om/prompt/choice/alert, message = "Use your spear to climb faster? This will drop and break it!", title = "Scug Tactics", choices = list("Yes!", "No"))
+			var/choice = rerun_ask(L, "k840", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Use your spear to climb faster? This will drop and break it!", title = "Scug Tactics", choices = list("Yes!", "No"), buttons = TRUE)
 			if(isnull(choice))
 				return
 			if(choice == "Yes!")
@@ -984,14 +984,14 @@
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = rerun_ask(H, "k951", VERB_REF(climb_down), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+			var/sure = rerun_ask(H, "k951", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 			if(isnull(sure))
 				return
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!src.can_climb)
-		var/sure = rerun_ask(src, "k956", VERB_REF(climb_down), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+		var/sure = rerun_ask(src, "k956", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 		if(isnull(sure))
 			return
 		if(!sure || sure == "Stay grounded") return

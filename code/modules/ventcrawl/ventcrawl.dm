@@ -107,7 +107,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	if(pipes.len == 1)
 		pipe = pipes[1]
 	else
-		pipe = rerun_ask(src, "pipe", caller_verb, list(), /datum/om/prompt/choice, message = "Crawl Through Vent", title = "Pick a pipe", choices = pipes)
+		pipe = rerun_ask(src, "pipe", caller_verb, list(), /datum/prompt/choice, question = "Crawl Through Vent", title = "Pick a pipe", choices = pipes)
 		if(!(pipe in pipes))
 			return
 	if(canmove && pipe)

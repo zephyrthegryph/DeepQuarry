@@ -623,7 +623,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 		return TRUE
 
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
+		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
 		if(isnull(_answer_k604))
 			return
 		switch(_answer_k604)
@@ -646,7 +646,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 					to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
 
 			if("Select Prize")
-				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Select a prize", title = "Chose a collar", choices = collar_list || list())
+				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Select a prize", title = "Chose a collar", choices = collar_list || list())
 				if(isnull(_answer_k624))
 					return
 				rel_set(src, nameof(selected_collar), _answer_k624)
@@ -664,7 +664,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 				if(safety_ckey in sentientprizes_ckeys_list)
 					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
 					return TRUE
-				var/confirm = rerun_ask(user, "k639", PROC_REF(interaction_use), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"))
+				var/confirm = rerun_ask(user, "k639", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(confirm))
 					return
 				if(!confirm)
@@ -672,7 +672,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 				if(confirm == "No")
 					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
 					return TRUE
-				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(interaction_use), args, /datum/om/prompt/choice/alert, message = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"))
+				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(confirmitemtf))
 					return
 				var/allowitemtf = FALSE
@@ -737,7 +737,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please ask your owner to free you with collar swipe on the SPASM, or contact staff if you need assistance."))
 			return TRUE
 	if(user.name == C.ownername)
-		var/confirm = rerun_ask(user, "k717", PROC_REF(interaction_collar), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe [C.sentientprizename] entry?", title = "Confirm Sentient Prize Release", choices = list("Yes", "No"))
+		var/confirm = rerun_ask(user, "k717", PROC_REF(interaction_collar), args, /datum/prompt/choice, question = "Are you sure you want to wipe [C.sentientprizename] entry?", title = "Confirm Sentient Prize Release", choices = list("Yes", "No"), buttons = TRUE)
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -760,7 +760,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 /obj/machinery/casinosentientprize_handler/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(interaction_id), args, /datum/om/prompt/choice, message = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))
+		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(interaction_id), args, /datum/prompt/choice, question = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))
 		if(isnull(_answer_k743))
 			return
 		switch(_answer_k743)
@@ -790,7 +790,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 					rel_clear(src, nameof(selected_collar))
 					return TRUE
 				var/safety_ckey = selected_collar.sentientprizeckey
-				var/confirm = rerun_ask(user, "k770", PROC_REF(interaction_id), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"))
+				var/confirm = rerun_ask(user, "k770", PROC_REF(interaction_id), args, /datum/prompt/choice, question = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")

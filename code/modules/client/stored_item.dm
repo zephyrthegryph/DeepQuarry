@@ -203,7 +203,7 @@ EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
 		if(ispath(I))
 			to_chat(user, span_warning("You cannot store \the [O]. You already have something stored."))
 			return TRUE
-		var/choice = rerun_ask(user, "store", PROC_REF(interaction_store), args, /datum/om/prompt/choice/alert, message = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", title = "[src]", choices = list("Store", "Cancel"), timeout = 10 SECONDS)
+		var/choice = rerun_ask(user, "store", PROC_REF(interaction_store), args, /datum/prompt/choice, question = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", title = "[src]", choices = list("Store", "Cancel"), timeout = 10 SECONDS, buttons = TRUE)
 		if(!choice || choice == "Cancel" || !Adjacent(user) || !operable() || panel_open || busy_bank || O.loc != user)
 			return TRUE
 		for(var/obj/item/check in contents_of(O))

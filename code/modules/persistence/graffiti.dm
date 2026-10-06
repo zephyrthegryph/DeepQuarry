@@ -59,7 +59,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 	if(!thing.sharp)
 		return FALSE
 
-	var/_message = rerun_ask(user, "k49", PROC_REF(interaction_engrave_graffiti), args, /datum/om/prompt/text, message = "Enter an additional message to engrave.", title = "Graffiti", max_length = MAX_MESSAGE_LEN)
+	var/_message = rerun_ask(user, "k49", PROC_REF(interaction_engrave_graffiti), args, /datum/prompt/text, question = "Enter an additional message to engrave.", title = "Graffiti", max_len = MAX_MESSAGE_LEN, name_text = ((MAX_MESSAGE_LEN) <= MAX_NAME_LEN))
 	if(isnull(_message))
 		return TRUE
 	if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)

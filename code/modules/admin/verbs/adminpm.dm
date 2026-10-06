@@ -52,25 +52,16 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	if(T)
 		message_admins(span_pm("[key_name_admin(src)] has started replying to [key_name(C, 0, 0)]'s admin help."))
-	om_ask(src, /datum/om/prompt/text/admin_pm/ahelp_reply, PROC_REF(ahelp_reply_entered), whom = C, ticket = T)
+	open_request(src, /datum/prompt/text/admin_pm, PROC_REF(ahelp_reply_entered), answerer = mob, title = "Private message to [key_name(C, 0, 0)]", whom_ckey = C.ckey, ticket = T)
 
-/// Writing an admin PM to `whom` (a client).
-/datum/om/prompt/text/admin_pm
-	message = "Message:"
+/// Writing an admin PM to `whom_ckey`'s client (by ckey: a client is gone when it disconnects).
+/datum/prompt/text/admin_pm
+	question = "Message:"
 	multiline = TRUE
 	encode = FALSE
-	var/client/whom
+	timeout = 0
+	var/whom_ckey
 	var/datum/ticket/ticket
-
-/datum/om/prompt/text/admin_pm/prepare()
-	title = "Private message to [key_name(whom, 0, 0)]"
-	return TRUE
-
-/// Replying to an adminhelp: a cancel is announced to the other admins.
-/datum/om/prompt/text/admin_pm/ahelp_reply
-
-/datum/om/prompt/text/admin_pm/ahelp_reply/cancelled()
-	answerer?.client?.ahelp_reply_cancelled(whom)
 
 /// A popup admin PM's reply, on the recipient; the sender is looked up by ckey when it arrives.
 /datum/prompt/text/admin_pm_popup
@@ -81,11 +72,14 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 /client/proc/ahelp_reply_cancelled(client/whom)
 	message_admins(span_pm("[key_name_admin(src)] has cancelled their reply to [key_name(whom, 0, 0)]'s admin help."))
 
-/client/proc/ahelp_reply_entered(datum/om/prompt/text/admin_pm/ahelp_reply/ask)
-	if (!ask.text)
-		ahelp_reply_cancelled(ask.whom)
+/// Replying to an adminhelp: a cancel is announced to the other admins.
+/client/proc/ahelp_reply_entered(datum/act/request/A)
+	var/datum/prompt/text/admin_pm/asked = A.request
+	var/client/whom = GLOB.directory[asked.whom_ckey]
+	if(!A.answer || !asked.value)
+		ahelp_reply_cancelled(whom)
 		return
-	cmd_admin_pm(ask.whom, ask.text, ask.ticket)
+	cmd_admin_pm(whom, asked.value, asked.ticket)
 
 //takes input from cmd_admin_pm_context, cmd_admin_pm_panel or /client/Topic and sends them a PM.
 //Fetching a message if needed. src is the sender and C is the target client
@@ -103,9 +97,10 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	else
 		adminhelp(reply)													//sender has left, adminhelp instead
 
-/client/proc/admin_pm_entered(datum/om/prompt/text/admin_pm/ask)
-	if(ask.text)
-		cmd_admin_pm(ask.whom, ask.text, ask.ticket)
+/client/proc/admin_pm_entered(datum/act/request/A)
+	var/datum/prompt/text/admin_pm/asked = A.answer
+	if(asked?.value)
+		cmd_admin_pm(GLOB.directory[asked.whom_ckey], asked.value, asked.ticket)
 
 /// Shows this client a popup admin PM they can reply to (the answer runs on this client).
 /client/proc/ask_admin_pm_popup(msg, sender_key, sender_ckey)
@@ -136,7 +131,9 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
-		om_ask(src, /datum/om/prompt/text/admin_pm, PROC_REF(admin_pm_entered), whom = recipient, ticket = T)
+		if(!recipient)
+			return
+		open_request(src, /datum/prompt/text/admin_pm, PROC_REF(admin_pm_entered), answerer = mob, title = "Private message to [key_name(recipient, 0, 0)]", whom_ckey = recipient.ckey, ticket = T)
 		return
 
 	//clean the message if it's not sent by a high-rank admin

@@ -188,6 +188,11 @@ SYSTEM_DEF(requests)
 	R.valid = valid
 	R.opened_at = world.time // ALLOW(sys_world_time_write): the request's own open stamp, read for diagnostics, not an expiry
 	R.answerer_expected = !isnull(R.answerer)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+	// A test that records the prompts it causes (test_prompts_reset()) sees every one opened, in order.
+	if(islist(GLOB.test_prompts) && istype(R, /datum/prompt))
+		GLOB.test_prompts += R
+#endif
 	var/datum/system/requests/registry = SSrequests
 	registry.open += R // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
 	registry.opened++

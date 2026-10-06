@@ -227,7 +227,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 		friendly_cameras.Add(C.c_tag)
 
 	in_use = TRUE
-	var/target = rerun_ask(user, "k232", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Select the camera to observe", title = "Select Camera", choices = friendly_cameras)
+	var/target = rerun_ask(user, "k232", PROC_REF(interaction_self), args, /datum/prompt/choice, question = "Select the camera to observe", title = "Select Camera", choices = friendly_cameras)
 	if(isnull(target))
 		return TRUE
 	in_use = FALSE

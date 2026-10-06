@@ -63,7 +63,7 @@
 	if(enabled)
 		tgui_interact(user)
 	else if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
-		var/response = rerun_ask(user, "k98", PROC_REF(modular_computer_ghost_view), args, /datum/om/prompt/choice/alert, message = "This computer is turned off. Would you like to turn it on?", title = "Admin Override", choices = list("Yes", "No"))
+		var/response = rerun_ask(user, "k98", PROC_REF(modular_computer_ghost_view), args, /datum/prompt/choice, question = "This computer is turned off. Would you like to turn it on?", title = "Admin Override", choices = list("Yes", "No"), buttons = TRUE)
 		if(isnull(response))
 			return TRUE
 		if(response == "Yes")
@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 	var/list/component_names = list()
 	for(var/obj/item/computer_hardware/hardware in all_components)
 		component_names += hardware.name
-	var/choice = rerun_ask(user, "k196", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which component do you want to uninstall?", title = "Computer maintenance", choices = component_names)
+	var/choice = rerun_ask(user, "k196", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/prompt/choice, question = "Which component do you want to uninstall?", title = "Computer maintenance", choices = component_names)
 	if(isnull(choice))
 		return ITEM_INTERACT_BLOCKING
 	if(!choice || !Adjacent(user))

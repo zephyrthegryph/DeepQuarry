@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/camera/siliconcam)
 		return
 	for(var/obj/item/photo/t in cam.aipictures)
 		nametemp += t.name
-	var/_answer_k50 = rerun_ask(user, "k50", PROC_REF(selectpicture), args, /datum/om/prompt/choice, message = "Select image (numbered in order taken)", title = "Picture Choice", choices = nametemp)
+	var/_answer_k50 = rerun_ask(user, "k50", PROC_REF(selectpicture), args, /datum/prompt/choice, question = "Select image (numbered in order taken)", title = "Picture Choice", choices = nametemp)
 	if(isnull(_answer_k50))
 		return
 	find = _answer_k50

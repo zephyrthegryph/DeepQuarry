@@ -23,7 +23,7 @@
 /datum/unit_test/dq_hc_items/Run()
 	test_driver_begin()
 	test_rng(11)
-	om_scheduler().test_prompts = list()
+	test_prompts_reset()
 	run_gate()
 	own_turf_contents(run_loc_floor_bottom_left)
 	own_turf_contents(run_loc_floor_top_right)
@@ -105,21 +105,11 @@
 	settle()
 	TEST_ASSERT(!W.scanning, "an empty hand on the wall counter switches it off")
 
-/// Answers the question `actor` was asked with `value` (`cancel` closes it). The engine's requests answer first; a question asked the legacy way
-/// is answered through the prompt the test scheduler collected.
+/// Answers the question `actor` was asked with `value` (`cancel` closes it). Every question is an engine request.
 /proc/hci_answer(mob/actor, value, cancel = FALSE)
 	var/datum/op_result/result = test_answer(actor, value, cancel ? REQ_CANCELLED : REQ_ANSWERED)
 	if(!isnull(result))
 		return result
-	var/list/prompts = om_scheduler().test_prompts
-	for(var/i in length(prompts) to 1 step -1)
-		var/datum/om/prompt/P = prompts[i]
-		if(!P.answered && P.peek("answerer") == actor)
-			var/answer = value
-			if(istype(P, /datum/om/prompt/confirm))
-				var/datum/om/prompt/confirm/C = P
-				answer = value ? C.yes_text : C.no_text
-			return om_prompt_answer(P, cancel ? null : answer, cancel)
 	return null
 
 // ---------------------------------------------------------------------------------------------------------------------

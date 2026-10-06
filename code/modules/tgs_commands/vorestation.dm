@@ -111,7 +111,7 @@ GLOBAL_VAR_INIT(tgs_flow_seq, 0)
 		return
 	var/datum/tgs_chat_user/sender = held[1]
 	var/reply = flow_run(sender, params)
-	if(!om_flow_answers()) // finished on its first run: Run() returns the reply
+	if(!prompt_flow_answers()) // finished on its first run: Run() returns the reply
 		return reply
 	GLOB.tgs_flow_senders -= key
 	if(isnull(reply))

@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 		to_chat(M, span_notice("\The [src] is incomplete and can't be climbed."))
 		return
 	if(target_down && target_up)
-		var/direction = rerun_ask(M, "direction", caller_proc, caller_args, /datum/om/prompt/choice/alert, message = "Do you want to go up or down?", title = "Ladder", choices = list("Up", "Down", "Cancel"))
+		var/direction = rerun_ask(M, "direction", caller_proc, caller_args, /datum/prompt/choice, question = "Do you want to go up or down?", title = "Ladder", choices = list("Up", "Down", "Cancel"), buttons = TRUE)
 
 		if(!direction || direction == "Cancel")
 			return

@@ -65,7 +65,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 		return
 
 	var/delmob = 0
-	var/answer = topic_ask(user, args, "a3", /datum/om/prompt/choice/alert, message = "Delete old mob?", title = "Message", choices = list("Yes","No","Cancel"))
+	var/answer = topic_ask(user, args, "a3", /datum/prompt/choice, question = "Delete old mob?", title = "Message", choices = list("Yes","No","Cancel"), buttons = TRUE)
 	switch(answer)
 		if("Yes")
 			delmob = 1
@@ -131,7 +131,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	return TRUE
 
 /datum/admins/proc/topic_sendtoprison(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a24", /datum/om/prompt/choice/alert, message = "Send to admin prison for the round?", title = "Message", choices = list("Yes", "No"))
+	var/answer = topic_ask(user, args, "a24", /datum/prompt/choice, question = "Send to admin prison for the round?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
 	if(answer != "Yes")
 		return
 
@@ -175,7 +175,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 		to_chat(user, span_filter_adminlog(span_warning("[M] doesn't seem to have an active client.")))
 		return
 
-	var/answer = topic_ask(user, args, "a25", /datum/om/prompt/choice/alert, message = "Send [key_name(M)] back to Lobby?", title = "Message", choices = list("Yes", "No"))
+	var/answer = topic_ask(user, args, "a25", /datum/prompt/choice, question = "Send [key_name(M)] back to Lobby?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
 	if(answer != "Yes" || QDELETED(M))
 		return
 
@@ -188,7 +188,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /// Sends `M` to one of the thunderdome landmark lists; `strip` drops their gear first.
 /datum/admins/proc/topic_send_to_thunderdome(mob/user, list/args, key, answer_key, strip)
-	var/answer = topic_ask(user, args, answer_key, /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
+	var/answer = topic_ask(user, args, answer_key, /datum/prompt/choice, question = "Confirm?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
 	if(answer != "Yes")
 		return FALSE
 
@@ -381,7 +381,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /datum/admins/proc/topic_bluespaceartillery(mob/user, list/args)
 	var/mob/living/M = args["BlueSpaceArtillery"]
-	var/answer = topic_ask(user, args, "a30", /datum/om/prompt/choice/alert, message = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", title = "Confirm Firing?", choices = list("Yes", "No"))
+	var/answer = topic_ask(user, args, "a30", /datum/prompt/choice, question = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", title = "Confirm Firing?", choices = list("Yes", "No"), buttons = TRUE)
 	if(answer != "Yes" || QDELETED(M))
 		return
 	bluespace_artillery(M, user)
@@ -405,7 +405,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
-	var/answer = topic_ask(user, args, "a33", /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
+	var/answer = topic_ask(user, args, "a33", /datum/prompt/choice, question = "Confirm?", title = "Message", choices = list("Yes", "No"), buttons = TRUE)
 	if(answer != "Yes")
 		return
 
@@ -426,7 +426,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 	var/mob/M = args["sendmob"]
 	var/list/areachoices = return_sorted_areas()
-	var/choice = topic_ask(user, args, "a34", /datum/om/prompt/choice, message = "Pick an area:", title = "Send Mob", choices = areachoices)
+	var/choice = topic_ask(user, args, "a34", /datum/prompt/choice, question = "Pick an area:", title = "Send Mob", choices = areachoices)
 	if(!choice || QDELETED(M))
 		return
 

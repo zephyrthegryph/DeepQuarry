@@ -139,7 +139,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
 			return TRUE
 		if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
-			var/_answer_k143 = rerun_ask(user, "k143", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Which side would you like to use?", title = "Side", choices = list("Left","Right"))
+			var/_answer_k143 = rerun_ask(user, "k143", PROC_REF(interaction_self), args, /datum/prompt/choice, question = "Which side would you like to use?", title = "Side", choices = list("Left","Right"), buttons = TRUE)
 			if(isnull(_answer_k143))
 				return TRUE
 			switch(_answer_k143)

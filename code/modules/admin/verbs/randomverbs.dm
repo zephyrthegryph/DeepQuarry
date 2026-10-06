@@ -709,13 +709,6 @@ CAPABILITIES(/datum/respawn_review)
 		stack_trace("om flow [type] step [next]: [result.error]")
 		retire()
 
-/// One button question of the respawn flow; "Cancel" stops the flow.
-/datum/om/prompt/choice/respawn_step
-	buttons = TRUE
-
-/datum/om/prompt/choice/respawn_step/valid()
-	return choice == "Cancel" ? "cancelled" : null
-
 /client/proc/respawn_character_answered(datum/respawn_review/answers)
 	var/client/picked_client = answers.picked_client()
 	var/location = answers.location

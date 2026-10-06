@@ -144,7 +144,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 	effect = /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount
 
 /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "k140", PROC_REF(interaction_set_transfer_amount), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
+	var/N = rerun_ask(user, "k140", PROC_REF(interaction_set_transfer_amount), args, /datum/prompt/choice, question = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
 	if(isnull(N))
 		return
 	if(N && Adjacent(user))

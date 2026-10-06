@@ -367,18 +367,24 @@ CAPABILITIES(/obj/item/book/tome)
 	for (var/entry in words)
 		if (words[entry] != entry)
 			english += list(words[entry] = entry)
-	om_flow_start(/datum/om/flow/tome_scribe, user, src, english = english)
+	var/list/scribewords = list("none")
+	var/list/dictionary = GLOB.tome_rune_dictionary
+	for (var/entry in dictionary)
+		var/list/required = dictionary[entry]
+		if (length(english & required) == required.len)
+			scribewords += entry
+	open_request(src, /datum/prompt/choice/tome_rune, PROC_REF(rune_picked), answerer = user, subject = src, english = english, choices = scribewords)
 
-/// Scribing a rune: pick the rune (and a destination word for teleports), cut a finger, draw for
-/// five seconds, and the rune appears. Every step after the first re-checks `requires`: the
-/// tome is still in the cultist's hands and they can act.
-/datum/om/flow/tome_scribe
-	name = "tome scribe"
-	requires = list(/datum/om/check/in_hands, /datum/om/check/not_incapacitated)
+/// Scribing a rune: pick the rune (and a destination word for teleports), cut a finger, draw for five seconds, and the rune appears. Every
+/// answer re-checks that the tome is still in the cultist's hands and they can act.
+/datum/prompt/choice/tome_rune
+	question = "Choose a rune to scribe."
+	timeout = 0
+	ask_flags = ASK_HELD | ASK_CAPABLE
 	/// English word -> the round's rune word, for the words this tome knows.
 	var/list/english
+	/// The rune a destination word is asked for.
 	var/chosen_rune
-	var/destination
 
 /// The words each rune needs.
 GLOBAL_LIST_INIT(tome_rune_dictionary, list(
@@ -408,44 +414,49 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	"teleport other" = list("travel","other")
 ))
 
-/datum/om/flow/tome_scribe/start()
-	var/list/scribewords = list("none")
-	var/list/dictionary = GLOB.tome_rune_dictionary
-	for (var/entry in dictionary)
-		var/list/required = dictionary[entry]
-		if (length(english & required) == required.len)
-			scribewords += entry
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(rune_picked), message = "Choose a rune to scribe.", choices = scribewords)
-
-/datum/om/flow/tome_scribe/proc/rune_picked(datum/om/prompt/choice/ask)
-	chosen_rune = ask.choice
+/obj/item/book/tome/proc/rune_picked(datum/act/request/A)
+	var/datum/prompt/choice/tome_rune/asked = A.answer
+	if(!asked)
+		return
+	var/mob/living/user = asked.answerer
+	var/chosen_rune = asked.value
 	if (chosen_rune == "none")
-		to_chat(actor, span_notice("You decide against scribing a rune, perhaps you should take this time to study your notes."))
+		to_chat(user, span_notice("You decide against scribing a rune, perhaps you should take this time to study your notes."))
 		return
 	if(chosen_rune == "teleport" || chosen_rune == "teleport other")
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(destination_picked), message = "Choose a destination word", choices = english)
+		open_request(src, /datum/prompt/choice/tome_rune, PROC_REF(destination_picked), answerer = user, subject = src, english = asked.english, chosen_rune = chosen_rune, question = "Choose a destination word", choices = asked.english)
 		return
-	begin_drawing()
+	begin_drawing(user, asked.english, chosen_rune, null)
 
-/datum/om/flow/tome_scribe/proc/destination_picked(datum/om/prompt/choice/ask)
-	destination = ask.choice
-	begin_drawing()
+/obj/item/book/tome/proc/destination_picked(datum/act/request/A)
+	var/datum/prompt/choice/tome_rune/asked = A.answer
+	if(!asked)
+		return
+	begin_drawing(asked.answerer, asked.english, asked.chosen_rune, asked.value)
 
-/datum/om/flow/tome_scribe/proc/begin_drawing()
-	var/mob/living/user = actor
-	for (var/mob/V in viewers(target))
+/obj/item/book/tome/proc/begin_drawing(mob/living/user, list/english, chosen_rune, destination)
+	for (var/mob/V in viewers(src))
 		V.show_message(span_danger("\The [user] slices open a finger and begins to chant and paint symbols on the floor."), 3, span_danger("You hear chanting."), 2)
 	to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
-	user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, target) // 0.1 to 1.0 damage
-	wait(5 SECONDS, PROC_REF(drawn))
+	user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
+	task_start(/datum/task/timed/tome_scribe, user, src, duration = 5 SECONDS, english = english, chosen_rune = chosen_rune, destination = destination)
 
-/datum/om/flow/tome_scribe/proc/drawn()
-	var/mob/living/user = actor
-	var/list/required = GLOB.tome_rune_dictionary[chosen_rune]
-	if(destination)
-		required = required + destination
+/// The five seconds of drawing a rune.
+/datum/task/timed/tome_scribe
+	name = "tome_scribe"
+	complete_proc = /obj/item/book/tome/proc/rune_drawn
+	var/list/english
+	var/chosen_rune
+	var/destination
+
+/obj/item/book/tome/proc/rune_drawn(datum/task/timed/tome_scribe/T)
+	var/mob/living/user = T.actor
+	var/list/english = T.english
+	var/list/required = GLOB.tome_rune_dictionary[T.chosen_rune]
+	if(T.destination)
+		required = required + T.destination
 	var/area/A = get_area(user)
-	log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
+	log_and_message_admins("created \an [T.chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
 	var/obj/effect/rune/R = new /obj/effect/rune(user.loc)
 	to_chat(user, span_notice("You finish drawing the arcane markings of the Geometer."))
 	R.word1 = english[required[1]]

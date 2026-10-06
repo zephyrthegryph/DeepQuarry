@@ -479,43 +479,13 @@
 #define PROMPT_ALIVE list(/datum/om/check/stat_at_most = UNCONSCIOUS)
 /// The user still holds these admin rights (R_* flags; 0 = any admin rank).
 #define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
-/// Returned by an om_ask_sequence() step proc: end the sequence here (on_done does not run).
-#define ASK_STOP "om_ask_stop"
 
 // ---------------------------------------------------------------- named-argument launchers
 // DM rejects a named argument a proc doesn't declare, so these are macros: the named arguments
 // become a list keyed by var name, and the caller's src rides along (the receiver default).
 
-/// Asks `answerer` a typed prompt (ask.dm): om_ask(answerer, /datum/om/prompt/confirm/x, PROC_REF(cb), var = value, ...).
-/// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt
-/// (`receiver = X` runs it on X instead; in a global proc, where src is null, pass a /proc/ path).
-#define om_ask(answerer, prompt, on_answer, params...) om_ask_begin(src, answerer, prompt, on_answer, list(params))
-/// Starts a flow (flow.dm): om_flow_start(/datum/om/flow/x, actor, target, var = value, ...).
-#define om_flow_start(flow, actor, target, params...) om_flow_begin(flow, actor, target, list(params))
-/// Asks a list of typed prompts in turn (flow.dm): om_ask_sequence(/datum/om/flow/ask_sequence/x, answerer, subject, steps = list(...), on_done = PROC_REF(cb), var = value, ...).
-/// Step procs, on_done and on_stop run on the caller's src (`owner = X` runs them on X).
-#define om_ask_sequence(sequence, answerer, subject, params...) om_ask_sequence_begin(src, sequence, answerer, subject, list(params))
 
-// Re-run prompts (prompt_helpers.dm): the first call asks and returns null; the answer re-runs
-// the caller, where the same call returns the answer. `prompt` is a /datum/om/prompt/<kind>;
-// the named arguments set its vars, as in om_ask().
-/// In a Topic() handler.
-#define topic_ask(user, href_list, key, prompt, fields...) om_topic_ask(user, href_list, key, prompt, list(fields))
-/// In an ADMIN_VERB body (`verb_args`: the verb's args).
-#define verb_ask(user, key, verb_args, prompt, fields...) om_verb_ask(user, key, verb_args, prompt, list(fields))
-/// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.
-#define client_ask(key, proc_name, proc_args, rights, prompt, fields...) om_client_ask(key, proc_name, proc_args, rights, prompt, list(fields))
-/// In any datum proc: re-runs proc_name on src with proc_args.
-#define rerun_ask(user, key, proc_name, proc_args, prompt, fields...) om_rerun_ask(user, key, proc_name, proc_args, prompt, list(fields))
-/// The same, re-running proc_name on `target` instead of src.
-#define rerun_ask_on(target, user, key, proc_name, proc_args, prompt, fields...) target.om_rerun_ask(user, key, proc_name, proc_args, prompt, list(fields))
-/// Deep inside a prompt_flow().
-#define flow_ask(user, key, prompt, fields...) om_flow_ask(user, key, prompt, list(fields))
-/// Returned by a prompt kind's refine_answer() when it asked again instead of answering.
-#define OM_PROMPT_REOPENED "om_prompt_reopened"
 
 // The ASK_* re-check flags moved to code/__defines/kernel.dm (a request re-checks them when its answer arrives).
 
-/// Thrown by flow_io_answer() (flow_io.dm) to unwind a prompt flow whose query is in flight;
-/// prompt_flow() catches it.
-#define OM_FLOW_PENDING "om_flow_pending"
+

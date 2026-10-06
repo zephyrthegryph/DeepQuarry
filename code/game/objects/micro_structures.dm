@@ -395,19 +395,18 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 		grant(src, granted_verb(/obj/proc/micro_interact), src)
 
 /// Someone inside a micro-enterable object picks what to do. Re-checked: still inside.
-/datum/om/prompt/choice/micro_action
-	message = "What would you like to do?"
+/datum/prompt/choice/micro_action
+	question = "What would you like to do?"
 	choices = list("Exit", "Move", "Cancel")
 	buttons = TRUE
-	requires = list(/datum/om/check/inside_target)
+	timeout = 0
+	ask_flags = ASK_INSIDE
 
-/datum/om/prompt/choice/micro_action/prepare()
-	title = "[subject]"
-	return TRUE
-
-/obj/proc/micro_action_chosen(datum/om/prompt/choice/micro_action/ask)
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+/obj/proc/micro_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.value)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
@@ -458,7 +457,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 			contained_mobs |= issamob
 
 	if(usr.loc == src)
-		om_ask(usr, /datum/om/prompt/choice/micro_action, PROC_REF(micro_action_chosen))
+		open_request(src, /datum/prompt/choice/micro_action, PROC_REF(micro_action_chosen), answerer = usr, title = "[src]")
 		return
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))

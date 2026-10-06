@@ -321,7 +321,7 @@
 		if(istype(target_item, /obj/item/stack) && precise_insertion)
 			var/atom/current_parent = owner
 			item_stack = target_item
-			var/requested_amount = rerun_ask(user, "a1", PROC_REF(user_insert), args, /datum/om/prompt/number, message = "How much do you want to insert?", title = "Inserting [item_stack.singular_name]s", default = item_stack.amount, max = item_stack.amount)
+			var/requested_amount = rerun_ask(user, "a1", PROC_REF(user_insert), args, /datum/prompt/number, question = "How much do you want to insert?", title = "Inserting [item_stack.singular_name]s", default = item_stack.amount, max_value = item_stack.amount)
 			if(isnull(requested_amount))
 				return
 			if(!requested_amount || QDELETED(target_item) || QDELETED(user) || QDELETED(src))

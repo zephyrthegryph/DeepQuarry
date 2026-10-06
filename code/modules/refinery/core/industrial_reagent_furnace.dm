@@ -170,7 +170,7 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/furnace, \
 	else if(filter_reagent_id != "")
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
 		filter = "sintering [R.name]"
-	var/select = rerun_ask(user, "k188", PROC_REF(interaction_set_filter), args, /datum/om/prompt/choice, message = "Select chemical to sinter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
+	var/select = rerun_ask(user, "k188", PROC_REF(interaction_set_filter), args, /datum/prompt/choice, question = "Select chemical to sinter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
 	if(isnull(select))
 		return
 

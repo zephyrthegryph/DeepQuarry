@@ -661,12 +661,12 @@ ADMIN_VERB(view_runtimes, R_DEBUG, "View Runtimes", "Opens the runtime viewer.",
 		tgui_alert_async(user, "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", "HEED THIS WARNING CAREFULLY MORTAL")
 
 ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the current weather.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = SSplanets.planets)
+	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/prompt/choice, question = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = SSplanets.planets)
 	if(isnull(planet))
 		return
 	if(!istype(planet))
 		return
-	var/datum/weather/new_weather = verb_ask(user, "a9", args, /datum/om/prompt/choice, message = "What weather do you want to change to?", title = "Change Weather", choices = planet.weather_holder.allowed_weather_types)
+	var/datum/weather/new_weather = verb_ask(user, "a9", args, /datum/prompt/choice, question = "What weather do you want to change to?", title = "Change Weather", choices = planet.weather_holder.allowed_weather_types)
 	if(isnull(new_weather))
 		return
 	if(!new_weather)
@@ -694,20 +694,20 @@ ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework O
 		log_admin(log)
 
 ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time of a planet.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Which planet do you want to modify time on?", title = "Change Time", choices = SSplanets.planets)
+	var/datum/planet/planet = verb_ask(user, "a11", args, /datum/prompt/choice, question = "Which planet do you want to modify time on?", title = "Change Time", choices = SSplanets.planets)
 	if(isnull(planet))
 		return
 	if(!istype(planet))
 		return
 	var/datum/time/current_time_datum = planet.current_time
 	var/planet_hours = max(round(current_time_datum.seconds_in_day / 36000) - 1, 0)
-	var/new_hour = verb_ask(user, "a12", args, /datum/om/prompt/number, message = "What hour do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("hh")), max = planet_hours)
+	var/new_hour = verb_ask(user, "a12", args, /datum/prompt/number, question = "What hour do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("hh")), max_value = planet_hours)
 	if(isnull(new_hour))
 		return
 	if(isnull(new_hour))
 		return
 	var/planet_minutes = max(round(current_time_datum.seconds_in_hour / 600) - 1, 0)
-	var/new_minute = verb_ask(user, "a13", args, /datum/om/prompt/number, message = "What minute do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("mm")), max = planet_minutes)
+	var/new_minute = verb_ask(user, "a13", args, /datum/prompt/number, question = "What minute do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("mm")), max_value = planet_minutes)
 	if(isnull(new_minute))
 		return
 	if(isnull(new_minute))
@@ -756,7 +756,7 @@ ADMIN_VERB(cmd_reload_robot_sprite_test, R_DEBUG|R_SERVER, "Reload Robot Test Sp
 
 ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-implant mode.", ADMIN_CATEGORY_FUN_ADD_NIF)
 	var/input_NIF
-	var/mob/living/carbon/human/H = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "Pick a mob with a player", title = "Quick NIF", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+	var/mob/living/carbon/human/H = verb_ask(user, "a14", args, /datum/prompt/choice, question = "Pick a mob with a player", title = "Quick NIF", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	if(isnull(H))
 		return
 
@@ -789,7 +789,7 @@ ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-
 
 		var/list/show_NIFs = sortList(NIFs) // the list that will be shown to the user to pick from
 
-		var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice, message = "Pick the NIF type", title = "Quick NIF", choices = show_NIFs)
+		var/_answer_a15 = verb_ask(user, "a15", args, /datum/prompt/choice, question = "Pick the NIF type", title = "Quick NIF", choices = show_NIFs)
 		if(isnull(_answer_a15))
 			return
 		input_NIF = _answer_a15

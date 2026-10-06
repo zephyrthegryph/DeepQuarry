@@ -865,20 +865,27 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 // Will delete the specified order from the user-side list
 /datum/system/supply/proc/delete_order(datum/supply_order/O, mob/user)
 	// Making sure they know what they're doing
-	om_ask(user, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_order_sure), message = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", record = O)
+	open_request(src, /datum/prompt/yes_no/supply_delete_record, PROC_REF(delete_order_sure), answerer = user, question = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", record = O)
 
 /// "Delete this supply record?" (asked twice). `record` is the order or export receipt.
-/datum/om/prompt/confirm/supply_delete_record
+/datum/prompt/yes_no/supply_delete_record
 	title = "Delete Record"
 	no_first = TRUE
+	timeout = 0
 	var/datum/record
 
-/datum/system/supply/proc/delete_order_sure(datum/om/prompt/confirm/supply_delete_record/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_order_confirmed), message = "Are you really sure? There is no way to recover the order once deleted.", record = ask.record)
+/datum/system/supply/proc/delete_order_sure(datum/act/request/A)
+	var/datum/prompt/yes_no/supply_delete_record/asked = A.answer
+	if(!asked?.value)
+		return
+	open_request(src, /datum/prompt/yes_no/supply_delete_record, PROC_REF(delete_order_confirmed), answerer = asked.answerer, question = "Are you really sure? There is no way to recover the order once deleted.", record = asked.record)
 
-/datum/system/supply/proc/delete_order_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
-	var/mob/user = ask.answerer
-	var/datum/supply_order/O = ask.record
+/datum/system/supply/proc/delete_order_confirmed(datum/act/request/A)
+	var/datum/prompt/yes_no/supply_delete_record/asked = A.answer
+	if(!asked?.value)
+		return
+	var/mob/user = asked.answerer
+	var/datum/supply_order/O = asked.record
 	if(!(O in order_history)) // deleted by someone else meanwhile
 		return
 	refund_order(O, "Refund deleted order #[O.ordernum]: [O.supply_pack_of().name]")
@@ -962,14 +969,20 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 // Will delete the specified export receipt from the user-side list
 /datum/system/supply/proc/delete_export(datum/exported_crate/E, mob/user)
 	// Making sure they know what they're doing
-	om_ask(user, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_export_sure), message = "Are you sure you want to delete this record?", record = E)
+	open_request(src, /datum/prompt/yes_no/supply_delete_record, PROC_REF(delete_export_sure), answerer = user, question = "Are you sure you want to delete this record?", record = E)
 
-/datum/system/supply/proc/delete_export_sure(datum/om/prompt/confirm/supply_delete_record/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_export_confirmed), message = "Are you really sure? There is no way to recover the receipt once deleted.", record = ask.record)
+/datum/system/supply/proc/delete_export_sure(datum/act/request/A)
+	var/datum/prompt/yes_no/supply_delete_record/asked = A.answer
+	if(!asked?.value)
+		return
+	open_request(src, /datum/prompt/yes_no/supply_delete_record, PROC_REF(delete_export_confirmed), answerer = asked.answerer, question = "Are you really sure? There is no way to recover the receipt once deleted.", record = asked.record)
 
-/datum/system/supply/proc/delete_export_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
-	var/mob/user = ask.answerer
-	var/datum/exported_crate/E = ask.record
+/datum/system/supply/proc/delete_export_confirmed(datum/act/request/A)
+	var/datum/prompt/yes_no/supply_delete_record/asked = A.answer
+	if(!asked?.value)
+		return
+	var/mob/user = asked.answerer
+	var/datum/exported_crate/E = asked.record
 	if(!(E in exported_crates))
 		return
 	log_admin("[key_name(user)] has deleted export receipt [REF(E)] [E] from the user-side export history.")
@@ -977,27 +990,36 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 
 // Will add an item entry to the specified export receipt on the user-side list
 /datum/system/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
-	om_flow_start(/datum/om/flow/supply_export_item, user, null, receipt = E)
+	open_request(src, /datum/prompt/text/export_item, PROC_REF(export_name_entered), answerer = user, title = "Name", question = "Please enter the name of the item.", receipt = E)
 
-/// Adding an item line to an export receipt: its name, quantity and value.
-/datum/om/flow/supply_export_item
+/// Adding an item line to an export receipt: its name, quantity and value, each asked carrying what came before.
+/datum/prompt/text/export_item
+	timeout = 0
+	var/datum/exported_crate/receipt
+
+/datum/prompt/number/export_item
+	timeout = 0
 	var/datum/exported_crate/receipt
 	var/item_name
 	var/quantity
 
-/datum/om/flow/supply_export_item/start()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(name_entered), title = "Name", message = "Please enter the name of the item.")
+/datum/system/supply/proc/export_name_entered(datum/act/request/A)
+	var/datum/prompt/text/export_item/asked = A.answer
+	if(!asked)
+		return
+	open_request(src, /datum/prompt/number/export_item, PROC_REF(export_quantity_entered), answerer = asked.answerer, title = "Quantity", question = "Please enter the quantity of the item.", receipt = asked.receipt, item_name = asked.value)
 
-/datum/om/flow/supply_export_item/proc/name_entered(datum/om/prompt/text/ask)
-	item_name = ask.text
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(quantity_entered), title = "Quantity", message = "Please enter the quantity of the item.")
+/datum/system/supply/proc/export_quantity_entered(datum/act/request/A)
+	var/datum/prompt/number/export_item/asked = A.answer
+	if(!asked)
+		return
+	open_request(src, /datum/prompt/number/export_item, PROC_REF(export_value_entered), answerer = asked.answerer, title = "Value", question = "Please enter the value of the item.", receipt = asked.receipt, item_name = asked.item_name, quantity = asked.value)
 
-/datum/om/flow/supply_export_item/proc/quantity_entered(datum/om/prompt/number/ask)
-	quantity = ask.number
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(value_entered), title = "Value", message = "Please enter the value of the item.")
-
-/datum/om/flow/supply_export_item/proc/value_entered(datum/om/prompt/number/ask)
-	SSsupply.export_item_entered(receipt, item_name, quantity, ask.number)
+/datum/system/supply/proc/export_value_entered(datum/act/request/A)
+	var/datum/prompt/number/export_item/asked = A.answer
+	if(!asked)
+		return
+	export_item_entered(asked.receipt, asked.item_name, asked.quantity, asked.value)
 
 /datum/system/supply/proc/export_item_entered(datum/exported_crate/E, new_name, new_quantity, new_value)
 	if(!(E in exported_crates) || !new_name || !new_quantity || !new_value)

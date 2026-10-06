@@ -396,7 +396,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 		return FALSE
 	if(customer.security_level)
 		// Keyed by the price, so a price change asks again.
-		var/attempt_pin = rerun_ask(user, "pin[item_ref]:[price]", PROC_REF(storefront_purchase), args, /datum/om/prompt/number, message = "Enter your account PIN", title = "Storefront purchase")
+		var/attempt_pin = rerun_ask(user, "pin[item_ref]:[price]", PROC_REF(storefront_purchase), args, /datum/prompt/number, question = "Enter your account PIN", title = "Storefront purchase")
 		if(isnull(attempt_pin))
 			return FALSE
 		if(QDELETED(item) || item.loc != src || stock_prices[item_ref] != price || get_dist(src, user) > 1 || src.z != user.z)

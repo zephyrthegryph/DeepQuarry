@@ -139,6 +139,28 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 /proc/test_answer(mob/actor, value, outcome = REQ_ANSWERED)
 	return request_answer(actor, value, outcome)
 
+/// Every prompt request opened since test_prompts_reset(), in order (null: not recording).
+GLOBAL_VAR(test_prompts)
+
+/// Starts recording the prompts the test causes (GLOB.test_prompts).
+/proc/test_prompts_reset()
+	GLOB.test_prompts = list()
+
+/// Answers prompt `P` with `answer` (or cancels it): null when the answer went through, else why not (the refusal, "no answer" for a cancel,
+/// or the re-check that dropped it, such as "no admin rights").
+/proc/test_prompt_answer(datum/prompt/P, answer, cancel = FALSE)
+	if(!istype(P) || !P.is_open())
+		return "that question is closed"
+	if(cancel)
+		request_end(P, REQ_CANCELLED, null)
+		return "no answer"
+	var/why = request_submit(P, answer)
+	if(why)
+		return why
+	if(P.outcome != REQ_ANSWERED)
+		return P.last_error || "cancelled"
+	return null
+
 // ---- Kernel forms (E6) ----
 
 /// Runs a drain point now.

@@ -28,7 +28,7 @@
 		pixel_y = 0
 		to_chat(user, "You unsecure \the [src].")
 		return ITEM_INTERACT_SUCCESS
-	var/choice = rerun_ask(user, "k31", TYPE_PROC_REF(/atom, crowbar_act), args, /datum/om/prompt/choice, message = "Where do you want to place \the [src]?", title = "Offset selection", choices = list("North", "South", "West", "East", "This tile", "Cancel"))
+	var/choice = rerun_ask(user, "k31", TYPE_PROC_REF(/atom, crowbar_act), args, /datum/prompt/choice, question = "Where do you want to place \the [src]?", title = "Offset selection", choices = list("North", "South", "West", "East", "This tile", "Cancel"))
 	if(isnull(choice))
 		return ITEM_INTERACT_BLOCKING
 	switch(choice)

@@ -23,12 +23,12 @@
 	var/static/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
 	if(!GLOB.cultwords["travel"])
 		runerandom()
-	var/r = cast_ask(user, "rune", /datum/om/prompt/choice, message = "Choose a rune to scribe", title = "Rune Scribing", choices = runes, timeout = 30 SECONDS)
+	var/r = cast_ask(user, "rune", /datum/prompt/choice, question = "Choose a rune to scribe", title = "Rune Scribing", choices = runes, timeout = 30 SECONDS)
 	if(!r)
 		return list()
 	var/beacon
 	if(r == "Teleport" || r == "Teleport Other")
-		beacon = cast_ask(user, "beacon", /datum/om/prompt/choice, message = "Select the last rune", title = "Rune Scribing", choices = GLOB.rnwords, timeout = 30 SECONDS)
+		beacon = cast_ask(user, "beacon", /datum/prompt/choice, question = "Select the last rune", title = "Rune Scribing", choices = GLOB.rnwords, timeout = 30 SECONDS)
 		if(!beacon)
 			return list()
 	picked_rune = r

@@ -87,7 +87,7 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 /datum/admins/proc/topic_edit_shuttle_time(mob/user, list/args)
 	if(SSemergency_shuttle.wait_for_launch)
-		var/new_time_left = topic_ask(user, args, "a1", /datum/om/prompt/number, message = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = SSemergency_shuttle.estimate_launch_time())
+		var/new_time_left = topic_ask(user, args, "a1", /datum/prompt/number, question = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = SSemergency_shuttle.estimate_launch_time())
 		if(isnull(new_time_left))
 			return
 
@@ -96,7 +96,7 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 		log_admin("[key_name(user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's launch time to [new_time_left SECONDS]"), 1)
 	else if(SSemergency_shuttle.shuttle.has_arrive_time())
-		var/new_time_left = topic_ask(user, args, "a2", /datum/om/prompt/number, message = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = SSemergency_shuttle.estimate_arrival_time())
+		var/new_time_left = topic_ask(user, args, "a2", /datum/prompt/number, question = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = SSemergency_shuttle.estimate_arrival_time())
 		if(isnull(new_time_left))
 			return
 		EXPIRY_SET(SSemergency_shuttle.shuttle, arrive_time, (new_time_left SECONDS), CLOCK_WORLD)

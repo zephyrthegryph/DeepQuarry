@@ -307,7 +307,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 		return 0
 
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		var/attempt_pin = rerun_ask(user, "k299", PROC_REF(process_payment), args, /datum/om/prompt/number, message = "Enter pin code", title = "Vendor transaction")
+		var/attempt_pin = rerun_ask(user, "k299", PROC_REF(process_payment), args, /datum/prompt/number, question = "Enter pin code", title = "Vendor transaction")
 		if(isnull(attempt_pin))
 			return
 		customer_account = attempt_account_access(I.associated_account_number, attempt_pin, 2)

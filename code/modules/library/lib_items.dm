@@ -271,12 +271,12 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 		if(unique)
 			to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
 			return INTERACTION_HANDLED_PASS
-		var/choice = rerun_ask(user, "k248", PROC_REF(interaction_item), args, /datum/om/prompt/choice, message = "What would you like to change?", title = "Change What?", choices = list("Title", "Contents", "Author", "Cancel"))
+		var/choice = rerun_ask(user, "k248", PROC_REF(interaction_item), args, /datum/prompt/choice, question = "What would you like to change?", title = "Change What?", choices = list("Title", "Contents", "Author", "Cancel"))
 		if(isnull(choice))
 			return TRUE
 		switch(choice)
 			if("Title")
-				var/_answer_k251 = rerun_ask(user, "k251", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write a new title:", encode = FALSE)
+				var/_answer_k251 = rerun_ask(user, "k251", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write a new title:", encode = FALSE)
 				if(isnull(_answer_k251))
 					return TRUE
 				var/newtitle = reject_bad_text(sanitizeSafe(_answer_k251))
@@ -287,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 					src.name = newtitle
 					src.title = newtitle
 			if("Contents")
-				var/content = rerun_ask(user, "k259", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write your book's contents (HTML NOT allowed):", max_length = MAX_BOOK_MESSAGE_LEN, multiline = TRUE)
+				var/content = rerun_ask(user, "k259", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write your book's contents (HTML NOT allowed):", max_len = MAX_BOOK_MESSAGE_LEN, multiline = TRUE, name_text = ((MAX_BOOK_MESSAGE_LEN) <= MAX_NAME_LEN))
 				if(isnull(content))
 					return TRUE
 				if(!content)
@@ -296,7 +296,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 				else
 					src.dat += content
 			if("Author")
-				var/newauthor = rerun_ask(user, "k266", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write the author's name:", max_length = MAX_LNAME_LEN)
+				var/newauthor = rerun_ask(user, "k266", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write the author's name:", max_len = MAX_LNAME_LEN, name_text = ((MAX_LNAME_LEN) <= MAX_NAME_LEN))
 				if(isnull(newauthor))
 					return TRUE
 				if(!newauthor)

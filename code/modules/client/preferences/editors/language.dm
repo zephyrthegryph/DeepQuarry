@@ -69,7 +69,7 @@
 		return PREF_UPDATE_REJECTED
 	var/current = prefixes.len >= idx ? prefixes[idx] : ""
 	// The answer re-runs this action.
-	var/typed = rerun_ask(user, "prefix", PROC_REF(handle_action), args, /datum/om/prompt/text, message = "Prefix character for slot [idx] (single character)", title = "Language Prefix", default = current, max_length = 1)
+	var/typed = rerun_ask(user, "prefix", PROC_REF(handle_action), args, /datum/prompt/text, question = "Prefix character for slot [idx] (single character)", title = "Language Prefix", default = current, max_len = 1, name_text = ((1) <= MAX_NAME_LEN))
 	if(!typed)
 		return PREF_UPDATE_UNCHANGED
 	if(!user?.client?.prefs || user.client.prefs != preferences)
@@ -91,7 +91,7 @@
 	// prompt for the key. Replaces any prior binding for that key.
 	var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 	var/lang = params["language"]
-	var/typed = rerun_ask(user, "key", PROC_REF(handle_action), args, /datum/om/prompt/text, message = "Bind language '[lang]' to which single character?", title = "Language Key", max_length = 1)
+	var/typed = rerun_ask(user, "key", PROC_REF(handle_action), args, /datum/prompt/text, question = "Bind language '[lang]' to which single character?", title = "Language Key", max_len = 1, name_text = ((1) <= MAX_NAME_LEN))
 	if(!typed)
 		return PREF_UPDATE_UNCHANGED
 	if(!user?.client?.prefs || user.client.prefs != preferences)

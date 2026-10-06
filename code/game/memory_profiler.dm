@@ -9,19 +9,22 @@
 
 /proc/profile_memory()
 	if(usr?.client)
-		om_ask_begin(null, usr, /datum/om/prompt/confirm/profile_memory, TYPE_PROC_REF(/client, profile_memory_confirmed), list(receiver = usr.client))
+		open_request(usr, /datum/prompt/yes_no/profile_memory, TYPE_PROC_REF(/mob, profile_memory_confirmed), answerer = usr)
 		return
 	profile_memory_run()
 
 /// Re-checked on the answer: still a debug admin.
-/datum/om/prompt/confirm/profile_memory
+/datum/prompt/yes_no/profile_memory
 	title = "Profile memory"
-	message = "Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end"
-	requires = PROMPT_ADMIN(R_DEBUG)
+	question = "Running this will likely cause minor lag for around 20 minutes and the server will freeze for a bit at the end"
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
 
 /// The debug admin confirmed the memory profile.
-/client/proc/profile_memory_confirmed(datum/om/prompt/confirm/profile_memory/ask)
-	profile_memory_run()
+/mob/proc/profile_memory_confirmed(datum/act/request/A)
+	if(A.answer?.value)
+		profile_memory_run()
 
 /proc/profile_memory_run()
 	var/list/types_count = list()

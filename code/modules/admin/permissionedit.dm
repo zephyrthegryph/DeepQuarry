@@ -213,7 +213,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		if(remove_answer != "Do it")
 			return
 	else
-		if(flow_ask(user, "remove_admin", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel")) != "Do it")
+		if(flow_ask(user, "remove_admin", /datum/prompt/choice, question = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel"), buttons = TRUE) != "Do it")
 			return
 	if(!(admin_ckey in (GLOB.admin_datums + GLOB.deadmins)) && !use_db)
 		return
@@ -320,7 +320,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				open_request(src, /datum/prompt/choice/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "rank:[step]", question = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
 				return
 		else
-			var/next_rank = flow_ask(user, "rank:[step]", /datum/om/prompt/choice, message = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
+			var/next_rank = flow_ask(user, "rank:[step]", /datum/prompt/choice, question = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
 			rank_answer = next_rank
 
 		if (isnull(rank_answer) || !(rank_answer in display_rank_names))
@@ -347,7 +347,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 					open_request(src, /datum/prompt/text/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "new_rank:[step]", question = "Please input a new rank", title = "New custom rank")
 					return
 			else
-				var/new_rank_name = flow_ask(user, "new_rank:[step]", /datum/om/prompt/text, message = "Please input a new rank", title = "New custom rank")
+				var/new_rank_name = flow_ask(user, "new_rank:[step]", /datum/prompt/text, question = "Please input a new rank", title = "New custom rank")
 				picked_name = new_rank_name
 			if (!picked_name)
 				return null
@@ -548,7 +548,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "admin_flags", title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
 			return
 	else
-		var/new_flags = flow_ask(user, "admin_flags", /datum/om/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
+		var/new_flags = flow_ask(user, "admin_flags", /datum/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
 		selected_flags = new_flags
 	if(isnull(selected_flags))
 		return

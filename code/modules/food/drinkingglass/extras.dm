@@ -46,7 +46,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 	if(src != user.get_inactive_hand())
 		return FALSE
 
-	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
+	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/prompt/choice, question = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
 	if(isnull(choice))
 		return TRUE
 	if(!choice || !(choice in extras))

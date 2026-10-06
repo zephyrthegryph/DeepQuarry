@@ -29,13 +29,13 @@ GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new
 	)
 
 /// Step proc (run with the tweak as the sequence owner): only specific players need a ckey list.
-/datum/gear_tweak/item_tf_spawn/proc/ask_valid_ckeys(datum/om/flow/ask_sequence/gear_tweak/seq)
+/datum/gear_tweak/item_tf_spawn/proc/ask_valid_ckeys(datum/ask_sequence/gear_tweak/seq)
 	if(seq.value != "Only Specific Players")
 		return null
 	var/list/current = seq.metadata
 	return gear_ask_text("detail", "Allowed Players", "Input ckeys allowed to join on separate lines", islist(current) ? jointext(current["valid"], "\n") : "", MAX_MESSAGE_LEN, TRUE)
 
-/datum/gear_tweak/item_tf_spawn/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+/datum/gear_tweak/item_tf_spawn/metadata_answered(datum/ask_sequence/gear_tweak/seq)
 	var/entry = seq.value
 	if(!entry)
 		return null

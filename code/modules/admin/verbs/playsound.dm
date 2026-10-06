@@ -73,7 +73,7 @@ ADMIN_VERB(play_local_sound, R_SOUNDS, "Play Local Sound", "Plays a sound around
 	feedback_add_details("admin_verb", "Play Local Sound")
 
 ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a sound to a single mob.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
-	var/mob/target_mob = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
+	var/mob/target_mob = verb_ask(user, "a3", args, /datum/prompt/choice, question = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
 	if(isnull(target_mob))
 		return
 	if(QDELETED(target_mob))

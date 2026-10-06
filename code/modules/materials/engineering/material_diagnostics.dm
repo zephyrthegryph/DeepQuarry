@@ -121,7 +121,7 @@
 	var/list/roles = list()
 	for(var/role in owner().material_roles())
 		roles += role
-	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/om/prompt/choice, message = "Which component should be replaced?", title = "Service assembly", choices = roles)
+	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/prompt/choice, question = "Which component should be replaced?", title = "Service assembly", choices = roles)
 	if(isnull(role))
 		return
 	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner().material_roles()))

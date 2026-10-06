@@ -981,14 +981,14 @@ SETTER(/mob/living, nutrition)
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/choice = flow_ask(C.mob, "body_injure_kind", /datum/om/prompt/choice, message = "Injury kind", title = "Injure [src]", choices = kinds)
+			var/choice = flow_ask(C.mob, "body_injure_kind", /datum/prompt/choice, question = "Injury kind", title = "Injure [src]", choices = kinds)
 			if(!choice || QDELETED(src))
 				return null
-			var/amount = flow_ask(C.mob, "body_injure_amount", /datum/om/prompt/number, message = "How much [choice]?", title = "Injure [src]", default = 10, min = 0, round_entry = FALSE)
+			var/amount = flow_ask(C.mob, "body_injure_amount", /datum/prompt/number, question = "How much [choice]?", title = "Injure [src]", default = 10, min_value = 0, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
 			var/static/list/zones = list("whole body") + BP_ALL
-			var/zone = flow_ask(C.mob, "body_injure_zone", /datum/om/prompt/choice, message = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
+			var/zone = flow_ask(C.mob, "body_injure_zone", /datum/prompt/choice, question = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
 			if(!zone || QDELETED(src))
 				return null
 			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
@@ -998,10 +998,10 @@ SETTER(/mob/living, nutrition)
 			var/list/tags = list()
 			for(var/tag in names)
 				tags[names[tag]] = tag
-			var/choice = flow_ask(C.mob, "body_mend_tag", /datum/om/prompt/choice, message = "Treatment tag", title = "Mend [src]", choices = tags)
+			var/choice = flow_ask(C.mob, "body_mend_tag", /datum/prompt/choice, question = "Treatment tag", title = "Mend [src]", choices = tags)
 			if(!choice || QDELETED(src))
 				return null
-			var/amount = flow_ask(C.mob, "body_mend_amount", /datum/om/prompt/number, message = "How much [choice]?", title = "Mend [src]", default = 10, min = 0, round_entry = FALSE)
+			var/amount = flow_ask(C.mob, "body_mend_amount", /datum/prompt/number, question = "How much [choice]?", title = "Mend [src]", default = 10, min_value = 0, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
 			var/treated = mend(tags[choice], amount)
@@ -1010,11 +1010,11 @@ SETTER(/mob/living, nutrition)
 			var/list/affliction_types = list()
 			for(var/path in subtypesof(/datum/affliction))
 				affliction_types["[path]"] = path
-			var/affliction_name = flow_ask(C.mob, "body_afflict_type", /datum/om/prompt/choice, message = "Affliction", title = "Afflict [src]", choices = affliction_types)
+			var/affliction_name = flow_ask(C.mob, "body_afflict_type", /datum/prompt/choice, question = "Affliction", title = "Afflict [src]", choices = affliction_types)
 			var/affliction_type = affliction_types[affliction_name]
 			if(!affliction_type || QDELETED(src) || !body)
 				return null
-			var/severity = flow_ask(C.mob, "body_afflict_severity", /datum/om/prompt/number, message = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", title = "Afflict [src]", default = 30, max = AFFLICTION_SEVERITY_TERMINAL, min = 0, round_entry = FALSE)
+			var/severity = flow_ask(C.mob, "body_afflict_severity", /datum/prompt/number, question = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", title = "Afflict [src]", default = 30, max_value = AFFLICTION_SEVERITY_TERMINAL, min_value = 0, round_entry = FALSE)
 			if(isnull(severity) || QDELETED(src) || !body)
 				return null
 			var/datum/affliction/A = body.afflict(affliction_type, null, severity)
@@ -1029,7 +1029,7 @@ SETTER(/mob/living, nutrition)
 			if(!length(choices))
 				to_chat(C, span_notice("[src] has no afflictions."), confidential = TRUE)
 				return null
-			var/choice = flow_ask(C.mob, "body_cure", /datum/om/prompt/choice, message = "Remove which affliction?", title = "Cure [src]", choices = choices)
+			var/choice = flow_ask(C.mob, "body_cure", /datum/prompt/choice, question = "Remove which affliction?", title = "Cure [src]", choices = choices)
 			var/datum/affliction/A = choices[choice]
 			if(!A || QDELETED(src) || A.owner != src)
 				return null
@@ -1037,7 +1037,7 @@ SETTER(/mob/living, nutrition)
 			A.cure()
 			return "removed affliction [removed]"
 		if("oxygen")
-			var/amount = flow_ask(C.mob, "body_oxygen", /datum/om/prompt/number, message = "Oxygen debt to add (negative pays it down)", title = "Oxygen debt of [src]", default = 0, min = -INFINITY, round_entry = FALSE)
+			var/amount = flow_ask(C.mob, "body_oxygen", /datum/prompt/number, question = "Oxygen debt to add (negative pays it down)", title = "Oxygen debt of [src]", default = 0, min_value = -INFINITY, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
 			if(amount > 0)

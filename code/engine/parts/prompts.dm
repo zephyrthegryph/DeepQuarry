@@ -127,6 +127,8 @@ CAPABILITIES(/datum/prompt)
 	/// The labels of the two buttons ("Confirm" / "Cancel", "Launch" / "Cancel"). A label that depends on the asking op is computed(PROC_REF(x)).
 	var/yes_text = "Yes"
 	var/no_text = "No"
+	/// The no button comes first.
+	var/no_first = FALSE
 
 /datum/prompt/yes_no/normalize(given)
 	return !!given
@@ -152,7 +154,7 @@ CAPABILITIES(/datum/prompt)
 	return button == yes_text
 
 /datum/prompt/yes_no/present(mob/user)
-	var/datum/tgui_alert/prompt/alert = new(user, question, title || "Confirm", list(yes_text, no_text), timeout, TRUE, GLOB.tgui_always_state)
+	var/datum/tgui_alert/prompt/alert = new(user, question, title || "Confirm", no_first ? list(no_text, yes_text) : list(yes_text, no_text), timeout, TRUE, GLOB.tgui_always_state)
 	rel_set(alert, nameof(alert.prompt), src)
 	alert.tgui_interact(user)
 	return alert
@@ -203,6 +205,8 @@ CAPABILITIES(/datum/prompt)
 	/// Answers are rounded to a multiple of this (null: any).
 	var/step
 	var/default = 0
+	/// The window rounds what is typed to a whole number (when no step is set). FALSE takes decimals.
+	var/round_entry = TRUE
 
 /datum/prompt/number/normalize(given)
 	if(!isnum(given))
@@ -230,7 +234,7 @@ CAPABILITIES(/datum/prompt)
 	data["value"] = "[default]"
 
 /datum/prompt/number/present(mob/user)
-	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, isnull(step), GLOB.tgui_always_state)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, round_entry && isnull(step), GLOB.tgui_always_state)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box

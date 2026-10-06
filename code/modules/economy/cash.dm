@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 
 /// Old attack_self.
 /obj/item/spacecash/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k92", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "How many [initial_name]s do you want to take? (0 to [src.worth])", title = "Take Money", default = 20, max = src.worth)
+	var/amount = rerun_ask(user, "k92", PROC_REF(interaction_self), args, /datum/prompt/number, question = "How many [initial_name]s do you want to take? (0 to [src.worth])", title = "Take Money", default = 20, max_value = src.worth)
 	if(isnull(amount))
 		return TRUE
 	if(!src || QDELETED(src))

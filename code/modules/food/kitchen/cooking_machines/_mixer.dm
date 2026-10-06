@@ -80,7 +80,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 				for (var/obj/item/I in CI.container())
 					menuoptions[I.name] = I
 
-		var/selection = rerun_ask(user, "k86", PROC_REF(removal_menu), args, /datum/om/prompt/choice, message = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", title = "Remove ingredients", choices = menuoptions)
+		var/selection = rerun_ask(user, "k86", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", title = "Remove ingredients", choices = menuoptions)
 		if(isnull(selection))
 			return
 		if (selection)

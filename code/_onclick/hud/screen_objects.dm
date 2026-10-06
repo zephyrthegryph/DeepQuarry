@@ -559,7 +559,7 @@ CAPABILITIES(/atom/movable/screen)
 		if("Show Camera List")
 			if(isAI(user))
 				var/mob/living/silicon/ai/ai_user = user
-				var/camera = rerun_ask(ai_user, "k545", PROC_REF(click_with_actor), args, /datum/om/prompt/choice, message = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
+				var/camera = rerun_ask(ai_user, "k545", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
 				if(isnull(camera))
 					return
 				ai_user.ai_camera_list(camera)
@@ -567,7 +567,7 @@ CAPABILITIES(/atom/movable/screen)
 		if("Track With Camera")
 			if(isAI(user))
 				var/mob/living/silicon/ai/ai_user = user
-				var/target_name = rerun_ask(ai_user, "k551", PROC_REF(click_with_actor), args, /datum/om/prompt/choice, message = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
+				var/target_name = rerun_ask(ai_user, "k551", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
 				if(isnull(target_name))
 					return
 				ai_user.ai_camera_track(target_name)

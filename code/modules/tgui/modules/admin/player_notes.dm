@@ -322,7 +322,7 @@ TOPIC_ACTION(/datum/admins, "notes_legacy=filter", PROC_REF(topic_notes_legacy_f
 
 /datum/admins/proc/topic_add_player_info_legacy(mob/user, list/args)
 	var/key = args["add_player_info_legacy"]
-	var/add = topic_ask(user, args, "a1", /datum/om/prompt/text, message = "Add Player Info (Legacy)", multiline = TRUE)
+	var/add = topic_ask(user, args, "a1", /datum/prompt/text, question = "Add Player Info (Legacy)", multiline = TRUE)
 	if(isnull(add))
 		return
 	if(!add)

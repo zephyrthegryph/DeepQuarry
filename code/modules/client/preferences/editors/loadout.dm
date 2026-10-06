@@ -555,13 +555,13 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	return cost
 
 /// A loadout gear tweak change: which prefs, gear, tweak and loadout slot it is for.
-/datum/om/flow/ask_sequence/gear_tweak/loadout
+/datum/ask_sequence/gear_tweak/loadout
 	var/datum/preferences/preferences
 	var/gear_name
 	var/tweak_idx
 	var/loadout_key
 
-/datum/om/flow/ask_sequence/gear_tweak/loadout/New(datum/preferences/preferences, gear_name, tweak_idx, loadout_key)
+/datum/ask_sequence/gear_tweak/loadout/New(datum/preferences/preferences, gear_name, tweak_idx, loadout_key)
 	..()
 	rel_set(src, nameof(preferences), preferences)
 	src.gear_name = gear_name
@@ -569,7 +569,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	src.loadout_key = loadout_key
 
 /// A gear tweak's new value: the item must still be equipped in the same loadout.
-/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/om/flow/ask_sequence/gear_tweak/loadout/seq)
+/datum/preference_editor/loadout/proc/tweak_answered(mob/user, new_value, datum/ask_sequence/gear_tweak/loadout/seq)
 	var/datum/preferences/preferences = seq.preferences
 	var/gear_name = seq.gear_name
 	var/tweak_idx = seq.tweak_idx
@@ -751,7 +751,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		item_meta = list()
 	var/cur_value = item_meta["[tweak_idx]"]
 	// Asks, then tweak_answered() saves the new value.
-	gt.ask_metadata(user, cur_value, G, null, src, PROC_REF(tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/loadout(preferences, gear_name, tweak_idx, loadout_key))
+	gt.ask_metadata(user, cur_value, G, null, src, PROC_REF(tweak_answered), new /datum/ask_sequence/gear_tweak/loadout(preferences, gear_name, tweak_idx, loadout_key))
 	return PREF_UPDATE_UNCHANGED
 
 /datum/preference_editor/loadout/proc/ui_act_set_tweak_value(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
@@ -883,7 +883,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	var/list/cur_meta = item_meta["[tweak_idx]"]
 	var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
 	// The answer re-runs this action, so the item is checked again.
-	var/list/new_matrix = rerun_ask(user, "matrix", PROC_REF(handle_action), args, /datum/om/prompt/colormatrix, message = "Pick a color matrix for this item", title = "Matrix Recolor", preview = G.path, default = cur_matrix, matrix_only = TRUE)
+	var/list/new_matrix = rerun_ask(user, "matrix", PROC_REF(handle_action), args, /datum/prompt/colormatrix, question = "Pick a color matrix for this item", title = "Matrix Recolor", preview = G.path, default = cur_matrix, matrix_only = TRUE)
 	if(!islist(new_matrix) || length(new_matrix) < 12)
 		return PREF_UPDATE_UNCHANGED
 	if(!user?.client?.prefs || user.client.prefs != preferences)

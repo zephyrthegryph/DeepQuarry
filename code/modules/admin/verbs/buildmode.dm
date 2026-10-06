@@ -755,11 +755,6 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 			log_admin("[key_name(user)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
 			return
 
-/// Remaining world-reference question; `step` carries the variable being edited.
-/datum/om/prompt/choice/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
 /obj/effect/bmode/buildmode/proc/ask_edit_type(datum/act/request/context)
 	if(!context.answer)
 		return
@@ -779,7 +774,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 			var/list/mob_choices = REGISTRY_MEMBERS(REGISTRY_MOBS)
 			open_request(src, /datum/prompt/choice/buildmode_mob_reference, PROC_REF(edit_mob_ref_picked), answerer = user, choices = mob_choices?.Copy(), step = ask.step)
 		if("obj-reference", "turf-reference")
-			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = world, step = ask.step)
+			open_request(src, /datum/prompt/choice/buildmode_edit, PROC_REF(edit_ref_picked), answerer = user, title = "Value", question = "Enter variable value:", choices = world, step = ask.step)
 
 /obj/effect/bmode/buildmode/proc/edit_text_entered(datum/act/request/context)
 	if(!context.answer)
@@ -799,8 +794,11 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 	var/datum/prompt/choice/buildmode_mob_reference/ask = context.answer
 	edit_answered(ask.answerer, ask.step, ask.value)
 
-/obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/om/prompt/choice/buildmode/ask)
-	edit_answered(ask.answerer, ask.step, ask.choice)
+/obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_edit/ask = context.answer
+	edit_answered(ask.answerer, ask.step, ask.value)
 
 /obj/effect/bmode/buildmode/proc/edit_answered(mob/user, var_name, value)
 	master().buildmode.varholder = var_name

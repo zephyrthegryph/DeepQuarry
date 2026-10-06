@@ -2492,7 +2492,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	if(!length(passengers))
 		to_chat(user, span_warning("There are no passengers to remove."))
 		return
-	om_ask(user, /datum/om/prompt/choice/mecha_remove_passenger, PROC_REF(passenger_removal_chosen), choices = passengers)
+	open_request(src, /datum/prompt/choice/mecha_remove_passenger, PROC_REF(passenger_removal_chosen), answerer = user, choices = passengers)
 
 /obj/mecha/proc/topic_finish_req_access(mob/user, list/args)
 	if(!in_range(src, user))
@@ -2563,14 +2563,16 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	box.tgui_interact(user)
 	return box
 
-/datum/om/prompt/choice/mecha_remove_passenger
+/// Which passenger to pull out: re-checked on the answer, still next to the mech with its bolts exposed.
+/datum/prompt/choice/mecha_remove_passenger
 	title = "Forcibly Remove Passenger"
-	message = "Choose a passenger to forcibly remove."
-	requires = PROMPT_ADJACENT
+	question = "Choose a passenger to forcibly remove."
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/choice/mecha_remove_passenger/valid()
-	var/obj/mecha/M = subject
-	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
+/datum/prompt/choice/mecha_remove_passenger/recheck_extra()
+	var/obj/mecha/M = subject || owner
+	return istype(M) && M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
 
 /obj/mecha/proc/tank_valve_entered(datum/act/request/A)
 	if(!A.answer)
@@ -2579,9 +2581,12 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 		internal_tank_valve = A.answer.value
 		to_chat(A.request.answerer, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
 
-/obj/mecha/proc/passenger_removal_chosen(datum/om/prompt/choice/mecha_remove_passenger/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = ask.choices[ask.choice]
+/obj/mecha/proc/passenger_removal_chosen(datum/act/request/A)
+	var/datum/prompt/choice/mecha_remove_passenger/asked = A.answer
+	if(!asked)
+		return
+	var/mob/user = asked.answerer
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = asked.choices[asked.value]
 	var/mob/passenger_occupant = P?.slot_item(MECHA_SLOT_PILOT)
 
 	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \

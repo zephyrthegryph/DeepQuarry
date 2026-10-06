@@ -61,7 +61,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 
 			if(possible_targets.len)
 				if(spell_flags & SELECTABLE) //if we are allowed to choose. see setup.dm for details
-					var/mob/temp_target = cast_ask(user, "target", /datum/om/prompt/choice, message = "Choose the target for the spell.", title = "Targeting", choices = possible_targets)
+					var/mob/temp_target = cast_ask(user, "target", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets)
 					if(temp_target)
 						targets += temp_target
 				else
@@ -89,7 +89,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 			for(var/i = 1, i<=max_targets, i++)
 				if(!possible_targets.len)
 					break
-				var/mob/M = cast_ask(user, "target[i]", /datum/om/prompt/choice, message = "Choose the target for the spell.", title = "Targeting", choices = possible_targets, cancel_answer = "") // closing picks no more
+				var/mob/M = cast_ask(user, "target[i]", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets, cancel_answer = "") // closing picks no more
 				if(isnull(M))
 					return list()
 				if(!M)

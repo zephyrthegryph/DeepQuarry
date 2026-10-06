@@ -93,13 +93,13 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 		// LIKE parameters so user-supplied title/author cannot inject SQL.
 		// io_job: the results fill in when they arrive.
 		if(category == "Any")
-			om_sql_view(src, "search",
+			sql_view(src, "search",
 				"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat",
 				list("author_pat" = "%[author]%", "title_pat" = "%[title]%"),
 				PROC_REF(sql_rows_arrived)
 			)
 		else
-			om_sql_view(src, "search",
+			sql_view(src, "search",
 				"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat AND category = :category",
 				list("author_pat" = "%[author]%", "title_pat" = "%[title]%", "category" = category),
 				PROC_REF(sql_rows_arrived)
@@ -115,7 +115,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 
 
 /obj/machinery/librarypubliccomp/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	last_results = list()
 	for(var/list/row as anything in rows)
 		last_results += list(list(
@@ -280,10 +280,10 @@ CAPABILITIES(/obj/machinery/librarycomp)
 		return
 	// sortby is mapped to a fixed column literal at the query site, so ORDER BY
 	// can never be injected even if the whitelist in tgui_act is ever bypassed.
-	om_sql_view(src, "external", "SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]", PROC_REF(sql_rows_arrived))
+	sql_view(src, "external", "SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]", PROC_REF(sql_rows_arrived))
 
 /obj/machinery/librarycomp/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	external_rows = rows
 	SStgui.update_uis(src)
 

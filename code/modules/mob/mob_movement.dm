@@ -407,30 +407,21 @@
 ///Called by client/Move()
 ///Allows mobs to run though walls
 /// Leaving a predator's belly as a ghost; any answer but yes clears the pending leave.
-/datum/om/prompt/confirm/leave_belly
+/datum/prompt/yes_no/leave_belly
 	title = "Leave belly?"
-	message = "Do you want to leave your predator's belly?"
+	question = "Do you want to leave your predator's belly?"
+	timeout = 0
 	/// The direction the ghost pressed.
 	var/dir
 
-/datum/om/prompt/confirm/leave_belly/proc/reset_leaving()
-	if(answerer?.client)
-		answerer.client.is_leaving_belly = FALSE
-
-/datum/om/prompt/confirm/leave_belly/cancelled()
-	unpark()
-	reset_leaving()
-
-/datum/om/prompt/confirm/leave_belly/declined()
-	reset_leaving()
-
-/datum/om/prompt/confirm/leave_belly/refused(reason)
-	reset_leaving()
-
-/// Confirmed: the ghost moves out on the direction it pressed.
-/client/proc/leave_belly_answered(datum/om/prompt/confirm/leave_belly/ask)
+/// Confirmed: the ghost moves out on the direction it pressed. Anything else clears the pending leave.
+/client/proc/leave_belly_answered(datum/act/request/A)
+	var/datum/prompt/yes_no/leave_belly/asked = A.request
+	if(!A.answer?.value)
+		is_leaving_belly = FALSE
+		return
 	is_leaving_belly = 2
-	Process_Incorpmove(ask.dir)
+	Process_Incorpmove(asked.dir)
 
 /client/proc/Process_Incorpmove(direct)
 	if(isbelly(mob.loc) && isobserver(mob))
@@ -438,7 +429,7 @@
 			return
 		if(!is_leaving_belly)
 			is_leaving_belly = TRUE
-			om_ask(mob, /datum/om/prompt/confirm/leave_belly, PROC_REF(leave_belly_answered), dir = direct)
+			open_request(src, /datum/prompt/yes_no/leave_belly, PROC_REF(leave_belly_answered), answerer = mob, dir = direct)
 			return
 		is_leaving_belly = FALSE
 	if(isghosttrap(mob.loc))

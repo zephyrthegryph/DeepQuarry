@@ -393,7 +393,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
 		// encode = FALSE: the raw answer is sanitized below, before any branch shows it to another client.
-		var/_answer_k241 = client_ask("k241", PROC_REF(cmd_mentor_pm), args, 0, /datum/om/prompt/text, message = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
+		var/_answer_k241 = client_ask("k241", PROC_REF(cmd_mentor_pm), args, 0, /datum/prompt/text, question = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT, name_text = ((MAX_TGUI_INPUT) <= MAX_NAME_LEN))
 		if(isnull(_answer_k241))
 			return
 		msg = _answer_k241

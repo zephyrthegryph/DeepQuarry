@@ -100,7 +100,7 @@
 	last_args = args.Copy()
 	return ..()
 
-/atom/movable/screen/interim_camera_rerun/om_rerun_ask(mob/user, key, proc_name, list/proc_args, prompt, list/fields)
+/atom/movable/screen/interim_camera_rerun/rerun_ask_proc(mob/user, key, proc_name, list/proc_args, prompt, list/fields)
 	last_callback = proc_name
 	return ..()
 
@@ -108,7 +108,7 @@
 	c_tag = "Interim HUD camera rerun"
 
 /datum/unit_test/om/interim_screen_camera_rerun_actor/run_om(list/made)
-	sched.test_prompts = list()
+	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/camera_turf = get_step(T, EAST)
 	TEST_ASSERT_NOTNULL(camera_turf, "the actual camera has a separate destination turf")
@@ -125,22 +125,22 @@
 	var/control = "interim_camera_control"
 	var/params = "left=1;screen-loc=1,1"
 	button.click_with_actor(actor, T, control, params)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the actual camera helper opens exactly one typed prompt")
-	var/datum/om/prompt/choice/ask = sched.test_prompts[1]
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the actual camera helper opens exactly one typed prompt")
+	var/datum/prompt/choice/ask = GLOB.test_prompts[1]
 	made += ask
-	TEST_ASSERT_EQUAL(ask.peek("answerer"), actor, "the real camera prompt belongs to its explicit AI actor")
+	TEST_ASSERT_EQUAL(ask.answerer, actor, "the real camera prompt belongs to its explicit AI actor")
 	TEST_ASSERT(camera.c_tag in ask.choices, "the actual camera list offers the initialized camera")
 	TEST_ASSERT_EQUAL(actor.track.cameras[camera.c_tag], camera, "the real camera list stores the exact initialized camera")
 	TEST_ASSERT_EQUAL(button.last_callback, TYPE_PROC_REF(/atom/movable/screen, click_with_actor), "the typed answer resumes the actor helper by its actual proc name")
 	TEST_ASSERT_EQUAL(eye.loc, T, "opening the real choice does not move the AI eye")
-	TEST_ASSERT_NULL(om_prompt_answer(ask, camera.c_tag), "the real typed camera answer resumes successfully")
+	TEST_ASSERT_NULL(test_prompt_answer(ask, camera.c_tag), "the real typed camera answer resumes successfully")
 	TEST_ASSERT_EQUAL(button.helper_calls, 2, "the actual answer reenters the actor helper exactly once")
 	TEST_ASSERT_EQUAL(length(button.last_args), 4, "the resumed helper keeps exactly its four original arguments")
 	TEST_ASSERT_EQUAL(button.last_args[1], actor, "the actual rerun preserves the explicit actor argument")
 	TEST_ASSERT_EQUAL(button.last_args[2], T, "the actual rerun preserves the location argument")
 	TEST_ASSERT_EQUAL(button.last_args[3], control, "the actual rerun preserves the control argument")
 	TEST_ASSERT_EQUAL(button.last_args[4], params, "the actual rerun preserves the parameter argument")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the consumed camera answer does not reopen its prompt")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the consumed camera answer does not reopen its prompt")
 	TEST_ASSERT_EQUAL(eye.loc, camera_turf, "the actual selected camera moves the AI eye to its real turf")
 	var/cache_key = "[REF(button)]:[TYPE_PROC_REF(/atom/movable/screen, click_with_actor)]"
-	TEST_ASSERT_NULL(GLOB.om_rerun_answers[cache_key], "the completed real rerun releases its answer cache")
+	TEST_ASSERT_NULL(GLOB.rerun_answers[cache_key], "the completed real rerun releases its answer cache")

@@ -52,7 +52,7 @@
 		options.Add("Bloodstream")
 
 	// Choose destination
-	var/choice = rerun_ask(user, "a1", PROC_REF(inflation_setup), args, /datum/om/prompt/choice/alert, message = "Select where this hose connects.", title = "Hose Connection", choices = options)
+	var/choice = rerun_ask(user, "a1", PROC_REF(inflation_setup), args, /datum/prompt/choice, question = "Select where this hose connects.", title = "Hose Connection", choices = options, buttons = TRUE)
 	if(isnull(choice))
 		return
 	if(!user.Adjacent(human_owner()) || !choice)

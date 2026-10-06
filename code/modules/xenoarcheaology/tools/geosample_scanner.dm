@@ -54,7 +54,7 @@ EXTEND_INTERACTIONS(/obj/machinery/radiocarbon_spectrometer, \
 		var/obj/item/reagent_containers/glass/G = I
 		if(!G.is_open_container())
 			return TRUE
-		var/choice = rerun_ask(user, "k74", PROC_REF(interaction_use_item), args, /datum/om/prompt/choice/alert, message = "What do you want to do with the container?", title = "Radiometric Scanner", choices = list("Add water","Empty water","Scan container"))
+		var/choice = rerun_ask(user, "k74", PROC_REF(interaction_use_item), args, /datum/prompt/choice, question = "What do you want to do with the container?", title = "Radiometric Scanner", choices = list("Add water","Empty water","Scan container"), buttons = TRUE)
 		if(isnull(choice))
 			return
 		if(!choice)

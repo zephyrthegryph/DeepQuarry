@@ -354,7 +354,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	if(!in_range(src, user))	//Basic checks to prevent abuse
 		return TRUE
 
-	var/_answer_k349 = rerun_ask(user, "k349", PROC_REF(interaction_alt), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"))
+	var/_answer_k349 = rerun_ask(user, "k349", PROC_REF(interaction_alt), args, /datum/prompt/choice, question = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(_answer_k349))
 		return TRUE
 	if(_answer_k349 == "Yes")

@@ -100,15 +100,15 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 	var/result
 	switch(op)
 		if(DX_WINGET)
-			var/client/C = om_prompt_unwrap(op_args[1])
+			var/client/C = rerun_unwrap(op_args[1])
 			if(C)
 				result = winget(C, op_args[2], op_args[3]) // ALLOW(scheduler): DX-exec itself: winget, winexists, MeasureText, shell run here and nowhere else
 		if(DX_WINEXISTS)
-			var/client/C = om_prompt_unwrap(op_args[1])
+			var/client/C = rerun_unwrap(op_args[1])
 			if(C)
 				result = winexists(C, op_args[2]) // ALLOW(scheduler): DX-exec itself: winget, winexists, MeasureText, shell run here and nowhere else
 		if(DX_MEASURE_TEXT)
-			var/client/C = om_prompt_unwrap(op_args[1])
+			var/client/C = rerun_unwrap(op_args[1])
 			if(C)
 				result = C.MeasureText(op_args[2], op_args[3], op_args[4]) // ALLOW(scheduler): DX-exec itself: winget, winexists, MeasureText, shell run here and nowhere else
 		if(DX_SHELL)
@@ -119,10 +119,10 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 
 /// Resolves the owner and context (weakly held) and runs the callback, or drops it.
 /proc/dx_exec_deliver(owner_ref, op, result, on_done, list/wrapped_context)
-	var/owner = om_prompt_unwrap(owner_ref)
+	var/owner = rerun_unwrap(owner_ref)
 	var/list/call_args = list(result)
 	for(var/wrapped in wrapped_context)
-		var/value = om_prompt_unwrap(wrapped)
+		var/value = rerun_unwrap(wrapped)
 		if(isnull(value) && !isnull(wrapped))
 			dx_exec_stat(op, 3)
 			return

@@ -133,7 +133,7 @@ CAPABILITIES(/atom/movable/screen/ghost)
 	record_found = find_general_record("name", G.client.prefs.read_preference(/datum/preference/name/real_name))
 	// Found their record, they were spawned previously. Remind them corpses cannot play games.
 	if(record_found)
-		var/answer = rerun_ask(G, "k107", PROC_REF(click_with_actor), args, /datum/om/prompt/choice/alert, message = "You seem to have previously joined this round. If you are currently dead, you should not enter VR as this character. Would you still like to proceed?", title = "Previously spawned", choices = list("Yes", "No"))
+		var/answer = rerun_ask(G, "k107", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "You seem to have previously joined this round. If you are currently dead, you should not enter VR as this character. Would you still like to proceed?", title = "Previously spawned", choices = list("Yes", "No"), buttons = TRUE)
 		if(isnull(answer))
 			return
 		if(answer != "Yes")
@@ -146,7 +146,7 @@ CAPABILITIES(/atom/movable/screen/ghost)
 	if(!LAZYLEN(vr_landmarks))
 		to_chat(G, "There are no available spawn locations in virtual reality.")
 		return
-	var/_answer_k118 = rerun_ask(G, "k118", PROC_REF(click_with_actor), args, /datum/om/prompt/choice, message = "Please select a location to spawn your avatar at:", title = "Spawn location", choices = vr_landmarks)
+	var/_answer_k118 = rerun_ask(G, "k118", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Please select a location to spawn your avatar at:", title = "Spawn location", choices = vr_landmarks)
 	if(isnull(_answer_k118))
 		return
 	S = _answer_k118

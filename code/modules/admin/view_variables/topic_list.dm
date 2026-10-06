@@ -33,7 +33,7 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_LIST_SHUFFLE, PROC_REF(vv_topic_list_shuffle), VV_LI
 	if(!target_index || target_index > length(target))
 		return
 	var/variable = target[target_index]
-	var/prompt = flow_ask(mob, "list:remove", /datum/om/prompt/choice/alert, message = "Do you want to remove item number [target_index] from list?", title = "Confirm", choices = list("Yes", "No"))
+	var/prompt = flow_ask(mob, "list:remove", /datum/prompt/choice, question = "Do you want to remove item number [target_index] from list?", title = "Confirm", choices = list("Yes", "No"), buttons = TRUE)
 	if (prompt != "Yes")
 		return
 	target.Cut(target_index, target_index+1)

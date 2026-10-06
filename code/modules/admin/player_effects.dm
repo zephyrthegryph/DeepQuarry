@@ -371,7 +371,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 /// The types whose path contains the text of the first question.
 /datum/eventkit/player_effects/proc/typepath_matches(datum/act/op/A)
 	var/typed = answer_of(A, "path")
-	return istext(typed) ? om_prompt_typepaths(typed, /atom) : list()
+	return istext(typed) ? typepaths_matching(typed, /atom) : list()
 
 /datum/eventkit/player_effects/proc/typepath_ambiguous(datum/act/op/A)
 	return length(typepath_matches(A)) > 1

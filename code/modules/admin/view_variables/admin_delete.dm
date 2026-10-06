@@ -14,7 +14,7 @@
 		else
 			jmp_coords = coords = "in nullspace"
 
-	if (flow_ask(mob, "delete", /datum/om/prompt/choice/alert, message = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No")) == "Yes")
+	if (flow_ask(mob, "delete", /datum/prompt/choice, question = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No"), buttons = TRUE) == "Yes")
 		log_admin("[key_name(actor)] deleted [D] [coords]")
 		message_admins("[key_name_admin(actor)] deleted [D] [jmp_coords]")
 		feedback_add_details("admin_verb","ADEL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

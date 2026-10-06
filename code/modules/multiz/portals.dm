@@ -42,14 +42,14 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 /obj/structure/portal_event/proc/portal_event_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
 		to_chat(user, span_notice("Selecting 'Portal Here' will create and link a portal at your location, while 'Target Here' will create an object that is only visible to ghosts which will act as the target, again at your location. Each option will give you the ability to change portal types, but for all options except 'Select Type' you only get one shot at it, so be sure to experiment with 'Select Type' first if you're not familiar with them."))
-		var/response = rerun_ask(user, "k36", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, see chat for more info, otherwise click 'Cancel'", title = "Unbound Portal", choices = list("Cancel","Portal Here","Target Here", "Select Type"))
+		var/response = rerun_ask(user, "k36", PROC_REF(portal_event_ghost_use), args, /datum/prompt/choice, question = "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, see chat for more info, otherwise click 'Cancel'", title = "Unbound Portal", choices = list("Cancel","Portal Here","Target Here", "Select Type"), buttons = TRUE)
 		if(isnull(response))
 			return TRUE
 		if(response == "Portal Here")
 			rel_set(src, nameof(target), new type(get_turf(user), src))
 			rel_set(target, nameof(/obj/singularity/::target), src)
 			target.icon_state = icon_state
-			var/letsportal = rerun_ask(user, "k41", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "Would you like to select a different portal type for these portals?", title = "Change portal", choices = list("No","Yes"))
+			var/letsportal = rerun_ask(user, "k41", PROC_REF(portal_event_ghost_use), args, /datum/prompt/choice, question = "Would you like to select a different portal type for these portals?", title = "Change portal", choices = list("No","Yes"), buttons = TRUE)
 			if(isnull(letsportal))
 				return TRUE
 			if(letsportal == "Yes")
@@ -60,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 			var/obj/structure/portal_target/newtarg = new(get_turf(user))
 			rel_set(src, nameof(target), newtarg)
 			rel_set(newtarg, nameof(newtarg.target), src)
-			var/letsportal = rerun_ask(user, "k50", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "Would you like to select a different portal type?", title = "Change portal", choices = list("No","Yes"))
+			var/letsportal = rerun_ask(user, "k50", PROC_REF(portal_event_ghost_use), args, /datum/prompt/choice, question = "Would you like to select a different portal type?", title = "Change portal", choices = list("No","Yes"), buttons = TRUE)
 			if(isnull(letsportal))
 				return TRUE
 			if(letsportal == "Yes")
@@ -76,14 +76,14 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	return TRUE
 
 /obj/structure/portal_event/proc/select_portal_subtype(user)
-	var/portal_type = rerun_ask(user, "k64", PROC_REF(select_portal_subtype), args, /datum/om/prompt/choice/alert, message = "What kind of portal would you like it to be?", title = "Type Selection", choices = list("Tech (Default)","Star","Weird Green","Pulsing"))
+	var/portal_type = rerun_ask(user, "k64", PROC_REF(select_portal_subtype), args, /datum/prompt/choice, question = "What kind of portal would you like it to be?", title = "Type Selection", choices = list("Tech (Default)","Star","Weird Green","Pulsing"), buttons = TRUE)
 	if(isnull(portal_type))
 		return
 	var/portal_icon_selection = "type-d-portal"
 	if(portal_type == "Tech (Default)")
 		portal_icon_selection = "type-d-portal"
 	if(portal_type == "Star")
-		var/portal_subtype = rerun_ask(user, "k69", PROC_REF(select_portal_subtype), args, /datum/om/prompt/choice/alert, message = "Which subtype would you prefer?", title = "Subtype Selection", choices = list("Blue","Blue Pulse","Blue Unstable","Red","Red Unstable"))
+		var/portal_subtype = rerun_ask(user, "k69", PROC_REF(select_portal_subtype), args, /datum/prompt/choice, question = "Which subtype would you prefer?", title = "Subtype Selection", choices = list("Blue","Blue Pulse","Blue Unstable","Red","Red Unstable"), buttons = TRUE)
 		if(isnull(portal_subtype))
 			return
 		if(portal_subtype == "Blue")
@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	if(portal_type == "Weird Green")
 		portal_icon_selection = "type-b-portal"
 	if(portal_type == "Pulsing")
-		var/portal_subtype = rerun_ask(user, "k83", PROC_REF(select_portal_subtype), args, /datum/om/prompt/choice/alert, message = "Which subtype would you prefer?", title = "Subtype Selection", choices = list("Blue","Red","Blue/Red Mix", "Yellow", "White"))
+		var/portal_subtype = rerun_ask(user, "k83", PROC_REF(select_portal_subtype), args, /datum/prompt/choice, question = "Which subtype would you prefer?", title = "Subtype Selection", choices = list("Blue","Red","Blue/Red Mix", "Yellow", "White"), buttons = TRUE)
 		if(isnull(portal_subtype))
 			return
 		if(portal_subtype == "Blue")

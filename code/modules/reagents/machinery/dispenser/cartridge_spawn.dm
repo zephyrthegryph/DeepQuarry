@@ -1,10 +1,10 @@
 ADMIN_VERB(spawn_chemdisp_cartridge, R_SPAWN, "Spawn Chemical Dispenser Cartridge", "Spawns a chemical dispenser catridge.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/size = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select the catridge size", title = "Select Size", choices = list("small", "medium", "large"), default = "small")
+	var/size = verb_ask(user, "a1", args, /datum/prompt/choice, question = "Select the catridge size", title = "Select Size", choices = list("small", "medium", "large"), default = "small")
 	if(isnull(size))
 		return
 	if(!size)
 		return
-	var/reagent = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select the reagent to put into the catridge", title = "Select Reagent", choices = SSchemistry.ready().chemical_reagents)
+	var/reagent = verb_ask(user, "a2", args, /datum/prompt/choice, question = "Select the reagent to put into the catridge", title = "Select Reagent", choices = SSchemistry.ready().chemical_reagents)
 	if(isnull(reagent))
 		return
 	if(!reagent)

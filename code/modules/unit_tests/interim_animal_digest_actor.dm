@@ -8,7 +8,7 @@
 	animal.toggle_digestion()
 
 /datum/unit_test/om/interim_animal_digest_actor/run_om(list/made)
-	sched.test_prompts = list()
+	test_prompts_reset()
 	var/mob/living/simple_mob/animal = allocate(/mob/living/simple_mob/interim_digest_actor, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -22,13 +22,13 @@
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "the fixture's actual default belly starts in hold mode")
 	rel_set(probe, nameof(probe.animal), animal)
 	km_synthetic_click(actor, probe)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the actual granted-proc boundary opens its real enable choice")
-	var/datum/om/prompt/choice/alert/enable = sched.test_prompts[1]
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the actual granted-proc boundary opens its real enable choice")
+	var/datum/prompt/choice/enable = GLOB.test_prompts[1]
 	made += enable
-	TEST_ASSERT_EQUAL(enable.peek("answerer"), actor, "the first real choice keeps the native selecting human")
-	om_prompt_answer(enable, "Enable")
+	TEST_ASSERT_EQUAL(enable.answerer, actor, "the first real choice keeps the native selecting human")
+	test_prompt_answer(enable, "Enable")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_DIGEST, "the actual answer reenters the helper with its actor and enables digestion")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the resumed helper consumes its answer without reopening a prompt")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the resumed helper consumes its answer without reopening a prompt")
 	var/list/timers = belly.om_rec?.timers
 	TEST_ASSERT(timers && length(timers) == OM_TIMER_STRIDE, "actual enable schedules exactly one real reset timer on the selected belly")
 	TEST_ASSERT_EQUAL(timers[3], TYPE_PROC_REF(/obj/belly, reset_digest_mode), "the actual timer invokes the existing reset proc")
@@ -36,20 +36,20 @@
 	TEST_ASSERT_EQUAL(timer_args[1], animal.vore_default_mode, "the actual scheduled reset captures the animal's original mode")
 	TEST_ASSERT_EQUAL(om_timer_left(belly, timers[1]), 20 MINUTES, "the actual scheduled reset retains its complete defined duration")
 	animal.toggle_digestion_for(bystander)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 2, "an explicit different human opens the real disable choice")
-	var/datum/om/prompt/choice/alert/disable = sched.test_prompts[2]
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "an explicit different human opens the real disable choice")
+	var/datum/prompt/choice/disable = GLOB.test_prompts[2]
 	made += disable
-	TEST_ASSERT_EQUAL(disable.peek("answerer"), bystander, "the second helper retains its supplied actor rather than the prior native actor")
-	om_prompt_answer(disable, "Disable")
+	TEST_ASSERT_EQUAL(disable.answerer, bystander, "the second helper retains its supplied actor rather than the prior native actor")
+	test_prompt_answer(disable, "Disable")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "the actual resumed disable choice restores hold")
 	animal.toggle_digestion_for(actor)
-	var/datum/om/prompt/choice/alert/cancelled = sched.test_prompts[3]
+	var/datum/prompt/choice/cancelled = GLOB.test_prompts[3]
 	made += cancelled
-	om_prompt_answer(cancelled, "Cancel")
+	test_prompt_answer(cancelled, "Cancel")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "the actual cancel choice leaves digestion unchanged")
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 3, "cancellation resumes once without an extra choice")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 3, "cancellation resumes once without an extra choice")
 	actor.set_stat(UNCONSCIOUS)
 	animal.toggle_digestion_for(actor)
 	animal.toggle_digestion_for(null)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 3, "unconscious and absent explicit actors open no choice")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 3, "unconscious and absent explicit actors open no choice")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "actor refusals preserve actual belly state")

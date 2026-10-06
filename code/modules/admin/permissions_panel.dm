@@ -67,11 +67,11 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	db_rows = null
 	switch(holder().dq_perms_page)
 		if(PERMISSIONS_PAGE_RANKS, PERMISSIONS_PAGE_HOUSEKEEPING)
-			om_sql_view(src, "admins", "SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]", PROC_REF(sql_rows_arrived))
-			om_sql_view(src, "ranks", "SELECT rank, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", PROC_REF(sql_rows_arrived))
+			sql_view(src, "admins", "SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]", PROC_REF(sql_rows_arrived))
+			sql_view(src, "ranks", "SELECT rank, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", PROC_REF(sql_rows_arrived))
 		if(PERMISSIONS_PAGE_LOGGING)
 			var/list/filter = list("target" = holder().dq_perms_log_target, "adminckey" = holder().dq_perms_log_actor, "operation" = holder().dq_perms_log_operation)
-			om_sql_view(src, "log_count", {"
+			sql_view(src, "log_count", {"
 				SELECT COUNT(id) FROM [format_table_name("admin_log")]
 				WHERE target LIKE CONCAT('%',:target,'%')
 					AND adminckey LIKE CONCAT('%',:adminckey,'%')
@@ -80,7 +80,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			var/list/search_args = filter.Copy()
 			search_args["skip"] = PERMISSIONS_LOGS_PER_PAGE * holder().dq_perms_log_page
 			search_args["take"] = PERMISSIONS_LOGS_PER_PAGE
-			om_sql_view(src, "log_search", {"
+			sql_view(src, "log_search", {"
 				SELECT
 					datetime,
 					round_id,
@@ -99,7 +99,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /// The rows arrive for whoever still has the panel and the rights to see it.
 /datum/permissions_panel/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	if(!holder()?.owner() || !check_rights_for(holder().owner(), R_PERMISSIONS))
 		return
 	if(error)

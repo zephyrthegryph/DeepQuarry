@@ -10,17 +10,19 @@
 
 
 /// Re-checked on the answer: still next to it, and the pick is still buckled to it.
-/datum/om/prompt/choice/unbuckle_who
+/datum/prompt/choice/unbuckle_who
 	title = "Unbuckle Who?"
-	message = "Who do you wish to unbuckle?"
-	requires = PROMPT_ADJACENT
+	question = "Who do you wish to unbuckle?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/choice/unbuckle_who/valid()
-	var/atom/movable/AM = subject
-	return (choice in AM.buckled_mob_list()) ? null : "not buckled"
+/datum/prompt/choice/unbuckle_who/recheck_extra()
+	var/atom/movable/AM = subject || owner
+	return (istype(AM) && (value in AM.buckled_mob_list())) ? null : "not buckled"
 
-/atom/movable/proc/unbuckle_chosen(datum/om/prompt/choice/unbuckle_who/ask)
-	user_unbuckle_mob(ask.choice, ask.answerer)
+/atom/movable/proc/unbuckle_chosen(datum/act/request/A)
+	if(A.answer)
+		user_unbuckle_mob(A.answer.value, A.request.answerer)
 
 /atom/movable/hand_gate(mob/living/user)
 	. = ..()
@@ -28,7 +30,7 @@
 	if(can_buckle && has_buckled_mobs())
 		var/list/mobs = src?.buckled_mob_list()
 		if(mobs.len > 1)
-			om_ask(user, /datum/om/prompt/choice/unbuckle_who, PROC_REF(unbuckle_chosen), choices = mobs)
+			open_request(src, /datum/prompt/choice/unbuckle_who, PROC_REF(unbuckle_chosen), answerer = user, choices = mobs)
 			return TRUE
 		else
 			if(user_unbuckle_mob(mobs[1], user))

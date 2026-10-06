@@ -639,7 +639,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	if(!user)
 		return null
 
-	var/icon_from_file = flow_ask(user, "[key]:from_file", /datum/om/prompt/choice/alert, message = "Do you wish to pick an icon from file?", title = "File picker icon", choices = list("Yes", "No"))
+	var/icon_from_file = flow_ask(user, "[key]:from_file", /datum/prompt/choice, question = "Do you wish to pick an icon from file?", title = "File picker icon", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(icon_from_file))
 		return null
 	if(icon_from_file == "Yes")
@@ -647,7 +647,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 		if(!icon_result)
 			return null
 	else if(icon_from_file == "No")
-		var/new_icon = flow_ask(user, "[key]:path", /datum/om/prompt/text, message = "Pick icon path", title = "icon path")
+		var/new_icon = flow_ask(user, "[key]:path", /datum/prompt/text, question = "Pick icon path", title = "icon path")
 		if(isnull(new_icon))
 			return null
 		var/regex/regex = regex(@"^.+icons/")
@@ -661,20 +661,20 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	if(!dmi_path || pick_only)
 		return icon_result
 
-	var/custom = flow_ask(user, "[key]:custom", /datum/om/prompt/choice/alert, message = "Do you wish to specify any arguments for the icon?", title = "Customize Icon", choices = list("Yes", "No"))
+	var/custom = flow_ask(user, "[key]:custom", /datum/prompt/choice, question = "Do you wish to specify any arguments for the icon?", title = "Customize Icon", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(custom))
 		return null
 	if(custom == "Yes")
-		var/new_icon_state = flow_ask(user, "[key]:state", /datum/om/prompt/text, message = "Pick icon_state", title = "icon_state")
+		var/new_icon_state = flow_ask(user, "[key]:state", /datum/prompt/text, question = "Pick icon_state", title = "icon_state")
 		if(isnull(new_icon_state))
 			return null
-		var/new_icon_dir = flow_ask(user, "[key]:dir", /datum/om/prompt/choice, message = "Pick icon dir", title = "dir", choices = list("North", "East", "South", "West"), default = "South")
+		var/new_icon_dir = flow_ask(user, "[key]:dir", /datum/prompt/choice, question = "Pick icon dir", title = "dir", choices = list("North", "East", "South", "West"), default = "South")
 		if(isnull(new_icon_dir))
 			return null
-		var/new_icon_frame = flow_ask(user, "[key]:frame", /datum/om/prompt/number, message = "Pick icon frame", title = "frame")
+		var/new_icon_frame = flow_ask(user, "[key]:frame", /datum/prompt/number, question = "Pick icon frame", title = "frame")
 		if(isnull(new_icon_frame))
 			return null
-		var/new_icon_moving = flow_ask(user, "[key]:moving", /datum/om/prompt/choice, message = "Pick icon moving", title = "moving", choices = list("Both", "Movement only", "Non-Movement Only"), default = "Both")
+		var/new_icon_moving = flow_ask(user, "[key]:moving", /datum/prompt/choice, question = "Pick icon moving", title = "moving", choices = list("Both", "Movement only", "Non-Movement Only"), default = "Both")
 		switch(new_icon_moving)
 			if("Both")
 				new_icon_moving = null

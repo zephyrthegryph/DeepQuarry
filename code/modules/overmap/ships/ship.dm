@@ -302,11 +302,11 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 		if(!sdog.shipvore)
 			return
 	var/mob/living/L = over
-	var/confirm = rerun_ask(L, "k285", PROC_REF(offer_ingestion_with_actor), args, /datum/om/prompt/choice/alert, message = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."))
+	var/confirm = rerun_ask(L, "k285", PROC_REF(offer_ingestion_with_actor), args, /datum/prompt/choice, question = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."), buttons = TRUE)
 	if(isnull(confirm))
 		return
 	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = rerun_ask(L, "k287", PROC_REF(offer_ingestion_with_actor), args, /datum/om/prompt/choice, message = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
+		var/obj/belly/bellychoice = rerun_ask(L, "k287", PROC_REF(offer_ingestion_with_actor), args, /datum/prompt/choice, question = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
 		if(isnull(bellychoice))
 			return
 		if(bellychoice)

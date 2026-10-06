@@ -138,7 +138,7 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	S.set_species("Promethean")
 	S.shapeshifter_set_colour("#2398FF")
 	visible_message(span_warning("The monkey cube suddenly takes the shape of a humanoid!"))
-	var/newname = rerun_ask(S, "k62", PROC_REF(transfer_personality), args, /datum/om/prompt/text, message = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_length = MAX_NAME_LEN)
+	var/newname = rerun_ask(S, "k62", PROC_REF(transfer_personality), args, /datum/prompt/text, question = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_len = MAX_NAME_LEN, name_text = ((MAX_NAME_LEN) <= MAX_NAME_LEN))
 	if(isnull(newname))
 		return
 	if(newname)

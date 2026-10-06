@@ -26,7 +26,7 @@
 	var/A = null
 
 	if(!randomise_selection)
-		A = cast_ask(user, "area", /datum/om/prompt/choice, message = "Area to teleport to", title = "Teleport", choices = GLOB.teleportlocs)
+		A = cast_ask(user, "area", /datum/prompt/choice, question = "Area to teleport to", title = "Teleport", choices = GLOB.teleportlocs)
 		if(!A)
 			return list()
 	else

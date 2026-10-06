@@ -136,7 +136,7 @@ DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
 
 /// Old attack_self.
 /obj/item/spacecasinocash/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k142", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "How much credits worth of chips do you want to take? (0 to [src.worth])", title = "Take chips", default = 20, max = src.worth)
+	var/amount = rerun_ask(user, "k142", PROC_REF(interaction_self), args, /datum/prompt/number, question = "How much credits worth of chips do you want to take? (0 to [src.worth])", title = "Take chips", default = 20, max_value = src.worth)
 	if(isnull(amount))
 		return TRUE
 	if(!src || QDELETED(src))
@@ -325,7 +325,7 @@ DECLARE_INTERACTIONS(/obj/item/spacecasinocash_fake, \
 
 /// Old attack_self.
 /obj/item/spacecasinocash_fake/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k323", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "How much credits worth of chips do you want to take? (0 to [src.worth])", title = "Take chips", default = 20, max = src.worth)
+	var/amount = rerun_ask(user, "k323", PROC_REF(interaction_self), args, /datum/prompt/number, question = "How much credits worth of chips do you want to take? (0 to [src.worth])", title = "Take chips", default = 20, max_value = src.worth)
 	if(isnull(amount))
 		return TRUE
 	if(!src || QDELETED(src))

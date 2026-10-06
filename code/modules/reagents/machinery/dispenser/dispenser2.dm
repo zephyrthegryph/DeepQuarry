@@ -154,7 +154,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	return OP_OK
 
 /obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
-	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Dispenser", choices = cartridges)
+	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/prompt/choice, question = "Which cartridge would you like to remove?", title = "Chemical Dispenser", choices = cartridges)
 	if(!label)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)

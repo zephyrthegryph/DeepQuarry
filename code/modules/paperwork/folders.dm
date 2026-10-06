@@ -92,7 +92,7 @@ APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 		if(move_into(src, CONTAINER_SLOT_PAGES, W, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k98 = rerun_ask(user, "k98", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to label the folder?", title = "Folder Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+		var/_answer_k98 = rerun_ask(user, "k98", PROC_REF(interaction_item), args, /datum/prompt/text, question = "What would you like to label the folder?", title = "Folder Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = ((MAX_NAME_LEN) <= MAX_NAME_LEN))
 		if(isnull(_answer_k98))
 			return TRUE
 		var/n_name = sanitizeSafe(_answer_k98, MAX_NAME_LEN)
