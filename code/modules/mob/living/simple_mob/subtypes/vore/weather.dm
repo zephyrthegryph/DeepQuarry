@@ -139,19 +139,22 @@
 	delete_on_death = TRUE
 
 /// Attacks still to chain after a warp. A field: one chained attack every 4 s while it is non-zero.
-OM_FIELD(/mob/living/simple_mob/vore/boss_jellyfish, chain_number, 0, CHANGE_MOB_CONDITIONS)
+/mob/living/simple_mob/vore/boss_jellyfish/var/chain_number = 0
+TRACKED_BRIDGED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number, CHANGE_MOB_CONDITIONS)
 /// Who the chained attacks go at (a relation view).
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
-DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_attack, "chain_number")
 
-/// DECLARE_REPEAT while attacks remain in the chain: a dash or a puddle summon at the target.
-/mob/living/simple_mob/vore/boss_jellyfish/proc/chain_attack()
+CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	every(4 SECONDS, then(PROC_REF(chain_attack)), when = nameof(chain_number))
+
+/// A dash or a puddle summon at the target (its every() runs while attacks remain in the chain).
+/mob/living/simple_mob/vore/boss_jellyfish/proc/chain_attack(datum/act/timer_act)
 	var/atom/A = chain_target
 	if(!A)
 		set_chain_number(0)
 		icon_state = "jellyfish"
 		icon_living = "jellyfish"
-		return REPEAT_STOP
+		return
 	set_chain_number(chain_number - 1)
 	if(prob(50))
 		icon_state = "jellyfish_yellow"

@@ -2,7 +2,8 @@
 /obj/item/reagent_containers/glass/replenishing
 	var/spawning_id
 
-DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
+	every(2 SECONDS, then(PROC_REF(replenishing_step)))
 
 // ALLOW(init/INSTANCE_STATE): rolls which reagent it replenishes
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
@@ -15,7 +16,7 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 			spawning_id = new_chem
 			break
 
-/obj/item/reagent_containers/glass/replenishing/periodic_step()
+/obj/item/reagent_containers/glass/replenishing/proc/replenishing_step(datum/act/timer/A)
 	reagents.add_reagent(spawning_id, 0.3)
 
 //a talking gas mask!

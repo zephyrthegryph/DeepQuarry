@@ -1,0 +1,2 @@
+/obj/item/mop_deploy vol=5 holder=/datum/reagents 
+

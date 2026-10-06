@@ -137,7 +137,8 @@
 	var/volume = 60
 	var/static/list/fuel = list(REAGENT_ID_PHORON = 50000, REAGENT_ID_SLIMEJELLY = 25000, REAGENT_ID_FUEL = 15000, REAGENT_ID_CARBON = 10000, REAGENT_ID_ETHANOL= 10000, REAGENT_ID_NUTRIMENT = 8000, REAGENT_ID_BLOOD = 5000)
 
-DECLARE_REAGENTS(/obj/item/integrated_circuit/passive/power/chemical_cell, "volume", null)
+CAPABILITIES(/obj/item/integrated_circuit/passive/power/chemical_cell)
+	reagents(nameof(volume))
 
 /obj/item/integrated_circuit/passive/power/chemical_cell/interact(mob/user)
 	set_pin_data(IC_OUTPUT, 2, ic_ref(src))

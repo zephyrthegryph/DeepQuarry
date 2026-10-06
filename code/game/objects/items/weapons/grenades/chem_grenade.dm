@@ -19,12 +19,12 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
+	reagents(1000)
 	owns_many(nameof(beakers))
 	owns_one(nameof(detonator), /obj/item/assembly_holder)
 
 TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle))
 
-DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 
 
 /// Old attack_self.
@@ -224,11 +224,13 @@ TYPE_TABLE(/obj/item/grenade/chem_grenade/large, chem_grenade_containers, list(/
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, null, list(REAGENT_ID_ALUMINIUM = 30))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a)
+	configure(reagents(add = list(REAGENT_ID_ALUMINIUM = 30)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b, null, list(REAGENT_ID_FOAMINGAGENT = 10, REAGENT_ID_PACID = 10))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b)
+	configure(reagents(add = list(REAGENT_ID_FOAMINGAGENT = 10, REAGENT_ID_PACID = 10)))
 
 CAPABILITIES(/obj/item/grenade/chem_grenade/metalfoam)
 	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b))
@@ -244,11 +246,13 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/metalfoam)
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, null, list(REAGENT_ID_ALUMINIUM = 15, REAGENT_ID_FUEL = 40))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a)
+	configure(reagents(add = list(REAGENT_ID_ALUMINIUM = 15, REAGENT_ID_FUEL = 40)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b, null, list(REAGENT_ID_PHORON = 15, REAGENT_ID_SACID = 15))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b)
+	configure(reagents(add = list(REAGENT_ID_PHORON = 15, REAGENT_ID_SACID = 15)))
 
 CAPABILITIES(/obj/item/grenade/chem_grenade/incendiary)
 	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b))
@@ -264,11 +268,13 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/incendiary)
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, null, list(REAGENT_ID_PLANTBGONE = 25, REAGENT_ID_POTASSIUM = 25))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a)
+	configure(reagents(add = list(REAGENT_ID_PLANTBGONE = 25, REAGENT_ID_POTASSIUM = 25)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b, null, list(REAGENT_ID_PHOSPHORUS = 25, REAGENT_ID_SUGAR = 25))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b)
+	configure(reagents(add = list(REAGENT_ID_PHOSPHORUS = 25, REAGENT_ID_SUGAR = 25)))
 
 CAPABILITIES(/obj/item/grenade/chem_grenade/antiweed)
 	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b))
@@ -284,11 +290,13 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/antiweed)
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, null, list(REAGENT_ID_FLUOROSURFACTANT = 40))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a)
+	configure(reagents(add = list(REAGENT_ID_FLUOROSURFACTANT = 40)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b, null, list(REAGENT_ID_WATER = 40, REAGENT_ID_CLEANER = 10))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b)
+	configure(reagents(add = list(REAGENT_ID_WATER = 40, REAGENT_ID_CLEANER = 10)))
 
 CAPABILITIES(/obj/item/grenade/chem_grenade/cleaner)
 	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b))
@@ -304,11 +312,13 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/cleaner)
 
 /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, null, list(REAGENT_ID_PHOSPHORUS = 40, REAGENT_ID_POTASSIUM = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 40))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a)
+	configure(reagents(add = list(REAGENT_ID_PHOSPHORUS = 40, REAGENT_ID_POTASSIUM = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 40)))
 
 /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b, null, list(REAGENT_ID_SUGAR = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 80))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 80)))
 
 CAPABILITIES(/obj/item/grenade/chem_grenade/teargas)
 	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b))

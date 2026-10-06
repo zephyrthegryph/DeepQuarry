@@ -556,19 +556,23 @@
 /// Technomancer instability.
 OM_FIELD(/mob/living, instability, 0, CHANGE_MOB_CONDITIONS)
 /// Gross boolean for keeping VR mobs in VR.
-OM_FIELD(/mob/living, virtual_reality_mob, FALSE, CHANGE_MOB_CONDITIONS)
+/mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, virtual_reality_mob, CHANGE_MOB_CONDITIONS)
 /// If they're glowing!
 OM_FIELD(/mob/living, glow_toggle, FALSE, CHANGE_MOB_CONDITIONS)
 /// Ignore the manual toggle.
-OM_FIELD(/mob/living, glow_override, FALSE, CHANGE_MOB_CONDITIONS)
+/mob/living/var/glow_override = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, glow_override, CHANGE_MOB_CONDITIONS)
 OM_FIELD(/mob/living, glow_range, 2, CHANGE_MOB_CONDITIONS)
 OM_FIELD(/mob/living, glow_intensity, null, CHANGE_MOB_CONDITIONS)
 /// The color they're glowing!
 OM_FIELD(/mob/living, glow_color, "#FFFFFF", CHANGE_MOB_CONDITIONS)
 /// The mob this one was transformed from (vore/mob_tf.dm).
-OM_FIELD_TYPED(/mob/living, mob/living, tf_mob_holder, null, CHANGE_MOB_CONDITIONS)
+/mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, tf_mob_holder, CHANGE_MOB_CONDITIONS)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
-OM_FIELD(/mob, sdisabilities, 0, CHANGE_MOB_STATUS)
+/mob/var/sdisabilities = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob, sdisabilities, CHANGE_MOB_STATUS)
 OM_FIELD(/mob, ear_damage, 0, CHANGE_MOB_STATUS)
 /// Cult stuff.
 OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)

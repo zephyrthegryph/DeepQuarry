@@ -16,7 +16,7 @@
 	aspect = ASPECT_SHOCK
 	glow_color = "#0000FF" //TODO
 
-/obj/item/spell/aura/shock/periodic_step()
+/obj/item/spell/aura/shock/aura_step(datum/act/timer/A)
 	if(!pay_energy(500))
 		spent(src)
 		return

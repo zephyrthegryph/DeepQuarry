@@ -10,7 +10,8 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 
-DECLARE_PERIODIC(/obj/structure/blob/node, PERIODIC_SLOW)
+CAPABILITIES(/obj/structure/blob/node)
+	every(2 SECONDS, then(PROC_REF(node_step)))
 
 /obj/structure/blob/node/Initialize(mapload, new_overmind)
 	. = ..()
@@ -27,7 +28,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/node, TYPE_PROC_REF(/atom, appearanc
 	. += blob_overlay
 	. += "blob_node_overlay"
 
-/obj/structure/blob/node/periodic_step()
+/obj/structure/blob/node/proc/node_step(datum/act/timer/A)
 	if(overmind) // This check is so that if the core is killed, the nodes stop.
 		pulse_area(overmind, 10, BLOB_NODE_PULSE_RANGE, BLOB_NODE_EXPAND_RANGE)
 

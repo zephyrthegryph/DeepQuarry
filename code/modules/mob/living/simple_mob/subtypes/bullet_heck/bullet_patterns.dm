@@ -8,15 +8,19 @@
 #define ECLIPSE_VOLLEY_CUTOFF_ULTI 5
 
 /// Shots left in the current counted volley. A field: the volley repeats while it is non-zero.
-OM_FIELD(/mob/living/simple_mob/mechanical/mecha/eclipse, volley_shots_left, 0, CHANGE_MOB_CONDITIONS)
+/mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_shots_left = 0
+TRACKED_BRIDGED(/mob/living/simple_mob/mechanical/mecha/eclipse, volley_shots_left, CHANGE_MOB_CONDITIONS)
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_kind
 /// What the current volley is fired at (a relation view).
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/atom/volley_target
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_next_cycle
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_fire_delay = 0
-DECLARE_REPEAT(/mob/living/simple_mob/mechanical/mecha/eclipse, "volley_fire_delay", volley_step, "volley_shots_left")
 
-/// Starts a counted volley: the first shot now, the rest on the declared repeat.
+/// The every() interval of volley_step(): the current volley's fire delay.
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/volley_interval(datum/act/A)
+	return volley_fire_delay
+
+/// Starts a counted volley: the first shot now, the rest on the every() while shots remain.
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/start_volley(kind, atom/target, amount, next_cycle, fire_delay)
 	volley_kind = kind
 	rel_set(src, nameof(volley_target), target)
@@ -25,12 +29,12 @@ DECLARE_REPEAT(/mob/living/simple_mob/mechanical/mecha/eclipse, "volley_fire_del
 	set_volley_shots_left(amount)
 	volley_step()
 
-/// DECLARE_REPEAT while shots remain: one shot of the current volley.
-/mob/living/simple_mob/mechanical/mecha/eclipse/proc/volley_step()
+/// One shot of the current volley (its every() runs while shots remain).
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/volley_step(datum/act/A)
 	var/atom/target = volley_target
 	if(!target)
 		set_volley_shots_left(0)
-		return REPEAT_STOP
+		return
 	switch(volley_kind)
 		if(ECLIPSE_VOLLEY_RANDOM)
 			bullet_heck(target, rand(-7,7), rand(-7,7))
@@ -63,7 +67,6 @@ DECLARE_REPEAT(/mob/living/simple_mob/mechanical/mecha/eclipse, "volley_fire_del
 	set_volley_shots_left(volley_shots_left - 1)
 	if(volley_shots_left <= 0)
 		attackcycle = volley_next_cycle
-		return REPEAT_STOP
 
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/singleproj(atom/target, next_cycle)

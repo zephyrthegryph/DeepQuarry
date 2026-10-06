@@ -9,6 +9,7 @@ mod abi;
 mod adjacency;
 pub mod allocator;
 mod bulk;
+mod chem;
 pub mod entity;
 pub mod frame;
 mod gas;

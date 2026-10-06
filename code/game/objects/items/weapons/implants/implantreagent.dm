@@ -173,12 +173,12 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 // In format of You [self_emote_descriptor] some [generated_reagent] into [container]
 TYPE_TABLE_DECLARE(/obj/item/implant/reagent_generator, reagent_implant_self_emotes, list("transfer"))
 
-DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 
 /// Makes its reagents every 2 s from implantation on.
 /obj/item/implant/reagent_generator/var/generating = FALSE
 TRACKED(/obj/item/implant/reagent_generator, generating)
 CAPABILITIES(/obj/item/implant/reagent_generator)
+	reagents(nameof(usable_volume))
 	every(2 SECONDS, then(PROC_REF(reagent_step)), when = nameof(generating))
 
 /obj/item/implanter/reagent_generator

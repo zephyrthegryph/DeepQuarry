@@ -7,7 +7,8 @@
 	time_to_live = 300
 	pass_flags = PASSTABLE | PASSGRILLE | PASSGLASS //PASSGLASS is fine here, it's just so the visual effect can "flow" around glass
 
-DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
+CAPABILITIES(/obj/effect/effect/smoke/chem)
+	reagents(500)
 
 /obj/effect/effect/smoke/chem/Initialize(mapload)
 	. = ..()

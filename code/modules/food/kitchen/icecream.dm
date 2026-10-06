@@ -45,7 +45,6 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		else
 			return "vanilla"
 
-DECLARE_REAGENTS(/obj/machinery/icecream_vat, 100, list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
 
 /obj/machinery/icecream_vat/Initialize(mapload)
 	. = ..()
@@ -58,6 +57,7 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 )
 
 CAPABILITIES(/obj/machinery/icecream_vat)
+	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
 	interface("IcecreamVat")
 	without("ui_open")
 	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
@@ -175,7 +175,8 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 	var/ice_creamed = 0
 	var/cone_type
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/icecream, 20, list(REAGENT_ID_NUTRIMENT = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/icecream)
+	configure(reagents(volume = 20, add = list(REAGENT_ID_NUTRIMENT = 5)))
 
 /obj/item/reagent_containers/food/snacks/icecream/proc/add_ice_cream(flavour_name)
 	name = "[flavour_name] icecream"

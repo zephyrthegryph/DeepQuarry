@@ -15,7 +15,8 @@
 
 // Every container gets a holder of its (possibly mapped) volume; subtypes declare what starts in it
 // (doc/rewrite/declarative_lifecycle.md).
-DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
+CAPABILITIES(/obj/item/reagent_containers)
+	reagents(nameof(volume))
 
 /obj/item/reagent_containers/afterattack(obj/target, mob/user, flag)
 	return

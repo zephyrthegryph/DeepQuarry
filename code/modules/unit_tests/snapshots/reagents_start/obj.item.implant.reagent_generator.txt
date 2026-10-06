@@ -1,0 +1,9 @@
+/obj/item/implant/reagent_generator vol=120 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg vol=1500 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg/slow vol=3000 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg/veryslow vol=6000 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg/hicap vol=3000 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg/doublehicap vol=6000 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg/slowlowcap vol=3000 holder=/datum/reagents 
+/obj/item/implant/reagent_generator/egg/veryslowlowcap vol=6000 holder=/datum/reagents 
+

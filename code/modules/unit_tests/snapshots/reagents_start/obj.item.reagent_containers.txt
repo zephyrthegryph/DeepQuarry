@@ -1,0 +1,1561 @@
+/obj/item/reagent_containers vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/pill vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/pill/sleevingcure runtime
+/obj/item/reagent_containers/pill/neotane vol=60 holder=/datum/reagents neotane=5
+/obj/item/reagent_containers/pill/burncard vol=60 holder=/datum/reagents burncard=5
+/obj/item/reagent_containers/pill/flamecure vol=60 holder=/datum/reagents flamecure=5
+/obj/item/reagent_containers/pill/juggernog vol=60 holder=/datum/reagents juggernog=5
+/obj/item/reagent_containers/pill/curea vol=60 holder=/datum/reagents curea=10
+/obj/item/reagent_containers/pill/souldew vol=60 holder=/datum/reagents souldew=10
+/obj/item/reagent_containers/pill/purifyingagent vol=60 holder=/datum/reagents purifyingagent=10
+/obj/item/reagent_containers/pill/paroxetine vol=60 holder=/datum/reagents paroxetine=10
+/obj/item/reagent_containers/pill/adranol vol=60 holder=/datum/reagents adranol=10
+/obj/item/reagent_containers/pill/aphrodisiac vol=60 holder=/datum/reagents aphrodisiac=20
+/obj/item/reagent_containers/pill/patch vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/pill/antitox vol=60 holder=/datum/reagents anti_toxin=30
+/obj/item/reagent_containers/pill/tox vol=60 holder=/datum/reagents toxin=50
+/obj/item/reagent_containers/pill/cyanide vol=60 holder=/datum/reagents cyanide=50
+/obj/item/reagent_containers/pill/adminordrazine vol=60 holder=/datum/reagents adminordrazine=5
+/obj/item/reagent_containers/pill/stox vol=60 holder=/datum/reagents stoxin=15
+/obj/item/reagent_containers/pill/kelotane vol=60 holder=/datum/reagents kelotane=20
+/obj/item/reagent_containers/pill/paracetamol vol=60 holder=/datum/reagents paracetamol=15
+/obj/item/reagent_containers/pill/tramadol vol=60 holder=/datum/reagents tramadol=15
+/obj/item/reagent_containers/pill/methylphenidate vol=60 holder=/datum/reagents methylphenidate=10
+/obj/item/reagent_containers/pill/citalopram vol=60 holder=/datum/reagents citalopram=15
+/obj/item/reagent_containers/pill/dexalin vol=60 holder=/datum/reagents dexalin=7.5
+/obj/item/reagent_containers/pill/dexalin_plus vol=60 holder=/datum/reagents dexalinp=15
+/obj/item/reagent_containers/pill/dermaline vol=60 holder=/datum/reagents dermaline=15
+/obj/item/reagent_containers/pill/dylovene vol=60 holder=/datum/reagents anti_toxin=15
+/obj/item/reagent_containers/pill/inaprovaline vol=60 holder=/datum/reagents inaprovaline=30
+/obj/item/reagent_containers/pill/bicaridine vol=60 holder=/datum/reagents bicaridine=20
+/obj/item/reagent_containers/pill/spaceacillin vol=60 holder=/datum/reagents spaceacillin=15
+/obj/item/reagent_containers/pill/carbon vol=60 holder=/datum/reagents carbon=30
+/obj/item/reagent_containers/pill/iron vol=60 holder=/datum/reagents iron=30
+/obj/item/reagent_containers/pill/copper vol=60 holder=/datum/reagents copper=30
+/obj/item/reagent_containers/pill/happy vol=60 holder=/datum/reagents bliss=15,sugar=15
+/obj/item/reagent_containers/pill/zoom vol=60 holder=/datum/reagents expired_medicine=5,stimm=5
+/obj/item/reagent_containers/pill/diet vol=60 holder=/datum/reagents lipozine=15
+/obj/item/reagent_containers/pill/small_blood_restoration vol=60 holder=/datum/reagents copper=5,gold=5,iron=5,silver=5
+/obj/item/reagent_containers/pill/small_inaprovaline vol=60 holder=/datum/reagents inaprovaline=5
+/obj/item/reagent_containers/pill/small_prussian_blue vol=60 holder=/datum/reagents prussian_blue=5
+/obj/item/reagent_containers/pill/small_tramadol vol=60 holder=/datum/reagents tramadol=5
+/obj/item/reagent_containers/pill/small_paracetamol vol=60 holder=/datum/reagents paracetamol=5
+/obj/item/reagent_containers/pill/small_dylovene vol=60 holder=/datum/reagents anti_toxin=5
+/obj/item/reagent_containers/pill/nutriment vol=60 holder=/datum/reagents nutriment=30
+/obj/item/reagent_containers/pill/protein vol=60 holder=/datum/reagents protein=30
+/obj/item/reagent_containers/pill/rezadone vol=60 holder=/datum/reagents rezadone=5
+/obj/item/reagent_containers/pill/peridaxon vol=60 holder=/datum/reagents peridaxon=10
+/obj/item/reagent_containers/pill/carthatoline vol=60 holder=/datum/reagents carthatoline=15
+/obj/item/reagent_containers/pill/alkysine vol=60 holder=/datum/reagents alkysine=10
+/obj/item/reagent_containers/pill/imidazoline vol=60 holder=/datum/reagents imidazoline=15
+/obj/item/reagent_containers/pill/osteodaxon vol=60 holder=/datum/reagents inaprovaline=10,osteodaxon=15
+/obj/item/reagent_containers/pill/myelamine vol=60 holder=/datum/reagents inaprovaline=10,myelamine=15
+/obj/item/reagent_containers/pill/hyronalin vol=60 holder=/datum/reagents hyronalin=15
+/obj/item/reagent_containers/pill/arithrazine vol=60 holder=/datum/reagents arithrazine=5
+/obj/item/reagent_containers/pill/corophizine vol=60 holder=/datum/reagents corophizine=5
+/obj/item/reagent_containers/pill/vermicetol vol=60 holder=/datum/reagents vermicetol=15
+/obj/item/reagent_containers/pill/healing_nanites vol=60 holder=/datum/reagents healing_nanites=30
+/obj/item/reagent_containers/pill/airlock vol=60 holder=/datum/reagents anti_toxin=15,paracetamol=5
+/obj/item/reagent_containers/pill/benzilate vol=60 holder=/datum/reagents benzilate=50
+/obj/item/reagent_containers/pill/phenethylamine vol=60 holder=/datum/reagents phenethylamine=50
+/obj/item/reagent_containers/glass vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/vial vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/vial/vaccine vol=15 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/vial/random vol=30 holder=/datum/reagents cleaner=15
+/obj/item/reagent_containers/glass/beaker/vial/random/toxin vol=30 holder=/datum/reagents zombiepowder=10
+/obj/item/reagent_containers/glass/beaker/vial/sustenance vol=30 holder=/datum/reagents a_sustenance=30
+/obj/item/reagent_containers/glass/beaker/vial/bicaridine vol=30 holder=/datum/reagents bicaridine=30
+/obj/item/reagent_containers/glass/beaker/vial/dylovene vol=30 holder=/datum/reagents anti_toxin=30
+/obj/item/reagent_containers/glass/beaker/vial/dermaline vol=30 holder=/datum/reagents dermaline=30
+/obj/item/reagent_containers/glass/beaker/vial/kelotane vol=30 holder=/datum/reagents kelotane=30
+/obj/item/reagent_containers/glass/beaker/vial/inaprovaline vol=30 holder=/datum/reagents inaprovaline=30
+/obj/item/reagent_containers/glass/beaker/vial/dexalin vol=30 holder=/datum/reagents dexalin=30
+/obj/item/reagent_containers/glass/beaker/vial/dexalinplus vol=30 holder=/datum/reagents dexalinp=30
+/obj/item/reagent_containers/glass/beaker/vial/tricordrazine vol=30 holder=/datum/reagents tricordrazine=30
+/obj/item/reagent_containers/glass/beaker/vial/alkysine vol=30 holder=/datum/reagents alkysine=30
+/obj/item/reagent_containers/glass/beaker/vial/imidazoline vol=30 holder=/datum/reagents imidazoline=30
+/obj/item/reagent_containers/glass/beaker/vial/peridaxon vol=30 holder=/datum/reagents peridaxon=30
+/obj/item/reagent_containers/glass/beaker/vial/hyronalin vol=30 holder=/datum/reagents hyronalin=30
+/obj/item/reagent_containers/glass/beaker/vial/amorphorovir vol=30 holder=/datum/reagents amorphorovir=1
+/obj/item/reagent_containers/glass/beaker/vial/androrovir vol=30 holder=/datum/reagents androrovir=1
+/obj/item/reagent_containers/glass/beaker/vial/gynorovir vol=30 holder=/datum/reagents gynorovir=1
+/obj/item/reagent_containers/glass/beaker/vial/androgynorovir vol=30 holder=/datum/reagents androgynorovir=1
+/obj/item/reagent_containers/glass/beaker/vial/macrocillin vol=30 holder=/datum/reagents macrocillin=1
+/obj/item/reagent_containers/glass/beaker/vial/microcillin vol=30 holder=/datum/reagents microcillin=1
+/obj/item/reagent_containers/glass/beaker/vial/normalcillin vol=30 holder=/datum/reagents normalcillin=1
+/obj/item/reagent_containers/glass/beaker/vial/supermatter vol=30 holder=/datum/reagents supermatter=5
+/obj/item/reagent_containers/glass/beaker/vial/culture vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/vial/culture/cold vol=30 holder=/datum/reagents blood=10
+/obj/item/reagent_containers/glass/beaker/vial/culture/flu vol=30 holder=/datum/reagents blood=10
+/obj/item/reagent_containers/glass/beaker/vial/culture/blobspores vol=30 holder=/datum/reagents blood=10
+/obj/item/reagent_containers/glass/beaker/vial/culture/macrophages vol=30 holder=/datum/reagents blood=10
+/obj/item/reagent_containers/glass/beaker/vial/culture/random_virus vol=30 holder=/datum/reagents blood=10
+/obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/minor vol=30 holder=/datum/reagents blood=20
+/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a vol=60 holder=/datum/reagents aluminum=30
+/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b vol=60 holder=/datum/reagents foaming_agent=10,pacid=10
+/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a vol=60 holder=/datum/reagents aluminum=15,fuel=40
+/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b vol=60 holder=/datum/reagents phoron=15,sacid=15
+/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a vol=60 holder=/datum/reagents plantbgone=25,potassium=25
+/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b vol=60 holder=/datum/reagents phosphorus=25,sugar=25
+/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a vol=60 holder=/datum/reagents fluorosurfactant=40
+/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b vol=60 holder=/datum/reagents cleaner=10,water=40
+/obj/item/reagent_containers/glass/beaker/large vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a vol=120 holder=/datum/reagents condensedcapsaicin=40,phosphorus=40,potassium=40
+/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b vol=120 holder=/datum/reagents condensedcapsaicin=80,sugar=40
+/obj/item/reagent_containers/glass/beaker/large/borg vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/noreact vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/bluespace vol=300 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/cryoxadone vol=60 holder=/datum/reagents cryoxadone=30
+/obj/item/reagent_containers/glass/beaker/sulphuric vol=60 holder=/datum/reagents sacid=60
+/obj/item/reagent_containers/glass/beaker/stopperedbottle vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/neurotoxin vol=60 holder=/datum/reagents neurotoxin=50
+/obj/item/reagent_containers/glass/beaker/measuring_cup vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/lichpowder vol=60 holder=/datum/reagents lichpowder=50
+/obj/item/reagent_containers/glass/beaker/zombiepowder vol=60 holder=/datum/reagents zombiepowder=50
+/obj/item/reagent_containers/glass/paint vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/red vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/yellow vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/green vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/blue vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/violet vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/black vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/grey vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/orange vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/purple vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/cyan vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/paint/white vol=60 holder=/datum/reagents paint=60
+/obj/item/reagent_containers/glass/bottle vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/bottle/adminordrazine vol=60 holder=/datum/reagents adminordrazine=60
+/obj/item/reagent_containers/glass/bottle/essential_oil vol=60 holder=/datum/reagents essential_oil=60
+/obj/item/reagent_containers/glass/bottle/inaprovaline vol=60 holder=/datum/reagents inaprovaline=60
+/obj/item/reagent_containers/glass/bottle/toxin vol=60 holder=/datum/reagents toxin=60
+/obj/item/reagent_containers/glass/bottle/cyanide vol=60 holder=/datum/reagents cyanide=30
+/obj/item/reagent_containers/glass/bottle/stoxin vol=60 holder=/datum/reagents stoxin=60
+/obj/item/reagent_containers/glass/bottle/chloralhydrate vol=60 holder=/datum/reagents chloralhydrate=30
+/obj/item/reagent_containers/glass/bottle/antitoxin vol=60 holder=/datum/reagents anti_toxin=60
+/obj/item/reagent_containers/glass/bottle/mutagen vol=60 holder=/datum/reagents mutagen=60
+/obj/item/reagent_containers/glass/bottle/ammonia vol=60 holder=/datum/reagents ammonia=60
+/obj/item/reagent_containers/glass/bottle/eznutrient vol=60 holder=/datum/reagents eznutrient=60
+/obj/item/reagent_containers/glass/bottle/left4zed vol=60 holder=/datum/reagents left4zed=60
+/obj/item/reagent_containers/glass/bottle/robustharvest vol=60 holder=/datum/reagents robustharvest=60
+/obj/item/reagent_containers/glass/bottle/diethylamine vol=60 holder=/datum/reagents diethylamine=60
+/obj/item/reagent_containers/glass/bottle/pacid vol=60 holder=/datum/reagents pacid=60
+/obj/item/reagent_containers/glass/bottle/capsaicin vol=60 holder=/datum/reagents capsaicin=60
+/obj/item/reagent_containers/glass/bottle/frostoil vol=60 holder=/datum/reagents frostoil=60
+/obj/item/reagent_containers/glass/bottle/biomass vol=60 holder=/datum/reagents biomass=60
+/obj/item/reagent_containers/glass/bottle/cakebatter vol=60 holder=/datum/reagents cakebatter=60
+/obj/item/reagent_containers/glass/bottle/cinnamonpowder vol=60 holder=/datum/reagents cinnamonpowder=30
+/obj/item/reagent_containers/glass/bottle/nothing vol=60 holder=/datum/reagents nothing=60
+/obj/item/reagent_containers/glass/bottle/gelatin vol=60 holder=/datum/reagents gelatin=60
+/obj/item/reagent_containers/glass/bottle/lube vol=60 holder=/datum/reagents lube=60
+/obj/item/reagent_containers/glass/bottle/sorbitol vol=60 holder=/datum/reagents sorbitol=60
+/obj/item/reagent_containers/glass/bottle/bicaridine vol=60 holder=/datum/reagents bicaridine=60
+/obj/item/reagent_containers/glass/bottle/vermicetol vol=60 holder=/datum/reagents vermicetol=60
+/obj/item/reagent_containers/glass/bottle/keloderm vol=60 holder=/datum/reagents dermaline=30,kelotane=30
+/obj/item/reagent_containers/glass/bottle/dermaline vol=60 holder=/datum/reagents dermaline=60
+/obj/item/reagent_containers/glass/bottle/carthatoline vol=60 holder=/datum/reagents carthatoline=60
+/obj/item/reagent_containers/glass/bottle/dexalinp vol=60 holder=/datum/reagents dexalinp=60
+/obj/item/reagent_containers/glass/bottle/tramadol vol=60 holder=/datum/reagents tramadol=60
+/obj/item/reagent_containers/glass/bottle/oxycodone vol=60 holder=/datum/reagents oxycodone=60
+/obj/item/reagent_containers/glass/bottle/alkysine vol=60 holder=/datum/reagents alkysine=60
+/obj/item/reagent_containers/glass/bottle/imidazoline vol=60 holder=/datum/reagents imidazoline=60
+/obj/item/reagent_containers/glass/bottle/peridaxon vol=60 holder=/datum/reagents peridaxon=60
+/obj/item/reagent_containers/glass/bottle/osteodaxon vol=60 holder=/datum/reagents osteodaxon=60
+/obj/item/reagent_containers/glass/bottle/myelamine vol=60 holder=/datum/reagents myelamine=60
+/obj/item/reagent_containers/glass/bottle/hyronalin vol=60 holder=/datum/reagents hyronalin=60
+/obj/item/reagent_containers/glass/bottle/arithrazine vol=60 holder=/datum/reagents arithrazine=60
+/obj/item/reagent_containers/glass/bottle/spaceacillin vol=60 holder=/datum/reagents spaceacillin=60
+/obj/item/reagent_containers/glass/bottle/corophizine vol=60 holder=/datum/reagents corophizine=60
+/obj/item/reagent_containers/glass/bottle/rezadone vol=60 holder=/datum/reagents rezadone=60
+/obj/item/reagent_containers/glass/bottle/healing_nanites vol=60 holder=/datum/reagents healing_nanites=60
+/obj/item/reagent_containers/glass/bottle/ickypak vol=60 holder=/datum/reagents ickypak=60
+/obj/item/reagent_containers/glass/bottle/unsorbitol vol=60 holder=/datum/reagents unsorbitol=60
+/obj/item/reagent_containers/glass/bottle/potion vol=60 holder=/datum/reagents bicaridine=30
+/obj/item/reagent_containers/glass/bottle/potion/healing vol=60 holder=/datum/reagents bicaridine=30
+/obj/item/reagent_containers/glass/bottle/potion/greater_healing vol=60 holder=/datum/reagents vermicetol=30
+/obj/item/reagent_containers/glass/bottle/potion/fire_resist vol=60 holder=/datum/reagents dermaline=15,kelotane=15
+/obj/item/reagent_containers/glass/bottle/potion/antidote vol=60 holder=/datum/reagents anti_toxin=30
+/obj/item/reagent_containers/glass/bottle/potion/water vol=60 holder=/datum/reagents dexalinp=30
+/obj/item/reagent_containers/glass/bottle/potion/regeneration vol=60 holder=/datum/reagents peridaxon=30
+/obj/item/reagent_containers/glass/bottle/potion/panacea vol=60 holder=/datum/reagents spaceacillin=30
+/obj/item/reagent_containers/glass/bottle/potion/magic vol=60 holder=/datum/reagents hyronalin=30
+/obj/item/reagent_containers/glass/bottle/potion/lightness vol=60 holder=/datum/reagents ickypak=30
+/obj/item/reagent_containers/glass/bottle/potion/SOP vol=60 holder=/datum/reagents myelamine=30
+/obj/item/reagent_containers/glass/bottle/potion/shrink vol=60 holder=/datum/reagents microcillin=1
+/obj/item/reagent_containers/glass/bottle/potion/growth vol=60 holder=/datum/reagents capsaicin=5,macrocillin=1
+/obj/item/reagent_containers/glass/bottle/potion/pain vol=60 holder=/datum/reagents tramadol=30
+/obj/item/reagent_containers/glass/bottle/potion/faerie vol=60 holder=/datum/reagents psilocybin=30
+/obj/item/reagent_containers/glass/bottle/potion/relaxation vol=60 holder=/datum/reagents ambrosia_extract=30
+/obj/item/reagent_containers/glass/bottle/potion/speed vol=60 holder=/datum/reagents hyperzine=30
+/obj/item/reagent_containers/glass/bottle/potion/attractiveness vol=60 holder=/datum/reagents menthol=30
+/obj/item/reagent_containers/glass/bottle/potion/girljuice vol=60 holder=/datum/reagents gynorovir=1
+/obj/item/reagent_containers/glass/bottle/potion/boyjuice vol=60 holder=/datum/reagents androrovir=1
+/obj/item/reagent_containers/glass/bottle/potion/badpolymorph vol=60 holder=/datum/reagents mutagen=30
+/obj/item/reagent_containers/glass/bottle/potion/bonerepair vol=60 holder=/datum/reagents osteodaxon=1
+/obj/item/reagent_containers/glass/bottle/potion/truepolymorph vol=60 holder=/datum/reagents polymorph=1
+/obj/item/reagent_containers/glass/bottle/potion/glamour vol=60 holder=/datum/reagents glamour=1
+/obj/item/reagent_containers/glass/bottle/potion/plain vol=60 holder=/datum/reagents water=30
+/obj/item/reagent_containers/glass/bottle/potion/ethanol vol=60 holder=/datum/reagents ethanol=30
+/obj/item/reagent_containers/glass/bottle/potion/sugar vol=60 holder=/datum/reagents sugar=30
+/obj/item/reagent_containers/glass/bottle/potion/capsaicin vol=60 holder=/datum/reagents capsaicin=30
+/obj/item/reagent_containers/glass/bottle/potion/soporific vol=60 holder=/datum/reagents stoxin=30
+/obj/item/reagent_containers/glass/bottle/potion/lipostipo vol=60 holder=/datum/reagents lipostipo=30
+/obj/item/reagent_containers/glass/bottle/potion/phoron vol=60 holder=/datum/reagents phoron=10
+/obj/item/reagent_containers/glass/bottle/potion/invisibility vol=60 holder=/datum/reagents transparent_glamour=1
+/obj/item/reagent_containers/glass/bottle/potion/scaling vol=60 holder=/datum/reagents scaling_glamour=1
+/obj/item/reagent_containers/glass/bottle/potion/darksight vol=60 holder=/datum/reagents twinkling_glamour=1
+/obj/item/reagent_containers/glass/bottle/robot vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/bottle/robot/inaprovaline vol=60 holder=/datum/reagents inaprovaline=60
+/obj/item/reagent_containers/glass/bottle/robot/antitoxin vol=60 holder=/datum/reagents anti_toxin=60
+/obj/item/reagent_containers/glass/bottle/poppy vol=60 holder=/datum/reagents bicaridine=30,nutriment=30
+/obj/item/reagent_containers/glass/rag vol=10 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/bucket vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/bucket/cyborg vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/bucket/wood vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/cooler_bottle vol=2000 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/pint_mug vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/kettle vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/replenishing vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/syringe vol=15 holder=/datum/reagents 
+/obj/item/reagent_containers/syringe/ld50_syringe vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/syringe/ld50_syringe/choral vol=50 holder=/datum/reagents chloralhydrate=50
+/obj/item/reagent_containers/syringe/inaprovaline vol=15 holder=/datum/reagents inaprovaline=15
+/obj/item/reagent_containers/syringe/antitoxin vol=15 holder=/datum/reagents anti_toxin=15
+/obj/item/reagent_containers/syringe/antiviral vol=15 holder=/datum/reagents spaceacillin=15
+/obj/item/reagent_containers/syringe/drugs vol=15 holder=/datum/reagents bliss=5,cryptobiolin=5,mindbreaker=5
+/obj/item/reagent_containers/syringe/steroid vol=15 holder=/datum/reagents hyperzine=10
+/obj/item/reagent_containers/syringe/old vol=15 holder=/datum/reagents 
+/obj/item/reagent_containers/food vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/bread vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/bread/filled vol=80 holder=/datum/reagents nutriment=2.4
+/obj/item/reagent_containers/food/snacks/slice/margherita vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/margherita/filled vol=80 holder=/datum/reagents nutriment=11.5,protein=0.833,tomatojuice=1
+/obj/item/reagent_containers/food/snacks/slice/meatpizza vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/meatpizza/filled vol=80 holder=/datum/reagents nutriment=3.333,protein=5.667,tomatojuice=1
+/obj/item/reagent_containers/food/snacks/slice/mushroompizza vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/mushroompizza/filled vol=80 holder=/datum/reagents fungi=0.833,nutriment=11.667,protein=0.833
+/obj/item/reagent_containers/food/snacks/slice/vegetablepizza vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/vegetablepizza/filled vol=80 holder=/datum/reagents imidazoline=2,nutriment=8.333,protein=0.833,tomatojuice=1
+/obj/item/reagent_containers/food/snacks/slice/meatbread vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/meatbread/filled vol=80 holder=/datum/reagents nutriment=4,protein=4
+/obj/item/reagent_containers/food/snacks/slice/xenomeatbread vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/xenomeatbread/filled vol=80 holder=/datum/reagents nutriment=4,protein=4
+/obj/item/reagent_containers/food/snacks/slice/bananabread vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/bananabread/filled vol=80 holder=/datum/reagents banana=4,nutriment=4
+/obj/item/reagent_containers/food/snacks/slice/tofubread vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/tofubread/filled vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/slice/creamcheesebread vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/creamcheesebread/filled vol=80 holder=/datum/reagents nutriment=2,protein=3
+/obj/item/reagent_containers/food/snacks/slice/carrotcake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/carrotcake/filled vol=80 holder=/datum/reagents imidazoline=2,nutriment=10
+/obj/item/reagent_containers/food/snacks/slice/braincake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/braincake/filled vol=80 holder=/datum/reagents alkysine=2,nutriment=2,protein=5
+/obj/item/reagent_containers/food/snacks/slice/cheesecake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/cheesecake/filled vol=80 holder=/datum/reagents nutriment=4,protein=3
+/obj/item/reagent_containers/food/snacks/slice/plaincake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/plaincake/filled vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/slice/orangecake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/orangecake/filled vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/slice/limecake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/limecake/filled vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/slice/lemoncake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/lemoncake/filled vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/slice/chocolatecake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/chocolatecake/filled vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/slice/birthdaycake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/birthdaycake/filled vol=80 holder=/datum/reagents nutriment=8,sprinkles=2
+/obj/item/reagent_containers/food/snacks/slice/applecake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/applecake/filled vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/slice/pumpkinpie vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/pumpkinpie/filled vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/slice/peanutcake vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/peanutcake/filled vol=80 holder=/datum/reagents nutriment=4,protein=1
+/obj/item/reagent_containers/food/snacks/slice/oldpizza vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito vol=80 holder=/datum/reagents nutriment=45,protein=12
+/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/filled vol=80 holder=/datum/reagents nutriment=45,protein=12
+/obj/item/reagent_containers/food/snacks/slice/buttspie vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/sushi vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/sushi/filled vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slice/sushi/filled/filled vol=80 holder=/datum/reagents nutriment=6,protein=2
+/obj/item/reagent_containers/food/snacks/tastybread vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/tastybread/sequel vol=80 holder=/datum/reagents nutriment=24
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/grown vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/mushroom vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/mushroom/libertycap vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/ambrosiavulgaris vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/ambrosiadeus vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif/sifpod vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif/wabback vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif/blackwabback vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif/wildwabback vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif/eyebulbs vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/grown/sif/cavebulbs vol=80 holder=/datum/reagents nutriment=1,soymilk=10
+/obj/item/reagent_containers/food/snacks/candy vol=80 holder=/datum/reagents nutriment=2,sugar=3
+/obj/item/reagent_containers/food/snacks/candy/donor vol=80 holder=/datum/reagents nutriment=18,sugar=6
+/obj/item/reagent_containers/food/snacks/candy/proteinbar vol=80 holder=/datum/reagents nutriment=18,protein=4,sugar=7
+/obj/item/reagent_containers/food/snacks/candy/gummy vol=80 holder=/datum/reagents nutriment=10,sugar=8
+/obj/item/reagent_containers/food/snacks/sosjerky vol=80 holder=/datum/reagents protein=8
+/obj/item/reagent_containers/food/snacks/unajerky vol=80 holder=/datum/reagents capsaicin=2,protein=8
+/obj/item/reagent_containers/food/snacks/cheesiehonkers vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/no_raisin vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/packaged vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie vol=80 holder=/datum/reagents nutriment=8,sugar=4
+/obj/item/reagent_containers/food/snacks/packaged/lunacake vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/packaged/darklunacake vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/packaged/mochicake vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/packaged/genration vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/packaged/meatration vol=80 holder=/datum/reagents nutriment=8,protein=4
+/obj/item/reagent_containers/food/snacks/packaged/vegration vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/packaged/sweetration vol=80 holder=/datum/reagents nutriment=8,sugar=6
+/obj/item/reagent_containers/food/snacks/packaged/vendburger vol=80 holder=/datum/reagents nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/packaged/vendburger/ancient vol=80 holder=/datum/reagents mindbreaker=2,mold=5,nutriment=6,salmonella=5,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/packaged/vendhotdog vol=80 holder=/datum/reagents nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/packaged/vendburrito vol=80 holder=/datum/reagents nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/packaged/pasty vol=80 holder=/datum/reagents nutriment=8,protein=2
+/obj/item/reagent_containers/food/snacks/packaged/sausageroll vol=80 holder=/datum/reagents nutriment=6,protein=2
+/obj/item/reagent_containers/food/snacks/packaged/scotchegg vol=80 holder=/datum/reagents nutriment=6,protein=2
+/obj/item/reagent_containers/food/snacks/packaged/porkpie vol=80 holder=/datum/reagents nutriment=6,protein=2
+/obj/item/reagent_containers/food/snacks/skrellsnacks vol=80 holder=/datum/reagents fungi=1,nutriment=20,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/chips vol=80 holder=/datum/reagents nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/chips/bbq vol=80 holder=/datum/reagents nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/chips/snv vol=80 holder=/datum/reagents nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/brainburger vol=80 holder=/datum/reagents alkysine=6,protein=6
+/obj/item/reagent_containers/food/snacks/ghostburger vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/human vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/human/burger vol=80 holder=/datum/reagents protein=6
+/obj/item/reagent_containers/food/snacks/human/kabob vol=80 holder=/datum/reagents protein=8
+/obj/item/reagent_containers/food/snacks/cheeseburger vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/monkeyburger vol=80 holder=/datum/reagents nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/fishburger vol=80 holder=/datum/reagents protein=6
+/obj/item/reagent_containers/food/snacks/tofuburger vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/roburger vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/roburgerbig vol=100 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/xenoburger vol=80 holder=/datum/reagents protein=8
+/obj/item/reagent_containers/food/snacks/clownburger vol=80 holder=/datum/reagents nutriment=12,protein=2
+/obj/item/reagent_containers/food/snacks/mimeburger vol=80 holder=/datum/reagents nutriment=24
+/obj/item/reagent_containers/food/snacks/spellburger vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/jellyburger vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/jellyburger/slime vol=80 holder=/datum/reagents nutriment=10,slimejelly=5
+/obj/item/reagent_containers/food/snacks/jellyburger/cherry vol=80 holder=/datum/reagents cherryjelly=5,nutriment=10
+/obj/item/reagent_containers/food/snacks/bigbiteburger vol=80 holder=/datum/reagents nutriment=8,protein=10
+/obj/item/reagent_containers/food/snacks/superbiteburger vol=80 holder=/datum/reagents nutriment=50,protein=25
+/obj/item/reagent_containers/food/snacks/sandwich vol=80 holder=/datum/reagents nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/toastedsandwich vol=80 holder=/datum/reagents carbon=2,nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/grilledcheese vol=80 holder=/datum/reagents nutriment=6,protein=4
+/obj/item/reagent_containers/food/snacks/jellysandwich vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/jellysandwich/slime vol=80 holder=/datum/reagents nutriment=4,slimejelly=5
+/obj/item/reagent_containers/food/snacks/jellysandwich/peanutbutter vol=80 holder=/datum/reagents nutriment=4,peanutbutter=5
+/obj/item/reagent_containers/food/snacks/jellysandwich/cherry vol=80 holder=/datum/reagents cherryjelly=5,nutriment=4
+/obj/item/reagent_containers/food/snacks/cookie vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/chocolatebar vol=80 holder=/datum/reagents coco=2,nutriment=4,sugar=2
+/obj/item/reagent_containers/food/snacks/chocolateegg vol=80 holder=/datum/reagents coco=2,nutriment=6,sugar=2
+/obj/item/reagent_containers/food/snacks/candy_corn vol=80 holder=/datum/reagents nutriment=8,sugar=2
+/obj/item/reagent_containers/food/snacks/donut vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/donut/chaos vol=80 holder=/datum/reagents nutriment=4,sprinkles=4
+/obj/item/reagent_containers/food/snacks/donut/plain vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/plain/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/plain/jelly/poisonberry vol=80 holder=/datum/reagents berryjuice=5,nutriment=12,poisonberryjuice=5
+/obj/item/reagent_containers/food/snacks/donut/plain/jelly/slimejelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12,slimejelly=5
+/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryjelly vol=80 holder=/datum/reagents berryjuice=5,cherryjelly=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/pink vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/pink/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/purple vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/purple/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/green vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/green/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/beige vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/beige/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/choc vol=80 holder=/datum/reagents chocolate=5,nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/choc/jelly vol=80 holder=/datum/reagents berryjuice=5,chocolate=10,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/blue vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/blue/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/yellow vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/yellow/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/olive vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/olive/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/donut/homer vol=80 holder=/datum/reagents nutriment=9,sprinkles=1
+/obj/item/reagent_containers/food/snacks/donut/homer/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12,sprinkles=2
+/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles vol=80 holder=/datum/reagents chocolate=1,nutriment=9,sprinkles=1
+/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly vol=80 holder=/datum/reagents berryjuice=5,chocolate=2,nutriment=12,sprinkles=2
+/obj/item/reagent_containers/food/snacks/donut/meat vol=80 holder=/datum/reagents nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/donut/laugh vol=80 holder=/datum/reagents nutriment=9
+/obj/item/reagent_containers/food/snacks/donut/laugh/jelly vol=80 holder=/datum/reagents berryjuice=5,nutriment=12
+/obj/item/reagent_containers/food/snacks/popcorn vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/fortunecookie vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/candiedapple vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit vol=80 holder=/datum/reagents fungi=1,nutriment=10
+/obj/item/reagent_containers/food/snacks/chawanmushi vol=80 holder=/datum/reagents protein=5
+/obj/item/reagent_containers/food/snacks/cracker vol=80 holder=/datum/reagents nutriment=2,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/friedegg vol=80 holder=/datum/reagents blackpepper=1,protein=3,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/tofurkey vol=80 holder=/datum/reagents nutriment=24
+/obj/item/reagent_containers/food/snacks/carpmeat vol=80 holder=/datum/reagents carpotoxin=3,seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/fish vol=80 holder=/datum/reagents seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/fish/sif vol=80 holder=/datum/reagents seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/fish/sharkmeat vol=80 holder=/datum/reagents nutriment=4,protein=2,seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/ray vol=80 holder=/datum/reagents seafood=3,stoxin=3
+/obj/item/reagent_containers/food/snacks/carpmeat/gnat vol=80 holder=/datum/reagents carpotoxin=1,seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/shark vol=80 holder=/datum/reagents carpotoxin=5,seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/sif vol=80 holder=/datum/reagents seafood=3
+/obj/item/reagent_containers/food/snacks/carpmeat/sif/murkfish vol=80 holder=/datum/reagents seafood=3
+/obj/item/reagent_containers/food/snacks/fishfingers vol=80 holder=/datum/reagents seafood=4
+/obj/item/reagent_containers/food/snacks/omelette vol=80 holder=/datum/reagents protein=8
+/obj/item/reagent_containers/food/snacks/berryclafoutis vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/berryclafoutis/berry vol=80 holder=/datum/reagents berryjuice=5,nutriment=8
+/obj/item/reagent_containers/food/snacks/berryclafoutis/poison vol=80 holder=/datum/reagents nutriment=8,poisonberryjuice=5
+/obj/item/reagent_containers/food/snacks/waffles vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/eggplantparm vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/soylentgreen vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/soylenviridians vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/wingfangchu vol=80 holder=/datum/reagents protein=6
+/obj/item/reagent_containers/food/snacks/monkeykabob vol=80 holder=/datum/reagents protein=8
+/obj/item/reagent_containers/food/snacks/tofukabob vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/cubancarp vol=80 holder=/datum/reagents capsaicin=3,nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/loadedbakedpotato vol=80 holder=/datum/reagents nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/fries vol=80 holder=/datum/reagents nutriment=8,oil=1.2
+/obj/item/reagent_containers/food/snacks/spagetti vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/cheesyfries vol=80 holder=/datum/reagents nutriment=8,protein=2
+/obj/item/reagent_containers/food/snacks/enchiladas vol=80 holder=/datum/reagents capsaicin=6,nutriment=4,protein=6
+/obj/item/reagent_containers/food/snacks/taco vol=80 holder=/datum/reagents nutriment=8,protein=3
+/obj/item/reagent_containers/food/snacks/monkeysdelight vol=80 holder=/datum/reagents banana=5,blackpepper=1,protein=10,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/fishandchips vol=80 holder=/datum/reagents nutriment=6,protein=3,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/rofflewaffles vol=80 holder=/datum/reagents nutriment=16,psilocybin=8
+/obj/item/reagent_containers/food/snacks/stew vol=80 holder=/datum/reagents fungi=1,imidazoline=5,nutriment=7,protein=4,squirt_cider=15
+/obj/item/reagent_containers/food/snacks/stewedsoymeat vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/boiledspagetti vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/boiledrice vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ricepudding vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/pastatomato vol=80 holder=/datum/reagents nutriment=12,tomatojuice=10
+/obj/item/reagent_containers/food/snacks/meatballspagetti vol=80 holder=/datum/reagents nutriment=8,protein=4
+/obj/item/reagent_containers/food/snacks/spesslaw vol=80 holder=/datum/reagents nutriment=8,protein=4
+/obj/item/reagent_containers/food/snacks/carrotfries vol=80 holder=/datum/reagents imidazoline=3,nutriment=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/appletart vol=80 holder=/datum/reagents gold=5,nutriment=16
+/obj/item/reagent_containers/food/snacks/sliceable vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/sliceable/pizza vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita vol=80 holder=/datum/reagents nutriment=69,protein=5,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice vol=80 holder=/datum/reagents nutriment=69,protein=5,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple vol=80 holder=/datum/reagents cheese=5,nutriment=60,protein=4,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple/bigslice vol=80 holder=/datum/reagents cheese=5,nutriment=60,protein=4,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza vol=80 holder=/datum/reagents nutriment=20,protein=34,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza/bigslice vol=80 holder=/datum/reagents nutriment=20,protein=34,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza vol=80 holder=/datum/reagents fungi=5,nutriment=70,protein=5
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza/bigslice vol=80 holder=/datum/reagents fungi=5,nutriment=70,protein=5
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza vol=80 holder=/datum/reagents imidazoline=12,nutriment=50,protein=5,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza/bigslice vol=80 holder=/datum/reagents imidazoline=12,nutriment=50,protein=5,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch vol=80 holder=/datum/reagents batter=6.5,nutriment=50,oil=4
+/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza vol=80 holder=/datum/reagents mold=8,nutriment=20,protein=5,tomatojuice=6
+/obj/item/reagent_containers/food/snacks/sliceable/meatbread vol=80 holder=/datum/reagents nutriment=20,protein=20
+/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread vol=80 holder=/datum/reagents nutriment=20,protein=20
+/obj/item/reagent_containers/food/snacks/sliceable/bananabread vol=80 holder=/datum/reagents banana=20,nutriment=20
+/obj/item/reagent_containers/food/snacks/sliceable/tofubread vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/sliceable/bread vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread vol=80 holder=/datum/reagents nutriment=10,protein=15
+/obj/item/reagent_containers/food/snacks/sliceable/carrotcake vol=80 holder=/datum/reagents imidazoline=10,nutriment=50
+/obj/item/reagent_containers/food/snacks/sliceable/braincake vol=80 holder=/datum/reagents alkysine=10,nutriment=10,protein=25
+/obj/item/reagent_containers/food/snacks/sliceable/cheesecake vol=80 holder=/datum/reagents nutriment=20,protein=15
+/obj/item/reagent_containers/food/snacks/sliceable/plaincake vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/sliceable/orangecake vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/sliceable/limecake vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/sliceable/lemoncake vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/sliceable/chocolatecake vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake vol=80 holder=/datum/reagents nutriment=40,sprinkles=10
+/obj/item/reagent_containers/food/snacks/sliceable/applecake vol=80 holder=/datum/reagents nutriment=30
+/obj/item/reagent_containers/food/snacks/sliceable/pumpkinpie vol=80 holder=/datum/reagents nutriment=30
+/obj/item/reagent_containers/food/snacks/sliceable/peanutcake vol=80 holder=/datum/reagents nutriment=20,protein=5
+/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel vol=80 holder=/datum/reagents nutriment=20,protein=10
+/obj/item/reagent_containers/food/snacks/sliceable/grilled_carp vol=80 holder=/datum/reagents seafood=12
+/obj/item/reagent_containers/food/snacks/sliceable/keylimepie vol=80 holder=/datum/reagents nutriment=32,protein=4
+/obj/item/reagent_containers/food/snacks/sliceable/quiche vol=80 holder=/datum/reagents nutriment=20,protein=10
+/obj/item/reagent_containers/food/snacks/sliceable/brownies vol=80 holder=/datum/reagents nutriment=16,protein=2
+/obj/item/reagent_containers/food/snacks/sliceable/cosmicbrownies vol=80 holder=/datum/reagents ambrosia_extract=2,bicaridine=1,kelotane=1,nutriment=16,protein=2,toxin=1
+/obj/item/reagent_containers/food/snacks/sliceable/buchedenoel vol=80 holder=/datum/reagents coco=5,nutriment=40,sugar=9
+/obj/item/reagent_containers/food/snacks/sliceable/turkey vol=80 holder=/datum/reagents blackpepper=1,cookingoil=1,nutriment=40,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/sliceable/suppermatter vol=80 holder=/datum/reagents nutriment=80
+/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter vol=80 holder=/datum/reagents nutriment=80
+/obj/item/reagent_containers/food/snacks/sliceable/flatdough vol=80 holder=/datum/reagents nutriment=6,protein=1
+/obj/item/reagent_containers/food/snacks/sliceable/supremoburrito vol=80 holder=/datum/reagents nutriment=30,protein=50
+/obj/item/reagent_containers/food/snacks/sliceable/blondies vol=80 holder=/datum/reagents nutriment=16,protein=2
+/obj/item/reagent_containers/food/snacks/sliceable/sushi vol=80 holder=/datum/reagents nutriment=30,protein=10
+/obj/item/reagent_containers/food/snacks/sliceable/monkfish vol=80 holder=/datum/reagents nutriment=60
+/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains vol=80 holder=/datum/reagents carbon=5,nutriment=20
+/obj/item/reagent_containers/food/snacks/sliceable/sharkchunk vol=80 holder=/datum/reagents nutriment=30,protein=20
+/obj/item/reagent_containers/food/snacks/poppypretzel vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/baguette vol=80 holder=/datum/reagents blackpepper=1,nutriment=12,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/jelliedtoast vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/jelliedtoast/cherry vol=80 holder=/datum/reagents cherryjelly=5,nutriment=2
+/obj/item/reagent_containers/food/snacks/jelliedtoast/slime vol=80 holder=/datum/reagents nutriment=2,slimejelly=5
+/obj/item/reagent_containers/food/snacks/twobread vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/meatballsoup vol=80 holder=/datum/reagents protein=8,water=5
+/obj/item/reagent_containers/food/snacks/slimesoup vol=80 holder=/datum/reagents slimejelly=5,water=10
+/obj/item/reagent_containers/food/snacks/bloodsoup vol=80 holder=/datum/reagents blood=10,protein=2,water=5
+/obj/item/reagent_containers/food/snacks/clownstears vol=80 holder=/datum/reagents banana=5,nutriment=8,sodiumchloride=1,water=10
+/obj/item/reagent_containers/food/snacks/vegetablesoup vol=80 holder=/datum/reagents vegetable_soup=10
+/obj/item/reagent_containers/food/snacks/nettlesoup vol=80 holder=/datum/reagents nutriment=16,tricordrazine=5,water=5
+/obj/item/reagent_containers/food/snacks/mysterysoup vol=80 holder=/datum/reagents nutriment=2,slimejelly=10,water=10
+/obj/item/reagent_containers/food/snacks/wishsoup vol=80 holder=/datum/reagents water=10
+/obj/item/reagent_containers/food/snacks/hotchili vol=80 holder=/datum/reagents capsaicin=3,nutriment=6,protein=3,tomatojuice=2
+/obj/item/reagent_containers/food/snacks/coldchili vol=80 holder=/datum/reagents frostoil=3,nutriment=6,protein=3,tomatojuice=2
+/obj/item/reagent_containers/food/snacks/tomatosoup vol=80 holder=/datum/reagents tomato_soup=10
+/obj/item/reagent_containers/food/snacks/milosoup vol=80 holder=/datum/reagents nutriment=16,water=5
+/obj/item/reagent_containers/food/snacks/mushroomsoup vol=80 holder=/datum/reagents mushroom_soup=10
+/obj/item/reagent_containers/food/snacks/beetsoup vol=80 holder=/datum/reagents beet_soup=10
+/obj/item/reagent_containers/food/snacks/pie vol=80 holder=/datum/reagents banana=5,nutriment=8
+/obj/item/reagent_containers/food/snacks/meatpie vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/tofupie vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/plump_pie vol=80 holder=/datum/reagents fungi=2,nutriment=24,tricordrazine=5
+/obj/item/reagent_containers/food/snacks/xemeatpie vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/applepie vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/cherrypie vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/boiledegg vol=80 holder=/datum/reagents protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/spicy vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/teriyaki vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/pizza vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/honk vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/berry vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/gondola vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket vol=80 holder=/datum/reagents nutriment=4,protein=2
+/obj/item/reagent_containers/food/snacks/donkpocket/ascended vol=80 holder=/datum/reagents nutriment=10,protein=2,thermite_v=3,uranium=3
+/obj/item/reagent_containers/food/snacks/sausage vol=80 holder=/datum/reagents protein=6
+/obj/item/reagent_containers/food/snacks/sausage/battered vol=80 holder=/datum/reagents batter=1.7,oil=1.5,protein=12
+/obj/item/reagent_containers/food/snacks/muffin vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/tossedsalad vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/validsalad vol=80 holder=/datum/reagents nutriment=12,protein=2
+/obj/item/reagent_containers/food/snacks/dionaroast vol=80 holder=/datum/reagents nutriment=12,radium=2
+/obj/item/reagent_containers/food/snacks/csandwich vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/aesirsalad vol=80 holder=/datum/reagents doctorsdelight=8,nutriment=16,tricordrazine=8
+/obj/item/reagent_containers/food/snacks/chocolatepiece vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/chocolatepiece/white vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/egg vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/blue vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/green vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/mime vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/orange vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/purple vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/rainbow vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/red vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/yellow vol=10 holder=/datum/reagents egg=3
+/obj/item/reagent_containers/food/snacks/egg/rotten vol=10 holder=/datum/reagents egg=3,salmonella=3
+/obj/item/reagent_containers/food/snacks/organ vol=80 holder=/datum/reagents protein=5,toxin=3
+/obj/item/reagent_containers/food/snacks/tofu vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/stuffing vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/crab_legs vol=80 holder=/datum/reagents nutriment=4,seafood=6,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/zestfish vol=80 holder=/datum/reagents seafood=4
+/obj/item/reagent_containers/food/snacks/mushroomslice vol=80 holder=/datum/reagents fungi=1,nutriment=6,psilocybin=3
+/obj/item/reagent_containers/food/snacks/tomatomeat vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/bearmeat vol=80 holder=/datum/reagents hyperzine=10,protein=24
+/obj/item/reagent_containers/food/snacks/xenomeat vol=80 holder=/datum/reagents pacid=12,protein=12
+/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat vol=80 holder=/datum/reagents protein=12,spidertoxin=12
+/obj/item/reagent_containers/food/snacks/meatball vol=80 holder=/datum/reagents protein=3
+/obj/item/reagent_containers/food/snacks/amanita_pie vol=80 holder=/datum/reagents amatoxin=3,fungi=2,nutriment=10,psilocybin=1
+/obj/item/reagent_containers/food/snacks/onionrings vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/microfries vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/ovenfries vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/chilicheesefries vol=80 holder=/datum/reagents capsaicin=2,nutriment=16,protein=2
+/obj/item/reagent_containers/food/snacks/blackpudding vol=80 holder=/datum/reagents blood=5,protein=2
+/obj/item/reagent_containers/food/snacks/soydope vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/badrecipe vol=80 holder=/datum/reagents carbon=3,salmonella=1
+/obj/item/reagent_containers/food/snacks/meatsteak vol=80 holder=/datum/reagents blackpepper=1,protein=4,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/spacylibertyduff vol=80 holder=/datum/reagents fungi=1,nutriment=12,psilocybin=6
+/obj/item/reagent_containers/food/snacks/amanitajelly vol=80 holder=/datum/reagents amatoxin=6,fungi=2,nutriment=12,psilocybin=3
+/obj/item/reagent_containers/food/snacks/monkeycube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/farwacube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/stokcube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/neaeracube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/sobakacube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/sarucube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/sparracube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/wolpincube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/farwacube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/stokcube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/neaeracube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/pet vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/pet/wrapped vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/sobakacube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/sarucube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/sparracube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/monkeycube/wolpincube vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/honeytoast vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/cheesetoast vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/kudzudonburi vol=80 holder=/datum/reagents nutriment=32,protein=4
+/obj/item/reagent_containers/food/snacks/caramelapple vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/clubsandwich vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/boiledslimecore vol=80 holder=/datum/reagents slimejelly=5
+/obj/item/reagent_containers/food/snacks/soup vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/soup/onion vol=80 holder=/datum/reagents onion_soup=10
+/obj/item/reagent_containers/food/snacks/chickennoodlesoup vol=80 holder=/datum/reagents chicken_noodle_soup=10
+/obj/item/reagent_containers/food/snacks/bearstew vol=80 holder=/datum/reagents hyperzine=5,imidazoline=5,nutriment=7,protein=4,squirt_cider=15
+/obj/item/reagent_containers/food/snacks/bearchili vol=80 holder=/datum/reagents capsaicin=3,hyperzine=5,nutriment=6,protein=3,tomatojuice=2
+/obj/item/reagent_containers/food/snacks/cheesewedge vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/watermelonslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/grilled_carp_slice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/keylimepieslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/keylimepieslice/filled vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/quicheslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/quicheslice/filled vol=80 holder=/datum/reagents nutriment=2,protein=1
+/obj/item/reagent_containers/food/snacks/browniesslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/browniesslice/filled vol=80 holder=/datum/reagents nutriment=2,protein=1
+/obj/item/reagent_containers/food/snacks/cosmicbrowniesslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/cosmicbrowniesslice/filled vol=80 holder=/datum/reagents nutriment=2,protein=1
+/obj/item/reagent_containers/food/snacks/lasagna vol=80 holder=/datum/reagents nutriment=10,protein=2
+/obj/item/reagent_containers/food/snacks/gigapuddi vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/gigapuddi/happy vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/gigapuddi/anger vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/bucheslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/turkeyslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/turkeydrumstick vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/suppermattershard vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/excitingsuppermattershard vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/pineappleslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/pineappleslice/filled vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/pizzacrunchslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/dough vol=80 holder=/datum/reagents nutriment=6,protein=1
+/obj/item/reagent_containers/food/snacks/doughslice vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/bun vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/bunbun vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/rawcutlet vol=80 holder=/datum/reagents protein=1
+/obj/item/reagent_containers/food/snacks/cutlet vol=80 holder=/datum/reagents protein=2
+/obj/item/reagent_containers/food/snacks/burgerpatty vol=80 holder=/datum/reagents protein=3
+/obj/item/reagent_containers/food/snacks/rawmeatball vol=80 holder=/datum/reagents protein=2
+/obj/item/reagent_containers/food/snacks/hotdog vol=80 holder=/datum/reagents protein=6
+/obj/item/reagent_containers/food/snacks/flatbread vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/rawsticks vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/rawsunflower vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/frostbelle vol=80 holder=/datum/reagents bliss=5,nutriment=2,oxycodone=1,sifsap=5
+/obj/item/reagent_containers/food/snacks/bellefritter vol=80 holder=/datum/reagents batter=10,sugar=5
+/obj/item/reagent_containers/food/snacks/roastedsunflower vol=80 holder=/datum/reagents nutriment=4,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/roastedpeanuts vol=80 holder=/datum/reagents nutriment=4,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/liquidfood vol=80 holder=/datum/reagents iron=3,nutriment=40
+/obj/item/reagent_containers/food/snacks/liquidprotein vol=80 holder=/datum/reagents iron=3,protein=30
+/obj/item/reagent_containers/food/snacks/liquidvitamin vol=80 holder=/datum/reagents enzyme=1,flour=20,iron=3,paracetamol=5,tricordrazine=5
+/obj/item/reagent_containers/food/snacks/meatcube vol=80 holder=/datum/reagents protein=15
+/obj/item/reagent_containers/food/snacks/sashimi vol=80 holder=/datum/reagents nutriment=12,protein=2
+/obj/item/reagent_containers/food/snacks/benedict vol=80 holder=/datum/reagents nutriment=8,protein=2
+/obj/item/reagent_containers/food/snacks/beans vol=80 holder=/datum/reagents bean_protein=6
+/obj/item/reagent_containers/food/snacks/sugarcookie vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/berrymuffin vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/berrymuffin/berry vol=80 holder=/datum/reagents berryjuice=3,nutriment=12
+/obj/item/reagent_containers/food/snacks/berrymuffin/poison vol=80 holder=/datum/reagents nutriment=12,poisonberryjuice=3
+/obj/item/reagent_containers/food/snacks/ghostmuffin vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/ghostmuffin/berry vol=80 holder=/datum/reagents berryjuice=3,nutriment=12
+/obj/item/reagent_containers/food/snacks/ghostmuffin/poison vol=80 holder=/datum/reagents nutriment=12,poisonberryjuice=3
+/obj/item/reagent_containers/food/snacks/devilledegg vol=80 holder=/datum/reagents capsaicin=2,nutriment=16
+/obj/item/reagent_containers/food/snacks/fruitsalad vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/flowerchildsalad vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/rosesalad vol=80 holder=/datum/reagents nutriment=20,stoxin=2
+/obj/item/reagent_containers/food/snacks/eggbowl vol=80 holder=/datum/reagents nutriment=12,protein=4
+/obj/item/reagent_containers/food/snacks/cubannachos vol=80 holder=/datum/reagents capsaicin=4,nutriment=12,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/curryrice vol=80 holder=/datum/reagents capsaicin=4,nutriment=12,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/piginblanket vol=80 holder=/datum/reagents nutriment=12,protein=4
+/obj/item/reagent_containers/food/snacks/wormsickly vol=80 holder=/datum/reagents fishbait=9,nutriment=2,protein=3
+/obj/item/reagent_containers/food/snacks/worm vol=80 holder=/datum/reagents fishbait=15,nutriment=2,protein=5
+/obj/item/reagent_containers/food/snacks/wormdeluxe vol=80 holder=/datum/reagents fishbait=30,nutriment=10,protein=10
+/obj/item/reagent_containers/food/snacks/siffruit vol=80 holder=/datum/reagents nutriment=4,sifsap=2
+/obj/item/reagent_containers/food/snacks/bagelplain vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/bagelsunflower vol=80 holder=/datum/reagents nutriment=14
+/obj/item/reagent_containers/food/snacks/bagelcheese vol=80 holder=/datum/reagents nutriment=16,protein=4
+/obj/item/reagent_containers/food/snacks/bagelraisin vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/bagelpoppy vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/bageleverything vol=80 holder=/datum/reagents defective_nanites=5,nutriment=40,phoron=5
+/obj/item/reagent_containers/food/snacks/bageltwo none
+/obj/item/reagent_containers/food/snacks/macncheese vol=80 holder=/datum/reagents nutriment=18
+/obj/item/reagent_containers/food/snacks/jalapeno_poppers vol=80 holder=/datum/reagents batter=2,nutriment=4,oil=2
+/obj/item/reagent_containers/food/snacks/mouseburger vol=80 holder=/datum/reagents protein=4
+/obj/item/reagent_containers/food/snacks/chickenkatsu vol=80 holder=/datum/reagents beerbatter=2,oil=1,protein=6
+/obj/item/reagent_containers/food/snacks/funnelcake vol=80 holder=/datum/reagents batter=10,sugar=5
+/obj/item/reagent_containers/food/snacks/spreads vol=80 holder=/datum/reagents nutriment=40,sodiumchloride=1,triglyceride=20
+/obj/item/reagent_containers/food/snacks/spreads/butter vol=80 holder=/datum/reagents sodiumchloride=1,triglyceride=20
+/obj/item/reagent_containers/food/snacks/rawbacon vol=80 holder=/datum/reagents protein=0.33
+/obj/item/reagent_containers/food/snacks/bacon vol=80 holder=/datum/reagents protein=0.33,triglyceride=1
+/obj/item/reagent_containers/food/snacks/bacon/microwave vol=80 holder=/datum/reagents protein=0.33,triglyceride=1
+/obj/item/reagent_containers/food/snacks/bacon/oven vol=80 holder=/datum/reagents protein=0.33,triglyceride=1
+/obj/item/reagent_containers/food/snacks/bacon_stick vol=80 holder=/datum/reagents egg=1,protein=3
+/obj/item/reagent_containers/food/snacks/chilied_eggs vol=80 holder=/datum/reagents egg=6,protein=2
+/obj/item/reagent_containers/food/snacks/bacon_and_eggs vol=80 holder=/datum/reagents egg=1,protein=3
+/obj/item/reagent_containers/food/snacks/sweet_and_sour vol=80 holder=/datum/reagents nutriment=12,protein=3
+/obj/item/reagent_containers/food/snacks/corn_dog vol=80 holder=/datum/reagents nutriment=8,protein=3
+/obj/item/reagent_containers/food/snacks/truffle vol=80 holder=/datum/reagents coco=6
+/obj/item/reagent_containers/food/snacks/truffle/random vol=80 holder=/datum/reagents coco=6,cream=4
+/obj/item/reagent_containers/food/snacks/bacon_flatbread vol=80 holder=/datum/reagents nutriment=10,protein=5
+/obj/item/reagent_containers/food/snacks/meat_pocket vol=80 holder=/datum/reagents nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/fish_taco vol=80 holder=/datum/reagents nutriment=6,seafood=3
+/obj/item/reagent_containers/food/snacks/nt_muffin vol=80 holder=/datum/reagents nutriment=6,protein=5
+/obj/item/reagent_containers/food/snacks/pineapple_ring vol=80 holder=/datum/reagents nutriment=4,pineapplejuice=3
+/obj/item/reagent_containers/food/snacks/burger vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/burger/bacon vol=80 holder=/datum/reagents nutriment=6,protein=4
+/obj/item/reagent_containers/food/snacks/blt vol=80 holder=/datum/reagents nutriment=8,protein=4
+/obj/item/reagent_containers/food/snacks/porkbowl vol=80 holder=/datum/reagents protein=4,rice=6
+/obj/item/reagent_containers/food/snacks/mashedpotato vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/bangersandmash vol=80 holder=/datum/reagents nutriment=8,protein=3
+/obj/item/reagent_containers/food/snacks/cheesymash vol=80 holder=/datum/reagents nutriment=8,protein=3
+/obj/item/reagent_containers/food/snacks/croissant vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/pancakes vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/pancakes/berry vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/nugget vol=80 holder=/datum/reagents protein=4
+/obj/item/reagent_containers/food/snacks/icecreamsandwich vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/honeybun vol=80 holder=/datum/reagents honey=3,nutriment=8
+/obj/item/reagent_containers/food/snacks/tortilla vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/chip vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/salsa vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/guac vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/cheese vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/nacho vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/nacho/salsa vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/nacho/guac vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chip/nacho/cheese vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/nacho vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/chipplate vol=80 holder=/datum/reagents nutriment=20
+/obj/item/reagent_containers/food/snacks/chipplate/nachos vol=80 holder=/datum/reagents nutriment=28
+/obj/item/reagent_containers/food/snacks/dip vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/dip/salsa vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/dip/guac vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/fuegoburrito vol=80 holder=/datum/reagents capsaicin=4,nutriment=12
+/obj/item/reagent_containers/food/snacks/meatburrito vol=80 holder=/datum/reagents nutriment=12,protein=6
+/obj/item/reagent_containers/food/snacks/cheeseburrito vol=80 holder=/datum/reagents nutriment=12,protein=2
+/obj/item/reagent_containers/food/snacks/eggroll vol=80 holder=/datum/reagents nutriment=8,protein=2
+/obj/item/reagent_containers/food/snacks/burrito vol=80 holder=/datum/reagents nutriment=12,protein=4
+/obj/item/reagent_containers/food/snacks/burrito_spicy vol=80 holder=/datum/reagents nutriment=12,protein=6
+/obj/item/reagent_containers/food/snacks/burrito_cheese vol=80 holder=/datum/reagents nutriment=12,protein=6
+/obj/item/reagent_containers/food/snacks/burrito_cheese_spicy vol=80 holder=/datum/reagents nutriment=12,protein=6
+/obj/item/reagent_containers/food/snacks/burrito_vegan vol=80 holder=/datum/reagents nutriment=12,tofu=6
+/obj/item/reagent_containers/food/snacks/breakfast_wrap vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/burrito_mystery vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/burrito_hell vol=80 holder=/datum/reagents condensedcapsaicin=10,nutriment=48,protein=9
+/obj/item/reagent_containers/food/snacks/hatchling_suprise vol=80 holder=/datum/reagents egg=2,protein=4
+/obj/item/reagent_containers/food/snacks/red_sun_special vol=80 holder=/datum/reagents protein=2
+/obj/item/reagent_containers/food/snacks/riztizkzi_sea vol=80 holder=/datum/reagents egg=4
+/obj/item/reagent_containers/food/snacks/father_breakfast vol=80 holder=/datum/reagents egg=4,protein=6
+/obj/item/reagent_containers/food/snacks/stuffed_meatball vol=80 holder=/datum/reagents protein=4
+/obj/item/reagent_containers/food/snacks/egg_pancake vol=80 holder=/datum/reagents egg=2,protein=6
+/obj/item/reagent_containers/food/snacks/redcurry vol=80 holder=/datum/reagents nutriment=16,protein=7
+/obj/item/reagent_containers/food/snacks/greencurry vol=80 holder=/datum/reagents capsaicin=2,nutriment=24,protein=1
+/obj/item/reagent_containers/food/snacks/yellowcurry vol=80 holder=/datum/reagents nutriment=26,protein=2
+/obj/item/reagent_containers/food/snacks/bearburger vol=80 holder=/datum/reagents protein=4
+/obj/item/reagent_containers/food/snacks/bibimbap vol=80 holder=/datum/reagents nutriment=20,protein=10
+/obj/item/reagent_containers/food/snacks/lomein vol=80 holder=/datum/reagents nutriment=16,protein=2
+/obj/item/reagent_containers/food/snacks/friedrice vol=80 holder=/datum/reagents nutriment=14
+/obj/item/reagent_containers/food/snacks/chickenfillet vol=80 holder=/datum/reagents nutriment=8,protein=8
+/obj/item/reagent_containers/food/snacks/friedmushroom vol=80 holder=/datum/reagents nutriment=8,protein=2
+/obj/item/reagent_containers/food/snacks/pisanggoreng vol=80 holder=/datum/reagents nutriment=16,protein=1
+/obj/item/reagent_containers/food/snacks/meatbun vol=80 holder=/datum/reagents nutriment=10,protein=4
+/obj/item/reagent_containers/food/snacks/spicedmeatbun vol=80 holder=/datum/reagents nutriment=10,protein=3
+/obj/item/reagent_containers/food/snacks/custardbun vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/chickenmomo vol=80 holder=/datum/reagents nutriment=18,protein=6
+/obj/item/reagent_containers/food/snacks/veggiemomo vol=80 holder=/datum/reagents nutriment=26,protein=2
+/obj/item/reagent_containers/food/snacks/risotto vol=80 holder=/datum/reagents nutriment=18,protein=1
+/obj/item/reagent_containers/food/snacks/risottoballs vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/poachedegg vol=80 holder=/datum/reagents blackpepper=1,nutriment=2,protein=3
+/obj/item/reagent_containers/food/snacks/ribplate vol=80 holder=/datum/reagents blackpepper=1,honey=5,nutriment=12,protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/omurice vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/omurice/heart vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/omurice/face vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/cinnamonbun vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/mint vol=80 holder=/datum/reagents mint=1
+/obj/item/reagent_containers/food/snacks/mint/admints vol=80 holder=/datum/reagents mint=1
+/obj/item/reagent_containers/food/snacks/namagashi vol=80 holder=/datum/reagents nutriment=2,sugar=2
+/obj/item/reagent_containers/food/snacks/cookiesnack vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/fruitbar vol=80 holder=/datum/reagents nutriment=26,sugar=4
+/obj/item/reagent_containers/food/snacks/cb01 vol=80 holder=/datum/reagents nutriment=8,sugar=1
+/obj/item/reagent_containers/food/snacks/cb02 vol=80 holder=/datum/reagents nutriment=8,sugar=1
+/obj/item/reagent_containers/food/snacks/cb03 vol=80 holder=/datum/reagents nutriment=8,sugar=1
+/obj/item/reagent_containers/food/snacks/cb04 vol=80 holder=/datum/reagents nutriment=8,sugar=1
+/obj/item/reagent_containers/food/snacks/cb05 vol=80 holder=/datum/reagents nutriment=6,sugar=3
+/obj/item/reagent_containers/food/snacks/cb06 vol=80 holder=/datum/reagents coffee=1,nutriment=8,sugar=1
+/obj/item/reagent_containers/food/snacks/cb07 vol=80 holder=/datum/reagents nutriment=8,sugar=1
+/obj/item/reagent_containers/food/snacks/cb08 vol=80 holder=/datum/reagents nutriment=6,sugar=2
+/obj/item/reagent_containers/food/snacks/cb09 vol=80 holder=/datum/reagents milk=1,nutriment=12,peanutoil=1,sugar=1
+/obj/item/reagent_containers/food/snacks/cb10 vol=80 holder=/datum/reagents nutriment=10,peanutoil=1,protein=1,sugar=1
+/obj/item/reagent_containers/food/snacks/tuna vol=80 holder=/datum/reagents nutriment=6,protein=4
+/obj/item/reagent_containers/food/snacks/pistachios vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/semki vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/squid vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/squid/true vol=80 holder=/datum/reagents nutriment=4,protein=4,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/croutons vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/salo vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/salo/true vol=80 holder=/datum/reagents nutriment=4,protein=8,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/driedfish vol=80 holder=/datum/reagents nutriment=4,protein=4,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/syndicake vol=80 holder=/datum/reagents doctorsdelight=5,nutriment=8
+/obj/item/reagent_containers/food/snacks/triton vol=80 holder=/datum/reagents nutriment=10,sodiumchloride=10
+/obj/item/reagent_containers/food/snacks/saturn vol=80 holder=/datum/reagents nutriment=10,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/jupiter vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/pluto vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/mars vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/venus vol=80 holder=/datum/reagents capsaicin=5,nutriment=10
+/obj/item/reagent_containers/food/snacks/sun_snax vol=80 holder=/datum/reagents capsaicin=6,nutriment=6
+/obj/item/reagent_containers/food/snacks/oort vol=80 holder=/datum/reagents frostoil=5,nutriment=10
+/obj/item/reagent_containers/food/snacks/pretzels vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/hakarl vol=80 holder=/datum/reagents nutriment=8,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/ricecake vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/dorayaki vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/daifuku vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/weebonuts vol=80 holder=/datum/reagents capsaicin=1,nutriment=10
+/obj/item/reagent_containers/food/snacks/wasabi_peas vol=80 holder=/datum/reagents capsaicin=1,nutriment=12
+/obj/item/reagent_containers/food/snacks/chocobanana vol=80 holder=/datum/reagents nutriment=10,sprinkles=10
+/obj/item/reagent_containers/food/snacks/goma_dango vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/hanami_dango vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/old vol=80 holder=/datum/reagents carpotoxin=5,nutriment=20,salmonella=5
+/obj/item/reagent_containers/food/snacks/old/pizza vol=80 holder=/datum/reagents nutriment=20,psilocybin=5,salmonella=5
+/obj/item/reagent_containers/food/snacks/old/burger vol=80 holder=/datum/reagents carpotoxin=5,nutriment=20,salmonella=5
+/obj/item/reagent_containers/food/snacks/old/horseburger vol=80 holder=/datum/reagents fuel=5,nutriment=20,salmonella=5
+/obj/item/reagent_containers/food/snacks/old/fries vol=80 holder=/datum/reagents cryptobiolin=5,nutriment=20,salmonella=5
+/obj/item/reagent_containers/food/snacks/old/hotdog vol=80 holder=/datum/reagents nutriment=20,psilocybin=5,salmonella=5
+/obj/item/reagent_containers/food/snacks/old/taco vol=80 holder=/datum/reagents nutriment=20,psilocybin=5,salmonella=5
+/obj/item/reagent_containers/food/snacks/canned vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/canned/beef vol=80 holder=/datum/reagents protein=4,sodiumchloride=2
+/obj/item/reagent_containers/food/snacks/canned/beans vol=80 holder=/datum/reagents bean_protein=5,tomatojuice=5
+/obj/item/reagent_containers/food/snacks/canned/tomato vol=80 holder=/datum/reagents tomato_soup=12
+/obj/item/reagent_containers/food/snacks/canned/spinach vol=80 holder=/datum/reagents adrenaline=4,hyperzine=4,iron=4
+/obj/item/reagent_containers/food/snacks/canned/caviar vol=80 holder=/datum/reagents seafood=5,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/canned/caviar/true vol=80 holder=/datum/reagents carpotoxin=1,seafood=9,sodiumchloride=2
+/obj/item/reagent_containers/food/snacks/canned/maps vol=80 holder=/datum/reagents protein=6,sodiumchloride=2
+/obj/item/reagent_containers/food/snacks/canned/appleberry vol=80 holder=/datum/reagents milk=8,sugar=5
+/obj/item/reagent_containers/food/snacks/canned/ntbeans vol=80 holder=/datum/reagents bean_protein=6,protein=2
+/obj/item/reagent_containers/food/snacks/canned/brainzsnax vol=80 holder=/datum/reagents brain_protein=10
+/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red vol=80 holder=/datum/reagents red_brain_protein=10
+/obj/item/reagent_containers/food/snacks/churro vol=80 holder=/datum/reagents cookingoil=1,nutriment=4
+/obj/item/reagent_containers/food/snacks/sauerkraut vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/tamales vol=80 holder=/datum/reagents nutriment=18,protein=5
+/obj/item/reagent_containers/food/snacks/bigos vol=80 holder=/datum/reagents nutriment=12,protein=4,water=3
+/obj/item/reagent_containers/food/snacks/concha vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/pandenata vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/tocino vol=80 holder=/datum/reagents nutriment=16,protein=5
+/obj/item/reagent_containers/food/snacks/garlicbread vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/plumpburger vol=80 holder=/datum/reagents nutriment=10,protein=5
+/obj/item/reagent_containers/food/snacks/steamtealeaf vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/steamrolltealeaf vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/greentealeaf vol=80 holder=/datum/reagents tealeavesgreen=6
+/obj/item/reagent_containers/food/snacks/butterscotch vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/slicable vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/slicable/buttspie vol=80 holder=/datum/reagents nutriment=24
+/obj/item/reagent_containers/food/snacks/spicy_boys vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/cinnamonroll vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/welders_original vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/hotbuttericecream vol=80 holder=/datum/reagents nutriment=8
+/obj/item/reagent_containers/food/snacks/blondiesslice vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/blondiesslice/filled vol=80 holder=/datum/reagents nutriment=2,protein=1
+/obj/item/reagent_containers/food/snacks/goulash vol=80 holder=/datum/reagents nutriment=12,protein=3,water=5
+/obj/item/reagent_containers/food/snacks/donerkebab vol=80 holder=/datum/reagents nutriment=10,protein=2
+/obj/item/reagent_containers/food/snacks/roastbeef vol=80 holder=/datum/reagents nutriment=16,protein=4
+/obj/item/reagent_containers/food/snacks/reishicup vol=80 holder=/datum/reagents nutriment=6,psilocybin=3
+/obj/item/reagent_containers/food/snacks/chickenwing vol=80 holder=/datum/reagents nutriment=4,protein=1
+/obj/item/reagent_containers/food/snacks/hotandsoursoup vol=80 holder=/datum/reagents hot_n_sour_soup=10,nutriment=12
+/obj/item/reagent_containers/food/snacks/kitsuneudon vol=80 holder=/datum/reagents nutriment=12
+/obj/item/reagent_containers/food/snacks/generalschicken vol=80 holder=/datum/reagents nutriment=12,protein=4
+/obj/item/reagent_containers/food/snacks/bugball vol=80 holder=/datum/reagents carbon=5,nutriment=2,protein=1
+/obj/item/reagent_containers/food/snacks/pillbug vol=80 holder=/datum/reagents nutriment=6,protein=3,shockchem=6
+/obj/item/reagent_containers/food/snacks/pillbugempty vol=80 holder=/datum/reagents carbon=5,nutriment=2,protein=1
+/obj/item/reagent_containers/food/snacks/mammi vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/makaroni vol=80 holder=/datum/reagents nutriment=30,protein=1,shockchem=6
+/obj/item/reagent_containers/food/snacks/lobster vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/lobstercooked vol=80 holder=/datum/reagents iron=5,nutriment=40,protein=20,tricordrazine=5
+/obj/item/reagent_containers/food/snacks/cuttlefish vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/cuttlefishcooked vol=80 holder=/datum/reagents nutriment=40,protein=10
+/obj/item/reagent_containers/food/snacks/monkfishfillet vol=80 holder=/datum/reagents nutriment=10,protein=1
+/obj/item/reagent_containers/food/snacks/monkfishcooked vol=80 holder=/datum/reagents nutriment=20,protein=5
+/obj/item/reagent_containers/food/snacks/sharkmeatcooked vol=80 holder=/datum/reagents nutriment=10,protein=8
+/obj/item/reagent_containers/food/snacks/sharkmeatdip vol=80 holder=/datum/reagents capsaicin=4,nutriment=10,protein=4,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/sharkmeatcubes vol=80 holder=/datum/reagents nutriment=16,potatojuice=30
+/obj/item/reagent_containers/food/snacks/cube vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/cube/protein vol=80 holder=/datum/reagents meatcolony=5
+/obj/item/reagent_containers/food/snacks/cube/nutriment vol=80 holder=/datum/reagents plantcolony=5
+/obj/item/reagent_containers/food/snacks/proteinslab vol=80 holder=/datum/reagents nutriment=10,protein=30
+/obj/item/reagent_containers/food/snacks/nutrimentslab vol=80 holder=/datum/reagents nutriment=40
+/obj/item/reagent_containers/food/snacks/nachos vol=80 holder=/datum/reagents nutriment=5,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/cheesenachos vol=80 holder=/datum/reagents nutriment=15,protein=2,sodiumchloride=1
+/obj/item/reagent_containers/food/snacks/onionsoup vol=80 holder=/datum/reagents onion_soup=10
+/obj/item/reagent_containers/food/snacks/grub vol=80 holder=/datum/reagents nutriment=6,protein=2
+/obj/item/reagent_containers/food/snacks/grub_pink vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/grub_purple vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/grub_blue vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/scorpion vol=80 holder=/datum/reagents nutriment=16
+/obj/item/reagent_containers/food/snacks/scorpion_cooked vol=80 holder=/datum/reagents nutriment=14,protein=4
+/obj/item/reagent_containers/food/snacks/ant vol=80 holder=/datum/reagents honey=2,nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/antball vol=80 holder=/datum/reagents honey=2,nutriment=8
+/obj/item/reagent_containers/food/snacks/honey_candy vol=80 holder=/datum/reagents nutriment=8,sugar=2
+/obj/item/reagent_containers/food/snacks/locust vol=80 holder=/datum/reagents nutriment=8,protein=1
+/obj/item/reagent_containers/food/snacks/locust_cooked vol=80 holder=/datum/reagents nutriment=4,protein=3
+/obj/item/reagent_containers/food/snacks/ratprotein vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/ratveggies vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/ratliquid vol=80 holder=/datum/reagents nutriment=4,protein=4
+/obj/item/reagent_containers/food/snacks/ratsteak vol=80 holder=/datum/reagents nutriment=16,protein=3
+/obj/item/reagent_containers/food/snacks/ratfruitcake vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ratpackburger vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ratpackcheese vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ratpackturkey vol=80 holder=/datum/reagents nutriment=36
+/obj/item/reagent_containers/food/snacks/ratpackramen vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ratpacktaco vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ratpackcake vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/ratpackmeat vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/jaffacake vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/winegum vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/winegum/orange vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/winegum/black vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/winegum/green vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/winegum/yellow vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/winegum/white vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/saucer vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/custardcream vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/bourbon vol=80 holder=/datum/reagents coco=2,nutriment=2
+/obj/item/reagent_containers/food/snacks/foam_banana vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/foam_shrimp vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/rhubarbcustard vol=80 holder=/datum/reagents nutriment=2
+/obj/item/reagent_containers/food/snacks/acorn vol=80 holder=/datum/reagents nutriment=2,peanutbutter=2
+/obj/item/reagent_containers/food/snacks/thecakeslice vol=80 holder=/datum/reagents nutriment=10
+/obj/item/reagent_containers/food/snacks/chaoscakeslice vol=80 holder=/datum/reagents dexalinp=2,nutriment=8,tricordrazine=2
+/obj/item/reagent_containers/food/snacks/customizable vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/customizable/sandwich vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/customizable/burger vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/customizable/fullycustom vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/customizable/soup vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/customizable/pizza vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/customizable/pasta vol=80 holder=/datum/reagents nutriment=3
+/obj/item/reagent_containers/food/snacks/meat vol=80 holder=/datum/reagents protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/syntiflesh vol=80 holder=/datum/reagents protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/human vol=80 holder=/datum/reagents protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/monkey vol=80 holder=/datum/reagents protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/corgi vol=80 holder=/datum/reagents protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/chicken vol=80 holder=/datum/reagents protein=6
+/obj/item/reagent_containers/food/snacks/meat/fox vol=80 holder=/datum/reagents protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/grubmeat vol=80 holder=/datum/reagents protein=7,shockchem=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/worm vol=80 holder=/datum/reagents myelamine=3,phoron=3,protein=12,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/raymeat vol=80 holder=/datum/reagents nutriment=6,protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/eelmeat vol=80 holder=/datum/reagents nutriment=6,protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/gravityshell vol=80 holder=/datum/reagents nutriment=6,protein=6,triglyceride=2
+/obj/item/reagent_containers/food/snacks/meat/xeyakin vol=80 holder=/datum/reagents protein=6,triglyceride=2,xeyakinblood=2
+/obj/item/reagent_containers/food/snacks/crabmeat vol=80 holder=/datum/reagents seafood=2
+/obj/item/reagent_containers/food/snacks/hugemushroomslice vol=80 holder=/datum/reagents fungi=1,nutriment=6,psilocybin=3
+/obj/item/reagent_containers/food/snacks/rawturkey vol=80 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/snacks/deathclawmeat vol=80 holder=/datum/reagents deathblood=6,nutriment=6,protein=6
+/obj/item/reagent_containers/food/snacks/dragonmeat vol=80 holder=/datum/reagents liquidfire=6,nutriment=6,protein=6
+/obj/item/reagent_containers/food/snacks/phorondragonmeat vol=80 holder=/datum/reagents neoliquidfire=6,nutriment=6,phoron=3,protein=6
+/obj/item/reagent_containers/food/snacks/metroidmeat vol=80 holder=/datum/reagents liquidlife=3,nutriment=6,protein=3
+/obj/item/reagent_containers/food/snacks/tyrant_shock vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/copperant vol=80 holder=/datum/reagents protein=5,shockchem=5
+/obj/item/reagent_containers/food/snacks/tyrant_neoburn vol=80 holder=/datum/reagents nutriment=6
+/obj/item/reagent_containers/food/snacks/painiteant vol=80 holder=/datum/reagents neoliquidfire=5,protein=5
+/obj/item/reagent_containers/food/snacks/tyrant_burn vol=80 holder=/datum/reagents liquidfire=5,nutriment=6,protein=5
+/obj/item/reagent_containers/food/snacks/tyrant_radiation vol=80 holder=/datum/reagents deathblood=5,nutriment=6,protein=5
+/obj/item/reagent_containers/food/snacks/tyrant_bonus vol=80 holder=/datum/reagents liquidlife=5,nutriment=6,protein=5
+/obj/item/reagent_containers/food/snacks/icecream vol=20 holder=/datum/reagents nutriment=5
+/obj/item/reagent_containers/food/snacks/variable vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/pizza vol=170 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/bread vol=330 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/pie vol=210 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/cake vol=330 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/pocket vol=74 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/kebab vol=90 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/waffles vol=106 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/cookie vol=58 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/donut vol=74 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/jawbreaker vol=42 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/candybar vol=58 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/sucker vol=42 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/jelly vol=74 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/cereal vol=250 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/variable/mob vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/fruit_slice deleted
+/obj/item/reagent_containers/food/snacks/jellyfishcore vol=80 holder=/datum/reagents nutriment=80
+/obj/item/reagent_containers/food/snacks/snakesnack vol=80 holder=/datum/reagents nutriment=2,sugar=2
+/obj/item/reagent_containers/food/snacks/pitcher_fruit runtime
+/obj/item/reagent_containers/food/snacks/snackplanet vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/food/snacks/snackplanet/moon vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/snackplanet/phoron vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime vol=80 holder=/datum/reagents nutriment=4
+/obj/item/reagent_containers/food/snacks/slime vol=80 holder=/datum/reagents nutriment=50
+/obj/item/reagent_containers/food/snacks/weatherlily vol=80 holder=/datum/reagents luminol=1,protein=1
+/obj/item/reagent_containers/food/snacks/mutatedmeat vol=80 holder=/datum/reagents protein=4
+/obj/item/reagent_containers/food/drinks vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/coffee vol=50 holder=/datum/reagents coffee=30
+/obj/item/reagent_containers/food/drinks/tea vol=50 holder=/datum/reagents tea=30
+/obj/item/reagent_containers/food/drinks/h_chocolate vol=50 holder=/datum/reagents hot_coco=30
+/obj/item/reagent_containers/food/drinks/cans vol=40 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/cans/cola vol=40 holder=/datum/reagents cola=30
+/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind vol=40 holder=/datum/reagents spacemountainwind=30
+/obj/item/reagent_containers/food/drinks/cans/dr_gibb vol=40 holder=/datum/reagents dr_gibb=30
+/obj/item/reagent_containers/food/drinks/cans/starkist vol=40 holder=/datum/reagents brownstar=30
+/obj/item/reagent_containers/food/drinks/cans/waterbottle vol=40 holder=/datum/reagents water=30
+/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur vol=150 holder=/datum/reagents water=150
+/obj/item/reagent_containers/food/drinks/cans/space_up vol=40 holder=/datum/reagents space_up=30
+/obj/item/reagent_containers/food/drinks/cans/iced_tea vol=40 holder=/datum/reagents icetea=30
+/obj/item/reagent_containers/food/drinks/cans/grape_juice vol=40 holder=/datum/reagents grapejuice=30
+/obj/item/reagent_containers/food/drinks/cans/gingerale vol=40 holder=/datum/reagents gingerale=30
+/obj/item/reagent_containers/food/drinks/cans/thirteenloko vol=40 holder=/datum/reagents thirteenloko=30
+/obj/item/reagent_containers/food/drinks/cans/lemon_lime vol=40 holder=/datum/reagents lemon_lime=30
+/obj/item/reagent_containers/food/drinks/cans/tonic vol=40 holder=/datum/reagents tonic=30
+/obj/item/reagent_containers/food/drinks/cans/sodawater vol=40 holder=/datum/reagents sodawater=30
+/obj/item/reagent_containers/food/drinks/cans/decaf_cola vol=40 holder=/datum/reagents decafcola=30
+/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet vol=40 holder=/datum/reagents diet_dr_gibb=30
+/obj/item/reagent_containers/food/drinks/cans/starkistdecaf vol=40 holder=/datum/reagents brownstar_decaf=30
+/obj/item/reagent_containers/food/drinks/cans/root_beer vol=40 holder=/datum/reagents rootbeer=30
+/obj/item/reagent_containers/food/drinks/cans/kvass vol=40 holder=/datum/reagents kvass=30
+/obj/item/reagent_containers/food/drinks/cans/kompot vol=40 holder=/datum/reagents kompot=30
+/obj/item/reagent_containers/food/drinks/cans/boda vol=40 holder=/datum/reagents sodawater=30
+/obj/item/reagent_containers/food/drinks/cans/bodaplus vol=40 holder=/datum/reagents sodawater=15,watermelonjuice=15
+/obj/item/reagent_containers/food/drinks/cans/redarmy vol=40 holder=/datum/reagents potatojuice=15,sodawater=15
+/obj/item/reagent_containers/food/drinks/cans/arstbru vol=40 holder=/datum/reagents turnipjuice=30
+/obj/item/reagent_containers/food/drinks/cans/terra_cola vol=40 holder=/datum/reagents iron=5,water=25
+/obj/item/reagent_containers/food/drinks/cans/straw_cola vol=40 holder=/datum/reagents strawsoda=30
+/obj/item/reagent_containers/food/drinks/cans/apple_cola vol=40 holder=/datum/reagents applesoda=30
+/obj/item/reagent_containers/food/drinks/cans/lemon_cola vol=40 holder=/datum/reagents lemonsoda=30
+/obj/item/reagent_containers/food/drinks/cans/sarsaparilla vol=40 holder=/datum/reagents sarsaparilla=30
+/obj/item/reagent_containers/food/drinks/cans/grape_cola vol=40 holder=/datum/reagents grapesoda=30
+/obj/item/reagent_containers/food/drinks/cans/orange_cola vol=40 holder=/datum/reagents orangesoda=30
+/obj/item/reagent_containers/food/drinks/cans/baconsoda vol=40 holder=/datum/reagents porksoda=30
+/obj/item/reagent_containers/food/drinks/cans/bepis vol=40 holder=/datum/reagents bepis=30
+/obj/item/reagent_containers/food/drinks/cans/astrodew vol=40 holder=/datum/reagents water=30
+/obj/item/reagent_containers/food/drinks/cans/icecoffee vol=40 holder=/datum/reagents icecoffee=30
+/obj/item/reagent_containers/food/drinks/cans/buzz vol=40 holder=/datum/reagents buzz_fuzz=30
+/obj/item/reagent_containers/food/drinks/cans/shambler vol=40 holder=/datum/reagents shamblers=30
+/obj/item/reagent_containers/food/drinks/cans/cranberry vol=40 holder=/datum/reagents sprited_cranberry=30
+/obj/item/reagent_containers/food/drinks/cans/beercan vol=40 holder=/datum/reagents beer=30
+/obj/item/reagent_containers/food/drinks/cans/alecan vol=40 holder=/datum/reagents ale=30
+/obj/item/reagent_containers/food/drinks/cans/nukie_peach vol=60 holder=/datum/reagents nukie_peach=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_pear vol=60 holder=/datum/reagents nukie_pear=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_cherry vol=60 holder=/datum/reagents nukie_cherry=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_melon vol=60 holder=/datum/reagents nukie_melon=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_banana vol=60 holder=/datum/reagents nukie_banana=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_rose vol=60 holder=/datum/reagents nukie_rose=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_lemon vol=60 holder=/datum/reagents nukie_lemon=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_fruit vol=60 holder=/datum/reagents nukie_fruit=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_special vol=60 holder=/datum/reagents nukie_special=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight vol=60 holder=/datum/reagents nukie_mega_sight=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart vol=60 holder=/datum/reagents nukie_mega_heart=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep vol=60 holder=/datum/reagents nukie_mega_sleep=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock vol=60 holder=/datum/reagents nukie_mega_shock=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast vol=60 holder=/datum/reagents nukie_mega_fast=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high vol=60 holder=/datum/reagents nukie_mega_high=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink vol=60 holder=/datum/reagents nukie_mega_shrink=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow vol=60 holder=/datum/reagents nukie_mega_growth=60
+/obj/item/reagent_containers/food/drinks/cans/nukie_one vol=60 holder=/datum/reagents nukie_one=60
+/obj/item/reagent_containers/food/drinks/bottle vol=100 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/bottle/cola vol=100 holder=/datum/reagents cola=100
+/obj/item/reagent_containers/food/drinks/bottle/space_up vol=100 holder=/datum/reagents space_up=100
+/obj/item/reagent_containers/food/drinks/bottle/space_mountain_wind vol=100 holder=/datum/reagents spacemountainwind=100
+/obj/item/reagent_containers/food/drinks/bottle/orangejuice vol=100 holder=/datum/reagents orangejuice=100
+/obj/item/reagent_containers/food/drinks/bottle/applejuice vol=100 holder=/datum/reagents applejuice=100
+/obj/item/reagent_containers/food/drinks/bottle/cream vol=100 holder=/datum/reagents cream=100
+/obj/item/reagent_containers/food/drinks/bottle/tomatojuice vol=100 holder=/datum/reagents tomatojuice=100
+/obj/item/reagent_containers/food/drinks/bottle/limejuice vol=100 holder=/datum/reagents limejuice=100
+/obj/item/reagent_containers/food/drinks/bottle/small vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/bottle/small/beer vol=50 holder=/datum/reagents beer=50
+/obj/item/reagent_containers/food/drinks/bottle/small/beer/silverdragon vol=50 holder=/datum/reagents beer=50
+/obj/item/reagent_containers/food/drinks/bottle/small/beer/meteor vol=50 holder=/datum/reagents beer=50
+/obj/item/reagent_containers/food/drinks/bottle/small/ale vol=50 holder=/datum/reagents ale=50
+/obj/item/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper vol=50 holder=/datum/reagents ale=50
+/obj/item/reagent_containers/food/drinks/bottle/small/litebeer vol=50 holder=/datum/reagents litebeer=50
+/obj/item/reagent_containers/food/drinks/bottle/small/cider vol=50 holder=/datum/reagents cider=50
+/obj/item/reagent_containers/food/drinks/bottle/small/cola vol=50 holder=/datum/reagents cola=50
+/obj/item/reagent_containers/food/drinks/bottle/small/space_up vol=50 holder=/datum/reagents space_up=50
+/obj/item/reagent_containers/food/drinks/bottle/small/space_mountain_wind vol=50 holder=/datum/reagents spacemountainwind=50
+/obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb vol=50 holder=/datum/reagents dr_gibb=50
+/obj/item/reagent_containers/food/drinks/bottle/absinthe vol=100 holder=/datum/reagents absinthe=100
+/obj/item/reagent_containers/food/drinks/bottle/bluecuracao vol=100 holder=/datum/reagents bluecuracao=100
+/obj/item/reagent_containers/food/drinks/bottle/gin vol=100 holder=/datum/reagents gin=100
+/obj/item/reagent_containers/food/drinks/bottle/kahlua vol=100 holder=/datum/reagents kahlua=100
+/obj/item/reagent_containers/food/drinks/bottle/melonliquor vol=100 holder=/datum/reagents melonliquor=100
+/obj/item/reagent_containers/food/drinks/bottle/rum vol=100 holder=/datum/reagents rum=100
+/obj/item/reagent_containers/food/drinks/bottle/tequila vol=100 holder=/datum/reagents tequila=100
+/obj/item/reagent_containers/food/drinks/bottle/vodka vol=100 holder=/datum/reagents vodka=100
+/obj/item/reagent_containers/food/drinks/bottle/whiskey vol=100 holder=/datum/reagents whiskey=100
+/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey vol=100 holder=/datum/reagents specialwhiskey=100
+/obj/item/reagent_containers/food/drinks/bottle/patron vol=100 holder=/datum/reagents patron=100
+/obj/item/reagent_containers/food/drinks/bottle/goldschlager vol=100 holder=/datum/reagents goldschlager=100
+/obj/item/reagent_containers/food/drinks/bottle/bottleofnothing vol=100 holder=/datum/reagents nothing=100
+/obj/item/reagent_containers/food/drinks/bottle/grenadine vol=100 holder=/datum/reagents grenadine=100
+/obj/item/reagent_containers/food/drinks/bottle/wine vol=100 holder=/datum/reagents redwine=100
+/obj/item/reagent_containers/food/drinks/bottle/cognac vol=100 holder=/datum/reagents cognac=100
+/obj/item/reagent_containers/food/drinks/bottle/vermouth vol=100 holder=/datum/reagents vermouth=100
+/obj/item/reagent_containers/food/drinks/bottle/pwine vol=100 holder=/datum/reagents pwine=100
+/obj/item/reagent_containers/food/drinks/bottle/sake vol=100 holder=/datum/reagents sake=100
+/obj/item/reagent_containers/food/drinks/bottle/jager vol=100 holder=/datum/reagents jager=100
+/obj/item/reagent_containers/food/drinks/bottle/snaps vol=100 holder=/datum/reagents snaps=100
+/obj/item/reagent_containers/food/drinks/bottle/holywater vol=100 holder=/datum/reagents holywater=100
+/obj/item/reagent_containers/food/drinks/bottle/redeemersbrew vol=100 holder=/datum/reagents unathiliquor=100
+/obj/item/reagent_containers/food/drinks/bottle/peppermintschnapps vol=100 holder=/datum/reagents schnapps_pep=100
+/obj/item/reagent_containers/food/drinks/bottle/peachschnapps vol=100 holder=/datum/reagents schnapps_pea=100
+/obj/item/reagent_containers/food/drinks/bottle/lemonadeschnapps vol=100 holder=/datum/reagents schnapps_lem=100
+/obj/item/reagent_containers/food/drinks/bottle/whitewine vol=100 holder=/datum/reagents whitewine=100
+/obj/item/reagent_containers/food/drinks/bottle/carnoth vol=100 holder=/datum/reagents carnoth=100
+/obj/item/reagent_containers/food/drinks/bottle/champagne vol=100 holder=/datum/reagents champagne=100
+/obj/item/reagent_containers/food/drinks/bottle/decaf_cola vol=100 holder=/datum/reagents decafcola=100
+/obj/item/reagent_containers/food/drinks/bottle/dr_gibb vol=100 holder=/datum/reagents dr_gibb=100
+/obj/item/reagent_containers/food/drinks/bottle/milk vol=100 holder=/datum/reagents milk=100
+/obj/item/reagent_containers/food/drinks/bottle/lemonjuice vol=100 holder=/datum/reagents lemonjuice=100
+/obj/item/reagent_containers/food/drinks/bottle/grapejuice vol=100 holder=/datum/reagents grapejuice=100
+/obj/item/reagent_containers/food/drinks/dry_ramen vol=50 holder=/datum/reagents dry_ramen=30
+/obj/item/reagent_containers/food/drinks/glass2 vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/square vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/rocks vol=20 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/shake vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/cocktail vol=15 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/shot vol=5 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/pint vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/mug vol=40 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/wine vol=25 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/sol vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/fleet vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/fivearrows vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/alma vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/almp vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/psc vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/nt vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal/wulf vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/gilthari vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/wt vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/aether vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/zeng vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/bishop vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/oculum vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/talon vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/one vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/puni vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/heart vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/pawn vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/diona vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/britcup vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/flame vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/black vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green/dark vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/blue vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/rainbow vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/glass vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/black vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/metal vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/rainbow vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/carafe vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/pitcher vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask vol=100 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake vol=100 holder=/datum/reagents iron=10,nutriment=30,protein=35,water=25
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake vol=100 holder=/datum/reagents liquid_protean=50,nutriment=50
+/obj/item/reagent_containers/food/drinks/glass2/fluff vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask vol=60 holder=/datum/reagents milk=20,tea=40
+/obj/item/reagent_containers/food/drinks/metaglass vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/metaglass/metapint vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/britcup vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/textmug vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/golden_cup vol=150 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/milk vol=50 holder=/datum/reagents milk=50
+/obj/item/reagent_containers/food/drinks/soymilk vol=50 holder=/datum/reagents soymilk=50
+/obj/item/reagent_containers/food/drinks/smallmilk vol=30 holder=/datum/reagents milk=30
+/obj/item/reagent_containers/food/drinks/smallchocmilk vol=30 holder=/datum/reagents chocolate_milk=30
+/obj/item/reagent_containers/food/drinks/decaf_tea vol=50 holder=/datum/reagents teadecaf=30
+/obj/item/reagent_containers/food/drinks/ice vol=50 holder=/datum/reagents ice=30
+/obj/item/reagent_containers/food/drinks/greentea vol=50 holder=/datum/reagents greentea=30
+/obj/item/reagent_containers/food/drinks/chaitea vol=50 holder=/datum/reagents chaitea=30
+/obj/item/reagent_containers/food/drinks/decaf vol=50 holder=/datum/reagents decaf=30
+/obj/item/reagent_containers/food/drinks/sillycup vol=10 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/shaker vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/teapot vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/shiny vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/lithium vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/detflask vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/barflask vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/vacuumflask vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor vol=60 holder=/datum/reagents pwine=60
+/obj/item/reagent_containers/food/drinks/drinkingglass vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/drinkingglass/soda vol=30 holder=/datum/reagents sodawater=30
+/obj/item/reagent_containers/food/drinks/drinkingglass/cola vol=30 holder=/datum/reagents cola=30
+/obj/item/reagent_containers/food/drinks/drinkingglass/shotglass vol=10 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask vol=100 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/proteinshake vol=100 holder=/datum/reagents iron=10,nutriment=30,protein=15,water=45
+/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose vol=100 holder=/datum/reagents glucose=100
+/obj/item/reagent_containers/food/drinks/cup vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/tall vol=40 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/grande vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/venti vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/jar vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/drinks/bluespace_coffee vol=50 holder=/datum/reagents coffee=50
+/obj/item/reagent_containers/food/condiment vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/condiment/enzyme vol=50 holder=/datum/reagents enzyme=50
+/obj/item/reagent_containers/food/condiment/sugar vol=50 holder=/datum/reagents sugar=50
+/obj/item/reagent_containers/food/condiment/ketchup vol=50 holder=/datum/reagents ketchup=50
+/obj/item/reagent_containers/food/condiment/mustard vol=50 holder=/datum/reagents mustard=50
+/obj/item/reagent_containers/food/condiment/hotsauce vol=50 holder=/datum/reagents capsaicin=50
+/obj/item/reagent_containers/food/condiment/cookingoil vol=50 holder=/datum/reagents cookingoil=50
+/obj/item/reagent_containers/food/condiment/cornoil vol=50 holder=/datum/reagents cornoil=50
+/obj/item/reagent_containers/food/condiment/coldsauce vol=50 holder=/datum/reagents frostoil=50
+/obj/item/reagent_containers/food/condiment/soysauce vol=50 holder=/datum/reagents soysauce=50
+/obj/item/reagent_containers/food/condiment/vinegar vol=50 holder=/datum/reagents vinegar=50
+/obj/item/reagent_containers/food/condiment/yeast vol=50 holder=/datum/reagents yeast=50
+/obj/item/reagent_containers/food/condiment/sprinkles vol=50 holder=/datum/reagents sprinkles=50
+/obj/item/reagent_containers/food/condiment/barbeque vol=50 holder=/datum/reagents barbecue=50
+/obj/item/reagent_containers/food/condiment/small vol=20 holder=/datum/reagents 
+/obj/item/reagent_containers/food/condiment/small/saltshaker vol=20 holder=/datum/reagents sodiumchloride=20
+/obj/item/reagent_containers/food/condiment/small/peppermill vol=20 holder=/datum/reagents blackpepper=20
+/obj/item/reagent_containers/food/condiment/small/peppergrinder vol=20 holder=/datum/reagents blackpepper=20
+/obj/item/reagent_containers/food/condiment/small/sugar vol=20 holder=/datum/reagents sugar=20
+/obj/item/reagent_containers/food/condiment/small/packet vol=5 holder=/datum/reagents 
+/obj/item/reagent_containers/food/condiment/small/packet/salt vol=5 holder=/datum/reagents sodiumchloride=5
+/obj/item/reagent_containers/food/condiment/small/packet/pepper vol=5 holder=/datum/reagents blackpepper=5
+/obj/item/reagent_containers/food/condiment/small/packet/sugar vol=5 holder=/datum/reagents sugar=5
+/obj/item/reagent_containers/food/condiment/small/packet/jelly vol=10 holder=/datum/reagents cherryjelly=10
+/obj/item/reagent_containers/food/condiment/small/packet/honey vol=10 holder=/datum/reagents honey=10
+/obj/item/reagent_containers/food/condiment/small/packet/capsaicin vol=5 holder=/datum/reagents capsaicin=5
+/obj/item/reagent_containers/food/condiment/small/packet/ketchup vol=5 holder=/datum/reagents ketchup=5
+/obj/item/reagent_containers/food/condiment/small/packet/mayo vol=5 holder=/datum/reagents mayo=5
+/obj/item/reagent_containers/food/condiment/small/packet/soy vol=5 holder=/datum/reagents soysauce=5
+/obj/item/reagent_containers/food/condiment/small/packet/coffee vol=5 holder=/datum/reagents coffeepowder=5
+/obj/item/reagent_containers/food/condiment/small/packet/tea vol=5 holder=/datum/reagents tea=5
+/obj/item/reagent_containers/food/condiment/small/packet/cocoa vol=5 holder=/datum/reagents coco=5
+/obj/item/reagent_containers/food/condiment/small/packet/grape vol=5 holder=/datum/reagents instantgrape=5
+/obj/item/reagent_containers/food/condiment/small/packet/orange vol=5 holder=/datum/reagents instantorange=5
+/obj/item/reagent_containers/food/condiment/small/packet/watermelon vol=5 holder=/datum/reagents instantwatermelon=5
+/obj/item/reagent_containers/food/condiment/small/packet/apple vol=5 holder=/datum/reagents instantapple=5
+/obj/item/reagent_containers/food/condiment/small/packet/protein vol=10 holder=/datum/reagents protein=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon vol=10 holder=/datum/reagents 
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/generic vol=10 holder=/datum/reagents crayon_dust=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/red vol=10 holder=/datum/reagents crayon_dust_red=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/orange vol=10 holder=/datum/reagents crayon_dust_orange=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/yellow vol=10 holder=/datum/reagents crayon_dust_yellow=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/green vol=10 holder=/datum/reagents crayon_dust_green=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/blue vol=10 holder=/datum/reagents crayon_dust_blue=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/purple vol=10 holder=/datum/reagents crayon_dust_purple=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/grey vol=10 holder=/datum/reagents crayon_dust_grey=10
+/obj/item/reagent_containers/food/condiment/small/packet/crayon/brown vol=10 holder=/datum/reagents crayon_dust_brown=10
+/obj/item/reagent_containers/food/condiment/small/packet/protein_powder vol=5 holder=/datum/reagents protein_powder=5
+/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/vanilla vol=5 holder=/datum/reagents protein_powder=5
+/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/banana vol=5 holder=/datum/reagents protein_powder=5
+/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/chocolate vol=5 holder=/datum/reagents protein_powder=5
+/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/strawberry vol=5 holder=/datum/reagents protein_powder=5
+/obj/item/reagent_containers/food/condiment/carton vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/food/condiment/carton/flour vol=220 holder=/datum/reagents flour=200
+/obj/item/reagent_containers/food/condiment/carton/flour/rustic vol=220 holder=/datum/reagents flour=200
+/obj/item/reagent_containers/food/condiment/carton/sugar vol=120 holder=/datum/reagents sugar=100
+/obj/item/reagent_containers/food/condiment/carton/sugar/rustic vol=120 holder=/datum/reagents sugar=100
+/obj/item/reagent_containers/food/condiment/spacespice vol=40 holder=/datum/reagents spacespice=40
+/obj/item/reagent_containers/food/rawnutrition vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/powder vol=50 holder=/datum/reagents 
+/obj/item/reagent_containers/rollingpaper vol=25 holder=/datum/reagents 
+/obj/item/reagent_containers/rollingpaper/blunt vol=45 holder=/datum/reagents 
+/obj/item/reagent_containers/ecig_cartridge vol=20 holder=/datum/reagents 
+/obj/item/reagent_containers/ecig_cartridge/blank vol=20 holder=/datum/reagents 
+/obj/item/reagent_containers/ecig_cartridge/blanknico vol=20 holder=/datum/reagents nicotine=5,water=10
+/obj/item/reagent_containers/ecig_cartridge/med_nicotine vol=20 holder=/datum/reagents nicotine=5,water=15
+/obj/item/reagent_containers/ecig_cartridge/high_nicotine vol=20 holder=/datum/reagents nicotine=10,water=10
+/obj/item/reagent_containers/ecig_cartridge/orange vol=20 holder=/datum/reagents nicotine=5,orangejuice=5,water=10
+/obj/item/reagent_containers/ecig_cartridge/mint vol=20 holder=/datum/reagents menthol=5,nicotine=5,water=10
+/obj/item/reagent_containers/ecig_cartridge/watermelon vol=20 holder=/datum/reagents nicotine=5,water=10,watermelonjuice=5
+/obj/item/reagent_containers/ecig_cartridge/grape vol=20 holder=/datum/reagents grapejuice=5,nicotine=5,water=10
+/obj/item/reagent_containers/ecig_cartridge/lemonlime vol=20 holder=/datum/reagents lemon_lime=5,nicotine=5,water=10
+/obj/item/reagent_containers/ecig_cartridge/coffee vol=20 holder=/datum/reagents americano=15,nicotine=5
+/obj/item/reagent_containers/hypospray vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/hypospray/vial vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/hypospray/vial/tempest vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/hypospray/vial/kenzie vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/hypospray/autoinjector vol=5 holder=/datum/reagents inaprovaline=5
+/obj/item/reagent_containers/hypospray/autoinjector/empty vol=5 holder=/datum/reagents 
+/obj/item/reagent_containers/hypospray/autoinjector/used vol=5 holder=/datum/reagents inaprovaline=5
+/obj/item/reagent_containers/hypospray/autoinjector/detox vol=5 holder=/datum/reagents anti_toxin=5
+/obj/item/reagent_containers/hypospray/autoinjector/bonemed vol=5 holder=/datum/reagents osteodaxon=5
+/obj/item/reagent_containers/hypospray/autoinjector/bonemed/unidentified vol=5 holder=/datum/reagents osteodaxon=5
+/obj/item/reagent_containers/hypospray/autoinjector/clonemed vol=5 holder=/datum/reagents rezadone=5
+/obj/item/reagent_containers/hypospray/autoinjector/clonemed/unidentified vol=5 holder=/datum/reagents rezadone=5
+/obj/item/reagent_containers/hypospray/autoinjector/allergen vol=5 holder=/datum/reagents inaprovaline=5
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector vol=15 holder=/datum/reagents inaprovaline=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty vol=15 holder=/datum/reagents 
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute vol=15 holder=/datum/reagents bicaridine=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute/unidentified vol=15 holder=/datum/reagents bicaridine=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn vol=15 holder=/datum/reagents dermaline=7.5,kelotane=7.5
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn/unidentified vol=15 holder=/datum/reagents dermaline=7.5,kelotane=7.5
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin vol=15 holder=/datum/reagents anti_toxin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin/unidentified vol=15 holder=/datum/reagents anti_toxin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/oxy vol=15 holder=/datum/reagents dexalinp=10,tricordrazine=5
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/oxy/unidentified vol=15 holder=/datum/reagents dexalinp=10,tricordrazine=5
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/purity vol=15 holder=/datum/reagents arithrazine=5,prussian_blue=5,ryetalyn=1,spaceacillin=4
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/purity/unidentified vol=15 holder=/datum/reagents arithrazine=5,prussian_blue=5,ryetalyn=1,spaceacillin=4
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain vol=15 holder=/datum/reagents tramadol=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain/unidentified vol=15 holder=/datum/reagents tramadol=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/organ vol=15 holder=/datum/reagents alkysine=3,imidazoline=2,peridaxon=10
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/organ/unidentified vol=15 holder=/datum/reagents alkysine=3,imidazoline=2,peridaxon=10
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/combat vol=15 holder=/datum/reagents bicaridine=3,dermaline=1.5,hyperzine=3,kelotane=1.5,oxycodone=3,tricordrazine=3
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/combat/unidentified vol=15 holder=/datum/reagents bicaridine=3,dermaline=1.5,hyperzine=3,kelotane=1.5,oxycodone=3,tricordrazine=3
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/clotting vol=15 holder=/datum/reagents inaprovaline=5,myelamine=10
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/clotting/unidentified vol=15 holder=/datum/reagents inaprovaline=5,myelamine=10
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/glucose vol=15 holder=/datum/reagents glucose=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/stimm vol=15 holder=/datum/reagents stimm=10
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/stimm/unidentified vol=15 holder=/datum/reagents stimm=10
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/expired vol=15 holder=/datum/reagents expired_medicine=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/expired/unidentified vol=15 holder=/datum/reagents expired_medicine=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/soporific vol=15 holder=/datum/reagents stoxin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/soporific/unidentified vol=15 holder=/datum/reagents stoxin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/cyanide vol=15 holder=/datum/reagents cyanide=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/cyanide/unidentified vol=15 holder=/datum/reagents cyanide=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/serotrotium vol=15 holder=/datum/reagents serotrotium=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/serotrotium/unidentified vol=15 holder=/datum/reagents serotrotium=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/bliss vol=15 holder=/datum/reagents bliss=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/bliss/unidentified vol=15 holder=/datum/reagents bliss=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/cryptobiolin vol=15 holder=/datum/reagents cryptobiolin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/cryptobiolin/unidentified vol=15 holder=/datum/reagents cryptobiolin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/impedrezene vol=15 holder=/datum/reagents impedrezene=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/impedrezene/unidentified vol=15 holder=/datum/reagents impedrezene=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/mindbreaker vol=15 holder=/datum/reagents mindbreaker=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/mindbreaker/unidentified vol=15 holder=/datum/reagents mindbreaker=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/psilocybin vol=15 holder=/datum/reagents psilocybin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/psilocybin/unidentified vol=15 holder=/datum/reagents psilocybin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/mutagen vol=15 holder=/datum/reagents mutagen=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/mutagen/unidentified vol=15 holder=/datum/reagents mutagen=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/lexorin vol=15 holder=/datum/reagents lexorin=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/healing_nanites vol=15 holder=/datum/reagents healing_nanites=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/healing_nanites/unidentified vol=15 holder=/datum/reagents healing_nanites=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/defective_nanites vol=15 holder=/datum/reagents defective_nanites=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/defective_nanites/unidentified vol=15 holder=/datum/reagents defective_nanites=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/contaminated vol=15 holder=/datum/reagents virusfood=15
+/obj/item/reagent_containers/hypospray/autoinjector/biginjector/contaminated/unidentified vol=15 holder=/datum/reagents virusfood=15
+/obj/item/reagent_containers/hypospray/autoinjector/burn vol=5 holder=/datum/reagents dermaline=3.5,leporazine=1.5
+/obj/item/reagent_containers/hypospray/autoinjector/trauma vol=5 holder=/datum/reagents bicaridine=4,tramadol=1
+/obj/item/reagent_containers/hypospray/autoinjector/oxy vol=5 holder=/datum/reagents dexalinp=5
+/obj/item/reagent_containers/hypospray/autoinjector/rad vol=5 holder=/datum/reagents hyronalin=5
+/obj/item/reagent_containers/hypospray/autoinjector/stabiliser vol=5 holder=/datum/reagents inaprovaline=2,norepinephrine=3
+/obj/item/reagent_containers/hypospray/science vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/spray vol=250 holder=/datum/reagents 
+/obj/item/reagent_containers/spray/luminol vol=250 holder=/datum/reagents luminol=250
+/obj/item/reagent_containers/spray/cleaner vol=250 holder=/datum/reagents cleaner=250
+/obj/item/reagent_containers/spray/cleaner/drone vol=50 holder=/datum/reagents cleaner=50
+/obj/item/reagent_containers/spray/sterilizine vol=250 holder=/datum/reagents sterilizine=250
+/obj/item/reagent_containers/spray/pepper vol=40 holder=/datum/reagents condensedcapsaicin=40
+/obj/item/reagent_containers/spray/waterflower vol=10 holder=/datum/reagents water=10
+/obj/item/reagent_containers/spray/chemsprayer vol=600 holder=/datum/reagents 
+/obj/item/reagent_containers/spray/chemsprayer/hosed vol=600 holder=/datum/reagents 
+/obj/item/reagent_containers/spray/plantbgone vol=100 holder=/datum/reagents plantbgone=100
+/obj/item/reagent_containers/spray/windowsealant vol=80 holder=/datum/reagents silicate=80
+/obj/item/reagent_containers/cooking_container vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/cooking_container/oven vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/cooking_container/fryer vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/cooking_container/grill vol=80 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/hound vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/hound/lost vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/hound/trauma vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/surgeon vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/crisis vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/lost vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/merc vol=30 holder=/datum/reagents 
+/obj/item/reagent_containers/borghypo/service vol=60 holder=/datum/reagents 
+/obj/item/reagent_containers/chem_disp_cartridge vol=500 holder=/datum/reagents 
+/obj/item/reagent_containers/chem_disp_cartridge/small vol=100 holder=/datum/reagents 
+/obj/item/reagent_containers/chem_disp_cartridge/medium vol=250 holder=/datum/reagents 
+/obj/item/reagent_containers/chem_disp_cartridge/water vol=500 holder=/datum/reagents water=500
+/obj/item/reagent_containers/chem_disp_cartridge/sugar vol=500 holder=/datum/reagents sugar=500
+/obj/item/reagent_containers/chem_disp_cartridge/hydrogen vol=500 holder=/datum/reagents hydrogen=500
+/obj/item/reagent_containers/chem_disp_cartridge/lithium vol=500 holder=/datum/reagents lithium=500
+/obj/item/reagent_containers/chem_disp_cartridge/carbon vol=500 holder=/datum/reagents carbon=500
+/obj/item/reagent_containers/chem_disp_cartridge/nitrogen vol=500 holder=/datum/reagents nitrogen=500
+/obj/item/reagent_containers/chem_disp_cartridge/oxygen vol=500 holder=/datum/reagents oxygen=500
+/obj/item/reagent_containers/chem_disp_cartridge/fluorine vol=500 holder=/datum/reagents fluorine=500
+/obj/item/reagent_containers/chem_disp_cartridge/sodium vol=500 holder=/datum/reagents sodium=500
+/obj/item/reagent_containers/chem_disp_cartridge/aluminum vol=500 holder=/datum/reagents aluminum=500
+/obj/item/reagent_containers/chem_disp_cartridge/silicon vol=500 holder=/datum/reagents silicon=500
+/obj/item/reagent_containers/chem_disp_cartridge/phosphorus vol=500 holder=/datum/reagents phosphorus=500
+/obj/item/reagent_containers/chem_disp_cartridge/sulfur vol=500 holder=/datum/reagents sulfur=500
+/obj/item/reagent_containers/chem_disp_cartridge/chlorine vol=500 holder=/datum/reagents chlorine=500
+/obj/item/reagent_containers/chem_disp_cartridge/potassium vol=500 holder=/datum/reagents potassium=500
+/obj/item/reagent_containers/chem_disp_cartridge/iron vol=500 holder=/datum/reagents iron=500
+/obj/item/reagent_containers/chem_disp_cartridge/copper vol=500 holder=/datum/reagents copper=500
+/obj/item/reagent_containers/chem_disp_cartridge/mercury vol=500 holder=/datum/reagents mercury=500
+/obj/item/reagent_containers/chem_disp_cartridge/radium vol=500 holder=/datum/reagents radium=500
+/obj/item/reagent_containers/chem_disp_cartridge/ethanol vol=500 holder=/datum/reagents ethanol=500
+/obj/item/reagent_containers/chem_disp_cartridge/sacid vol=500 holder=/datum/reagents sacid=500
+/obj/item/reagent_containers/chem_disp_cartridge/tungsten vol=500 holder=/datum/reagents tungsten=500
+/obj/item/reagent_containers/chem_disp_cartridge/calcium vol=500 holder=/datum/reagents calcium=500
+/obj/item/reagent_containers/chem_disp_cartridge/beer vol=500 holder=/datum/reagents beer=500
+/obj/item/reagent_containers/chem_disp_cartridge/kahlua vol=500 holder=/datum/reagents kahlua=500
+/obj/item/reagent_containers/chem_disp_cartridge/whiskey vol=500 holder=/datum/reagents whiskey=500
+/obj/item/reagent_containers/chem_disp_cartridge/redwine vol=500 holder=/datum/reagents redwine=500
+/obj/item/reagent_containers/chem_disp_cartridge/whitewine vol=500 holder=/datum/reagents whitewine=500
+/obj/item/reagent_containers/chem_disp_cartridge/vodka vol=500 holder=/datum/reagents vodka=500
+/obj/item/reagent_containers/chem_disp_cartridge/gin vol=500 holder=/datum/reagents gin=500
+/obj/item/reagent_containers/chem_disp_cartridge/rum vol=500 holder=/datum/reagents rum=500
+/obj/item/reagent_containers/chem_disp_cartridge/tequila vol=500 holder=/datum/reagents tequila=500
+/obj/item/reagent_containers/chem_disp_cartridge/vermouth vol=500 holder=/datum/reagents vermouth=500
+/obj/item/reagent_containers/chem_disp_cartridge/cognac vol=500 holder=/datum/reagents cognac=500
+/obj/item/reagent_containers/chem_disp_cartridge/ale vol=500 holder=/datum/reagents ale=500
+/obj/item/reagent_containers/chem_disp_cartridge/mead vol=500 holder=/datum/reagents mead=500
+/obj/item/reagent_containers/chem_disp_cartridge/bitters vol=500 holder=/datum/reagents bitters=500
+/obj/item/reagent_containers/chem_disp_cartridge/cider vol=500 holder=/datum/reagents cider=500
+/obj/item/reagent_containers/chem_disp_cartridge/ice vol=500 holder=/datum/reagents ice=500
+/obj/item/reagent_containers/chem_disp_cartridge/tea vol=500 holder=/datum/reagents tea=500
+/obj/item/reagent_containers/chem_disp_cartridge/icetea vol=500 holder=/datum/reagents icetea=500
+/obj/item/reagent_containers/chem_disp_cartridge/cola vol=500 holder=/datum/reagents cola=500
+/obj/item/reagent_containers/chem_disp_cartridge/smw vol=500 holder=/datum/reagents spacemountainwind=500
+/obj/item/reagent_containers/chem_disp_cartridge/dr_gibb vol=500 holder=/datum/reagents dr_gibb=500
+/obj/item/reagent_containers/chem_disp_cartridge/spaceup vol=500 holder=/datum/reagents space_up=500
+/obj/item/reagent_containers/chem_disp_cartridge/tonic vol=500 holder=/datum/reagents tonic=500
+/obj/item/reagent_containers/chem_disp_cartridge/sodawater vol=500 holder=/datum/reagents sodawater=500
+/obj/item/reagent_containers/chem_disp_cartridge/lemon_lime vol=500 holder=/datum/reagents lemon_lime=500
+/obj/item/reagent_containers/chem_disp_cartridge/orange vol=500 holder=/datum/reagents orangejuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/lime vol=500 holder=/datum/reagents limejuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/watermelon vol=500 holder=/datum/reagents watermelonjuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/lemon vol=500 holder=/datum/reagents lemonjuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/grapesoda vol=500 holder=/datum/reagents grapesoda=500
+/obj/item/reagent_containers/chem_disp_cartridge/pineapple vol=500 holder=/datum/reagents pineapplejuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/coffee vol=500 holder=/datum/reagents coffee=500
+/obj/item/reagent_containers/chem_disp_cartridge/drip_coffee vol=500 holder=/datum/reagents drip_coffee=500
+/obj/item/reagent_containers/chem_disp_cartridge/cafe_latte vol=500 holder=/datum/reagents cafe_latte=500
+/obj/item/reagent_containers/chem_disp_cartridge/soy_latte vol=500 holder=/datum/reagents soy_latte=500
+/obj/item/reagent_containers/chem_disp_cartridge/hot_coco vol=500 holder=/datum/reagents hot_coco=500
+/obj/item/reagent_containers/chem_disp_cartridge/milk vol=500 holder=/datum/reagents milk=500
+/obj/item/reagent_containers/chem_disp_cartridge/milk_foam vol=500 holder=/datum/reagents milk_foam=500
+/obj/item/reagent_containers/chem_disp_cartridge/cream vol=500 holder=/datum/reagents cream=500
+/obj/item/reagent_containers/chem_disp_cartridge/mint vol=500 holder=/datum/reagents mint=500
+/obj/item/reagent_containers/chem_disp_cartridge/berry vol=500 holder=/datum/reagents berryjuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/greentea vol=500 holder=/datum/reagents greentea=500
+/obj/item/reagent_containers/chem_disp_cartridge/decaf vol=500 holder=/datum/reagents decaf=500
+/obj/item/reagent_containers/chem_disp_cartridge/chaitea vol=500 holder=/datum/reagents chaitea=500
+/obj/item/reagent_containers/chem_disp_cartridge/decafchai vol=500 holder=/datum/reagents chaiteadecaf=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_pumpkin vol=500 holder=/datum/reagents syrup_pumpkin=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_caramel vol=500 holder=/datum/reagents syrup_caramel=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_scaramel vol=500 holder=/datum/reagents syrup_salted_caramel=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_irish vol=500 holder=/datum/reagents syrup_irish=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_almond vol=500 holder=/datum/reagents syrup_almond=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_cinnamon vol=500 holder=/datum/reagents syrup_cinnamon=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_pistachio vol=500 holder=/datum/reagents syrup_pistachio=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_vanilla vol=500 holder=/datum/reagents syrup_vanilla=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_toffee vol=500 holder=/datum/reagents syrup_toffee=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_cherry vol=500 holder=/datum/reagents syrup_cherry=500
+/obj/item/reagent_containers/chem_disp_cartridge/grenadine vol=500 holder=/datum/reagents grenadine=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_butterscotch vol=500 holder=/datum/reagents syrup_butterscotch=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_chocolate vol=500 holder=/datum/reagents syrup_chocolate=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_wchocolate vol=500 holder=/datum/reagents syrup_white_chocolate=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_strawberry vol=500 holder=/datum/reagents syrup_strawberry=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_coconut vol=500 holder=/datum/reagents syrup_coconut=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_ginger vol=500 holder=/datum/reagents syrup_ginger=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_gingerbread vol=500 holder=/datum/reagents syrup_gingerbread=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_peppermint vol=500 holder=/datum/reagents syrup_peppermint=500
+/obj/item/reagent_containers/chem_disp_cartridge/syrup_birthday vol=500 holder=/datum/reagents syrup_birthday=500
+/obj/item/reagent_containers/chem_disp_cartridge/inaprov vol=500 holder=/datum/reagents inaprovaline=500
+/obj/item/reagent_containers/chem_disp_cartridge/ryetalyn vol=500 holder=/datum/reagents ryetalyn=500
+/obj/item/reagent_containers/chem_disp_cartridge/paracetamol vol=500 holder=/datum/reagents paracetamol=500
+/obj/item/reagent_containers/chem_disp_cartridge/tramadol vol=500 holder=/datum/reagents tramadol=500
+/obj/item/reagent_containers/chem_disp_cartridge/oxycodone vol=500 holder=/datum/reagents oxycodone=500
+/obj/item/reagent_containers/chem_disp_cartridge/sterilizine vol=500 holder=/datum/reagents sterilizine=500
+/obj/item/reagent_containers/chem_disp_cartridge/leporazine vol=500 holder=/datum/reagents leporazine=500
+/obj/item/reagent_containers/chem_disp_cartridge/kelotane vol=500 holder=/datum/reagents kelotane=500
+/obj/item/reagent_containers/chem_disp_cartridge/dermaline vol=500 holder=/datum/reagents dermaline=500
+/obj/item/reagent_containers/chem_disp_cartridge/dexalin vol=500 holder=/datum/reagents dexalin=500
+/obj/item/reagent_containers/chem_disp_cartridge/dexalin/small vol=100 holder=/datum/reagents dexalin=100
+/obj/item/reagent_containers/chem_disp_cartridge/dexalin_p vol=500 holder=/datum/reagents dexalinp=500
+/obj/item/reagent_containers/chem_disp_cartridge/tricord vol=500 holder=/datum/reagents tricordrazine=500
+/obj/item/reagent_containers/chem_disp_cartridge/dylovene vol=500 holder=/datum/reagents anti_toxin=500
+/obj/item/reagent_containers/chem_disp_cartridge/synaptizine vol=500 holder=/datum/reagents synaptizine=500
+/obj/item/reagent_containers/chem_disp_cartridge/hyronalin vol=500 holder=/datum/reagents hyronalin=500
+/obj/item/reagent_containers/chem_disp_cartridge/arithrazine vol=500 holder=/datum/reagents arithrazine=500
+/obj/item/reagent_containers/chem_disp_cartridge/alkysine vol=500 holder=/datum/reagents alkysine=500
+/obj/item/reagent_containers/chem_disp_cartridge/imidazoline vol=500 holder=/datum/reagents imidazoline=500
+/obj/item/reagent_containers/chem_disp_cartridge/peridaxon vol=500 holder=/datum/reagents peridaxon=500
+/obj/item/reagent_containers/chem_disp_cartridge/bicaridine vol=500 holder=/datum/reagents bicaridine=500
+/obj/item/reagent_containers/chem_disp_cartridge/hyperzine vol=500 holder=/datum/reagents hyperzine=500
+/obj/item/reagent_containers/chem_disp_cartridge/rezadone vol=500 holder=/datum/reagents rezadone=500
+/obj/item/reagent_containers/chem_disp_cartridge/spaceacillin vol=500 holder=/datum/reagents spaceacillin=500
+/obj/item/reagent_containers/chem_disp_cartridge/ethylredox vol=500 holder=/datum/reagents ethylredoxrazine=500
+/obj/item/reagent_containers/chem_disp_cartridge/sleeptox vol=500 holder=/datum/reagents stoxin=500
+/obj/item/reagent_containers/chem_disp_cartridge/chloral vol=500 holder=/datum/reagents chloralhydrate=500
+/obj/item/reagent_containers/chem_disp_cartridge/cryoxadone vol=500 holder=/datum/reagents cryoxadone=500
+/obj/item/reagent_containers/chem_disp_cartridge/clonexadone vol=500 holder=/datum/reagents clonexadone=500
+/obj/item/reagent_containers/chem_disp_cartridge/gelatin vol=500 holder=/datum/reagents gelatin=500
+/obj/item/reagent_containers/chem_disp_cartridge/nothing vol=500 holder=/datum/reagents nothing=500
+/obj/item/reagent_containers/chem_disp_cartridge/champagne vol=500 holder=/datum/reagents champagne=500
+/obj/item/reagent_containers/chem_disp_cartridge/singulo vol=500 holder=/datum/reagents singulo=500
+/obj/item/reagent_containers/chem_disp_cartridge/doctorsdelight vol=500 holder=/datum/reagents doctorsdelight=500
+/obj/item/reagent_containers/chem_disp_cartridge/banana vol=500 holder=/datum/reagents banana=500
+/obj/item/reagent_containers/chem_disp_cartridge/honey vol=500 holder=/datum/reagents honey=500
+/obj/item/reagent_containers/chem_disp_cartridge/egg vol=500 holder=/datum/reagents egg=500
+/obj/item/reagent_containers/chem_disp_cartridge/coco vol=500 holder=/datum/reagents coco=500
+/obj/item/reagent_containers/chem_disp_cartridge/cherryjelly vol=500 holder=/datum/reagents cherryjelly=500
+/obj/item/reagent_containers/chem_disp_cartridge/carrotjuice vol=500 holder=/datum/reagents carrotjuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/applejuice vol=500 holder=/datum/reagents applejuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/tomatojuice vol=500 holder=/datum/reagents tomatojuice=500
+/obj/item/reagent_containers/chem_disp_cartridge/peanutbutter vol=500 holder=/datum/reagents peanutbutter=500
+/obj/item/reagent_containers/chem_disp_cartridge/matcha_latte vol=500 holder=/datum/reagents matcha_latte=500
+/obj/item/reagent_containers/chem_disp_cartridge/soymilk vol=500 holder=/datum/reagents soymilk=500
+/obj/item/reagent_containers/chem_disp_cartridge/gingerale vol=500 holder=/datum/reagents gingerale=500
+/obj/item/reagent_containers/chem_disp_cartridge/roy_rogers vol=500 holder=/datum/reagents roy_rogers=500
+/obj/item/reagent_containers/chem_disp_cartridge/patron vol=500 holder=/datum/reagents patron=500
+/obj/item/reagent_containers/chem_disp_cartridge/goldschlager vol=500 holder=/datum/reagents goldschlager=500
+/obj/item/reagent_containers/chem_disp_cartridge/melonliquor vol=500 holder=/datum/reagents melonliquor=500
+/obj/item/reagent_containers/chem_disp_cartridge/bluecuracao vol=500 holder=/datum/reagents bluecuracao=500
+/obj/item/reagent_containers/chem_disp_cartridge/thirteenloko vol=500 holder=/datum/reagents thirteenloko=500
+/obj/item/reagent_containers/chem_disp_cartridge/deadrum vol=500 holder=/datum/reagents deadrum=500
+/obj/item/reagent_containers/chem_disp_cartridge/sake vol=500 holder=/datum/reagents sake=500
+/obj/item/reagent_containers/chem_disp_cartridge/acidspit vol=500 holder=/datum/reagents acidspit=500
+/obj/item/reagent_containers/chem_disp_cartridge/amasec vol=500 holder=/datum/reagents amasec=500
+/obj/item/reagent_containers/chem_disp_cartridge/beepskysmash vol=500 holder=/datum/reagents beepskysmash=500
+/obj/item/reagent_containers/chem_disp_cartridge/atomicbomb vol=500 holder=/datum/reagents atomicbomb=500
+/obj/item/reagent_containers/chem_disp_cartridge/nuka_cola vol=500 holder=/datum/reagents nuka_cola=500
+/obj/item/reagent_containers/chem_disp_cartridge/threemileisland vol=500 holder=/datum/reagents threemileisland=500
+/obj/item/reagent_containers/chem_disp_cartridge/manhattan_proj vol=500 holder=/datum/reagents manhattan_proj=500
+/obj/item/reagent_containers/chem_disp_cartridge/psilocybin vol=500 holder=/datum/reagents psilocybin=500
+/obj/item/reagent_containers/chem_disp_cartridge/moonshine vol=500 holder=/datum/reagents moonshine=500
+/obj/item/reagent_containers/chem_disp_cartridge/specialwhiskey vol=500 holder=/datum/reagents specialwhiskey=500
+/obj/item/reagent_containers/chem_disp_cartridge/unathiliquor vol=500 holder=/datum/reagents unathiliquor=500
+/obj/item/reagent_containers/chem_disp_cartridge/winebrandy vol=500 holder=/datum/reagents winebrandy=500
+/obj/item/reagent_containers/chem_disp_cartridge/snaps vol=500 holder=/datum/reagents snaps=500
+/obj/item/reagent_containers/chem_disp_cartridge/ammonia vol=500 holder=/datum/reagents ammonia=500
+/obj/item/reagent_containers/chem_disp_cartridge/diethylamine vol=500 holder=/datum/reagents diethylamine=500
+/obj/item/reagent_containers/chem_disp_cartridge/plantbgone vol=500 holder=/datum/reagents plantbgone=500
+/obj/item/reagent_containers/chem_disp_cartridge/mutagen vol=500 holder=/datum/reagents mutagen=500
+/obj/item/reagent_containers/chem_disp_cartridge/nutriment vol=500 holder=/datum/reagents nutriment=500
+/obj/item/reagent_containers/chem_disp_cartridge/protein vol=500 holder=/datum/reagents protein=500
+/obj/item/reagent_containers/chem_disp_cartridge/biomass vol=500 holder=/datum/reagents biomass=500
+/obj/item/reagent_containers/chem_disp_cartridge/carthatoline vol=500 holder=/datum/reagents carthatoline=500
+/obj/item/reagent_containers/chem_disp_cartridge/corophizine vol=500 holder=/datum/reagents corophizine=500
+/obj/item/reagent_containers/chem_disp_cartridge/myelamine vol=500 holder=/datum/reagents myelamine=500
+/obj/item/reagent_containers/chem_disp_cartridge/osteodaxon vol=500 holder=/datum/reagents osteodaxon=500
+/obj/item/reagent_containers/blood vol=200 holder=/datum/reagents 
+/obj/item/reagent_containers/blood/APlus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/AMinus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/BPlus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/BMinus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/OPlus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/OMinus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/synthplas vol=200 holder=/datum/reagents synthblood_dilute=200
+/obj/item/reagent_containers/blood/synthblood vol=200 holder=/datum/reagents synthblood=200
+/obj/item/reagent_containers/blood/empty vol=200 holder=/datum/reagents 
+/obj/item/reagent_containers/blood/random_bloodsucker vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/prelabeled vol=200 holder=/datum/reagents 
+/obj/item/reagent_containers/blood/prelabeled/APlus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/prelabeled/AMinus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/prelabeled/BPlus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/prelabeled/BMinus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/prelabeled/OPlus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/blood/prelabeled/OMinus vol=200 holder=/datum/reagents blood=200
+/obj/item/reagent_containers/dropper vol=5 holder=/datum/reagents 
+/obj/item/reagent_containers/dropper/industrial vol=10 holder=/datum/reagents 
+/obj/item/reagent_containers/chem_canister vol=500 holder=/datum/reagents 
+/obj/item/reagent_containers/chem_canister/water vol=500 holder=/datum/reagents water=500
+/obj/item/reagent_containers/chem_canister/sugar vol=500 holder=/datum/reagents sugar=500
+/obj/item/reagent_containers/chem_canister/hydrogen vol=500 holder=/datum/reagents hydrogen=500
+/obj/item/reagent_containers/chem_canister/lithium vol=500 holder=/datum/reagents lithium=500
+/obj/item/reagent_containers/chem_canister/carbon vol=500 holder=/datum/reagents carbon=500
+/obj/item/reagent_containers/chem_canister/nitrogen vol=500 holder=/datum/reagents nitrogen=500
+/obj/item/reagent_containers/chem_canister/oxygen vol=500 holder=/datum/reagents oxygen=500
+/obj/item/reagent_containers/chem_canister/fluorine vol=500 holder=/datum/reagents fluorine=500
+/obj/item/reagent_containers/chem_canister/sodium vol=500 holder=/datum/reagents sodium=500
+/obj/item/reagent_containers/chem_canister/aluminum vol=500 holder=/datum/reagents aluminum=500
+/obj/item/reagent_containers/chem_canister/silicon vol=500 holder=/datum/reagents silicon=500
+/obj/item/reagent_containers/chem_canister/phosphorus vol=500 holder=/datum/reagents phosphorus=500
+/obj/item/reagent_containers/chem_canister/sulfur vol=500 holder=/datum/reagents sulfur=500
+/obj/item/reagent_containers/chem_canister/chlorine vol=500 holder=/datum/reagents chlorine=500
+/obj/item/reagent_containers/chem_canister/potassium vol=500 holder=/datum/reagents potassium=500
+/obj/item/reagent_containers/chem_canister/iron vol=500 holder=/datum/reagents iron=500
+/obj/item/reagent_containers/chem_canister/copper vol=500 holder=/datum/reagents copper=500
+/obj/item/reagent_containers/chem_canister/mercury vol=500 holder=/datum/reagents mercury=500
+/obj/item/reagent_containers/chem_canister/radium vol=500 holder=/datum/reagents radium=500
+/obj/item/reagent_containers/chem_canister/ethanol vol=500 holder=/datum/reagents ethanol=500
+/obj/item/reagent_containers/chem_canister/sacid vol=500 holder=/datum/reagents sacid=500
+/obj/item/reagent_containers/chem_canister/tungsten vol=500 holder=/datum/reagents tungsten=500
+/obj/item/reagent_containers/chem_canister/calcium vol=500 holder=/datum/reagents calcium=500
+

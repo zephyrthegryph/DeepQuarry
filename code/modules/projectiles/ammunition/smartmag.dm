@@ -28,9 +28,10 @@
 
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
-DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/ammo_magazine/smart)
+	every(2 SECONDS, then(PROC_REF(smart_step)))
 
-/obj/item/ammo_magazine/smart/periodic_step()
+/obj/item/ammo_magazine/smart/proc/smart_step(datum/act/timer/A)
 	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
 		if(istype(src.loc, /obj/item/gun))
 			rel_set(src, nameof(holding_gun), src.loc)

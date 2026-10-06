@@ -1,0 +1,10 @@
+/obj/item/grenade/chem_grenade vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/large vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/metalfoam vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/incendiary vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/antiweed vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/cleaner vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/teargas vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/miasma vol=1000 holder=/datum/reagents 
+/obj/item/grenade/chem_grenade/frost vol=1000 holder=/datum/reagents 
+

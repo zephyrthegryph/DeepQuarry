@@ -1,0 +1,16 @@
+cycle 1 touching: water=6/2
+cycle 1 ingested: nutriment=9.6/0.4 sugar=5.9/0.1 water=19/1
+cycle 1 bloodstr: bicaridine=11.8/0.2 inaprovaline=3.26/0.04 tramadol=39.98/0.02
+cycle 2 touching: water=4/4
+cycle 2 ingested: nutriment=9.2/0.8 sugar=5.8/0.2 water=18/2
+cycle 2 bloodstr: bicaridine=11.6/0.4 inaprovaline=3.22/0.08 tramadol=39.96/0.04
+cycle 3 touching: water=2/6
+cycle 3 ingested: nutriment=8.8/1.2 sugar=5.7/0.3 water=17/3
+cycle 3 bloodstr: bicaridine=11.4/0.6 inaprovaline=3.18/0.12 tramadol=39.94/0.06
+cycle 4 touching: 
+cycle 4 ingested: nutriment=8.4/1.6 sugar=5.6/0.4 water=16/4
+cycle 4 bloodstr: bicaridine=11.2/0.8 inaprovaline=3.14/0.16 tramadol=39.92/0.08
+cycle 5 touching: 
+cycle 5 ingested: nutriment=8/2 sugar=5.5/0.5 water=15/5
+cycle 5 bloodstr: bicaridine=11/1 inaprovaline=3.1/0.2 tramadol=39.9/0.1
+

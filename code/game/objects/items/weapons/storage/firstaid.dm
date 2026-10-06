@@ -601,42 +601,48 @@ CAPABILITIES(/obj/item/storage/mrebag/pill)
 
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/neotane, null, list(REAGENT_ID_NEOTANE = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/neotane)
+	configure(reagents(add = list(REAGENT_ID_NEOTANE = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/burncard
 	name = REAGENT_BURNCARD + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/burncard, null, list(REAGENT_ID_BURNCARD = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/burncard)
+	configure(reagents(add = list(REAGENT_ID_BURNCARD = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/flamecure
 	name = REAGENT_FLAMECURE + " (5u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/flamecure, null, list(REAGENT_ID_FLAMECURE = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/flamecure)
+	configure(reagents(add = list(REAGENT_ID_FLAMECURE = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/juggernog
 	name = REAGENT_JUGGERNOG + " (5u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/juggernog, null, list(REAGENT_ID_JUGGERNOG = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/juggernog)
+	configure(reagents(add = list(REAGENT_ID_JUGGERNOG = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/curea
 	name = REAGENT_CUREA + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/curea, null, list(REAGENT_ID_CUREA = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/curea)
+	configure(reagents(add = list(REAGENT_ID_CUREA = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/souldew
 	name = REAGENT_SOULDEW + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/souldew, null, list(REAGENT_ID_SOULDEW = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/souldew)
+	configure(reagents(add = list(REAGENT_ID_SOULDEW = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/purifyingagent
 	name = REAGENT_PURIFYINGAGENT + " (10u)"
@@ -644,25 +650,29 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/souldew, null, list(RE
 	desc = "An expirmental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/purifyingagent, null, list(REAGENT_ID_PURIFYINGAGENT = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/purifyingagent)
+	configure(reagents(add = list(REAGENT_ID_PURIFYINGAGENT = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/paroxetine
 	name = REAGENT_PAROXETINE + " (10u)"
 	desc = "A pill to help treat severe depression."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/paroxetine, null, list(REAGENT_ID_PAROXETINE = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/paroxetine)
+	configure(reagents(add = list(REAGENT_ID_PAROXETINE = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/adranol
 	name = REAGENT_ADRANOL + " (10u)"
 	desc = "A pill to help treat jitters, confusion, and blurred vision."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/adranol, null, list(REAGENT_ID_ADRANOL = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/adranol)
+	configure(reagents(add = list(REAGENT_ID_ADRANOL = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/aphrodisiac
 	name = REAGENT_APHRODISIAC + " (20u)"
 	desc = "Just one couldn't hurt, right?"
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/aphrodisiac, null, list(REAGENT_ID_APHRODISIAC = 20))
+CAPABILITIES(/obj/item/reagent_containers/pill/aphrodisiac)
+	configure(reagents(add = list(REAGENT_ID_APHRODISIAC = 20), tint = TRUE))
