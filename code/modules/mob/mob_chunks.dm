@@ -121,12 +121,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /// Something whose periodic work only matters with mobs (or players) nearby -- a radiation source,
 /// a spawner, a haunting -- ends its step with `return sleep_until_mob_near(radius)` when nobody is
-/// in range: it watches the chunks around it and restarts on its lane when a mob moves into one.
-/atom/movable/proc/proximity_woke(datum/mob_chunk/C, bits)
-	if(QDELETED(src) || !proximity_chunks)
-		return
-	proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask)
-	om_task_periodic(src, proximity_lane)
+/// in range: it watches the chunks around it and restarts on its lane when a mob moves into one (proximity_woke(), periodic.dm).
 
 /atom/movable/var/tmp/list/proximity_chunks
 /atom/movable/var/tmp/proximity_mask = 0

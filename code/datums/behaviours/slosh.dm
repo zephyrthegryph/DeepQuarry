@@ -21,8 +21,11 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 
 /datum/capability/slosh/proc/slosh_step(datum/act/A)
 	var/mob/living/source = A.holder
-	if(!istype(source))
-		return
+	if(istype(source))
+		slosh_moved(source)
+
+/// One step of `source` (the mob that moved): humans slosh by intent, silicons every other step.
+/datum/capability/slosh/proc/slosh_moved(mob/living/source)
 	if(ishuman(source))
 		var/mob/living/carbon/human/source_human = source
 		if(source_human.m_intent == I_WALK && source.slosh_steps++ % 20 == 0)

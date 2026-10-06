@@ -378,9 +378,6 @@ CAPABILITIES(/obj/item)
 	owns_one(nameof(identity), /datum/identification)
 	owns_one(nameof(mind_host), /datum/mind_host)
 	owns_many(nameof(possessed_voice))
-	// The tether (code/datums/behaviours/tethered_item.dm): losing the handheld remakes it, deleting the host deletes the handheld.
-	ref_one(nameof(tether_handheld_item), /obj/item, on_unlink = PROC_REF(tether_handheld_lost))
-	ref_one(nameof(tether_host_item), /obj/item, on_other_deleted = OTHER_DELETE_ME)
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)

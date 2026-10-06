@@ -6,7 +6,7 @@
 // made on first use, so an empty belly has none.
 //
 // Scheduling. There is no belly subsystem. A belly runs its digestion cycle on its
-// own clock (a keyed after(), "belly_cycle", it re-arms each cycle) only while something is inside it (or its owner previews it):
+// own clock (the belly_cycle capability's every(), granted while it is occupied) only while something is inside it (or its owner previews it):
 // belly_reschedule() starts it when the first thing enters and cancels it when the
 // last one leaves. An empty belly that makes liquid from nutrition sleeps on an
 // after() timer for its next batch instead. An empty, idle belly holds no
@@ -63,6 +63,21 @@
 /obj/belly/proc/belly_generates_liquid()
 	return isliving(owner) && show_liquids && reagentbellymode && (reagent_mode_flags & DM_FLAG_REAGENTSNUTRI) && !isnewplayer(owner)
 
+/// An occupied belly's digestion cycle: every(belly_cycle_period()) on the belly's own clock, granted by belly_reschedule().
+CAPABILITY_TYPE(belly_cycle, CAP_BELLY_CYCLE, /datum/capability/belly_cycle, key = NONE)
+/datum/capability/belly_cycle
+
+/datum/capability/belly_cycle/entries()
+	return list(every(TYPE_PROC_REF(/obj/belly, belly_cycle_interval), then(CAP_PROC(cycle_run))))
+
+/datum/capability/belly_cycle/proc/cycle_run(datum/act/timer/A)
+	var/obj/belly/B = A.holder
+	B.belly_cycle_due()
+
+/// The every() interval of the cycle: the period in deciseconds (the interval proc's form, x(datum/act/A)).
+/obj/belly/proc/belly_cycle_interval(datum/act/A)
+	return cycle_period || belly_cycle_period()
+
 /// Starts, retunes or stops this belly's scheduled work to match what it holds.
 /// Call it whenever contents, turbo mode, liquid settings or the preview change.
 /obj/belly/proc/belly_reschedule()
@@ -71,16 +86,14 @@
 	if(belly_occupied())
 		if(after_pending(src, "liquid_timer"))
 			cancel_after(src, "liquid_timer")
-		var/period = belly_cycle_period()
-		if(!cycle_token || cycle_period != period)
-			if(!cycle_token)
-				EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
+		cycle_period = belly_cycle_period()
+		if(!cycle_token)
+			EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 			cycle_token = TRUE
-			cycle_period = period
-			after(src, max(period - (world.time - cycle_last), 0), PROC_REF(belly_cycle_due), key = "belly_cycle")
+			grant(src, /datum/capability/belly_cycle, src)
 		return
 	if(cycle_token)
-		cancel_after(src, "belly_cycle")
+		revoke(src, /datum/capability/belly_cycle, src)
 		cycle_token = null
 		cycle_period = null
 		belly_surrounding = null
@@ -92,13 +105,12 @@
 	else if(after_pending(src, "liquid_timer"))
 		cancel_after(src, "liquid_timer")
 
-/// Occupied: one digestion cycle for the real time since the last one, then the next is armed.
+/// Occupied: one digestion cycle for the real time since the last one (the capability's every() arms the next).
 /obj/belly/proc/belly_cycle_due()
 	if(QDELETED(src) || !cycle_token)
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
 	EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
-	after(src, cycle_period, PROC_REF(belly_cycle_due), key = "belly_cycle")
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())
 		belly_reschedule()

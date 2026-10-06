@@ -42,7 +42,9 @@ CAPABILITY_TYPE(bluespace_connection, CAP_BLUESPACE_CONNECTION, /datum/capabilit
 
 /datum/capability/bluespace_connection/proc/bluespace_closed(datum/act/A)
 	var/obj/structure/closet/assigned_closet = A.holder
-	if(isemptylist(assigned_closet.contents))
+	assigned_closet.latent_materialize_all(CONTAINER_SLOT_INTERIOR)
+	var/list/inside = assigned_closet.slot_contents(CONTAINER_SLOT_INTERIOR)
+	if(!length(inside))
 		return
 	var/list/exits = assigned_closet.bluespace_exits()
 	if(!length(exits))
@@ -62,7 +64,7 @@ CAPABILITY_TYPE(bluespace_connection, CAP_BLUESPACE_CONNECTION, /datum/capabilit
 		after(exit_closet, 1 SECONDS, TYPE_PROC_REF(/obj/structure/closet, open))
 
 	playsound(exit_point, BLUESPACE_EXIT_SOUND, 50, TRUE)
-	after(assigned_closet, 1.3 SECONDS, TYPE_PROC_REF(/obj/structure/closet, bluespace_exit), with = list(exit_point, assigned_closet.contents.Copy()))
+	after(assigned_closet, 1.3 SECONDS, TYPE_PROC_REF(/obj/structure/closet, bluespace_exit), with = list(exit_point, inside))
 
 /obj/structure/closet/proc/bluespace_exit(atom/exit_point, list/moving)
 	// Nope, must be closed.
