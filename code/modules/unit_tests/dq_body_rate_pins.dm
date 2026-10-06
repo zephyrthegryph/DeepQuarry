@@ -320,3 +320,26 @@
 	for(var/obj/effect/decal/cleanable/B in range(1, patient))
 		qdel(B)
 
+
+// --- Slice 6: loose organs ---------------------------------------------------------------------------------------
+
+/// A liver taken out of the body ticks on its own (one tick: a germ), and stops once it is dead.
+/datum/unit_test/dq_body_pin/loose_organ_ticks
+
+/datum/unit_test/dq_body_pin/loose_organ_ticks/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
+	L.removed()
+	L.forceMove(H.loc)
+	TEST_ASSERT(body_pin_ticks_loose(L), "a removed liver ticks on its own")
+	var/before = L.germ_level
+	body_pin_loose_tick(L)
+	TEST_ASSERT(body_pin_close(L.germ_level, before + 1), "one loose tick gathers a germ ([before] -> [L.germ_level])")
+	L.die()
+	TEST_ASSERT(!body_pin_ticks_loose(L), "a dead loose organ stops ticking")
+	qdel(L)
+
+/proc/body_pin_ticks_loose(obj/item/organ/O)
+	return O.organ_ticks_loose()
+
+/proc/body_pin_loose_tick(obj/item/organ/O)
+	O.periodic_step()
