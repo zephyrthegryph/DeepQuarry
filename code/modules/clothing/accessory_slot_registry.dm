@@ -166,7 +166,7 @@ CAPABILITIES(/datum/accessory_slot_registry)
 		if(mod.registry_key != key)
 			continue
 		mod.revert(clothing)
-		own_remove(src, nameof(active_modifiers), mod)
+		rel_remove(src, nameof(active_modifiers), mod)
 
 // remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/on_destroy(force)

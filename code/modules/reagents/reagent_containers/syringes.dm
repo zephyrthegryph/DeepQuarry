@@ -123,7 +123,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 /obj/item/reagent_containers/syringe/proc/set_contamination(hash, list/contagions)
 	for(var/datum/syringe_contamination/old as anything in viruses?.Copy())
 		if(old.hash == hash)
-			own_remove(src, nameof(viruses), old)
+			rel_remove(src, nameof(viruses), old)
 	var/datum/syringe_contamination/C = new
 	C.hash = hash
 	for(var/datum/affliction/contagion/D as anything in contagions)

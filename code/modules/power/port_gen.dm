@@ -679,7 +679,7 @@ CAPABILITIES(/obj/machinery/power/rtg/fake_gen)
 		span_warningplain("You hear a loud electrical crack!"))
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, 5, power_gen * 0.05, current_jumps = 1)
-	after(null, 100, GLOBAL_PROC_REF(explosion), with = list(get_turf(src), 2, 3, 4, 8)) // Not a normal explosion.
+	after(null, 10 SECONDS, GLOBAL_PROC_REF(explosion), with = list(get_turf(src), 2, 3, 4, 8)) // Not a normal explosion.
 
 /obj/machinery/power/rtg/abductor/bullet_act(obj/item/projectile/Proj)
 	. = ..()

@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		taperecorder_stop_effect(user)
 	to_chat(user, span_notice("You remove [mytape] from [src]."))
 	user.put_in_hands(mytape)
-	own_take(src, nameof(mytape))
+	rel_take(src, nameof(mytape))
 	changed(src)
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)

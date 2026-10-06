@@ -195,7 +195,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		rel_clear(user, nameof(user.holo))
 	var/obj/effect/overlay/aiholo/old_holo = hologram_of(user)
 	if(old_holo)
-		own_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
+		rel_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
 	rel_remove(src, nameof(masters), user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
 		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)

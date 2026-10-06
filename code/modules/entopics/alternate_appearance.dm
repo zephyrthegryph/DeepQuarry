@@ -60,7 +60,7 @@
 		rel_add(src, nameof(alt_appearances_owned), null, key)
 
 /atom/proc/remove_all_alt_appearances()
-	own_clear(src, nameof(alt_appearances_owned), OWN_DELETE)
+	rel_clear(src, nameof(alt_appearances_owned))
 
 /atom/proc/display_alt_appearance(key, list/displayTo)
 	var/list/owned = dq_get_alt_appearances(src)

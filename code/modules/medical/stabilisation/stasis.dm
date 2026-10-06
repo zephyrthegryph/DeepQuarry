@@ -156,7 +156,7 @@
 		release(src, STAT_CLOCK_RATE_BIO, old_hold)
 		rel_add(src, nameof(stasis_sources), null, key)
 		if(!length(stasis_sources))
-			own_clear(src, nameof(stasis_sources), OWN_DELETE)
+			rel_clear(src, nameof(stasis_sources))
 	if(stasis_type)
 		var/static/hold_serial = 0
 		key = source ? "stasis_[++hold_serial]" : STASIS_NO_SOURCE

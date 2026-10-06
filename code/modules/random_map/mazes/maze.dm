@@ -56,7 +56,7 @@ CAPABILITIES(/datum/random_map/maze)
 
 	// Cleanup. Map stays in memory for display proc.
 	LAZYCLEARLIST(checked_coord_cache)
-	own_clear(src, nameof(openlist), OWN_DELETE)
+	rel_clear(src, nameof(openlist))
 	LAZYCLEARLIST(closedlist)
 
 /datum/random_map/maze/proc/add_to_openlist(tx, ty, nx, ny)

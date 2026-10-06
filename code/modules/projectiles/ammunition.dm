@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
 	. = BB
-	own_take(src, nameof(BB))
+	rel_take(src, nameof(BB))
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 	changed(src)
 
@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			return
 		var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
 		AC.forceMove(src)
-		own_transfer(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
+		rel_move(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
 		L.update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)

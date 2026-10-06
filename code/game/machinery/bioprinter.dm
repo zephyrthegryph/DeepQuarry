@@ -234,7 +234,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 /obj/machinery/organ_printer/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, nameof(container))
+		rel_take(src, nameof(container))
 		return 1
 	return 0
 
@@ -318,7 +318,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, nameof(container))
+			rel_take(src, nameof(container))
 	return ..()
 
 /obj/machinery/organ_printer/flesh/print_organ(choice)

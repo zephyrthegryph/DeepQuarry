@@ -238,14 +238,14 @@
 	visible_message(span_warning("\The [src] spits out \the [disk()]."))
 	rel_clear(src, nameof(current_br))
 	disk().forceMove(get_turf(src))
-	own_take(src, nameof(disk))
+	rel_take(src, nameof(disk))
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_view_b_rec(datum/act/op/A, ref)
 	view_b_rec(ref)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_clear_b_rec(datum/act/op/A)
-	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
+	rel_clear(src, nameof(src.current_br))
 	return OP_OK
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_view_m_rec(datum/act/op/A, ref)
@@ -263,10 +263,10 @@
 		. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_ejectdisk(datum/act/op/A)
-	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
+	rel_clear(src, nameof(src.current_br))
 	if(disk())
 		disk().forceMove(get_turf(src))
-		own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
+		rel_take(src, nameof(disk))
 	return OP_OK
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_create(datum/act/op/A)

@@ -30,14 +30,14 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		spawncount--
 
 	//Delayed announcements to keep the crew on their toes.
-	after(null, rand(500 SECONDS, 600 SECONDS), /proc/delayed_command_announcement, with = list("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS))
+	after(null, rand(500 SECONDS, 600 SECONDS), GLOBAL_PROC_REF(delayed_command_announcement), with = list("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS))
 
 /proc/carp_migration() // -- Darem
 	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn")
 			new /mob/living/simple_mob/animal/space/carp(C.loc)
 	//Delayed announcements to keep the crew on their toes.
-	after(null, rand(30 SECONDS, 60 SECONDS), /proc/delayed_command_announcement, with = list("Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", ANNOUNCER_MSG_NEW_COMMAND_REPORT))
+	after(null, rand(30 SECONDS, 60 SECONDS), GLOBAL_PROC_REF(delayed_command_announcement), with = list("Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", ANNOUNCER_MSG_NEW_COMMAND_REPORT))
 
 /proc/lightsout(isEvent = 0, lightsoutAmount = 1,lightsoutRange = 25) //leave lightsoutAmount as 0 to break ALL lights
 	if(isEvent)

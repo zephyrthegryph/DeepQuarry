@@ -343,7 +343,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 
 	// An edit replaces the old objective (deleted) with the new one at the end of the list.
 	if (objective)
-		own_remove(src, nameof(objectives), objective)
+		rel_remove(src, nameof(objectives), objective)
 	rel_add(src, nameof(objectives), new_objective)
 
 /datum/mind/proc/telecrystals_set(datum/act/request/A)
@@ -397,7 +397,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	role_alt_title =  null
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.
 	rel_clear(src, nameof(initial_account))
-	own_clear(src, nameof(objectives), OWN_DELETE)
+	rel_clear(src, nameof(objectives))
 	rel_clear(src, nameof(shared_objectives))
 	special_verbs =   list()
 	has_been_rev =    0

@@ -85,7 +85,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	return bolt
 
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
-	own_take(src, nameof(bolt))
+	rel_take(src, nameof(bolt))
 	set_tension(0)
 	..()
 
@@ -102,7 +102,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
 			var/obj/item/arrow/A = bolt
-			own_take(src, nameof(bolt))
+			rel_take(src, nameof(bolt))
 			A.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))

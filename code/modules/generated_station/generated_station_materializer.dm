@@ -391,9 +391,9 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/abort_materialization(stage, details)
 	last_failure_details = details || last_failure_details || stage
 	log_world("Generated station [spec()?.id] materialization failed during [stage].")
-	own_clear(src, nameof(result), OWN_DELETE)
-	own_clear(src, nameof(tile_plan), OWN_DELETE)
-	own_take(src, nameof(active_job))
+	rel_clear(src, nameof(result))
+	rel_clear(src, nameof(tile_plan))
+	rel_take(src, nameof(active_job))
 	return GENERATED_STATION_PHASE_FAILED
 
 /// A structural stage failed: its tile plan errors are the details.
@@ -414,7 +414,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/phase_tile_grid(cursor)
 	generation_checkpoint("Compiling structural ownership", 27)
 	if(!cursor)
-		own_clear(src, nameof(tile_plan), OWN_DELETE)
+		rel_clear(src, nameof(tile_plan))
 		rel_set(src, nameof(tile_plan), new /datum/generated_station_tile_plan(spec().grid_width, spec().grid_height, src, TRUE))
 		cursor = 1
 	for(var/x in cursor to tile_plan.grid_width)
@@ -518,7 +518,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	if(length(tile_plan.errors))
 		return abort_structural("tile-plan")
 	rel_set(result, nameof(result.tile_plan), tile_plan)
-	own_take(src, nameof(tile_plan))
+	rel_take(src, nameof(tile_plan))
 	return null
 
 /datum/generated_station_materializer/proc/phase_modules(cursor)
@@ -676,7 +676,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 
 /datum/generated_station_materializer/proc/phase_finalize(cursor)
 	finalize()
-	own_take(src, nameof(active_job))
+	rel_take(src, nameof(active_job))
 	return null
 
 /// Applies the Rust room floor contract after structural turfs exist. Room

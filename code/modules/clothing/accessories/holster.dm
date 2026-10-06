@@ -33,7 +33,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
-	own_take(src, nameof(holstered))
+	rel_take(src, nameof(holstered))
 	name = initial(name)
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.

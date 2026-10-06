@@ -10,13 +10,13 @@
 	M.set_species(SPECIES_CUSTOM)
 	var/datum/species/singleton = GLOB.all_species[SPECIES_CUSTOM]
 	TEST_ASSERT_EQUAL(M.species, singleton, "set_species points at the registered singleton")
-	TEST_ASSERT(!proto_is_private(M, nameof(M.species)), "a registered species is shared, not the mob's own")
+	TEST_ASSERT(!rel_is_private(M, nameof(M.species)), "a registered species is shared, not the mob's own")
 
 	var/list/capture = list()
 	set_global("dq_lifecycle_report_capture", capture)
 	var/list/traits = list(/datum/trait/neutral/addiction_coffee = null)
 	var/datum/species/first = M.species.produceCopy(traits.Copy(), M, SPECIES_HUMAN, TRUE)
-	TEST_ASSERT(proto_is_private(M, nameof(M.species)), "produceCopy's result is the mob's private copy")
+	TEST_ASSERT(rel_is_private(M, nameof(M.species)), "produceCopy's result is the mob's private copy")
 	TEST_ASSERT_EQUAL(owner_of(first), M, "the private copy is stamped with its owner")
 	TEST_ASSERT(!QDELETED(singleton), "copying from the singleton leaves it alive")
 	M.species.create_organs(M)

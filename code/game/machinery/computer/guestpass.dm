@@ -168,7 +168,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 			user.put_in_hands(giver)
 		else
 			giver.forceMove(src.loc)
-		own_take(src, nameof(giver))
+		rel_take(src, nameof(giver))
 		LAZYCLEARLIST(accesses)
 	else
 		to_chat(user, span_warning("There is nothing to remove from the console."))
@@ -261,10 +261,10 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 			giver.forceMove(A.actor.loc)
 			if(!A.actor.get_active_hand())
 				A.actor.put_in_hands(giver)
-			own_take(src, nameof(/obj/machinery/computer/guestpass::giver))
+			rel_take(src, nameof(/obj/machinery/computer/guestpass::giver))
 		else
 			giver.forceMove(src.loc)
-			own_take(src, nameof(/obj/machinery/computer/guestpass::giver))
+			rel_take(src, nameof(/obj/machinery/computer/guestpass::giver))
 		LAZYCLEARLIST(accesses)
 	else
 		var/obj/item/I = A.actor.get_active_hand()

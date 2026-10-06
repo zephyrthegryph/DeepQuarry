@@ -137,7 +137,7 @@ CAPABILITIES(/datum/action_group)
 
 /// Clears any landing objects we may currently have
 /datum/action_group/proc/clear_landing()
-	own_clear(src, nameof(landing), OWN_DELETE)
+	rel_clear(src, nameof(landing))
 
 /datum/action_group/proc/update_landing()
 	if(!landing)

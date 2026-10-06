@@ -14,7 +14,7 @@
 /obj/proc/add_disposal_connection(visibly_connects = TRUE)
 	RETURN_TYPE(/datum/disposal_system_connection)
 	if(disposal_connection)
-		own_clear(src, nameof(disposal_connection), OWN_DELETE)
+		rel_clear(src, nameof(disposal_connection))
 	rel_set(src, nameof(disposal_connection), new /datum/disposal_system_connection(src, visibly_connects))
 	return disposal_connection
 

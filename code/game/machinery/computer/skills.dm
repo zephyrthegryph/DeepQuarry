@@ -493,7 +493,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		scan.forceMove(loc)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		rel_take(src, nameof(src.scan))
 	else
 		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
@@ -518,7 +518,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		var/mob/living/silicon/robot/R = A.actor
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+		rel_clear(src, nameof(src.active1))
 		screen = GENERAL_RECORD_LIST
 
 /obj/machinery/computer/skills/proc/ui_act_logout(datum/act/op/A)
@@ -530,10 +530,10 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		scan.forceMove(loc)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		rel_take(src, nameof(src.scan))
 	authenticated = null
 	screen = null
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(src.active1))
 
 /obj/machinery/computer/skills/proc/ui_act_screen(datum/act/op/A, screen_arg)
 	. = TRUE
@@ -545,7 +545,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		screen = requested_screen
 	else
 		screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(src.active1))
 
 /obj/machinery/computer/skills/proc/ui_act_contract_accept(datum/act/op/A, id_arg)
 	. = TRUE
@@ -767,7 +767,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 				spent(R)
 		set_temp("Employment record deleted.")
 		var/datum/data/record/deleted_record = active1()
-		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+		rel_clear(src, nameof(src.active1))
 		QDEL_NULL(deleted_record)
 
 /obj/machinery/computer/skills/proc/ui_act_d_rec(datum/act/op/A, d_rec)
@@ -780,7 +780,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		set_temp("Record not found.", "danger")
 		return
 
-	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
+	rel_set(src, nameof(src.active1), general_record)
 	screen = GENERAL_RECORD_DATA
 
 /obj/machinery/computer/skills/proc/ui_act_new(datum/act/op/A)
@@ -790,7 +790,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	. = TRUE
 	if(GLOB.PDA_Manifest)
 		GLOB.PDA_Manifest.Cut()
-	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), GLOB.data_core.CreateGeneralRecord())
+	rel_set(src, nameof(src.active1), GLOB.data_core.CreateGeneralRecord())
 	screen = GENERAL_RECORD_DATA
 	set_temp("Employment record created.", "success")
 

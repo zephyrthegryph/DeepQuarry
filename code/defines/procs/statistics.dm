@@ -35,7 +35,7 @@
 	if(!CONFIG_GET(flag/enable_stat_tracking))
 		return
 	sql_poll_population()
-	after(null, 10 MINUTES, /proc/statistic_cycle)
+	after(null, 10 MINUTES, GLOBAL_PROC_REF(statistic_cycle))
 
 //This proc is used for feedback. It is executed at round end.
 /proc/sql_commit_feedback()

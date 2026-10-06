@@ -252,7 +252,7 @@
 	repairer.min_x = station_materialization.origin_x
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
-	own_take(repairer, nameof(repairer.result))
+	rel_take(repairer, nameof(repairer.result))
 	spent(repairer)
 	return succeeded
 

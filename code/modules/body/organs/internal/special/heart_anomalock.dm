@@ -124,7 +124,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	if(!core)
 		return
 	balloon_alert(user, "core removed")
-	var/obj/item/removed_core = own_take(src, nameof(core)) // unowned before it goes to the hands
+	var/obj/item/removed_core = rel_take(src, nameof(core)) // unowned before it goes to the hands
 	removed_core.forceMove(drop_location())
 	if(Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS))
 		user.put_in_hands(removed_core)

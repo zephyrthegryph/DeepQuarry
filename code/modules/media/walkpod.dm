@@ -268,7 +268,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 	if(istype(potential_holder))
 		potential_holder.unEquip(deployed_headpods, force = TRUE)
-	own_clear(src, nameof(deployed_headpods), OWN_DELETE)
+	rel_clear(src, nameof(deployed_headpods))
 	changed(src)
 
 /obj/item/walkpod/proc/check_headpods()

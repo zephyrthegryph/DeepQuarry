@@ -394,10 +394,10 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 /obj/machinery/computer/rdconsole_tg/proc/eject_disk(type)
 	if(type == RND_DESIGN_DISK && d_disk)
 		d_disk.forceMove(get_turf(src))
-		own_take(src, nameof(d_disk))
+		rel_take(src, nameof(d_disk))
 	if(type == RND_TECH_DISK && t_disk)
 		t_disk.forceMove(get_turf(src))
-		own_take(src, nameof(t_disk))
+		rel_take(src, nameof(t_disk))
 
 #undef RND_TECH_DISK
 #undef RND_DESIGN_DISK

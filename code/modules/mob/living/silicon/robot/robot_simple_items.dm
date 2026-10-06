@@ -522,7 +522,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 		else
 			integrated_tools_by_name -= our_item.name
 			integrated_tool_images -= our_item.name
-			own_remove(src, nameof(cyborg_integrated_tools), our_item)
+			rel_remove(src, nameof(cyborg_integrated_tools), our_item)
 
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)

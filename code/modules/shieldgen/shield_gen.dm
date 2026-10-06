@@ -267,7 +267,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 			E.update_icon()
 		shield_hum.start()
 	else
-		own_clear(src, nameof(field), OWN_DELETE)
+		rel_clear(src, nameof(field))
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning fade out.")

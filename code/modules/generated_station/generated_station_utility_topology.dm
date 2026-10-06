@@ -656,7 +656,7 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
 	log_world("Generated station utility build failed for [spec()?.id]: [reason]")
-	own_clear(src, nameof(result), OWN_DELETE)
+	rel_clear(src, nameof(result))
 	return null
 
 /datum/generated_station_utility_builder/proc/add_external_connection(list/connections, turf/T, direction)

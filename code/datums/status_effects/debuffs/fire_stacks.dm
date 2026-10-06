@@ -260,7 +260,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 	if(moblight_type)
 		if(moblight)
-			own_clear(src, nameof(moblight), OWN_DELETE)
+			rel_clear(src, nameof(moblight))
 		rel_set(src, nameof(moblight), new moblight_type(owner))
 
 	cache_stacks()
@@ -276,7 +276,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	extinguish()
 
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
-	own_clear(src, nameof(moblight), OWN_DELETE)
+	rel_clear(src, nameof(moblight))
 	on_fire = FALSE
 	cache_stacks()
 	for(var/obj/item/equipped in (owner.get_equipped_items()))

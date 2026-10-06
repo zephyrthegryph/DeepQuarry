@@ -174,7 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	playsound(src, tool.usesound, 50, 1)
 	power_down()
 	cell.forceMove(get_turf(src))
-	own_take(src, nameof(cell))
+	rel_take(src, nameof(cell))
 
 /obj/item/uav/proc/can_transition_to(new_state, mob/user)
 	switch(state) //Current one

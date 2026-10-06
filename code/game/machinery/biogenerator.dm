@@ -150,7 +150,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 /obj/machinery/biogenerator/proc/ui_act_detach(datum/act/op/A)
 	if(beaker)
 		beaker.forceMove(loc)
-		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
+		rel_take(src, nameof(/obj/machinery/biogenerator::beaker))
 	return TRUE
 
 /obj/machinery/biogenerator/proc/ui_act_purchase(datum/act/op/A, raw_amount, cat, raw_name)

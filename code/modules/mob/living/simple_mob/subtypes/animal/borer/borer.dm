@@ -286,7 +286,7 @@
 		if(!host.lastKnownIP)
 			host.lastKnownIP = b2h_ip
 
-	own_clear(src, nameof(host_brain), OWN_DELETE)
+	rel_clear(src, nameof(host_brain))
 	// End horrible ip swapping code for bans
 
 /mob/living/simple_mob/animal/borer/proc/leave_host()

@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(current_film)
-			user.put_in_hands(own_take(src, nameof(current_film)))
+			user.put_in_hands(rel_take(src, nameof(current_film)))
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
 			update_state(0)

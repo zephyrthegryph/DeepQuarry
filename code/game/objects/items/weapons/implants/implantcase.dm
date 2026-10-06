@@ -64,13 +64,13 @@ CAPABILITIES(/obj/item/implantcase)
 		if ((imp || M.imp.implanted))
 			return OP_OK
 		M.imp.forceMove(src)
-		own_transfer(M, nameof(M.imp), src, nameof(imp))
+		rel_move(M, nameof(M.imp), src, nameof(imp))
 		update()
 		M.update()
 	else
 		if (imp)
 			imp.forceMove(M)
-			own_transfer(src, nameof(imp), M, nameof(M.imp))
+			rel_move(src, nameof(imp), M, nameof(M.imp))
 			update()
 		M.update()
 	return OP_OK

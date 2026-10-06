@@ -62,7 +62,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 
 		if(cell && removable_components)
 			removing = cell
-			own_take(src, nameof(cell))
+			rel_take(src, nameof(cell))
 
 		if(removing)
 			user.put_in_hands(removing)
@@ -97,7 +97,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	mat_cost = initial(mat_cost)
-	own_take(src, nameof(manipulator))
+	rel_take(src, nameof(manipulator))
 	update_icon()
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS

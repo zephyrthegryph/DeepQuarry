@@ -332,7 +332,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 			assembly.state = 1
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
-		own_take(src, nameof(assembly))
+		rel_take(src, nameof(assembly))
 	spent(src, user)
 	return ITEM_INTERACT_SUCCESS
 

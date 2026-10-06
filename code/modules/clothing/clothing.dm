@@ -387,13 +387,13 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	if(gloves)
 		if(!H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES))
 			gloves.forceMove(get_turf(src))
-		own_take(src, nameof(gloves))
+		rel_take(src, nameof(gloves))
 		return
 
 	if(ring) //We do NOT have gloves under our gloves but have a ring under our glove instead!
 		if(!H.equip_to_slot_if_possible(ring, SLOT_ID_GLOVES))
 			ring.forceMove(get_turf(src))
-		own_take(src, nameof(ring))
+		rel_take(src, nameof(ring))
 		return
 
 /obj/item/clothing/gloves
@@ -680,7 +680,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	if(user.put_in_hands(holding))
 		act_message(user, null, others = span_danger("%U% pulls a knife out of their boot!"))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
-		own_take(src, nameof(holding))
+		rel_take(src, nameof(holding))
 		cut_overlay("[icon_state]_knife")
 	else
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))

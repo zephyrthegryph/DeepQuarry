@@ -237,7 +237,7 @@
 		if(!has_stat(NOPOWER))
 			icon_state = initial(icon_state)
 		else
-			after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
+			after(src, rand(0 SECONDS, 1.5 SECONDS), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 
 /obj/machinery/casino_prize_dispenser/proc/interaction_attackby(datum/act/op/A)
 	var/mob/user = A.actor

@@ -582,7 +582,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			to_chat(src,span_notice("Your current tail is too considerable to hide!"))
 			return
 	if(species.tail) //If they're using this verb, they already have a custom tail. This prevents their species tail from showing.
-		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.tail = null //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
 	tail_hidden = !tail_hidden
 	update_tail_showing()

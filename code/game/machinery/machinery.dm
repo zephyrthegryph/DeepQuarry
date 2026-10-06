@@ -733,7 +733,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	materialize_circuit()
 	materialize_parts()
 	own_take_all(src, nameof(component_parts))
-	own_take(src, nameof(circuit))
+	rel_take(src, nameof(circuit))
 	return ..()
 
 /obj/machinery/atom_destruction(damage_flag)

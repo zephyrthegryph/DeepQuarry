@@ -22,7 +22,7 @@
 	TEST_ASSERT(H.can_feel_pain(), "a plain human feels pain")
 	TEST_ASSERT(!H.factor(BF_PAIN_IMMUNITY), "a plain human has no pain immunity")
 	var/old_flags = H.species.flags
-	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
+	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.flags |= NO_PAIN
 	H.body.invalidate(BODY_DIRTY_FACTORS)
 	var/immune = H.factor(BF_PAIN_IMMUNITY)

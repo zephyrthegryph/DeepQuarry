@@ -84,7 +84,7 @@ SYSTEM_DEF(shuttles)
 	return rel_add(src, nameof(specops_announcers), announcer)
 
 /datum/system/shuttles/proc/release_specops_announcer(obj/item/radio/intercom/announcer)
-	return own_remove(src, nameof(specops_announcers), announcer)
+	return rel_remove(src, nameof(specops_announcers), announcer)
 
 /datum/system/shuttles/proc/performance_diagnostics()
 	var/list/type_costs = profile_type_cost_ms.Copy()

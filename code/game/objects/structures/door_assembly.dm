@@ -252,7 +252,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 	to_chat(A.actor, span_notice("You removed the airlock electronics!"))
 	if(electronics)
 		electronics.forceMove(loc)
-		own_take(src, nameof(electronics))
+		rel_take(src, nameof(electronics))
 	update_state()
 	return OP_OK
 

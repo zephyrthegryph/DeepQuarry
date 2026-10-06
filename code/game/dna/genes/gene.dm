@@ -108,7 +108,7 @@
 			if(linked_trait.type in H.species.traits)
 				return
 			// Mutate the mob's own copy, never the shared species prototype.
-			var/datum/species/S = proto_private(H, nameof(H.species))
+			var/datum/species/S = rel_private(H, nameof(H.species))
 			linked_trait.apply(S, H, S.traits[linked_trait.type])
 			S.traits.Add(linked_trait.type)
 			if(!(linked_trait.type in H.dna.species_traits)) // Set species traits too
@@ -125,7 +125,7 @@
 			if(!(linked_trait.type in H.species.traits))
 				return
 			// Mutate the mob's own copy, never the shared species prototype.
-			var/datum/species/S = proto_private(H, nameof(H.species))
+			var/datum/species/S = rel_private(H, nameof(H.species))
 			linked_trait.unapply(S, H, S.traits[linked_trait.type])
 			linked_trait.remove(S) // Does nothing, but may as well call it because it exists and has a place now
 			S.traits.Remove(linked_trait.type)

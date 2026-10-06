@@ -46,4 +46,4 @@
 		if(!QDELETED(index))
 			unobserve(index, /datum/notice/qdeleting, src)
 	// the search objects are ours: deleting them also empties to_image (a relation list)
-	own_clear(src, nameof(searchables), OWN_DELETE)
+	rel_clear(src, nameof(searchables))

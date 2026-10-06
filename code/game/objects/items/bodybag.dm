@@ -42,7 +42,7 @@ CAPABILITIES(/obj/item/bodybag)
 	var/obj/structure/closet/body_bag/R = new made_type(user.loc)
 	R.add_fingerprint(user)
 	if(syringe && istype(R, /obj/structure/closet/body_bag/cryobag))
-		own_transfer(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
+		rel_move(src, nameof(syringe), R, nameof(/obj/structure/closet/body_bag/cryobag::syringe)) // stays in nullspace, now the unfolded bag's
 	consume(src, user)
 	return OP_OK
 
@@ -245,7 +245,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 
 /obj/structure/closet/body_bag/cryobag/fold_into_item(obj/item/bodybag/folded)
 	if(syringe)
-		own_transfer(src, nameof(syringe), folded, nameof(folded.syringe))
+		rel_move(src, nameof(syringe), folded, nameof(folded.syringe))
 	return folded
 
 /obj/structure/closet/body_bag/cryobag/Entered(atom/movable/AM)
@@ -338,7 +338,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 /// The injector is pried out onto the floor.
 /obj/structure/closet/body_bag/cryobag/proc/injector_removed(datum/act/op/A)
 	syringe.forceMove(src.loc)
-	own_take(src, nameof(syringe))
+	rel_take(src, nameof(syringe))
 	return OP_OK
 
 /obj/item/usedcryobag

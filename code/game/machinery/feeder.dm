@@ -95,7 +95,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, nameof(beaker))
+		rel_take(src, nameof(beaker))
 	destroyed(src, user, "deconstructed")
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
@@ -116,7 +116,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 	if(!beaker)
 		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
-	own_take(src, nameof(beaker))
+	rel_take(src, nameof(beaker))
 	update_icon()
 	return TRUE
 

@@ -37,7 +37,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		if(detonator)
 			detonator.detached()
 			user.put_in_hands(detonator)
-			own_take(src, nameof(detonator))
+			rel_take(src, nameof(detonator))
 			det_time = null
 			stage=0
 			icon_state = initial(icon_state)

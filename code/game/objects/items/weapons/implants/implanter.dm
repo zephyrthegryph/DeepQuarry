@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/implanter)
 			M.put_in_hands(imp)
 		to_chat(M, span_notice("You remove \the [imp] from \the [src]."))
 		name = "implanter"
-		own_take(src, nameof(imp))
+		rel_take(src, nameof(imp))
 
 	update()
 
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/implanter)
 			H.flag_hud_update(IMPLOYAL_HUD)
 			H.flag_hud_update(BACKUP_HUD) // Backup HUD updates
 
-	own_take(src, nameof(imp))
+	rel_take(src, nameof(imp))
 	update()
 
 /obj/item/implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

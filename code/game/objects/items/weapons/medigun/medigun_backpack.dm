@@ -360,24 +360,24 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
-			own_take(src, nameof(smodule))
+			rel_take(src, nameof(smodule))
 
 		if(smanipulator)
 			smanipulator.forceMove(get_turf(loc))
-			own_take(src, nameof(smanipulator))
+			rel_take(src, nameof(smanipulator))
 			smaniptier = 0
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
-			own_take(src, nameof(slaser))
+			rel_take(src, nameof(slaser))
 
 		if(scapacitor)
 			scapacitor.forceMove(get_turf(loc))
-			own_take(src, nameof(scapacitor))
+			rel_take(src, nameof(scapacitor))
 
 		if(sbin)
 			sbin.forceMove(get_turf(loc))
-			own_take(src, nameof(sbin))
+			rel_take(src, nameof(sbin))
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))

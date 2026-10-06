@@ -66,7 +66,7 @@
 	for(var/obj/item/I in guncomponents)
 		to_chat(user, span_notice("You remove the gun's components."))
 		playsound(src, tool.usesound, 50, 1)
-		own_take_member(src, nameof(guncomponents), I)
+		rel_take(src, nameof(guncomponents), I)
 		I.forceMove(get_turf(src))
 		CheckParts()
 	return ITEM_INTERACT_SUCCESS
@@ -126,7 +126,7 @@
 		chargecost = 100
 		chargecost_lethal = 200
 
-	own_clear(src, nameof(firemodes), OWN_DELETE)
+	rel_clear(src, nameof(firemodes))
 	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
 	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
 	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))

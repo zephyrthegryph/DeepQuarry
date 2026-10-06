@@ -277,7 +277,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	// release contents
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, nameof(beaker))
+		rel_take(src, nameof(beaker))
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
 		slot_remove(WC, get_turf(src))
@@ -666,7 +666,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	if(!disk)
 		return TRUE
 	disk.forceMove(get_turf(src))
-	own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
+	rel_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
 // Transfer Buffer Management
 
 /obj/machinery/computer/scan_consolenew/proc/ui_act_bufferoption(datum/act/op/A, block, id, option)
@@ -771,7 +771,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	if(!disk)
 		return TRUE
 	disk.forceMove(get_turf(src))
-	own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
+	rel_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
 	return TRUE
 
 /**

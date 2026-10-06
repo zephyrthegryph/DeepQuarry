@@ -197,7 +197,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
 /obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
-	own_clear(src, nameof(thermostat_watch), OWN_DELETE)
+	rel_clear(src, nameof(thermostat_watch))
 	work_start(src)
 
 

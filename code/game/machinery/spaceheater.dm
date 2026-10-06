@@ -212,7 +212,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		cell.update_icon()
 		user.put_in_hands(cell)
 		cell.add_fingerprint(user)
-		own_take(src, nameof(/obj/mecha::cell))
+		rel_take(src, nameof(cell))
 		power_change()
 		. = TRUE
 

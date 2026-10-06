@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 	process_material_sample()
 
 	if(!QDELETED(owned_field))
-		after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
+		after(owned_field, 0.1 SECONDS, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
 
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)

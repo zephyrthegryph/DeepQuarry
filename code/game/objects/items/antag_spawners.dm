@@ -33,7 +33,7 @@ CAPABILITIES(/obj/item/antag_spawner)
 	else
 		reset_search()
 	unobserve(Q, /datum/notice/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	rel_clear(src, nameof(Q)) //get rid of the query
 	return
 
 /obj/item/antag_spawner/proc/reset_search()

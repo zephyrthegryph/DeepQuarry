@@ -188,7 +188,7 @@ CAPABILITIES(/datum/system/flight)
 			destination.orbit_period = 600
 
 /datum/system/flight/proc/register_mapped_ports()
-	own_clear(src, nameof(ports), OWN_DELETE)
+	rel_clear(src, nameof(ports))
 	port_by_landmark.Cut()
 	if(length(using_map.station_levels))
 		var/station_z = using_map.station_levels[1]

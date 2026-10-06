@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/chameleon)
 	if(active_dummy)
 		eject_all()
 		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = -6)
-		own_clear(src, nameof(active_dummy), OWN_DELETE)
+		rel_clear(src, nameof(active_dummy))
 		to_chat(user, span_notice("You deactivate the [src]."))
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
@@ -79,9 +79,9 @@ CAPABILITIES(/obj/item/chameleon)
 		fx_sparks(src, 5, FALSE)
 		eject_all()
 		if(delete_dummy)
-			own_clear(src, nameof(active_dummy), OWN_DELETE)
+			rel_clear(src, nameof(active_dummy))
 		else
-			own_take(src, nameof(active_dummy)) // the dummy is already being destroyed
+			rel_take(src, nameof(active_dummy)) // the dummy is already being destroyed
 		can_use = 0
 		after(src, 5 SECONDS, PROC_REF(allow_use))
 

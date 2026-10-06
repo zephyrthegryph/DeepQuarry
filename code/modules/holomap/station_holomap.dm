@@ -161,7 +161,7 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 			if(QDELETED(watcher))
 				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
 			else
-				after(watcher, 0.5 SECONDS, /proc/remove_client_image, with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
+				after(watcher, 0.5 SECONDS, GLOBAL_PROC_REF(remove_client_image), with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
 		unobserve(watcher, /datum/notice/movable_attempted_move, src)
 		unobserve(watcher, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(watching_mob))

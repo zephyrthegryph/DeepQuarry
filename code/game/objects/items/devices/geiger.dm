@@ -96,7 +96,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		if(!geiger_sound)
 			rel_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
 	else
-		own_clear(src, nameof(geiger_sound), OWN_DELETE)
+		rel_clear(src, nameof(geiger_sound))
 
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
 	return OP_OK

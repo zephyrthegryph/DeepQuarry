@@ -26,7 +26,7 @@
 /// Ends the slide: detaches from the mob and deletes this datum (was qdel(src) on the component).
 /datum/turfslip/proc/end_slip()
 	if(owner?.turfslip == src)
-		own_take(owner, nameof(owner.turfslip))
+		rel_take(owner, nameof(owner.turfslip))
 	spent(src)
 
 /datum/turfslip/proc/start_slip(turf/simulated/start, is_dirt)

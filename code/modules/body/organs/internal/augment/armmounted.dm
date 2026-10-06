@@ -260,8 +260,8 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	if(isnull(tool_key))
 		return
 	if(integrated_object)
-		own_transfer(src, nameof(integrated_object), src, nameof(integrated_tools), null, integrated_object.type)
-	own_transfer(src, nameof(integrated_tools), src, nameof(integrated_object), tool_key)
+		rel_move(src, nameof(integrated_object), src, nameof(integrated_tools), null, integrated_object.type)
+	rel_move(src, nameof(integrated_tools), src, nameof(integrated_object), tool_key)
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/handle_organ_proc_special(cycles)
 	..()

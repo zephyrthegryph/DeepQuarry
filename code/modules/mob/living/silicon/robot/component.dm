@@ -67,7 +67,7 @@ CAPABILITIES(/datum/robot_component)
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
 	installed = ROBOT_PART_MISSING
-	own_take(src, nameof(wrapped))
+	rel_take(src, nameof(wrapped))
 	owner?.on_part_changed(src)
 
 /// Threshold event: the part is fried. The remains stay installed (and keep
@@ -80,7 +80,7 @@ CAPABILITIES(/datum/robot_component)
 		brokenstate = comp.icon_state_broken
 	// Clear the slot before deleting the part so deletion handlers (the
 	// robot's cell watcher) see an empty slot rather than a removal.
-	own_clear(src, nameof(wrapped), OWN_DELETE)
+	rel_clear(src, nameof(wrapped))
 	if(!internal)
 		rel_set(src, nameof(wrapped), new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate

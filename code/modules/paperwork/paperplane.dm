@@ -53,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 	to_chat(user, span_notice("You unfold [src]."))
 	var/atom/movable/internal_paper_tmp = internalPaper
 	internal_paper_tmp.forceMove(loc)
-	own_take(src, nameof(internalPaper))
+	rel_take(src, nameof(internalPaper))
 	consume(src, user)
 	user.put_in_hands(internal_paper_tmp)
 	return TRUE

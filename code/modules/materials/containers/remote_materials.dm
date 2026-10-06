@@ -164,7 +164,7 @@ CAPABILITIES(/datum/remote_materials)
 					new_container.materials[mat] += mat_amount
 					mat_container().materials[mat] = 0
 			if(mat_container() == local_container)
-				own_clear(src, nameof(local_container), OWN_DELETE) // mat_container's view clears with it
+				rel_clear(src, nameof(local_container)) // mat_container's view clears with it
 			else
 				spent(mat_container(), user)
 		rel_set(src, nameof(silo), new_silo)

@@ -86,7 +86,7 @@
 	if(W.body)
 		W.body.remove_affliction(W)
 	integrity_dirty = TRUE
-	if(!own_remove(src, nameof(detached_afflictions), W))
+	if(!rel_remove(src, nameof(detached_afflictions), W))
 		spent(W)
 
 /// Apply a located injury to this limb. Returns the amount applied.
@@ -184,7 +184,7 @@
 	for(var/datum/affliction/A as anything in detached_afflictions?.Copy())
 		A.tick_offline()
 		if(A.severity <= 0 && !istype(A, /datum/affliction/load))
-			own_remove(src, nameof(detached_afflictions), A)
+			rel_remove(src, nameof(detached_afflictions), A)
 
 /// Afflictions located on this organ, whether it's in a body or detached.
 /obj/item/organ/proc/afflictions_here()

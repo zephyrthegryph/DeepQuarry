@@ -221,7 +221,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 /obj/machinery/media/jukebox/proc/ui_act_change_track(datum/act/op/A, change_track)
 	var/datum/track/T = ui_ref(change_track, getTracksList(), /datum/track)
 	if(istype(T))
-		rel_set(src, nameof(/obj/item/walkpod::current_track), T)
+		rel_set(src, nameof(src.current_track), T)
 		StartPlaying()
 	return TRUE
 

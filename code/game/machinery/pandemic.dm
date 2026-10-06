@@ -145,7 +145,7 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	if(!beaker)
 		return
 	beaker.forceMove(loc)
-	own_take(src, nameof(beaker))
+	rel_take(src, nameof(beaker))
 	icon_state = "pandemic0"
 
 /obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)

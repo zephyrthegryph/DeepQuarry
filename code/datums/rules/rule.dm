@@ -98,7 +98,7 @@ CAPABILITIES(/datum/rule)
 	predicate.spec = condition
 	if(!predicate.compile())
 		errors += predicate.errors
-		own_clear(src, nameof(predicate), OWN_DELETE)
+		rel_clear(src, nameof(predicate))
 	else
 		var/datum/rule_compiler/compiler = new(src)
 		compiler.visit(predicate.root)

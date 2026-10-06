@@ -68,7 +68,7 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 	finished = TRUE
 
 /datum/beam/proc/Reset()
-	own_clear(src, nameof(elements), OWN_DELETE)
+	rel_clear(src, nameof(elements))
 
 
 /datum/beam/proc/Draw()

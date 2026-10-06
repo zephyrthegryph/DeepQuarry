@@ -54,13 +54,13 @@ CAPABILITIES(/obj/structure/ghost_pod)
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]
 		unobserve(Q, /datum/notice/ghost_query_complete, src)
-		own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+		rel_clear(src, nameof(Q)) //get rid of the query
 		create_occupant(D)
 		return
 
 	// No volunteer: an automatic pod's auto_trigger() repeat tries again after delay_to_try_again.
 	unobserve(Q, /datum/notice/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	rel_clear(src, nameof(Q)) //get rid of the query
 
 // Override this to create whatever mob you need. Be sure to call ..() if you don't want it to make infinite mobs.
 /obj/structure/ghost_pod/proc/create_occupant(mob/M)

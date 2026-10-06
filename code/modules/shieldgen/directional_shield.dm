@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/shield_projector)
 	return TRUE
 
 /obj/item/shield_projector/proc/destroy_shields()
-	own_clear(src, nameof(active_shields), OWN_DELETE)
+	rel_clear(src, nameof(active_shields))
 	set_light(0)
 	active = FALSE
 

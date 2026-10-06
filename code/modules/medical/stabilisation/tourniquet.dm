@@ -103,7 +103,7 @@
 /// Clear a tourniquet that is no longer physically on this limb, restoring flow.
 /obj/item/organ/external/proc/release_lost_tourniquet()
 	var/obj/item/tourniquet/T = tourniquet
-	own_take(src, nameof(tourniquet))
+	rel_take(src, nameof(tourniquet))
 	if(T)
 		T.applied_at = null
 	log_game("TOURNIQUET: [T] left [key_name(owner)]'s [name] without being loosened; flow restored.")
@@ -160,7 +160,7 @@
 	if(!tourniquet)
 		return null
 	var/obj/item/tourniquet/T = tourniquet
-	own_take(src, nameof(tourniquet))
+	rel_take(src, nameof(tourniquet))
 	var/minutes = T.applied_at ? round((world.time - T.applied_at) / (1 MINUTES), 0.1) : 0
 	T.applied_at = null
 	if(T.loc == src)

@@ -44,7 +44,7 @@ CAPABILITIES(/obj/effect/anomaly)
 		return INITIALIZE_HINT_QDEL
 
 	if(!drops_core)
-		own_clear(src, nameof(anomaly_core), OWN_DELETE) // still the type path here, or a core made early
+		rel_clear(src, nameof(anomaly_core)) // still the type path here, or a core made early
 
 	if(anomaly_core)
 		rel_set(src, nameof(anomaly_core), new anomaly_core(src))
@@ -112,14 +112,14 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 	new /obj/effect/effect/smoke(loc)
 	if(!isnull(anomaly_core))
 		anomaly_core.forceMove(get_turf(src))
-		own_clear(src, nameof(anomaly_core), OWN_DELETE) // still the type path here, or a core made early
+		rel_clear(src, nameof(anomaly_core)) // still the type path here, or a core made early
 	consume(src)
 
 /obj/effect/anomaly/proc/stabilize(anchor = FALSE, has_core = TRUE, add_stats = FALSE)
 	immortal = TRUE
 	name = (has_core ? "stable " : "hollow ") + name
 	if(!has_core)
-		own_clear(src, nameof(anomaly_core), OWN_DELETE)
+		rel_clear(src, nameof(anomaly_core))
 	if(anchor)
 		move_chance = 0
 	if(!stats && add_stats)

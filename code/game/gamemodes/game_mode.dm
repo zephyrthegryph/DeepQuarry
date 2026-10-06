@@ -233,7 +233,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 	refresh_event_modifiers()
 
-	after(src, ROUNDSTART_LOGOUT_REPORT_TIME, /proc/display_roundstart_logout_report)
+	after(src, ROUNDSTART_LOGOUT_REPORT_TIME, GLOBAL_PROC_REF(display_roundstart_logout_report))
 	after(src, rand(waittime_l, waittime_h) + rand(10 SECONDS, 15 SECONDS), PROC_REF(announce_ert_disabled))
 
 	//Assign all antag types for this game mode. Any players spawned as antags earlier should have been removed from the pending list, so no need to worry about those.

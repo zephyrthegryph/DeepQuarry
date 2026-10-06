@@ -77,7 +77,7 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 	var/list/L = teleport_targets()
 	if(!L[desc])
 		return
-	rel_set(src, nameof(/datum/cinematic::locked), L[desc])
+	rel_set(src, nameof(src.locked), L[desc])
 	locked_name = desc
 
 /datum/tgui_module/teleport_control/proc/ui_act_test_fire(datum/act/op/A)

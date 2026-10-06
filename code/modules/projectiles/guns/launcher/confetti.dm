@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 	return chambered
 
 /obj/item/gun/launcher/confetti_cannon/handle_post_fire(mob/user)
-	own_take(src, nameof(chambered))
+	rel_take(src, nameof(chambered))
 
 /obj/item/gun/launcher/confetti_cannon/overdrive
 	name = "overdrive confetti cannon"

@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/extrapolator)
 		return OP_OK
 	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
 	scanner.forceMove(drop_location())
-	own_take(src, nameof(scanner))
+	rel_take(src, nameof(scanner))
 	playsound(src, tool.usesound, 50, 1)
 	return OP_OK
 

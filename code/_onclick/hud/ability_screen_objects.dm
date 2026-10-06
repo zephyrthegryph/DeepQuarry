@@ -116,7 +116,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	own_remove(src, nameof(ability_objects), ability)
+	rel_remove(src, nameof(ability_objects), ability)
 
 	if(length(ability_objects))
 		toggle_open(showing + 1)

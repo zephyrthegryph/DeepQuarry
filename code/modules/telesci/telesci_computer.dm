@@ -182,7 +182,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		return FALSE
 	if(inserted_gps)
 		inserted_gps.forceMove(loc)
-		own_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
+		rel_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setmemory(datum/act/op/A)

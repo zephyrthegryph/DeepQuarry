@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 		set_active(0)
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
-		own_take(src, nameof(ec_cartridge))
+		rel_take(src, nameof(ec_cartridge))
 		update_icon()
 	return OP_OK
 

@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /// A heavy blast may throw the unit's contents out.
 /obj/machinery/suit_storage_unit/proc/suit_storage_blast(datum/act/hit/explosion/A)
@@ -210,7 +210,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return //Do I even need this sanity check? Nyoro~n
 	else
 		HELMET.forceMove(get_turf(src))
-		own_take(src, nameof(HELMET))
+		rel_take(src, nameof(HELMET))
 		return
 
 
@@ -219,7 +219,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return
 	else
 		SUIT.forceMove(get_turf(src))
-		own_take(src, nameof(SUIT))
+		rel_take(src, nameof(SUIT))
 		return
 
 
@@ -228,7 +228,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return
 	else
 		MASK.forceMove(get_turf(src))
-		own_take(src, nameof(MASK))
+		rel_take(src, nameof(MASK))
 		return
 
 
@@ -237,13 +237,13 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	set_islocked(0) //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
-		own_take(src, nameof(SUIT))
+		rel_take(src, nameof(SUIT))
 	if(HELMET)
 		HELMET.forceMove(get_turf(src))
-		own_take(src, nameof(HELMET))
+		rel_take(src, nameof(HELMET))
 	if(MASK)
 		MASK.forceMove(get_turf(src))
-		own_take(src, nameof(MASK))
+		rel_take(src, nameof(MASK))
 	if(OCCUPANT)
 		eject_occupant(OCCUPANT)
 	return
@@ -317,13 +317,13 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		else //It was supercycling, destroy everything
 			if(HELMET)
 				destroyed(HELMET, src, BURN)
-				own_take(src, nameof(HELMET))
+				rel_take(src, nameof(HELMET))
 			if(SUIT)
 				destroyed(SUIT, src, BURN)
-				own_take(src, nameof(SUIT))
+				rel_take(src, nameof(SUIT))
 			if(MASK)
 				destroyed(MASK, src, BURN)
-				own_take(src, nameof(MASK))
+				rel_take(src, nameof(MASK))
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 			isbroken = 1
 			isopen = 1

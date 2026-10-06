@@ -87,7 +87,7 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 	if(user.get_inactive_hand() == src && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		own_take(src, nameof(power_source))
+		rel_take(src, nameof(power_source))
 		turn_off()
 		return TRUE
 	return OP_DECLINE

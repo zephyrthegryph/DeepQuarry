@@ -194,7 +194,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	set_energy(CLAMP(energy - 5, 0, max_energy))
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
-	own_clear(src, nameof(recipes), OWN_DELETE)
+	rel_clear(src, nameof(recipes))
 	for(var/D in subtypesof(/datum/particle_smasher_recipe))
 		rel_add(src, nameof(recipes), new D)
 
@@ -286,14 +286,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	// Everything goes to the floor below: detach the owned slots first.
-	own_take(src, nameof(target))
+	rel_take(src, nameof(target))
 	own_take(src, nameof(reagent_container))
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(I in storage)
-			own_take_member(src, nameof(storage), I)
+			rel_take(src, nameof(storage), I)
 		I.forceMove(T)
 	update_icon()
 

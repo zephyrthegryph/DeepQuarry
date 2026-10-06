@@ -161,7 +161,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		if(updating)
 			stop_updates()
 	else
@@ -210,7 +210,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 /obj/item/mapping_unit/proc/last_run()
 	stop_updates()
 	rel_clear(src, nameof(hud_item))
-	own_clear(src, nameof(hud_datum), OWN_DELETE) // its holder screen object goes with it
+	rel_clear(src, nameof(hud_datum)) // its holder screen object goes with it
 
 /obj/item/mapping_unit/periodic_step()
 	if(uses_power && !cell)

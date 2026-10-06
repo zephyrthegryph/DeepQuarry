@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/projectile/spell_projectile)
 		after(src, proj_trail_lifespan, PROC_REF(expire_trail), with = list(trail)) // our Destroy() takes the trails with us
 
 /obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)
-	own_remove(src, nameof(trails), trail) // disposes of it
+	rel_remove(src, nameof(trails), trail) // disposes of it
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)

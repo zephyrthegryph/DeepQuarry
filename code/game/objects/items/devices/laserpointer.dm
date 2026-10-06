@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 		return OP_OK
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
-	own_take(src, nameof(diode))
+	rel_take(src, nameof(diode))
 	return OP_OK
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)

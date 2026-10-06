@@ -396,7 +396,7 @@
 /// Rebuilds unarmed_attacks from unarmed_types. Call it on a mob's private copy
 /// (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/update_attack_types()
-	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
+	rel_clear(src, nameof(unarmed_attacks))
 	for(var/u_type in unarmed_types)
 		rel_add(src, nameof(unarmed_attacks), new u_type())
 
@@ -831,7 +831,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/give_numbing_bite() //Holy SHIT this is hacky, but it works. Updating a mob's attacks mid game is insane.
-	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
+	rel_clear(src, nameof(unarmed_attacks))
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
 		rel_add(src, nameof(unarmed_attacks), new u_type())

@@ -105,7 +105,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 /obj/machinery/computer/timeclock/proc/ui_act_id(datum/act/op/A)
 	if(card)
 		A.actor.put_in_hands(card)
-		own_take(src, nameof(/mob/living/silicon/pai::card))
+		rel_take(src, nameof(card))
 		play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	else
 		var/obj/item/I = A.actor.get_active_hand()
@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		if(checkCardCooldown(A.actor))
 			makeOnDuty(rank, assignment, A.actor)
 			A.actor.put_in_hands(card)
-			own_take(src, nameof(/mob/living/silicon/pai::card))
+			rel_take(src, nameof(card))
 			play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	return TRUE
 
@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 		if(checkCardCooldown(A.actor))
 			makeOffDuty(A.actor)
 			A.actor.put_in_hands(card)
-			own_take(src, nameof(/mob/living/silicon/pai::card))
+			rel_take(src, nameof(card))
 			play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	return TRUE
 
