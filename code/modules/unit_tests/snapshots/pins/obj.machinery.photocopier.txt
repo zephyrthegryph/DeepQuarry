@@ -102,5 +102,5 @@ human|/obj/item menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, make_copy, photocopier_catchall, photocopier_insert, photocopier_toner
+keys: ai_photo, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, make_copy, photocopier_catchall, photocopier_insert, photocopier_toner, remove, set_copies
 

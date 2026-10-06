@@ -144,5 +144,5 @@ human|/obj/item menu: Remove ID card (refused: there is no ID card to remove)
 human|/obj/item menu: Staff Request Form
 human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: faxmachine_insert_id, faxmachine_insert_toner, faxmachine_open_ui, faxmachine_remove_card, faxmachine_request_roles, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, make_copy, photocopier_catchall, photocopier_insert, photocopier_toner
+keys: ai_photo, dept, faxmachine_insert_id, faxmachine_insert_toner, faxmachine_open_ui, faxmachine_remove_card, faxmachine_request_roles, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, login, logout, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, make_copy, photocopier_catchall, photocopier_insert, photocopier_toner, remove, rename, scan, send, send_automated_staff_request, set_copies
 

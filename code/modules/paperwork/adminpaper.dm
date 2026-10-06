@@ -96,10 +96,21 @@ CAPABILITIES(/obj/item/paper/admin)
 	op("clear", ui_act("clear"), then(PROC_REF(admin_paper_clear)))
 	op("toggleheader", ui_act("toggleheader"), then(PROC_REF(admin_paper_toggleheader)))
 	op("togglefooter", ui_act("togglefooter"), then(PROC_REF(admin_paper_togglefooter)))
+	interface("AdminPaper")
+	without("ui_open")
+	op("write_field", ui_act("write_field", arg("id", schema_text(4096))), then(PROC_REF(ui_act_write_field)))
+	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
+	op("confirm", ui_act("confirm"), asks(/datum/prompt/choice/admin_paper_send, step = "send"), then(PROC_REF(ui_act_confirm)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
-DECLARE_UI(/obj/item/paper/admin, "AdminPaper")
-
-UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_item_paper_admin{segments:unknown,stamps:bool,header_html:bool,footer_html:bool,header_on:bool,footer_on:bool,is_crayon:bool}")
+/obj/item/paper/admin/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = name
+	var/list/merged_1 = ui_data_obj_item_paper_admin(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/paper/admin's window data (declared on its UI_DATA row).
 /obj/item/paper/admin/proc/ui_data_obj_item_paper_admin(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -113,20 +124,18 @@ UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_ite
 	data["is_crayon"] = !!isCrayon
 	return data
 
-UI_ACT(/obj/item/paper/admin, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
-UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_field)
-	admin_write("[params["id"]]", user)
+/obj/item/paper/admin/ui_act_write_field(datum/act/op/A, id)
+	var/mob/user = A.actor
+	admin_write("[id]", user)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "write_end", ui_act_write_end)
-UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_end)
+/obj/item/paper/admin/ui_act_write_end(datum/act/op/A)
+	var/mob/user = A.actor
 	admin_write("end", user)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "confirm", ui_act_confirm)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
-	if(istype(ui) && !QDELETED(ui) && ismob(user) && !QDELETED(user))
-		open_request(ui, /datum/prompt/choice/admin_paper_send, TYPE_PROC_REF(/datum/tgui, admin_paper_send_answered), answerer = user)
+/obj/item/paper/admin/proc/ui_act_confirm(datum/act/op/A)
+	apply_send_confirmation(A.step_value("send"))
 	return TRUE
 
 /obj/item/paper/admin/proc/apply_send_confirmation(selected)
@@ -144,8 +153,7 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
 	isCrayon = !isCrayon
 	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "cancel", ui_act_cancel)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
+/obj/item/paper/admin/proc/ui_act_cancel(datum/act/op/A)
 	SStgui.close_uis(src)
 	qdel(src)
 	return TRUE
@@ -254,30 +262,9 @@ CAPABILITIES(/datum/prompt/text/admin_paper_write_review)
 	if(write_operator_expected && QDELETED(write_operator))
 		return "gone"
 
-/datum/tgui/proc/admin_paper_send_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/item/paper/admin/paper = src_object()
-	if(paper.apply_send_confirmation(context.answer.value))
-		SStgui.update_uis(paper)
-
 /datum/prompt/choice/admin_paper_send
 	question = "Are you sure you want to send the fax as is?"
 	title = "Send Fax"
 	choices = list("Yes", "No")
 	buttons = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/admin_paper_send/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/item/paper/admin/paper = original_ui.src_object()
-	if(!istype(paper) || QDELETED(paper))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!paper.ui_act_allowed(original_ui.user, "confirm", original_ui, original_ui.state()))
-		return "the send confirmation is unavailable"
-	return null

@@ -37,14 +37,28 @@
 	)
 	..()
 
+// The copier's window. An AI's photo print asks which of its pictures (asks()), when it has one to print.
 CAPABILITIES(/obj/machinery/photocopier)
+	interface("Photocopier")
+	without("ui_open")
 	op("make_copy", ui_act(), then(PROC_REF(ui_act_make_copy)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	op("set_copies", ui_act("set_copies", arg("num_copies", num())), then(PROC_REF(ui_act_set_copies)))
+	op("ai_photo", ui_act("ai_photo"), asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(album_names)), "timeout" = 0), step = "picture", when = PROC_REF(album_ready)),
+		then(PROC_REF(ui_act_ai_photo)))
 
-DECLARE_UI(/obj/machinery/photocopier, "Photocopier")
+/// The window data.
+/obj/machinery/photocopier/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["current_toner"] = toner
+	data["num_copies"] = copies
+	data["max_copies"] = maxcopies
+	var/list/computed = ui_data_obj_machinery_photocopier(A.actor, null, null)
+	for(var/key in computed)
+		data[key] = computed[key]
+	return data
 
-UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copies:num", "max_copies=maxcopies:num", "merge:ui_data_obj_machinery_photocopier{has_item:bool,isAI:num,can_AI_print:bool,has_toner:bool,max_toner:num}")
-
-/// The computed part of /obj/machinery/photocopier's window data (declared on its UI_DATA row).
+/// The computed part of the window data (ui_data()).
 /obj/machinery/photocopier/proc/ui_data_obj_machinery_photocopier(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -60,102 +74,62 @@ UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copie
 	after(src, 0, PROC_REF(copy_operation), with = list(A.actor))
 	return OP_OK
 
-UI_ACT(/obj/machinery/photocopier, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_remove)
+/obj/machinery/photocopier/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
 	if(copyitem)
-		copyitem.forceMove(ui.user.loc)
-		ui.user.put_in_hands(copyitem)
-		to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, nameof(/obj/machinery/photocopier::copyitem))
+		copyitem.forceMove(user.loc)
+		user.put_in_hands(copyitem)
+		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
+		own_take(src, nameof(copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
-	. = TRUE
-
-UI_ACT(/obj/machinery/photocopier, "set_copies", ui_act_set_copies, UI_ARG_NUM("num_copies"))
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_set_copies)
-	copies = clamp(params["num_copies"], 1, maxcopies)
-	. = TRUE
-
-UI_ACT(/obj/machinery/photocopier, "ai_photo", ui_act_ai_photo)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
-	if(!issilicon(ui.user))
-		return
-	if(!operable())
-		return
-
-	if(toner >= 5)
-		var/mob/living/silicon/tempAI = ui.user
-		var/obj/item/camera/siliconcam/camera = tempAI.aiCamera
-
-		if(!camera)
-			return
-		var/obj/item/camera/siliconcam/source_cam = camera.getsource(ui.user)
-		if(!length(source_cam.aipictures))
-			to_chat(ui.user, span_userdanger("No images saved"))
-			return
-		var/list/names = list()
-		for(var/obj/item/photo/photo in source_cam.aipictures)
-			names += photo.name
-		open_request(ui, /datum/prompt/choice/photocopier_album, TYPE_PROC_REF(/datum/tgui, photocopier_album_selected), answerer = ui.user, subject = camera, choices = names)
-		return
 	return TRUE
 
-/datum/tgui/proc/photocopier_album_selected(datum/act/request/A)
-	if(!A.answer)
+/obj/machinery/photocopier/proc/ui_act_set_copies(datum/act/op/A, num_copies)
+	copies = clamp(num_copies, 1, maxcopies)
+	return TRUE
+
+/// The camera album of the AI working the copier, or null (anyone else, or a silicon with no camera).
+/obj/machinery/photocopier/proc/ai_album(datum/act/op/A)
+	var/mob/living/silicon/tempAI = A.actor
+	if(!istype(tempAI) || !tempAI.aiCamera)
+		return null
+	return tempAI.aiCamera.getsource(tempAI)
+
+/// The AI's photo print asks for a picture when the copier can print one and the album has one.
+/obj/machinery/photocopier/proc/album_ready(datum/act/op/A)
+	var/mob/living/silicon/tempAI = A.actor
+	return istype(tempAI) && toner >= 5 && length(tempAI.aiCamera?.aipictures) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+
+/obj/machinery/photocopier/proc/album_names(datum/act/op/A)
+	. = list()
+	var/obj/item/camera/siliconcam/source_cam = ai_album(A)
+	for(var/obj/item/photo/photo in source_cam?.aipictures)
+		. += photo.name
+
+/obj/machinery/photocopier/proc/ui_act_ai_photo(datum/act/op/A)
+	var/mob/living/silicon/tempAI = A.actor
+	var/obj/item/camera/siliconcam/source_cam = ai_album(A)
+	if(!source_cam || !operable() || toner < 5)
 		return
-	var/datum/prompt/choice/photocopier_album/ask = A.request
-	var/obj/machinery/photocopier/copier = src_object()
-	var/mob/living/silicon/tempAI = ask.answerer
-	var/obj/item/camera/siliconcam/source_cam = ask.album_source()
 	if(!length(source_cam.aipictures))
 		to_chat(tempAI, span_userdanger("No images saved"))
 		return
-	var/obj/item/photo/selection = ask.selected_picture()
+	var/picked = A.step_value("picture")
+	var/obj/item/photo/selection
+	for(var/obj/item/photo/photo in source_cam.aipictures)
+		if(photo.name == picked)
+			selection = photo
+			break
 	if(!selection)
 		return
-	var/obj/item/photo/p = copier.photocopy(selection)
+	var/obj/item/photo/p = photocopy(selection)
 	if(p.desc == "")
 		p.desc += "Copied by [tempAI.name]"
 	else
 		p.desc += " - Copied by [tempAI.name]"
-	copier.toner -= 5
-	SStgui.update_uis(copier)
-
-/datum/prompt/choice/photocopier_album
-	question = "Select image (numbered in order taken)"
-	title = "Picture Choice"
-	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/photocopier_album/proc/album_source()
-	var/obj/item/camera/siliconcam/camera = subject
-	return camera.getsource(answerer)
-
-/datum/prompt/choice/photocopier_album/proc/selected_picture()
-	if(!value)
-		return null
-	var/obj/item/camera/siliconcam/source_cam = album_source()
-	for(var/obj/item/photo/photo in source_cam.aipictures)
-		if(photo.name == value)
-			return photo
-	return null
-
-/datum/prompt/choice/photocopier_album/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer) || QDELETED(subject))
-		return "gone"
-	var/obj/machinery/photocopier/copier = original_ui.src_object()
-	if(!istype(copier) || QDELETED(copier))
-		return "gone"
-	if(original_ui.user != answerer || !issilicon(answerer))
-		return "the original operator is unavailable"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!copier.ui_act_allowed(answerer, "ai_photo", original_ui, original_ui.state()))
-		return "the copier action is unavailable"
-	if(!copier.operable() || copier.toner < 5)
-		return "the copier cannot print a photo"
-	return null
+	toner -= 5
+	return TRUE
 
 /// Makes `copies` copies, one after another (each a few steps on the machine's timers).
 /obj/machinery/photocopier/proc/copy_operation(mob/user)

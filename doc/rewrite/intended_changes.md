@@ -1454,3 +1454,7 @@ focused tests of the touched windows (the tests that called a handler with its o
   sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
   stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
   view over its link from anywhere it works the console (the distance check is a hand's).
+* **Copier, fax, ore console, exosuit console, paper.** Their window questions are `asks()` steps: the AI's photo pick, the fax title,
+  department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
+  admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
+  1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
