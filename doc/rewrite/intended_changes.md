@@ -2160,3 +2160,10 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
   shuts a full cabinet and unwrenches an empty one after 1.5 s. **The holoplant** goes out when its anchoring changes (`on_change`),
   where its wrench proc switched it off after the machine's anchor.
+
+## Life's OM events are actions (rewrite/om-life)
+
+- The status increase events (stun, weaken, paralyze, sleep, blind) were refusable OM events no handler ever refused;
+  they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
+  (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
+  listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).

@@ -269,9 +269,7 @@
 	return TRUE
 
 /mob/living/carbon/human/life_mutations(datum/seq_frame/life/F)
-	. = ..()
-	if(.)
-		return
+	..()
 
 	// Slow natural healing of wounds; cold-resistant bodies shrug off burns.
 	if(src.injury_load(INJURY_CATEGORY_THERMAL))

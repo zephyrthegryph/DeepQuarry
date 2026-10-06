@@ -382,10 +382,6 @@
 	src.shadow_wight = shadow_wight
 
 /// Non TG signals.
-/// From the mutations life system
-/datum/om/event/before/handle_mutations
-	accumulate = TRUE
-
 /// Hose Connector Component
 /datum/om/event/hose_forcepump
 	sync = TRUE
@@ -546,46 +542,6 @@
 	src.source = source
 	src.flags = flags
 
-/// Before a blindness increase (amount)
-/datum/om/event/living_status_blind
-	sync = TRUE
-	var/amount
-
-/datum/om/event/living_status_blind/New(amount)
-	src.amount = amount
-
-/// Before a paralysis increase (amount)
-/datum/om/event/living_status_paralyze
-	sync = TRUE
-	var/amount
-
-/datum/om/event/living_status_paralyze/New(amount)
-	src.amount = amount
-
-/// Before a sleep increase (amount)
-/datum/om/event/before/living_status_sleep
-	accumulate = TRUE
-	var/amount
-
-/datum/om/event/before/living_status_sleep/New(amount)
-	src.amount = amount
-
-/// Before a stun increase (amount)
-/datum/om/event/living_status_stun
-	sync = TRUE
-	var/amount
-
-/datum/om/event/living_status_stun/New(amount)
-	src.amount = amount
-
-/// Before a weakness increase (amount)
-/datum/om/event/living_status_weaken
-	sync = TRUE
-	var/amount
-
-/datum/om/event/living_status_weaken/New(amount)
-	src.amount = amount
-
 /// Called when a living mob collides with a dense turf : /mob/living/proc/turf_collision(var/turf/T, var/speed)
 /datum/om/event/before/living_turf_collision
 	accumulate = TRUE
@@ -734,14 +690,6 @@
 
 /datum/om/event/mob_granted_action/New(action)
 	src.action = action
-
-/// From the HUD life system (darksight()).
-/datum/om/event/mob_handle_hud_darksight
-	sync = TRUE
-
-/// From the vision life system (the sight reaction, life_vision(); a ghost's upkeep).
-/datum/om/event/mob_handle_vision
-	sync = TRUE
 
 /// From base of /mob/Login(): ()
 /datum/om/event/mob_login
