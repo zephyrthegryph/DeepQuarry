@@ -566,6 +566,7 @@
 #include "dq_fwg3_modals.dm"
 #include "dq_fwg3_asks.dm"
 #include "dq_eg2_wait_tests.dm"
+#include "dq_prompt_interrupt_tests.dm"
 #include "dq_p2_reagent_pill_behaviour.dm"
 #include "dq_p2_reagent_hypo_behaviour.dm"
 #include "dq_p2_reagent_misc_behaviour.dm"

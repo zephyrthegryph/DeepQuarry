@@ -2410,3 +2410,4 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   `rotatable()` machines. The implant chair's grab op is "Put in chair" with a grab only; its two verbs are ops. A bare `/obj/item/holder`
   is not a probe (it is made around a mob).
 * **A deferred `dx_*` callback finds its owner again**: the wrapper key is the one `rerun_unwrap()` reads (`rerun_h`).
+* **Open prompts are pinned, not changed.** An op paused at a prompt was already cancelled on losing its actor, target, held item, reach (adjacent bindings, the window) or what its requirements read, and re-ran its requirements on the answer; `dq_prompt_interrupt/*` now pins it (walk away, drop, delete, power loss, answer after a requirement changed, `keeps = 0`, chains). No behaviour changed.
