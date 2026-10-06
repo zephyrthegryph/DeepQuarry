@@ -89,6 +89,7 @@
 		var/temp_factor = abs(protection - 1)
 
 		new_temperature = starting_temperature + (new_temperature - starting_temperature) * temp_factor
+		new_temperature = clamp(new_temperature, min(starting_temperature, target_temperature), max(starting_temperature, target_temperature))
 		L.set_bodytemperature(new_temperature)
 	// The last metroid has escaped from captivity, the galaxy is no longer safe.
 		if(istype(L, /mob/living/simple_mob/vore/alienanimals/space_jellyfish) && target_temperature <= T0C)
