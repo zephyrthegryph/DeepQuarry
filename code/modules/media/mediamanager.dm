@@ -147,6 +147,8 @@
 
 CAPABILITIES(/datum/media_manager)
 	owns_one(nameof(media_window), /datum/tgui_window)
+	interface("MediaPlayer", state = nameof(GLOB.tgui_always_state), pinned = TRUE, preinitialized = TRUE)
+	ui_shape(url = schema_text(), start_time = num(), volume = num())
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
@@ -159,12 +161,8 @@ CAPABILITIES(/datum/media_manager)
 		window.close()
 	return ..()
 
-DECLARE_UI_STATE(/datum/media_manager, GLOB.tgui_always_state)
-
-UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:text,start_time:num,volume:num}")
-
 /// The computed part of /datum/media_manager's window data (declared on its UI_DATA row).
-/datum/media_manager/proc/ui_data_datum_media_manager(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/media_manager/ui_data(datum/act/eval/A)
 	var/should_play = TRUE
 	if(owner()?.prefs)
 		should_play = owner().prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
@@ -175,7 +173,6 @@ UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:tex
 	)
 
 // Actually pop open the player in the background.
-DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
 
 /// Renders in the hidden media browser element open() initializes.
 /datum/media_manager/ui_window(mob/user)

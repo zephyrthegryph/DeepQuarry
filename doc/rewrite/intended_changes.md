@@ -1451,6 +1451,9 @@ focused tests of the touched windows (the tests that called a handler with its o
   op (the event manager's from the old `act_ask()` calls). The library upload confirmation is asked even with nothing scanned (the
   handler then does nothing); a feedback submission that is empty or too long is not confirmed (the handler says why). A guard in a
   handler that stood above its question now runs after the answer.
+* **interface() takes the legacy window options**: `window_var = nameof(x)` (a window named by a var each subtype sets: the appliances,
+  the inventory panel, a rig, the entity narrator), `autoupdate`, `pinned` (the lobby, the tooltip, the media player) and
+  `preinitialized`. `ui_types` leaves a var-named window untyped.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
@@ -1637,6 +1640,8 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   examine line while the panel is open; installing the super I/O coil is a 30 s op.
 - Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
   the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
+- Mecha UI: the window helpers' tgui parameters are renamed so the body's `state` reads the mech's maintenance state again (before this, the parameter shadowed it).
+- Lobby "Observe": the confirmation is now an `asks()` step on the observe op and opens only once the round has finished setting up. The handler still checks login holds and the round state when the answer comes back.
 - **Emags on items are the emag library** (`emag(then(PROC_REF(on_emag)), repeatable =, powered = FALSE)`): a sequencer that
   works now also says the library's "You subvert X with Y" line, and pays one use (the legacy handlers' counts were 0 or 1).
   A handler that did nothing declines: the card goes on to its other uses. The defib kit works its paddles' emag by key.
@@ -1669,6 +1674,9 @@ The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle 
 * **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
   override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
   the previous `usr` even when the callback throws (the hand-written swaps left it set).
+- Laptop vendor: the legacy handlers' tgui `state` parameter shadowed the vendor's order state, so "pick device" always refused and the hardware buttons were open in every state. The handlers now read the vendor's own order state.
+- Ticket windows: the data helpers no longer shadow the ticket's `state` (the panel shows open/resolved/closed again). "New ticket" asks its questions (ckey, text, level, and duplicate only when the player already has a ticket) as `asks()` steps before the handler runs, so an offline ckey is reported after all the answers instead of after the first. "List tickets" is an `asks()` step.
+- Circuit export window: its data reads the assembly's data through `tgui_data(user)`.
 ## The gas turbine and its motor (rewrite/pipenet-full)
 
 Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
@@ -1706,6 +1714,11 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - The base `/obj/machinery/atmospherics/machine_step()` is deleted (no atmospherics device is stepped by the machine pipeline any more), the
   pipeline's MACHINE_WAKE of each pipe on joining is gone (HE pipes reconsider on their `parent`), and the engineered-material follow-up timer is
   checked with `after_left()` instead of `om_timer_slot_pending()`.
+- **Object verbs keep their legacy base requirements** (reach and an actor who can act: `needs(req_adjacent(), req_capable())`
+  on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
+- **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
+  handled and goes on, as before.
+
 
 
 ## Power plants: the tesla coils and grounding rods (rewrite/power-plants)

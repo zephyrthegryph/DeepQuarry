@@ -217,8 +217,6 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 /datum/inventory_panel/tgui_host(mob/user)
 	return host.tgui_host()
 
-DECLARE_UI_STATE(/datum/inventory_panel, GLOB.tgui_physical_state)
-
 /datum/inventory_panel/tgui_status(mob/user, datum/tgui_state/state)
 	if(!host)
 		return STATUS_CLOSE
@@ -226,7 +224,9 @@ DECLARE_UI_STATE(/datum/inventory_panel, GLOB.tgui_physical_state)
 		return STATUS_CLOSE
 	return ..()
 
-DECLARE_UI(/datum/inventory_panel, UI_FROM_VAR("tgui_id"))
+CAPABILITIES(/datum/inventory_panel)
+	interface(null, state = nameof(GLOB.tgui_physical_state), window_var = nameof(tgui_id))
+	ui_shape(slots = list_of(), internals = any, internalsValid = bool())
 
 /datum/inventory_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host)
@@ -237,10 +237,8 @@ DECLARE_UI(/datum/inventory_panel, UI_FROM_VAR("tgui_id"))
 /datum/inventory_panel/ui_title(mob/user)
 	return host.name
 
-UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,internals:unknown,internalsValid:bool}")
-
 /// The computed part of /datum/inventory_panel's window data (declared on its UI_DATA row).
-/datum/inventory_panel/proc/ui_data_datum_inventory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/inventory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/slots = list()
@@ -287,10 +285,12 @@ UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,
 		return
 	return ..() // Let our parent assign the host.
 
-UI_ACT(/datum/inventory_panel/human, "targetSlot", ui_act_targetslot, UI_ARG_TEXT("slot"))
-UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
+CAPABILITIES(/datum/inventory_panel/human)
+	op("targetSlot", ui_act("targetSlot", arg("slot", schema_text(4096))), then(PROC_REF(ui_act_targetslot)))
+/datum/inventory_panel/human/proc/ui_act_targetslot(datum/act/op/A, slot)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/H = host
-	H.handle_strip(params["slot"], ui.user)
+	H.handle_strip(slot, user)
 	return TRUE
 
 /datum/inventory_panel/human/ui_assets(mob/user)
@@ -298,10 +298,8 @@ UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
 		get_asset_datum(/datum/asset/simple/inventory)
 	)
 
-UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_panel_human{slots:list,specialSlots:list,internals:unknown,internalsValid:bool,sensors:bool,handcuffed:bool,handcuffedParams:listmap,legcuffed:bool,legcuffedParams:listmap,accessory:bool}")
-
 /// The computed part of /datum/inventory_panel/human's window data (declared on its UI_DATA row).
-/datum/inventory_panel/human/proc/ui_data_datum_inventory_panel_human(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/inventory_panel/human/ui_data(datum/act/eval/A)
 	var/list/data = list() // We don't inherit TGUI data because humans are soooo different.
 
 	var/mob/living/carbon/human/H = host // Not my fault if this runtimes, a human inventory panel should never be created without a human attached.
