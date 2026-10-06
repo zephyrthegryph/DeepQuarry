@@ -38,7 +38,10 @@
 
 /// Time for the algae farm's own work (one service interval of it).
 /proc/ap_algae_tick(obj/machinery/atmospherics/binary/algae_farm/F)
-	F.machine_step()
+	for(var/i in 1 to 10)
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		stoplag()
 	am_settle()
 
 /// A radio command packet to a pipe device with radio tag `tag` (its `id`).
@@ -782,7 +785,8 @@
 /// CO2 it stops, and new CO2 starts it again.
 /datum/unit_test/dq_atmos_m/pipes/algae_farm_converts
 /datum/unit_test/dq_atmos_m/pipes/algae_farm_converts/run_gate()
-	var/obj/machinery/atmospherics/binary/algae_farm/filled/F = pipe_device(/obj/machinery/atmospherics/binary/algae_farm/filled)
+	var/list/line = pipe_line(/obj/machinery/atmospherics/binary/algae_farm/filled)
+	var/obj/machinery/atmospherics/binary/algae_farm/filled/F = line[2]
 	var/mob/living/carbon/human/H = person()
 	F.air1.adjust_gas(GAS_CO2, 5)
 	gas_touched(F.air1)
@@ -806,3 +810,4 @@
 	for(var/i in 1 to 3)
 		ap_algae_tick(F)
 	TEST_ASSERT(F.stored_material[MAT_ALGAE] < algae_idle, "new CO2 starts it again")
+	take_down_lines()

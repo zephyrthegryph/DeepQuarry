@@ -1478,3 +1478,13 @@ Generated pins: `snapshots/pins/obj.machinery.portable_atmospherics.powered.*`, 
 - **Area air console**: no MACHINE_WAKE when it switches the scrubbers (their `every()` follows `on`).
 - **Stasis clamp**: its hand toggle (only while on a pipe), its drag-onto-yourself removal (3 s, refused while active) and the clamp item's
   attach (3 s, refused where a clamp already is) are ops; the OM timed tasks are gone. `open` is tracked.
+
+## The algae farm (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
+
+- It works on `every(when = working)`; `working` (tracked) is reconsidered when its switch, its power, its stores (loading, ejecting) or its
+  input's gas change (a gas watch on `air1`, composition). The OM derived field, the periodic declaration, the OM watch and MACHINE_WAKE are gone.
+- Its RPED is `part_replacement()`, loading materials an op. The "you cannot insert this item" catch-all is gone: an op answering any held item
+  would take the screwdriver and the crowbar from the machine core's panel and deconstruction (ops answer before the legacy interactions), so
+  another item is now what the machine core does with it.
