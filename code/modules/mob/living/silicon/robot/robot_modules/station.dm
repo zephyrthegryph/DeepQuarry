@@ -177,10 +177,12 @@ CAPABILITIES(/obj/item/robot_module)
 	LAZYCLEARLIST(added_networks)
 
 /obj/item/robot_module/proc/add_subsystems(mob/living/silicon/robot/R)
-	om_grant_each(R, GRANT_VERB, subsystems, src)
+	for(var/granted_path in subsystems)
+		grant(R, granted_verb(granted_path), src)
 
 /obj/item/robot_module/proc/remove_subsystems(mob/living/silicon/robot/R)
-	om_revoke_each(R, GRANT_VERB, subsystems, src)
+	for(var/granted_path in subsystems)
+		revoke(R, granted_verb(granted_path), src)
 
 /obj/item/robot_module/proc/apply_status_flags(mob/living/silicon/robot/R)
 	if(!can_be_pushed)

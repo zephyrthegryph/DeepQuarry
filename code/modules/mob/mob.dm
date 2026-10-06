@@ -1448,7 +1448,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/verb = ask.value
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
-		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
+		revoke(src, granted_verb(verb, hidden = TRUE), verb_source(VERB_SOURCE_ADMIN))
 		grant(src, granted_verb(verb), verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_verb_removed(datum/act/request/A)
@@ -1460,7 +1460,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/datum/prompt/choice/vv_debug/ask = A.answer
 	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
 	revoke(src, granted_verb(ask.value), verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, ask.value, verb_source(VERB_SOURCE_ADMIN))
+	grant(src, granted_verb(ask.value, hidden = TRUE), verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_organ_added(datum/act/request/A)
 	if(!A.answer)

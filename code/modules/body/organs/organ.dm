@@ -681,9 +681,11 @@ CAPABILITIES(/obj/item/organ)
 	// Each organ grants its verbs with itself as source, so a verb shared with another
 	// working organ stays while that organ still grants it.
 	if(!removed && organ_verbs && check_verb_compatability())
-		om_grant_each(owner, GRANT_VERB, organ_verbs, src)
+		for(var/granted_path in organ_verbs)
+			grant(owner, granted_verb(granted_path), src)
 	else if(organ_verbs)
-		om_revoke_each(owner, GRANT_VERB, organ_verbs, src)
+		for(var/granted_path in organ_verbs)
+			revoke(owner, granted_verb(granted_path), src)
 	return
 
 /// TRUE when organ_tick() has nothing to do for this organ right now, so the body's organ clock

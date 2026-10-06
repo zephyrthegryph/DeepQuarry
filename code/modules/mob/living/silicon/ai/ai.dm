@@ -126,12 +126,16 @@ CAPABILITIES(/mob/living/silicon/ai)
 	param(nameof(spawn_safety), pos = 4)
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
-	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
-	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in GLOB.ai_verbs_default)
+		grant(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		grant(src, granted_verb(granted_path), src)
 
 /mob/living/silicon/ai/proc/remove_ai_verbs()
-	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
-	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in GLOB.ai_verbs_default)
+		revoke(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		revoke(src, granted_verb(granted_path), src)
 
 /// The brain an AI is made from (its constructor param, read before its parents' init).
 /mob/living/silicon/ai/var/tmp/obj/item/mmi/brain_at_make
@@ -222,7 +226,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	new /obj/machinery/ai_powersupply(src)
 
 	if(CONFIG_GET(flag/allow_ai_shells))
-		om_grant(src, GRANT_VERB, /mob/living/silicon/ai/proc/deploy_to_shell_act, verb_source(VERB_SOURCE_CONFIG))
+		grant(src, granted_verb(/mob/living/silicon/ai/proc/deploy_to_shell_act), verb_source(VERB_SOURCE_CONFIG))
 
 	create_eyeobj()
 	if(eyeobj)
