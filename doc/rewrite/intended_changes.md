@@ -1784,6 +1784,8 @@ organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURA
   every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
   horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
   (`ORGAN_LEGACY_BURST`).
+* **Liver strain under heavy toxin load is 0.2 a cycle** (was 2.0 every tenth cycle): the pin's twenty cycles cost about 4 (old run 5.65, the
+  bursts landing with other random liver harm).
 * **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
   falls to below 8 within thirty cycles (old run 8 -> 6.6).
 * "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.

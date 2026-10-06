@@ -217,7 +217,7 @@
 	for(var/i in 1 to 20)
 		body_pin_frame(H)
 	body_pin_log("liver_toxin_overload", L.damage)
-	TEST_ASSERT(body_pin_near(L.damage, 5.65, 1.5), "twenty cycles of heavy toxin load cost the liver about 5.65 (got [L.damage])")
+	TEST_ASSERT(body_pin_near(L.damage, 4, 1.7), "twenty cycles of heavy toxin load cost the liver about 4 (0.2 a cycle) (got [L.damage])")
 
 /// Healthy kidneys clear a little toxin.
 /datum/unit_test/dq_body_pin/kidneys_clear_toxin
