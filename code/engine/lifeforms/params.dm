@@ -115,7 +115,7 @@ GLOBAL_LIST_EMPTY(param_given)
 	for(var/i in 2 to length(new_args))
 		var/var_name = P.param_pos["[i - 1]"]
 		if(var_name)
-			A.vars[var_name] = new_args[i] // ALLOW(api): a positional constructor argument a param(pos =) declares, set before init
+			param_write(A, var_name, new_args[i])
 			given += var_name
 	if(length(given))
 		GLOB.param_given[A] = given
@@ -128,7 +128,7 @@ GLOBAL_LIST_EMPTY(param_given)
 		if(!(name in D.vars))
 			declare_report("make([D.type]): [name] is not a var of the type")
 			continue
-		D.vars[name] = M.values[name] // ALLOW(api): a make() argument writes the declared param before init
+		param_write(D, name, M.values[name])
 		given += name
 	if(M.parts)
 		var/datum/lifeform_plan/P = lifeform_plan_of(D)
@@ -191,3 +191,11 @@ GLOBAL_LIST_EMPTY(param_given)
 		GLOB.make_pending.Cut(i, i + 1)
 		return M
 	return null
+
+/// Writes a param before init: a declared relation var through rel_set() (its back-reference and teardown are the relation layer's), any
+/// other var directly, as a map edit would.
+/proc/param_write(datum/D, var_name, value)
+	if(own_table_of(D).entries?[var_name])
+		rel_set(D, var_name, value)
+		return
+	D.vars[var_name] = value // ALLOW(api): a param is written before init, as a map edit would be
