@@ -1,4 +1,4 @@
-/obj/machinery/computer/shutoff_monitor|human|none => shutoff_monitor_use|
-/obj/machinery/computer/shutoff_monitor|robot|none => shutoff_monitor_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/shutoff_monitor|human|none => |
+/obj/machinery/computer/shutoff_monitor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/shutoff_monitor|ai|none => |
 /obj/machinery/computer/shutoff_monitor|ghost|none => |

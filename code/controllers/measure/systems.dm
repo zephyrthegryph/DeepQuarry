@@ -126,25 +126,6 @@
 	var/list/rows = list(
 		// code/game/machinery/: the machine pipeline (the machine system is a kernel work item).
 		"machines" = list(/datum/om/pipeline/machine),
-		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.
-		"ai_brain" = list(/datum/om/behaviour/ai_brain, /datum/om/behaviour/sleeper/ai_brain),
-		// Periodic cadences and hotspots are kernel work items now (code/datums/om/periodic.dm): the kernel meters them.
-		// code/modules/vore/.
-		"vore" = list(/datum/om/behaviour/belly_cycle),
-		// code/modules/materials/, code/modules/material_science/.
-		"materials" = list(/datum/om/behaviour/material_emission, /datum/om/behaviour/material_service),
-		// code/modules/heat/.
-		"heat" = list(/datum/om/behaviour/overheating),
-		// code/datums/looping_sounds/.
-		"sound" = list(/datum/om/behaviour/sleeper/looping_sound),
-		// code/datums/behaviours/: per-object feature behaviours (footstep, slosh, ...).
-		"object_behaviours" = list(
-			/datum/om/behaviour/absorbent, /datum/om/behaviour/bluespace_connection, /datum/om/behaviour/burning,
-			/datum/om/behaviour/cleaning, /datum/om/behaviour/footstep,
-			/datum/om/behaviour/omen, /datum/om/behaviour/resize_guard,
-			/datum/om/behaviour/slip_prone, /datum/om/behaviour/slosh, /datum/om/behaviour/swarming,
-			/datum/om/behaviour/tether_host, /datum/om/behaviour/tether_handheld,
-		),
 		// code/datums/om/: the scheduler's own behaviours (expiry, rates, timers, tasks, io, ui pushes, edges) and
 		// the sleeper/timed bases in pipeline.dm.
 		"om_core" = list(/datum/om/behaviour/internal, /datum/om/behaviour/sleeper/timed),

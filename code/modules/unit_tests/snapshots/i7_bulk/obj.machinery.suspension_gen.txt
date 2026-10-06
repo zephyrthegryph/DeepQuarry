@@ -1,7 +1,5 @@
-/obj/machinery/suspension_gen|human|none => suspension_gen_use|emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver,suspension_gen_insert_cell:needs a power cell,suspension_gen_swipe_card:needs a card
-/obj/machinery/suspension_gen|robot|none => suspension_gen_use|emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now,suspension_gen_insert_cell:needs a power cell,suspension_gen_swipe_card:needs a card
+/obj/machinery/suspension_gen|human|none => |emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver
+/obj/machinery/suspension_gen|robot|none => |emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/suspension_gen|ai|none => |
 /obj/machinery/suspension_gen|ghost|none => |
-/obj/machinery/suspension_gen|human|/obj/item/cell => suspension_gen_insert_cell,suspension_gen_use|emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver,suspension_gen_swipe_card:needs a card
-/obj/machinery/suspension_gen|human|/obj/item/card => suspension_gen_swipe_card,suspension_gen_use|emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver,suspension_gen_insert_cell:needs a power cell
-/obj/machinery/suspension_gen|human|/obj/item/card/emag => emag,suspension_gen_swipe_card,suspension_gen_use|machine_panel:needs a screwdriver,suspension_gen_insert_cell:needs a power cell
+/obj/machinery/suspension_gen|human|/obj/item/card/emag => emag|machine_panel:needs a screwdriver

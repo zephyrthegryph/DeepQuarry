@@ -56,7 +56,7 @@
 
 	/// When the next redraw in the `refresh_token` timer slot is due (a countdown, the clock or a
 	/// scrolling message); the shuttle schedule watched in shuttle modes (SHUTTLE_SCHEDULE_*, 0
-	/// for none) and the entity whose CHANGE_SHUTTLE_SCHEDULE it watches.
+	/// for none) and the entity whose shuttle_schedule_changed notice it observes.
 	var/tmp/refresh_at = 0
 	var/tmp/shuttle_key_token
 	var/tmp/shuttle_key_id = 0
@@ -101,7 +101,7 @@
 /obj/machinery/status_display/proc/watched_shuttle()
 	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? SHUTTLE_SCHEDULE_EVAC : 0
 
-/// The entity that raises CHANGE_SHUTTLE_SCHEDULE for schedule `id`.
+/// The entity that publishes shuttle_schedule_changed for schedule `id`.
 /proc/shuttle_schedule_source(id)
 	switch(id)
 		if(SHUTTLE_SCHEDULE_EVAC)
@@ -111,12 +111,9 @@
 	return null
 
 /// A watched shuttle schedule changed.
-/datum/om/behaviour/sleeper/status_display
-	name = "status display"
-
-/datum/om/behaviour/sleeper/status_display/on_wake(obj/machinery/status_display/D, changes)
-	if(!QDELETED(D))
-		D.refresh()
+/obj/machinery/status_display/proc/shuttle_schedule_seen(datum/act/A)
+	if(!QDELETED(src))
+		refresh()
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
@@ -131,13 +128,13 @@
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
-			om_unwatch(src, shuttle_key_token, /datum/om/behaviour/sleeper/status_display)
+			unobserve(shuttle_key_token, /datum/notice/shuttle_schedule_changed, src)
 			shuttle_key_token = null
 		shuttle_key_id = want_shuttle
 		var/datum/source = shuttle_schedule_source(want_shuttle)
 		if(source)
-			om_attach(src, /datum/om/behaviour/sleeper/status_display)
-			om_watch(src, source, CHANGE_SHUTTLE_SCHEDULE, /datum/om/behaviour/sleeper/status_display)
+			sleep_audit_join(src)
+			observe(source, /datum/notice/shuttle_schedule_changed, src, then(PROC_REF(shuttle_schedule_seen)))
 			shuttle_key_token = source
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
@@ -147,14 +144,14 @@
 		cancel_after(src, "refresh_token")
 	refresh_at = at
 	if(at)
-		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
+		sleep_audit_join(src)
 		after(src, delay, PROC_REF(refresh_timer_fired), key = "refresh_token")
 
 /obj/machinery/status_display/proc/refresh_timer_fired()
 	refresh_at = 0
 	refresh()
 
-/obj/machinery/status_display/om_sleep_violation()
+/obj/machinery/status_display/sleep_violation()
 	if(has_stat(NOPOWER))
 		return null
 	if(next_refresh_delay() && !after_pending(src, "refresh_token"))

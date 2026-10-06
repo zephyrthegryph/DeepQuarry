@@ -539,7 +539,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 	var/sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
 		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm, allows robots to use ranged melee weapons
-			OM_EMIT(user, /datum/om/event/before/robot_item_attack, W, user, params) // we ATTEMPTED to attack someone.
+			PUBLISH_LEGACY(user, /datum/notice/robot_item_attack, W, user, params)
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
 				after_click(W, A, user, 1, params, user.input_stance())

@@ -231,7 +231,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// sample right after. A 1 s deadline here was superseded at once, leaving a stale wheel
 	// entry per service (about 1,400 at boot, one per power cell and admitted pipe).
 
-// unregisters diagnostics and its service behaviour; its owner forgets it.
+// unregisters diagnostics and its service timer; its owner forgets it.
 /datum/material_service/on_destroy(force)
 	drop_heat_links()
 	if(heat_store)
@@ -264,13 +264,13 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		return
 	var/due = world.time + delay
 	if(!timer)
-		om_deadline(src, delay, /datum/om/behaviour/material_service)
+		after(src, delay, PROC_REF(service_due), key = "material_service")
 		next_update = due
 		timer = TRUE
 	else
 		if(due < next_update)
 			next_update = due
-			om_deadline(src, delay, /datum/om/behaviour/material_service)
+			after(src, delay, PROC_REF(service_due), key = "material_service")
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf())
@@ -570,21 +570,17 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		heat_equalize(HEAT_STORE(heat_store), location)
 
 /datum/material_service/proc/tick()
-	om_cancel_after(src, /datum/om/behaviour/material_service)
+	cancel_after(src, "material_service")
 	timer = null
 	advance()
 
-/// Material exposure work: one deadline per service on the core wheel (was SSmaterial_services'
-/// heap). Setting it again moves it; deletion cancels it with the entity.
-/datum/om/behaviour/material_service
-	name = "material exposure"
-	lane = LANE_BACKGROUND
-
-/datum/om/behaviour/material_service/on_deadline(datum/material_service/service)
-	if(QDELETED(service))
+/// Material exposure work: one keyed after() per service (was SSmaterial_services' heap, then an OM deadline).
+/// Setting it again moves it; deletion cancels it with the entity.
+/datum/material_service/proc/service_due()
+	if(QDELETED(src))
 		return
-	service.timer = FALSE
-	service.advance()
+	timer = FALSE
+	advance()
 
 /datum/material_service/proc/advance()
 	if(updating || QDELETED(owner()))

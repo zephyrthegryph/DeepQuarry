@@ -1,5 +1,4 @@
-/obj/machinery/power/supply_beacon|human|none => supply_beacon_use|power_cable_place:needs a cable coil
-/obj/machinery/power/supply_beacon|robot|none => supply_beacon_use|gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/supply_beacon|human|none => |
+/obj/machinery/power/supply_beacon|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/supply_beacon|ai|none => |
 /obj/machinery/power/supply_beacon|ghost|none => |
-/obj/machinery/power/supply_beacon|human|/obj/item/stack/cable_coil => supply_beacon_use,power_cable_place|

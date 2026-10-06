@@ -41,7 +41,7 @@
 /mob/proc/init_vore(force = FALSE)
 	//Something else made organs, meanwhile.
 	if(!isnewplayer(src))
-		om_attach(src, /datum/om/behaviour/slosh)
+		enable_slosh()
 	if(LAZYLEN(vore_organs))
 		if(!soulgem)
 			rel_set(src, nameof(soulgem), new /obj/soulgem(src))

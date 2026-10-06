@@ -87,7 +87,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	add_disposal_connection()
 	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
-		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
+		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 
 	// air_contents is declared (DECLARE_GAS). Map-loaded bins are installed infrastructure, not freshly constructed
 	// empty vessels. Prime their tiny reservoir from the mapped room atmosphere
@@ -108,7 +108,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // it unlinks and ejects its contents.
 /obj/machinery/disposal/on_destroy(force)
 	clear_gas_dependency()
-	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
+	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	eject()
 	..()
 
@@ -720,7 +720,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	if(.)
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
-		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !om_timer_slot_pending(src, "power_retry_timer"))
+		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !after_pending(src, "power_retry_timer"))
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
@@ -797,7 +797,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(T)
 	//..() //*cough
-	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
+	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	destroyed(src, null, "deconstructed") //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()

@@ -21,7 +21,7 @@
 	if(queued_echo_turfs[REF(T)]) // Already echoing
 		return
 	all_pings_round++
-	OM_EMIT(src, /datum/om/event/movable_motiontracker, source, T)
+	PUBLISH_LEGACY(src, /datum/notice/movable_motiontracker, source, T)
 
 // We get this back from anything that handles the signal, and queues up a turf to draw the echo on
 // The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming

@@ -61,4 +61,4 @@
 //I'm just reimplementing the way it worked before but with events. I don't have the patience to refactor this.
 /mob/living/Moved()
 	. = ..()
-	OM_EMIT(SSmobs, /datum/om/event/observer_globalmoved)
+	PUBLISH_LEGACY(SSmobs, /datum/notice/observer_globalmoved)

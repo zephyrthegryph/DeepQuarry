@@ -1,6 +1,4 @@
-/obj/machinery/bomb_tester|human|none => bomb_tester_open|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device,bomb_tester_load_tank:needs a tank
-/obj/machinery/bomb_tester|robot|none => bomb_tester_open|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,machine_part_replacement:needs a rapid part exchange device,bomb_tester_load_tank:needs a tank
+/obj/machinery/bomb_tester|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/bomb_tester|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/bomb_tester|ai|none => |
 /obj/machinery/bomb_tester|ghost|none => |
-/obj/machinery/bomb_tester|human|/obj/item/storage/part_replacer => machine_part_replacement,bomb_tester_open|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,bomb_tester_load_tank:needs a tank
-/obj/machinery/bomb_tester|human|/obj/item/tank => bomb_tester_load_tank,bomb_tester_open|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_part_replacement:needs a rapid part exchange device

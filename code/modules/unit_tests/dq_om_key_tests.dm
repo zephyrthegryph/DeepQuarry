@@ -1,6 +1,6 @@
 // Change-channel wake tests: machines sleeping on watched channels and the AI brain's
 // chunk hibernation. Held steady, each must stay asleep; after its input changes, it must
-// wake. Each also checks om_sleep_violation() while asleep.
+// wake. Each also checks sleep_violation() while asleep.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -26,14 +26,14 @@
 	B.active_behavior_type = null
 	var/mob/living/visitor = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
-	TEST_ASSERT_NULL(B.om_sleep_violation(), "a calm hibernating brain reported a violation")
+	TEST_ASSERT_NULL(B.sleep_violation(), "a calm hibernating brain reported a violation")
 	var/failure = om_wake_test(B, om_callable(visitor, TYPE_PROC_REF(/atom/movable, forceMove), T))
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
 	// The audit catches a brain asleep with a threat.
 	B.hibernate_calm()
 	rel_set(B, nameof(B.primary_threat), visitor)
-	TEST_ASSERT(B.om_sleep_violation(), "the audit missed a hibernating brain with a threat")
+	TEST_ASSERT(B.sleep_violation(), "the audit missed a hibernating brain with a threat")
 	rel_clear(B, nameof(B.primary_threat))
 
 /// One mob chunk key, two mask bits: a mob without a client wakes any-mob subscribers only.

@@ -1,5 +1,4 @@
-/obj/machinery/message_server|human|none => message_server_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,message_server_upgrade:needs a circuit board (message monitor console)
-/obj/machinery/message_server|robot|none => message_server_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,message_server_upgrade:needs a circuit board (message monitor console)
+/obj/machinery/message_server|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/message_server|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/message_server|ai|none => |
 /obj/machinery/message_server|ghost|none => |
-/obj/machinery/message_server|human|/obj/item/circuitboard/message_monitor => message_server_upgrade,message_server_toggle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar

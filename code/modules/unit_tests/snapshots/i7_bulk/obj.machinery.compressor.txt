@@ -1,6 +1,4 @@
-/obj/machinery/compressor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,compressor_fingerprint:needs an item,machine_part_replacement:needs a rapid part exchange device,compressor_set_ident:needs a multitool
-/obj/machinery/compressor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,compressor_fingerprint:needs an item,machine_part_replacement:needs a rapid part exchange device,compressor_set_ident:needs a multitool
+/obj/machinery/compressor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/compressor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/compressor|ai|none => |
 /obj/machinery/compressor|ghost|none => |
-/obj/machinery/compressor|human|/obj/item => compressor_fingerprint|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_part_replacement:needs a rapid part exchange device,compressor_set_ident:needs a multitool
-/obj/machinery/compressor|human|/obj/item/storage/part_replacer => compressor_fingerprint,machine_part_replacement|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,compressor_set_ident:needs a multitool

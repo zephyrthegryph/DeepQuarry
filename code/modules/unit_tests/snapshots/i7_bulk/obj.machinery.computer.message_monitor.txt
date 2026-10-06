@@ -1,5 +1,5 @@
-/obj/machinery/computer/message_monitor|human|none => message_monitor_open_ui|emag:needs a cryptographic sequencer
-/obj/machinery/computer/message_monitor|robot|none => message_monitor_open_ui|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/message_monitor|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/computer/message_monitor|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/message_monitor|ai|none => |
 /obj/machinery/computer/message_monitor|ghost|none => |
-/obj/machinery/computer/message_monitor|human|/obj/item/card/emag => emag,message_monitor_open_ui|
+/obj/machinery/computer/message_monitor|human|/obj/item/card/emag => emag|

@@ -85,16 +85,18 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 
 /client/proc/vv_topic_add_behaviour(mob/user, list/args)
 	var/datum/target = args[VV_HK_TARGET]
-	var/list/names = sortList(subtypesof(/datum/om/behaviour), GLOBAL_PROC_REF(cmp_typepaths_asc))
-	var/result = flow_ask(mob, "behaviour:add", /datum/om/prompt/choice, message = "Choose an OM behaviour to attach", title = "Attach Behaviour", choices = names)
+	var/list/names = sortList(subtypesof(/datum/capability), GLOBAL_PROC_REF(cmp_typepaths_asc))
+	var/result = flow_ask(mob, "behaviour:add", /datum/om/prompt/choice, message = "Choose a capability to grant", title = "Grant Capability", choices = names)
 	if(isnull(result) || !user)
 		return
 	if(QDELETED(target))
 		to_chat(user, "That thing doesn't exist anymore!", confidential = TRUE)
 		return
-	om_attach(target, result)
-	log_admin("[key_name(user)] has attached behaviour [result] to [key_name(target)].")
-	message_admins(span_notice("[key_name_admin(user)] has attached behaviour [result] to [key_name_admin(target)]."))
+	if(!grant(target, result, SRC_VV))
+		to_chat(user, "[result] could not be granted to [target] (see the runtime log).", confidential = TRUE)
+		return
+	log_admin("[key_name(user)] has granted capability [result] to [key_name(target)].")
+	message_admins(span_notice("[key_name_admin(user)] has granted capability [result] to [key_name_admin(target)]."))
 	return TRUE
 
 /client/proc/vv_topic_remove_behaviour(mob/user, list/args)
@@ -105,12 +107,13 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 
 /client/proc/vv_remove_behaviour(mob/user, datum/target, mass_remove)
 	var/list/names = list()
-	for(var/datum/om/behaviour/B as anything in target.om_rec?.att)
-		names += B.type
+	for(var/datum/activation/A as anything in target.rx?.activations)
+		if(!A.dead && A.source == SRC_VV)
+			names |= A.def.type
 	if(!length(names))
-		to_chat(user, "[target] has no OM behaviours attached.")
+		to_chat(user, "[target] has no capabilities granted through VV.")
 		return
-	var/path = flow_ask(mob, "behaviour:remove", /datum/om/prompt/choice, message = "Choose an OM behaviour to detach", title = "Detach Behaviour", choices = names)
+	var/path = flow_ask(mob, "behaviour:remove", /datum/om/prompt/choice, message = "Choose a capability to revoke", title = "Revoke Capability", choices = names)
 	if(isnull(path) || !user)
 		return
 	if(QDELETED(target))
@@ -121,12 +124,12 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 		var/method = vv_subtype_prompt(target.type, "behaviour")
 		if(isnull(method))
 			return
-		if(flow_ask(mob, "behaviour:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-detach [path] on [target.type]?", title = "Mass Detach Confirmation", choices = list("Yes", "No")) != "Yes")
+		if(flow_ask(mob, "behaviour:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-revoke [path] on [target.type]?", title = "Mass Revoke Confirmation", choices = list("Yes", "No")) != "Yes")
 			return
 		targets_to_remove_from = get_all_of_type(target.type, method)
 	for(var/datum/target_to_remove_from as anything in targets_to_remove_from)
-		om_detach(target_to_remove_from, path)
-	message_admins(span_notice("[key_name_admin(user)] has [mass_remove ? "mass " : ""]detached behaviour [path] from [mass_remove ? target.type : key_name_admin(target)]."))
+		revoke(target_to_remove_from, path, SRC_VV)
+	message_admins(span_notice("[key_name_admin(user)] has [mass_remove ? "mass " : ""]revoked capability [path] from [mass_remove ? target.type : key_name_admin(target)]."))
 	return TRUE
 
 /client/proc/vv_topic_call_proc(mob/user, list/args)

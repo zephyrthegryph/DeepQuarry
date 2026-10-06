@@ -261,3 +261,11 @@
 /// A timer target that restarts periodic work on the slow lane (om_after(src, delay, /datum/proc/periodic_resume)).
 /datum/proc/periodic_resume()
 	om_task_periodic(src, PERIODIC_SLOW)
+
+/// A mob moved into a chunk a proximity-gated sleeper watches (sleep_until_mob_near(), code/modules/mob/mob_chunks.dm): its
+/// periodic work restarts on its lane.
+/atom/movable/proc/proximity_woke(datum/mob_chunk/C, bits)
+	if(QDELETED(src) || !proximity_chunks)
+		return
+	proximity_chunks = unwatch_mob_chunks(src, proximity_chunks, proximity_mask)
+	om_task_periodic(src, proximity_lane)

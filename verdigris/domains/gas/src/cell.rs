@@ -95,6 +95,9 @@ const PLANET_RELAX: f32 = 0.25;
 /// Pressure differences below this (kPa) do not add bulk flow to the
 /// stiffness (they still flow).
 const STIFF_PRESSURE: f32 = 1.0;
+/// The most faces a cell exchanges through (four planar, up and down): the share of a pair's levelling flow one edge may take in a sub-step
+/// whose length ignored the bulk flow.
+const STABLE_FACES: f32 = 6.0;
 
 /// Cell flags.
 pub mod flags {
@@ -382,7 +385,21 @@ impl FieldKind for TurfGas {
 			a.cell.pressure_in(a.capacity),
 			b.cell.pressure_in(b.capacity),
 		);
-		let bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
+		let mut bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
+		if (pa - pb).abs() <= STIFF_PRESSURE {
+			// Below the threshold the bulk flow is not in the stiffness, so the sub-step is sized for diffusion alone and an
+			// unlimited bulk flow overshoots: the room rang, growing until a difference crossed the threshold. Each edge moves
+			// at most 1/FACES of the moles that would level the pair, so a cell's edges together never overshoot (monotone).
+			let k = dp_dn(&a, pa) + dp_dn(&b, pb);
+			if k > 0.0 {
+				let level = (pa - pb).abs() / k / STABLE_FACES;
+				let moved: f32 = bulk.0[..N].iter().sum::<f32>().abs();
+				if moved > level {
+					let scale = level / moved;
+					bulk = Amounts(bulk.0.map(|v| v * scale));
+				}
+			}
+		}
 		let diffusion = kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt);
 		bulk + diffusion
 	}

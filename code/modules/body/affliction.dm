@@ -214,7 +214,7 @@ OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
 			dirty |= BODY_DIRTY_FACTORS
 		body.invalidate(dirty)
 	if(owner)
-		OM_EMIT(owner, /datum/om/event/affliction_severity_changed, src, old_severity)
+		PUBLISH_LEGACY(owner, /datum/notice/affliction_severity_changed, src, old_severity)
 	return TRUE
 
 /datum/affliction/proc/adjust_severity(delta)

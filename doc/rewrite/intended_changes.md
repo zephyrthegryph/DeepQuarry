@@ -1906,6 +1906,12 @@ Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscure
   empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
   `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).
 
+## Power plants: the power monitoring console (rewrite/power-plants, b266f960a0)
+
+- Its legacy "Use" hand interaction (`power_monitor_use`) is the `use` op: an empty hand on an operable console opens its monitor window, as
+  before (the i7 interaction snapshot lost the legacy row; recorded here after the fact). It checks its sensors on `every(MACHINE_SERVICE_INTERVAL)`
+  instead of sleeping on their grid keys.
+
 ## Power plants: the gas turbine (rewrite/power-plants)
 
 Pinned by `dq_pp/turbine_output_curve` and `compressor_spin_up` (((rpm / 100000) ^ 0.8) * 100000 * productivity W; a tenth of the way to the
@@ -2155,6 +2161,16 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
   out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
   door's catch-all for held items.
+
+## Chemical dispenser refill and closets made in play (rewrite/watch-fixes)
+
+- **A chemical canister refills the dispenser's matching cartridge through the dispenser's `refill_cartridge` op.** It was the canister's
+  `afterattack()`, which the dispenser's ops (486461023f) now answer first, so the click set nothing; the pin gains the `refill_cartridge` key.
+- **A body bag unfolded in play leaves what lies on the floor alone** (`collects_in_play = FALSE`); every other closet made closed still takes
+  in the loose items on its turf, and a mapped bag still holds what was mapped into it.
+- **The toilet's conversion pin is recorded with a fixed random seed per type**, so its random lid (and its Flush row) no longer flips between
+  recordings; the pin's human is kept awake (godmode) for the same reason.
+
 - **DECLARE_EMAG is gone from code/game/objects and code/game/turfs** (ceiling 0). The sleevemate's sequencer asks what to make of it as
   an op step and spends a card use only when a hack is picked (the legacy one spent it when it asked). Pinned by `dq_items_emag_ops`.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
@@ -2232,6 +2248,7 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
 - `CLOCK_MACHINE` and `CLOCK_CHEM` had no effect held on them anywhere, so they always ran at world speed. They are
   deleted: a machine's timers run on its own clock (suspension still pauses them), and the reflector lane measures its
   dt on world time. The final API's clocks are CLOCK_WORLD, CLOCK_OWN and CLOCK_BIO. No behaviour change intended.
+
 - **More structures and toys are ops**: the catwalk (welder slice by stance, plating), window (bang/knock/item/tk, the weld repair op
   with its 4 s wait and 1 fuel, the polarized window's multitool id as an op step), micro tunnel (one hand op asks enter-or-reach,
   one from inside asks the action, then where to or whom; a simple mob's click runs the same op), bonfire (rods ask stake or grill),
@@ -2249,3 +2266,19 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
   stance), teleportation scroll (uses, then the area, as op steps; `uses` is tracked), hand teleporter, ore satchel (`current_capacity` and
   `max_storage_space` tracked), service fabricator (a radial step), barbed wire, the electric welder's cell. The material subtypes' own
   item uses come before the material's repair, as their EXTEND did.
+
+## The OM framework retired (rewrite/om-retire-2)
+
+Pinned by `code/modules/unit_tests/dq_retired_behaviour_pins.dm` and the existing AI, tether, burning, vore and property tests.
+
+- **The AI brain loops run on the mob's own clock** (CLOCK_OWN), as final_api.html section 14 specifies: suspension pauses them,
+  stasis (CLOCK_BIO) no longer does. Out of relevance (RELEVANCE_NONE) or outside RUNLEVEL_GAME/POSTGAME a loop's timer still fires and
+  skips its run; the OM ring parked it instead. A calm brain still hibernates on its chunk watches.
+- **The material service and a belly's digestion cycle are keyed `after()` timers** on their own clock, not OM deadlines on the
+  background lane. The cadence and the per-entity cancel are unchanged.
+- **The turf_prepare_step_sound veto is gone**: nothing handled it, so a footstep on a turf without a footstep sound stays silent as before.
+- **The dqai_target_changed / dqai_target_lost events are gone**: nothing listened to them.
+- **The before/catch_throw and before/dice_roll events are direct calls** (`omen_blocks_catch()`, `omen_roll_override()`): the omen was
+  their only handler.
+- **attack_self is an action** (`ACTION(attack_self, ...)`): the tether host takes it over with an `instead()`; everything else that used
+  the OM veto event is gone with it.

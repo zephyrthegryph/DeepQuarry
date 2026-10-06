@@ -673,7 +673,7 @@
 	desc = "You are able to clean messes just by walking over them, and gain nutrition from doing so!"
 	cost = 1
 	excludes = list(/datum/trait/negative/slipperydirt)
-	added_behaviour_path = /datum/om/behaviour/absorbent
+	added_capability = /datum/capability/absorbent
 
 /datum/trait/positive/adrenaline_rush
 	name = "Adrenaline Rush"

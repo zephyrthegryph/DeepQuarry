@@ -92,8 +92,7 @@
 //Handles the effects of "stun" weapons
 /mob/living/proc/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	flash_pain()
-	if(om_wants(src, /datum/om/event/stun_effect))
-		om_emit(src, new /datum/om/event/stun_effect(stun_amount, agony_amount, def_zone, used_weapon, electric))
+	PUBLISH_LEGACY(src, /datum/notice/stun_effect, stun_amount, agony_amount, def_zone, used_weapon, electric)
 
 	if (stun_amount)
 		status_at_least(STAT_STUNNED, stun_amount)
@@ -265,8 +264,6 @@
 
 //This is called when the mob is thrown into a dense turf
 /mob/living/proc/turf_collision(turf/T, speed)
-	if(OM_EMIT(src, /datum/om/event/before/living_turf_collision, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
-		return
 	injure(INJURY_BLUNT, speed * 5, null, T) // A default of 25, spread across the body.
 	playsound(src, get_sfx(SFX_PUNCH), 50) //ouch sound
 

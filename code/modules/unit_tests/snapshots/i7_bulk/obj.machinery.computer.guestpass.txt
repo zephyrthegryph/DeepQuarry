@@ -1,6 +1,4 @@
-/obj/machinery/computer/guestpass|human|none => guestpass_eject_id,machine_open_ui|guestpass_reject_guest_card:needs a guest pass,guestpass_insert_id:needs an identification card
-/obj/machinery/computer/guestpass|robot|none => guestpass_eject_id,machine_open_ui|gen_robot_interaction_swallow:not possible right now,guestpass_reject_guest_card:needs a guest pass,guestpass_insert_id:needs an identification card
+/obj/machinery/computer/guestpass|human|none => |
+/obj/machinery/computer/guestpass|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/guestpass|ai|none => |
 /obj/machinery/computer/guestpass|ghost|none => |
-/obj/machinery/computer/guestpass|human|/obj/item/card/id/guest => guestpass_reject_guest_card,guestpass_insert_id,guestpass_eject_id,machine_open_ui|
-/obj/machinery/computer/guestpass|human|/obj/item/card/id => guestpass_insert_id,guestpass_eject_id,machine_open_ui|guestpass_reject_guest_card:needs a guest pass

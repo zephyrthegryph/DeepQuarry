@@ -369,7 +369,7 @@
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()

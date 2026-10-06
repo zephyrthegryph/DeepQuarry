@@ -497,11 +497,11 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
  * * user - the user that cancelled the reboot, may be null
  */
 /datum/system/ticker/proc/cancel_reboot(mob/user)
-	if(!om_timer_slot_pending(src, "reboot_timer"))
+	if(!after_pending(src, "reboot_timer"))
 		to_chat(user, span_warning("There is no pending reboot!"))
 		return FALSE
 	to_chat(world, span_boldannounce("An admin has delayed the round end."))
-	om_cancel_timer_slot(src, "reboot_timer")
+	cancel_after(src, "reboot_timer")
 	set_reboot_countdown_left(0)
 	return TRUE
 
@@ -514,7 +514,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	delay_end = !delay_end
 
 	set_reboot_countdown_left(0)
-	if(om_timer_slot_pending(src, "reboot_timer"))
-		om_cancel_timer_slot(src, "reboot_timer")
+	if(after_pending(src, "reboot_timer"))
+		cancel_after(src, "reboot_timer")
 	else
 		Reboot("World reboot after administrative delay.")

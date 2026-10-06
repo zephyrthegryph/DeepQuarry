@@ -105,15 +105,17 @@
 /datum/unit_test/dq_boot_bind_audit_first_wake
 
 /datum/unit_test/dq_boot_bind_audit_first_wake/Run()
-	// A machine still on the machine pipeline (pipe devices such as the omni mixer are a Rust law now).
-	var/obj/machinery/portable_atmospherics/powered/pump/M = allocate(/obj/machinery/portable_atmospherics/powered/pump, test_floor())
+	// A machine still on the machine pipeline's roster (/datum/om/decl/pipeline_machines): pipe devices are a Rust law, and the portable
+	// pumps and scrubbers left it for every() (ba7b7e2a02) and the space heater for started_work(), so neither joins nor queues a first
+	// wake. The fire alarm is on the roster.
+	var/obj/machinery/firealarm/M = allocate(/obj/machinery/firealarm, test_floor())
 	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
 	TEST_ASSERT(P, "the machine pipeline is registered")
 	// Joining after boot schedules the first wake in the machine's `first_wake` slot (zero delay):
 	// it is pending until that timer runs, then the machine is audited as usual.
 	TEST_ASSERT(P.first_wake_pending(M), "a machine that joined after boot has its first wake queued in its slot")
 	M.materialize_wakes()
-	om_cancel_timer_slot(M, "first_wake")
+	cancel_after(M, "first_wake")
 	TEST_ASSERT(!P.first_wake_pending(M), "a machine whose first wake already ran is audited as usual")
 	rel_add(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), M)
 	TEST_ASSERT(P.first_wake_pending(M), "a machine queued for the bulk first-wake pass has its first wake pending")
@@ -121,6 +123,6 @@
 	TEST_ASSERT(!P.first_wake_pending(M), "running the first wake ends it, with nothing to clear by hand")
 	after_slot(M, "first_wake", 10 MINUTES, /obj/machinery/proc/materialize_wakes)
 	TEST_ASSERT(P.first_wake_pending(M), "a first wake in its timer slot is pending")
-	om_cancel_timer_slot(M, "first_wake")
+	cancel_after(M, "first_wake")
 	TEST_ASSERT(!P.first_wake_pending(M), "cancelling the slot ends it")
 	TEST_ASSERT(!P.first_wake_pending(null), "a non-machine never counts as pending")

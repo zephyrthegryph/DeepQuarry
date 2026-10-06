@@ -101,7 +101,7 @@
 /datum/recursive_move/proc/top_moved(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entering/event = A
-	OM_EMIT(holder, /datum/om/event/movable_attempted_move, event.old_loc, event.destination)
+	PUBLISH_LEGACY(holder, /datum/notice/movable_attempted_move, event.old_loc, event.destination)
 
 //One of the parents other than the top parent moved.
 /datum/recursive_move/proc/on_parent_exited(datum/act/notice/A)
@@ -118,7 +118,7 @@
 	heirarchy_changed(old_loc, event.slot)
 
 /datum/recursive_move/proc/heirarchy_changed(atom/old_loc, atom/new_loc)
-	OM_EMIT(holder, /datum/om/event/movable_attempted_move, old_loc, new_loc)
+	PUBLISH_LEGACY(holder, /datum/notice/movable_attempted_move, old_loc, new_loc)
 	//Rebuild our list of parents
 	reset_parents()
 	setup_parents()

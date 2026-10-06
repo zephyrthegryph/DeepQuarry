@@ -516,14 +516,14 @@
 /datum/unit_test/dq_p2_reagents/capped_syringe_does_nothing_to_a_person/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/mob/living/carbon/human/patient = rc_actor()
-	var/obj/item/reagent_containers/syringe/S = rc_syringe(/obj/item/reagent_containers/syringe, 10, "capped")
+	var/obj/item/reagent_containers/syringe/S = rc_syringe(/obj/item/reagent_containers/syringe, 15, "capped") // full: a stab moves rand(5, 10) of 15 (of 10 it may move none)
 	var/before = rc_blood_units(patient)
 	rc_click(H, patient, S, I_HELP)
-	TEST_ASSERT_EQUAL(rc_units(S), 10, "a capped syringe injects nothing")
+	TEST_ASSERT_EQUAL(rc_units(S), 15, "a capped syringe injects nothing")
 	TEST_ASSERT_EQUAL(rc_blood_units(patient), before, "and the patient has nothing more")
 	TEST_ASSERT_EQUAL(rc_syringe_mode(S), "capped", "it stays capped")
 	rc_click(H, patient, S, I_HURT, FALSE)
-	TEST_ASSERT(rc_units(S) < 10, "a hostile click stabs with it all the same")
+	TEST_ASSERT(rc_units(S) < 15, "a hostile click stabs with it all the same")
 	TEST_ASSERT_EQUAL(rc_syringe_mode(S), "broken", "and breaks it")
 
 /// A full syringe that is set to draw switches to inject when it is clicked on something; an empty one set to inject goes the other way.

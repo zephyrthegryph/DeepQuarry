@@ -121,7 +121,7 @@
 	if(!cap_has(I, CAP_LIT))
 		return FALSE
 	cap_set(I, CAP_LIT, FALSE)
-	om_cancel_timer_slot(I, "cap_smokable")
+	cancel_after(I, "cap_smokable")
 	I.set_light(0)
 	play_sfx(I, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 	return TRUE

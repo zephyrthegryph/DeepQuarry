@@ -1,5 +1,5 @@
 // One cycle of the predator's effects upon the contents of its belly (digestion,
-// transformation, ...), for `seconds` of real time. An OM deadline (/datum/om/behaviour/belly_cycle) runs it only while the
+// transformation, ...), for `seconds` of real time. A keyed after() ("belly_cycle") runs it only while the
 // belly is occupied (belly_slot.dm).
 /obj/belly/proc/belly_cycle(seconds = BELLY_BASELINE_TICK / (1 SECONDS))
 	recent_sound = FALSE

@@ -18,7 +18,7 @@
 	. = ..()
 	// OM_EMIT only builds the event when something listens; every mapped object
 	// entering its turf at init would otherwise make one.
-	OM_EMIT(src, /datum/om/event/observer_turf_entered, am, old_loc)
+	PUBLISH_LEGACY(src, /datum/notice/observer_turf_entered, am, old_loc)
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()

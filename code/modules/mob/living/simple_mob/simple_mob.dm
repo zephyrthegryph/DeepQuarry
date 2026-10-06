@@ -691,7 +691,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	if(!vore_active || no_vore || !voremob_loaded)
 		return
 
-	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
+	enable_slosh() // Sloshy element
 
 	if(!soulgem)
 		rel_set(src, nameof(soulgem), new /obj/soulgem(src))

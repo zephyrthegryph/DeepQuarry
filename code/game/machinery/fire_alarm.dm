@@ -201,7 +201,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 /obj/machinery/firealarm/power_change()
 	. = ..()
 	// A burst of power changes (every grid binding at boot) shares one pending settle.
-	if(!om_timer_slot_pending(src, "power_settle"))
+	if(!after_pending(src, "power_settle"))
 		after(src, rand(0 SECONDS,1.5 SECONDS), PROC_REF(power_change_settle), key = "power_settle")
 
 /datum/interaction/machine_hand/ungated/firealarm_use

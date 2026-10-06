@@ -434,11 +434,11 @@
 
 	// A pending op cancels early when a requirement's read is published.
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "the timed op starts")
-	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "and waits")
+	TEST_ASSERT(after_pending(H, "op_wait"), "and waits")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 1, "one pending context")
 	TEST_ASSERT_NULL(F.calls, "nothing ran yet")
 	cap_set(F, CAP_LOCKED, TRUE)
-	TEST_ASSERT(!om_timer_slot_pending(H, "op_wait"), "the wait is cancelled at once")
+	TEST_ASSERT(!after_pending(H, "op_wait"), "the wait is cancelled at once")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "the pending set is empty")
 	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 0, "and the watch index too")
 	TEST_ASSERT_EQUAL(GLOB.op_cancelled_log[length(GLOB.op_cancelled_log)], "slow|[/datum/msg/req_wrong_state]", "the early cancel is recorded with its reason")
@@ -449,7 +449,7 @@
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts again")
 	var/pending_id = GLOB.op_pending[1]
 	F.cap_state |= CAP_LOCKED
-	om_cancel_timer_slot(H, "op_wait")
+	cancel_after(H, "op_wait")
 	op_wait_done(pending_id)
 	TEST_ASSERT_NULL(F.calls, "the after-wait re-check refuses a stale go-ahead")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "the context was released")
@@ -458,7 +458,7 @@
 	// And a wait that ends with everything holding commits, through op_before / op_after.
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts a third time")
 	pending_id = GLOB.op_pending[1]
-	om_cancel_timer_slot(H, "op_wait")
+	cancel_after(H, "op_wait")
 	F.hook_log = null
 	op_wait_done(pending_id)
 	TEST_ASSERT_EQUAL(length(F.calls), 1, "the handler ran after the wait")
@@ -497,15 +497,15 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched)
 	TEST_ASSERT_EQUAL(length(GLOB.op_cancelled_log), 0, "and cancels nothing")
 
 	TEST_ASSERT(perform_action(H, G, ACT_UNLOCK), "the gauged op starts")
-	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "and waits")
+	TEST_ASSERT(after_pending(H, "op_wait"), "and waits")
 	TEST_ASSERT(READERS(G, key), "a pending op watching a TRACKED var counts as a reader of it")
 	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 1, "and is in the watch index")
 	G.set_unwatched(7)
-	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "a var it does not read leaves the wait alone")
+	TEST_ASSERT(after_pending(H, "op_wait"), "a var it does not read leaves the wait alone")
 	G.set_gauge(4)
-	TEST_ASSERT(om_timer_slot_pending(H, "op_wait"), "a read that changed but still holds leaves the wait alone")
+	TEST_ASSERT(after_pending(H, "op_wait"), "a read that changed but still holds leaves the wait alone")
 	G.set_gauge(50)
-	TEST_ASSERT(!om_timer_slot_pending(H, "op_wait"), "a watched var that breaks the requirement cancels the wait at once")
+	TEST_ASSERT(!after_pending(H, "op_wait"), "a watched var that breaks the requirement cancels the wait at once")
 	TEST_ASSERT_EQUAL(GLOB.op_cancelled_log[length(GLOB.op_cancelled_log)], "gauged|[/datum/msg/req_refused]", "recorded with its reason")
 	TEST_ASSERT(!READERS(G, key), "the reader count went back to zero with the wait")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending) + length(GLOB.op_watchers), 0, "nothing pending or watched is left")
@@ -527,7 +527,7 @@ TRACKED(/obj/cap_fixture/ops/gauged, unwatched)
 	qdel(G)
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "deleting the target cancels it")
 	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 0, "and clears the watch index")
-	TEST_ASSERT(!om_timer_slot_pending(H, "op_wait"), "and the actor's wait timer")
+	TEST_ASSERT(!after_pending(H, "op_wait"), "and the actor's wait timer")
 	TEST_ASSERT_EQUAL(op_ctx_live_count(), live0, "and the context went back to the pool")
 	TEST_ASSERT_NULL(H.rx?.pending_ops, "the actor forgot it")
 

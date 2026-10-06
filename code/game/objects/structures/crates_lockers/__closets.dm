@@ -1,6 +1,8 @@
 // Someone should really merge secure closets and crates into this, which Bay has done already.
 /obj/structure/closet
 	name = "closet"
+	/// Made closed in play (not by the map), it takes in the loose items on its turf (closet_after_init()).
+	var/collects_in_play = TRUE
 	desc = "It's a basic storage unit."
 	icon = 'icons/obj/closets/bases/closet.dmi'
 	icon_state = "base"
@@ -101,7 +103,8 @@ CAPABILITIES(/obj/structure/closet)
 	// now; the rest stay declared until something needs them (C5).
 	dq_latent_declare(src)
 
-	if(!opened)		// if closed, any item at the crate's loc is put in the contents
+	// A closed closet takes in the loose items on its turf; a body bag unfolded in play (collects_in_play FALSE) leaves the floor alone.
+	if(!opened && (collects_in_play || A?.mapload))
 		if(isliving(loc)) return
 		var/list/loose = list()
 		for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
@@ -277,8 +280,7 @@ CAPABILITIES(/obj/structure/closet)
 	if(initial(density))
 		set_density(!density)
 	animate_door(TRUE)
-	if(om_wants(src, /datum/om/event/closet_closed))
-		om_emit(src, new /datum/om/event/closet_closed)
+	PUBLISH_LEGACY(src, /datum/notice/closet_closed)
 	return 1
 
 // Each store_* proc moves what it finds on the turf into the interior slot and

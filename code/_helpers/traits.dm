@@ -81,7 +81,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 	if(!om_grant(target, GRANT_TRAIT, trait, holder))
 		return FALSE
 	if(!had)
-		OM_EMIT(target, /datum/om/event/trait_gained, trait)
+		PUBLISH_LEGACY(target, /datum/notice/trait_gained, trait)
 	return TRUE
 
 /// Releases `trait` on `target` from `sources` (one source or a list). Null sources release
@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 	for(var/datum/holder as anything in holders)
 		om_revoke(target, GRANT_TRAIT, trait, holder)
 	if(!has_trait(target, trait))
-		OM_EMIT(target, /datum/om/event/trait_lost, trait)
+		PUBLISH_LEGACY(target, /datum/notice/trait_lost, trait)
 
 /// Releases every trait `target` holds from `sources` (one source or a list).
 /proc/remove_traits_in(datum/target, sources)

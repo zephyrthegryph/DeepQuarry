@@ -1,4 +1,4 @@
-/obj/machinery/wish_granter|human|none => wish_granter_touch|
-/obj/machinery/wish_granter|robot|none => wish_granter_touch|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/wish_granter|human|none => gen_hand_ungated_interaction_touch|
+/obj/machinery/wish_granter|robot|none => gen_hand_ungated_interaction_touch|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/wish_granter|ai|none => |
 /obj/machinery/wish_granter|ghost|none => |

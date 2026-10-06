@@ -278,7 +278,7 @@
 			tracker.toggle_tracking()
 	recompute_power_demand()
 	update_items()
-	OM_EMIT(src, /datum/om/event/robot_equipment_changed, O)
+	PUBLISH_LEGACY(src, /datum/notice/robot_equipment_changed, O)
 	if(O)
 		for(var/datum/action/A as anything in O.actions)
 			A.Grant(src)

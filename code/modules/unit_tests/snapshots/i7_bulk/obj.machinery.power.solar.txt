@@ -1,6 +1,4 @@
-/obj/machinery/power/solar|human|none => |power_cable_place:needs a cable coil,solar_panel_strike:combat mode is off
-/obj/machinery/power/solar|robot|none => |gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil,solar_panel_strike:combat mode is off
+/obj/machinery/power/solar|human|none => |
+/obj/machinery/power/solar|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/solar|ai|none => |
 /obj/machinery/power/solar|ghost|none => |
-/obj/machinery/power/solar|human|/obj/item => |power_cable_place:needs a cable coil,solar_panel_strike:combat mode is off
-/obj/machinery/power/solar|human|/obj/item/stack/cable_coil => power_cable_place|solar_panel_strike:combat mode is off

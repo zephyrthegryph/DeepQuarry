@@ -1,6 +1,4 @@
-/obj/machinery/power/shield_generator|human|none => shield_generator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,shield_generator_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
-/obj/machinery/power/shield_generator|robot|none => shield_generator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,shield_generator_part_replacement:needs a rapid part exchange device,power_cable_place:needs a cable coil
+/obj/machinery/power/shield_generator|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/power/shield_generator|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/shield_generator|ai|none => |
 /obj/machinery/power/shield_generator|ghost|none => |
-/obj/machinery/power/shield_generator|human|/obj/item/storage/part_replacer => shield_generator_part_replacement,shield_generator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,power_cable_place:needs a cable coil
-/obj/machinery/power/shield_generator|human|/obj/item/stack/cable_coil => shield_generator_use,power_cable_place|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,shield_generator_part_replacement:needs a rapid part exchange device

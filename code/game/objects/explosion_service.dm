@@ -185,7 +185,7 @@ SYSTEM_DEF(explosions)
 		var/heavy_impact_range 	= time_dat[5]
 		var/light_impact_range 	= time_dat[6]
 		var/took 				= (world.time - time_dat[7]) / (1 SECOND) // Horrifyingly, this has always been server performance dependant. Should really only be used for cosmetic stuff.
-		OM_EMIT_WORLD(/datum/om/event/world_explosion, epicenter, devastation_range, heavy_impact_range, light_impact_range, took)
+		PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_explosion, epicenter, devastation_range, heavy_impact_range, light_impact_range, took)
 		if(TICK_CHECK)
 			return FALSE
 	currentsignals.Cut()

@@ -30,8 +30,10 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	SHOULD_CALL_PARENT(TRUE)
 	if(!user)
 		CRASH("attack_self was called without a user!")
-	if(om_wants(src, /datum/om/event/before/attack_self) && om_emit(src, new /datum/om/event/before/attack_self(user)) == EVENT_VETO)
+	var/datum/act/attack_self/use = ACT_TRY(src, attack_self, user)
+	if(!use)
 		return TRUE
+	act_done(use)
 	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_SELF.
 	if(run_interaction_entry(user, src, src, INTERACTION_ENTRY_SELF))
 		return TRUE
@@ -106,8 +108,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		var/result = tool_act(user, tool, tool_quality, secondary)
 		if(result & ITEM_INTERACT_SUCCESS)
 			if(!secondary)
-				OM_EMIT(tool, /datum/om/event/item_tool_acted, src, user, tool_quality, modifiers)
-			OM_EMIT(tool, /datum/om/event/tool_atom_acted, tool_quality, secondary, src, user, modifiers)
+				PUBLISH_LEGACY(tool, /datum/notice/item_tool_acted, src, user, tool_quality, modifiers)
+			PUBLISH_LEGACY(tool, /datum/notice/tool_atom_acted, tool_quality, secondary, src, user, modifiers)
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
 	return NONE
@@ -183,14 +185,11 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return TRUE
 	return FALSE
 
-/// The gate every item use on `target` passes: a hook on the target (observe(target, /datum/act/attackby, ...)) or a legacy behaviour may stop it.
+/// The gate every item use on `target` passes: a hook on the target (observe(target, /datum/act/attackby, ...), a capability's extend()) may stop it.
 /// TRUE when something did. The use is announced (/datum/notice/attacked_by) when nothing stopped it.
 /proc/attackby_stopped(atom/target, obj/item/W, mob/user, click_parameters)
 	var/datum/act/attackby/use = ACT_TRY(target, attackby, W, user, click_parameters)
 	if(!use)
-		return TRUE
-	if(om_wants(target, /datum/om/event/before/attackby) && om_emit(target, new /datum/om/event/before/attackby(W, user, click_parameters)) == EVENT_VETO)
-		act_cancel(use)
 		return TRUE
 	act_done(use)
 	return FALSE
@@ -299,7 +298,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
-	OM_EMIT(src, /datum/om/event/item_attack, M, user, target_zone)
+	PUBLISH_LEGACY(src, /datum/notice/item_attack, M, user, target_zone)
 
 	/////////////////////////
 	M.lastattacker = user

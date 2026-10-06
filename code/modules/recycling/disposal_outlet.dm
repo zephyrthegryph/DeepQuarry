@@ -24,11 +24,11 @@
 	add_disposal_connection()
 	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
-		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
+		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 
 // it unlinks from its trunk.
 /obj/structure/disposaloutlet/on_destroy(force)
-	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
+	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	..()
 
 DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
@@ -58,7 +58,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	if(!src)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You sliced the floorweld off the disposal outlet.")
-	OM_EMIT(src, /datum/om/event/disposal_unlink)
+	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	var/obj/structure/disposalconstruct/C = new(src.loc)
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)

@@ -551,7 +551,7 @@
 							safe_geometry["pos"] = reported_pos
 					var/client/geometry_client = client()
 					LAZYSET(geometry_client.tgui_resolved_geometries, locked_by().interface, safe_geometry)
-			OM_EMIT(src, /datum/om/event/tgui_window_visible, client())
+			PUBLISH_LEGACY(src, /datum/notice/tgui_window_visible, client())
 		if("perf/flicker")
 			if(!accept_perf_telemetry())
 				return
@@ -650,7 +650,7 @@
 	var/list/chunks = payload["chunks"]
 	chunks += chunk
 	if(length(chunks) >= payload["count"])
-		om_cancel_timer_slot(src, "payload_timeout:[payload_id]")
+		cancel_after(src, "payload_timeout:[payload_id]")
 		var/message_type = payload["type"]
 		var/final_payload = chunks.Join()
 		remove_oversized_payload(payload_id)

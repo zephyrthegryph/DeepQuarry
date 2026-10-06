@@ -93,12 +93,12 @@
 /datum/system/emergency_shuttle/proc/set_launch_countdown(seconds)
 	wait_for_launch = TRUE
 	EXPIRY_SET(src, launch_time, (seconds * 10), CLOCK_WORLD)
-	changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
+	PUBLISH(SSemergency_shuttle, shuttle_schedule_change)
 	demand()
 
 /datum/system/emergency_shuttle/proc/stop_launch_countdown()
 	wait_for_launch = FALSE
-	changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
+	PUBLISH(SSemergency_shuttle, shuttle_schedule_change)
 
 //returns 1 if the shuttle is not idle at centcom
 /datum/system/emergency_shuttle/proc/online()

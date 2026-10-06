@@ -322,7 +322,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 	// Observer pattern pre-move
 	var/old_location = current_location()
-	OM_EMIT(src, /datum/om/event/observer_shuttle_pre_move, old_location, destination)
+	PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_pre_move, old_location, destination)
 	current_location().shuttle_departed(src)
 
 	if(debug_logging)
@@ -338,7 +338,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 	// Observer pattern post-move
 	destination.shuttle_arrived(src)
-	OM_EMIT(src, /datum/om/event/observer_shuttle_moved, old_location, destination)
+	PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_moved, old_location, destination)
 
 	return TRUE
 
@@ -492,9 +492,9 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
 	if(src == SSemergency_shuttle?.shuttle)
-		changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
+		PUBLISH(SSemergency_shuttle, shuttle_schedule_change)
 	else if(src == SSsupply?.shuttle)
-		changed(SSsupply, CHANGE_SHUTTLE_SCHEDULE)
+		PUBLISH(SSsupply, shuttle_schedule_change)
 
 /// Set current_location_tag, not this: New() resolves the tag into the landmark.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark

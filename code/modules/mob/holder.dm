@@ -118,7 +118,7 @@
 /// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
 /// right after the move that did it (Exited(), Moved()), never polled.
 /obj/item/holder/proc/schedule_cleanup_check()
-	if(!om_timer_slot_pending(src, "cleanup_timer"))
+	if(!after_pending(src, "cleanup_timer"))
 		after(src, 0, PROC_REF(cleanup_check), key = "cleanup_timer")
 
 /obj/item/holder/proc/cleanup_check()

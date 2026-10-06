@@ -8,6 +8,10 @@
 	circuit = /obj/item/circuitboard/stationalert_engineering
 	var/datum/tgui_module/alarm_monitor/alarm_monitor
 	var/monitor_type = /datum/tgui_module/alarm_monitor/engineering
+	/// TRUE while a major alarm it watches is up: its screen shows the alert (screen_state()).
+	var/alerting = FALSE
+
+TRACKED(/obj/machinery/computer/station_alert, alerting)
 
 CAPABILITIES(/obj/machinery/computer/station_alert)
 	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor)
@@ -57,15 +61,17 @@ CAPABILITIES(/obj/machinery/computer/station_alert)
 /obj/machinery/computer/station_alert/ui_redirect(mob/user)
 	return alarm_monitor
 
+/// An alarm it watches was raised or cleared: its screen follows through its tracked `alerting` (the look reads it), with the alarm's chime.
 /obj/machinery/computer/station_alert/proc/update_console_icon()
-	if(operable())
-		var/last_icon = icon_screen
-		var/list/alarms = alarm_monitor ? alarm_monitor.major_alarms() : list()
-		if(alarms.len)
-			icon_screen = "alert:2"
-			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR) // Alarm notifications
-		else
-			icon_screen = initial(icon_screen)
-			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
-		if(last_icon != icon_screen)
-			update_icon()
+	if(!operable())
+		return
+	var/list/alarms = alarm_monitor ? alarm_monitor.major_alarms() : list()
+	set_alerting(!!length(alarms))
+	play_sfx(src, alerting ? SFX_EFFECTS_COMP_ALERT_MAJOR : SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
+
+/obj/machinery/computer/station_alert/screen_state()
+	return alerting ? "alert:2" : icon_screen
+
+/obj/machinery/computer/station_alert/derived()
+	. = ..()
+	. += drawn_from(nameof(alerting))

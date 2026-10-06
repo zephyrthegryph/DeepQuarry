@@ -66,9 +66,6 @@
 	var/datum/act/attack_hand/touch = ACT_TRY(src, attack_hand, user)
 	if(!touch)
 		return TRUE
-	if(om_wants(src, /datum/om/event/before/attack_hand) && om_emit(src, new /datum/om/event/before/attack_hand(user)) == EVENT_VETO)
-		act_cancel(touch)
-		return TRUE
 	act_done(touch)
 	return FALSE
 

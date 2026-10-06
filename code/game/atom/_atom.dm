@@ -119,7 +119,7 @@
 
 /atom/proc/Bumped(AM as mob|obj)
 
-	OM_EMIT(src, /datum/om/event/atom_bumped, AM)
+	PUBLISH_LEGACY(src, /datum/notice/atom_bumped, AM)
 
 // Convenience proc to see if a container is open for chemistry handling
 // returns true if open
@@ -193,7 +193,7 @@
 		for(var/atom/A in contents)
 			A.emp_act(severity, recursive)
 
-	OM_EMIT(src, /datum/om/event/atom_emp_act, severity, protection)
+	PUBLISH_LEGACY(src, /datum/notice/atom_emp_act, severity, protection)
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
@@ -306,7 +306,7 @@
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
+	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
 	dir = new_dir
 
 /// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers
@@ -337,18 +337,18 @@ SETTER(/atom, density)
 /**
  * Respond to fire being used on our atom
  *
- * Default behaviour is to emit /datum/om/event/atom_fire_act and return
+ * Default behaviour is to publish /datum/notice/atom_fire_act and return
  */
 /atom/proc/fire_act(exposed_temperature, exposed_volume)
-	OM_EMIT(src, /datum/om/event/atom_fire_act, exposed_temperature, exposed_volume)
+	PUBLISH_LEGACY(src, /datum/notice/atom_fire_act, exposed_temperature, exposed_volume)
 	return FALSE
 
 /**
- * Emits /datum/om/event/before/atom_extinguish, which properly removes burning state if it is present.
+ * Puts out a fire on this atom. Overrides (a burning object's) end their burning state and call the parent.
  */
 /atom/proc/extinguish()
 	SHOULD_CALL_PARENT(TRUE)
-	return OM_EMIT(src, /datum/om/event/before/atom_extinguish)
+	return NONE
 
 // Returns an assoc list of RCD information.
 // Example would be: list(RCD_VALUE_MODE = RCD_DECONSTRUCT, RCD_VALUE_DELAY = 50, RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 4)
@@ -372,8 +372,7 @@ SETTER(/atom, density)
 
 
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	if(om_wants(src, /datum/om/event/hitby))
-		om_emit(src, new /datum/om/event/hitby(source, throwingdatum))
+	PUBLISH_LEGACY(src, /datum/notice/hitby, source, throwingdatum)
 	thrown_damage(source, throwingdatum)
 
 /// The thrown-impact adapter. Types whose shape changes how hard a throw lands
@@ -547,9 +546,9 @@ SETTER(/atom, density)
 /atom/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
 	op_moved(AM, src)
-	OM_EMIT(AM, /datum/om/event/movable_attempted_move, old_loc, AM.loc)
-	OM_EMIT(src, /datum/om/event/atom_entered, AM, old_loc)
-	OM_EMIT(AM, /datum/om/event/atom_entering, src, old_loc)
+	PUBLISH_LEGACY(AM, /datum/notice/movable_attempted_move, old_loc, AM.loc)
+	PUBLISH_LEGACY(src, /datum/notice/atom_entered, AM, old_loc)
+	PUBLISH_LEGACY(AM, /datum/notice/atom_entering, src, old_loc)
 	RANGE_WATCH(src, RANGE_ENTERED, AM, old_loc)
 
 /atom/Exit(atom/movable/AM, atom/new_loc)
@@ -558,7 +557,7 @@ SETTER(/atom, density)
 /atom/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	op_moved(AM, src)
-	OM_EMIT(src, /datum/om/event/atom_exited, AM, new_loc)
+	PUBLISH_LEGACY(src, /datum/notice/atom_exited, AM, new_loc)
 	RANGE_WATCH(src, RANGE_EXITED, AM, new_loc)
 
 /atom/proc/interact(mob/user)

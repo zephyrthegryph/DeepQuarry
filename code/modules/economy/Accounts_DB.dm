@@ -194,7 +194,7 @@ CAPABILITIES(/obj/machinery/account_database)
 		return FALSE
 	if(detailed_account_view())
 		detailed_account_view().suspended = !detailed_account_view().suspended
-		OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
+		PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_payment_account_status, detailed_account_view())
 	return TRUE
 
 /obj/machinery/account_database/proc/ui_act_finalise_create_account(datum/act/op/A, holder_name, starting_funds_arg)

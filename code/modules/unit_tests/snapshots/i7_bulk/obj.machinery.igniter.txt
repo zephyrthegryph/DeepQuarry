@@ -1,4 +1,4 @@
-/obj/machinery/igniter|human|none => igniter_toggle|
-/obj/machinery/igniter|robot|none => igniter_toggle|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/igniter|human|none => |
+/obj/machinery/igniter|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/igniter|ai|none => |
 /obj/machinery/igniter|ghost|none => |

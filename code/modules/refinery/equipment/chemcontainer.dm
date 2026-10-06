@@ -55,32 +55,6 @@
 	if (!flag)
 		return
 
-	else if(istype(target, /obj/machinery/chemical_dispenser)) //A dispenser. Refill a matching reagent container in it!
-		target.add_fingerprint(user)
-
-		if(!reagents.total_volume)
-			to_chat(user, span_warning("\The [src] is empty."))
-			return
-
-		var/found_any = FALSE
-		var/obj/machinery/chemical_dispenser/DISP = target
-		for(var/key in DISP.cartridges)
-			var/obj/item/reagent_containers/chem_disp_cartridge/C = DISP.cartridges[key]
-			if(C && C.label == label) // This allows it to be player configured
-				found_any = TRUE
-				if(C.reagents.total_volume >= C.reagents.maximum_volume)
-					continue
-				reagents.trans_to_obj(C, amount_per_transfer_from_this)
-				update_icon()
-				SStgui.update_uis(DISP)
-				to_chat(user, span_notice("You fill \the [target] with '\the [src]."))
-				return
-
-		if(found_any)
-			to_chat(user, span_notice("The [label] is already full."))
-		else
-			to_chat(user, span_notice("\The [target] has no [label] cartridges to fill."))
-
 	if(target.is_open_container() && target.reagents) //Something like a glass. Player probably wants to transfer TO it.
 
 		if(!reagents.total_volume)
@@ -97,6 +71,30 @@
 
 	else
 		return ..()
+
+/// Refills the cartridge of `DISP` that carries this canister's label (the dispenser's refill_cartridge op). TRUE when it poured.
+/obj/item/reagent_containers/chem_canister/proc/refill_dispenser(obj/machinery/chemical_dispenser/DISP, mob/user)
+	DISP.add_fingerprint(user)
+	if(!reagents.total_volume)
+		to_chat(user, span_warning("\The [src] is empty."))
+		return FALSE
+	var/found_any = FALSE
+	for(var/key in DISP.cartridges)
+		var/obj/item/reagent_containers/chem_disp_cartridge/C = DISP.cartridges[key]
+		if(C && C.label == label) // This allows it to be player configured
+			found_any = TRUE
+			if(C.reagents.total_volume >= C.reagents.maximum_volume)
+				continue
+			reagents.trans_to_obj(C, amount_per_transfer_from_this)
+			update_icon()
+			SStgui.update_uis(DISP)
+			to_chat(user, span_notice("You fill 	he [DISP] with '	he [src]."))
+			return TRUE
+	if(found_any)
+		to_chat(user, span_notice("The [label] is already full."))
+	else
+		to_chat(user, span_notice("\The [DISP] has no [label] cartridges to fill."))
+	return FALSE
 
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
 	update_icon()

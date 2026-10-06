@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	replace_with(src, CB.build_path, CB)
 
 /obj/machinery/computer/arcade/proc/prizevend(mob/user)
-	OM_EMIT(src, /datum/om/event/arcade_prizevend, user)
+	PUBLISH_LEGACY(src, /datum/notice/arcade_prizevend, user)
 
 	if(LAZYLEN(special_prizes)) // Downstream wanted the 'win things inside contents sans circuitboard' feature kept.
 		var/atom/movable/AM = pick_n_take(special_prizes)

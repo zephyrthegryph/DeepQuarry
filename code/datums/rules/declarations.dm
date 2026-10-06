@@ -73,10 +73,10 @@
 /obj/proc/rule_overheat(datum/rule/rule)
 	if(resistance_flags & (INDESTRUCTIBLE|FIRE_PROOF))
 		return
-	om_attach(src, /datum/om/behaviour/overheating)
+	grant(src, /datum/capability/overheating, src)
 
 /obj/proc/rule_cooled(datum/rule/rule)
-	om_detach(src, /datum/om/behaviour/overheating)
+	revoke(src, /datum/capability/overheating, src)
 
 /// Food held at cooking temperature for long enough cooks (cook() sets the
 /// raw/cooked differences). Appliances heat their contents; this rule decides.

@@ -5,9 +5,8 @@
 // slot_remove() and move between bellies with slot_transfer(). The ledger is
 // made on first use, so an empty belly has none.
 //
-// Scheduling. There is no belly subsystem. A belly runs its digestion cycle on an
-// object-model clock (/datum/om/behaviour/belly_cycle, a deadline it re-arms each
-// cycle) only while something is inside it (or its owner previews it):
+// Scheduling. There is no belly subsystem. A belly runs its digestion cycle on its
+// own clock (the belly_cycle capability's every(), granted while it is occupied) only while something is inside it (or its owner previews it):
 // belly_reschedule() starts it when the first thing enters and cancels it when the
 // last one leaves. An empty belly that makes liquid from nutrition sleeps on an
 // after() timer for its next batch instead. An empty, idle belly holds no
@@ -24,13 +23,6 @@
 	/// The period the clock runs at, and when it last ran a cycle.
 	var/tmp/cycle_period
 	EXPIRY_TMP_DECLARE(cycle_last)
-
-/// An occupied belly's digestion cycle: a deadline re-armed every cycle_period.
-/datum/om/behaviour/belly_cycle
-	name = "belly cycle"
-
-/datum/om/behaviour/belly_cycle/on_deadline(obj/belly/B)
-	B.belly_cycle_due()
 
 /// The inside of a belly: sealed (its own air and temperature), and it reaches the
 /// mobs inside it. Outside effects don't pass the predator's body into it; the
@@ -71,49 +63,61 @@
 /obj/belly/proc/belly_generates_liquid()
 	return isliving(owner) && show_liquids && reagentbellymode && (reagent_mode_flags & DM_FLAG_REAGENTSNUTRI) && !isnewplayer(owner)
 
+/// An occupied belly's digestion cycle: every(belly_cycle_period()) on the belly's own clock, granted by belly_reschedule().
+CAPABILITY_TYPE(belly_cycle, CAP_BELLY_CYCLE, /datum/capability/belly_cycle, key = NONE)
+/datum/capability/belly_cycle
+
+/datum/capability/belly_cycle/entries()
+	return list(every(TYPE_PROC_REF(/obj/belly, belly_cycle_interval), then(CAP_PROC(cycle_run))))
+
+/datum/capability/belly_cycle/proc/cycle_run(datum/act/timer/A)
+	var/obj/belly/B = A.holder
+	B.belly_cycle_due()
+
+/// The every() interval of the cycle: the period in deciseconds (the interval proc's form, x(datum/act/A)).
+/obj/belly/proc/belly_cycle_interval(datum/act/A)
+	return cycle_period || belly_cycle_period()
+
 /// Starts, retunes or stops this belly's scheduled work to match what it holds.
 /// Call it whenever contents, turbo mode, liquid settings or the preview change.
 /obj/belly/proc/belly_reschedule()
 	if(QDELETED(src))
 		return
 	if(belly_occupied())
-		if(om_timer_slot_pending(src, "liquid_timer"))
-			om_cancel_timer_slot(src, "liquid_timer")
-		var/period = belly_cycle_period()
-		if(!cycle_token || cycle_period != period)
-			if(!cycle_token)
-				EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
+		if(after_pending(src, "liquid_timer"))
+			cancel_after(src, "liquid_timer")
+		cycle_period = belly_cycle_period()
+		if(!cycle_token)
+			EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 			cycle_token = TRUE
-			cycle_period = period
-			om_deadline(src, max(period - (world.time - cycle_last), 0), /datum/om/behaviour/belly_cycle)
+			grant(src, /datum/capability/belly_cycle, src)
 		return
 	if(cycle_token)
-		om_cancel_after(src, /datum/om/behaviour/belly_cycle)
+		revoke(src, /datum/capability/belly_cycle, src)
 		cycle_token = null
 		cycle_period = null
 		belly_surrounding = null
 	if(belly_generates_liquid())
-		if(!om_timer_slot_pending(src, "liquid_timer"))
+		if(!after_pending(src, "liquid_timer"))
 			var/cycles_left = max(gen_time + 1 - gen_interval, 1)
-			om_attach(src, /datum/om/behaviour/sleeper/timed)
+			sleep_audit_join(src)
 			after(src, cycles_left * belly_cycle_period(), PROC_REF(liquid_batch_due), key = "liquid_timer")
-	else if(om_timer_slot_pending(src, "liquid_timer"))
-		om_cancel_timer_slot(src, "liquid_timer")
+	else if(after_pending(src, "liquid_timer"))
+		cancel_after(src, "liquid_timer")
 
-/// Occupied: one digestion cycle for the real time since the last one, then the next is armed.
+/// Occupied: one digestion cycle for the real time since the last one (the capability's every() arms the next).
 /obj/belly/proc/belly_cycle_due()
 	if(QDELETED(src) || !cycle_token)
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
 	EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
-	om_deadline(src, cycle_period, /datum/om/behaviour/belly_cycle)
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())
 		belly_reschedule()
 
 /// Empty and generating: the next liquid batch is due.
 /obj/belly/proc/liquid_batch_due()
-	if(!om_timer_slot_pending(src, "liquid_timer"))
+	if(!after_pending(src, "liquid_timer"))
 		return
 	if(belly_occupied())
 		belly_reschedule()
@@ -123,7 +127,7 @@
 	belly_reschedule()
 
 /// Asleep means no cycle while empty and not previewed.
-/obj/belly/om_sleep_violation()
+/obj/belly/sleep_violation()
 	if(!cycle_token && belly_occupied())
 		return "[src] of [owner] holds [length(contents)] things but has no cycle"
 	if(cycle_token && !belly_occupied())

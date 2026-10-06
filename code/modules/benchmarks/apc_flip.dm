@@ -15,9 +15,9 @@
 		return FALSE
 	changed(src)
 	if(has_stat(NOPOWER))
-		OM_EMIT(src, /datum/om/event/machinery_power_lost)
+		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
 	else
-		OM_EMIT(src, /datum/om/event/machinery_power_restored)
+		PUBLISH_LEGACY(src, /datum/notice/machinery_power_restored)
 	update_heat_output()
 	return TRUE
 

@@ -413,8 +413,8 @@ only if each is still exactly what the codemod wrote. After the step is a commit
 stacked on it, re-run from `pre/<step>` (doc section 19, "Revert recipe").
 
 **Scope today.** `om_after` (also `after_slot`), `own_set`, `own_add`: the three highest-volume forms whose target is on master
-(`after()`, `rel_set()`, `rel_add()`). `om_ask` and `om_hook` convert to forms that exist (`open_request`, `observe`) but change the handler's
-signature, so they wait for a handler-rewriting pass; `INTERACT_*`, `UI_ACT`, `TOPIC_ACTION` need `op()`.
+(`after()`, `rel_set()`, `rel_add()`). The `om_ask` and `om_hook` codemods were deleted with the OM framework (their sites were converted
+by hand); `INTERACT_*`, `UI_ACT`, `TOPIC_ACTION` need `op()`.
 
 ## Tooling gotchas
 
@@ -450,6 +450,4 @@ are still Python: they regenerate files rather than lint, take about 3 s each, a
 the same fields (a var the tree already declares on that notice type is not declared twice), `make_notice()` on the act, and the registry
 `action_notice_types`; for a FIXED action no act type and `publish_<name>(holder, fields...)`. Past tense: `fall` -> `fell`, `insert` -> `inserted`,
 `equip` -> `equipped`; a name that already reads as past tense (`hit`, `stumbled_into`, `round_started`) is kept. A field named `origin` is declared
-`origin_turf`; any other field every act carries is a diagnostic; the `op` action keeps the op context as its act. `event_twins.dm`
-(`analyze gen event_twins`): the rows of `GLOB.event_twin_notice` from `tools/dx/codemods/om_event_map.json` (the PUBLISH / OM_EMIT twins,
-code/engine/actions/twins.dm). The declare generator also rewrites `adjusts(packet.amount, ...)` and `on_change(nameof(a.b), ...)` so the path is text.
+`origin_turf`; any other field every act carries is a diagnostic; the `op` action keeps the op context as its act. The declare generator also rewrites `adjusts(packet.amount, ...)` and `on_change(nameof(a.b), ...)` so the path is text.

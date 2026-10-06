@@ -388,7 +388,7 @@
 		if(QDELETED(A))
 			return
 
-	OM_EMIT(src, /datum/om/event/before/movable_bump, A)
+	PUBLISH_LEGACY(src, /datum/notice/movable_bump, A)
 
 	bump_into(A)
 
@@ -528,7 +528,7 @@
 		return TRUE
 
 /atom/movable/proc/onTransitZ(old_z,new_z)
-	OM_EMIT(src, /datum/om/event/before/movable_z_changed, old_z, new_z)
+	PUBLISH_LEGACY(src, /datum/notice/movable_z_changed, old_z, new_z)
 	for(var/atom/movable/AM as anything in contents_of(src)) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)
 
@@ -557,7 +557,7 @@ SETTER(/atom/movable, anchored)
 
 //called when src is thrown into hit_atom
 /atom/movable/proc/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
-	OM_EMIT(src, /datum/om/event/movable_impact, hit_atom, throwingdatum)
+	PUBLISH_LEGACY(src, /datum/notice/movable_impact, hit_atom, throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
 		if(M?.buckled_to() == src)

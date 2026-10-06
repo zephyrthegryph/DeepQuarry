@@ -18,8 +18,7 @@
 	var/has_preferences //if set, should be a list of the preferences for this trait in the format: list("identifier/name of var to edit" = list(typeofpref, "text to display in prefs", TRAIT_NO_VAREDIT_TARGET/TRAIT_VAREDIT_TARGET_SPECIES/etc, (optional: default value)), etc) typeofpref should follow the defines in _traits.dm (eg. TRAIT_PREF_TYPE_BOOLEAN)
 	var/special_env = FALSE
 	var/added_component_path		//What per-mob state (a /datum/trait_state path, see species_state_add()) this trait applies, if any.
-	var/added_behaviour_path		//What OM behaviour this trait attaches, if any.
-	var/added_capability		//What capability (a /datum/capability path: a disability) this trait grants, with itself as the source.
+	var/added_capability		//What capability (a /datum/capability path: a disability, absorbent, slip prone) this trait grants, with itself as the source.
 
 
 	// Traitgenes Traits can toggle mutations and disabilities
@@ -85,8 +84,6 @@
 		rel_add(S, nameof(S.env_traits), src)
 	if(added_component_path && !species_state_has(H, added_component_path))
 		species_state_add(H, added_component_path)
-	if(added_behaviour_path)
-		om_attach(H, added_behaviour_path)
 	if(added_capability)
 		grant(H, added_capability, src)
 	return
@@ -138,8 +135,6 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)
 		rel_remove(S, nameof(S.env_traits), src)
-	if(added_behaviour_path && H)
-		om_detach(H, added_behaviour_path)
 	if(added_capability && H)
 		revoke(H, added_capability, src)
 	if(added_component_path)

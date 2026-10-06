@@ -161,7 +161,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_power
 	light_power = new_power
-	OM_EMIT(src, /datum/om/event/atom_update_light_power, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_power, .)
 
 /// Setter for the light range of this atom.
 /atom/proc/set_light_range(new_range)
@@ -169,7 +169,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_range
 	light_range = new_range
-	OM_EMIT(src, /datum/om/event/atom_update_light_range, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_range, .)
 
 /// Setter for the light color of this atom.
 /atom/proc/set_light_color(new_color)
@@ -177,7 +177,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_color
 	light_color = new_color
-	OM_EMIT(src, /datum/om/event/atom_update_light_color, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_color, .)
 
 /// Setter for whether or not this atom's light is on.
 /atom/proc/set_light_on(new_value)
@@ -185,7 +185,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_on
 	light_on = new_value
-	OM_EMIT(src, /datum/om/event/atom_update_light_on, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_on, .)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
@@ -193,7 +193,7 @@ SETTER(/atom, opacity)
 		return
 	. = light_flags
 	light_flags = new_value
-	OM_EMIT(src, /datum/om/event/atom_update_light_flags, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_flags, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
 /atom/movable/proc/update_dynamic_luminosity()

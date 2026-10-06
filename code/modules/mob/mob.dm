@@ -48,7 +48,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//return QDEL_HINT_HARDDEL_NOW
 
 /mob/Initialize(mapload)
-	OM_EMIT_WORLD(/datum/om/event/world_mob_created, src)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 	lastarea = get_area(src)
 	if(speak_emote)
 		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
@@ -262,7 +262,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			client.perspective = EYE_PERSPECTIVE
 			client.set_eye(loc)
 	/// Signal sent after the eye has been successfully updated, with the client existing.
-	OM_EMIT(src, /datum/om/event/mob_reset_perspective)
+	PUBLISH_LEGACY(src, /datum/notice/mob_reset_perspective)
 	return TRUE
 
 /// Reapplies remote views based on object type and flags. Returns true if the view was assigned.

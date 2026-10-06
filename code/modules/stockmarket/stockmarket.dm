@@ -16,7 +16,7 @@ CAPABILITIES(/datum/stockMarket)
 		schedule_process()
 
 /datum/stockMarket/proc/schedule_process()
-	if(QDELETED(src) || om_timer_slot_pending(src, "process_timer"))
+	if(QDELETED(src) || after_pending(src, "process_timer"))
 		return
 	after(src, 10 SECONDS, PROC_REF(market_tick), key = "process_timer")
 

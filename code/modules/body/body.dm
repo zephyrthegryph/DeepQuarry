@@ -145,7 +145,7 @@
 	// Interference markers live on afflictions: the snapshot folds them in.
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_added()
-	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, TRUE)
+	PUBLISH_LEGACY(owner, /datum/notice/body_afflictions_changed, A, TRUE)
 	return TRUE
 
 /// The only way an affliction leaves a body (cure, organ removal, heal-all).
@@ -161,7 +161,7 @@
 	A.on_removed()
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
-	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
+	PUBLISH_LEGACY(owner, /datum/notice/body_afflictions_changed, A, FALSE)
 	return TRUE
 
 /// Teardown only: drop `A` from the indexes with no hooks, invalidation, wake or signal. For a
