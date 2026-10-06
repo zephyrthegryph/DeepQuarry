@@ -308,7 +308,7 @@ MSG_DEF_SELF(interaction/wall_burn_rot, "You burn away the fungi with %I%.")
 /turf/simulated/wall/proc/burn_away_rot(mob/actor, obj/item/held, datum/interaction/interaction)
 	touched_by_tool(held)
 	for(var/obj/effect/overlay/wallrot/rot in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
-		qdel(rot)
+		dissolved(rot, actor)
 	return TRUE
 
 /datum/interaction/wall_light_thermite

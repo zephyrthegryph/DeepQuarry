@@ -6,7 +6,7 @@
 /turf/proc/RemoveLattice()
 	var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 	if(L)
-		qdel(L)
+		spent(L)
 
 // Called after turf replaces old one
 /turf/proc/post_change()
@@ -86,8 +86,7 @@
 	cut_overlays(TRUE)
 	unmake_z_transparent()
 	changing_turf = TRUE
-	// ALLOW(lifecycle): changing a turf deletes the old one before the new one is made in its place
-	qdel(src)
+	spent(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
 	for(var/list/post_change as anything in post_change_callbacks)
@@ -110,7 +109,7 @@
 		rel_set(old_shandler, nameof(old_shandler.holder), W)
 	else
 		if(old_shandler) // the new turf can't hold one
-			qdel(old_shandler)
+			spent(old_shandler)
 		if(istype(W_sim) && (SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
 			rel_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
 			W_sim.shandler.manualInit()

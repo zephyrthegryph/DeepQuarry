@@ -49,8 +49,7 @@
 	if(new_owner)
 		rel_set(src, nameof(owner), new_owner)
 	if(QDELETED(owner) || !on_apply())
-		// ALLOW(lifecycle): a status effect that fails to apply to its owner never starts
-		qdel(src)
+		consumed(src)
 		return
 	if(owner)
 		rel_add(owner, nameof(owner.status_effects), src)
@@ -110,8 +109,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(QDELETED(owner))
-		// ALLOW(lifecycle): a status effect ends with its owner
-		qdel(src)
+		spent(src)
 		return
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
@@ -127,8 +125,7 @@
 
 	if(duration != STATUS_EFFECT_PERMANENT)
 		if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
-			// ALLOW(lifecycle): a status effect ends when its duration runs out
-			qdel(src)
+			spent(src)
 			return
 		update_shown_duration()
 
@@ -170,8 +167,7 @@
 	owner.clear_alert(id)
 	own_take_member(owner, nameof(owner.status_effects), src)
 	rel_clear(src, nameof(owner))
-	// ALLOW(lifecycle): a replaced status effect makes way for its successor
-	qdel(src)
+	spent(src)
 
 /// Called before being fully removed (before on_remove)
 /// Returning FALSE will cancel removal
@@ -201,8 +197,7 @@
 	if(!remove_on_fullheal)
 		return
 
-	// ALLOW(lifecycle): a full heal clears this status effect
-	qdel(src)
+	spent(src)
 
 /// Remove [seconds] of duration from the status effect, qdeling / ending if we eclipse the current world time.
 /datum/status_effect/proc/remove_duration(seconds)
@@ -211,8 +206,7 @@
 
 	duration -= seconds
 	if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
-		// ALLOW(lifecycle): a status effect ends when its shortened duration runs out
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	update_shown_duration()

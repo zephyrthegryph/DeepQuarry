@@ -51,8 +51,7 @@
 /datum/using_machine_shim/proc/on_mob_action()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(host_mob().stat == DEAD || !host_mob().client || !host_mob().Adjacent(linked_machine()))
-		// ALLOW(lifecycle): the machine link ends when its user dies, leaves or steps away
-		qdel(src)
+		spent(src)
 
 /// Called by the using machine shim trait system each Life() cycle.
 /datum/using_machine_shim/proc/on_mob_life()
@@ -62,15 +61,13 @@
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	// ALLOW(lifecycle): the machine link ends with its machine
-	qdel(src)
+	spent(src)
 
 /datum/using_machine_shim/proc/on_mob_logout(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	// ALLOW(lifecycle): the machine link ends when its user logs out
-	qdel(src)
+	spent(src)
 
 /////////////////////////////////////////////////////////////////////////////////
 // To be removed helper procs
@@ -94,7 +91,7 @@
 /mob/proc/unset_machine()
 	var/datum/using_machine_shim/shim = machine_shim
 	if(shim)
-		qdel(shim)
+		spent(shim)
 
 /// deprecated, do not use
 /mob/proc/set_machine(obj/O)
@@ -102,7 +99,7 @@
 	if(shim)
 		if(shim.linked_machine() == O) // Already in use
 			return
-		qdel(shim)
+		spent(shim)
 		return
 	new /datum/using_machine_shim(src, O)
 

@@ -109,7 +109,7 @@
 			for(var/mob/living/voice/V in possessed_voice)
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				own_take_member(src, nameof(possessed_voice), V)
-				qdel(V)
+				consumed(V, eater)
 			if(!move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, NR, eater))
 				NR.forceMove(get_turf(eater))
 		if(trash)
@@ -120,12 +120,12 @@
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 					own_take_member(src, nameof(possessed_voice), V)
-					qdel(V)
+					consumed(V, eater)
 		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
 				own_take_member(src, nameof(possessed_voice), V)
-				qdel(V)
+				consumed(V, eater)
 		consume(src, feeder || eater)
 
 /obj/item/reagent_containers/food/snacks/examine(mob/user)
@@ -1526,10 +1526,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubancarp, null, list(
 	nutriment_desc = list("popcorn" = 3)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
 
-// ALLOW(init/INSTANCE_STATE): unpopped rolled at random for each instance
-/obj/item/reagent_containers/food/snacks/popcorn/Initialize(mapload)
-	. = ..()
-	unpopped = rand(1,10)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
+	rolls(nameof(unpopped), range_of(1, 10))
 
 /obj/item/reagent_containers/food/snacks/popcorn/On_Consume(mob/living/M)
 	if(prob(unpopped))	//lol ...what's the point?
@@ -1767,7 +1765,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		var/mob/living/voice/V = possessed_voice[1]
 		V.mind.transfer_to(H)
 		H.set_tf_mob_holder(V.tf_mob_holder)
-		qdel(V)
+		spent(V)
 	replace_with(src, H)
 	return H
 
@@ -2522,10 +2520,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, li
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(REAGENT_ID_BEETSOUP = 10))
 
-// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
-/obj/item/reagent_containers/food/snacks/beetsoup/Initialize(mapload)
-	. = ..()
-	name = pick(list("borsch","bortsch","borstch","borsh","borshch","borscht"))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/beetsoup)
+	rolls(nameof(name), pick_one(list("borsch","bortsch","borstch","borsh","borshch","borscht")))
 
 /obj/item/reagent_containers/food/snacks/soup/onion
 	name = "onion soup"
@@ -2665,7 +2661,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearchili, null, list(
 			var/reagent_amount = whole.reagents.total_volume/whole.slices_num
 			whole.reagents.trans_to_obj(src, reagent_amount)
 
-		qdel(whole)
+		spent(whole)
 
 /obj/item/reagent_containers/food/snacks/sliceable/meatbread
 	name = "meatbread loaf"
@@ -8111,10 +8107,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5)
 	var/static/list/color_options = list("saucer_pink","saucer_blue","saucer_orange","saucer_green","saucer_yellow")
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/reagent_containers/food/snacks/saucer/Initialize(mapload)
-	. = ..()
-	icon_state = pick(color_options)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/saucer)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/saucer/proc/roll_icon_state(datum/roller/R)
+	return R.choose(color_options)
 
 /obj/item/storage/box/saucer //This is kinda like the donut box.
 	name = "Desatti Sherbert Saucers"
@@ -8268,10 +8266,12 @@ CAPABILITIES(/obj/item/storage/box/shrimpsandbananas)
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5, PLANT_ROSE = 2, "custard" = 2)
 	var/static/list/color_options = list("rhubarbcustard_1","rhubarbcustard_2")
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/reagent_containers/food/snacks/rhubarbcustard/Initialize(mapload)
-	. = ..()
-	icon_state = pick(color_options)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/rhubarbcustard/proc/roll_icon_state(datum/roller/R)
+	return R.choose(color_options)
 
 /obj/item/storage/box/rhubarbcustard //This is kinda like the donut box.
 	name = "Desatti Rhubarb and Custards"

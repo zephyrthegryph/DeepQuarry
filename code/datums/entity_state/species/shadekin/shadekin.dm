@@ -127,7 +127,7 @@
 		return shadekin
 	var/datum/shadekin/SK = new path(src, manual)
 	if(shadekin != SK) //incompatible mob
-		qdel(SK)
+		spent(SK)
 		return null
 	return SK
 
@@ -221,12 +221,8 @@
 		return TRUE
 	return FALSE
 
-DECLARE_UI(/datum/shadekin, "ShadekinConfig", UI_TITLE("Shadekin Config"))
-
-UI_DATA_REPLACE(/datum/shadekin, "merge:ui_data_datum_shadekin{stun_time:unknown,flicker_time:num,flicker_color:unknown,flicker_break_chance:num,flicker_distance:num,no_retreat:num,nutrition_energy_conversion:num,hide_voice_in_phase:num,extended_kin:num,savefile_selected:unknown}")
-
 /// The computed part of /datum/shadekin's window data (declared on its UI_DATA row).
-/datum/shadekin/proc/ui_data_datum_shadekin(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/shadekin/ui_data(datum/act/eval/A)
 	var/data = list(
 		"stun_time" = calculate_stun(),
 		"flicker_time" = flicker_time,
@@ -246,67 +242,64 @@ UI_DATA_REPLACE(/datum/shadekin, "merge:ui_data_datum_shadekin{stun_time:unknown
 	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
-/datum/shadekin/proc/flicker_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/color/ask = A.answer
-	if(ask.value)
-		flicker_color = ask.value
-		ask.answerer.write_preference_directly(/datum/preference/color/living/flicker_color, ask.value, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
-	SStgui.update_uis(src)
-
-UI_ACT(/datum/shadekin, "adjust_time", ui_act_adjust_time, UI_ARG_NUM("val"))
-UI_ACT_PROC(/datum/shadekin, ui_act_adjust_time)
-	var/new_time = params["val"]
+/datum/shadekin/proc/ui_act_adjust_time(datum/act/op/A, val)
+	var/mob/user = A.actor
+	var/new_time = val
 	new_time = CLAMP(new_time, 2, 20)
 	if(!isnum(new_time))
 		return FALSE
 	flicker_time = new_time
-	ui.user.write_preference_directly(/datum/preference/numeric/living/flicker_time, new_time, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	user.write_preference_directly(/datum/preference/numeric/living/flicker_time, new_time, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
-UI_ACT(/datum/shadekin, "adjust_color", ui_act_adjust_color)
-UI_ACT_PROC(/datum/shadekin, ui_act_adjust_color)
-	open_request(src, /datum/prompt/color, PROC_REF(flicker_color_picked), answerer = ui.user, question = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", default = flicker_color, title = "Color Selector", timeout = 0)
-	return FALSE
+/datum/shadekin/proc/flicker_color_default(datum/act/op/A)
+	return flicker_color
 
-UI_ACT(/datum/shadekin, "adjust_break", ui_act_adjust_break, UI_ARG_NUM("val"))
-UI_ACT_PROC(/datum/shadekin, ui_act_adjust_break)
-	var/new_break_chance = params["val"]
+/datum/shadekin/proc/ui_act_adjust_color(datum/act/op/A)
+	var/mob/user = A.actor
+	var/picked = A.step_value("color")
+	if(picked)
+		flicker_color = picked
+		user.write_preference_directly(/datum/preference/color/living/flicker_color, picked, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	return TRUE
+
+/datum/shadekin/proc/ui_act_adjust_break(datum/act/op/A, val)
+	var/mob/user = A.actor
+	var/new_break_chance = val
 	new_break_chance = CLAMP(new_break_chance, 0, 25)
 	if(!isnum(new_break_chance))
 		return FALSE
 	flicker_break_chance = new_break_chance
-	ui.user.write_preference_directly(/datum/preference/numeric/living/flicker_break_chance, new_break_chance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	user.write_preference_directly(/datum/preference/numeric/living/flicker_break_chance, new_break_chance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
-UI_ACT(/datum/shadekin, "adjust_distance", ui_act_adjust_distance, UI_ARG_NUM("val"))
-UI_ACT_PROC(/datum/shadekin, ui_act_adjust_distance)
-	var/new_distance = params["val"]
+/datum/shadekin/proc/ui_act_adjust_distance(datum/act/op/A, val)
+	var/mob/user = A.actor
+	var/new_distance = val
 	new_distance = CLAMP(new_distance, 4, 10)
 	if(!isnum(new_distance))
 		return FALSE
 	flicker_distance = new_distance
-	ui.user.write_preference_directly(/datum/preference/numeric/living/flicker_distance, new_distance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	user.write_preference_directly(/datum/preference/numeric/living/flicker_distance, new_distance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
-UI_ACT(/datum/shadekin, "toggle_retreat", ui_act_toggle_retreat)
-UI_ACT_PROC(/datum/shadekin, ui_act_toggle_retreat)
+/datum/shadekin/proc/ui_act_toggle_retreat(datum/act/op/A)
+	var/mob/user = A.actor
 	var/new_retreat = !no_retreat
 	no_retreat = !no_retreat
-	ui.user.write_preference_directly(/datum/preference/toggle/living/dark_retreat_toggle, new_retreat, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	user.write_preference_directly(/datum/preference/toggle/living/dark_retreat_toggle, new_retreat, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
-UI_ACT(/datum/shadekin, "toggle_nutrition", ui_act_toggle_nutrition)
-UI_ACT_PROC(/datum/shadekin, ui_act_toggle_nutrition)
+/datum/shadekin/proc/ui_act_toggle_nutrition(datum/act/op/A)
+	var/mob/user = A.actor
 	var/new_retreat = !nutrition_energy_conversion
 	nutrition_energy_conversion = !nutrition_energy_conversion
-	ui.user.write_preference_directly(/datum/preference/toggle/living/shadekin_nutrition_conversion, new_retreat, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	user.write_preference_directly(/datum/preference/toggle/living/shadekin_nutrition_conversion, new_retreat, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
-UI_ACT(/datum/shadekin, "toggle_voice", ui_act_toggle_voice)
-UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
+/datum/shadekin/proc/ui_act_toggle_voice(datum/act/op/A)
+	var/mob/user = A.actor
 	var/new_voice_hide = !hide_voice_in_phase
 	hide_voice_in_phase = !hide_voice_in_phase
-	ui.user.write_preference_directly(/datum/preference/toggle/living/shadekin_hide_voice_in_phase, new_voice_hide, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
+	user.write_preference_directly(/datum/preference/toggle/living/shadekin_hide_voice_in_phase, new_voice_hide, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
 /// The voice answer of GetVoice(): phase-shifted shadekin who hide their voice are "Something". The handler's value is the voice (the act's reply).
 /datum/shadekin/proc/on_get_voice(datum/act/name_voice/voice)
@@ -355,6 +348,14 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 
 CAPABILITIES(/datum/shadekin)
 	ref_many(nameof(active_dark_maws))
+	interface("ShadekinConfig", title = "Shadekin Config")
+	op("adjust_time", ui_act("adjust_time", arg("val", num())), then(PROC_REF(ui_act_adjust_time)))
+	op("adjust_color", ui_act("adjust_color"), asks(/datum/prompt/color, fields = list("question" = "Select a color you wish the lights to flicker as (Default is #E0EFF0)", "default" = computed(PROC_REF(flicker_color_default)), "title" = "Color Selector", "timeout" = 0), step = "color"), then(PROC_REF(ui_act_adjust_color)))
+	op("adjust_break", ui_act("adjust_break", arg("val", num())), then(PROC_REF(ui_act_adjust_break)))
+	op("adjust_distance", ui_act("adjust_distance", arg("val", num())), then(PROC_REF(ui_act_adjust_distance)))
+	op("toggle_retreat", ui_act("toggle_retreat"), then(PROC_REF(ui_act_toggle_retreat)))
+	op("toggle_nutrition", ui_act("toggle_nutrition"), then(PROC_REF(ui_act_toggle_nutrition)))
+	op("toggle_voice", ui_act("toggle_voice"), then(PROC_REF(ui_act_toggle_voice)))
 
 /// Constant ability ids shared by every instance of the same concrete type.
 TYPE_TABLE_DECLARE(/datum/shadekin, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE))

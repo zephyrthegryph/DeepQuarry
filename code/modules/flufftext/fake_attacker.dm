@@ -15,8 +15,7 @@
 	for(var/client/C in clients)
 		live_clients++
 	if(!live_clients)
-		// ALLOW(lifecycle): a fake attacker with no clients left to fool is cleaned up
-		qdel(src)
+		spent(src)
 
 /obj/effect/fake_attacker/set_dir(newdir)
 	if(!(newdir in GLOB.cardinal))
@@ -214,8 +213,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 		step_away(src,M)
 
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
-		// ALLOW(lifecycle): the fleeing fake attacker vanishes
-		qdel(src)
+		spent(src)
 
 CAPABILITIES(/obj/effect/fake_attacker)
 	ref_many(nameof(clients))

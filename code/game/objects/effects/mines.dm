@@ -258,7 +258,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		var/obj/mecha/E = M
 		M = E?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(M))
-		qdel(M.client)
+		destroyed(M.client, M)
 	consume(src)
 
 /obj/effect/mine/frag

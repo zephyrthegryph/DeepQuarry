@@ -29,11 +29,8 @@
 <b>Integrity:</b> Generally very survivable. Susceptible to being destroyed by acid."}
 	return dat
 
-// ALLOW(init/CTOR_ARGS): db_key is a constructor argument from whoever builds it
-/obj/item/implant/backup/Initialize(mapload, db_key)
-	. = ..()
-	if(!isnull(db_key))
-		src.db_key = db_key
+CAPABILITIES(/obj/item/implant/backup)
+	param(nameof(db_key), pos = 1)
 
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
 	if(istype(H))
@@ -212,7 +209,7 @@ CAPABILITIES(/obj/structure/backup_implanter_ch)
 
 	//If implanting somehow fails, delete the implant.
 	else
-		qdel(imp)
+		spent(imp, user)
 
 /// Old attackby.
 /obj/structure/backup_implanter_ch/proc/backup_implanter_ch_interaction_item(datum/act/op/A)

@@ -61,7 +61,7 @@ CAPABILITIES(/datum/plane_holder)
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}, VIS_SOULCATCHER) // Soulcatcher
 	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master{plane = PLANE_INVIS_EVENT}, VIS_EVENT_INVIS) //Things only specific players can see at any time.
 
-	rel_add(src, nameof(plane_masters), new /atom/movable/screen/plane_master/augmented(null, my_mob), VIS_AUGMENTED) //Augmented reality
+	rel_add(src, nameof(plane_masters), make(/atom/movable/screen/plane_master/augmented, at = null, my_mob = my_mob), VIS_AUGMENTED) //Augmented reality
 
 	..()
 
@@ -242,10 +242,8 @@ CAPABILITIES(/datum/plane_holder)
 	var/state = FALSE //Saves cost with the lists
 	var/mob/my_mob
 
-// ALLOW(init/CTOR_ARGS): M is a constructor argument from whoever builds it
-/atom/movable/screen/plane_master/augmented/Initialize(mapload, mob/M)
-	. = ..()
-	rel_set(src, nameof(my_mob), M)
+CAPABILITIES(/atom/movable/screen/plane_master/augmented)
+	param(nameof(my_mob), pos = 1)
 
 /// Phase 2: its mob leaves the entopic users.
 /atom/movable/screen/plane_master/augmented/lifecycle_dematerialize()

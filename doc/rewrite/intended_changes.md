@@ -1440,6 +1440,20 @@ focused tests of the touched windows (the tests that called a handler with its o
   department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
   admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
   1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
+* **Plushie editor, shock collar tag, account terminal funds, shadekin flicker colour, particle editor type, filter editor colour,
+  ColorMate colour.** Asked with `asks()` on the button's op; the filter editor's icon questions run as their own flow from the handler.
+  The account terminal asks the amount only of a central command card, as before.
+* **Communicator and instrument editor.** The communicator's name, ringtone, message and note, and the song editor's import and lines,
+  are `asks()` steps. Cancelling the note question now leaves the note (it cleared it); a message is asked before the exonet check (the
+  check still refuses to send). Answering "Yes" to keep editing an oversized song import ends it: the player presses import again (it
+  reopened the paste box).
+* **Library computers, mob spawner, feedback form, event manager, character directory.** Their questions are `asks()` steps of the button's
+  op (the event manager's from the old `act_ask()` calls). The library upload confirmation is asked even with nothing scanned (the
+  handler then does nothing); a feedback submission that is empty or too long is not confirmed (the handler says why). A guard in a
+  handler that stood above its question now runs after the answer.
+* **interface() takes the legacy window options**: `window_var = nameof(x)` (a window named by a var each subtype sets: the appliances,
+  the inventory panel, a rig, the entity narrator), `autoupdate`, `pinned` (the lobby, the tooltip, the media player) and
+  `preinitialized`. `ui_types` leaves a var-named window untyped.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
@@ -1558,6 +1572,152 @@ The stance is derived when a limb changes (`code/modules/body/limb_state.dm`); t
   still counted as broken about a third of the time, and a splinted arm could still drop what it held); now a splint in place holds.
 * The broken-bone jolt while moving stops at the first limb that jolts in a cycle (was: every broken limb rolled its 10%).
 * Open wounds getting dirtier while you move ran per organs cycle for processed limbs; it is now part of the body clock (same 1 germ per cycle).
+## The algae farm (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
+
+- It works on `every(when = working)`; `working` (tracked) is reconsidered when its switch, its power, its stores (loading, ejecting) or its
+  input's gas change (a gas watch on `air1`, composition). The OM derived field, the periodic declaration, the OM watch and MACHINE_WAKE are gone.
+- Its RPED is `part_replacement()`, loading materials an op. The "you cannot insert this item" catch-all is gone: an op answering any held item
+  would take the screwdriver and the crowbar from the machine core's panel and deconstruction (ops answer before the legacy interactions), so
+  another item is now what the machine core does with it.
+
+## Thermoelectric generator and circulators (rewrite/pipenet-full)
+
+- **The TEG works on `every(when = generating)`.** `generating` (tracked) is reconsidered when its bolts, its circulators, its power or its loops
+  change; asleep, it holds native gas watches on its circulators' four mixtures (pressure) and wakes when either loop has a head worth turning.
+  The periodic declaration, the OM watch, MACHINE_WAKE and `SSmachines.hibernate_generator()` are gone; it left the machine pipeline roster.
+- Its window is `interface()` with a requirement (bolted down and working), so a hand on a loose or dead TEG is refused with a reason instead of
+  doing nothing; it no longer reconnects its circulators when the window opens (the wrenches and the map load do). Its look is `draw(look)` from
+  a tracked `lastgenlev`; the circulators' hot/cold overlays are set when the level changes, not from inside the TEG's appearance proc.
+- The circulator's and the TEG's wrenches are ops; the circulator's "running" display times out on a keyed `after()` (was `om_after_replace`),
+  and its look is `draw(look)` from a tracked `run_state` and `temperature_overlay`. The TEG joins `REGISTRY_TURBINES` with `membership()`.
+
+
+
+## Power plants: the supermatter (rewrite/power-plants)
+
+Pinned by `code/modules/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`), green on the legacy code first.
+
+- **No machine step.** The crystal's reaction is `every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))` (2 s, as the pipeline frame was);
+  it left the machine pipeline's roster. Off a turf it skips the step (it used to stop stepping for good on a null loc; a crystal with a null
+  loc never comes back, so nothing changes in play). Cadence pin: 5 steps in 10 s, before and after.
+- **The exhaust is a gas reaction in Rust** (`GAS_REACTION_SUPERMATTER`, `SUPERMATTER_THERMAL_RELEASE` = 10000 J per unit of device energy,
+  `verdigris/domains/gas/src/reaction_energy.rs`). Before, DM added the phoron and oxygen with `adjust_gas()` (the new moles arrived at the
+  mixture's temperature, so they brought their own heat) and then `heat_add()`ed the release. Now the reaction keeps the mixture's energy over
+  its new heat capacity and adds the release, so the exhaust carries no free heat: at power 500 in 500 K oxygen the step adds 5.50 MJ, where
+  it added 5.54 MJ (the 0.37 mol of phoron and 0.05 mol of oxygen at 500 K were the 37 kJ, 0.7%). Power, damage and the gas amounts are
+  unchanged (pins: `sm_energy_curve_*`, `sm_damage_*`, `sm_gas_release`). The 10000 K cap stays a `heat_set()`.
+- **Touch, item touch and bump are ops and a notice** (`touch`, `touch_item`, `on_notice(/datum/notice/bumped)`); the legacy interaction table,
+  the cyborg "Use" interaction and the `Bumped()` override are gone. What a player sees: a plain click with an empty hand or anything held
+  touches the crystal (the pin's "click: nothing" became "Click: Touch"; that is what the legacy click did in play, the pin harness did not
+  run the legacy click); a cyborg beside it touches it with its empty hand (as the legacy "Use" did when adjacent); a silicon at range and the
+  AI open the monitor window through `interface(..., input = remote())` (was the robot interaction's `tgui_interact()` and `silicon_use`).
+
+## Power plants: the singularity, its containment, emitters, collectors and the particle accelerator (rewrite/power-plants)
+
+Pinned by `dq_pp/sing_*`, `fg_*`, `containment_field_*`, `emitter_*`, `collector_*`, `particle_*`, `pa_*`; green on the legacy code first, every
+number unchanged (size thresholds, dissipation 1 per 11 steps at stage one, field draw 2750 W alone and 8500 W linked with 3 fields, the 250 kJ
+store cap, 64 kJ per emitter shot in bursts of four, collector output moles x strength x 20 W).
+
+- **No machine pipeline, no PERIODIC lanes.** The singularity (and Nar-Sie, the cascade rift and the energy ball) steps on its `every(2 s)`
+  (`singularity_frame()`), field generators and emitters on `every(MACHINE_SERVICE_INTERVAL, when = ...)`, the control box emits on
+  `every(..., when = active)`, particles fly on `every(0.1 s)`. The singularity generator collapses at the drain after a particle brings it to
+  200 (`on_change(nameof(energy))`), not on the next 2 s frame.
+- **Containment-failure alert fixed.** `cleanup()` looked for singularities in `REGISTRY_MACHINES`, where none ever were, so the admin
+  "SINGUL/TESLOOSE!" alert never fired; it now reads `REGISTRY_SINGULARITIES`. A field generator next to the map edge no longer runtimes
+  raising its fields (it stops at the edge).
+- **Field generator warm-up** is a keyed `after()` chain (two 5 s stages, the fields at 10 s, as before); switching off cancels it and the
+  warm-up overlay goes with it (it used to stay on the dead generator).
+- **The bolt-and-weld ladder is a library capability** (`floor_weld()`, `code/library/machine/floor_weld.dm`) for emitters and field
+  generators: wrench instant, welder 2 s, refused while running; same messages.
+- **Locks are `lock()`** (emitter, collector; no alt-click): the ID swipe toggles `LOCK_LOCKED`, an emag shorts it open for good (`emag()`),
+  the collector locks only while active. `activate()` and the remote emitter button read `lock_locked()`.
+- **The particle accelerator parts and control box are on a construction graph** (loose, bolted, wired, closed; `pa_stage()` is the old
+  number). Opening a closed control box's panel now also powers it off (it stayed idle before). Parts and boxes rotate through the
+  `rotatable()` menu instead of granted verbs.
+- **The singularity generator** anchors with `anchor()`, opens with `panel()`; the screwdriver's two flavour waits (3 s then 8 s) became an
+  examine line while the panel is open; installing the super I/O coil is a 30 s op.
+- Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
+  the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
+- Mecha UI: the window helpers' tgui parameters are renamed so the body's `state` reads the mech's maintenance state again (before this, the parameter shadowed it).
+- Lobby "Observe": the confirmation is now an `asks()` step on the observe op and opens only once the round has finished setting up. The handler still checks login holds and the round state when the answer comes back.
+- **Emags on items are the emag library** (`emag(then(PROC_REF(on_emag)), repeatable =, powered = FALSE)`): a sequencer that
+  works now also says the library's "You subvert X with Y" line, and pays one use (the legacy handlers' counts were 0 or 1).
+  A handler that did nothing declines: the card goes on to its other uses. The defib kit works its paddles' emag by key.
+- **Timed tool uses are op waits**: the vehicle cage (wrench 6 s, cutters 7 s) and salvageable wrecks (crowbar 17 s) say a
+  begin line to the user as well as onlookers, and the wait scales by the tool's speed as every tool op does.
+- **The window tint button's cutters**: with the panel shut they go on to the legacy tool handling instead of being swallowed.
+- **The portable sign asks its direction as an op step** (`asks()`), so the question is the op's and the answer is re-checked.
+
+## Lifecycle forms (rolls, params, registries, adjacency, endings, input)
+
+The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle forms"; tests `dq_lifeform_*_tests.dm`) and the codemods that moved
+`Initialize()`, `qdel(src)` and `usr` sites onto them.
+
+* **Random per-instance values are seeded.** A `rand()`/`pick()`/`prob()` an `Initialize()` drew from the world RNG is a `rolls()` entry drawing from
+  the instance's own stream (the round seed with its map position, or its creator's stream). The distributions are the same (`range_of(a, b)` is
+  `rand(a, b)`, `pick_one()` is `pick()`, `pick_weighted()` is `pickweight()`, `chance(p)` is `prob(p)`, `PIXEL_JITTER(n)` is each pixel offset in
+  `rand(-n, n)`); the realisation differs: the same round seed rolls the same map, and the world RNG no longer advances for them.
+* **A rolled value is suppressed by a map edit or a given param.** The old overrides re-rolled a var even where the map set it (a mapped `icon_state`
+  of a random rock was overwritten); a roll now leaves a value that differs from the compiled default alone.
+* **Rolls run before the type's own init code.** An override that rolled after `..()` rolled after the capabilities initialized; a capability whose
+  `on_holder_init()` read a rolled var now sees the rolled value instead of the default.
+* **Constructor arguments are set before init.** A `param(pos = N)` writes the positional argument in `/atom/New()`, before the root of `Initialize()`,
+  where the override wrote it after `..()`: init code between sees the value instead of the default.
+* **Contents made by `contains()` are created in nullspace** and moved in with the capabilities' init, as `starts =` already did: a content's own
+  `Initialize()` sees no loc.
+* **Every ending publishes `/datum/notice/ended` with a cause** (when something listens), and the endings the verbs make record it: `expire()`
+  is `END_EXPIRED`, `replace_with()` `END_REPLACED`, `consume()` `END_CONSUMED`. Nothing listened to an ending before, so no behaviour changes.
+* **A `lives_while()` scope ends its holder when the scope ends** instead of the host's `on_destroy()` deleting it: the order changes (the holder
+  ends in the host's first destroy step, before the host's links are cleared) and the holder's ended notice says `END_OWNER`.
+* **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
+  override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
+  the previous `usr` even when the callback throws (the hand-written swaps left it set).
+- Laptop vendor: the legacy handlers' tgui `state` parameter shadowed the vendor's order state, so "pick device" always refused and the hardware buttons were open in every state. The handlers now read the vendor's own order state.
+- Ticket windows: the data helpers no longer shadow the ticket's `state` (the panel shows open/resolved/closed again). "New ticket" asks its questions (ckey, text, level, and duplicate only when the player already has a ticket) as `asks()` steps before the handler runs, so an offline ckey is reported after all the answers instead of after the first. "List tickets" is an `asks()` step.
+- Circuit export window: its data reads the assembly's data through `tgui_data(user)`.
+## The gas turbine and its motor (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
+
+- The turbine works on `every(when = spinning)` (bolted, whole, and spinning or with a head across it); asleep it watches its two sides with
+  `gas_watch_many()` (the shared multi-mixture watch, also used now by the TEG and a pipe's sleeping leak). The motor works on
+  `every(when = converting)`, which the turbine's step reconsiders instead of MACHINE_WAKE. OM derived fields, the periodic declarations, the OM
+  watch and the `ownership()` table proc are gone; both left the machine pipeline roster. Their wrenches are ops; the turbine's look is
+  `draw(look)` from tracked `driven` and `speed_band`.
+- **Bug fixed:** after a stroke the turbine handed its input side `remove(volume_ratio)` (0.2 moles) instead of `remove_ratio(volume_ratio)` (its
+  share by volume), so nearly all the gas was dumped to the output and the head flipped. Its two sides now settle at one pressure.
+
+## The thermoregulator (rewrite/pipenet-full)
+
+- It works on `every(when = regulating)`: on, bolted, on the grid and its room a degree or more off its target. A gas watch on its room's air
+  (temperature), its switch, its target (tracked `target_temp`) and moving it reconsider; the OM watch, the periodic declaration and MACHINE_WAKE
+  are gone, and it left the machine pipeline roster. The heat itself stays the thermal domain's `heat_pump`.
+- Its hand switch (empty hand), wrench and multitool target (an `asks()` number in degrees C) are ops; a hand on an unbolted one is refused with a
+  reason (it did nothing). The Southern Cross and Cryogaia regulators keep their own step and wrench (the Cryogaia one's message is the shared
+  one). Its look is `draw(look)`; its display is an `examine_line()`.
+
+## Heat-exchanging pipes (rewrite/pipenet-full)
+
+- An HE pipe's DM work is only what Rust does not do: a body lying on it (heat equalize and the burn) and its glow. It works on
+  `every(when = tending)` (a body on it, or its glow more than 10 K behind its gas above 500 K); asleep, it watches its pipeline's gas with
+  `gas_watch_many()`. Its pipeline joining, a buckle, a move and a disconnect reconsider. The OM watch, the machine step and its roster entry are
+  gone; the dead leak branch in the step is gone (HE pipes cannot leak). The exchange itself stays the shell's heat body and the sky link.
+- Its watch is on every change of the gas, not temperature alone: a heat-domain write to a pipe region (`heat_set`) does not report a
+  temperature-only change to a gas dependency watch (reported to the thermal owner).
+
+## Air system debug panel and the network core leftovers (rewrite/pipenet-full)
+
+- The air system's debug panel (`SSair`, "Debug Atmospherics") is `interface("AtmosControlPanel", rights = R_DEBUG)` + `ui_data()` + ops; the
+  `DECLARE_UI`, `UI_DATA_REPLACE` and `UI_ACT` rows are gone. "move-to-target" takes the turf's ref and locates it in the op.
+- The base `/obj/machinery/atmospherics/machine_step()` is deleted (no atmospherics device is stepped by the machine pipeline any more), the
+  pipeline's MACHINE_WAKE of each pipe on joining is gone (HE pipes reconsider on their `parent`), and the engineered-material follow-up timer is
+  checked with `after_left()` instead of `om_timer_slot_pending()`.
+- **Object verbs keep their legacy base requirements** (reach and an actor who can act: `needs(req_adjacent(), req_capable())`
+  on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
+- **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
+  handled and goes on, as before.
 
 ## Body migration, slice 3: internal organs on the organ clock (rewrite/body-full)
 

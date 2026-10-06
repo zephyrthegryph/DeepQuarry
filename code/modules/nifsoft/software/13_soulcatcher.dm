@@ -274,7 +274,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
 		brainmob.transient = TRUE
-		qdel(M) //Bye ghost
+		spent(M) //Bye ghost
 
 	//Give them a flavortext message
 	var/message = span_notice("Your vision fades in a haze of static, before returning.") + "\n\
@@ -329,7 +329,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /datum/om/stage/life/type_pre/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
 	if(!self.mind || !self.key)
-		qdel(self)
+		spent(self)
 		return ctx.abort()
 	return ..()
 
@@ -346,7 +346,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 	if(!self.client)
 		if(++self.client_missing == 300)
-			qdel(self)
+			spent(self)
 		return
 	else
 		self.client_missing = 0

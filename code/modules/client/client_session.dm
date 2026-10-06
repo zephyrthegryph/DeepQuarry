@@ -31,12 +31,12 @@
 		for(var/var_name in owned_vars)
 			var/datum/owned = client.vars[var_name]
 			if(owned)
-				qdel(owned) // ALLOW(lifecycle): a connection-scoped panel datum held on the /client, which is not a datum with owned vars
+				destroyed(owned)
 			client.vars[var_name] = null // ALLOW(api): clears a fixed static list of client-owned panel vars on session teardown
 		for(var/window_id in client.tgui_windows)
 			var/datum/tgui_window/window = client.tgui_windows[window_id]
 			if(window)
-				qdel(window) // ALLOW(lifecycle, decl): a tgui window datum in the client's window table, which is neither an atom nor a var this session could declare
+				destroyed(window)
 		client.tgui_windows = list()
 	asset_waiters = null
 	completed_asset_jobs = null

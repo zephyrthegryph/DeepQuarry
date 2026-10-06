@@ -47,8 +47,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_size(width, height, do_refresh = TRUE)
 	if(!aiEye) // Exploit fix
-		// ALLOW(lifecycle): a multicam window without its AI eye is closed
-		qdel(src)
+		spent(src)
 		return
 	aiEye.static_visibility_range =	(round(max(width, height) / 2) + 1)
 	if(ai)
@@ -58,16 +57,14 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_center(atom/target, do_refresh = TRUE)
 	..()
 	if(!aiEye) // Exploit Fix
-		// ALLOW(lifecycle): a multicam window without its AI eye is closed
-		qdel(src)
+		spent(src)
 		return
 	aiEye.setLoc(get_turf(target))
 
 /atom/movable/screen/movable/pic_in_pic/ai/refresh_view()
 	..()
 	if(!aiEye) // Exploit Fix
-		// ALLOW(lifecycle): a multicam window without its AI eye is closed
-		qdel(src)
+		spent(src)
 		return
 	aiEye.setLoc(get_turf(center()))
 
@@ -91,8 +88,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 			to_chat(new_ai, span_danger("<h2>You've run into a unfixable bug with AI eye code. \
 In order to create a new multicam, you will have to select a different camera first before trying to add one, or ask an admin to fix you. \
 Whatever you did that made the last camera window disappear-- don't do that again.</h2>"))
-		// ALLOW(lifecycle): a multicam window without its AI eye is closed
-		qdel(src)
+		spent(src)
 		return
 	if(ai)
 		rel_remove(ai, nameof(ai.multicam_screens), src)
@@ -130,7 +126,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 /obj/effect/landmark/ai_multicam_room/Initialize(mapload)
 	. = ..()
-	qdel(GLOB.ai_camera_room_landmark)
+	spent(GLOB.ai_camera_room_landmark)
 	GLOB.ai_camera_room_landmark = src
 
 /// Phase 2: stops being the multicam room.

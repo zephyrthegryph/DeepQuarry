@@ -385,7 +385,8 @@ CAPABILITIES(/turf/simulated/shuttle)
 	icon = 'icons/turf/stomach_vr.dmi'
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/floor/flesh)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
 /turf/simulated/floor/flesh
 	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
@@ -425,7 +426,7 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
 				return OP_PASS
-			qdel(L)
+			spent(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)

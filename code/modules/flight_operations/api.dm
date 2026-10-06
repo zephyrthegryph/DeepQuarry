@@ -81,7 +81,7 @@
 	if(destination.target())
 		destination_by_target -= REF(destination.target())
 	own_take_member(src, nameof(destinations), id)
-	qdel(destination)
+	spent(destination)
 
 /datum/system/flight/proc/destination_for_target(atom/target)
 	RETURN_TYPE(/datum/flight_destination)

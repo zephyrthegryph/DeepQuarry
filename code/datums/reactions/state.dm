@@ -62,6 +62,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
+	if(lifeform_watch_keys?[key] && lifeform_watching(E, key))
+		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
 	return hooks_watching(E, key) // an on_change() hook of the engine (code/engine/actions/change.dm)
 
 /// The tracked var `var_name` of E changed (TRACKED setters, a hand-written SETTER): its key is published when
@@ -126,6 +128,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	// The on_change() hooks of the engine that read the key are marked for the next drain point.
 	if(islist(GLOB?.change_index_by_type) && (GLOB.change_index_by_type[E.type] || E.rx?.hooks || GLOB.change_hop_keys[key]))
 		hooks_change_published(E, key)
+	// A lifecycle form that follows the var reacts now: a re-key, a retune, a recompute, a scope check (code/engine/lifeforms/forms.dm).
+	if(lifeform_watch_keys?[key])
+		lifeform_published(E, key)
 	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
 	if(length(GLOB.op_watchers))
 		op_reads_changed(E, key)

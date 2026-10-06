@@ -211,15 +211,14 @@
 		src.death()
 
 		for(var/obj/item/organ/internal/diona/Org in internal_organ_list()) // Remove Nymph organs. (a fresh list from the organ slots)
-			qdel(Org)
+			spent(Org)
 
 		for(var/obj/item/organ/external/E in organs.Copy()) // Just fall apart.
 			E.droplimb(TRUE)
 
 	else
 		act_message(src, null, others = span_warning("%U% quivers slightly, then splits apart with a wet slithering noise."))
-		// ALLOW(lifecycle): the diona splits into nymphs and the body is gone
-		qdel(src)
+		spent(src)
 
 /mob/living/carbon/human/proc/self_diagnostics()
 	set name = "Self-Diagnostics"
@@ -348,7 +347,7 @@
 			E.disfigured = 0
 		if(E && (E.is_stump() || (E.status & (ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))))
 			E.removed()
-			qdel(E)
+			spent(E)
 			E = null
 		if(!E)
 			var/list/organ_data = src.species.has_limbs[limb_type]

@@ -28,7 +28,7 @@
 				return 0
 			else
 				visible_message(span_infoplain(span_bold("\The [L]") + " vanishes!"))
-				qdel(L)
+				spent(L, user)
 		else if(istype(L, /mob/living/simple_mob/construct))
 			var/mob/living/simple_mob/construct/evil = L
 			to_chat(evil, span_danger("\The [user]'s abjuration purges your form!"))

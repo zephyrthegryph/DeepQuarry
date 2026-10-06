@@ -110,7 +110,7 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 			M.set_species(S.name)
 			M.update_icons_body()
 			result_icon = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
-			qdel(M)
+			spent(M)
 		catch(var/exception/e)
 			stack_trace("dq_species_preview_b64 slow path failed for [S.name]: [e.name] at [e.file]:[e.line]")
 			return null

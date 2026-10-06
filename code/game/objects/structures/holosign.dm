@@ -6,11 +6,6 @@
 	max_integrity = 10
 	explosion_resistance = 1
 
-// ALLOW(init/CTOR_ARGS): source_projector is a constructor argument from whoever builds it
-/obj/structure/holosign/Initialize(mapload, source_projector)
-	. = ..()
-	if(source_projector)
-		rel_set(src, nameof(projector), source_projector) // the pair adds us to its signs
 /*	if(overlays) // Fucking god damnit why do we have to have an entire different subsystem for this shit from other codebases.
 		overlays.add_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, alpha, RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
 		alpha = 0
@@ -26,6 +21,7 @@
 CAPABILITIES(/obj/structure/holosign)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	param(nameof(projector), pos = 1)
 
 /obj/structure/holosign/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor

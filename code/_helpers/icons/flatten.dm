@@ -25,17 +25,17 @@
 	var/icon/east = get_flat_icon(N, EAST, no_anim = no_anim)
 	N.dir = WEST
 	var/icon/west = get_flat_icon(N, WEST, no_anim = no_anim)
-	qdel(N)
+	spent(N)
 	//Starts with a blank icon because of byond bugs.
 	var/icon/full = icon('icons/system/blank_32x32.dmi', "")
 	full.Insert(north, dir = NORTH)
 	full.Insert(south, dir = SOUTH)
 	full.Insert(east, dir = EAST)
 	full.Insert(west, dir = WEST)
-	qdel(north)
-	qdel(south)
-	qdel(east)
-	qdel(west)
+	spent(north)
+	spent(south)
+	spent(east)
+	spent(west)
 	return full
 
 /proc/get_flat_icon(appearance/appearancelike, dir, no_anim)

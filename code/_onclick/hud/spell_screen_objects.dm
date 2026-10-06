@@ -35,8 +35,7 @@
 
 /atom/movable/screen/movable/spell_master/Click()
 	if(!length(spell_buttons()))
-		// ALLOW(lifecycle): the spell bar goes away when it holds no spells
-		qdel(src)
+		spent(src)
 		return
 
 	toggle_open()
@@ -122,8 +121,7 @@
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)
 	else
-		// ALLOW(lifecycle): the spell bar goes away when its last spell is removed
-		qdel(src)
+		spent(src)
 
 /atom/movable/screen/movable/spell_master/proc/silence_spells(amount)
 	for(var/atom/movable/screen/spell/spell as anything in spell_buttons())
@@ -179,8 +177,7 @@
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	var/datum/spell/spell = spell()
 	if(!spell)
-		// ALLOW(lifecycle): a spell button whose spell is gone has nothing to cast
-		qdel(src)
+		spent(src)
 		return
 
 	if((last_charge == spell.charge_counter || !handle_icon_updates) && !forced_update)
@@ -216,14 +213,17 @@
 	if(spell.silenced)
 		overlays += "silence"
 
-/atom/movable/screen/spell/Click()
-	return cast_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native spell button clicks supply the initiating mob to the unchanged casting path.
+CAPABILITIES(/atom/movable/screen/spell)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/spell/proc/click_input(datum/act/input/A)
+	return cast_with_actor(A.actor)
 
 /atom/movable/screen/spell/proc/cast_with_actor(mob/user)
 	var/datum/spell/spell = spell()
 	if(!user || !spell)
-		// ALLOW(lifecycle): a spell button whose spell or caster is gone has nothing to cast
-		qdel(src)
+		spent(src, user)
 		return
 
 	spell.perform(user)

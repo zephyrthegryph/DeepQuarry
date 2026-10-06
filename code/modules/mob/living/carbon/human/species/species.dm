@@ -522,12 +522,12 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	H.mob_size = mob_size
 	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
 	if(old_root)
-		qdel(old_root)
+		consumed(old_root, H)
 	// Parts left over outside the tree (loose after a refused placement).
 	for(var/obj/item/organ/stray as anything in H.organs?.Copy())
-		qdel(stray)
+		consumed(stray, H)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
-		qdel(stray)
+		consumed(stray, H)
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()
@@ -826,7 +826,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		targetHead.eye_icon_location = baseHead.eye_icon_location
 
 		if(!QDELETED(baseHead) && baseHead)
-			qdel(baseHead)
+			spent(baseHead, H)
 	return
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.

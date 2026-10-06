@@ -148,7 +148,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
 			var/image/IM = image(I, pixel_x = (32 - I.Width()))
 			add_overlay(IM)
-			qdel(I)
+			spent(I)
 
 /obj/structure/closet/secure_closet/mind/allowed(mob/user)
 	if(user.mind == owner_ref()) // ALLOW(reads): whose mind it is is read at the click; the locker is made for one mind and never changes it
@@ -159,8 +159,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 /obj/structure/closet/secure_closet/mind/open()
 	.=..()
 	if(self_del)
-		// ALLOW(lifecycle): a self-deleting closet goes once it is opened
-		qdel(src)
+		spent(src)
 
 /// A mind's locker takes nothing in: it only resolves its look.
 /obj/structure/closet/secure_closet/mind/closet_after_init(datum/act/timer/A)

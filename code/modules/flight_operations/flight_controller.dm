@@ -162,7 +162,7 @@ CAPABILITIES(/datum/system/flight)
 			mission.faction_type = expedition_pick_faction(difficulty)
 			var/datum/expedition_site/site = SSexpedition.create_site_descriptor(mission, difficulty, null, null, planet.id)
 			if(!site)
-				qdel(mission)
+				spent(mission)
 				break
 			site_count++
 
@@ -396,7 +396,7 @@ CAPABILITIES(/datum/system/flight)
 	if(plan.vessel?.active_plan == plan)
 		own_clear(plan.vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
 		return
-	qdel(plan)
+	spent(plan)
 
 /datum/system/flight/stat_entry(msg)
 	return "[..()]V:[length(vessels)] D:[length(destinations)] F:[length(plans)]"

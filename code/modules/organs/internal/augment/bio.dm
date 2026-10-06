@@ -60,7 +60,7 @@
 			else
 				drop_from_inventory(G)
 				to_chat(src, span_notice("\The [G] retract into your skull."))
-				qdel(G)
+				spent(G)
 
 	else
 		if(aug && aug.integrated_object)

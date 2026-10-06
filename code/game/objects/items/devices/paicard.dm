@@ -43,6 +43,7 @@
 	var/selected_system = "pAI"
 
 CAPABILITIES(/obj/item/paicard)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	blast_contents()
 	owns_one(nameof(multitool), /obj/item/multitool)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
@@ -376,7 +377,7 @@ CAPABILITIES(/obj/item/paicard)
 
 /obj/item/paicard/proc/setEmotion(emotion)
 	cut_overlays()
-	qdel(screen_layer)
+	spent(screen_layer)
 	screen_layer = null
 	switch(emotion)
 		if(1) screen_layer = image(icon, "pai-neutral")
@@ -828,13 +829,12 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		return TRUE
 	return FALSE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
-/obj/item/paicard/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	. = EMAG_DECLINED
+/obj/item/paicard/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!pai)
 		if(!emagged)
 			to_chat(user, span_warning("Without a pAI inhabiting \the [src] nothing happens."))
-		return
+		return OP_DECLINE
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("\The [src] buzzes and beeps."))
@@ -844,7 +844,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		if(has_emag_toolkit)
 			rel_set(src, nameof(multitool), new /obj/item/multitool(src))
 			rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 ///////////////////////////////
 //////////pAI Parts  //////////
@@ -857,11 +858,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	pickup_sound = SFX_ITEMS_PICKUP_CARD
 	drop_sound = SFX_ITEMS_DROP_CARD
 
-// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-/obj/item/paiparts/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-10,10)
-	pixel_y = rand(-10,10)
+CAPABILITIES(/obj/item/paiparts)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 
 /obj/item/paiparts/cell
 	name = "pAI power cell"

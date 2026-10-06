@@ -20,6 +20,14 @@
 	var/list/shockdirs
 	COOLDOWN_DECLARE(hasShocked) //Used to add a delay between shocks. In some cases this used to crash servers by spawning hundreds of sparks every second.
 
+// The containment field (doc/rewrite/final_api.html section 16): an energy field between two field generators (FG1, FG2). It shocks and throws
+// whoever touches it or stands beside it (at most every 2 s), destroys any dense object that crosses it, and falls when either generator is
+// gone. A singularity cannot step onto it (/obj/singularity/proc/can_move()).
+CAPABILITIES(/obj/machinery/containment_field)
+	ref_one(nameof(FG1), /obj/machinery/field_generator)
+	ref_one(nameof(FG2), /obj/machinery/field_generator)
+	op("touch", hand(), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))
+
 /obj/machinery/containment_field/Initialize(mapload)
 	. = ..()
 	shockdirs = list(turn(dir,90),turn(dir,-90))
@@ -39,24 +47,10 @@
 		FG2().cleanup()
 	..()
 
-/obj/machinery/containment_field/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/containment_field_shock,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): shock whoever touches it.
-/datum/interaction/machine_hand/ungated/containment_field_shock
-	id = "containment_field_shock"
-	name = "Touch"
-	category = INTERACTION_CAT_ATTACK
-	tags = list(INTERACTION_TAG_HOSTILE)
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/machinery/containment_field/proc/interaction_shock
-
-/obj/machinery/containment_field/proc/interaction_shock(mob/user, obj/item/held, datum/interaction/interaction)
-	shock(user)
-	return TRUE
+/// Whoever touches it is shocked.
+/obj/machinery/containment_field/proc/touched(datum/act/op/A)
+	shock(A.actor)
+	return OP_OK
 
 /obj/machinery/containment_field/Crossed(atom/A)
 	if(!istype(A) || A.is_incorporeal())
@@ -69,7 +63,7 @@
 		if(istype(A,/obj/machinery/containment_field) || istype(A,/obj/effect) || istype(A,/obj/singularity))
 			return
 		else
-			qdel(A)
+			destroyed(A)
 
 /obj/machinery/containment_field/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
@@ -91,8 +85,7 @@
 	if(!COOLDOWN_FINISHED(src, hasShocked))
 		return 0
 	if(!FG1() || !FG2())
-		// ALLOW(lifecycle): a field without both generators collapses
-		qdel(src)
+		spent(src, user)
 		return 0
 	if(isliving(user))
 		COOLDOWN_START(src, hasShocked, 2 SECONDS)

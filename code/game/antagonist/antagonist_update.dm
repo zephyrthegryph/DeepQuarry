@@ -9,7 +9,7 @@
 		var/mob/holder = player.current
 		rel_set(player, nameof(player.current), new mob_path(get_turf(player.current)))
 		player.transfer_to(player.current)
-		if(holder) qdel(holder)
+		if(holder) spent(holder)
 	rel_set(player, nameof(player.original_character), player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
 		after(src, 0.3 SECONDS, PROC_REF(deferred_set_appearance), with = list(player))
@@ -29,7 +29,7 @@
 		return
 	for(var/image/I in recipient.current.client.images)
 		if(I.icon_state == antag_indicator || (faction_indicator && I.icon_state == faction_indicator))
-			qdel(I)
+			spent(I)
 
 /datum/antagonist/proc/get_indicator(datum/mind/recipient, datum/mind/other)
 	if(!antag_indicator || !other.current || !recipient.current)
@@ -79,7 +79,7 @@
 			if(antag.current && antag.current.client)
 				for(var/image/I in antag.current.client.images)
 					if(I.loc == player.current)
-						qdel(I)
+						spent(I)
 
 /datum/antagonist/proc/update_current_antag_max()
 	cur_max = hard_cap

@@ -22,7 +22,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	if(answer != "Yes")
 		return
 	if(!RemoveBan(banfolder, user))
-		tgui_alert_async(user, "This ban has already been lifted / does not exist.", "Error")
+		open_request(user, /datum/prompt/choice/unban_error_notification, null, answerer = user, question = "This ban has already been lifted / does not exist.", title = "Error", choices = list("Ok"))
 	unbanpanel()
 
 /datum/admins/proc/topic_warn(mob/user, list/args)
@@ -274,7 +274,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	log_admin("[key_name(user)] booted [key_name(M)] for reason: '[reason]'.")
 	message_admins(span_blue("[key_name_admin(user)] booted [key_name_admin(M)] for reason '[reason]'."), 1)
 	admin_action_message(user.key, M.key, "kicked", reason, 0)
-	qdel(M.client)
+	spent(M.client, user)
 
 /datum/admins/proc/topic_removejobban(mob/user, list/args)
 	var/t = args["removejobban"]
@@ -336,7 +336,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 			if(T)
 				T.Resolve(user)
-			qdel(M.client)
+			spent(M.client, user)
 		if("No")
 			if(!check_rights(R_BAN))
 				return
@@ -366,7 +366,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 			if(T)
 				T.Resolve(user)
-			qdel(M.client)
+			spent(M.client, user)
 
 /datum/admins/proc/topic_mute(mob/user, list/args)
 	var/mob/M = args["mute"]
@@ -452,3 +452,11 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 /datum/prompt/text/admin_ban_topic/refusal(given)
 	return null
+
+/datum/prompt/choice/unban_error_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/unban_error_notification/recheck_extra()
+	return answerer?.client ? null : "gone"

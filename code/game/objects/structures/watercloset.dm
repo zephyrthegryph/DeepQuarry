@@ -671,7 +671,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_o
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/obj/effect/mist/mist = locate_on(loc, /obj/effect/mist)
 	if(mist && (!on || current_temperature == SHOWER_FREEZING))
-		qdel(mist)
+		spent(mist)
 
 /obj/machinery/shower/Crossed(atom/movable/AM)
 	..()
@@ -1288,16 +1288,16 @@ CAPABILITIES(/obj/structure/toilet/item)
 /obj/structure/biowaste_tank/Entered(atom/movable/thing, atom/OldLoc)
 	. = ..()
 	if(istype(thing, /obj/item/reagent_containers/food))
-		qdel(thing)
+		spent(thing)
 		return
 	if(istype(thing, /obj/item/organ))
-		qdel(thing)
+		spent(thing)
 		return
 	if(istype(thing, /obj/item/storage/vore_egg))
 		var/obj/item/storage/vore_egg/egg = thing
 		for(var/atom/movable/C in egg.slot_contents())
 			C.forceMove(src)
-		qdel(thing)
+		spent(thing)
 		return
 	if(istype(crusher(), /obj/machinery/recycling/crusher) && istype(thing, /obj/item/debris_pack))
 		crusher().take_item(thing)

@@ -500,11 +500,32 @@ def main():
         if len(decl) > 1:
             return None, "ui_forms"  # several declarations
         window = title = None
+        window_extra = []
         if decl:
-            m = re.match(r'^DECLARE_UI\((/[\w/]+),\s*"([^"]*)"(?:,\s*UI_TITLE\("([^"]*)"\))?\)\s*(//.*)?$', decl[0][3])
-            if not m:
+            dparts = split_args(inner_of_call(decl[0][3], "DECLARE_UI") or "")
+            if len(dparts) < 2 or dparts[0] != t:
                 return None, "ui_options"
-            window, title = m.group(2), m.group(3)
+            window_extra = []
+            wm = re.match(r'^"([^"]*)"$', dparts[1])
+            vm = re.match(r'^UI_FROM_VAR\("(\w+)"\)$', dparts[1])
+            if wm:
+                window = wm.group(1)
+            elif vm:
+                # the window from a var each subtype sets (interface(null, window_var = nameof(x)))
+                window = None
+                window_extra.append("window_var = nameof(%s)" % vm.group(1))
+            else:
+                return None, "ui_options"
+            for opt in dparts[2:]:
+                tm = re.match(r'^UI_TITLE\("([^"]*)"\)$', opt)
+                if tm:
+                    title = tm.group(1)
+                elif opt in ("UI_AUTOUPDATE", "UI_PINNED", "UI_PREINITIALIZED"):
+                    window_extra.append("%s = TRUE" % opt[3:].lower())
+                else:
+                    return None, "ui_options"
+            if window is None:
+                window = "__var__"
         if any(k not in ("DECLARE_UI", "DECLARE_UI_STATE", "UI_ACT", "UI_ACT_PROC", "UI_DATA", "UI_DATA_REPLACE", "UI_ACT_FALLBACK", "UI_ACT_FORWARD", "UI_ACT_OVERRIDE") for k in kinds):
             return None, "ui_forms"
         ancestors = fam_ancestors(fam, t)
@@ -634,8 +655,14 @@ def main():
             forward = {"var": fm.group(1), "def": fdef, "first": ffirst, "last": flast, "row": (rel, idx)}
         if bad:
             return None, bad
-        if len({a["action"] for a in acts}) != len(acts) or len({a["proc"] for a in acts}) != len(acts):
+        if len({a["action"] for a in acts}) != len(acts):
             return None, "proc_shared"
+        # one handler for several buttons with the same args: one op each, the handler reads which with A.window_action()
+        by_proc = {}
+        for a in acts:
+            other = by_proc.setdefault(a["proc"], a)
+            if other is not a and other["specs"] != a["specs"]:
+                return None, "proc_shared"
         # UI_ACT_OVERRIDE(T, proc): this type's handler of a button an ancestor declares
         overrides = []
         for k, rel, idx, text in rs:
@@ -749,12 +776,12 @@ def main():
                 return None, "ui_forms"
         plan["interface_args"] = None
         if window:
-            plan["interface_args"] = ['"%s"' % window] + (['title = "%s"' % title] if title is not None else []) + ([plan["state"][0]] if plan["state"] else []) + (["forwards = nameof(%s)" % forward["var"]] if forward else [])
+            plan["interface_args"] = [('"%s"' % window) if window != "__var__" else "null"] + (['title = "%s"' % title] if title is not None else []) + ([plan["state"][0]] if plan["state"] else []) + (["forwards = nameof(%s)" % forward["var"]] if forward else []) + window_extra
         elif (plan["state"] and not plan.get("state_down") and not plan.get("state_proc")) or forward:
             keep = [a for a in inherited["args"] if not re.match(r"^(state|rights)\s*=", a) and not (forward and re.match(r"^forwards\s*=", a))]
             plan["redeclared"] = keep + ([plan["state"][0]] if plan["state"] else []) + (["forwards = nameof(%s)" % forward["var"]] if forward else [])
         # ---- handlers
-        handler_jobs = [{"act": a, "owner": t, "row": None} for a in acts] + overrides
+        handler_jobs = [{"act": a, "owner": t, "row": None} for a in acts if by_proc[a["proc"]] is a] + overrides
         bad = None
         for job in handler_jobs:
             a = job["act"]
@@ -778,16 +805,18 @@ def main():
             asks = []
             if asks_on and any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
                 asks, why_ask = LA.parse_leading(f.lines, first, last, a["proc"], "user", ("act_ask",))
-                if asks is None:
-                    bad = why_ask
-                    break
-                if not asks:
-                    bad = "ask_not_first"
-                    break
-                body_lines = LA.edited_lines(f.lines, first, last, asks)
-                if any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
-                    bad = "ask_later"
-                    break
+                if asks is None or not asks:
+                    # --force ask: the questions stay in the body as they are, for the hand pass
+                    bad = forced("ask:" + (why_ask if asks is None else "ask_not_first"))
+                    if bad:
+                        break
+                    asks = []
+                else:
+                    body_lines = LA.edited_lines(f.lines, first, last, asks)
+                    if any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
+                        bad = forced("ask:ask_later")
+                        if bad:
+                            break
             body = "\n".join(strip_code(l) for l in body_lines)
             # references elsewhere: the row, the definition and nothing else
             occ = mentions(a["proc"], t)
@@ -1033,7 +1062,7 @@ def main():
                 parts.append(arg_schema_text(kind, name, bounds))
             ui = 'ui_act(%s%s)' % (a.get("expr") or '"%s"' % a["action"], "".join(", " + p for p in parts[1:]))
             need = ""
-            hh = next(h for h in plan["handlers"] if h["act"] is a)
+            hh = sorted((h for h in plan["handlers"] if h["act"]["proc"] == a["proc"]), key=lambda h: h["override"])[0]
             asks_text = "".join(", " + x for x in hh["ask_parts"])
             entries.append('op(%s, %s%s%s, then(PROC_REF(%s)))' % ('"%s"' % a["key"] if a.get("key") else (a.get("expr") or '"%s"' % a["action"]), ui, need, asks_text, a["proc"]))
         # handlers

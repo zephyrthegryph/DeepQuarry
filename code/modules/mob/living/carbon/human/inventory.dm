@@ -53,7 +53,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 		if (equip_to_slot_if_possible(W, slots[slot], del_on_fail = 0))
 			return slot
 	if (del_on_fail)
-		qdel(W)
+		spent(W)
 	return null
 
 /mob/living/carbon/human/proc/has_organ(name)

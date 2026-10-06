@@ -67,7 +67,7 @@
 	if(istype(D))
 		rel_remove(D, nameof(D.world_watches), token)
 	if(istype(token) && !QDELETED(token))
-		qdel(token)
+		spent(token)
 
 /proc/dq_rx_clear(datum/rule_binding/D)
 	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
@@ -178,7 +178,7 @@ CAPABILITIES(/datum/dq_rx_node)
 	return A ? A.get_temperature() : null
 
 /proc/dq_rx_node_free(datum/dq_rx_node/node)
-	qdel(node)
+	spent(node)
 
 /// Whether the node's watches are live heat-domain watches right now (tests).
 /proc/dq_rx_node_live(datum/dq_rx_node/node)

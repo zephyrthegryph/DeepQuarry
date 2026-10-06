@@ -171,15 +171,15 @@
 			var/obj/effect/plant/other = thing
 			if(other.seed() != child.seed())
 				other.vine_overrun(child.seed(), src) //vine fight
-			qdel(child)
+			spent(child)
 			return
 		if(istype(thing, /obj/effect/dead_plant))
-			qdel(thing)
-			qdel(child)
+			spent(thing)
+			spent(child)
 			return
 		if(isliving(thing) && (seed().get_trait(TRAIT_CARNIVOROUS) || (seed().get_trait(TRAIT_SPREAD) >= 2 && prob(round(seed().get_trait(TRAIT_POTENCY))))))
 			entangle(thing)
-			qdel(child)
+			spent(child)
 			return
 
 	// Update neighboring squares.

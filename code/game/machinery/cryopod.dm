@@ -341,7 +341,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 			despawn_occupant(M)
 		for(var/obj/item/O in I) // the things inside the tools, if anything; mainly for janiborg trash bags
 			O.forceMove(R)
-		qdel(I)
+		spent(I)
 	own_clear(R, nameof(R.module), OWN_DELETE)
 
 	return ..()
@@ -402,7 +402,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 			for(var/mob/living/V in W.possessed_voice) // Revert temporary patch
 				// Don't try and despawn, instead just ghost and delete, same as item destruction
 				V.ghostize(0)
-				qdel(V)
+				spent(V)
 		// ition Start
 		if(istype(W, /obj/item/pda))
 			var/obj/item/pda/found_pda = W
@@ -423,11 +423,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 			for(var/obj/machinery/computer/cloning/com in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				for(var/datum/dna2/record/R in com.records)
 					if(locate(R.implant) == W)
-						qdel(R)
-						qdel(W)
+						spent(R)
+						spent(W)
 
 		if(!preserve)
-			qdel(W)
+			spent(W)
 		else
 			log_special_item(W,to_despawn)
 			/* We do our own thing.
@@ -439,7 +439,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 			*/
 	for(var/obj/structure/B in items)
 		if(istype(B,/obj/structure/bed))
-			qdel(B)
+			spent(B)
 
 	//Update any existing objectives involving this mob.
 	for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
@@ -448,7 +448,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 		if(O.target == to_despawn.mind)
 			if(O.owner && O.owner.current)
 				to_chat(O.owner.current, span_warning("You get the feeling your target is no longer within your reach..."))
-			qdel(O)
+			spent(O)
 
 	// Resleeving.
 	if(to_despawn.mind)
@@ -474,26 +474,26 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 			GLOB.PDA_Manifest.Cut()
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if((R.fields["name"] == to_despawn.real_name))
-				qdel(R)
+				spent(R)
 		for(var/datum/data/record/T in GLOB.data_core.security)
 			if((T.fields["name"] == to_despawn.real_name))
-				qdel(T)
+				spent(T)
 		for(var/datum/data/record/G in GLOB.data_core.general)
 			if((G.fields["name"] == to_despawn.real_name))
-				qdel(G)
+				spent(G)
 
 		// Also check the hidden version of each datacore, if they're an offmap role.
 		var/datum/job/J = SSjob.get_job(job)
 		if(J?.offmap_spawn)
 			for(var/datum/data/record/R in GLOB.data_core.hidden_general)
 				if((R.fields["name"] == to_despawn.real_name))
-					qdel(R)
+					spent(R)
 			for(var/datum/data/record/T in GLOB.data_core.hidden_security)
 				if((T.fields["name"] == to_despawn.real_name))
-					qdel(T)
+					spent(T)
 			for(var/datum/data/record/G in GLOB.data_core.hidden_medical)
 				if((G.fields["name"] == to_despawn.real_name))
-					qdel(G)
+					spent(G)
 
 		icon_state = base_icon_state
 
@@ -528,7 +528,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	to_despawn.ckey = null
 
 	// Delete the mob.
-	qdel(to_despawn)
+	spent(to_despawn)
 	set_occupant(null)
 
 /obj/machinery/cryopod/declare_interactions(list/into)
@@ -837,7 +837,7 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 
 	// Log to harrass them later
 	log_game("CRYO [loaded_from_key]/([to_despawn.name]) cryo'd with [item_name] ([item.type])")
-	qdel(item)
+	spent(item)
 
 	if(control_computer() && control_computer().allow_items)
 		var/obj/machinery/computer/cryopod/log_console = control_computer()

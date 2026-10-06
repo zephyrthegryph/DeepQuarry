@@ -30,16 +30,12 @@
 		else
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " presses the lift button."))
 
-// ALLOW(init/CTOR_ARGS): _lift is a constructor argument from whoever builds it
-/obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
-	. = ..()
-	rel_set(src, nameof(lift), _lift)
-
 /obj/structure/lift
 	silicon_use = SILICON_USE_HAND
 
 CAPABILITIES(/obj/structure/lift)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	param(nameof(lift), pos = 1)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/lift/proc/smashed_by(datum/act/hit/generic/A)

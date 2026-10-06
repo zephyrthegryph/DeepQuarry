@@ -46,7 +46,7 @@ CAPABILITIES(/datum/pipeline)
 	// line a share of the gas it is about to store back into its pipes.
 	for(var/datum/pipe_network/membership as anything in network_memberships?.Copy())
 		rel_remove(src, nameof(network_memberships), membership)
-	qdel(network)
+	spent(network)
 
 	if(air && air.return_volume())
 		temporarily_store_air()
@@ -64,7 +64,7 @@ CAPABILITIES(/datum/pipeline)
 			needs_followup = TRUE
 		if(!member.check_pressure(pressure))
 			break
-	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
+	if(needs_followup && !after_left(src, "engineered_exposure_timer"))
 		after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure), key = "engineered_exposure_timer")
 
 /// The engineered pipes still had work: the network runs its engineered-material pass again.
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/pipeline)
 			// A pipe being destroyed (its unbind destroys this line) can't adopt a new
 			// mixture: its share goes straight back to the room.
 			member.loc?.assume_air(share)
-			qdel(share)
+			spent(share)
 			continue
 		rel_set(member, nameof(member.air_temporary), share)
 

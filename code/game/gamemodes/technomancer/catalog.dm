@@ -303,7 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 								to_chat(user, span_notice("[spell.name] was inside \the [core], and was refunded."))
 								core.remove_spell(spell)
 								break
-				qdel(AM)
+				consumed(AM, src)
 				return INTERACTION_HANDLED_PASS
 	to_chat(user, span_warning("\The [src] is unable to refund \the [AM]."))
 	return INTERACTION_HANDLED_PASS

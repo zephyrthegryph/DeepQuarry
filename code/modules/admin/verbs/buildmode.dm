@@ -22,7 +22,7 @@
 			M.plane_holder.set_vis(VIS_BUILDMODE, FALSE)
 			for(var/obj/effect/bmode/buildholder/H in REGISTRY_MEMBERS(REGISTRY_BUILDMODE_HOLDERS))
 				if(H.cl() == M.client)
-					qdel(H)
+					spent(H, M)
 		else
 			log_admin("[key_name(M)] entered build mode.")
 			M.client.buildmode = 1
@@ -84,8 +84,12 @@
 	icon_state = "buildhelp"
 	screen_loc = "NORTH,WEST+1"
 
-/obj/effect/bmode/buildhelp/Click()
-	return show_help_with_actor(usr) // ALLOW(sys_usr_outside_verb): native buildmode help Click supplies its initiating actor without parent routing
+CAPABILITIES(/obj/effect/bmode/buildhelp)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/bmode/buildhelp/proc/click_input(datum/act/input/A)
+	return show_help_with_actor(A.actor)
 
 /obj/effect/bmode/buildhelp/proc/show_help_with_actor(mob/user)
 	switch(master().cl().buildmode)
@@ -283,8 +287,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	var/new_light_range = 3
 	var/new_light_intensity = 3
 
-/obj/effect/bmode/buildmode/Click(location, control, params)
-	return configure_with_actor(usr, params) // ALLOW(sys_usr_outside_verb): native buildmode configuration Click supplies its initiating actor and unchanged mouse parameters
+CAPABILITIES(/obj/effect/bmode/buildmode)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/bmode/buildmode/proc/click_input(datum/act/input/A)
+	return configure_with_actor(A.actor, A.params)
 
 /obj/effect/bmode/buildmode/proc/configure_with_actor(mob/user, params)
 	var/list/pa = params2list(params)
@@ -371,7 +379,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					return
 				else if(istype(object,/obj))
 					log_admin("[key_name(user)] qdel'd [object].")
-					qdel(object)
+					spent(object, user)
 					return
 			else if(istype(object,/turf) && pa.Find("alt") && pa.Find("left"))
 				var/obj/new_door = new /obj/machinery/door/airlock(get_turf(object))
@@ -412,7 +420,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			else if(pa.Find("right") && !pa.Find("alt"))
 				if(isobj(object))
 					log_admin("BUILDMODE: [key_name(user)] qdel'd [object].")
-					qdel(object)
+					spent(object, user)
 			else if(pa.Find("ctrl"))
 				holder.buildmode.objholder = object.type
 				to_chat(user, span_notice("[object]([object.type]) copied to buildmode."))

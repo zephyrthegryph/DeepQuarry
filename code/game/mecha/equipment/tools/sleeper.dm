@@ -155,7 +155,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	data["health_percent"] = round(occupant.vitality()*100)
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 	data["diagnosis"] = D?.report_data()
-	qdel(D)
+	spent(D)
 	data["body_temp_c"] = round(occupant.body_temperature() - T0C, 0.1)
 	data["body_temp_f"] = round(occupant.body_temperature() * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	if(D)
 		text += D.render_chat()
 		text += "<br />"
-		qdel(D)
+		spent(D)
 
 	return text
 

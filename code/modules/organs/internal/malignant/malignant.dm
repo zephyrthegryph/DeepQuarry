@@ -71,7 +71,7 @@
 		return TRUE
 
 	// welp, clean up.
-	qdel(neworgan)
+	spent(neworgan)
 	return FALSE
 
 
@@ -350,7 +350,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	if(!turf_clear(T))
 		T = get_turf(src)
 	new /obj/effect/decal/cleanable/confetti(T)
-	qdel(src)
+	spent(src)
 */
 
 
@@ -527,7 +527,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 		thalers -= 1
 		spawn_money(1, T)
 
-	qdel(src)
+	spent(src)
 */
 
 
@@ -616,10 +616,8 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 	var/chem_target = null
 	supply_conversion_value = 0
 
-// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
-/obj/item/organ/internal/malignant/engineered/lattice/Initialize(mapload, internal, force_location = null, forcetag = null)
-	growth_trigger = rand(150,200)
-	return ..(mapload, internal, force_location, forcetag)
+CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
+	rolls(nameof(growth_trigger), range_of(150, 200))
 
 /obj/item/organ/internal/malignant/engineered/lattice/organ_tick(cycles)
 	. = ..()
@@ -641,8 +639,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 					var/ourowner = owner
 					var/ourloc = parent_organ
 					var/ourtag = organ_tag
-					// ALLOW(lifecycle): the lattice makes way for the organ it mutates into
-					qdel(src)
+					spent(src)
 					new newpath(ourowner, TRUE, ourloc, ourtag)
 			cooldown = rand(2,5)
 		else

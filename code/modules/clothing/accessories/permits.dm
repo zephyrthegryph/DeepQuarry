@@ -28,8 +28,8 @@ CAPABILITIES(/obj/item/clothing/accessory/permit)
 /obj/item/clothing/accessory/permit/proc/set_name(new_name)
 	set_owner(TRUE)
 	if(new_name)
-		src.name += " ([new_name])"
-		desc += " It belongs to [new_name]."
+		src.name = "[initial(name)] ([new_name])"
+		desc = "[initial(desc)] It belongs to [new_name]."
 
 /obj/item/clothing/accessory/permit/proc/naming_reset(datum/act/op/A)
 	set_owner(FALSE)

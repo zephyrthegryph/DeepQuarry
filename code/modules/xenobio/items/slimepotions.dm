@@ -513,7 +513,7 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
 		s.set_up(3, 3, location)
 		s.start()
-		qdel(M)
+		consumed(M, src)
 		consume(src, user)
 		return ITEM_INTERACT_SUCCESS
 	return FALSE

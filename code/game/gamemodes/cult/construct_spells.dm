@@ -543,7 +543,7 @@
 
 /obj/item/spell/construct/projectile/proc/shot_unmark(datum/om/task/timed/construct_shot/task)
 	task.marked?.cut_overlay(task.marker)
-	qdel(task.marker)
+	spent(task.marker)
 
 /obj/item/spell/construct/projectile/proc/shot_charged(datum/om/task/timed/construct_shot/task)
 	shot_unmark(task)
@@ -710,8 +710,7 @@
 	var/attack_message = task.attack_message
 	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
-	// ALLOW(lifecycle): the slam spell is spent once the wall is torn down
-	qdel(src)
+	spent(src)
 
 
 ////////////////////////////

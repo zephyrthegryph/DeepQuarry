@@ -1,10 +1,8 @@
 /obj/item/reagent_containers/food/snacks/grown/sif
 	var/seeds = 0
 
-// ALLOW(init/INSTANCE_STATE): seeds rolled at random for each instance
-/obj/item/reagent_containers/food/snacks/grown/sif/Initialize(mapload) // Wild Sifplants have some seeds you can extract with a knife.
-	. = ..()
-	seeds = rand(1, 2)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown/sif)
+	rolls(nameof(seeds), range_of(1, 2))
 
 /obj/item/reagent_containers/food/snacks/grown/sif/examine(mob/user)
 	. = ..()

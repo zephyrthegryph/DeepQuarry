@@ -781,7 +781,7 @@
 
 /proc/flick_overlay_end(image/I, list/show_to, gc_after)
 	if(gc_after)
-		qdel(I)
+		spent(I)
 	for(var/client/C in show_to)
 		C.images -= I
 

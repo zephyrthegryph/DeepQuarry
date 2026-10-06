@@ -66,7 +66,8 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock, TYPE_PROC_REF(/atom, app
 	appearance_notify_neighbours("[type]|[density]", /turf/simulated/wall/solidrock)
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/wall/solidrock)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
 /turf/simulated/wall/solidrock
 	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF

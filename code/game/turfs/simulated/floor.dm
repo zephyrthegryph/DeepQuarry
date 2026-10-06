@@ -70,7 +70,7 @@
 	cut_overlays()
 
 	for(var/obj/effect/decal/writing/W in turf_contents_of_type(src, /obj/effect/decal/writing))
-		qdel(W)
+		spent(W)
 
 	name = base_name
 	desc = base_desc

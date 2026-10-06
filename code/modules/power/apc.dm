@@ -304,7 +304,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(user && terminal && prob(50) && electrocute_mob(user, terminal.power_region, terminal))
 		fx_sparks(src, 5)
 	if(terminal)
-		qdel(terminal)
+		spent(terminal)
 	return OP_OK
 
 /// STAT_OPERABLE: the build is finished (its last stage, the electronics fastened). An unfinished frame does not run.

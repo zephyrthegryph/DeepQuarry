@@ -6,15 +6,12 @@
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 
-// ALLOW(init/CTOR_ARGS): text and target are constructor arguments from whoever builds it
-/obj/effect/statclick/Initialize(mapload, text, target)
-	. = ..()
-	name = text
-	src.target = target
+CAPABILITIES(/obj/effect/statclick)
+	param(nameof(name), pos = 1)
+	param(nameof(target), pos = 2)
 
 /obj/effect/statclick/proc/cleanup()
-	// ALLOW(lifecycle): the stat panel link is dropped when its panel entry is cleared
-	qdel(src)
+	spent(src)
 
 /obj/effect/statclick/proc/update(text)
 	name = text
@@ -72,7 +69,13 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 	//Goon PS stuff, and other yet-to-be-subsystem things.
 	options["LEGACY: cameranet"] = GLOB.cameranet
 
-	var/pick = verb_ask(user, "pick", args, /datum/om/prompt/choice, message = "Choose a controller to debug/view variables of.", title = "VV controller:", choices = options)
+	var/pick
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	if(istype(resumed, /datum/prompt/choice/admin_debug_controller) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(debug_controller_answered))
+		pick = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_debug_controller, PROC_REF(debug_controller_answered), answerer = user.mob, question = "Choose a controller to debug/view variables of.", title = "VV controller:", choices = options)
+		return
 	if(!pick)
 		return
 	var/datum/D = options[pick]
@@ -81,3 +84,29 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 	feedback_add_details("admin_verb", "DebugController")
 	message_admins("Admin [key_name_admin(user)] is debugging the [pick] controller.")
 	user.debug_variables(D)
+
+
+/datum/prompt/choice/admin_debug_controller
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_debug_controller/normalize(given)
+	return given
+
+/datum/prompt/choice/admin_debug_controller/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_debug_controller/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/debug_controller/proc/debug_controller_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

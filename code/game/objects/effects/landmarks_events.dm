@@ -42,7 +42,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 /// Keep the original unfinished-landmark cleanup, including a fault in any full step.
 /obj/effect/landmark/event_trigger/proc/discard_setup()
 	var/obj/effect/landmark/event_trigger/target = src
-	qdel(target)
+	spent(target)
 
 /obj/effect/landmark/event_trigger/proc/setup_step_checked(mob/M, list/state, answer, opening = FALSE)
 	try

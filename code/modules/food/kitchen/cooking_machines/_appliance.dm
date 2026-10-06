@@ -49,6 +49,13 @@ CAPABILITIES(/obj/machinery/appliance)
 	// the AI's ctrl-click switches it on or off over its link
 	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle power"),
 		wait(0), then(PROC_REF(remote_power)))
+	interface(null, window_var = nameof(tgui_id))
+	without("ui_open")
+	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
+	op("toggle_safety", ui_act("toggle_safety"), then(PROC_REF(ui_act_toggle_safety)))
+	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
+	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
+	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
 
 /// Whether or not the machine is currently operating (cooking its contents).
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
@@ -63,9 +70,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 // cooking food and its containers go with the machine.
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
-		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
+		destroyed(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
 		own_take_member(src, nameof(cooking_objs), CI)
-		qdel(CI)
+		destroyed(CI)
 	..()
 
 /obj/machinery/appliance/examine(mob/user)
@@ -562,10 +569,10 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			S.reagents.trans_to_holder(buffer, S.reagents.total_volume)
 		//Cleanup these empty husk ingredients now
 		if (I)
-			qdel(I)
+			spent(I)
 			CI.container().food_items--
 		if(S && !QDELETED(S)) //Incase I = S up there.
-			qdel(S)
+			spent(S)
 			CI.container().food_items--
 
 	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
@@ -659,9 +666,15 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		return TRUE
 	return FALSE
 
-DECLARE_UI(/obj/machinery/appliance, UI_FROM_VAR("tgui_id"))
-
-UI_DATA(/obj/machinery/appliance, "safety=food_safety", "selected_option", "merge:ui_data_obj_machinery_appliance{on:bool,containersRemovable:unknown,output_options:bool,our_contents:list}")
+/obj/machinery/appliance/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["safety"] = food_safety
+	data["selected_option"] = selected_option
+	var/list/merged_1 = ui_data_obj_machinery_appliance(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/appliance's window data (declared on its UI_DATA row).
 /obj/machinery/appliance/proc/ui_data_obj_machinery_appliance(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -691,40 +704,40 @@ UI_DATA(/obj/machinery/appliance, "safety=food_safety", "selected_option", "merg
 
 	return data
 
-UI_ACT(/obj/machinery/appliance, "toggle_power", ui_act_toggle_power)
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_toggle_power)
-	attempt_toggle_power(ui.user)
+/obj/machinery/appliance/proc/ui_act_toggle_power(datum/act/op/A)
+	var/mob/user = A.actor
+	attempt_toggle_power(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "toggle_safety", ui_act_toggle_safety)
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_toggle_safety)
-	toggle_safety(ui.user)
+/obj/machinery/appliance/proc/ui_act_toggle_safety(datum/act/op/A)
+	var/mob/user = A.actor
+	toggle_safety(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "change_output", ui_act_change_output, UI_ARG_VALUE("value"))
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_change_output)
-	choose_output(ui.user, params["value"])
+/obj/machinery/appliance/proc/ui_act_change_output(datum/act/op/A, value)
+	var/mob/user = A.actor
+	choose_output(user, value)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "slot", ui_act_slot, UI_ARG_NUM("slot"))
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_slot)
-	var/slot = params["slot"]
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/machinery/appliance/proc/ui_act_slot(datum/act/op/A, slot_arg)
+	var/mob/user = A.actor
+	var/slot = slot_arg
+	var/obj/item/I = user.get_active_hand()
 	if(slot <= LAZYLEN(cooking_objs)) // Inserting
 		var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, slot)
 
 		if(istype(I) && can_insert(I)) // Why do hard work when we can just make them smack us?
-			attackby(I, ui.user)
-		else if(istype(CI) && can_remove_items(ui.user))
-			eject(CI, ui.user)
+			attackby(I, user)
+		else if(istype(CI) && can_remove_items(user))
+			eject(CI, user)
 		return TRUE
 	if(istype(I)) // Why do hard work when we can just make them smack us?
-		attackby(I, ui.user)
+		attackby(I, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "remove_menu", ui_act_remove_menu)
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
-	removal_menu(ui.user)
+/obj/machinery/appliance/proc/ui_act_remove_menu(datum/act/op/A)
+	var/mob/user = A.actor
+	removal_menu(user)
 	return TRUE
 
 /obj/machinery/appliance/proc/removal_menu(mob/user)
@@ -777,7 +790,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 
 	if (delete)
 		own_take_member(src, nameof(cooking_objs), CI)
-		qdel(CI)
+		spent(CI, user)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside
 
@@ -834,7 +847,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)
 	if (!istype(H) || !H.held_mob)
-		qdel(H)
+		consumed(H)
 		return null
 	var/mob/living/victim = H.held_mob
 	if (victim.stat != DEAD)
@@ -862,9 +875,9 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 
 	// all done, now delete the old objects
 	rel_clear(H, nameof(H.held_mob))
-	qdel(victim)
+	consumed(victim, H)
 	victim = null
-	qdel(H)
+	consumed(H)
 	H = null
 
 	return result

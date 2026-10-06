@@ -143,8 +143,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold, TYPE_PROC_REF
 				break
 
 	if(!node1 && !node2 && !node3)
-		// ALLOW(lifecycle): a manifold that connects to nothing is removed at setup
-		qdel(src)
+		spent(src)
 		return
 
 	var/turf/T = get_turf(src)

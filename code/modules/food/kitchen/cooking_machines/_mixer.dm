@@ -91,7 +91,10 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 		return 1
 	return 0
 
-UI_DATA(/obj/machinery/appliance/mixer, "icon_used=off_icon:text")
+/obj/machinery/appliance/mixer/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["icon_used"] = off_icon
+	return data
 
 /// Requirement: something in the bowl to mix.
 /obj/machinery/appliance/mixer/can_toggle_power_verb(mob/user, atom/target, obj/item/held)

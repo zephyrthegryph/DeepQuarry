@@ -139,7 +139,7 @@
 		f.dirt = 0
 	if(!D)
 		return
-	qdel(D)
+	spent(D)
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
 			"department" = DEPARTMENT_CIVILIAN,
@@ -169,7 +169,7 @@
 		T.dirt = 0
 	for(var/obj/effect/O in contents_of(loc))
 		if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
-			qdel(O)
+			spent(O)
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
 			"department" = DEPARTMENT_CIVILIAN,

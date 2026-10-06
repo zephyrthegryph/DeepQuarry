@@ -138,8 +138,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/
 			break
 
 	if(!node1 && !node2)
-		// ALLOW(lifecycle): a pipe that connects to nothing on either end is removed at setup
-		qdel(src)
+		spent(src)
 		return
 
 	var/turf/T = loc

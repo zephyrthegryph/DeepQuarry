@@ -112,7 +112,8 @@
 	. = ..()
 	set_light(light_range, -20, "#FFFFFF")
 
-DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
+CAPABILITIES(/obj/structure/prop/dark_node)
+	every(2 SECONDS, then(PROC_REF(dark_node_step)))
 
 // its dark tiles unlink and wither.
 /obj/structure/prop/dark_node/on_destroy(force)
@@ -153,7 +154,7 @@ CAPABILITIES(/obj/effect/dark)
 				continue
 			// its Initialize linked it (the pair adds it to children_effects)
 
-/obj/structure/prop/dark_node/periodic_step()
+/obj/structure/prop/dark_node/proc/dark_node_step(datum/act/timer/A)
 	//set background = 1
 
 	if(!(locate_within(get_turf(src), /obj/effect/dark)))

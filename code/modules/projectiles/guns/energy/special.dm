@@ -327,7 +327,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	var/click_empty = task.click_empty
 	var/datum/beam = beam_holder[1]
 	if(beam && !QDELETED(beam))
-		qdel(beam)
+		spent(beam)
 	if(click_empty && user)
 		handle_click_empty(user)
 	power_cycle = FALSE

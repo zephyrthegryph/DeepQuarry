@@ -59,7 +59,8 @@ impl Generator for UiTypes {
                 match fname {
                     "interface" => {
                         let parts = split_top(body);
-                        if let Some(first) = parts.first() {
+                        // A window named by a var of the host (window_var =, each subtype its own) has no name to type here.
+                        if let Some(first) = parts.first().filter(|f| f.trim().starts_with('"')) {
                             window_name = Some(first.trim().trim_matches('"').to_string());
                         }
                         forwards = parts.iter().skip(1).any(|p| p.trim_start().starts_with("forwards"));

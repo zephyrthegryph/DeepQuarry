@@ -46,7 +46,7 @@
 /datum/stored_item/on_destroy(force)
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)
-			qdel(product)
+			destroyed(product)
 	rel_clear(src, nameof(instances))
 	stored = null
 	..()
@@ -104,7 +104,7 @@
 	else if(hash != dq_stock_pristine_hash(item_path, variant))
 		return FALSE
 	amount += collapse_units(product)
-	qdel(product)
+	destroyed(product)
 	return TRUE
 
 /// Latent units one collapsed product adds.
@@ -136,7 +136,7 @@
 	if(!sample)
 		return null
 	. = sample.vars[var_name]
-	qdel(sample)
+	spent(sample)
 
 /// The holder calls this when a thing leaves its stock slot some other way.
 /datum/stored_item/proc/forget(atom/movable/thing)

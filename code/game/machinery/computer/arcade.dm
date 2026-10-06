@@ -1076,8 +1076,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		if(3)
 			src.visible_message(span_danger("[src] explodes!"))
 			explosion(src.loc, 1,2,4)
-			// ALLOW(lifecycle): the toy ship blows up at the end of its countdown
-			qdel(src)
+			spent(src)
 
 #undef ORION_TRAIL_WINTURN
 #undef ORION_TRAIL_RAIDERS

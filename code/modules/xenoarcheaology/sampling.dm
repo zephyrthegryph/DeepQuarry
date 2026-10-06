@@ -12,12 +12,12 @@
 
 CAPABILITIES(/obj/item/rocksliver)
 	owns_one(nameof(geological_data_static), /datum/geosample)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
-// ALLOW(init/INSTANCE_STATE): icon_state and its pixel offset rolled at random for each instance
-/obj/item/rocksliver/Initialize(mapload)
-	. = ..()
-	icon_state = "sliver[rand(1, 3)]"
-	randpixel_xy()
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/rocksliver/proc/roll_icon_state(datum/roller/R)
+	return "sliver[R.number(1, 3)]"
 
 /datum/geosample
 	var/age = 0

@@ -30,6 +30,18 @@
 CAPABILITIES(/obj/machinery/lapvend)
 	owns_one(nameof(fabricated_laptop), /obj/item/modular_computer/laptop)
 	owns_one(nameof(fabricated_tablet), /obj/item/modular_computer/tablet)
+	interface("ComputerFabricator")
+	without("ui_open")
+	op("pick_device", ui_act("pick_device", arg("pick", num())), then(PROC_REF(ui_act_pick_device)))
+	op("clean_order", ui_act("clean_order"), then(PROC_REF(ui_act_clean_order)))
+	op("confirm_order", ui_act("confirm_order"), then(PROC_REF(ui_act_confirm_order)))
+	op("hw_cpu", ui_act("hw_cpu", arg("cpu", num())), then(PROC_REF(ui_act_hw_cpu)))
+	op("hw_battery", ui_act("hw_battery", arg("battery", num())), then(PROC_REF(ui_act_hw_battery)))
+	op("hw_disk", ui_act("hw_disk", arg("disk", num())), then(PROC_REF(ui_act_hw_disk)))
+	op("hw_netcard", ui_act("hw_netcard", arg("netcard", num())), then(PROC_REF(ui_act_hw_netcard)))
+	op("hw_tesla", ui_act("hw_tesla", arg("tesla", num())), then(PROC_REF(ui_act_hw_tesla)))
+	op("hw_nanoprint", ui_act("hw_nanoprint", arg("print", num())), then(PROC_REF(ui_act_hw_nanoprint)))
+	op("hw_card", ui_act("hw_card", arg("card", num())), then(PROC_REF(ui_act_hw_card)))
 
 // Removes all traces of old order and allows you to begin configuration from scratch.
 /obj/machinery/lapvend/proc/reset_order()
@@ -160,81 +172,71 @@ CAPABILITIES(/obj/machinery/lapvend)
 		return total_price
 	return 0
 
-UI_ACT(/obj/machinery/lapvend, "pick_device", ui_act_pick_device, UI_ARG_NUM("pick"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_pick_device)
+/obj/machinery/lapvend/proc/ui_act_pick_device(datum/act/op/A, pick)
 	if(state) // We've already picked a device type
 		return FALSE
-	devtype = params["pick"]
+	devtype = pick
 	set_state(1)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "clean_order", ui_act_clean_order)
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_clean_order)
+/obj/machinery/lapvend/proc/ui_act_clean_order(datum/act/op/A)
 	reset_order()
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "confirm_order", ui_act_confirm_order)
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_confirm_order)
+/obj/machinery/lapvend/proc/ui_act_confirm_order(datum/act/op/A)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
 	set_state(2) // Wait for ID swipe for payment processing
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_cpu", ui_act_hw_cpu, UI_ARG_NUM("cpu"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_cpu)
+/obj/machinery/lapvend/proc/ui_act_hw_cpu(datum/act/op/A, cpu)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_cpu = params["cpu"]
+	dev_cpu = cpu
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_battery", ui_act_hw_battery, UI_ARG_NUM("battery"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_battery)
+/obj/machinery/lapvend/proc/ui_act_hw_battery(datum/act/op/A, battery)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_battery = params["battery"]
+	dev_battery = battery
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_disk", ui_act_hw_disk, UI_ARG_NUM("disk"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_disk)
+/obj/machinery/lapvend/proc/ui_act_hw_disk(datum/act/op/A, disk)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_disk = params["disk"]
+	dev_disk = disk
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_netcard", ui_act_hw_netcard, UI_ARG_NUM("netcard"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_netcard)
+/obj/machinery/lapvend/proc/ui_act_hw_netcard(datum/act/op/A, netcard)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_netcard = params["netcard"]
+	dev_netcard = netcard
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_tesla", ui_act_hw_tesla, UI_ARG_NUM("tesla"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_tesla)
+/obj/machinery/lapvend/proc/ui_act_hw_tesla(datum/act/op/A, tesla)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_tesla = params["tesla"]
+	dev_tesla = tesla
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_nanoprint", ui_act_hw_nanoprint, UI_ARG_NUM("print"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_nanoprint)
+/obj/machinery/lapvend/proc/ui_act_hw_nanoprint(datum/act/op/A, print)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_nanoprint = params["print"]
+	dev_nanoprint = print
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_card", ui_act_hw_card, UI_ARG_NUM("card"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_card)
+/obj/machinery/lapvend/proc/ui_act_hw_card(datum/act/op/A, card)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_card = params["card"]
+	dev_card = card
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
@@ -247,18 +249,14 @@ UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_card)
 	)
 	..()
 
-DECLARE_UI(/obj/machinery/lapvend, "ComputerFabricator")
-
 /obj/machinery/lapvend/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
 		return FALSE
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{state:num,devtype:num,hw_battery:num,hw_disk:num,hw_netcard:num,hw_tesla:num,hw_nanoprint:num,hw_card:num,hw_cpu:num,totalprice:num}")
-
 /// The computed part of /obj/machinery/lapvend's window data (declared on its UI_DATA row).
-/obj/machinery/lapvend/proc/ui_data_obj_machinery_lapvend(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/lapvend/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["state"] = state

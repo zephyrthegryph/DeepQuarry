@@ -46,7 +46,7 @@ ADMIN_VERB(simple_DPS, R_DEBUG, "Simple DPS", "Gives a really basic idea of how 
 
 		weapon_damage = P.damage
 		weapon_attack_speed = G.fire_delay / 10
-		qdel(P)
+		spent(P)
 
 	var/DPS = weapon_damage / weapon_attack_speed
 	to_chat(user, span_notice("Damage: [weapon_damage][modified_damage_percent != 1 ? " (Modified by [modified_damage_percent*100]%)":""]"))
@@ -207,7 +207,7 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 	if(hsbitem)
 		for(var/atom/O in world)
 			if(istype(O, hsbitem))
-				qdel(O)
+				spent(O)
 		log_admin("[key_name(user)] has deleted all instances of [hsbitem].")
 		message_admins("[key_name_admin(user)] has deleted all instances of [hsbitem].", 0)
 	feedback_add_details("admin_verb","DELA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -330,7 +330,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 	var/mob/adminmob = user.mob
 	M.ckey = user.ckey
 	if( isobserver(adminmob) )
-		qdel(adminmob)
+		consumed(adminmob, src)
 	feedback_add_details("admin_verb","ADC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(take_picture, R_DEBUG, "Save PNG", "Opens a dialog to save a PNG of any object in the game.", ADMIN_CATEGORY_DEBUG_MISC, atom/selected_atom in world)
@@ -515,11 +515,11 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 		TC.update_icon()
 	for(var/obj/structure/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
-		PA.construction_state = 3
+		graph_place(PA, STAGE_PA_CLOSED)
 		PA.update_icon()
 	for(var/obj/machinery/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
-		PA.construction_state = 3
+		graph_place(PA, STAGE_PA_CLOSED)
 		PA.update_icon()
 
 	// /obj/machinery/power/rad_collector was deleted with the ZAS power

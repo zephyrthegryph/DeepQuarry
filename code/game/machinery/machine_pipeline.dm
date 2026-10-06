@@ -18,11 +18,6 @@
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
 		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
-		/obj/machinery/atmospherics/binary/algae_farm,
-		/obj/machinery/atmospherics/pipeturbine,
-		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
-		/obj/machinery/power/turbinemotor,
-		/obj/machinery/power/thermoregulator,
 		/obj/machinery/air_sensor,
 		/obj/machinery/computer/general_air_control/fuel_injection,
 		/obj/machinery/portable_atmospherics/hydroponics,
@@ -66,7 +61,6 @@
 		/obj/machinery/embedded_controller,
 		/obj/machinery/exonet_node,
 		/obj/machinery/feeder,
-		/obj/machinery/field_generator,
 		/obj/machinery/floodlight,
 		/obj/machinery/floor_light,
 		/obj/machinery/food_replicator,
@@ -89,16 +83,13 @@
 		/obj/machinery/optable,
 		/obj/machinery/oxygen_pump,
 		/obj/machinery/paradoxrift,
-		/obj/machinery/particle_accelerator/control_box,
 		/obj/machinery/particle_smasher,
 		/obj/machinery/partslathe,
 		/obj/machinery/pda_multicaster,
 		/obj/machinery/pointdefense,
 		/obj/machinery/power/debug_items/infinite_cable_powersink,
 		/obj/machinery/power/debug_items/infinite_generator,
-		/obj/machinery/power/emitter,
 		/obj/machinery/power/fusion_core,
-		/obj/machinery/power/generator,
 		/obj/machinery/power/hydromagnetic_trap,
 		/obj/machinery/power/port_gen,
 		/obj/machinery/power/rtg,
@@ -106,7 +97,6 @@
 		/obj/machinery/power/shield_generator,
 		/obj/machinery/power/singularity_beacon,
 		/obj/machinery/power/solar_control,
-		/obj/machinery/power/supermatter,
 		/obj/machinery/power/supply_beacon,
 		/obj/machinery/power/turbine,
 		/obj/machinery/pump,
@@ -132,7 +122,6 @@
 		/obj/machinery/suit_cycler,
 		/obj/machinery/suspension_gen,
 		/obj/machinery/telecomms,
-		/obj/machinery/the_singularitygen,
 		/obj/machinery/transhuman/synthprinter,
 		/obj/machinery/v_garbosystem,
 		/obj/machinery/vending,
@@ -401,12 +390,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// with work and no armed watch is a lost wake, which the OM audit reports.
 /datum/om/stage/machine/power/step/idle(obj/machinery/M)
 	return om_watch_armed(M) || !M.step_has_work()
-
-/datum/om/stage/machine/power/step/turbinemotor
-	of = /obj/machinery/power/turbinemotor
-
-/datum/om/stage/machine/power/step/thermoregulator
-	of = /obj/machinery/power/thermoregulator
 
 /datum/om/stage/machine/power/step/air_sensor
 	of = /obj/machinery/air_sensor

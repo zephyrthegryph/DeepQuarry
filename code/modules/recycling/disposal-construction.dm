@@ -307,8 +307,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 		var/obj/machinery/disposal/deliveryChute/P = new(src.loc)
 		transfer_fingerprints_to(P)
 		P.set_dir(dir)
-	// ALLOW(lifecycle): the construct is welded into the disposal part built from it
-	qdel(src)
+	destroyed(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalconstruct/hides_under_flooring()

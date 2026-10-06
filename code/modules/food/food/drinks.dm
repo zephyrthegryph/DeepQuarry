@@ -27,11 +27,9 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-// ALLOW(init/INSTANCE_STATE): cant_open rolled at random for each instance
-/obj/item/reagent_containers/food/drinks/Initialize(mapload)
-	. = ..()
-	if (prob(cant_chance))
-		cant_open = TRUE
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/drinks/proc/roll_cant_open(datum/roller/R)
+	return R.chance(cant_chance) ? TRUE : cant_open
 
 /obj/item/reagent_containers/food/drinks/on_reagent_change()
 	if (reagents.reagent_list.len > 0)
@@ -71,6 +69,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 	op("open", in_hand(), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand)))
 	extend("reagent_container.drink", then(PROC_REF(sipped)))
 	extend("reagent_container.feed", begins(PROC_REF(feeding_begins)), then(PROC_REF(sipped)))
+	rolls(nameof(cant_open), PROC_REF(roll_cant_open))
 
 /// Used in hand while it is shut: it is opened (or found to have no ring pull).
 /obj/item/reagent_containers/food/drinks/proc/opened_in_hand(datum/act/op/A)

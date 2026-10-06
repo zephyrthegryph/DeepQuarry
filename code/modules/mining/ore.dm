@@ -9,6 +9,7 @@
 
 CAPABILITIES(/obj/item/ore)
 	owns_one(nameof(geologic_data), /datum/geosample)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /obj/item/ore/archeology_debris
 	name = "rocky debris"
@@ -161,11 +162,6 @@ CAPABILITIES(/obj/item/ore)
 	desc = "Someone screwed up..."
 	icon_state = "slag"
 	material = null
-
-// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-/obj/item/ore/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
 
 DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

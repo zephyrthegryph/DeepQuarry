@@ -205,16 +205,6 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 
 	return node.pipe_color
 
-/obj/machinery/atmospherics/machine_step()
-	if(being_loaded)
-		return
-	last_flow_rate = 0
-	last_power_draw = 0
-	// Nothing to do at this level: park. Subtypes with work call ..() for the resets above and
-	// return their own verdict. Returning null here kept every plain pipe (~9k on Southern Cross)
-	// step_active forever once anything woke it, so the machine pipeline ran them all every frame.
-	return PROCESS_KILL
-
 /// Completion callback for deferred Rust gas transfers. Devices which queued a
 /// request must make their scheduling decision from the committed amount, not
 /// from the optimistic request calculated before shared-source clamping.
@@ -285,8 +275,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 			var/obj/item/pipe/trinary/flippable/flip = I
 			flip.icon_state = "[flip.icon_state][flip.mirrored ? "m" : ""]"
 		transfer_fingerprints_to(I)
-	// ALLOW(lifecycle): the deconstructed device leaves the pipe item built above in its place
-	qdel(src)
+	destroyed(src)
 
 // Return the neighboring nodes whose physical links must be refreshed during construction.
 /obj/machinery/atmospherics/proc/get_neighbor_nodes_for_init()

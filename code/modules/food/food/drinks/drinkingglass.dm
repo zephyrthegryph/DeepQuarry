@@ -141,10 +141,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/cola, nu
 	volume = 100
 	MATERIAL_BULK(MAT_PLASTIC, 2000)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/Initialize(mapload)
-	. = ..()
-	icon_state = pick("fitness-cup_black", "fitness-cup_red", "fitness-cup_black")
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask)
+	rolls(nameof(icon_state), pick_one(list("fitness-cup_black", "fitness-cup_red", "fitness-cup_black")))
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/on_reagent_change()
 	cut_overlays()

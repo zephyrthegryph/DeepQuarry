@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Temperature beams move body temperature toward their target in steps and apply insulation to the temperature change."
+  - bugfix: "Re-registering an emagged permit replaces the previous owner's name and description."

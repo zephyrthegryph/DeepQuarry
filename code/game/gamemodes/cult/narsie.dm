@@ -48,7 +48,8 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 		after(src, 10 SECONDS, /proc/narsie_call_evac)
 
-/obj/singularity/narsie/periodic_step()
+/// Nar-Sie's step (the singularity's every()): it eats, hunts a cultist and moves.
+/obj/singularity/narsie/singularity_frame(datum/act/timer/A)
 	eat()
 
 	if (!target || prob(5))
@@ -77,14 +78,17 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(isturf(A))
 		narsiewall(A)
 	else if(istype(A, /obj/structure/cult))
-		qdel(A)
+		destroyed(A)
 
-/obj/singularity/narsie/large/Bumped(atom/A)
-	if(!cause_hell) return
+/// What runs into the large one is walled in or broken (with hell coming), not consumed.
+/obj/singularity/narsie/large/bumped_into(datum/act/act)
+	var/datum/notice/bumped/N = act
+	var/atom/A = N.bumper
+	if(!cause_hell || !A) return
 	if(isturf(A))
 		narsiewall(A)
 	else if(istype(A, /obj/structure/cult))
-		qdel(A)
+		destroyed(A)
 
 /obj/singularity/narsie/move(force_move = 0)
 	if(!move_self)
@@ -192,10 +196,10 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		C2.dust() // Changed from gib(), just for less lag.
 
 	else if (istype(A, /obj/))
-		qdel(A)
+		spent(A)
 
 		if (A)
-			qdel(A)
+			spent(A)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 
@@ -224,10 +228,10 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		C2.dust() // Changed from gib(), just for less lag.
 
 	else if (istype(A, /obj/))
-		qdel(A)
+		consumed(A)
 
 		if (A)
-			qdel(A)
+			consumed(A)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 

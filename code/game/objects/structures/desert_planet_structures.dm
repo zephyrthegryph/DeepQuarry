@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/structure/prop/desert_rock/rock)
 	op("push", hand(), label("Push"), then(PROC_REF(interaction_push)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /obj/structure/prop/desert_rock/rock/proc/interaction_push(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -24,10 +25,9 @@ CAPABILITIES(/obj/structure/prop/desert_rock/rock)
 /obj/structure/prop/desert_rock/rock/proc/attack_hand_timed_done(movedir)
 	step(src, movedir)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/prop/desert_rock/rock/Initialize(mapload)
-	. = ..()
-	icon_state = "desert_rock[rand(0,6)]"
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/prop/desert_rock/rock/proc/roll_icon_state(datum/roller/R)
+	return "desert_rock[R.number(0, 6)]"
 
 /obj/structure/prop/desert_rock/pebble
 	name = "sandy pebble"
@@ -42,10 +42,12 @@ CAPABILITIES(/obj/structure/prop/desert_rock/rock)
 			M.status_at_least(EFFECT_WEAKENED, 2)
 			to_chat(M, "You trip over the [src]!")
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/prop/desert_rock/pebble/Initialize(mapload)
-	. = ..()
-	icon_state = "desert_pebble[rand(0,6)]"
+CAPABILITIES(/obj/structure/prop/desert_rock/pebble)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/prop/desert_rock/pebble/proc/roll_icon_state(datum/roller/R)
+	return "desert_pebble[R.number(0, 6)]"
 
 /obj/structure/prop/desert_rock/anthill
 	name = "ant hill"
@@ -53,10 +55,12 @@ CAPABILITIES(/obj/structure/prop/desert_rock/rock)
 	icon = 'icons/obj/desert_planet/desert_plants.dmi'
 	icon_state = "anthill0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/prop/desert_rock/anthill/Initialize(mapload)
-	. = ..()
-	icon_state = "anthill[rand(0,2)]"
+CAPABILITIES(/obj/structure/prop/desert_rock/anthill)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/prop/desert_rock/anthill/proc/roll_icon_state(datum/roller/R)
+	return "anthill[R.number(0, 2)]"
 
 /obj/structure/prop/desert_planet64x64
 	name = "large rock"
@@ -161,80 +165,96 @@ CAPABILITIES(/obj/structure/prop/desert_rock/rock)
 	desc = "Colloquially known as a pot plant."
 	icon_state = "potplant0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/potted_plant/Initialize(mapload)
-	. = ..()
-	icon_state = "potplant[rand(0,2)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/potted_plant)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/potted_plant/proc/roll_icon_state(datum/roller/R)
+	return "potplant[R.number(0, 2)]"
 
 /obj/structure/flora/desert_planet/thicket
 	name = "thicket"
 	desc = "Weedy growths."
 	icon_state = "thicket0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/thicket/Initialize(mapload)
-	. = ..()
-	icon_state = "thicket[rand(0,6)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/thicket)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/thicket/proc/roll_icon_state(datum/roller/R)
+	return "thicket[R.number(0, 6)]"
 
 /obj/structure/flora/desert_planet/shrub
 	name = "shrub"
 	desc = "Dense and weedy."
 	icon_state = "shrub0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/shrub/Initialize(mapload)
-	. = ..()
-	icon_state = "shrub[rand(0,5)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/shrub)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/shrub/proc/roll_icon_state(datum/roller/R)
+	return "shrub[R.number(0, 5)]"
 
 /obj/structure/flora/desert_planet/bush
 	name = "bush"
 	desc = "Denser and weedier."
 	icon_state = "bush0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/bush/Initialize(mapload)
-	. = ..()
-	icon_state = "bush[rand(0,5)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/bush)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/bush/proc/roll_icon_state(datum/roller/R)
+	return "bush[R.number(0, 5)]"
 
 /obj/structure/flora/desert_planet/barrelcacti
 	name = "barrel cacti"
 	desc = "Small, adorable, and begging for a hug."
 	icon_state = "barrelcacti0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/barrelcacti/Initialize(mapload)
-	. = ..()
-	icon_state = "barrelcacti[rand(0,3)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/barrelcacti)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/barrelcacti/proc/roll_icon_state(datum/roller/R)
+	return "barrelcacti[R.number(0, 3)]"
 
 /obj/structure/flora/desert_planet/palmy
 	name = "yucca bush"
 	desc = "Probably not actually a yucca."
 	icon_state = "palmy0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/palmy/Initialize(mapload)
-	. = ..()
-	icon_state = "palmy[rand(0,2)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/palmy)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/palmy/proc/roll_icon_state(datum/roller/R)
+	return "palmy[R.number(0, 2)]"
 
 /obj/structure/flora/desert_planet/shrubber
 	name = "thorny bush"
 	desc = "Makes for great fur accessories."
 	icon_state = "shrubber0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/shrubber/Initialize(mapload)
-	. = ..()
-	icon_state = "shrubber[rand(0,2)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/shrubber)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/shrubber/proc/roll_icon_state(datum/roller/R)
+	return "shrubber[R.number(0, 2)]"
 
 /obj/structure/flora/desert_planet/lbarrelcacti
 	name = "barrel cactus"
 	desc = "Absolutely begging for pets."
 	icon_state = "lbarrelcacti0"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/desert_planet/lbarrelcacti/Initialize(mapload)
-	. = ..()
-	icon_state = "lbarrelcacti[rand(0,2)]"
+CAPABILITIES(/obj/structure/flora/desert_planet/lbarrelcacti)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/desert_planet/lbarrelcacti/proc/roll_icon_state(datum/roller/R)
+	return "lbarrelcacti[R.number(0, 2)]"
 
 // Trees
 /obj/structure/flora/tree/desert_planet

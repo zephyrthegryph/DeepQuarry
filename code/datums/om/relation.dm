@@ -97,9 +97,9 @@
 		if(!QDELETED(source) && hascall(source, R.derived_view))
 			call(source, R.derived_view)()
 	if(deleting == source && R.on_source_delete == OM_END_DELETE_OTHER && !QDELETED(target))
-		qdel(target)
+		spent(target)
 	else if(deleting == target && R.on_target_delete == OM_END_DELETE_OTHER && !QDELETED(source))
-		qdel(source)
+		spent(source)
 
 /// Framework-maintained view vars and the list-undo list, on link.
 /proc/om_edge_views_link(datum/om/relation/R, datum/source, datum/target)

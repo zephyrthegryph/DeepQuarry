@@ -256,8 +256,7 @@ CAPABILITIES(/datum/tgui_module/law_manager/admin)
 /datum/tgui_module/law_manager/admin/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
-		// ALLOW(lifecycle): the admin law manager lives only while its window is open
-		qdel(src)
+		spent(src, user)
 
 /// The owner this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/law_manager/proc/owner() as /mob/living/silicon

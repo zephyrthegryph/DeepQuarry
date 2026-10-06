@@ -51,8 +51,7 @@
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] shatters!")
-	// ALLOW(lifecycle): the windoor shatters
-	qdel(src)
+	destroyed(src)
 
 /// Something walked into the windoor: a bot with its card or a mech with its pilot's access opens it for five seconds, a mob with access for two
 /// (five for a public one). Replaces the door's answer.

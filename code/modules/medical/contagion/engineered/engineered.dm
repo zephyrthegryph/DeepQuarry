@@ -559,7 +559,7 @@ CAPABILITIES(/datum/admin_virus_creation)
 	return TRUE
 
 /datum/admin_virus_creation/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/admin_virus_creation
 	rights = R_SPAWN|R_EVENT

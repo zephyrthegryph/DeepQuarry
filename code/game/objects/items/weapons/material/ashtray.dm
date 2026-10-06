@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/material/ashtray)
 				if(cig.possessed_voice && cig.possessed_voice.len)
 					var/mob/living/voice/V = cig.possessed_voice[1]
 					butt.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-					qdel(V)
+					spent(V)
 				consume(cig, user)
 				W = butt
 			else if (cig.lit == 0)

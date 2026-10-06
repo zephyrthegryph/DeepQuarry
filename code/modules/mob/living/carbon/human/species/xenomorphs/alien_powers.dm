@@ -375,7 +375,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	var/obj/item/grab/G = new(src,T)
 	if(!move_into(src, use_hand == "left" ? SLOT_ID_HAND_L : SLOT_ID_HAND_R, G, src))
-		qdel(G)
+		spent(G)
 		return
 
 	G.state = GRAB_PASSIVE

@@ -482,7 +482,7 @@
 	var/list/placed = list()
 	for(var/atom/movable/thing as anything in old.entries)
 		placed[thing] = old.entries[thing][LEDGER_E_SLOT]
-	qdel(old)
+	spent(old)
 	var/datum/ledger/fresh = dq_ledger(src)
 	if(!fresh)
 		return

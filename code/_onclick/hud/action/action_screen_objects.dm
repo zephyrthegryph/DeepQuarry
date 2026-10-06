@@ -40,8 +40,9 @@
 
 	return TRUE
 
-/atom/movable/screen/movable/action_button/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND action button Click supplies its clicking mob through usr at this native boundary
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/movable/action_button/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/movable/action_button/click_with_actor(mob/user, location, control, params)
 	if(!user)
@@ -92,14 +93,13 @@
 		rel_clear(src, nameof(last_hovored))
 	over_object?.MouseEntered(over_location, over_control, params)
 
-/atom/movable/screen/movable/action_button/MouseEntered(location, control, params)
-	. = ..()
-	if(!QDELETED(src))
-		openToolTip(usr, src, params, title = name, content = desc, theme = actiontooltipstyle)
+CAPABILITIES(/atom/movable/screen/movable/action_button)
+	tooltip(PROC_REF(input_tooltip), theme = nameof(actiontooltipstyle))
+	click_on(PROC_REF(click_input))
 
-/atom/movable/screen/movable/action_button/MouseExited(location, control, params)
-	closeToolTip(usr, src)
-	return ..()
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/movable/action_button/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
 	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native action button drop supplies its viewer before unchanged conditional parent routing.
@@ -333,8 +333,12 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 		return TRUE
 	return TRUE
 
-/atom/movable/screen/button_palette/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): Native palette clicks supply the actor without invoking parent input routing.
+CAPABILITIES(/atom/movable/screen/button_palette)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/button_palette/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/button_palette/click_with_actor(mob/user, location, control, params)
 	if(!can_use(user))
@@ -414,15 +418,12 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 		return
 	our_hud().palette_actions.scroll(scroll_direction)
 
-/atom/movable/screen/palette_scroll/MouseEntered(location, control, params)
-	. = ..()
-	if(QDELETED(src))
-		return
-	openToolTip(usr, src, params, title = name, content = desc)
+CAPABILITIES(/atom/movable/screen/palette_scroll)
+	tooltip(PROC_REF(input_tooltip))
 
-/atom/movable/screen/palette_scroll/MouseExited()
-	closeToolTip(usr, src)
-	return ..()
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/palette_scroll/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
 /atom/movable/screen/palette_scroll/down
 	name = "Scroll Down"

@@ -42,9 +42,9 @@ CAPABILITIES(/datum/hallucinations)
 		remove_hallucination_item()
 	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
 	if(halbody)
-		qdel(halbody)
+		destroyed(halbody)
 	if(halimage)
-		qdel(halimage)
+		destroyed(halimage)
 	..()
 
 /datum/hallucinations/proc/make_timer()
@@ -81,16 +81,13 @@ CAPABILITIES(/datum/hallucinations)
 /datum/hallucinations/proc/trigger()
 	PROTECTED_PROC(TRUE)
 	if(QDELETED(our_human))
-		// ALLOW(lifecycle): the hallucination ends with its human
-		qdel(src)
+		spent(src)
 		return
 	if(!our_human.client)
-		// ALLOW(lifecycle): the hallucination ends when its human has no client
-		qdel(src)
+		spent(src)
 		return
 	if(our_human.status_units(EFFECT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
-		// ALLOW(lifecycle): the hallucination ends when the human stops hallucinating
-		qdel(src)
+		spent(src)
 		return
 	handle_hallucinating()
 	make_timer()
@@ -131,17 +128,14 @@ CAPABILITIES(/datum/hallucinations)
 
 /datum/hallucinations/xenochimera/trigger()
 	if(QDELETED(our_human))
-		// ALLOW(lifecycle): the hallucination ends with its human
-		qdel(src)
+		spent(src)
 		return
 	if(!our_human.client)
-		// ALLOW(lifecycle): the hallucination ends when its human has no client
-		qdel(src)
+		spent(src)
 		return
 	var/datum/xenochimera/XC = our_human.xenochimera
 	if(!XC || XC.feral < XENOCHIFERAL_THRESHOLD)
-		// ALLOW(lifecycle): the hallucination ends when the feral state passes
-		qdel(src)
+		spent(src)
 		return
 	handle_hallucinating()
 	om_qdel_after(src, rand(3,9)SECONDS)

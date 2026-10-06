@@ -16,6 +16,7 @@ CAPABILITIES(/obj/item/weldpack)
 	owns_one(nameof(nozzle), /obj/item)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/weldpack/Initialize(mapload)
 	. = ..()
@@ -119,9 +120,10 @@ CAPABILITIES(/obj/item/weldpack)
 		to_chat(user, span_warning("The pack is already full!"))
 		return
 
-/obj/item/weldpack/MouseDrop(obj/over_object as obj) //This is terrifying.
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native inventory drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/weldpack/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/weldpack/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)

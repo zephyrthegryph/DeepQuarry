@@ -518,7 +518,7 @@ SYSTEM_DEF(internal_wiki)
 		smashers[id] = P
 		searchcache_smasher.Add(id)
 		pages.Add(P)
-		qdel(R)
+		destroyed(R)
 
 /datum/system/internal_wiki/proc/init_reagent_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -620,7 +620,7 @@ SYSTEM_DEF(internal_wiki)
 						"Price" = initial(res.price_tag),
 						"Flags" = R.wiki_flag
 						)
-		qdel(R)
+		spent(R)
 	// basically condiments, tofu, cheese, soysauce, etc
 	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.ready().chemical_reactions)
 		if(!allow_reagent(CR.result))
