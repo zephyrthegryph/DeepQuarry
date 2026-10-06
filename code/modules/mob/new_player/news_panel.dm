@@ -12,6 +12,18 @@ CAPABILITIES(/mob/new_player)
 	owns_one(nameof(manifest_dialog), /datum/tgui_module/crew_manifest/new_player)
 	owns_one(nameof(poll_browser_dialog), /datum/poll_browser_dialog)
 	owns_one(nameof(privacy_poll_dialog), /datum/privacy_poll_dialog)
+	interface("LobbyMenu", state = nameof(GLOB.tgui_always_state), pinned = TRUE, preinitialized = TRUE)
+	without("ui_open")
+	op("character_setup", ui_act("character_setup"), then(PROC_REF(ui_act_character_setup)))
+	op("ready", ui_act("ready"), then(PROC_REF(ui_act_ready)))
+	op("manifest", ui_act("manifest"), then(PROC_REF(ui_act_manifest)))
+	op("late_join", ui_act("late_join"), then(PROC_REF(ui_act_late_join)))
+	op("observe", ui_act("observe"), asks(/datum/prompt/choice/lobby_observe, fields = list("title" = "Observe Round?", "question" = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later."), step = "observe", when = PROC_REF(round_observable)), then(PROC_REF(ui_act_observe)))
+	op("give_feedback", ui_act("give_feedback"), then(PROC_REF(ui_act_give_feedback)))
+	op("open_station_news", ui_act("open_station_news"), then(PROC_REF(ui_act_open_station_news)))
+	op("open_changelog", ui_act("open_changelog"), then(PROC_REF(ui_act_open_changelog)))
+	op("keyboard", ui_act("keyboard"), then(PROC_REF(ui_act_keyboard)))
+	op("start_immediately", ui_act("start_immediately"), then(PROC_REF(ui_act_start_immediately)))
 
 /datum/news_panel
 	var/mob/new_player/host

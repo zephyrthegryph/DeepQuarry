@@ -213,7 +213,9 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	var/datum/ui_decl/decl = ui_decl_of(src)
 	if(decl?.interface_var)
 		return vars[decl.interface_var]
-	return decl?.interface || present_interface(src)?.args["window"] || tgui_id
+	var/datum/entry/declared = present_interface(src)
+	var/window_var = declared?.args["window_var"]
+	return decl?.interface || declared?.args["window"] || (istext(window_var) && (window_var in vars) ? vars[window_var] : null) || tgui_id
 
 /// The answer to a question one of `host`'s window buttons asked still counts: the window the answerer works it through is still open and
 /// interactive. A window host with no reach rule of its own says `request_usable(R)` as `return window_request_usable(src, R)`.
@@ -308,12 +310,13 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	var/datum/tgui_state/state = custom_state || decl?.state || interface_state(host) || host.tgui_window_state || (host.ui_rights ? ADMIN_STATE(host.ui_rights) : null)
 	if(state)
 		ui.set_state(state)
-	if(decl?.autoupdate)
+	var/datum/entry/declared = present_interface(host)
+	if(decl?.autoupdate || declared?.args["autoupdate"])
 		ui.set_autoupdate(TRUE)
-	if(decl?.pinned)
+	if(decl?.pinned || declared?.args["pinned"])
 		ui.closeable = FALSE
 	host.ui_opening(user, ui)
-	ui.open(decl?.preinitialized)
+	ui.open(decl?.preinitialized || declared?.args["preinitialized"])
 	if(!QDELETED(ui))
 		host.ui_opened(user, ui)
 	if(decl?.watch && !QDELETED(ui))
