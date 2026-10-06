@@ -1698,3 +1698,11 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   gone; the dead leak branch in the step is gone (HE pipes cannot leak). The exchange itself stays the shell's heat body and the sky link.
 - Its watch is on every change of the gas, not temperature alone: a heat-domain write to a pipe region (`heat_set`) does not report a
   temperature-only change to a gas dependency watch (reported to the thermal owner).
+
+## Air system debug panel and the network core leftovers (rewrite/pipenet-full)
+
+- The air system's debug panel (`SSair`, "Debug Atmospherics") is `interface("AtmosControlPanel", rights = R_DEBUG)` + `ui_data()` + ops; the
+  `DECLARE_UI`, `UI_DATA_REPLACE` and `UI_ACT` rows are gone. "move-to-target" takes the turf's ref and locates it in the op.
+- The base `/obj/machinery/atmospherics/machine_step()` is deleted (no atmospherics device is stepped by the machine pipeline any more), the
+  pipeline's MACHINE_WAKE of each pipe on joining is gone (HE pipes reconsider on their `parent`), and the engineered-material follow-up timer is
+  checked with `after_left()` instead of `om_timer_slot_pending()`.
