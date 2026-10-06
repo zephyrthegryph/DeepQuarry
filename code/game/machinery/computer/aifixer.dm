@@ -15,8 +15,6 @@
 
 /// Variable dictating if we are in the process of restoring the occupier AI
 OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "restoring")
-
 /obj/machinery/computer/aifixer/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/aifixer_card,
@@ -81,6 +79,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
 	extend("disconnect", needs(req(PROC_REF(no_ai_loaded), because = PROC_REF(screws_stuck_reason))))
 	interface("AiRestorer")
 	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
@@ -136,7 +135,7 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 
 	return occupier().vitality() < 1 || occupier().backup_capacitor() < 100
 
-/obj/machinery/computer/aifixer/machine_step()
+/obj/machinery/computer/aifixer/proc/work_step(datum/act/timer/A)
 	if(!occupier())
 		set_restoring(FALSE)
 		return

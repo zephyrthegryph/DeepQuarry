@@ -18,6 +18,7 @@
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	started_work(step = PROC_REF(work_step))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(cur_artifact), /obj)
 	interface("XenoarchArtifactHarvester")
@@ -306,11 +307,11 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	return harvest_stage(A.request.answerer, A.request.value, TRUE)
 
 /// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
-/obj/machinery/artifact_harvester/machine_step()
+/obj/machinery/artifact_harvester/proc/work_step(datum/act/timer/A)
 	if(harvesting == 0)
 		return PROCESS_KILL
 	if(!operable())
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 
 	if(harvesting > 0)
 		//charge at 33% consumption rate

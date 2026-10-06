@@ -43,6 +43,11 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
 	drag_onto(PROC_REF(drop_input))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("toggle_shield_effect", menu(), label("Toggle Shield"), needs(carried()), then(PROC_REF(toggle_shield_effect_op)))
+	op("weapon_toggle_effect", menu(), label("Toggle Gun"), needs(carried(), req(PROC_REF(pred_has_weapon_holds), because = PROC_REF(pred_has_weapon_refusal))), then(PROC_REF(weapon_toggle_effect_op)))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -112,19 +117,35 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 /obj/item/personal_shield_generator/ui_action_click(mob/user, actiontype)
 	toggle_shield_effect(user)
 
-DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// The toggle_shield_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/personal_shield_generator/proc/toggle_shield_effect_op(datum/act/op/A)
+	toggle_shield_effect(A.actor, A.held, null)
+	return OP_OK
 
-/obj/item/personal_shield_generator/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* pred_has_weapon): the legacy check answers TRUE to pass.
+/obj/item/personal_shield_generator/proc/pred_has_weapon_holds(datum/act/op/A)
+	var/answer = pred_has_weapon(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_has_weapon_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/personal_shield_generator/proc/pred_has_weapon_refusal(datum/act/op/A)
+	var/answer = pred_has_weapon(A.actor, src, A.held)
+	return istext(answer) ? answer : "it has no gun"
+
+/// The weapon_toggle_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/personal_shield_generator/proc/weapon_toggle_effect_op(datum/act/op/A)
+	weapon_toggle_effect(A.actor, A.held, null)
+	return OP_OK
+
+/obj/item/personal_shield_generator/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(loc == user)
 		toggle_shield_effect(user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/personal_shield_generator/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/personal_shield_generator/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/user = A.actor
 	weapon_toggle_effect(user)
 	return TRUE
 
@@ -143,7 +164,9 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
-/obj/item/personal_shield_generator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/personal_shield_generator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W == active_weapon)
 		reattach_gun(user)
 	else if(istype(W, /obj/item/cell))
@@ -160,7 +183,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			update_icon()
 
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/personal_shield_generator/screwdriver_act(mob/user, obj/item/tool)
@@ -596,10 +619,6 @@ CAPABILITIES(/obj/item/gun/energy/gun/generator)
 	param(nameof(linked_generator), pos = 1)
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \
-	INTERACT_VERB("Toggle Shield", PROC_REF(toggle_shield_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Gun", PROC_REF(weapon_toggle_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/personal_shield_generator/proc/pred_has_weapon, "it has no gun")), \
-)
 
 /// Requirement for "Toggle Gun" (old: the verb was removed from generators without a weapon).
 /obj/item/personal_shield_generator/proc/pred_has_weapon(mob/actor, atom/target, obj/item/held)

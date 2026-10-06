@@ -30,6 +30,8 @@
 
 CAPABILITIES(/obj/item/tank/jetpack)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_rockets_effect", menu(), label("Toggle Jetpack Stabilization"), needs(carried()), then(PROC_REF(toggle_rockets_effect_op)))
+	op("jetpack_toggle_effect", menu(), label("Toggle Jetpack"), needs(carried()), then(PROC_REF(jetpack_toggle_effect_op)))
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()
@@ -127,7 +129,12 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 /obj/item/tank/jetpack/rig/proc/holder_ref() as /obj/item/rig
 	return holder
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/tank/jetpack, \
-	INTERACT_VERB("Toggle Jetpack Stabilization", PROC_REF(toggle_rockets_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Jetpack", PROC_REF(jetpack_toggle_effect), REQ_IN_INVENTORY), \
-)
+/// The toggle_rockets_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/tank/jetpack/proc/toggle_rockets_effect_op(datum/act/op/A)
+	toggle_rockets_effect(A.actor, A.held, null)
+	return OP_OK
+
+/// The jetpack_toggle_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/tank/jetpack/proc/jetpack_toggle_effect_op(datum/act/op/A)
+	jetpack_toggle_effect(A.actor, A.held, null)
+	return OP_OK

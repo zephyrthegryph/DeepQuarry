@@ -157,8 +157,6 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 
 //Cryopods themselves.
 OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
-DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupied")
-
 /// Derived field: the pod holds someone. The occupant slot's link/unlink raises
 /// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
 /obj/machinery/cryopod/proc/cryopod_occupied()
@@ -312,7 +310,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	return 1
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
-/obj/machinery/cryopod/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/cryopod)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
+
+/obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		if(occupant.loc != src)

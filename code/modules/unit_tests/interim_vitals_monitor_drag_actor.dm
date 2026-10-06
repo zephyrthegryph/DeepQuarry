@@ -46,6 +46,6 @@
 	monitor.drop_patient_with_actor(actor, patient)
 	TEST_ASSERT_EQUAL(monitor.victim(), patient, "actual attachment can reconnect the same original patient")
 	patient.forceMove(far)
-	monitor.machine_step()
+	test_step_machine(monitor)
 	TEST_ASSERT_NULL(monitor.victim(), "the actual machine step clears a patient who moved beyond its existing range")
 	TEST_ASSERT_EQUAL(monitor.use_power, USE_POWER_IDLE, "actual range cleanup restores idle power")

@@ -20,7 +20,11 @@
 
 /// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
 /// ARTIFACT_HEAT_BREAK (and re-arms when moved).
-/obj/machinery/artifact/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/artifact)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/artifact/proc/work_step(datum/act/timer/A)
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T?.return_air()
 	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)
@@ -32,12 +36,12 @@
 	return PROCESS_KILL
 
 /obj/machinery/artifact/proc/heat_wake()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /obj/machinery/artifact/Moved(atom/old_loc)
 	. = ..()
 	if(isturf(loc) && !QDELETED(src))
-		MACHINE_WAKE(src)
+		work_start(src)
 
 
 // ALLOW(init/INSTANCE_STATE): rolls its look and the trigger of its effect

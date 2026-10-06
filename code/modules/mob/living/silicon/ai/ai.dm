@@ -366,7 +366,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 	use_power(1) // Just incase we need to wake up the power system.
 
-/obj/machinery/ai_powersupply/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/ai_powersupply)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
+/obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)
 	if(!powered_ai || powered_ai.stat == DEAD)
 		spent(src)
 		return
@@ -1135,7 +1139,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	add_language(LANGUAGE_DRUDAKAR,		1)
 	add_language(LANGUAGE_TAVAN,		1)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ai_powersupply/step_start_condition()
 	return TRUE // made when an AI needs power
 

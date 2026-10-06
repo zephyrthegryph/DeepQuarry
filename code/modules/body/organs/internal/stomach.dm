@@ -59,7 +59,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/stomach, 30, null)
 */
 
 // When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
-/// The acid top-up is left to the organs stage's rewake; a broken stomach keeps it awake.
+/// The acid top-up waits for the organ clock to run for something else; a broken stomach keeps it running.
 /obj/item/organ/internal/stomach/life_step_idle()
 	return ..() && !is_broken()
 

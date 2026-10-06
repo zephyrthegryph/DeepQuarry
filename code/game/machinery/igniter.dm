@@ -10,8 +10,6 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/igniter, MACHINE_PIPELINE, "on")
-
 /obj/machinery/igniter/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/igniter_toggle,
@@ -33,9 +31,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/igniter, MACHINE_PIPELINE, "on")
 
 /// Keeps its tile ignited every machine frame while on; off, it sleeps until toggled on, and
 /// unpowered until power returns.
-/obj/machinery/igniter/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/igniter)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+
+/obj/machinery/igniter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	var/turf/location = src.loc
 	if(isturf(location))
 		location.hotspot_expose(1000,500,1)
@@ -178,6 +180,6 @@ CAPABILITIES(/obj/machinery/sparker)
 	set_active(FALSE)
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/igniter/step_start_condition()
 	return on

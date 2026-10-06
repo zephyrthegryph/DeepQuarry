@@ -13,9 +13,8 @@
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
-
 CAPABILITIES(/obj/machinery/floodlight)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
 
 /obj/machinery/floodlight/Initialize(mapload)
@@ -27,7 +26,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 
 APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_battery?b:}0{on}")
 
-/obj/machinery/floodlight/machine_step()
+/obj/machinery/floodlight/proc/work_step(datum/act/timer/A)
 	if(!cell || (cell.charge < (use * CELLRATE)))
 		turn_off(1)
 		return PROCESS_KILL
@@ -172,7 +171,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	turn_on()
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/floodlight/step_start_condition()
 	return on
 

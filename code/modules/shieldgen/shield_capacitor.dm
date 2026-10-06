@@ -21,10 +21,9 @@
 	interact_offline = TRUE
 
 /// Charges from the cable underneath while bolted down (it parks once full or with nothing to draw).
-DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "anchored")
-
 // The generator this capacitor feeds (two-sided with its capacitors list).
 CAPABILITIES(/obj/machinery/shield_capacitor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored)))
 	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
 	climb()
 	interface("ShieldCapacitor")
@@ -123,7 +122,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 
 	return data
 
-/obj/machinery/shield_capacitor/machine_step()
+/obj/machinery/shield_capacitor/proc/work_step(datum/act/timer/A)
 	//see if we can connect to a power net.
 	var/PN = 0
 	var/turf/T = get_turf(src)
@@ -136,10 +135,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 		power_draw = power_draw(PN, power_draw) //what we actually get
 		stored_charge += power_draw
 		if(power_draw <= 0 && stored_charge < max_charge)
-			// Wait on a machine of the grid; with none, nothing can supply it.
-			var/obj/machinery/power/node = power_grid_any_node(PN)
-			sleep_until_keys(node ? list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE|CHANGE_POWER_GRID_TOPOLOGY) : list())
-			return PROCESS_KILL
+			return // the grid has nothing spare: it asks again next step
 	else
 		return PROCESS_KILL
 
@@ -162,7 +158,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 /obj/machinery/shield_capacitor/proc/ui_act_charge_rate(datum/act/op/A, rate)
 	charge_rate = clamp(rate, 10000, max_charge_rate)
 	if(stored_charge < max_charge)
-		MACHINE_WAKE(src)
+		work_start(src)
 	. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()
@@ -175,18 +171,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 // === merged from shield_capacitor_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_capacitor
 	icon = 'icons/obj/machines/shielding.dmi'
-
-/// Audit: a sleeping capacitor must be full or have nothing to draw from.
-/obj/machinery/shield_capacitor/om_sleep_violation()
-	if(!asleep_on_keys() || !anchored || stored_charge >= max_charge)
-		return null
-	var/turf/T = get_turf(src)
-	var/obj/structure/cable/C = T?.get_cable_node()
-	var/PN = C?.get_power_region()
-	if(PN && power_surplus(PN) > 0)
-		return "asleep below full charge on a grid with [power_surplus(PN)] W spare"
-	return null
-
 
 /// The generator this capacitor feeds (a relation view).
 /obj/machinery/shield_capacitor/proc/owned_gen() as /obj/machinery/shield_gen

@@ -16,18 +16,18 @@
 	TEST_ASSERT_NULL(core.wearer, "the wearer view is cleared when the wearer is destroyed")
 	TEST_ASSERT_NULL(core.periodic_pipe, "the auto-clear raised the field channel and stopped the upkeep")
 
-/// Fusion core: DECLARE_PERIODIC_WHILE(MACHINE_PIPELINE) on the owned `owned_field`.
+/// Fusion core: every(when = owned_field) on the owned `owned_field`.
 /datum/unit_test/periodic_autoclear_fusion_owned_field
 
 /datum/unit_test/periodic_autoclear_fusion_owned_field/Run()
 	var/obj/machinery/power/fusion_core/core = allocate(/obj/machinery/power/fusion_core, test_floor())
-	TEST_ASSERT(!sys_periodic_allows(core, MACHINE_PIPELINE), "a core with no field is gated off")
+	TEST_ASSERT(!condition_holds(core, nameof(core.owned_field)), "a core with no field is gated off")
 	rel_set(core, nameof(core.owned_field), new /obj/effect/fusion_em_field(core.loc, core))
 	TEST_ASSERT_NOTNULL(core.owned_field, "the core owns its new field")
-	TEST_ASSERT(sys_periodic_allows(core, MACHINE_PIPELINE), "owning a field opens the machine step")
+	TEST_ASSERT(condition_holds(core, nameof(core.owned_field)), "owning a field opens the core's step")
 	qdel(core.owned_field)
 	TEST_ASSERT_NULL(core.owned_field, "the owned field leaves its owner's var when it is destroyed")
-	TEST_ASSERT(!sys_periodic_allows(core, MACHINE_PIPELINE), "the auto-clear raised the field channel and gated the step off")
+	TEST_ASSERT(!condition_holds(core, nameof(core.owned_field)), "the auto-clear gated the step off")
 
 /// Magnetic gun: DECLARE_PERIODIC_WHILE on capacitor_unsettled, derived from the owned `cell` and
 /// `capacitor` and the cross-entity input "capacitor.charge".

@@ -35,6 +35,7 @@
 	light_color = "#FF0000"
 
 CAPABILITIES(/obj/machinery/vr_sleeper)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
 
@@ -54,8 +55,6 @@ OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADD
 	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
 
 /// Watches its occupant (death, power loss) while it has one.
-DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied")
-
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -70,7 +69,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied
 	..()
 
 /// Watches its occupant (death, power loss) while it has one (the declaration above).
-/obj/machinery/vr_sleeper/machine_step()
+/obj/machinery/vr_sleeper/proc/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable())
 		if(occupant)

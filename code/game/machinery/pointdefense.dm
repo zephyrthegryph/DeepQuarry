@@ -132,8 +132,6 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /// Steps (watches for and shoots meteors) while switched on and working.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/pointdefense, MACHINE_PIPELINE, list("active", "operable"))
-
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()
@@ -219,15 +217,17 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 /obj/machinery/pointdefense/proc/fire_sound_delayed()
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 
-/obj/machinery/pointdefense/machine_step()
-	..()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/pointdefense)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), nameof(stat)))
+
+/obj/machinery/pointdefense/proc/work_step(datum/act/timer/A)
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
 
 	if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
-		return PROCESS_KILL
+		return // no meteors about: it looks again next step
 	find_and_shoot()
 
 /obj/machinery/pointdefense/proc/find_and_shoot()
@@ -305,19 +305,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	set_active(FALSE)
 	return TRUE
 
-/// Audit: an active point defense must not sleep through meteors.
-/obj/machinery/pointdefense/om_sleep_violation()
-	if(!asleep_on_keys() || (!operable()) || !active)
-		return null
-	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		return "asleep with [LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))] meteors about"
-	return null
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/pointdefense/arm_wakes()
-	..()
-	sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/pointdefense/step_start_condition()
 	return active && LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))

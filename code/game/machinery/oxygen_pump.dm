@@ -19,6 +19,7 @@
 	active_power_usage = 120 // No idea what the realistic amount would be.
 
 CAPABILITIES(/obj/machinery/oxygen_pump)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(breather), wakes_on = list(nameof(breather)))
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	owns_one(nameof(contained), starts = nameof(mask_type))
 	interface("Tank")
@@ -30,9 +31,6 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
 /// Keeps the mask and internals right while a mask is on someone.
-DECLARE_PERIODIC_WHILE(/obj/machinery/oxygen_pump, MACHINE_PIPELINE, "breather")
-
-
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()
 	..()
@@ -189,7 +187,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		. += span_warning("It is missing a tank!")
 
 /// Runs while a mask is on someone (the declaration above).
-/obj/machinery/oxygen_pump/machine_step()
+/obj/machinery/oxygen_pump/proc/work_step(datum/act/timer/A)
 	if(!breather()) // the breather was deleted
 		return
 	if(breather())
@@ -334,7 +332,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	name = "portable patient stabilizer"
 	desc = "A portable oxygen pump with a retractable mask used for stabilizing patients in the field."
 
-/obj/machinery/oxygen_pump/mobile/stabilizer/machine_step()
+/obj/machinery/oxygen_pump/mobile/stabilizer/work_step(datum/act/timer/A)
 	if(!breather())
 		return PROCESS_KILL
 	if(breather())
