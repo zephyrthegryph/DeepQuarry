@@ -33,6 +33,11 @@ CAPABILITIES(/obj/structure/low_wall)
 	climb()
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
+	op("build_grille", item(/obj/item/stack/rods), label("Use"), then(PROC_REF(interaction_rods)))
+	op("build_window", item(/obj/item/stack/material/glass), label("Use"), then(PROC_REF(interaction_glass)))
+	op("build_window_cyborg", item(/obj/item/stack/material/cyborg/glass), label("Use"), then(PROC_REF(interaction_glass)))
+	op("place", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
+	op("place_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on wall"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_drag)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A low wall stands only on open floor.
 /obj/structure/low_wall/proc/build_of(materialtype)
@@ -48,44 +53,28 @@ CAPABILITIES(/obj/structure/low_wall)
 
 DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbor_type = /obj/structure/low_wall))
 
-/obj/structure/low_wall/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/low_wall_item,
-		/datum/interaction/entry_drag/low_wall_drag,
-	)
-	..()
+/// Old attackby: build a grille from rods.
+/obj/structure/low_wall/proc/interaction_rods(datum/act/op/A)
+	add_fingerprint(A.actor)
+	handle_rod_use(A.actor, A.held)
+	return OP_OK
 
-/// Old attackby: build a grille from rods, a window from glass, or drop an item on the wall.
-/datum/interaction/entry_item/low_wall_item
-	id = "low_wall_item"
-	name = "Use"
-	effect = /obj/structure/low_wall/proc/interaction_item
+/// Old attackby: build a window from glass (different per subtype).
+/obj/structure/low_wall/proc/interaction_glass(datum/act/op/A)
+	add_fingerprint(A.actor)
+	handle_glass_use(A.actor, A.held)
+	return OP_OK
 
-/obj/structure/low_wall/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-
-	// Making grilles (only works on Bay ones currently)
-	if(istype(W, /obj/item/stack/rods))
-		handle_rod_use(user, W)
-		return TRUE
-
-	// Making windows, different per subtype
-	else if(istype(W, /obj/item/stack/material/glass) || istype(W, /obj/item/stack/material/cyborg/glass))
-		handle_glass_use(user, W)
-		return TRUE
-
-	// Handle placing things
-	if(isrobot(user))
-		return TRUE
-
+/// Old attackby: drop an item on the wall (a cyborg's module stays with it: the op is not a cyborg's).
+/obj/structure/low_wall/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	add_fingerprint(user)
 	if(W.loc != user) // This should stop mounted modules ending up outside the module.
-		return TRUE
-
+		return OP_OK
 	if(can_place_items() && user.unEquip(W, 0, src.loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
 		auto_align(W, dq_interaction_click_params(user))
-		return TRUE
-
-	return TRUE
+	return OP_OK
 
 /obj/structure/low_wall/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -113,33 +102,26 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			return FALSE
 	return TRUE
 
-/// Old MouseDrop_T: climb, hoist a window up, or place or push an item onto the wall.
-/// Items align to the click through dq_interaction_click_params().
-/datum/interaction/entry_drag/low_wall_drag
-	id = "low_wall_drag"
-	name = "Place on wall"
-	effect = /obj/structure/low_wall/proc/interaction_drag
-
-/obj/structure/low_wall/proc/interaction_drag(mob/user, atom/movable/AM, datum/interaction/interaction)
+/// Old MouseDrop_T: hoist a window up, or place or push an item onto the wall (climbing is the climb capability's own drag).
+/// Items align to the click through dq_interaction_click_params(). A cyborg's drag is not this op's.
+/obj/structure/low_wall/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	if(AM == user) // climbing is the climb capability's own drag
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/obj/O = AM
 	if(!istype(O))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(O, /obj/structure/window))
 		var/obj/structure/window/W = O
 		if(Adjacent(W) && !W.anchored)
 			to_chat(user, span_notice("You hoist [W] up onto [src]."))
 			W.forceMove(loc)
-			return INTERACTION_HANDLED_PASS
-	if(isrobot(user))
-		return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(can_place_items())
 		if(ismob(O.loc)) //If placing an item
 			if(!isitem(O) || user.get_active_hand() != O)
-				return FALSE
-			if(isrobot(user))
-				return INTERACTION_HANDLED_PASS
+				return OP_DECLINE
 			user.drop_item()
 			if(O.loc != src.loc)
 				step(O, get_dir(O, src))
@@ -147,7 +129,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		else if(isturf(O.loc) && isitem(O)) //If pushing an item on the tabletop
 			var/obj/item/I = O
 			if(I.anchored)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			if((isliving(user)) && (Adjacent(user)) && !(user.incapacitated()))
 				if(O.w_class <= user.can_pull_size)
@@ -155,8 +137,8 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 					auto_align(I, dq_interaction_click_params(user), TRUE)
 				else
 					to_chat(user, span_warning("\The [I] is too big for you to move!"))
-				return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+				return OP_PASS
+	return OP_PASS
 
 /obj/structure/low_wall/proc/handle_rod_use(mob/user, obj/item/stack/rods/R)
 	if(!grille_type)

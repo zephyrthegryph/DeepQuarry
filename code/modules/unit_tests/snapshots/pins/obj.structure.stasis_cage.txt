@@ -23,5 +23,5 @@ human|/obj/item/stack/material/steel menu: Release
 human|/obj/item/stack/material/steel click: Click: Release
 human|/obj/item/card/id menu: Release
 human|/obj/item/card/id click: Click: Release
-keys: gen_drag_interaction_drag_buckle, release, stasis_cage_robot_release
+keys: drag_buckle, release, stasis_cage_robot_release
 

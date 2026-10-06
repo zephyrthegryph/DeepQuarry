@@ -100,5 +100,5 @@ human|/obj/item/storage/part_replacer menu: Put in recharger (refused: needs a m
 human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement
 

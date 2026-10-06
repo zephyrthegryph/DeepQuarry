@@ -292,7 +292,7 @@
  },
  "/datum/om/event/atom_used_in_craft": {
   "emits": [
-   "code/datums/entity_state/crafting/crafting_external.dm"
+   "code/modules/crafting/crafting_external.dm"
   ],
   "fields": [
    "result_"
@@ -470,16 +470,6 @@
   "target": "review",
   "tests": []
  },
- "/datum/om/event/before/handle_mutations": {
-  "emits": [
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [],
-  "reads_result": true,
-  "target": "delete",
-  "tests": []
- },
  "/datum/om/event/before/in_range_of_irradiation": {
   "emits": [
    "code/modules/radiation/radiation_service.dm"
@@ -501,23 +491,6 @@
   "tests": [
    "code/modules/unit_tests/dq_hook_hand_tests.dm"
   ]
- },
- "/datum/om/event/before/living_status_sleep": {
-  "emits": [],
-  "fields": [
-   "amount"
-  ],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/library/mob/statuses.dm"
-  ],
-  "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
-  "notice_fields": [
-   "amount"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/living_status_sleep",
-  "tests": []
  },
  "/datum/om/event/before/living_turf_collision": {
   "emits": [
@@ -765,7 +738,7 @@
  },
  "/datum/om/event/disposal_receive": {
   "emits": [
-   "code/datums/entity_state/machinery/disposal_connection.dm"
+   "code/modules/recycling/disposal_connection.dm"
   ],
   "fields": [
    "items",
@@ -1232,70 +1205,6 @@
   "target": "/datum/notice/living_shield_injury",
   "tests": []
  },
- "/datum/om/event/living_status_blind": {
-  "emits": [],
-  "fields": [
-   "amount"
-  ],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/library/mob/statuses.dm"
-  ],
-  "notice_fields": [
-   "amount"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/living_status_blind",
-  "tests": []
- },
- "/datum/om/event/living_status_paralyze": {
-  "emits": [],
-  "fields": [
-   "amount"
-  ],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/library/mob/statuses.dm"
-  ],
-  "notice_fields": [
-   "amount"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/living_status_paralyze",
-  "tests": []
- },
- "/datum/om/event/living_status_stun": {
-  "emits": [],
-  "fields": [
-   "amount"
-  ],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/library/mob/statuses.dm"
-  ],
-  "notice_fields": [
-   "amount"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/living_status_stun",
-  "tests": []
- },
- "/datum/om/event/living_status_weaken": {
-  "emits": [],
-  "fields": [
-   "amount"
-  ],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm",
-   "code/library/mob/statuses.dm"
-  ],
-  "notice_fields": [
-   "amount"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/living_status_weaken",
-  "tests": []
- },
  "/datum/om/event/machinery_broken": {
   "emits": [
    "code/game/machinery/machinery.dm"
@@ -1388,7 +1297,7 @@
  },
  "/datum/om/event/matcontainer_item_consumed": {
   "emits": [
-   "code/datums/entity_state/materials/material_container.dm"
+   "code/modules/materials/containers/material_container.dm"
   ],
   "fields": [
    "item",
@@ -1398,8 +1307,8 @@
    "context"
   ],
   "listeners": [
-   "code/datums/entity_state/materials/material_container.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/modules/materials/containers/material_container.dm"
   ],
   "notice_fields": [
    "item",
@@ -1414,15 +1323,15 @@
  },
  "/datum/om/event/matcontainer_stack_retrieved": {
   "emits": [
-   "code/datums/entity_state/materials/material_container.dm"
+   "code/modules/materials/containers/material_container.dm"
   ],
   "fields": [
    "new_stack",
    "context"
   ],
   "listeners": [
-   "code/datums/entity_state/materials/material_container.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/modules/materials/containers/material_container.dm"
   ],
   "notice_fields": [
    "new_stack",
@@ -1580,33 +1489,6 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/mob_granted_action",
-  "tests": []
- },
- "/datum/om/event/mob_handle_hud_darksight": {
-  "emits": [
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [],
-  "reads_result": false,
-  "target": "/datum/notice/mob_handle_hud_darksight",
-  "tests": []
- },
- "/datum/om/event/mob_handle_vision": {
-  "emits": [
-   "code/modules/mob/dead/observer/observer.dm",
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [],
-  "reads_result": false,
-  "target": "/datum/notice/mob_handle_vision",
   "tests": []
  },
  "/datum/om/event/mob_login": {
@@ -2068,8 +1950,8 @@
  },
  "/datum/om/event/remote_view_clear": {
   "emits": [
-   "code/datums/entity_state/remote_view.dm",
    "code/game/objects/items.dm",
+   "code/modules/mob/remote_view.dm",
    "code/modules/tgui/modules/ntos-only/uav.dm"
   ],
   "fields": [],

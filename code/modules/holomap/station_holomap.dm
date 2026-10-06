@@ -72,19 +72,10 @@ OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETT
 
 	after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 
-/obj/machinery/station_map/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/station_map_watch,
-		/datum/interaction/machine_item/station_map_fingerprint,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/station_map_watch
-	id = "station_map_watch"
-	name = "Watch"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/station_map/proc/can_watch))
-	effect = /obj/machinery/station_map/proc/interaction_watch
+EXTEND_INTERACTIONS(/obj/machinery/station_map, \
+	INTERACT_HAND_UNGATED("Watch", PROC_REF(interaction_watch), REQ_TARGET_STATE(/obj/machinery/station_map/proc/can_watch)), \
+	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_fingerprint), "Touch"), \
+)
 
 /// Requirement: TRUE, or why the user can't watch the holomap.
 /obj/machinery/station_map/proc/can_watch(mob/user, atom/target, obj/item/held)
@@ -221,13 +212,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appeara
 
 	if(panel_open)
 		. += "station_map-panel"
-
-/// Old attackby: fingerprinted, then always fell through to ..().
-/datum/interaction/machine_item/station_map_fingerprint
-	id = "station_map_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"

@@ -138,40 +138,48 @@
 	REAGENT_ID_PITCHERNECTAR =  1
 	)
 
+MSG_DEF_SELF(hydroponics/anchor_first, "Anchor it first!")
+MSG_DEF_SELF(hydroponics/no_freezer, "You see no way to use that on it.")
+MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
+
+// A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
+// soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	reagents(200)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(temp_chem_holder), /obj)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(has_seed), gate = PROC_REF(not_frozen), wakes_on = list(nameof(frozen)))
+	op("use_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("tend", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
+	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(req(PROC_REF(can_toggle_lid))), then(PROC_REF(interaction_close_lid)))
+	op("remove_label", menu(), label("Remove Label"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_remove_label)))
+	op("set_light", menu(), label("Set Light"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))),
+		asks(/datum/prompt/choice, fields = list("question" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10), "buttons" = FALSE, "timeout" = 0), step = "light"),
+		then(PROC_REF(interaction_set_light)))
+	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
+	op("sample", tool(TOOL_WIRECUTTER), label("Take a sample"), wait(0), then(PROC_REF(sample_cut)))
+	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(boltable))), then(PROC_REF(bolted)))
+	op("freezer", tool(TOOL_MULTITOOL), label("Toggle cryogenic freezing"), wait(0),
+		needs(req(PROC_REF(is_anchored), because = MSG(hydroponics/anchor_first)), req(PROC_REF(can_freeze), because = MSG(hydroponics/no_freezer))),
+		then(PROC_REF(freezer_toggled)))
 
+// A ghost's harvest (becoming the living plant product) stays a legacy observer interaction: an op has no observer binding yet.
 /obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest)),
-		INTERACT_TK("Harvest", PROC_REF(hydroponics_tk_harvest)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/hydroponics_attackby,
-		/datum/interaction/machine_hand/ungated/hydroponics_interact,
-		/datum/interaction/machine_alt/hydroponics_close_lid,
-		/datum/interaction/machine_verb/hydroponics_remove_label,
-		/datum/interaction/machine_verb/hydroponics_set_light,
-		/datum/interaction/machine_verb/hydroponics_toggle_lid,
-	)
+	var/static/list/ghost_harvest = INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest))
+	into += dq_interaction_from_spec(type, ghost_harvest)
 	..()
 
-/datum/interaction/machine_alt/hydroponics_close_lid
-	id = "hydroponics_close_lid"
-	name = "Toggle lid"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid, null))
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid
+/// Only a mechanical tray has a lid (the hand binding brings the reach and the actor's state).
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid(datum/act/op/A)
+	return mechanical
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid(mob/actor, atom/target, obj/item/held)
-	return mechanical && !actor.incapacitated() && Adjacent(actor)
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid(datum/act/op/A)
+	close_lid(A.actor)
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid(mob/user, obj/item/held, datum/interaction/interaction)
-	close_lid(user)
-	return TRUE
+/// The old verbs' check: alive, conscious and free.
+/obj/machinery/portable_atmospherics/hydroponics/proc/actor_can_act(datum/act/op/A)
+	return dq_actor_can_act(A.actor, src, A.held)
 
 /// Old attack_ghost: a ghost may become a living plant product. Never fell through to the default.
 /obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_ghost_harvest(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
@@ -220,13 +228,16 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 
 
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
-OM_FIELD(/obj/machinery/portable_atmospherics/hydroponics, frozen, 0, CHANGE_MACHINE_SETTINGS)
-/// Everything but cryogenically frozen (frozen == 1) grows.
-OM_DERIVE_FIELD(/obj/machinery/portable_atmospherics/hydroponics, not_frozen, list("frozen"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE_PIPELINE, "not_frozen")
+/obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
 
+/// Everything but cryogenically frozen (frozen == 1) grows.
 /obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()
 	return frozen != 1
+
+/// A tray with something planted starts its work when it is placed.
+/obj/machinery/portable_atmospherics/hydroponics/proc/has_seed(datum/act/A)
+	return !!seed
 
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
 	. = ..()
@@ -240,15 +251,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
-	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
+	if(after_pending(src, "growth_timer") || frozen == 1)
 		return
 	after(src, max(0.1 SECONDS, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth), key = "growth_timer")
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 // Give the seeds time to initialize itself
 /// Plants the seeds lying on its turf.
@@ -266,7 +277,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	//Snowflakey, maybe move this to the seed datum
 	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	MACHINE_WAKE(src)
+	work_start(src)
 
 	consumed(S, src)
 
@@ -506,41 +517,20 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 	return
 
-/datum/interaction/machine_verb/hydroponics_remove_label
-	id = "hydroponics_remove_label"
-	name = "Remove Label"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label(datum/act/op/A)
+	var/mob/user = A.actor
+	if(labelled)
+		to_chat(user, span_filter_notice("You remove the label."))
+		labelled = null
+		update_icon()
+	else
+		to_chat(user, span_filter_notice("There is no label to remove."))
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user) || isrobot(user))
-		if(labelled)
-			to_chat(user, span_filter_notice("You remove the label."))
-			labelled = null
-			update_icon()
-		else
-			to_chat(user, span_filter_notice("There is no label to remove."))
-	return TRUE
-
-/datum/interaction/machine_verb/hydroponics_set_light
-	id = "hydroponics_set_light"
-	name = "Set Light"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(mob/user, obj/item/held, datum/interaction/interaction)
-	return botany_tray_light_stage(user, held, interaction)
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_stage(mob/user, obj/item/held, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
-	if(ishuman(user) || isrobot(user))
-		if(!botany_answer_ready)
-			open_request(src, /datum/prompt/choice/botany_tray_light, PROC_REF(botany_tray_light_answered), answerer = user, botany_operator = user, botany_held = held, botany_interaction = interaction, question = "Specify a light level.", title = "Light Level", choices = list(0,1,2,3,4,5,6,7,8,9,10), buttons = FALSE)
-			return
-		var/new_light = botany_answer
-		if(isnull(new_light))
-			return
-		if(new_light)
-			tray_light = new_light
-			to_chat(user, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(datum/act/op/A)
+	var/new_light = A.step_value("light")
+	if(new_light)
+		tray_light = new_light
+		to_chat(A.actor, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/check_level_sanity()
 	//Make sure various values are sane.
@@ -580,22 +570,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 	return
 
-/// Kept as one effect: the guards and branches below all sit at the same level and the old
-/// proc only ever chained to ..() from the single "syringe, extract mode, seed present" case.
-/datum/interaction/machine_item/hydroponics_attackby
-	id = "hydroponics_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/// An item used on the tray, the old attackby kept as one effect: its guards and branches all sit at the same level, and only the
+/// "syringe, inject mode, seed present" case goes on to what else the click means (OP_DECLINE).
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 
 	if(O.is_open_container())
-		return TRUE
+		return OP_OK
 
 	if(istype(O, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
-		return TRUE
+		return OP_OK
 
 	else if(istype(O, /obj/item/reagent_containers/syringe))
 
@@ -603,17 +589,17 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 		if (S.mode == 1)
 			if(seed)
-				return FALSE
+				return OP_DECLINE
 			else
 				to_chat(user, span_filter_notice("There's no plant to inject."))
-				return TRUE
+				return OP_OK
 		else
 			if(seed)
 				//Leaving this in in case we want to extract from plants later.
 				to_chat(user, span_filter_notice("You can't get any extract out of this plant."))
 			else
 				to_chat(user, span_filter_notice("There's nothing to draw something from."))
-			return TRUE
+			return OP_OK
 
 	else if (istype(O, /obj/item/seeds))
 
@@ -625,7 +611,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 			if(!S.seed())
 				to_chat(user, span_filter_notice("The packet seems to be empty. You throw it away."))
 				consume(O, user)
-				return TRUE
+				return OP_OK
 
 			to_chat(user, span_filter_notice("You plant the [S.seed().seed_name] [S.seed().seed_noun]."))
 			plant_seeds(S)
@@ -673,7 +659,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 			health -= O.force
 			check_health()
 
-	return TRUE
+	return OP_OK
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/take_plant_sample(mob/user)
 	if(!seed)
@@ -691,62 +677,54 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 		sampled = TRUE
 	check_health()
 	force_update = TRUE
-	machine_step()
+	work_step(null)
 	return TRUE
 
-/obj/machinery/portable_atmospherics/hydroponics/wirecutter_act(mob/user, obj/item/tool)
-	take_plant_sample(user)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/portable_atmospherics/hydroponics/proc/sample_cut(datum/act/op/A)
+	take_plant_sample(A.actor)
 
 /// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
 /obj/machinery/portable_atmospherics/hydroponics/port_wrench_offered(datum/act/op/A)
 	return !mechanical || locate_within(loc, /obj/machinery/atmospherics/portables_connector)
 
-/obj/machinery/portable_atmospherics/hydroponics/wrench_act(mob/user, obj/item/tool)
-	if(!mechanical)
-		return ..()
-	if(locate_within(loc, /obj/machinery/atmospherics/portables_connector/))
-		return ..()
+/// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
+/obj/machinery/portable_atmospherics/hydroponics/proc/boltable(datum/act/op/A)
+	return mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): the port under the tray is looked for when the wrench is used
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/bolted(datum/act/op/A)
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_anchored(!anchored)
-	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 
-/obj/machinery/portable_atmospherics/hydroponics/multitool_act(mob/user, obj/item/tool)
-	if(!anchored)
-		to_chat(user, span_warning("Anchor it first!"))
-		return ITEM_INTERACT_BLOCKING
-	if(frozen == -1)
-		to_chat(user, span_warning("You see no way to use \the [tool] on [src]."))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
+/obj/machinery/portable_atmospherics/hydroponics/proc/is_anchored(datum/act/op/A)
+	return anchored
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_freeze(datum/act/op/A)
+	return frozen != -1
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/freezer_toggled(datum/act/op/A)
+	to_chat(A.actor, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
 	set_frozen(!frozen)
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_tk: clear a dead plant or harvest a ripe one at range.
-/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(datum/act/op/A)
 	if(dead)
-		remove_dead(user)
+		remove_dead(A.actor)
 	else if(harvest)
-		harvest(user)
-	return TRUE
+		harvest(A.actor)
 
-/datum/interaction/machine_hand/ungated/hydroponics_interact
-	id = "hydroponics_interact"
-	name = "Use"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(user,/mob/living/silicon))
-		return TRUE
+		return
 	if(frozen == 1)
 		to_chat(user, span_warning("Disable the cryogenic freezing first!"))
 	if(harvest)
 		harvest(user)
 	else if(dead)
 		remove_dead(user)
-	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/examine(mob/user)
 	. = ..()
@@ -797,15 +775,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 		. += "The tray's sensor suite is reporting [light_string] and a temperature of [environment.return_temperature()]K at [environment.return_pressure()] kPa in the [environment_type] environment."
 
-/datum/interaction/machine_verb/hydroponics_toggle_lid
-	id = "hydroponics_toggle_lid"
-	name = "Toggle Tray Lid"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user) || isrobot(user))
-		close_lid(user)
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb(datum/act/op/A)
+	close_lid(A.actor)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/close_lid(mob/living/user)
 	closed_system = !closed_system
@@ -861,48 +832,3 @@ CAPABILITIES(/datum/prompt/choice/botany_ghost_harvest)
 	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
 		return "gone"
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = botany_tray_light_apply(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/botany_tray_light_apply(datum/act/request/A)
-	var/datum/prompt/choice/botany_tray_light/ask = A.answer
-	return botany_tray_light_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
-
-/datum/prompt/choice/botany_tray_light
-	timeout = 0
-	var/mob/botany_operator
-	var/obj/item/botany_held
-	var/datum/interaction/botany_interaction
-	var/botany_operator_expected = FALSE
-	var/botany_held_expected = FALSE
-	var/botany_interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/botany_tray_light)
-	ref_one(nameof(botany_operator), /mob)
-	ref_one(nameof(botany_held), /obj/item)
-	ref_one(nameof(botany_interaction), /datum/interaction)
-
-/datum/prompt/choice/botany_tray_light/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_operator = botany_operator
-	var/obj/item/captured_held = botany_held
-	var/datum/interaction/captured_interaction = botany_interaction
-	botany_operator_expected = !isnull(captured_operator)
-	botany_held_expected = !isnull(captured_held)
-	botany_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(botany_operator))
-	rel_clear(src, nameof(botany_held))
-	rel_clear(src, nameof(botany_interaction))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(botany_operator), captured_operator)
-	if(captured_held && !QDELETED(captured_held))
-		rel_set(src, nameof(botany_held), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(botany_interaction), captured_interaction)
-
-/datum/prompt/choice/botany_tray_light/recheck_extra()
-	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
-		return "gone"

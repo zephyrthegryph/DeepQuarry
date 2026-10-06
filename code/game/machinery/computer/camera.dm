@@ -32,18 +32,10 @@ CAPABILITIES(/obj/machinery/computer/security)
 /obj/machinery/computer/security/ui_redirect(mob/user)
 	return camera
 
-/obj/machinery/computer/security/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/security_open_ui,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Use", PROC_REF(security_robot_use)))
-	..()
-
-/// The old attack_hand: never called ..(), so it stays ungated.
-/datum/interaction/machine_hand/ungated/security_open_ui
-	id = "security_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/security/proc/interaction_open_ui_impl
+EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open_ui_impl)), \
+	INTERACT_ROBOT("Use", PROC_REF(security_robot_use)), \
+)
 
 /obj/machinery/computer/security/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)

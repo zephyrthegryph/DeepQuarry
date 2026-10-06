@@ -101,15 +101,17 @@
 		return OP_PASS
 	return OP_DECLINE
 
-/obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/computer/transhuman/resleeving/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	rel_set(pod, nameof(pod.connected), src)
 	pod.name = "[initial(pod.name)] #[LAZYLEN(pods)]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_hand.
 /obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_hand(datum/act/op/A)
@@ -688,3 +690,4 @@ CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
 	op("selectsleever", ui_act("selectsleever", arg("ref", schema_ref(/obj/machinery/transhuman/resleever))), then(PROC_REF(ui_act_selectsleever)))
 	op("menu", ui_act("menu", arg("num", num(1, 3))), then(PROC_REF(ui_act_menu)))
 	op("sleeve", ui_act("sleeve", arg("mode", num())), then(PROC_REF(act_sleeve)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))

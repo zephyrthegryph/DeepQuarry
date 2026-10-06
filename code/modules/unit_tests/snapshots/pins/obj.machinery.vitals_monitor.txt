@@ -25,5 +25,5 @@ human|/obj/item/stack/material/steel menu: Toggle Monitor Beeping
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Toggle Monitor Beeping
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, vitals_monitor_toggle_beep
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, vitals_monitor_toggle_beep
 

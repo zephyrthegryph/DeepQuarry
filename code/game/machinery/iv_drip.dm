@@ -41,6 +41,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 CAPABILITIES(/obj/machinery/iv_drip)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
 	drag_onto(PROC_REF(drop_input))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
 /// then the native drop goes on.
@@ -81,11 +82,13 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	update_icon()
 	return TRUE
 
-/obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/iv_drip/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
 	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)
 	to_chat(user, span_notice("You dismantle the IV drip."))

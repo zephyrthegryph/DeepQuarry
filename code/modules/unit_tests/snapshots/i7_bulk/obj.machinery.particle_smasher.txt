@@ -1,9 +1,5 @@
-/obj/machinery/particle_smasher|human|none => particle_smasher_eject_contents|particle_smasher_analyzer:needs a gas analyzer,particle_smasher_fill_target:needs an item,particle_smasher_attach_beaker:needs a beaker,particle_smasher_swipe_id:needs an identification card,particle_smasher_store:needs an item
-/obj/machinery/particle_smasher|robot|none => particle_smasher_eject_contents|gen_robot_interaction_swallow:not possible right now,particle_smasher_analyzer:needs a gas analyzer,particle_smasher_fill_target:needs an item,particle_smasher_attach_beaker:needs a beaker,particle_smasher_swipe_id:needs an identification card,particle_smasher_store:needs an item
+/obj/machinery/particle_smasher|human|none => |
+/obj/machinery/particle_smasher|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/particle_smasher|ai|none => |
 /obj/machinery/particle_smasher|ghost|none => |
-/obj/machinery/particle_smasher|human|/obj/item/analyzer => particle_smasher_analyzer,particle_smasher_store,particle_smasher_eject_contents|particle_smasher_fill_target:needs an item,particle_smasher_attach_beaker:needs a beaker,particle_smasher_swipe_id:needs an identification card
-/obj/machinery/particle_smasher|human|/obj/item/stack/material => particle_smasher_fill_target,particle_smasher_store,particle_smasher_eject_contents|particle_smasher_analyzer:needs a gas analyzer,particle_smasher_attach_beaker:needs a beaker,particle_smasher_swipe_id:needs an identification card
-/obj/machinery/particle_smasher|human|/obj/item/reagent_containers/glass/beaker => particle_smasher_attach_beaker,particle_smasher_store,particle_smasher_eject_contents|particle_smasher_analyzer:needs a gas analyzer,particle_smasher_fill_target:needs an item,particle_smasher_swipe_id:needs an identification card
-/obj/machinery/particle_smasher|human|/obj/item/card/id => particle_smasher_swipe_id,particle_smasher_store,particle_smasher_eject_contents|particle_smasher_analyzer:needs a gas analyzer,particle_smasher_fill_target:needs an item,particle_smasher_attach_beaker:needs a beaker
-/obj/machinery/particle_smasher|human|/obj/item => particle_smasher_store,particle_smasher_eject_contents|particle_smasher_analyzer:needs a gas analyzer,particle_smasher_fill_target:needs an item,particle_smasher_attach_beaker:needs a beaker,particle_smasher_swipe_id:needs an identification card
+

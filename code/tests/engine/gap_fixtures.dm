@@ -197,6 +197,46 @@ CAPABILITIES(/obj/gap_touch)
 	LAZYADD(ran, "touch")
 	return OP_OK
 
+/// A ghost's op beside a hand op: observer() needs AFF_OBSERVE, which only the observer mob provides.
+/obj/gap_observe
+	name = "gap observe target"
+	var/list/ran
+
+CAPABILITIES(/obj/gap_observe)
+	op("haunt", observer(), label("Haunt"), then(PROC_REF(haunted)))
+	op("touch", hand(), label("Touch"), then(PROC_REF(touched)))
+
+/obj/gap_observe/proc/ran_text()
+	return jointext(ran, ",")
+
+/obj/gap_observe/proc/haunted(datum/act/op/A)
+	LAZYADD(ran, "haunt")
+	return OP_OK
+
+/obj/gap_observe/proc/touched(datum/act/op/A)
+	LAZYADD(ran, "touch")
+	return OP_OK
+
+/// An op only a hulk is offered (req_mutation() in a when()), ahead of the plain touch.
+/obj/gap_hulk
+	name = "gap hulk target"
+	var/list/ran
+
+CAPABILITIES(/obj/gap_hulk)
+	op("smash", hand(), label("Smash"), priority(OP_PRIORITY_NORMAL + 1), when(req_mutation(HULK)), then(PROC_REF(smashed)))
+	op("touch", hand(), label("Touch"), then(PROC_REF(touched)))
+
+/obj/gap_hulk/proc/ran_text()
+	return jointext(ran, ",")
+
+/obj/gap_hulk/proc/smashed(datum/act/op/A)
+	LAZYADD(ran, "smash")
+	return OP_OK
+
+/obj/gap_hulk/proc/touched(datum/act/op/A)
+	LAZYADD(ran, "touch")
+	return OP_OK
+
 /// An op that answers OP_PASS beneath another that takes the input: the pass hands the click on, the next op runs, and a result that does not pass stops there.
 /obj/gap_pass
 	name = "gap pass target"

@@ -16,6 +16,7 @@ robot|none menu: Open maintenance panel (refused: needs a screwdriver)
 robot|none menu: Use (refused: needs an item)
 robot|none click: nothing
 ai|none click: nothing
+ghost|none menu: Eject (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Eject
@@ -24,7 +25,7 @@ human|/obj/item/tool/screwdriver menu: Enter VR Capsule
 human|/obj/item/tool/screwdriver menu: Insert (refused: needs a mob)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Eject
 human|/obj/item/tool/crowbar menu: Eject VR Capsule
@@ -32,7 +33,8 @@ human|/obj/item/tool/crowbar menu: Enter VR Capsule
 human|/obj/item/tool/crowbar menu: Insert (refused: needs a mob)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wrench menu: Eject
 human|/obj/item/tool/wrench menu: Eject VR Capsule
@@ -40,7 +42,7 @@ human|/obj/item/tool/wrench menu: Enter VR Capsule
 human|/obj/item/tool/wrench menu: Insert (refused: needs a mob)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wirecutters menu: Eject
 human|/obj/item/tool/wirecutters menu: Eject VR Capsule
@@ -48,7 +50,7 @@ human|/obj/item/tool/wirecutters menu: Enter VR Capsule
 human|/obj/item/tool/wirecutters menu: Insert (refused: needs a mob)
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/multitool menu: Eject
 human|/obj/item/multitool menu: Eject VR Capsule
@@ -56,7 +58,7 @@ human|/obj/item/multitool menu: Enter VR Capsule
 human|/obj/item/multitool menu: Insert (refused: needs a mob)
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/weldingtool menu: Eject
 human|/obj/item/weldingtool menu: Eject VR Capsule
@@ -64,7 +66,7 @@ human|/obj/item/weldingtool menu: Enter VR Capsule
 human|/obj/item/weldingtool menu: Insert (refused: needs a mob)
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/cable_coil menu: Eject
 human|/obj/item/stack/cable_coil menu: Eject VR Capsule
@@ -73,7 +75,7 @@ human|/obj/item/stack/cable_coil menu: Insert (refused: needs a mob)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/material/steel menu: Eject
 human|/obj/item/stack/material/steel menu: Eject VR Capsule
@@ -81,7 +83,7 @@ human|/obj/item/stack/material/steel menu: Enter VR Capsule
 human|/obj/item/stack/material/steel menu: Insert (refused: needs a mob)
 human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Eject
 human|/obj/item/card/id menu: Eject VR Capsule
@@ -89,7 +91,7 @@ human|/obj/item/card/id menu: Enter VR Capsule
 human|/obj/item/card/id menu: Insert (refused: needs a mob)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
+human|/obj/item/card/id click: Click: Use
 human|/obj/item menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item menu: Eject
 human|/obj/item menu: Eject VR Capsule
@@ -97,6 +99,6 @@ human|/obj/item menu: Enter VR Capsule
 human|/obj/item menu: Insert (refused: needs a mob)
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Use
-human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, vr_sleeper_alien_eject, vr_sleeper_alien_scan, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
+human|/obj/item click: Click: Use
+keys: drag_buckle, eject_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, scan_impl, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
 

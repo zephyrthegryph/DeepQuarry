@@ -8,12 +8,8 @@ interact /obj/item/robot_parts/robot_suit request_in_effect
 interact /obj/item/melee/energy request_in_effect
 interact /obj/item/paint_palette request_in_effect
 interact /obj/structure/bonfire request_in_effect
-interact /obj/structure/biowaste_tank request_in_effect
 # The handler asks who the actor is (isrobot): the op's binding or a requirement says it, by hand.
-tool_act /obj/structure/extinguisher_cabinet/wrench handler_actor_check
-interact /obj/structure/extinguisher_cabinet handler_actor_check
 interact /obj/structure/gargoyle handler_actor_check
-interact /obj/structure/low_wall handler_actor_check
 # The legacy requirement reads state the generated reads cannot follow (loc, untracked vars): the requirement is
 # rewritten on tracked state by hand.
 interact /obj/item/TVAssembly unknown_read
@@ -22,13 +18,11 @@ interact /obj/item/ore_bag unknown_read
 interact /obj/item/paper unknown_read
 interact /obj/item/picnic_blankets_carried unknown_read
 interact /obj/structure/fitness/weightlifter unknown_read
-interact /obj/structure/flora/tree/pine/xmas/presents unknown_read
 interact /obj/structure/picnic_blanket_deployed unknown_read
 interact /obj/structure/undies_wardrobe unknown_read
 # Lowering would move a silicon spec or a guarded legacy handler under a lint it is baselined against; the
 # interaction codemod cannot convert them yet (INTERACT_SILICON, INTERACT_OBSERVER, a related replacer).
 lower /obj/item/radio/borg inline_refusal
-lower /obj/structure/ghost_pod/manual inline_refusal
 # Second pass (after the test-caller and key fixes reached more types).
 interact /obj/item/emergency_beacon request_in_effect
 interact /obj/item/holowarrant request_in_effect
@@ -41,10 +35,6 @@ interact /obj/item/hand_tele request_in_effect
 interact /obj/item/poi/broken_drone_circuit unknown_read
 interact /obj/item/toy/acorn_branch unknown_read
 # A question opened from the emag handler: asks() on the op, by hand.
-emag /obj/item/sleevemate request_in_effect
 interact /obj/item/vac_attachment request_in_effect
 interact /obj/item/capture_crystal request_in_effect
 interact /obj/item/taperecorder unknown_read
-interact /obj/structure/girder unknown_read
-lower /obj/structure/girder unknown_read
-tool_act /obj/machinery/button/windowtint/multitool request_in_effect

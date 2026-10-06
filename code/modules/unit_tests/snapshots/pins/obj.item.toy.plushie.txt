@@ -159,5 +159,5 @@ human|/obj/item/storage menu: Strangle (refused: hold Grab)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_use_interaction_squeeze, gen_verb_move_to_top_effect, gen_verb_rename_plushie_effect, gen_verb_toggle_digestable_effect
+keys: drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_use_interaction_squeeze, gen_verb_move_to_top_effect, gen_verb_rename_plushie_effect, gen_verb_toggle_digestable_effect
 

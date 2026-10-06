@@ -44,6 +44,9 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
 	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds), because = PROC_REF(has_crystal_slot_refusal))), then(PROC_REF(interaction_insert_crystal)))
+	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
 
 /obj/machinery/computer/telescience/ownership()
 	. = ..()
@@ -65,28 +68,23 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	for(var/i = 1; i <= starting_crystals; i++)
 		rel_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
-/obj/machinery/computer/telescience/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/telescience_insert_crystal,
-		/datum/interaction/machine_item/telescience_insert_gps,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// Old attackby: the bluespace crystal branch.
-/datum/interaction/machine_item/telescience_insert_crystal
-	id = "telescience_insert_crystal"
-	name = "Insert crystal"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/bluespace_crystal
-	effect = /obj/machinery/computer/telescience/proc/interaction_insert_crystal
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/telescience/proc/has_crystal_slot))
-
 /// Requirement: a free crystal slot.
 /obj/machinery/computer/telescience/proc/has_crystal_slot(mob/user, atom/target, obj/item/held)
 	return length(crystals) >= max_crystals ? "there are not enough crystal slots" : TRUE
 
-/obj/machinery/computer/telescience/proc/interaction_insert_crystal(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement (was REQ_* has_crystal_slot): the legacy check answers TRUE to pass.
+/obj/machinery/computer/telescience/proc/has_crystal_slot_holds(datum/act/op/A)
+	var/answer = has_crystal_slot(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why has_crystal_slot_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/telescience/proc/has_crystal_slot_refusal(datum/act/op/A)
+	var/answer = has_crystal_slot(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/computer/telescience/proc/interaction_insert_crystal(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!user.unEquip(W))
 		return TRUE
 	W.forceMove(src)
@@ -94,29 +92,25 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s crystal slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s crystal slot."))
 	return TRUE
 
-/// Old attackby: the GPS branch.
-/datum/interaction/machine_item/telescience_insert_gps
-	id = "telescience_insert_gps"
-	name = "Insert GPS"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/gps
-	effect = /obj/machinery/computer/telescience/proc/interaction_insert_gps
-
-/obj/machinery/computer/telescience/proc/interaction_insert_gps(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/telescience/proc/interaction_insert_gps(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!inserted_gps)
 		if(!move_into(src, nameof(src.inserted_gps), W, user))
 			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s GPS device slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s GPS device slot."))
 	return TRUE
 
-/obj/machinery/computer/telescience/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/computer/telescience/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/multitool/multitool = tool
 	if(!istype(multitool.connectable(), /obj/machinery/telepad))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	rel_set(src, nameof(telepad), multitool.connectable())
 	rel_clear(multitool, nameof(multitool.connectable))
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((length(crystals) * telepad().efficiency * powerCoefficient), 1)

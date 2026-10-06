@@ -57,6 +57,8 @@ CAPABILITIES(/obj/item/bedsheet/pillow)
 CAPABILITIES(/obj/structure/bed/pillowpile)
 	owns_one(nameof(front), /obj/structure/bed/pillowpilefront)
 	bed_hands_off()
+	without("drag_buckle")   // its own Use replaced every inherited interaction
+	op("disassemble", hand(), label("Disassemble"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/bed/pillowpilefront
 	name = "pillow pile"
@@ -84,22 +86,15 @@ APPEARANCE_NONE(/obj/structure/bed/pillowpile)
 
 CAPABILITIES(/obj/structure/bed/pillowpilefront)
 	bed_hands_off()
-
-/obj/structure/bed/pillowpile/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/pillowpile_hand,
-	)
+	without("drag_buckle")   // its own Use replaced every inherited interaction
+	op("disassemble", hand(), label("Disassemble"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand: disassemble the pile.
-/datum/interaction/entry_hand/pillowpile_hand
-	id = "pillowpile_hand"
-	name = "Disassemble"
-	effect = /obj/structure/bed/pillowpile/proc/interaction_hand
-
-/obj/structure/bed/pillowpile/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/pillowpile/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_notice("You dissasembled the large pillow pile!"))
@@ -108,21 +103,12 @@ CAPABILITIES(/obj/structure/bed/pillowpilefront)
 		replace_with(front, front.sourcepillow)
 	replace_with(src, sourcepillow)
 
-/obj/structure/bed/pillowpilefront/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/pillowpilefront_hand,
-	)
-
 /// Old attack_hand: disassemble the front piece.
-/datum/interaction/entry_hand/pillowpilefront_hand
-	id = "pillowpilefront_hand"
-	name = "Disassemble"
-	effect = /obj/structure/bed/pillowpilefront/proc/interaction_hand
-
-/obj/structure/bed/pillowpilefront/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/pillowpilefront/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)
 	to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))

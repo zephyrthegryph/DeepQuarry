@@ -67,5 +67,5 @@ human|/obj/item/card/id menu: Punch (refused: combat mode is off)
 human|/obj/item/card/id menu: Strangle (refused: hold Grab)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_punch, gen_hand_ungated_interaction_hand, gen_item_interaction_item
+keys: drag_buckle, gen_hand_interaction_punch, gen_hand_ungated_interaction_hand, gen_item_interaction_item
 

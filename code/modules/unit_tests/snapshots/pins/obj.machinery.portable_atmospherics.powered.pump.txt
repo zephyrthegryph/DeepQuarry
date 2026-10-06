@@ -39,5 +39,5 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
-keys: cell_in, cell_out, climb.climb, climb.climb_menu, direction, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, power, pressure, tank_bay.holding.insert, ui_open
+keys: cell_in, cell_out, climb.climb, climb.climb_menu, direction, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, power, pressure, tank_bay.holding.insert, ui_open
 

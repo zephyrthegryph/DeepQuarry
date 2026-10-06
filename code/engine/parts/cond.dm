@@ -336,6 +336,24 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 	var/mob/M = A.actor
 	return !istype(M) || M.stat != DEAD
 
+/// req_mutation(M, of = ON_ACTOR, because =): the participant (the actor by default) is a mob with mutation M (HULK, TK, ...): a hulk's smash,
+/// a telekinetic's reach. In a when() it picks the op only for such an actor; in needs() it refuses everyone else. It reads the mob's conditions
+/// key (MOB_KEY_CONDITIONS, published by add_mutation()/remove_mutation()), so a waiting op re-checks when the mutation comes or goes.
+/proc/req_mutation(mutation, of = ON_ACTOR, because = null, id = null)
+	return part_make(/datum/entry/part/req/mutation, list("mutation" = mutation, "of" = of, "because" = because, "id" = id))
+
+/datum/entry/part/req/mutation
+	part_name = "req_mutation"
+	default_reason = /datum/msg/req_failed
+
+/datum/entry/part/req/mutation/read_keys(datum/act/op/A)
+	var/datum/D = op_subject(A, src.args["of"])
+	return D ? list(list(D, MOB_KEY_CONDITIONS)) : list()
+
+/datum/entry/part/req/mutation/holds(datum/act/op/A)
+	var/mob/M = op_subject(A, src.args["of"])
+	return istype(M) && M.has_mutation(src.args["mutation"])
+
 /// req_adjacent(): the actor is next to the target.
 /proc/req_adjacent()
 	return part_make(/datum/entry/part/req/adjacent)

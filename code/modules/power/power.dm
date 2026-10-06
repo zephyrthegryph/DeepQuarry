@@ -210,19 +210,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
 // attach a wire to a power machine - leads from the turf you are standing on
 //almost never called, overwritten by all power machines but terminal and generator
-/obj/machinery/power/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/power_cable_place,
-	)
-	..()
+CAPABILITIES(/obj/machinery/power)
+	op("cable_place", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Lay cable"), then(PROC_REF(interaction_cable_place)))
 
-/datum/interaction/machine_item/power_cable_place
-	id = "power_cable_place"
-	name = "Lay cable"
-	held_type = /obj/item/stack/cable_coil
-	effect = /obj/machinery/power/proc/interaction_cable_place
-
-/obj/machinery/power/proc/interaction_cable_place(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
+/obj/machinery/power/proc/interaction_cable_place(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/cable_coil/coil = A.held
 	var/turf/T = user.loc
 
 	if(!T.is_plating() || !istype(T, /turf/simulated/floor))

@@ -44,21 +44,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, 
 	else
 		set_light(light_range_on, light_power_on)
 
-/obj/machinery/computer/timeclock/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/timeclock_insert_id,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// Old attackby: insert an ID card, or complain there's already one inside.
-/datum/interaction/machine_item/timeclock_insert_id
-	id = "timeclock_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/computer/timeclock/proc/interaction_insert_id
-
-/obj/machinery/computer/timeclock/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
+/obj/machinery/computer/timeclock/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = A.held
 	if(!card && move_into(src, nameof(src.card), I, user))
 		play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 		SStgui.update_uis(src)
@@ -73,6 +61,7 @@ CAPABILITIES(/obj/machinery/computer/timeclock)
 	op("switch-to-onduty-rank", ui_act("switch-to-onduty-rank", arg("assignment"), arg("rank")), then(PROC_REF(ui_act_switch_to_onduty_rank)))
 	op("switch-to-offduty", ui_act("switch-to-offduty"), then(PROC_REF(ui_act_switch_to_offduty)))
 	extend(TAG_UI, then(PROC_REF(ui_touched), early = TRUE))
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 
 /obj/machinery/computer/timeclock/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

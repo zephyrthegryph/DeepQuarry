@@ -123,13 +123,13 @@ CAPABILITIES(/obj/item/beartrap)
 
 	//trap the victim in place
 	set_dir(L.dir)
-	can_buckle = TRUE
+	set_can_buckle(TRUE)
 	buckle_mob(L)
 	L.status_at_least(STAT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
 	deployed = 0
 	set_anchored(FALSE)
-	can_buckle = initial(can_buckle)
+	set_can_buckle(initial(can_buckle))
 
 /obj/item/beartrap/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

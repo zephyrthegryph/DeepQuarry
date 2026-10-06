@@ -62,5 +62,5 @@ human|/obj/item menu: Drop on belt
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Push pulled object
 human|/obj/item click: nothing
-keys: conveyor_drop_item, conveyor_push_pulled, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: conveyor_drop_item, conveyor_push_pulled, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

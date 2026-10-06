@@ -1,67 +1,56 @@
-human|none menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|none menu: Make Deployable
 human|none menu: Ui open
 human|none menu: Use
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 robot|none menu: Make Deployable (refused: you don't have the dexterity to do this)
 robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
+ghost|none menu: Make Deployable (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/tool/screwdriver menu: Make Deployable
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Ui open
-human|/obj/item/tool/crowbar menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/tool/crowbar menu: Make Deployable
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Ui open
-human|/obj/item/tool/wrench menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/tool/wrench menu: Make Deployable
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Ui open
-human|/obj/item/tool/wirecutters menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/tool/wirecutters menu: Make Deployable
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Ui open
-human|/obj/item/multitool menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/multitool menu: Make Deployable
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Ui open
-human|/obj/item/weldingtool menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/weldingtool menu: Make Deployable
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Ui open
-human|/obj/item/stack/cable_coil menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Deployable
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Ui open
-human|/obj/item/stack/material/steel menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/stack/material/steel menu: Make Deployable
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Ui open
-human|/obj/item/card/id menu: Insert authentication disk (refused: needs a nuclear authentication disk)
 human|/obj/item/card/id menu: Make Deployable
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-human|/obj/item/disk/nuclear menu: Insert authentication disk (refused: not deployed)
-human|/obj/item/disk/nuclear menu: Make Deployable
-human|/obj/item/disk/nuclear menu: Ui open
-human|/obj/item/disk/nuclear menu: Use
-human|/obj/item/disk/nuclear click: Click: Ui open
-keys: anchor, auth, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, nuclearbomb_insert_disk, nuclearbomb_make_deployable, nuclearbomb_use, pulse, safety, time, timer, type, ui_open, wire
+keys: anchor, auth, drag_buckle, gen_robot_interaction_swallow, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_repair, make_deployable, pulse, safety, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wrench, wire
 

@@ -146,5 +146,5 @@ human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carryin
 human|/obj/item/storage menu: Toggle Follow (refused: you need to be carrying it)
 human|/obj/item/storage menu: Use (refused: not in your hand)
 human|/obj/item/storage click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_destroy_crystal_effect, gen_verb_follow_owner_effect, gen_verb_invite_ghost_effect, gen_verb_move_to_top_effect, gen_verb_release_ownership_effect, gen_verb_toggle_digestable_effect
+keys: drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_destroy_crystal_effect, gen_verb_follow_owner_effect, gen_verb_invite_ghost_effect, gen_verb_move_to_top_effect, gen_verb_release_ownership_effect, gen_verb_toggle_digestable_effect
 

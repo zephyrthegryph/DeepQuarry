@@ -146,34 +146,12 @@
 
 // Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
 #define EFFECT_BUCKLED "buckled"
-#define EFFECT_SLOWED "slowed"
-#define EFFECT_ARMOR_MELEE "armor_melee"
-#define EFFECT_ARMOR_BULLET "armor_bullet"
-#define EFFECT_ARMOR_HEAT "armor_heat"
-#define EFFECT_INSULATION "insulation"
-#define EFFECT_MOVE_SPEED "move_speed"
-#define EFFECT_POWER_DRAW "power_draw"
-#define EFFECT_HUD_VITALS "hud_vitals"
-/// Something wants this mob unpushable (a robot module, an anchoring effect). Keyed per source;
-/// status_flags' CANPUSH is derived from it (code/modules/mob/_push_sources.dm).
-#define EFFECT_UNPUSHABLE "unpushable"
-/// Product of every stealth/cloak effect's opacity (0..1); the mob's alpha is 255 x this
-/// (code/modules/mob/_alpha_sources.dm). Keyed per source (ALPHA_SOURCE_*).
-#define EFFECT_ALPHA_MULT "alpha_mult"
 /// Body effects on a mob (code/modules/body/body_effects.dm): keyed by /datum/body_effect type,
 /// value = stacks. Timed ones expire on the mob's body clock.
 #define EFFECT_BODY_EFFECTS "body_effects"
 
-// Clock domains and their generated effect ids ("clock:<id>:mult"/":inhibit").
+// The biological clock domain: it runs at the clock_rate_bio stat (code/datums/om/contribution.dm, om_clock_compute()).
 #define CLOCK_BIO "bio"
-#define CLOCK_MACHINE "machine"
-#define CLOCK_CHEM "chem"
-#define EFFECT_CLOCK_BIO_MULT "clock:bio:mult"
-#define EFFECT_CLOCK_BIO_INHIBIT "clock:bio:inhibit"
-#define EFFECT_CLOCK_MACHINE_MULT "clock:machine:mult"
-#define EFFECT_CLOCK_MACHINE_INHIBIT "clock:machine:inhibit"
-#define EFFECT_CLOCK_CHEM_MULT "clock:chem:mult"
-#define EFFECT_CLOCK_CHEM_INHIBIT "clock:chem:inhibit"
 
 // ---- Relations (section D). ----
 #define OM_REL_REPLACE 1

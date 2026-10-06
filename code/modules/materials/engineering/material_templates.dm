@@ -27,6 +27,7 @@
 
 /// The shared singleton for a template type. Templates are read-only.
 /proc/material_template_singleton(template_path) as /datum/material_template
+	READS_FROM()
 	var/static/list/templates
 	if(!template_path)
 		return null

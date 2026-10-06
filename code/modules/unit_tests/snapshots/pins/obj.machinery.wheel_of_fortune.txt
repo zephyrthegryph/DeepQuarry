@@ -1,0 +1,66 @@
+human|none menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|none menu: Change interval
+human|none menu: Management controls (refused: needs an identification card or a PDA)
+human|none menu: Use
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Buy lottery ticket (refused: needs a broken casino chip)
+robot|none menu: Change interval
+robot|none menu: Management controls (refused: needs an identification card or a PDA)
+robot|none menu: Use
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/tool/screwdriver menu: Change interval
+human|/obj/item/tool/screwdriver menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/tool/crowbar menu: Change interval
+human|/obj/item/tool/crowbar menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/tool/wrench menu: Change interval
+human|/obj/item/tool/wrench menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/tool/wirecutters menu: Change interval
+human|/obj/item/tool/wirecutters menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/multitool menu: Change interval
+human|/obj/item/multitool menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/weldingtool menu: Change interval
+human|/obj/item/weldingtool menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/stack/cable_coil menu: Change interval
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/stack/material/steel menu: Change interval
+human|/obj/item/stack/material/steel menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Buy lottery ticket (refused: needs a broken casino chip)
+human|/obj/item/card/id menu: Change interval
+human|/obj/item/card/id menu: Management controls (refused: access denied)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: nothing
+human|/obj/item/spacecasinocash menu: Buy lottery ticket (refused: lottery sales are currently disabled)
+human|/obj/item/spacecasinocash menu: Change interval
+human|/obj/item/spacecasinocash menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/spacecasinocash menu: Use
+human|/obj/item/spacecasinocash click: nothing
+keys: drag_buckle, gen_hand_ungated_interaction_use, gen_insert_interaction_cash, gen_insert_interaction_id, gen_robot_interaction_swallow, gen_verb_interaction_setinterval_verb, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

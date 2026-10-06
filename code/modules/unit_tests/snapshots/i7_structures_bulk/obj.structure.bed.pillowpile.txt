@@ -1,5 +1,5 @@
-/obj/structure/bed/pillowpile|human|none => pillowpile_hand|
-/obj/structure/bed/pillowpile|robot|none => pillowpile_hand|
+/obj/structure/bed/pillowpile|human|none => |
+/obj/structure/bed/pillowpile|robot|none => |
 /obj/structure/bed/pillowpile|ai|none => |
 /obj/structure/bed/pillowpile|ghost|none => |
 

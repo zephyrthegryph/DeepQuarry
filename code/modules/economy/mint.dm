@@ -8,20 +8,9 @@
 	anchored = TRUE
 	var/coinsToProduce = 6	//how many coins do we make per sheet? a sheet is 2000 units whilst a coin is 250, and some material should be lost in the process
 
-/obj/machinery/mineral/mint/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/mint_press,
-	)
-	..()
-
-/// Old attackby: feed a material sheet through the press.
-/datum/interaction/machine_item/mint_press
-	id = "mint_press"
-	name = "Press coins"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	also_requires = list(REQ_BECAUSE(REQ_ANCHORED, "it must be properly secured to operate"))
-	effect = /obj/machinery/mineral/mint/proc/interaction_press
+EXTEND_INTERACTIONS(/obj/machinery/mineral/mint, \
+	INTERACT_INSERT(/obj/item/stack/material, PROC_REF(interaction_press), "Press coins", REQ_BECAUSE(REQ_ANCHORED, "it must be properly secured to operate")), \
+)
 
 /obj/machinery/mineral/mint/proc/interaction_press(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
 	if(!M.coin_type)

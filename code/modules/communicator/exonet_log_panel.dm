@@ -4,6 +4,8 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
+	// a ghost acts only as an observer: its clicks and menu picks reach the observer() ops of what it looks at, nothing else (no hands, no interface)
+	provides(AFF_OBSERVE)
 	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 	op("observer_tome_manifest", item(/obj/item/book/tome), label("Manifest"), then(PROC_REF(observer_tome_manifest)))

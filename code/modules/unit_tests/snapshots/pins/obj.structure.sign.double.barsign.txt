@@ -14,5 +14,5 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Use (refused: Access denied.)
 human|/obj/item/card/id click: Click: Use
-keys: change_sign, gen_drag_interaction_drag_buckle, use_screwdriver
+keys: change_sign, drag_buckle, use_screwdriver
 

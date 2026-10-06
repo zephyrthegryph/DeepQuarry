@@ -133,3 +133,66 @@
 		qdel(G)
 	for(var/obj/item/organ/O in range(4, tile(2, 2)))
 		qdel(O)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Hydroponics trays and power cells
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A planted tray's step runs a growth cycle when one is due, stamping the cycle's start.
+/datum/unit_test/dq_leftovers/tray_cycles_while_growing
+
+/datum/unit_test/dq_leftovers/tray_cycles_while_growing/run_gate()
+	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, tile(2, 2))
+	var/obj/item/seeds/chiliseed/packet = allocate(/obj/item/seeds/chiliseed, tile(2, 2))
+	tray.plant_seeds(packet)
+	TEST_ASSERT_NOTNULL(tray.seed, "the seed is planted")
+	TEST_ASSERT(test_work_allowed(tray), "a planted tray has work")
+	tray.lastcycle = null
+	tray.force_update = TRUE
+	test_step_machine(tray)
+	TEST_ASSERT_NOTNULL(tray.lastcycle, "the step ran a growth cycle")
+
+/// A cryogenically frozen tray has no work; thawed, it has.
+/datum/unit_test/dq_leftovers/frozen_tray_does_not_cycle
+
+/datum/unit_test/dq_leftovers/frozen_tray_does_not_cycle/run_gate()
+	var/obj/machinery/portable_atmospherics/hydroponics/tray = allocate(/obj/machinery/portable_atmospherics/hydroponics, tile(2, 2))
+	var/obj/item/seeds/chiliseed/packet = allocate(/obj/item/seeds/chiliseed, tile(2, 2))
+	tray.plant_seeds(packet)
+	tray.set_frozen(1)
+	TEST_ASSERT(test_machine_idle(tray), "no growth while frozen")
+	tray.set_frozen(0)
+	TEST_ASSERT(test_work_allowed(tray), "thawed, it grows again")
+
+/// One step of a cell's periodic self-charge (adapter: the step's name).
+/proc/dq_lo_cell_step(obj/item/cell/C)
+	if(hascall(C, "recharge_step"))
+		call(C, "recharge_step")(null)
+	else
+		call(C, "periodic_step")()
+
+/// A self-charging cell drained by use charges itself back over time.
+/datum/unit_test/dq_leftovers/self_charging_cell_recharges
+
+/datum/unit_test/dq_leftovers/self_charging_cell_recharges/run_gate()
+	var/obj/item/cell/device/weapon/recharge/C = allocate(/obj/item/cell/device/weapon/recharge, tile(2, 2))
+	C.use(C.charge)
+	var/drained = C.charge
+	TEST_ASSERT(drained < C.maxcharge, "drained")
+	COOLDOWN_RESET(C, charge_cooldown)
+	dq_lo_cell_step(C)
+	TEST_ASSERT(C.charge > drained, "its periodic step charged it back ([drained] -> [C.charge])")
+
+/// A gradual charge adds its charge one step a second.
+/datum/unit_test/dq_leftovers/gradual_charge_steps_each_second
+
+/datum/unit_test/dq_leftovers/gradual_charge_steps_each_second/run_gate()
+	var/obj/item/cell/C = allocate(/obj/item/cell, tile(2, 2))
+	C.charge = 0
+	C.gradual_charge(4, 1, FALSE, null)
+	var/after_first = C.charge
+	TEST_ASSERT(after_first > 0, "the first step lands at once")
+	test_time(1.5 SECONDS)
+	TEST_ASSERT(C.charge > after_first, "the next step lands a second later")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(C.gradual_charge_left, 0, "the steps run out")

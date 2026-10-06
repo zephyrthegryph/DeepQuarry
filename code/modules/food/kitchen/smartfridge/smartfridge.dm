@@ -51,6 +51,9 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
 	item_throw(stat = STAT_SHOOT_INVENTORY)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(throw_frame)), when = cond_all(STAT_OPERABLE, STAT_SHOOT_INVENTORY))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/smartfridge/proc/wire_lights()
 	return list(
@@ -226,24 +229,27 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		return TRUE
 	return INTERACTION_HANDLED_PASS
 
-/obj/machinery/smartfridge/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/smartfridge/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_panel_open(!panel_open)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the maintenance panel of %T%.")), \
 		MSG_OTHERS(span_filter_notice("%U% [panel_open ? "opens" : "closes"] the maintenance panel of %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/smartfridge/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/smartfridge/proc/wrench_used(datum/act/op/A)
 	if(!wrenchable)
-		return ..()
-	return ..()
+		return OP_DECLINE
+	return OP_DECLINE
 
-/obj/machinery/smartfridge/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/smartfridge/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!allowed(user))
 		to_chat(user, span_warning("\The [src] smartly denies you access to deconstruct it."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/smartfridge/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)

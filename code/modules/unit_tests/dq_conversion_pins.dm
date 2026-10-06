@@ -60,9 +60,20 @@
 	var/area/sweep_room = get_area(T)
 	var/sweep_gravity = sweep_room.has_gravity
 	var/list/actual_by_type = list()
+	// a turf is pinned in place of the tile beside the actors and turned back afterwards (a turf is never qdel'd)
+	var/turf/beside = get_step(T, EAST)
+	var/beside_type = beside?.type
 	for(var/type in expected_by_type)
 		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
 		rand_seed(1)
+		if(ispath(type, /turf))
+			if(!beside)
+				actual_by_type[type] = list("no tile to pin a turf on")
+				continue
+			var/turf/changed = beside.ChangeTurf(type)
+			actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			beside = changed.ChangeTurf(beside_type)
+			continue
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")

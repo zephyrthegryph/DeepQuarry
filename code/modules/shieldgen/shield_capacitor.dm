@@ -30,6 +30,9 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	without("ui_open")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("charge_rate", ui_act("charge_rate", arg("rate", num())), then(PROC_REF(ui_act_charge_rate)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("id_swipe", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/shield_capacitor/Initialize(mapload)
 	. = ..()
@@ -49,13 +52,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 		. = 1
 	fx_sparks(src, 5)
 
-/datum/interaction/machine_item/shield_capacitor_id_swipe
-	id = "shield_capacitor_id_swipe"
-	name = "Swipe ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/shield_capacitor/proc/interaction_id_swipe
-
-/obj/machinery/shield_capacitor/proc/interaction_id_swipe(mob/user, obj/item/card/id/W, datum/interaction/interaction)
+/obj/machinery/shield_capacitor/proc/interaction_id_swipe(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/W = A.held
 	if((ACCESS_CAPTAIN in W.GetAccess()) || (ACCESS_SECURITY in W.GetAccess()) || (ACCESS_ENGINE in W.GetAccess()))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
@@ -63,7 +62,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
-/obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shield_capacitor/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %U%."))
@@ -75,22 +76,10 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 	else
 		set_active(0)
 		rel_clear(src, nameof(owned_gen))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/shield_capacitor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_capacitor_id_swipe,
-		/datum/interaction/machine_hand/ungated/shield_capacitor_use,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/shield_capacitor_use
-	id = "shield_capacitor_use"
-	name = "Use"
-	effect = /obj/machinery/shield_capacitor/proc/interaction_use
-
-/obj/machinery/shield_capacitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_capacitor/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_stat(BROKEN))
 		return TRUE
 	tgui_interact(user)

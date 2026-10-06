@@ -553,20 +553,10 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	flags = WALL_ITEM
 	var/range = 7
 
-/obj/machinery/button/windowtint/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/windowtint_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/windowtint_toggle
-	id = "windowtint_toggle"
-	name = "Toggle"
-	effect = /obj/machinery/button/windowtint/proc/interaction_toggle
-
-/obj/machinery/button/windowtint/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: tint or clear the polarized windows in range that share its id.
+/obj/machinery/button/windowtint/proc/interaction_toggle(datum/act/op/A)
 	toggle_tint()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/button/windowtint/proc/toggle_tint()
 	use_power(5)
@@ -584,28 +574,27 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 
 APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 
-/obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
-	var/obj/item/multitool/multitool = tool
-	if(!id)
-		open_request(src, /datum/prompt/text, PROC_REF(button_id_entered), valid = PROC_REF(button_id_valid), answerer = user, subject = tool, ask_flags = ASK_HELD | ASK_CAPABLE, title = name, question = "Enter an ID for \the [src].", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
-		return ITEM_INTERACT_SUCCESS
-	store_in_multitool(user, multitool)
-	return ITEM_INTERACT_SUCCESS
+/// The question a multitool asks of a button with no id yet.
+/obj/machinery/button/windowtint/proc/id_question(datum/act/A)
+	return "Enter an ID for \the [src]."
 
-/// Setting a tint button's ID with a multitool (the subject, held throughout); the button stays next to them and unset.
-/obj/machinery/button/windowtint/proc/button_id_valid(datum/request/R)
-	var/mob/M = R.answerer
-	return !id && istype(M) && Adjacent(M)
-
-/obj/machinery/button/windowtint/proc/button_id_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/new_id = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
+/// A multitool names a button that has no id yet (held throughout, still beside it), then stores it.
+/obj/machinery/button/windowtint/proc/button_id_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/new_id = sanitizeSafe(R.value, MAX_NAME_LEN)
 	if(new_id)
-		id = new_id
+		set_id(new_id)
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
-		store_in_multitool(user, user.get_active_hand())
+		store_in_multitool(user, A.held)
+	return OP_OK
+
+/// A multitool stores a named button's id in its buffer.
+/obj/machinery/button/windowtint/proc/id_stored(datum/act/op/A)
+	store_in_multitool(A.actor, A.held)
+	return OP_OK
 
 /obj/machinery/button/windowtint/proc/store_in_multitool(mob/user, obj/item/multitool/multitool)
 	if(id && istype(multitool))
@@ -617,6 +606,11 @@ MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut
 
 CAPABILITIES(/obj/machinery/button/windowtint)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(windowtint/wires_cut)), then(PROC_REF(wires_cut)))
+	op("toggle", hand(), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("set_id", tool(TOOL_MULTITOOL), wait(0), label("Set ID"), when(cond_not(nameof(id))),
+		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(id_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0)),
+		needs(req_is(nameof(id), FALSE, because = /datum/msg/req_silent)), then(PROC_REF(button_id_entered)))
+	op("store_id", tool(TOOL_MULTITOOL), wait(0), label("Store ID"), when(nameof(id)), then(PROC_REF(id_stored)))
 
 /// The cutters through an open panel: the wires come out and the button comes off the wall.
 /obj/machinery/button/windowtint/proc/wires_cut(datum/act/op/A)

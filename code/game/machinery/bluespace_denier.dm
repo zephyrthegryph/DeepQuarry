@@ -29,10 +29,9 @@
 		icon_state = "[base_state]1-p"
 
 //Let the AI trigger them directly.
-EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", PROC_REF(bluespace_denier_silicon_trigger)))
 
 /// Old attack_ai: the AI triggers it directly while it is anchored.
-/obj/machinery/bluespace_denier/proc/bluespace_denier_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bluespace_denier/proc/bluespace_denier_silicon_trigger(datum/act/op/A)
 	if(anchored)
 		pulse()
 	return TRUE
@@ -58,6 +57,8 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 CAPABILITIES(/obj/machinery/bluespace_denier)
 	after_init(10 SECONDS, then(PROC_REF(start_up)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(denier_emp))))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("bluespace_denier_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Pulse"), then(PROC_REF(bluespace_denier_silicon_trigger)))
 
 /// An EMP may set off a pulse.
 /obj/machinery/bluespace_denier/proc/denier_emp(datum/act/hit/emp/A)
@@ -83,7 +84,8 @@ CAPABILITIES(/obj/machinery/bluespace_denier)
 	if(ishuman(AM))
 		pulse()
 
-/obj/machinery/bluespace_denier/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/bluespace_denier/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	set_anchored(!anchored)
 	if(!anchored)
@@ -94,4 +96,4 @@ CAPABILITIES(/obj/machinery/bluespace_denier)
 		user.show_message(span_warning("[src] is now secured."))
 		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK

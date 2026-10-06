@@ -1,0 +1,52 @@
+human|none menu: Swipe ID
+human|none menu: Ui open
+human|none menu: Use (refused: you don't have the dexterity)
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Swipe ID
+robot|none menu: Ui open
+robot|none menu: Use (refused: you don't have the dexterity)
+robot|none click: Click: Ui open
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Swipe ID
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Use (refused: you don't have the dexterity)
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/crowbar menu: Swipe ID
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar menu: Use (refused: you don't have the dexterity)
+human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Swipe ID
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Use (refused: you don't have the dexterity)
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Swipe ID
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Use (refused: you don't have the dexterity)
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Swipe ID
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Use (refused: you don't have the dexterity)
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Swipe ID
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Use (refused: you don't have the dexterity)
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Swipe ID
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil menu: Use (refused: you don't have the dexterity)
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Swipe ID
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Use (refused: you don't have the dexterity)
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Swipe ID
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use (refused: you don't have the dexterity)
+human|/obj/item/card/id click: Click: Ui open
+keys: drag_buckle, gen_hand_ungated_interaction_open_ui, gen_item_interaction_toggle_lock, gen_robot_interaction_swallow, lock, loc_edit, machine_anchor, machine_deconstruct, machine_panel, machine_repair, trans_add_code, trans_del, trans_edit_code, trans_edit_key, ui_open, use_screwdriver
+

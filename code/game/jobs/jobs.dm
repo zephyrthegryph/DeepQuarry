@@ -1,4 +1,5 @@
 /proc/guest_jobbans(job)
+	READS_FROM() // a fixed answer
 	return
 
 /proc/get_job_datums()

@@ -52,12 +52,10 @@
 		return persist_name
 
 
-/obj/machinery/item_bank/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/item_bank_use,
-		/datum/interaction/machine_item/item_bank_store,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/item_bank, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_store), "Store", REQ_TARGET_STATE(/obj/machinery/item_bank/proc/can_store)), \
+)
 
 /**
  * Old attack_hand: `. = ..()` but never checked `.` before continuing, so the gate never
@@ -65,11 +63,6 @@
  * checks, which is what the gate would otherwise have caught. Any message or side effect
  * the base gated attack_hand used to produce is no longer shown; note in the I7 report.
  */
-/datum/interaction/machine_hand/ungated/item_bank_use
-	id = "item_bank_use"
-	name = "Use"
-	effect = /obj/machinery/item_bank/proc/interaction_use
-
 /obj/machinery/item_bank/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
 		return TRUE
@@ -180,15 +173,6 @@
 	item_takers += user.ckey
 	busy_bank = FALSE
 	icon_state = "item_bank"
-
-/// Old attackby: entirely self-contained, never called ..(), so it catches every item.
-/datum/interaction/machine_item/item_bank_store
-	id = "item_bank_store"
-	name = "Store"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/item_bank/proc/can_store))
-	effect = /obj/machinery/item_bank/proc/interaction_store
 
 /// Requirement: TRUE, or why nothing can be stored right now (a non-human is refused silently by the effect).
 /obj/machinery/item_bank/proc/can_store(mob/living/user, atom/target, obj/item/held)

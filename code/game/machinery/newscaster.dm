@@ -245,18 +245,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		return STATUS_CLOSE
 	. = ..()
 
-/obj/machinery/newscaster/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/newscaster_open,
-		/datum/interaction/machine_item/newscaster_item_open,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): open the newscaster's interface.
-/datum/interaction/machine_hand/ungated/newscaster_open
-	id = "newscaster_open"
-	name = "Use"
-	effect = /obj/machinery/newscaster/proc/interaction_open
+EXTEND_INTERACTIONS(/obj/machinery/newscaster, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open)), \
+	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_as_touch), "Use"), \
+)
 
 /obj/machinery/newscaster/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ispowered || (has_stat(BROKEN)))
@@ -671,13 +663,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)
 		SStgui.update_uis(src)
-
-/// Old attackby: any item used on the newscaster just forwarded to attack_hand().
-/datum/interaction/machine_item/newscaster_item_open
-	id = "newscaster_item_open"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_as_touch
 
 /obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
 	return deconstruct_display(user, tool)

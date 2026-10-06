@@ -1,5 +1,5 @@
-/obj/machinery/holoplant|human|none => holoplant_toggle|machine_anchor:needs a wrench
-/obj/machinery/holoplant|robot|none => holoplant_toggle|machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/holoplant|human|none => |machine_anchor:needs a wrench
+/obj/machinery/holoplant|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/holoplant|ai|none => |
 /obj/machinery/holoplant|ghost|none => |
 

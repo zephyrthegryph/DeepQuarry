@@ -72,19 +72,8 @@
 	storage_name = "Travel Oversight Control"
 	allow_items = 1
 
-/obj/machinery/computer/cryopod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/cryopod_console_open_ui,
-	)
-	..()
-
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/cryopod_console_open_ui
-	id = "cryopod_console_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
@@ -93,6 +82,7 @@
 CAPABILITIES(/obj/machinery/computer/cryopod)
 	interface("CryoStorage")
 	ui_shape(allow_items = bool(), real_name = schema_text(), crew = list_of(schema_text()), items = list_of(schema_text()))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/cryopod/ui_title(mob/user)
 	return storage_name

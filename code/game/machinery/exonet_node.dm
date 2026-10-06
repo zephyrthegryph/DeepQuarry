@@ -33,6 +33,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	op("toggle_newscaster_port", ui_act("toggle_newscaster_port"), then(PROC_REF(ui_act_toggle_newscaster_port)))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	interface("ExonetNode")
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 // Proc: New()
 // Parameters: None
@@ -96,19 +97,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}
 // Proc: attack_hand()
 // Parameters: 1 (user - the person clicking on the machine)
 // Description: Opens the TGUI interface with tgui_interact()
-/obj/machinery/exonet_node/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/exonet_open_ui,
-	)
-	..()
 
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/exonet_open_ui
-	id = "exonet_open_ui"
-	name = "Use"
-	effect = /obj/machinery/exonet_node/proc/interaction_open_ui_impl
-
-/obj/machinery/exonet_node/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/exonet_node/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

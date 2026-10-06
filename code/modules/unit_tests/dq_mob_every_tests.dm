@@ -102,3 +102,69 @@
 	var/before = G.upkeeps
 	life_test_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 3 + 0.1)
 	TEST_ASSERT_EQUAL(G.upkeeps - before, 3, "one upkeep per cycle")
+
+GLOBAL_LIST_EMPTY(life_test_bio_hits)
+
+/proc/life_test_bio_hit(tag)
+	GLOB.life_test_bio_hits += tag
+
+/// CLOCK_BIO runs at the clock_rate_bio stat: a hold at 0 freezes it and the mob's own timers, 0.5 halves it, and releasing the
+/// hold brings it back to world speed. Time already passed is kept across each change.
+/datum/unit_test/life_om/bio_clock_follows_its_stat
+
+/datum/unit_test/life_om/bio_clock_follows_its_stat/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/datum/source = new
+	GLOB.life_test_bio_hits = list()
+	after(H, 2 SECONDS, GLOBAL_PROC_REF(life_test_bio_hit), with = list("bio"))
+	var/start = clock_now(H, CLOCK_BIO)
+	life_test_advance(1)
+	TEST_ASSERT(abs(clock_now(H, CLOCK_BIO) - start - 10) < 0.01, "rate 1: a second of biological time")
+	hold(H, STAT_CLOCK_RATE_BIO, 0, source, clock = HOLD_CLOCK_WORLD)
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 0, "the hold stops biology")
+	var/frozen = clock_now(H, CLOCK_BIO)
+	life_test_advance(5)
+	TEST_ASSERT(abs(clock_now(H, CLOCK_BIO) - frozen) < 0.01, "a stopped clock keeps its time")
+	TEST_ASSERT(!("bio" in GLOB.life_test_bio_hits), "and the mob's timer waits")
+	release(H, STAT_CLOCK_RATE_BIO, source)
+	hold(H, STAT_CLOCK_RATE_BIO, 0.5, source, clock = HOLD_CLOCK_WORLD)
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 0.5, "a half-speed hold")
+	life_test_advance(1)
+	TEST_ASSERT(abs(clock_now(H, CLOCK_BIO) - frozen - 5) < 0.01, "rate 0.5: half a second for a second, got [clock_now(H, CLOCK_BIO) - frozen]")
+	TEST_ASSERT(!("bio" in GLOB.life_test_bio_hits), "the timer has had 1.5 seconds")
+	release(H, STAT_CLOCK_RATE_BIO, source)
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 1, "released: world speed again")
+	life_test_advance(0.6)
+	TEST_ASSERT("bio" in GLOB.life_test_bio_hits, "the timer fires once its clock passed 2 seconds")
+	qdel(source)
+
+/// Hears a status announcement (remote view's use of it).
+/datum/life_test_status_listener
+	var/heard = 0
+	var/last_amount
+
+/datum/life_test_status_listener/proc/on_stun(datum/act/notice/N)
+	var/datum/notice/living_status_stun/stun = N
+	heard++
+	last_amount = stun.amount
+
+/// An admitted stun increase announces itself (the notice remote view ends on) with its amount, before scaling; an immune
+/// mob's is refused before anything is announced.
+/datum/unit_test/life_om/status_increase_is_announced
+
+/datum/unit_test/life_om/status_increase_is_announced/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/datum/life_test_status_listener/L = new
+	observe(H, /datum/notice/living_status_stun, L, then(TYPE_PROC_REF(/datum/life_test_status_listener, on_stun)))
+	H.status_at_least(STAT_STUNNED, 3)
+	TEST_ASSERT_EQUAL(L.heard, 1, "the increase was announced")
+	TEST_ASSERT_EQUAL(L.last_amount, 3, "with its amount")
+	H.status_end(STAT_STUNNED)
+	H.enable_godmode()
+	H.status_at_least(STAT_STUNNED, 3)
+	TEST_ASSERT_EQUAL(L.heard, 1, "an immune mob announces nothing")
+	H.disable_godmode()
+	unobserve(H, /datum/notice/living_status_stun, L)
+	qdel(L)

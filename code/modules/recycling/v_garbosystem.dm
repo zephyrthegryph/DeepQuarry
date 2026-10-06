@@ -141,19 +141,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 	icon_state = "doorbell-standby"
 	var/tmp/obj/machinery/v_garbosystem/grinder
 
-/obj/machinery/button/garbosystem/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/garbosystem_button_press,
-	)
-	..()
+CAPABILITIES(/obj/machinery/button/garbosystem)
+	op("press_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Press"), then(PROC_REF(interaction_press_impl)))
 
-/// Old attack_hand: never called ..(); delegates to the grinder's own attack_hand entry.
-/datum/interaction/machine_hand/ungated/garbosystem_button_press
-	id = "garbosystem_button_press"
-	name = "Press"
-	effect = /obj/machinery/button/garbosystem/proc/interaction_press_impl
-
-/obj/machinery/button/garbosystem/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/garbosystem/proc/interaction_press_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(grinder())
 		grinder().attack_hand(user)
 	return TRUE

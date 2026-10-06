@@ -81,28 +81,6 @@
 	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
 	return i ? rec.contribs[i + OM_C_EXPIRES] : null
 
-/// Value of `source`'s contribution to effect idx `eidx`, or null when none.
-/proc/om_contrib_value(datum/om/rec/rec, eidx, datum/source, key)
-	var/i = rec.contribs ? om_contrib_find(rec, eidx, source, key) : 0
-	return i ? rec.contribs[i + OM_C_VALUE] : null
-
-/// Latest expiry among the timed contributions to effect idx `eidx` (0 when none).
-/proc/om_contrib_latest_expiry(datum/om/rec/rec, eidx)
-	. = 0
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_EXPIRES] > .)
-			. = C[i + OM_C_EXPIRES]
-
-/// Releases `source`'s contribution to `eff` on `rec`. TRUE when there was one.
-/proc/om_contrib_release(datum/om/rec/rec, datum/om/effect/eff, datum/source, key)
-	var/i = rec.contribs ? om_contrib_find(rec, eff.idx, source, key) : 0
-	if(!i)
-		return FALSE
-	om_contrib_remove(rec, eff, i)
-	om_expiry_reschedule(rec)
-	return TRUE
-
 /// Releases every timed contribution to `eff` on `rec` (holds stay).
 /proc/om_contrib_release_timed(datum/om/rec/rec, datum/om/effect/eff)
 	var/i = 1
@@ -531,6 +509,10 @@
 /proc/om_clock_compute(datum/om/rec/rec, cidx)
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/clock_def/C = reg.clocks[cidx]
+	if(C.id == CLOCK_BIO)
+		// Biological time runs at the clock_rate_bio stat (MIN, base 1): stasis holds it lower (bio_clock_rate_changed()).
+		var/mob/living/L = rec.owner
+		return istype(L) ? clamp(L.clock_rate_bio, C.min_rate, C.max_rate) : 1
 	var/mult = om_effect_value(rec, reg.effects[C.mult_idx])
 	var/inhibit = om_effect_value(rec, reg.effects[C.inhibit_idx])
 	return clamp(mult * (1 - clamp(inhibit, 0, 1)), C.min_rate, C.max_rate)
@@ -541,8 +523,6 @@
 	for(var/i in 1 to length(K) step 4)
 		if(K[i] == cidx)
 			return K[i + 1]
-	if(!rec.contribs)
-		return 1
 	return om_clock_compute(rec, cidx)
 
 /// Local (clock) time in deciseconds.
@@ -573,30 +553,32 @@
 	om_clock_reschedule(rec, cidx)
 	om_sync_all(rec)
 
-/// Public: rate of `E` in clock domain `clock_id`.
-/proc/om_clock_rate_of(datum/E, clock_id)
-	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
-	if(!C)
-		CRASH("om: unknown clock [clock_id]")
-	var/datum/om/rec/rec = E.om_rec
-	return rec ? om_clock_rate(rec, C.idx) : 1
-
-/// Public: `E`'s local time in clock domain `clock_id`, in deciseconds. Body and medical code
-/// that needs "how much biological time has passed" reads CLOCK_BIO here instead of world.time:
-/// stasis (EFFECT_CLOCK_BIO_INHIBIT) stops it, a multiplier speeds it up. An entity with nothing
-/// modifying the clock reads its scheduler's time. (This is the reading the w6/k1 holder clocks
-/// provided; the rate itself comes from contributions, so holders slow their contents with
-/// relation `source_contributes` rows such as stasis_occupant's.)
-/proc/om_clock_now(datum/E, clock_id)
+/// The time on `E`'s clock `clock_id`, in deciseconds (doc/rewrite/final_api.html section 3). Body and medical code that needs
+/// "how much biological time has passed" reads CLOCK_BIO here instead of world.time: it runs at the clock_rate_bio stat, so
+/// stasis slows or stops it. An entity whose clock never moved off rate 1 reads its scheduler's time.
+/proc/clock_now(datum/E, clock_id)
 	var/datum/om/clock_def/C = om_registry().clock_by_id[clock_id]
 	if(!C)
 		CRASH("om: unknown clock [clock_id]")
 	var/datum/om/rec/rec = E?.om_rec
 	return rec ? om_clock_local(rec, C.idx) : om_scheduler().now()
 
+/// STAT_CLOCK_RATE_BIO of `E` moved: biological time so far is folded in at the old rate, then the bio clock, its deadlines,
+/// timers and cadences take the new one.
+/proc/bio_clock_rate_changed(datum/E)
+	var/datum/om/rec/rec = E.om_rec
+	if(!rec)
+		return
+	var/static/bio_idx
+	if(!bio_idx)
+		var/datum/om/clock_def/C = om_registry().clock_by_id[CLOCK_BIO]
+		bio_idx = C.idx
+	om_clock_settle(rec, bio_idx)
+	om_clock_changed(rec, bio_idx)
+	om_timers_rate_changed(rec)
+
 // ---------------------------------------------------------------- relevance and suspension
 
-/// `observer` makes `E` at least `level` relevant until released or deleted.
 /// STAT_RELEVANCE of `E` moved to `level`: the OM record's behaviours pick their cadence by it (rec.relevance) and the Rust side mirrors
 /// it; CHANGE_RELEVANCE wakes the sequences sweeping E (seq_channels(), through the dispatch).
 /proc/relevance_changed(datum/E, level)

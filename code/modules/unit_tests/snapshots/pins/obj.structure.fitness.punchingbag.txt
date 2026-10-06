@@ -23,5 +23,5 @@ human|/obj/item/stack/material/steel menu: Punch
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Punch
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, hand
+keys: drag_buckle, hand
 

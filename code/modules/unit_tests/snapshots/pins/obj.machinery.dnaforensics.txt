@@ -57,5 +57,5 @@ human|/obj/item/card/id menu: Insert swab
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
-keys: dnaforensics_insert_swab, dnaforensics_open_ui, ejectItem, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, scanItem
+keys: drag_buckle, ejectItem, gen_hand_ungated_interaction_open_ui, gen_item_interaction_insert_swab, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, scanItem
 

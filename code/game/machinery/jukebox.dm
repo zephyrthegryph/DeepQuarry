@@ -54,6 +54,9 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	on_wire(WIRE_NEXT)
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_cut_heard)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_pulse_heard)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 // ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
 /obj/machinery/media/jukebox/Initialize(mapload)
@@ -112,29 +115,24 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		return
 	hacked = newhacked
 
-/obj/machinery/media/jukebox/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/jukebox_fingerprint,
-		/datum/interaction/machine_hand/ungated/jukebox_interact,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/media/jukebox, \
+	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_fingerprint), "Use"), \
+	INTERACT_HAND_UNGATED("Use", TYPE_PROC_REF(/atom, interaction_interact)), \
+)
 
-/// The old attackby: fingerprinted, then fell through to ..().
-/datum/interaction/machine_item/jukebox_fingerprint
-	id = "jukebox_fingerprint"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
-
-/obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
+/obj/machinery/media/jukebox/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/media/jukebox/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/media/jukebox/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/media/jukebox/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/media/jukebox/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(playing)
 		StopPlaying()
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
@@ -148,7 +146,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		disconnect_media_source()
 	else
 		update_media_source()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/media/jukebox/power_change()
 	set_powered(powered(power_channel) && anchored)
@@ -280,12 +278,6 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	if(track_to_remove == current_track() && playing)
 		StopPlaying()
 	SSmedia_tracks.remove_track(user, track_to_remove)
-
-/// The old attack_hand: never called ..(), just interacted.
-/datum/interaction/machine_hand/ungated/jukebox_interact
-	id = "jukebox_interact"
-	name = "Use"
-	effect = /atom/proc/interaction_interact
 
 /obj/machinery/media/jukebox/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

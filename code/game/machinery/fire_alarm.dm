@@ -42,6 +42,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(firealarm_shot))))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -160,12 +162,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	alarm()
 	return TRUE
 
-/obj/machinery/firealarm/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/firealarm/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/firealarm/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)
@@ -175,13 +179,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
-/obj/machinery/firealarm/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/firealarm/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	detecting = !detecting
 	act_message(user, src, MSG_SELF(span_notice("You have [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit.")), \
 		MSG_OTHERS(span_notice("%U% has [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit!")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Machine pipeline (doc/rewrite/machine_pipeline.dm, code/game/machinery/machine_pipeline.dm):
 // `polls = FALSE` below opts this type out of SSmachines' process() roster onto

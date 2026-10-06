@@ -3,10 +3,12 @@
 	shuttle_tag = "Special Operations"
 	req_access = list(ACCESS_CENT_SPECOPS)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SILICON("Use", PROC_REF(specops_silicon_refuse)))
+CAPABILITIES(/obj/machinery/computer/shuttle_control/specops)
+	op("specops_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(specops_silicon_refuse)))
 
 /// Old attack_ai: refuse silicons.
-/obj/machinery/computer/shuttle_control/specops/proc/specops_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/shuttle_control/specops/proc/specops_silicon_refuse(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("Access Denied."))
 	return TRUE
 

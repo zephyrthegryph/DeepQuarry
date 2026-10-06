@@ -2,7 +2,7 @@ human|none click: nothing
 robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Inhabit
-ghost|none click: nothing
+ghost|none click: Click: Inhabit
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench click: nothing
@@ -13,5 +13,5 @@ human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_observer_ghost_pod_observer_use
+keys: drag_buckle, inhabit
 

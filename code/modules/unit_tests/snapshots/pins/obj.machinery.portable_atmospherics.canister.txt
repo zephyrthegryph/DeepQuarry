@@ -49,5 +49,5 @@ human|/obj/item/card/id menu: Climb (refused: There's a material processor in th
 human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
-keys: climb.climb, climb.climb_menu, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, liner, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, pressure, refill_jetpack, relabel, strike, tank_bay.holding.insert, ui_open, valve, weld_apart
+keys: climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, liner, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, pressure, refill_jetpack, relabel, strike, tank_bay.holding.insert, ui_open, valve, weld_apart
 

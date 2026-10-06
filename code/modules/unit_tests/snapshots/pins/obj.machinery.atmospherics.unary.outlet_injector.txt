@@ -26,5 +26,5 @@ human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
-keys: fit_material, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, multitool_settings.configure, multitool_settings.set_frequency, multitool_settings.set_id, painter, reset_rate, toggle, unwrench
+keys: drag_buckle, fit_material, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, multitool_settings.configure, multitool_settings.set_frequency, multitool_settings.set_id, painter, reset_rate, toggle, unwrench
 

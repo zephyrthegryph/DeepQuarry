@@ -1,114 +1,40 @@
-human|none menu: Attach container (refused: needs a beaker)
 human|none menu: Eject Particle Focus Contents
-human|none menu: Fill target (refused: needs an item)
-human|none menu: Store (refused: needs an item)
-human|none menu: Swipe (refused: needs an identification card)
-human|none menu: Use (refused: needs a gas analyzer)
 human|none click: nothing
-robot|none menu: Attach container (refused: needs a beaker)
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Particle Focus Contents
-robot|none menu: Fill target (refused: needs an item)
-robot|none menu: Store (refused: needs an item)
-robot|none menu: Swipe (refused: needs an identification card)
-robot|none menu: Use (refused: needs a gas analyzer)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Attach container (refused: needs a beaker)
 human|/obj/item/tool/screwdriver menu: Eject Particle Focus Contents
-human|/obj/item/tool/screwdriver menu: Fill target (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Store
-human|/obj/item/tool/screwdriver menu: Swipe (refused: needs an identification card)
-human|/obj/item/tool/screwdriver menu: Use (refused: needs a gas analyzer)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Attach container (refused: needs a beaker)
+human|/obj/item/tool/screwdriver click: Click: Store
 human|/obj/item/tool/crowbar menu: Eject Particle Focus Contents
-human|/obj/item/tool/crowbar menu: Fill target (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Store
-human|/obj/item/tool/crowbar menu: Swipe (refused: needs an identification card)
-human|/obj/item/tool/crowbar menu: Use (refused: needs a gas analyzer)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Attach container (refused: needs a beaker)
+human|/obj/item/tool/crowbar click: Click: Store
 human|/obj/item/tool/wrench menu: Eject Particle Focus Contents
-human|/obj/item/tool/wrench menu: Fill target (refused: needs an item)
+human|/obj/item/tool/wrench menu: Secure
 human|/obj/item/tool/wrench menu: Store
-human|/obj/item/tool/wrench menu: Swipe (refused: needs an identification card)
-human|/obj/item/tool/wrench menu: Use (refused: needs a gas analyzer)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Attach container (refused: needs a beaker)
+human|/obj/item/tool/wrench click: Click: Secure
 human|/obj/item/tool/wirecutters menu: Eject Particle Focus Contents
-human|/obj/item/tool/wirecutters menu: Fill target (refused: needs an item)
 human|/obj/item/tool/wirecutters menu: Store
-human|/obj/item/tool/wirecutters menu: Swipe (refused: needs an identification card)
-human|/obj/item/tool/wirecutters menu: Use (refused: needs a gas analyzer)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Attach container (refused: needs a beaker)
+human|/obj/item/tool/wirecutters click: Click: Store
 human|/obj/item/multitool menu: Eject Particle Focus Contents
-human|/obj/item/multitool menu: Fill target (refused: needs an item)
 human|/obj/item/multitool menu: Store
-human|/obj/item/multitool menu: Swipe (refused: needs an identification card)
-human|/obj/item/multitool menu: Use (refused: needs a gas analyzer)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Attach container (refused: needs a beaker)
+human|/obj/item/multitool click: Click: Store
 human|/obj/item/weldingtool menu: Eject Particle Focus Contents
-human|/obj/item/weldingtool menu: Fill target (refused: needs an item)
 human|/obj/item/weldingtool menu: Store
-human|/obj/item/weldingtool menu: Swipe (refused: needs an identification card)
-human|/obj/item/weldingtool menu: Use (refused: needs a gas analyzer)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Attach container (refused: needs a beaker)
+human|/obj/item/weldingtool click: Click: Store
 human|/obj/item/stack/cable_coil menu: Eject Particle Focus Contents
-human|/obj/item/stack/cable_coil menu: Fill target (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Store
-human|/obj/item/stack/cable_coil menu: Swipe (refused: needs an identification card)
-human|/obj/item/stack/cable_coil menu: Use (refused: needs a gas analyzer)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Attach container (refused: needs a beaker)
+human|/obj/item/stack/cable_coil click: Click: Store
 human|/obj/item/stack/material/steel menu: Eject Particle Focus Contents
 human|/obj/item/stack/material/steel menu: Fill target
 human|/obj/item/stack/material/steel menu: Store
-human|/obj/item/stack/material/steel menu: Swipe (refused: needs an identification card)
-human|/obj/item/stack/material/steel menu: Use (refused: needs a gas analyzer)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Attach container (refused: needs a beaker)
+human|/obj/item/stack/material/steel click: Click: Fill target
 human|/obj/item/card/id menu: Eject Particle Focus Contents
-human|/obj/item/card/id menu: Fill target (refused: needs an item)
 human|/obj/item/card/id menu: Store
 human|/obj/item/card/id menu: Swipe
-human|/obj/item/card/id menu: Use (refused: needs a gas analyzer)
-human|/obj/item/card/id click: nothing
-human|/obj/item/analyzer menu: Attach container (refused: needs a beaker)
-human|/obj/item/analyzer menu: Eject Particle Focus Contents
-human|/obj/item/analyzer menu: Fill target (refused: needs an item)
-human|/obj/item/analyzer menu: Store
-human|/obj/item/analyzer menu: Swipe (refused: needs an identification card)
-human|/obj/item/analyzer menu: Use
-human|/obj/item/analyzer click: nothing
-human|/obj/item/stack/material menu: Attach container (refused: needs a beaker)
-human|/obj/item/stack/material menu: Eject Particle Focus Contents
-human|/obj/item/stack/material menu: Fill target
-human|/obj/item/stack/material menu: Store
-human|/obj/item/stack/material menu: Swipe (refused: needs an identification card)
-human|/obj/item/stack/material menu: Use (refused: needs a gas analyzer)
-human|/obj/item/stack/material click: nothing
-human|/obj/item/reagent_containers/glass/beaker menu: Attach container
-human|/obj/item/reagent_containers/glass/beaker menu: Eject Particle Focus Contents
-human|/obj/item/reagent_containers/glass/beaker menu: Fill target (refused: needs an item)
-human|/obj/item/reagent_containers/glass/beaker menu: Open or close the lid
-human|/obj/item/reagent_containers/glass/beaker menu: Set transfer amount
-human|/obj/item/reagent_containers/glass/beaker menu: Splash (refused: There is nothing in it to pour.)
-human|/obj/item/reagent_containers/glass/beaker menu: Store
-human|/obj/item/reagent_containers/glass/beaker menu: Swipe (refused: needs an identification card)
-human|/obj/item/reagent_containers/glass/beaker menu: Use (refused: needs a gas analyzer)
-human|/obj/item/reagent_containers/glass/beaker click: nothing
-human|/obj/item menu: Attach container (refused: needs a beaker)
-human|/obj/item menu: Eject Particle Focus Contents
-human|/obj/item menu: Fill target (refused: needs an item)
-human|/obj/item menu: Store
-human|/obj/item menu: Swipe (refused: needs an identification card)
-human|/obj/item menu: Use (refused: needs a gas analyzer)
-human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, particle_smasher_analyzer, particle_smasher_attach_beaker, particle_smasher_eject_contents, particle_smasher_fill_target, particle_smasher_store, particle_smasher_swipe_id
+human|/obj/item/card/id click: Click: Swipe
+keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, secure, store, swipe_id
 

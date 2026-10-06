@@ -49,21 +49,12 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	update_nearby_tiles()
 	..()
 
-/obj/machinery/shield/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_hit,
-	)
-	..()
+CAPABILITIES(/obj/machinery/shield)
+	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
-/// Old attackby ended with a trailing return ..(): decline so the base attackby still runs.
-/datum/interaction/machine_item/shield_hit
-	id = "shield_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	effect = /obj/machinery/shield/proc/interaction_hit
-
-/obj/machinery/shield/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/shield/proc/interaction_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	//Play a fitting sound
 	play_sfx(src, SFX_EFFECTS_EMPULSE, 0.75)
 
@@ -73,7 +64,7 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 
 	set_opacity(1)
 	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), with = list(0))
-	return FALSE
+	return OP_DECLINE
 
 DAMAGE_REACTION_AFTER(/obj/machinery/shield, DAMAGE_PROJECTILE, PROC_REF(shield_flash_opaque))
 DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit))
@@ -125,6 +116,8 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	owns_many(nameof(deployed_shields))
 	climb()
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)
@@ -330,16 +323,20 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		return TRUE
 	return TRUE
 
-/obj/machinery/shieldgen/screwdriver_act(mob/user, obj/item/W)
+/obj/machinery/shieldgen/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	playsound(src, W.usesound, 100, 1)
 	is_open = !is_open
 	to_chat(user, span_blue("You [is_open ? "open the panel and expose the wiring" : "close the panel"]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/shieldgen/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shieldgen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(locked)
 		to_chat(user, "The bolts are covered, unlocking this would retract the covers.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(anchored)
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_blue("You unsecure the [src] from the floor!"))
@@ -349,11 +346,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		set_anchored(FALSE)
 	else
 		if(istype(get_turf(src), /turf/space))
-			return ITEM_INTERACT_BLOCKING
+			return OP_OK
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_blue("You secure the [src] to the floor!"))
 		set_anchored(TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Appearance reader: projecting (active and powered).
 /obj/machinery/shieldgen/proc/appearance_projecting()

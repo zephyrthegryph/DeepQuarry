@@ -24,11 +24,11 @@
 	TEST_ASSERT(H.has_body_effect(/datum/body_effect/entangled), "the modifier compatibility query must see body effects")
 
 	var/datum/stasis_source = new
-	om_hold(H, EFFECT_CLOCK_BIO_INHIBIT, stasis_source, 1)
+	hold(H, STAT_CLOCK_RATE_BIO, 0, stasis_source, clock = HOLD_CLOCK_WORLD)
 	scheduler_advance(10)
 	TEST_ASSERT(H.has_body_effect(/datum/body_effect/entangled), "full stasis must stop a body effect's countdown")
 
-	om_release(H, EFFECT_CLOCK_BIO_INHIBIT, stasis_source)
+	release(H, STAT_CLOCK_RATE_BIO, stasis_source)
 	scheduler_advance(5)
 	TEST_ASSERT(!H.has_body_effect(/datum/body_effect/entangled), "entangled should expire once body time passes its duration")
 	TEST_ASSERT(dq_near(H.factor(BF_SLOWDOWN), base), "the factor should return to baseline, got [H.factor(BF_SLOWDOWN)]")

@@ -47,5 +47,5 @@ human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use (refused: combat mode is off)
 human|/obj/item/card/id click: Click: Ui open
-keys: dispenser_item, dispenser_item_harm, dispenser_open_ui, gen_drag_interaction_drag_buckle, oxygen, phoron, ui_open, use_wrench
+keys: dispenser_item, dispenser_item_harm, dispenser_open_ui, drag_buckle, oxygen, phoron, ui_open, use_wrench
 

@@ -90,25 +90,14 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	if(chamber_air)
 		. += span_notice("Chamber: [round(chamber_air.return_pressure(), 0.1)] kPa at [round(chamber_air.return_temperature(), 0.1)] K.")
 
-/obj/machinery/material_furnace/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/material_furnace_load_stock,
-		/datum/interaction/machine_item/material_furnace_load_carbon,
-		/datum/interaction/machine_item/material_furnace_transfer_gas,
-		/datum/interaction/machine_item/material_furnace_transfer_reagents,
-		/datum/interaction/machine_verb/material_furnace_eject_contents,
-		/datum/interaction/machine_hand/material_furnace_use,
-	)
-	..()
-
-/// The old attackby's first branch: loads a material stack.
-/datum/interaction/machine_item/material_furnace_load_stock
-	id = "material_furnace_load_stock"
-	name = "Load material"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	effect = /obj/machinery/material_furnace/proc/interaction_load_stock
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_load_stock))
+EXTEND_INTERACTIONS(/obj/machinery/material_furnace, \
+	INTERACT_INSERT(/obj/item/stack/material, PROC_REF(interaction_load_stock), "Load material", REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_load_stock)), \
+	INTERACT_INSERT(/obj/item/ore/coal, PROC_REF(interaction_load_carbon), "Add carbon"), \
+	INTERACT_INSERT(/obj/item/tank, PROC_REF(interaction_transfer_gas), "Transfer gas"), \
+	INTERACT_INSERT(/obj/item/reagent_containers, PROC_REF(interaction_transfer_reagents), "Pour"), \
+	INTERACT_VERB("Eject contents", PROC_REF(interaction_eject_contents), REQ_FIELD_NOT("firing", "the sealed furnace can't be opened while firing"), REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_eject_contents)), \
+	INTERACT_HAND("Use", PROC_REF(interaction_use), REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_use_furnace)), \
+)
 
 /// Requirement: TRUE, or why this stack can't be loaded now.
 /obj/machinery/material_furnace/proc/can_load_stock(mob/user, atom/target, obj/item/stack/material/held)
@@ -124,14 +113,6 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	act_message(user, src, others = span_notice("%U% loads [stock] into %T%."))
 	return TRUE
 
-/// The old attackby's second branch: adds carbon (coal ore) to the charge.
-/datum/interaction/machine_item/material_furnace_load_carbon
-	id = "material_furnace_load_carbon"
-	name = "Add carbon"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/ore/coal
-	effect = /obj/machinery/material_furnace/proc/interaction_load_carbon
-
 /obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
 	if(firing || output_stock())
 		return TRUE
@@ -139,13 +120,6 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 		return TRUE
 	act_message(user, src, others = span_notice("%U% adds carbon to %T%'s charge."))
 	return TRUE
-
-/// The old attackby's third branch: transfers gas between a tank and the furnace chamber.
-/datum/interaction/machine_item/material_furnace_transfer_gas
-	id = "material_furnace_transfer_gas"
-	name = "Transfer gas"
-	held_type = /obj/item/tank
-	effect = /obj/machinery/material_furnace/proc/interaction_transfer_gas
 
 /obj/machinery/material_furnace/proc/interaction_transfer_gas(mob/user, obj/item/tank/tank, datum/interaction/interaction)
 	if(firing)
@@ -161,13 +135,6 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 		act_message(user, src, others = span_notice("%U% transfers gas [from_tank ? "from [tank] into" : "from %T% into"] the furnace chamber."))
 	return TRUE
 
-/// The old attackby's fourth branch: pours reagents into the chamber, else falls through to ..().
-/datum/interaction/machine_item/material_furnace_transfer_reagents
-	id = "material_furnace_transfer_reagents"
-	name = "Pour"
-	held_type = /obj/item/reagent_containers
-	effect = /obj/machinery/material_furnace/proc/interaction_transfer_reagents
-
 /obj/machinery/material_furnace/proc/interaction_transfer_reagents(mob/user, obj/item/reagent_containers/container, datum/interaction/interaction)
 	if(container.reagents?.total_volume)
 		var/transferred = container.reagents.trans_to(src, min(10, container.reagents.total_volume))
@@ -175,13 +142,6 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 			to_chat(user, span_notice("You pour [round(transferred, 0.1)] units from [container] into the furnace chamber."))
 			return TRUE
 	return FALSE
-
-/// The old attack_hand: called ..() first, then collected output or fired the charge.
-/datum/interaction/machine_hand/material_furnace_use
-	id = "material_furnace_use"
-	name = "Use"
-	effect = /obj/machinery/material_furnace/proc/interaction_use
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_use_furnace))
 
 /// Requirement: TRUE when there is output to take or a charge that can be fired, else why not.
 /obj/machinery/material_furnace/proc/can_use_furnace(mob/user, atom/target, obj/item/held)
@@ -213,18 +173,6 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
 	after(src, 6 SECONDS, PROC_REF(finish_firing), key = "firing_timer")
 	return TRUE
-
-/// The old "Eject contents" object verb.
-/datum/interaction/machine_verb/material_furnace_eject_contents
-	id = "material_furnace_eject_contents"
-	name = "Eject contents"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/material_furnace/proc/interaction_eject_contents
-	also_requires = list(
-		REQ_FIELD_NOT("firing", "the sealed furnace can't be opened while firing"),
-		REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_eject_contents),
-	)
 
 /// Requirement: TRUE, or why there is nothing to eject.
 /obj/machinery/material_furnace/proc/can_eject_contents(mob/user, atom/target, obj/item/held)

@@ -9,20 +9,11 @@
 	density = TRUE
 	layer = ABOVE_JUNK_LAYER
 
-/obj/machinery/giga_drill/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/giga_drill_toggle,
-	)
-	..()
+CAPABILITIES(/obj/machinery/giga_drill)
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/giga_drill_toggle
-	id = "giga_drill_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/giga_drill/proc/interaction_toggle
-
-/obj/machinery/giga_drill/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/giga_drill/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(active)
 		set_active(0)
 		icon_state = "gigadrill"

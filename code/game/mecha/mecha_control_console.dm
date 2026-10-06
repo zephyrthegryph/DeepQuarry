@@ -10,11 +10,8 @@
 	var/screen = 0
 	var/list/stored_data
 
-/obj/machinery/computer/mecha/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/mecha, \
+)
 
 /// The window data.
 /obj/machinery/computer/mecha/ui_data(datum/act/eval/A)

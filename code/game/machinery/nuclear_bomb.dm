@@ -62,26 +62,17 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return PROCESS_KILL
 
-/obj/machinery/nuclearbomb/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/nuclearbomb_insert_disk,
-		/datum/interaction/machine_hand/ungated/nuclearbomb_use,
-		/datum/interaction/machine_verb/nuclearbomb_make_deployable,
-	)
-	..()
-
-/// Old attackby: only offered while `extended`, else falls through (`..()` did nothing here).
-/datum/interaction/machine_item/nuclearbomb_insert_disk
-	id = "nuclearbomb_insert_disk"
-	name = "Insert authentication disk"
-	held_type = /obj/item/disk/nuclear
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/nuclearbomb/proc/is_extended, "not deployed"))
-	effect = /obj/machinery/nuclearbomb/proc/interaction_insert_disk
-
 /obj/machinery/nuclearbomb/proc/is_extended(mob/actor, atom/target, obj/item/held)
-	return extended
+	return extended // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
+/// Requirement (was REQ_* is_extended): the legacy check answers TRUE to pass.
+/obj/machinery/nuclearbomb/proc/is_extended_holds(datum/act/op/A)
+	var/answer = is_extended(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/obj/machinery/nuclearbomb/proc/interaction_insert_disk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!insert_auth_disk(user, O))
 		return TRUE
 	add_fingerprint(user)
@@ -94,7 +85,9 @@ GLOBAL_VAR(bomb_set)
 	rel_set(src, nameof(auth), disk)
 	return TRUE
 
-/obj/machinery/nuclearbomb/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/nuclearbomb/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, 1)
 	add_fingerprint(user)
 	if(auth())
@@ -115,7 +108,7 @@ GLOBAL_VAR(bomb_set)
 			cut_overlay("npanel_open")
 			to_chat(user, "You screw the control panel of [src] back on.")
 		flick("nuclearbombc", src)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/nuclearbomb/wirecutter_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
@@ -126,18 +119,20 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/multitool_act(mob/user, obj/item/tool)
 	return wirecutter_act(user, tool)
 
-/obj/machinery/nuclearbomb/welder_act(mob/user, obj/item/tool)
+/obj/machinery/nuclearbomb/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	if(!anchored)
-		return NONE
+		return OP_DECLINE
 	switch(removal_stage)
 		if(0)
 			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, start_self = "You start cutting loose the anchoring bolt covers with [tool]...", start_others = "[user] starts cutting loose the anchoring bolt covers on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-			return ITEM_INTERACT_SUCCESS
+			return OP_OK
 		if(2)
 			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start cutting apart the anchoring system's sealant with [tool]...", start_others = "[user] starts cutting apart the anchoring system sealant on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
-			return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+			return OP_OK
+	return OP_OK
 
 /obj/machinery/nuclearbomb/proc/welder_act_tool_done(mob/user)
 	if(!src || !user)
@@ -150,18 +145,20 @@ GLOBAL_VAR(bomb_set)
 	act_message(user, src, MSG_SELF("You cut apart the anchoring system's sealant."), MSG_OTHERS("%U% cuts apart the anchoring system sealant on %T%."))
 	removal_stage = 3
 
-/obj/machinery/nuclearbomb/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/nuclearbomb/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	if(!anchored)
-		return NONE
+		return OP_DECLINE
 	switch(removal_stage)
 		if(1)
 			use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, start_self = "You start forcing open the anchoring bolt covers with [tool]...", start_others = "[user] starts forcing open the bolt covers on [src].", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-			return ITEM_INTERACT_SUCCESS
+			return OP_OK
 		if(4)
 			use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, start_self = "You begin lifting the device off the anchors...", start_others = "[user] begins lifting [src] off of the anchors.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done2), done_args = list(user))
-			return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+			return OP_OK
+	return OP_OK
 
 /obj/machinery/nuclearbomb/proc/crowbar_act_tool_done(mob/user)
 	if(!src || !user)
@@ -176,14 +173,16 @@ GLOBAL_VAR(bomb_set)
 	set_anchored(FALSE)
 	removal_stage = 5
 
-/obj/machinery/nuclearbomb/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/nuclearbomb/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	if(!anchored)
-		return NONE
+		return OP_DECLINE
 	if(removal_stage != 3)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, start_self = "You begin unwrenching the anchoring bolts...", start_others = "[user] begins unwrenching the anchoring bolts on [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/nuclearbomb/proc/wrench_act_tool_done(mob/user)
 	if(!src || !user)
@@ -195,13 +194,8 @@ GLOBAL_VAR(bomb_set)
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
 // the same window. All keypad/auth/timer/safety/anchor and wire/pulse
 // actions are dispatched via tgui_act below.
-/// Old attack_hand: never called ..(), so ungated. Kept intact in the effect.
-/datum/interaction/machine_hand/ungated/nuclearbomb_use
-	id = "nuclearbomb_use"
-	name = "Use"
-	effect = /obj/machinery/nuclearbomb/proc/interaction_use
-
-/obj/machinery/nuclearbomb/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/nuclearbomb/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(extended)
 		if(!ishuman(user))
 			to_chat(user, span_warning("You don't have the dexterity to do this!"))
@@ -234,6 +228,13 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
 	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended_holds))), then(PROC_REF(interaction_insert_disk)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal)), req(PROC_REF(can_make_deployable_holds), because = PROC_REF(can_make_deployable_refusal))), then(PROC_REF(interaction_make_deployable)))
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 
@@ -432,21 +433,36 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 	wire_view = TRUE
 	tgui_interact(user)
 
-/datum/interaction/machine_verb/nuclearbomb_make_deployable
-	id = "nuclearbomb_make_deployable"
-	name = "Make Deployable"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/nuclearbomb/proc/can_make_deployable))
-	effect = /obj/machinery/nuclearbomb/proc/interaction_make_deployable
-
 /// Requirement: only something with hands can adjust the panels.
 /obj/machinery/nuclearbomb/proc/can_make_deployable(mob/user, atom/target, obj/item/held)
-	if(!user.canmove || user.stat || user.restrained())
+	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return TRUE // the effect declines silently
 	if(!ishuman(user))
 		return "you don't have the dexterity to do this"
 	return TRUE
 
-/obj/machinery/nuclearbomb/proc/interaction_make_deployable(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/nuclearbomb/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/nuclearbomb/proc/dq_actor_can_act_refusal(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	return istext(answer) ? answer : "you can't do that right now"
+
+/// Requirement (was REQ_* can_make_deployable): the legacy check answers TRUE to pass.
+/obj/machinery/nuclearbomb/proc/can_make_deployable_holds(datum/act/op/A)
+	var/answer = can_make_deployable(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_make_deployable_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/nuclearbomb/proc/can_make_deployable_refusal(datum/act/op/A)
+	var/answer = can_make_deployable(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/nuclearbomb/proc/interaction_make_deployable(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return TRUE
 	if(deployable)

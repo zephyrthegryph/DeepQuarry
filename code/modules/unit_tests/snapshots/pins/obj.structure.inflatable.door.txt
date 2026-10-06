@@ -5,7 +5,6 @@ robot|none menu: Deflate
 robot|none menu: Open
 robot|none menu: Use hand
 robot|none click: Click: Use hand
-ai|none menu: Open
 ai|none click: nothing
 ghost|none menu: Deflate
 ghost|none click: nothing
@@ -37,5 +36,5 @@ human|/obj/item/stack/material/steel click: Click: Use hand
 human|/obj/item/card/id menu: Deflate
 human|/obj/item/card/id menu: Use hand
 human|/obj/item/card/id click: Click: Use hand
-keys: deflate, gen_silicon_inflatable_door_silicon_use, use_hand
+keys: deflate, drag_buckle, silicon_open, use_hand
 

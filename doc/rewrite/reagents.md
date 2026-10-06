@@ -124,7 +124,7 @@ the grinder's run, an op wait with `claims()` for the analyzer's scan, and `asks
 dirtying is an `every()`. Pinned by `dq_reagent_machines_behaviour.dm` (written on master first) and the generated conversion pins.
 
 Left, each waiting for its replacement to land (`intended_changes.md`, "Reagent machines"): the ghost view of the dispenser and synthesizer
-(`INTERACT_OBSERVER`: `by(AFF_OBSERVE)` has no provider yet), their screwdriver cartridge removal (`rerun_ask` in `screwdriver_act`), the
+(`INTERACT_OBSERVER`: the `observer()` binding and the ghost's `AFF_OBSERVE` provider exist now, rewrite/items-structures-2), their screwdriver cartridge removal (`rerun_ask` in `screwdriver_act`), the
 `*_act` tool procs, the look procs that read untracked state (pump, distillery, synthesizer, syringe, blood pack) and the container
 `APPEARANCE_TEMPLATE`s (dropper, hypospray, autoinjector: a `draw()` does not refresh in the same tick the template did, which their tests read).
 

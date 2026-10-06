@@ -1,42 +1,30 @@
 human|none menu: Insert (refused: needs an item)
-human|none menu: Use
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Insert (refused: needs an item)
-robot|none menu: Use
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Insert (refused: you cannot put the screwdriver into the machine)
-human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Insert (refused: you cannot put the crowbar into the machine)
-human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Insert (refused: you cannot put the wrench into the machine)
-human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Insert (refused: you cannot put the wirecutters into the machine)
-human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Insert (refused: you cannot put the multitool into the machine)
-human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Insert (refused: you cannot put the welding tool into the machine)
-human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Insert (refused: you cannot put the cable coil into the machine)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Insert (refused: you cannot put the steel sheet into the machine)
-human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Insert (refused: you cannot put the identification card into the machine)
-human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Insert (refused: you cannot put the item into the machine)
-human|/obj/item menu: Use
 human|/obj/item click: nothing
-keys: construct, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, replicator_insert
+keys: construct, drag_buckle, gen_insert_interaction_insert, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

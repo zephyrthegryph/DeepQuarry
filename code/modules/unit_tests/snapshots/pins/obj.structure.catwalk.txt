@@ -74,5 +74,5 @@ human|/obj/item/stack/tile/floor menu: Slice apart (refused: hold Disarm)
 human|/obj/item/stack/tile/floor menu: Slice apart (refused: hold Grab)
 human|/obj/item/stack/tile/floor menu: Slice apart, keeping the lattice (refused: needs a welder)
 human|/obj/item/stack/tile/floor click: nothing
-keys: catwalk_plate, catwalk_slice_disarm, catwalk_slice_grab, catwalk_slice_harm, catwalk_slice_help, gen_drag_interaction_drag_buckle, use_crowbar
+keys: catwalk_plate, catwalk_slice_disarm, catwalk_slice_grab, catwalk_slice_harm, catwalk_slice_help, drag_buckle, use_crowbar
 

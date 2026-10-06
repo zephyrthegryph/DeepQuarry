@@ -24,7 +24,7 @@
 	if(seedless)
 		proto_set(soil, nameof(soil.seed), null)
 		TEST_ASSERT_NULL(soil.seed, "The actual holder enters its real seedless terminal processing state")
-		TEST_ASSERT_EQUAL(soil.machine_step(), PROCESS_KILL, "Actual seedless processing retains its original terminal scheduler result")
+		TEST_ASSERT_EQUAL(soil.work_step(null), PROCESS_KILL, "Actual seedless processing retains its original terminal scheduler result")
 	else
 		soil.die()
 	TEST_ASSERT(QDELETED(soil), "The actual terminal endpoint consumes the exact original invisible soil holder")

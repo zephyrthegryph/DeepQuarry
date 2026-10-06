@@ -15,20 +15,6 @@
 
 /// Variable dictating if we are in the process of restoring the occupier AI
 OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
-/obj/machinery/computer/aifixer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/aifixer_card,
-		/datum/interaction/machine_hand/ungated/aifixer_use,
-	)
-	..()
-
-/// Old attackby's aicard branch. Always falls through to ..() afterwards (base attackby still runs).
-/datum/interaction/machine_item/aifixer_card
-	id = "aifixer_card"
-	name = "Use AI card"
-	held_type = /obj/item/aicard
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/aifixer/proc/can_use_card, null))
-	effect = /obj/machinery/computer/aifixer/proc/interaction_use_card
 
 /obj/machinery/computer/aifixer/proc/can_use_card(mob/actor, atom/target, obj/item/held)
 	if(!operable())
@@ -37,7 +23,19 @@ OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTI
 		return "terminal is busy restoring [occupier()] right now"
 	return TRUE
 
-/obj/machinery/computer/aifixer/proc/interaction_use_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
+/// Requirement (was REQ_* can_use_card): the legacy check answers TRUE to pass.
+/obj/machinery/computer/aifixer/proc/can_use_card_holds(datum/act/op/A)
+	var/answer = can_use_card(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_use_card_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/aifixer/proc/can_use_card_refusal(datum/act/op/A)
+	var/answer = can_use_card(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/computer/aifixer/proc/interaction_use_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/aicard/card = A.held
 	if(occupier())
 		if(card.grab_ai(occupier(), user))
 			rel_clear(src, nameof(occupier))
@@ -54,7 +52,7 @@ OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTI
 	else
 		to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [card]. What exactly are you trying to do here?"))
 	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.
-	return FALSE
+	return OP_DECLINE
 
 MSG_DEF_SELF(aifixer/screws_stuck, "The screws on the screen won't budge.")
 MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge and it emits a warning beep.")
@@ -66,13 +64,8 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 /obj/machinery/computer/aifixer/proc/screws_stuck_reason(datum/act/op/A)
 	return operable() ? /datum/msg/aifixer/screws_stuck_beep : /datum/msg/aifixer/screws_stuck
 
-/// Old attack_hand (never called ..()): opens the UI, silently doing nothing when unpowered/broken.
-/datum/interaction/machine_hand/ungated/aifixer_use
-	id = "aifixer_use"
-	name = "Use"
-	effect = /obj/machinery/computer/aifixer/proc/interaction_use
-
-/obj/machinery/computer/aifixer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/aifixer/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
@@ -84,6 +77,8 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 	interface("AiRestorer")
 	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
+	op("use_card", item(/obj/item/aicard), priority(OP_PRIORITY_DEFAULT - 1), label("Use AI card"), needs(req(PROC_REF(can_use_card_holds), because = PROC_REF(can_use_card_refusal))), then(PROC_REF(interaction_use_card)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/computer/aifixer/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -153,7 +148,6 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 		return
 	look.overlay("ai-fixer-on", when = restoring)
 	var/mob/living/silicon/ai/AI = occupier()
-	// ALLOW(sys_dx_untracked_read): the card's AI is redrawn by the fixer's own update_icon() each repair step, as before
 	var/ai_stat = AI?.stat
 	if(!AI)
 		look.overlay("ai-fixer-empty")

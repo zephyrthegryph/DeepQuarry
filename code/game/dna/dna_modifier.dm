@@ -105,6 +105,10 @@ CAPABILITIES(/datum/dna2/record)
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
 	blast_contents()
+	op("dna_scanner_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(dna_scanner_interaction_item)))
+	op("dna_scanner_interaction_drag", item(/atom/movable), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(dna_scanner_interaction_drag)))
+	op("dna_scannernew_eject_effect", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject DNA Scanner"), needs(req_adjacent(), req_capable()), then(PROC_REF(dna_scannernew_eject_effect)))
+	op("dna_scannernew_move_inside_effect", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Enter DNA Scanner"), needs(req_adjacent(), req_capable()), then(PROC_REF(dna_scannernew_move_inside_effect)))
 
 /obj/machinery/dna_scannernew/on_destroy(force)
 	eject_occupant()
@@ -136,7 +140,8 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	src.go_out()
 	return
 
-/obj/machinery/dna_scannernew/proc/dna_scannernew_eject_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scannernew_eject_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(user.stat != 0)
 		return
@@ -157,22 +162,23 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
 			M.forceMove(get_turf(src))
 
-EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
-	INTERACT_ITEM(null, PROC_REF(dna_scanner_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(dna_scanner_interaction_drag), REQ_TARGET_STATE(/obj/machinery/dna_scannernew/proc/can_drag_inside)), \
-	INTERACT_VERB("Eject DNA Scanner", PROC_REF(dna_scannernew_eject_effect)), \
-	INTERACT_VERB("Enter DNA Scanner", PROC_REF(dna_scannernew_move_inside_effect), REQ_TARGET_STATE(/obj/machinery/dna_scannernew/proc/can_move_inside)), \
-)
-
 /// Old MouseDrop_T: allows borgs to clone people without external assistance.
-/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_drag(mob/user, atom/movable/dropped, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_drag(datum/act/op/A)
+	// the legacy check, read when the op runs: its text is the refusal
+	var/allowed = can_drag_inside(A.actor, src, A.held)
+	if(allowed != TRUE)
+		if(istext(allowed))
+			to_chat(A.actor, span_warning(allowed))
+		return
+	var/mob/user = A.actor
+	var/atom/movable/dropped = A.held
 	var/mob/target = dropped
 	var/mob/living/carbon/WC = get_occupant()
 	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target) || WC)
-		return FALSE
+		return OP_DECLINE
 	// Traitgenes Do not allow buckled or ridden mobs
 	if(target.buckled_to())
-		return FALSE
+		return OP_DECLINE
 	put_in(target)
 	return TRUE
 
@@ -197,7 +203,14 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		return "the subject cannot have abiotic items on"
 	return TRUE
 
-/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scannernew_move_inside_effect(datum/act/op/A)
+	// the legacy check, read when the op runs: its text is the refusal
+	var/allowed = can_move_inside(A.actor, src, A.held)
+	if(allowed != TRUE)
+		if(istext(allowed))
+			to_chat(A.actor, span_warning(allowed))
+		return
+	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)
 		return
 	user.stop_pulling()
@@ -210,7 +223,9 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	SStgui.update_uis(src)
 
 /// Old attackby.
-/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/machinery/dna_scannernew/proc/dna_scanner_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(istype(item, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
@@ -241,11 +256,11 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		return TRUE
 
 	else if(!istype(item, /obj/item/grab))
-		return FALSE
+		return OP_DECLINE
 	var/obj/item/grab/G = item
 	var/mob/living/grabbed = G?.grab_target()
 	if(!ismob(grabbed))
-		return FALSE
+		return OP_DECLINE
 	if(get_occupant())
 		to_chat(user, span_warning("The scanner is already occupied!"))
 		return TRUE

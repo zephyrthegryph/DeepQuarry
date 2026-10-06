@@ -53,7 +53,7 @@
 	/// TRUE for an item registered while a test owned the kernel clock (kernel_test_begin()): the live loop never runs it
 	/// and a test's injected clock runs only these, so a fixture's every() and the live kernel never meet.
 	var/test_owned = FALSE
-	/// The clock dt is measured on: CLOCK_WORLD, or CLOCK_BIO / CLOCK_MACHINE on the member (a stasis pause
+	/// The clock dt is measured on: CLOCK_WORLD, or CLOCK_BIO on the member (a stasis pause
 	/// pauses it). Each clock is a source: the kernel only asks it how much time has passed.
 	var/clock = CLOCK_WORLD
 	/// Declared reads (a list of field/channel names): what makes runnable() worth re-asking. Informational for
@@ -195,13 +195,13 @@
 
 // ---- clocks are sources
 
-/// Now on `clock`, for `member`. CLOCK_WORLD is world.time; an entity clock is the member's own (om_clock_now()),
+/// Now on `clock`, for `member`. CLOCK_WORLD is world.time; an entity clock is the member's own (clock_now()),
 /// which stands still while the member is paused. A member without that clock reads world time.
 // ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /proc/work_clock_now(clock, datum/member, now = world.time)
 	if(clock == CLOCK_WORLD || !member)
 		return now
-	return om_clock_now(member, clock) || now
+	return clock_now(member, clock) || now
 
 // ---- registration
 

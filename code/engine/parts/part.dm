@@ -153,6 +153,10 @@
 	part_name = "tk"
 	bind_kind = BIND_TK
 
+/datum/entry/part/bind/observe
+	part_name = "observe"
+	bind_kind = BIND_OBSERVE
+
 /// hand(): the actor's hand on the target.
 /proc/hand()
 	return part_make(/datum/entry/part/bind/hand)
@@ -210,6 +214,12 @@
 /// that means telekinesis goes first, and next to the actor the hand's op does.
 /proc/tk()
 	return part_make(/datum/entry/part/bind/tk)
+
+/// observer(): a ghost's click or menu pick on the target (the old INTERACT_OBSERVER, attack_ghost). The binding needs AFF_OBSERVE, which only the observer
+/// mob provides (CAPABILITIES(/mob/observer/dead)), so no living actor ever reaches the op and a ghost reaches no hand, tool or remote op. Reach is REACH_ANY
+/// (a ghost is anywhere it looks), it is not physical (no req_capable(): a ghost is dead by definition), and a target's requirements still apply.
+/proc/observer()
+	return part_make(/datum/entry/part/bind/observe)
 
 /// ui_act(args...) or ui_act("name", args...): a window button. The window action is the op's key unless a name is given. The arguments
 /// are arg(name, schema) parts.
