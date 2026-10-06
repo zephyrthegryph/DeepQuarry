@@ -21,4 +21,9 @@ STAT(/datum, relevance, MAX, base = RELEVANCE_NONE, virtual = TRUE)
 STAT(/mob/living, clock_rate_bio, MIN, base = 1)
 STAT(/area, lights_nightshift, ANY)
 STAT(/area, lights_emergency_off, ANY)
+/// What the area's machines ask of each power channel, in watts: the sum of their contributions (contributes_to(nameof(power_area), ...) in
+/// `/obj/machinery`'s capabilities). The APC supplies it; nothing keeps a tally of it (doc/rewrite/power_grid.md).
+STAT(/area, demand_equip, SUM, virtual = TRUE)
+STAT(/area, demand_light, SUM, virtual = TRUE)
+STAT(/area, demand_environ, SUM, virtual = TRUE)
 

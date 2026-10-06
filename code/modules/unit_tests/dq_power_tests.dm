@@ -142,7 +142,7 @@
 
 	// Cut off, nearly empty, with a load.
 	A.disconnect_from_network()
-	A.area.use_power_static(2000, EQUIP)
+	dq_area_load(get_turf(A), 2000, EQUIP)
 	A.set_operating(TRUE)
 	A.set_chargemode(TRUE)
 	A.equipment = POWERCHAN_ON_AUTO
@@ -184,7 +184,7 @@
 	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
-	A.area.use_power_static(-2000, EQUIP)
+	dq_area_load(get_turf(A), -2000, EQUIP)
 	A.cell.charge = old_charge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.apply_area_power()

@@ -39,20 +39,20 @@
 	TEST_ASSERT(M.operable(), "the outage ended by itself")
 	test_driver_end()
 
-/// Switching between idle and active use moves the area's tally by the difference of the two draws; leaving use off removes it.
+/// Switching between idle and active use moves the area's demand by the difference of the two draws; leaving use off removes it.
 /datum/unit_test/dq_machine_draw_follows_use_mode
 
 /datum/unit_test/dq_machine_draw_follows_use_mode/Run()
 	var/turf/T = test_floor()
 	var/area/A = get_area(T)
 	var/obj/machinery/dq_draw_probe/M = allocate(/obj/machinery/dq_draw_probe, T)
-	var/idle = A.static_equip
+	var/idle = dq_grid_demand(A, EQUIP)
 	M.set_use_power(USE_POWER_ACTIVE)
-	TEST_ASSERT_EQUAL(A.static_equip - idle, 90, "active use adds the difference of the two draws")
+	TEST_ASSERT_EQUAL(dq_grid_demand(A, EQUIP) - idle, 90, "active use adds the difference of the two draws")
 	M.set_use_power(USE_POWER_OFF)
-	TEST_ASSERT_EQUAL(A.static_equip - idle, -10, "off use drops the whole draw")
+	TEST_ASSERT_EQUAL(dq_grid_demand(A, EQUIP) - idle, -10, "off use drops the whole draw")
 	M.set_use_power(USE_POWER_IDLE)
-	TEST_ASSERT_EQUAL(A.static_equip, idle, "back to idle restores the tally")
+	TEST_ASSERT_EQUAL(dq_grid_demand(A, EQUIP), idle, "back to idle restores the demand")
 
 /// A distillery works while it is switched on and parks when switched off.
 /datum/unit_test/dq_distillery_work_follows_on

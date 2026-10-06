@@ -45,12 +45,13 @@
 	SSmachines.power_dirty_areas[src] = TRUE
 
 /datum/system/machines/proc/power_flush_areas()
+	stat_drain_point() // the on_change hooks that mark an area dirty run at a drain: take them before reading the set
 	for(var/area/A as anything in power_dirty_areas)
 		var/obj/machinery/power/apc/apc = A.apc
 		if(apc?.vg_entity)
-			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_equip, 0)
-			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_light, 1)
-			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_environ, 2)
+			native_write(apc, NATIVE_APC_STATIC_LOAD, A.demand(EQUIP), 0)
+			native_write(apc, NATIVE_APC_STATIC_LOAD, A.demand(LIGHT), 1)
+			native_write(apc, NATIVE_APC_STATIC_LOAD, A.demand(ENVIRON), 2)
 			if(A.oneoff_equip || A.oneoff_light || A.oneoff_environ)
 				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_equip, 0)
 				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_light, 1)

@@ -2420,3 +2420,16 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   their work resumes by itself when they work again. Before, each step ran and refused (or ended its work and waited for power). The 13 machines
   whose step reads power itself (the distillery, exonet node, magnet, ATM, recharge station, cooking appliances and others) declare `unpowered = TRUE`
   and run as before. `STAT_OPERABLE` is now contributed by every machine (the stat bits, `stat_bits_allow()`), not only machine_basics machines.
+
+## The power grid: an area's demand is its machines' contributions (rewrite/power-grid)
+
+Design and migration: `doc/rewrite/power_grid.md`.
+
+* **No tallies.** An area's standing power demand per channel (`demand_equip`, `demand_light`, `demand_environ`) is the sum of what its machines
+  contribute (`contributes_to` the machine's `power_area`), settled when a machine's `use_power`, idle or active draw, channel or area changes. The
+  `static_equip/light/environ` vars, `power_use_change()`, `use_power_static()`, `retally_power()` and `check_static_power()` are gone (the admin
+  "Check Static Power" VV option with them): there is nothing that can drift, so there is nothing to recount.
+* **Every machine joins its area.** `area.power_machines` holds every machine standing in the area (it held only the ones that wanted power-change
+  calls); `area.lights` is `lights_here()`. A machine moved between areas takes its draw and its power state with it in one step.
+* **Rarely, a load shows that the tallies had lost.** A subclass that wrote its draw outside the setters, or a machine moved while it was still
+  initialising, used to leave the area's load wrong until someone retallied; the APC now carries exactly what the machines in the area ask.

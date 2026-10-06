@@ -8,12 +8,6 @@
 // Please never change any of these variables! Use the procs that update them instead!
 //
 
-// Note that we update the area even if the area is unpowered.
-#define REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)\
-	if(old_power != new_power){\
-		var/area/A = get_area(src);\
-		if(A) A.power_use_change(old_power, new_power, power_channel)}
-
 // Current power consumption right now.
 #define POWER_CONSUMPTION (use_power == USE_POWER_IDLE ? idle_power_usage : (use_power >= USE_POWER_ACTIVE ? active_power_usage : 0))
 
@@ -96,19 +90,13 @@
 		recursive_set = TRUE
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
-	var/power = POWER_CONSUMPTION
-	REPORT_POWER_CONSUMPTION_CHANGE(0, power)
 	power_init_complete = TRUE
-	if(power_subscriber)
-		get_area(src)?.power_subscribe(src)
+	rel_set(src, nameof(power_area), get_area(src)) // the machine's draw reaches the area's demand with the relation
 
 // Or in Destroy at all, but especially after the ..().
 // the base machine: its power draw leaves the area budget.
 /obj/machinery/on_destroy(force)
-	var/power = POWER_CONSUMPTION
-	REPORT_POWER_CONSUMPTION_CHANGE(power, 0)
-	if(power_subscriber)
-		get_area(src)?.power_unsubscribe(src)
+	rel_set(src, nameof(power_area), null) // the draw leaves the area's demand
 	..()
 
 // Registering moved_event observers for all machines is too expensive.  Instead we do it ourselves.
@@ -139,17 +127,7 @@
 		return
 	if(!power_init_complete)
 		return
-	if(power_subscriber)
-		old_area?.power_unsubscribe(src)
-		new_area?.power_subscribe(src)
-	var/power = POWER_CONSUMPTION
-	if(!power)
-		return // This is the most likely case anyway.
-
-	if(old_area)
-		old_area.power_use_change(power, 0, power_channel) // Remove our usage from old area
-	if(new_area)
-		new_area.power_use_change(0, power, power_channel) // Add our usage to new area
+	rel_set(src, nameof(power_area), new_area) // the draw follows the relation: it leaves the old area's demand and joins the new one's
 	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.
 
 //
@@ -157,35 +135,21 @@
 // 	- use_power, idle_power_usage, active_power_usage, power_channel
 //
 
-// Sets the use_power var and then forces an area power update
+// Sets the use_power var. The draw is a contribution to the area's demand that reads it, so the write is the whole update.
 /obj/machinery/proc/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
-	if(!power_init_complete)
-		use_power = new_use_power
-	else
-		var/old_power = POWER_CONSUMPTION
-		use_power = new_use_power
-		var/new_power = POWER_CONSUMPTION
-		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)
+	use_power = new_use_power
 	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
 	// Raised after the write: watchers (declared periodic work) read the new value. use_power is the power
-	// capability's tracked draw mode (G8): the change publishes nameof(use_power) to its readers.
+	// capability's tracked draw mode (G8): the change publishes nameof(use_power) to its readers, and the area's demand stat
+	// that sums it recomputes before this returns.
 	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
 	return TRUE
 
-// Sets the power_channel var and then forces an area power update.
+/// Sets the power_channel var; the draw moves between the area's channel demands with it (power_channel is tracked).
 /obj/machinery/proc/update_power_channel(new_channel)
-	if(power_channel == new_channel)
-		return
-	if(!power_init_complete)
-		set_power_channel(new_channel)
-		return TRUE // We'll be retallying anyway.
-	var/power = POWER_CONSUMPTION
-	REPORT_POWER_CONSUMPTION_CHANGE(power, 0) // Subtract from old channel
-	set_power_channel(new_channel)
-	REPORT_POWER_CONSUMPTION_CHANGE(0, power) // Add to new channel
-	return TRUE
+	return set_power_channel(new_channel)
 
 /// Convenience wrapper: sets idle or active power consumption depending on use_power_mode.
 /// Prefer calling update_idle_power_usage() / update_active_power_usage() directly in new code.
@@ -196,23 +160,28 @@
 		if(USE_POWER_ACTIVE)
 			update_active_power_usage(new_power_consumption)
 
-// Sets the idle_power_usage var and then forces an area power update if use_power was USE_POWER_IDLE
+/// Sets the idle draw (tracked: the area's demand follows while the machine is idle).
 /obj/machinery/proc/update_idle_power_usage(new_power_usage)
-	if(idle_power_usage == new_power_usage)
-		return
-	var/old_power = idle_power_usage
-	idle_power_usage = new_power_usage
-	if(power_init_complete && use_power == USE_POWER_IDLE) // If this is the channel in use
-		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power_usage)
+	return set_idle_power_usage(new_power_usage)
 
-// Sets the active_power_usage var and then forces an area power update if use_power was USE_POWER_ACTIVE
+/// Sets the active draw (tracked: the area's demand follows while the machine is active).
 /obj/machinery/proc/update_active_power_usage(new_power_usage)
-	if(active_power_usage == new_power_usage)
-		return
-	var/old_power = active_power_usage
-	set_active_power_usage(new_power_usage)
-	if(power_init_complete && use_power == USE_POWER_ACTIVE) // If this is the channel in use
-		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power_usage)
+	return set_active_power_usage(new_power_usage)
 
-#undef REPORT_POWER_CONSUMPTION_CHANGE
+// ---- the draw as the area's demand (doc/rewrite/power_grid.md) ----
+
+/// The channel the machine draws on is EQUIP (the cond of its equipment contribution).
+/obj/machinery/proc/draws_equip(datum/act/A)
+	return power_channel == EQUIP
+
+/obj/machinery/proc/draws_light(datum/act/A)
+	return power_channel == LIGHT
+
+/obj/machinery/proc/draws_environ(datum/act/A)
+	return power_channel == ENVIRON
+
+/// What the machine asks of its channel right now: its idle or active draw by the mode it is in, or nothing.
+/obj/machinery/proc/power_demand(datum/act/A)
+	return get_power_usage()
+
 #undef POWER_CONSUMPTION

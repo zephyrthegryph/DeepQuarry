@@ -433,16 +433,16 @@
 /datum/unit_test/dq_p2_lights/fixture_power_use_follows_its_state
 
 /datum/unit_test/dq_p2_lights/fixture_power_use_follows_its_state/run_gate()
-	var/before = p2l_area.static_light
+	var/before = dq_grid_demand(p2l_area, LIGHT)
 	var/obj/machinery/light/L = light()
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 12, "an active tube is twelve watts of the area's light channel")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 12, "an active tube is twelve watts of the area's light channel")
 	set_area_switch(0)
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 2, "a switched-off fixture draws its idle two watts")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 2, "a switched-off fixture draws its idle two watts")
 	set_area_switch(1)
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 12, "back to active")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 12, "back to active")
 	qdel(L)
 	settle()
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 0, "a deleted fixture draws nothing")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 0, "a deleted fixture draws nothing")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The emergency cell (live: the discharge and the recharge run on world.time)

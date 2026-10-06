@@ -84,8 +84,6 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/bulb_emergency_pow_mul = 0.75	// the multiplier for determining the light's power in emergency mode
 	var/bulb_emergency_pow_min = 0.5	// the minimum value for the light's power in emergency mode
 	var/nightshift_allowed = TRUE
-	/// The area this fixture stands in, as a relation: its night-shift and emergency state are read through it.
-	var/tmp/area/power_area
 	var/brightness_range_ns
 	var/brightness_power_ns
 	var/brightness_color_ns
@@ -106,7 +104,6 @@ TRACKED(/obj/machinery/light, auto_flicker)
 CAPABILITIES(/obj/machinery/light)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
-	links(/obj/machinery/light::power_area, /area::lights, b_many = TRUE)
 	owns_one(nameof(installed_light), /obj/item/light)
 	owns_one(nameof(cell), /obj/item/cell/emergency_light)
 	contributes(STAT_NIGHTSHIFT_ENABLED, PROC_REF(wants_nightshift))

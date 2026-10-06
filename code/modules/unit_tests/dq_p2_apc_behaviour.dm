@@ -94,7 +94,7 @@
 
 /// The area takes `watts` more static load on the equipment channel (negative: gives it back).
 /proc/p2_apc_load(obj/machinery/power/apc/A, watts)
-	A.area.use_power_static(watts, EQUIP)
+	dq_area_load(get_turf(A), watts, EQUIP)
 
 /// One power step as the game runs it.
 /proc/p2_apc_power_step()

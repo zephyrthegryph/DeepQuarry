@@ -505,10 +505,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/area/served = area
 	if(served)
 		rel_set(src, nameof(area), null) // paired: the area no longer names this APC
-		served.power_light  = 0
-		served.power_equip  = 0
-		served.power_environ = 0
-		served.power_change()
+		served.set_channels(FALSE, FALSE, FALSE)
 	if(terminal)
 		terminal.expire(0) // the terminal goes with the APC it serves
 	..()
@@ -787,12 +784,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		new_power_light = (lighting >= POWERCHAN_ON)
 		new_power_equip = (equipment >= POWERCHAN_ON)
 		new_power_environ = (environ >= POWERCHAN_ON)
-	if(area.power_light == new_power_light && area.power_equip == new_power_equip && area.power_environ == new_power_environ)
+	if(!area.set_channels(new_power_equip, new_power_light, new_power_environ))
 		return
-	area.power_light = new_power_light
-	area.power_equip = new_power_equip
-	area.power_environ = new_power_environ
-	area.power_change()
 	contract_power_revision++
 	var/powered_channels = new_power_light + new_power_equip + new_power_environ
 	if(SScontracts)
@@ -989,6 +982,5 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// The lights of the area this APC powers (a copy, the loops yield).
 /obj/machinery/power/apc/proc/area_lights()
-	var/list/found = area?.lights
-	return found ? found.Copy() : list()
+	return area ? area.lights_here() : list()
 

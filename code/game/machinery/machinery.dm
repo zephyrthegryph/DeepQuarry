@@ -102,6 +102,10 @@ Class Procs:
 	var/idle_power_usage = 0
 	var/active_power_usage = 0
 	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
+	/// The area the machine draws its power through, as a relation (the other end of the area's power_machines): the machine contributes
+	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
+	/// handling (power_area_set()).
+	var/tmp/area/power_area
 	var/tmp/power_init_complete = FALSE
 	/// Re-checks power (power_change()) when its area's channels change.
 	/// Lights listen on the reactor key instead.
@@ -133,10 +137,17 @@ Class Procs:
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 TRACKED(/obj/machinery, active_power_usage)
+TRACKED(/obj/machinery, idle_power_usage)
 TRACKED(/obj/machinery, power_channel)
+SETTER(/obj/machinery, use_power)
 
 CAPABILITIES(/obj/machinery)
 	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reason = MSG(machine/inoperable), reads = list("stat"))
+	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
+	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)
+	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))
+	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))
+	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))
 	owns_one(nameof(circuit), /obj/item/circuitboard)
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
