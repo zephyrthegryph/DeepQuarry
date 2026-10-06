@@ -33,7 +33,7 @@
 	if(hardware)
 		om_revoke_all_of(src, GRANT_VERB, hardware)
 	om_revoke_each(src, GRANT_VERB, list(/datum/game_mode/malfunction/verb/ai_select_hardware, /datum/game_mode/malfunction/verb/ai_select_research, /datum/game_mode/malfunction/verb/ai_help, /datum/game_mode/malfunction/verb/ai_destroy_station), src)
-	own_clear(src, nameof(research), OWN_DELETE)
+	rel_clear(src, nameof(research))
 	// Fix hacked APCs (a pair: clearing our side clears each APC's hacker)
 	rel_clear(src, nameof(hacked_apcs))
 	// Let them know.

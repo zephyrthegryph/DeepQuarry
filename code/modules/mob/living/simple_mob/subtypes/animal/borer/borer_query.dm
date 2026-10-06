@@ -20,5 +20,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/borer)
 		var/mob/observer/dead/D = ghost_check.candidates[1]
 		transfer_personality(D)
 	unobserve(ghost_check, /datum/notice/ghost_query_complete, src)
-	own_clear(src, nameof(ghost_check), OWN_DELETE) //get rid of the query
+	rel_clear(src, nameof(ghost_check)) //get rid of the query
 

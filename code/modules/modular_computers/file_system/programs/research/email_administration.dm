@@ -79,9 +79,9 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 	if(error)
 		error = ""
 	else if(current_message())
-		rel_clear(src, nameof(/datum/tgui_module/email_client::current_message))
+		rel_clear(src, nameof(src.current_message))
 	else
-		rel_clear(src, nameof(/datum/tgui_module/email_client::current_account))
+		rel_clear(src, nameof(src.current_account))
 	return TRUE
 
 /datum/computer_file/program/email_administration/proc/ui_act_ban(datum/act/op/A)
@@ -121,14 +121,14 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 
 	for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
 		if(received_message.uid == viewmail)
-			rel_set(src, nameof(/datum/tgui_module/email_client::current_message), received_message)
+			rel_set(src, nameof(src.current_message), received_message)
 			break
 	return TRUE
 
 /datum/computer_file/program/email_administration/proc/ui_act_viewaccount(datum/act/op/A, viewaccount)
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 		if(email_account.uid == viewaccount)
-			rel_set(src, nameof(/datum/tgui_module/email_client::current_account), email_account)
+			rel_set(src, nameof(src.current_account), email_account)
 			break
 	return TRUE
 

@@ -103,7 +103,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	if(shoes)
 		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE, TRUE))
 			shoes.forceMove(get_turf(src))
-		own_take(src, nameof(shoes))
+		rel_take(src, nameof(shoes))
 
 /obj/item/clothing/shoes/magboots/examine(mob/user)
 	. = ..()

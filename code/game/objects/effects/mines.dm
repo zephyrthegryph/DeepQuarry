@@ -111,7 +111,7 @@ CAPABILITIES(/obj/effect/mine)
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
 		var/obj/item/grenade/G = trap
-		own_take(src, nameof(trap))
+		rel_take(src, nameof(trap))
 		G.forceMove(get_turf(src))
 		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/effect/mine)
 
 	if(istype(trap, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TV = trap
-		own_take(src, nameof(trap))
+		rel_take(src, nameof(trap))
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
@@ -419,7 +419,7 @@ CAPABILITIES(/obj/effect/mine)
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		own_transfer(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
+		rel_move(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
 	if(explode_now)
 		R.explode(user)
 	consume(src)
@@ -504,7 +504,7 @@ CAPABILITIES(/obj/item/mine)
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
 	trap.forceMove(get_turf(src))
-	own_take(src, nameof(trap))
+	rel_take(src, nameof(trap))
 
 //Lasertag mines
 

@@ -132,7 +132,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 	for(var/signal_id in facts_by_signal)
 		var/list/facts = facts_by_signal[signal_id]
 		for(var/fact_key in facts)
-			own_remove(src, nameof(observations), facts[fact_key])
+			rel_remove(src, nameof(observations), facts[fact_key])
 	..()
 
 /datum/contract_opportunity_window/proc/prune(datum/contract_opportunity_rule/rule)
@@ -144,7 +144,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 			if(observation.occurred_at >= cutoff)
 				continue
 			facts -= fact_key
-			own_remove(src, nameof(observations), observation)
+			rel_remove(src, nameof(observations), observation)
 
 /datum/contract_opportunity_window/proc/revise(datum/contract_opportunity_signal/signal, datum/contract_event/event)
 	var/stable_fact_id = event.fact_id || event.occurrence_id
@@ -159,7 +159,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 		if(event.fact_revision <= 0)
 			return FALSE
 		facts -= fact_key
-		own_remove(src, nameof(observations), previous)
+		rel_remove(src, nameof(observations), previous)
 	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
 	if(!event.fact_active || !signal.event_matches(event))
 		return TRUE
@@ -174,7 +174,7 @@ CAPABILITIES(/datum/contract_opportunity_window)
 				oldest_time = candidate.occurred_at
 		var/datum/contract_opportunity_observation/expired = facts[oldest_key]
 		facts -= oldest_key
-		own_remove(src, nameof(observations), expired)
+		rel_remove(src, nameof(observations), expired)
 	return TRUE
 
 /datum/contract_opportunity_window/proc/signal_snapshot(datum/contract_opportunity_signal/signal)

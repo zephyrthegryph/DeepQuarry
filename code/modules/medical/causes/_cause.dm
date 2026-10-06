@@ -49,7 +49,7 @@ CAPABILITIES(/datum/affliction_trigger)
 
 
 /datum/affliction_trigger/proc/setup()
-	own_clear(src, nameof(produces), OWN_DELETE)
+	rel_clear(src, nameof(produces))
 
 
 /datum/affliction_trigger/New()

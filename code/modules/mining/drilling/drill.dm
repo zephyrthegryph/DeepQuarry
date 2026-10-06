@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
 		cell.forceMove(loc)
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 	return ..()
 
 /obj/machinery/mining/drill/get_cell()
@@ -313,7 +313,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 	if (panel_open && cell && user.Adjacent(src))
 		balloon_alert(user, "you take out \the [cell]")
-		var/obj/item/cell/removed = own_take(src, nameof(cell))
+		var/obj/item/cell/removed = rel_take(src, nameof(cell))
 		user.put_in_hands(removed)
 		return TRUE
 	else if(need_player_check)

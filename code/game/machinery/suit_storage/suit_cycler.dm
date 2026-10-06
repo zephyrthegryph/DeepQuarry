@@ -370,11 +370,11 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		if("helmet")
 			if(helmet)
 				helmet.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/item/rig::helmet))
+				rel_take(src, nameof(helmet))
 		if("suit")
 			if(suit)
 				suit.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/machinery/suit_cycler::suit))
+				rel_take(src, nameof(/obj/machinery/suit_cycler::suit))
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_department(datum/act/op/A, department)

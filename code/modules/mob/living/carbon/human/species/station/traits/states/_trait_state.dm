@@ -94,5 +94,5 @@
 	var/datum/trait_state/S = get_trait_state(state_type)
 	if(!S)
 		return FALSE
-	own_remove(src, nameof(trait_states), S)
+	rel_remove(src, nameof(trait_states), S)
 	return TRUE

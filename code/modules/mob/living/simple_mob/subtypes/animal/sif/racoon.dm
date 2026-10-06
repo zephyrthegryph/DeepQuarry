@@ -63,7 +63,7 @@
 
 /mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
 	if(hat)
-		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
 		update_icon()
 		if(user == src)

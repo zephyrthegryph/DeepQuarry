@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	inserted.forceMove(drop_location())
 	if(isliving(user))
 		user.put_in_hands(inserted)
-	own_take(src, nameof(inserted))
+	rel_take(src, nameof(inserted))
 	SStgui.update_uis(src)
 
 /obj/machinery/gear_painter/ui_data(datum/act/eval/A)

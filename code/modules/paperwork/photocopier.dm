@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 		copyitem.forceMove(user.loc)
 		user.put_in_hands(copyitem)
 		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, nameof(copyitem))
+		rel_take(src, nameof(copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
 	return TRUE

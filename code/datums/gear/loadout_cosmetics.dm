@@ -32,7 +32,7 @@
 /datum/gear/cosmetic/nailpolish/New()
 	..()
 	// can't set description, it'll look funny
-	own_clear(src, nameof(gear_tweaks), OWN_DELETE)
+	rel_clear(src, nameof(gear_tweaks))
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_name)
 

@@ -79,7 +79,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
-		own_take(src, nameof(tank))
+		rel_take(src, nameof(tank))
 		return TRUE
 	if(!tank)
 		return TRUE

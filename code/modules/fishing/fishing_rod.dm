@@ -41,7 +41,7 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 	if((src.loc == user || Adjacent(user)) && Bait)
 		Bait.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove the bait from \the [src]."))
-		own_take(src, nameof(Bait))
+		rel_take(src, nameof(Bait))
 	else
 		..()
 

@@ -137,7 +137,7 @@
 /obj/item/rig/protean/proc/protean_removebag_verb(datum/act/op/A)
 	var/mob/user = A.actor
 	if(rig_storage)
-		var/obj/item/storage/backpack/removed_bag = own_take(src, nameof(rig_storage))
+		var/obj/item/storage/backpack/removed_bag = rel_take(src, nameof(rig_storage))
 		user.put_in_hands(removed_bag)
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
@@ -376,7 +376,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/tank/removed_tank = own_take(src, nameof(air_supply))
+	var/obj/item/tank/removed_tank = rel_take(src, nameof(air_supply))
 	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		removed_tank.forceMove(get_turf(user))
 	else

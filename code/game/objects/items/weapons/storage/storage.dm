@@ -558,7 +558,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	if(user.s_active == src)
 		rel_clear(user, nameof(/mob::s_active))
 	if(!LAZYLEN(is_seeing))
-		own_clear(src, nameof(hud), OWN_DELETE)
+		rel_clear(src, nameof(hud))
 
 /// Lays the HUD out again after a change, for everyone looking.
 /obj/item/storage/proc/refresh_hud()
@@ -646,7 +646,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	own_clear(src, nameof(catchers), OWN_DELETE)
+	rel_clear(src, nameof(catchers))
 	rel_set(src, nameof(catchers), list())
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts

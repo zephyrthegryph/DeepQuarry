@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	if(source == Beacon && QDELETED(source))
-		own_take(src, nameof(Beacon))
+		rel_take(src, nameof(Beacon))
 	work_start(src)
 
 /// Whether its work starts at initialization (started_work(starts =)).

@@ -230,7 +230,7 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 	key.forceMove(user.loc)
 	if(!user.get_active_hand())
 		user.put_in_hands(key)
-	own_take(src, nameof(key))
+	rel_take(src, nameof(key))
 
 //-------------------------------------------
 // Loading/unloading procs

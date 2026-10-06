@@ -257,7 +257,7 @@ GLOBAL_VAR(restart_counter)
 	RunUnattendedFunctions()
 
 	//so we aren't adding to the round-start lag; the download itself is an om_io job
-	after(null, 5 MINUTES, /proc/ToRban_autoupdate_if_enabled)
+	after(null, 5 MINUTES, GLOBAL_PROC_REF(ToRban_autoupdate_if_enabled))
 
 	return
 

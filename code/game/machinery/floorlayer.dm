@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/floorlayer)
 		return OP_OK
 	to_chat(user, span_notice("You remove [selected] from \the [src]."))
 	selected.forceMove(loc)
-	own_take(src, nameof(T))
+	rel_take(src, nameof(T))
 	return OP_OK
 
 /// The screwdriver's answer: the tiles it lays next.

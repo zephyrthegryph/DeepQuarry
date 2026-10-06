@@ -145,7 +145,7 @@ CAPABILITIES(/obj/item/transfer_valve)
 	if(attached_device)
 		attached_device.forceMove(get_turf(src))
 		rel_clear(attached_device, nameof(/client::holder))
-		own_take(src, nameof(/obj/item/transfer_valve::attached_device))
+		rel_take(src, nameof(/obj/item/transfer_valve::attached_device))
 		update_icon()
 	if(.)
 		update_icon()
@@ -178,10 +178,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 /obj/item/transfer_valve/proc/remove_tank(obj/item/tank/T)
 	if(tank_one == T)
 		split_gases()
-		own_take(src, nameof(tank_one))
+		rel_take(src, nameof(tank_one))
 	else if(tank_two == T)
 		split_gases()
-		own_take(src, nameof(tank_two))
+		rel_take(src, nameof(tank_two))
 	else
 		return
 

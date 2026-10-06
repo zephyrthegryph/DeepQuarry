@@ -89,7 +89,7 @@ CAPABILITIES(/datum/tgui_module/supermatter_monitor)
 	return data
 
 /datum/tgui_module/supermatter_monitor/proc/ui_act_clear(datum/act/op/A)
-	rel_clear(src, nameof(/area/looking_glass::active))
+	rel_clear(src, nameof(src.active))
 	return OP_OK
 
 /datum/tgui_module/supermatter_monitor/proc/ui_act_refresh(datum/act/op/A)
@@ -100,7 +100,7 @@ CAPABILITIES(/datum/tgui_module/supermatter_monitor)
 	var/newuid = set_uid
 	for(var/obj/machinery/power/supermatter/S in supermatters)
 		if(S.uid == newuid)
-			rel_set(src, nameof(/area/looking_glass::active), S)
+			rel_set(src, nameof(src.active), S)
 	. = TRUE
 
 /datum/tgui_module/supermatter_monitor/ntos

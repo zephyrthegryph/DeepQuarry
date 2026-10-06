@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		cell.update_icon()
 
 		icon_state = "suspension"
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
@@ -221,7 +221,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 			anom.move_chance = initial(anom.move_chance)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
-	own_clear(src, nameof(suspension_field), OWN_DELETE)
+	rel_clear(src, nameof(suspension_field))
 	icon_state = "suspension_wrenched"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()

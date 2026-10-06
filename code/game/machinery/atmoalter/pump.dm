@@ -163,7 +163,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, nameof(/datum/rule_binding::holding))
+		rel_take(src, nameof(src.holding))
 	. = 1
 
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_pressure(datum/act/op/A, raw_pressure)

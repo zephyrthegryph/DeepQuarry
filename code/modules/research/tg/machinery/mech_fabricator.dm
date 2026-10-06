@@ -293,7 +293,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	if(!stored_part || !exit || exit.density)
 		return
 	atom_say("Obstruction cleared. The fabrication of [stored_part] is now complete.")
-	var/obj/item/part = own_take(src, nameof(stored_part))
+	var/obj/item/part = rel_take(src, nameof(stored_part))
 	part.forceMove(exit)
 	if(process_queue && !being_built)
 		start_next(FALSE)

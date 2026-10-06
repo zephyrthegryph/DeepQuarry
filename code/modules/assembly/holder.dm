@@ -158,8 +158,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 		if(loc?.release_refusal(src, user))
 			return TRUE
 		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
-		var/obj/item/assembly/left = own_take(src, nameof(a_left))
-		var/obj/item/assembly/right = own_take(src, nameof(a_right))
+		var/obj/item/assembly/left = rel_take(src, nameof(a_left))
+		var/obj/item/assembly/right = rel_take(src, nameof(a_right))
 		if(left)
 			rel_clear(left, nameof(left.holder))
 			left.forceMove(T)

@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
 /obj/machinery/power/shield_generator/proc/shutdown_field()
-	own_clear(src, nameof(field_segments), OWN_DELETE)
+	rel_clear(src, nameof(field_segments))
 
 	set_running(SHIELD_OFF)
 	current_energy = 0
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
-	own_clear(src, nameof(field_segments), OWN_DELETE)
+	rel_clear(src, nameof(field_segments))
 	var/list/shielded_turfs
 
 	if(check_flag(MODEFLAG_HULL))
@@ -480,7 +480,7 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 		if(running == SHIELD_IDLE)
 			return
 		set_running(SHIELD_IDLE)
-		own_clear(src, nameof(field_segments), OWN_DELETE)
+		rel_clear(src, nameof(field_segments))
 	else
 		if(running != SHIELD_IDLE)
 			return

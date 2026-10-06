@@ -776,7 +776,7 @@ CAPABILITIES(/obj/structure/plushie)
 /obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 	return
 
 /// Old attackby: sew it shut, cut it open, or hide a small thing inside.
@@ -914,7 +914,7 @@ CAPABILITIES(/obj/structure/plushie)
 /obj/item/toy/plushie/proc/attack_self_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 	return
 
 /obj/item/toy/plushie/proc/say_phrase()
@@ -2278,7 +2278,7 @@ CAPABILITIES(/obj/item/toy/minigibber)
 	if(stored_minature)
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
-		own_clear(src, nameof(stored_minature), OWN_DELETE)
+		rel_clear(src, nameof(stored_minature))
 		COOLDOWN_START(src, cooldown, 0.8 SECONDS)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		to_chat(user, span_notice("You hit the gib button on \the [src]."))

@@ -193,7 +193,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 /obj/item/rig/Moved(old_loc, direction, forced)
 	set_carried_by_mob(ismob(loc) ? TRUE : FALSE)
 	if(!ismob(loc))
-		own_clear(src, nameof(minihud), OWN_DELETE) // Just in case we get removed some other way
+		rel_clear(src, nameof(minihud)) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
 		// damage, stuffed into storage, gibbed off, or a protean transforming out of
@@ -438,7 +438,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	canremove = seal_target
 	if(M.hud_used)
 		if(canremove)
-			own_clear(src, nameof(minihud), OWN_DELETE)
+			rel_clear(src, nameof(minihud))
 		else
 			rel_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
@@ -446,7 +446,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	M.client?.screen -= booting_L
 	consume(booting_L, M)
 	booting_R.icon_state = "boot_done"
-	after(M, 4 SECONDS, /proc/rig_boot_hud_clear, with = list(M, booting_R))
+	after(M, 4 SECONDS, GLOBAL_PROC_REF(rig_boot_hud_clear), with = list(M, booting_R))
 
 	if(canremove)
 		for(var/obj/item/rig_module/module in installed_modules)

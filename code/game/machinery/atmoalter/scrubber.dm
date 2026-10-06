@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, nameof(/datum/rule_binding::holding))
+		rel_take(src, nameof(src.holding))
 	. = TRUE
 
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_volume_adj(datum/act/op/A, vol)

@@ -349,14 +349,14 @@ CAPABILITIES(/datum/cargo_market_bid)
 	var/market_generation = 0
 
 /datum/system/supply/proc/initialize_cargo_market()
-	own_clear(src, nameof(market_counterparties), OWN_DELETE)
-	own_clear(src, nameof(market_listings), OWN_DELETE)
-	own_clear(src, nameof(market_bids), OWN_DELETE)
-	own_clear(src, nameof(market_transactions), OWN_DELETE)
-	own_take_all(src, nameof(market_counterparties))
-	own_take_all(src, nameof(market_listings))
-	own_take_all(src, nameof(market_bids))
-	own_take_all(src, nameof(market_transactions))
+	rel_clear(src, nameof(market_counterparties))
+	rel_clear(src, nameof(market_listings))
+	rel_clear(src, nameof(market_bids))
+	rel_clear(src, nameof(market_transactions))
+	rel_take(src, nameof(market_counterparties))
+	rel_take(src, nameof(market_listings))
+	rel_take(src, nameof(market_bids))
+	rel_take(src, nameof(market_transactions))
 	next_market_id = 1
 	market_generation = 0
 	for(var/counterparty_type as anything in subtypesof(/datum/cargo_market_counterparty))
@@ -620,7 +620,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	rel_add(src, nameof(market_transactions), transaction)
 	if(length(market_transactions) > CARGO_MARKET_TRANSACTION_LIMIT)
 		var/datum/cargo_market_transaction/oldest = market_transactions?[1]
-		own_remove(src, nameof(market_transactions), oldest)
+		rel_remove(src, nameof(market_transactions), oldest)
 	return transaction
 
 /datum/system/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)

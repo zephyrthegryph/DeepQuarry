@@ -126,7 +126,7 @@
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT && light)
-		own_clear(src, nameof(light), OWN_DELETE)
+		rel_clear(src, nameof(light))
 	return ..()
 
 /atom/movable/Destroy()
@@ -138,7 +138,7 @@
 	if(em_block)
 		cut_overlay(em_block)
 		unobserve(em_block, /datum/notice/qdeleting, src)
-		own_clear(src, nameof(em_block), OWN_DELETE)
+		rel_clear(src, nameof(em_block))
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -153,7 +153,7 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		ended_with(AM, src)
-	own_clear(src, nameof(ledger), OWN_DELETE)
+	rel_clear(src, nameof(ledger))
 
 	moveToNullspace()
 
@@ -167,7 +167,7 @@
 
 	stop_orbit()
 	rel_clear(src, nameof(throw_source))
-	own_clear(src, nameof(riding_datum), OWN_DELETE)
+	rel_clear(src, nameof(riding_datum))
 	set_listening(NON_LISTENING_ATOM)
 
 ////////////////////////////////////////

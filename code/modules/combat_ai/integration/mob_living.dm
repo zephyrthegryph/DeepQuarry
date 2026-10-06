@@ -73,7 +73,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 	if(!use_modern_ai)
 		return FALSE
 	if(ai_brain)
-		own_clear(src, nameof(ai_brain), OWN_DELETE)
+		rel_clear(src, nameof(ai_brain))
 	rel_set(src, nameof(ai_brain), new /datum/ai_brain(src))
 	var/list/sels = TYPE_TABLE_GET(src, get_ai_target_selectors)
 	if(sels && length(sels))

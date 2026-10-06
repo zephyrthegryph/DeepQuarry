@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/gift)
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
-		own_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
+		rel_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
 		user.put_in_active_hand(present)
 		present.add_fingerprint(user)
 	else

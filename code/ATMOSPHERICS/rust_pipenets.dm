@@ -644,9 +644,9 @@ CAPABILITIES(/obj/machinery/atmospherics)
 
 /obj/machinery/atmospherics/pipe/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	if(air_temporary == network_air)
-		own_take(src, nameof(air_temporary))
+		rel_take(src, nameof(air_temporary))
 	else
-		own_clear(src, nameof(air_temporary), OWN_DELETE)
+		rel_clear(src, nameof(air_temporary))
 	return TRUE
 
 /obj/machinery/atmospherics/unary/rust_pipe_port_count()

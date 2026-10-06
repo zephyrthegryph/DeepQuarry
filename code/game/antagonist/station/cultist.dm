@@ -47,7 +47,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	if(!..())
 		return
 
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
+	rel_clear(src, nameof(global_objectives))
 	if(prob(50))
 		rel_add(src, nameof(global_objectives), new /datum/objective/cult/survive)
 	else

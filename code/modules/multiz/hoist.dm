@@ -163,7 +163,7 @@ CAPABILITIES(/obj/structure/hoist)
 	desc += " It looks broken, and the clamp has retracted back into the hoist. Seems like you'd have to re-deploy it to get it to work again."
 	if(hoistee())
 		release_hoistee()
-	own_clear(src, nameof(source_hook), OWN_DELETE)
+	rel_clear(src, nameof(source_hook))
 
 DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
 DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))

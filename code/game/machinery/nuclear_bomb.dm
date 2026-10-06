@@ -545,7 +545,7 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 
 			if(GLOB.blackbox)
 				GLOB.blackbox.save_all_data_to_sql()
-			after(null, 30 SECONDS, /proc/nuke_reboot)
+			after(null, 30 SECONDS, GLOBAL_PROC_REF(nuke_reboot))
 
 /proc/nuke_reboot()
 	log_game("Rebooting due to nuclear detonation")

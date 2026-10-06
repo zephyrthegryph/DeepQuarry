@@ -714,7 +714,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		return
 
 	dna.base_species = new_species
-	var/datum/species/own_species = proto_private(src, nameof(species)) // never write through to a registered species
+	var/datum/species/own_species = rel_private(src, nameof(species)) // never write through to a registered species
 	own_species.base_species = new_species
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	if (visible)

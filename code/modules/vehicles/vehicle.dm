@@ -268,7 +268,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 		if(cell)
 			cell.forceMove(Tsec)
 			cell.update_icon()
-			own_take(src, nameof(cell))
+			rel_take(src, nameof(cell))
 
 	destroyed(src, null, "explosion")
 
@@ -317,7 +317,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	to_chat(H, span_notice("You remove [cell] from [src]."))
 	cell.forceMove(get_turf(H))
 	H.put_in_hands(cell)
-	own_take(src, nameof(cell))
+	rel_take(src, nameof(cell))
 	powercheck()
 
 /obj/vehicle/proc/RunOver(mob/living/M)

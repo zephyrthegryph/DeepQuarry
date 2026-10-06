@@ -454,7 +454,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 	return FALSE
 
 /obj/item/integrated_circuit/output/holographic_projector/proc/destroy_hologram()
-	own_clear(src, nameof(hologram), OWN_DELETE)
+	rel_clear(src, nameof(hologram))
 
 
 	power_draw_idle = 0

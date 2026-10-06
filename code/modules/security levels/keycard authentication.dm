@@ -51,7 +51,7 @@
 			C.forceMove(A)
 			continue
 		C.forceMove(loc)
-	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
+	rel_move(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
 	A.state = FRAME_WIRED
 	changed(A)
 	destroyed(src, user, "deconstructed")

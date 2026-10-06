@@ -231,7 +231,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 
 ///Drops the loaded item where it can and nulls it.
 /obj/machinery/rnd/destructive_analyzer/proc/unload_item()
-	var/obj/item/current_item = own_take(src, nameof(loaded_item))
+	var/obj/item/current_item = rel_take(src, nameof(loaded_item))
 	if(!current_item)
 		return FALSE
 	current_item.forceMove(drop_location())
@@ -250,7 +250,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	after(src, 2.4 SECONDS, PROC_REF(reset_busy))
 	use_power(active_power_usage)
 	// Destroy items inside
-	own_take(src, nameof(loaded_item)) // destroyed below
+	rel_take(src, nameof(loaded_item)) // destroyed below
 	var/list/destructing = list()
 	destructing += current_item
 	for(var/atom/movable/AM in contents_of(current_item))

@@ -438,7 +438,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 	if(component_parts)
 		return
 	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
-	own_take_all(src, nameof(component_parts))
+	rel_take(src, nameof(component_parts))
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
 			continue
@@ -589,7 +589,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 /// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
 /// RefreshParts() call included) asks the ledger an exact question.
 /obj/machinery/proc/default_apply_parts()
-	own_take_all(src, nameof(component_parts))
+	rel_take(src, nameof(component_parts))
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
@@ -696,10 +696,10 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 		for(var/obj/D in component_parts)
 			D.forceMove(src.loc)
 		if(A.components)
-			own_take_all(A, nameof(A.components))
+			rel_take(A, nameof(A.components))
 		else
-			own_take_all(A, nameof(A.components))
-		own_take_all(src, nameof(component_parts))
+			rel_take(A, nameof(A.components))
+		rel_take(src, nameof(component_parts))
 		A.check_components()
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
@@ -732,8 +732,8 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	// generic contents-to-turf pass, so materialize before letting go of them.
 	materialize_circuit()
 	materialize_parts()
-	own_take_all(src, nameof(component_parts))
-	own_take(src, nameof(circuit))
+	rel_take(src, nameof(component_parts))
+	rel_take(src, nameof(circuit))
 	return ..()
 
 /obj/machinery/atom_destruction(damage_flag)

@@ -203,7 +203,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 		else if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_held_icon()

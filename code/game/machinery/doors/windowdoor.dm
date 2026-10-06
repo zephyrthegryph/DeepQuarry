@@ -42,7 +42,7 @@
 			ae.set_one_access(1)
 	else
 		ae = electronics
-		own_take(src, nameof(electronics))
+		rel_take(src, nameof(electronics))
 		ae.forceMove(src.loc)
 	if(operating == -1)
 		ae.icon_state = "door_electronics_smoked"

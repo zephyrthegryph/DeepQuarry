@@ -32,7 +32,7 @@ CAPABILITIES(/datum/universal_icon)
 	else if(!isnull(transform))
 		rel_set(src, nameof(transform), transform)
 	else // null = empty list
-		own_take(src, nameof(transform))
+		rel_take(src, nameof(transform))
 
 /datum/universal_icon/proc/copy()
 	RETURN_TYPE(/datum/universal_icon)

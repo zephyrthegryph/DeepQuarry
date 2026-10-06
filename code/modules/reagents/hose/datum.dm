@@ -97,7 +97,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 /datum/hose/proc/update_beam()
 	if(!node1 && !node2) // We've already disconnected, clear beam
 		if(current_beam)
-			own_clear(src, nameof(current_beam), OWN_DELETE)
+			rel_clear(src, nameof(current_beam))
 		return FALSE
 	if(get_dist(get_turf(node1.get_carrier()), get_turf(node2.get_carrier())) > initial_distance)	// The hose didn't form. Something's fucky.
 		spent(src)

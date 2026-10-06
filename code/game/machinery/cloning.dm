@@ -179,7 +179,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
 	var/mob/living/carbon/human/H = BR?.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
-	own_clear(src, nameof(growing_record), OWN_DELETE)
+	rel_clear(src, nameof(growing_record))
 	// An after() callback: the record (or the mind) may have been deleted during the wait and
 	// arrives as null. Without a body there is nothing to finish; the pod resets either way.
 	if(!H)

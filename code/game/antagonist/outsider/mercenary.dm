@@ -26,7 +26,7 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 /datum/antagonist/mercenary/create_global_objectives()
 	if(!..())
 		return 0
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
+	rel_clear(src, nameof(global_objectives))
 	rel_add(src, nameof(global_objectives), new /datum/objective/nuclear)
 	return 1
 

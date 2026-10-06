@@ -123,7 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
 	if((user.get_inactive_hand() == src || ignore_inactive_hand_check) && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		own_take(src, nameof(power_source))
+		rel_take(src, nameof(power_source))
 		update_icon()
 	else
 		to_chat(user,span_notice("[src] does not have a power cell."))

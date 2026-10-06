@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 #define JPS_VISUAL_COLOR_INTERMEDIATE "#ff00ff"
 
 /proc/jps_wipe_colors_after(list/turf/turfs, time)
-	after(null, time, /proc/jps_wipe_colors_now, with = list(turfs))
+	after(null, time, GLOBAL_PROC_REF(jps_wipe_colors_now), with = list(turfs))
 
 /proc/jps_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)

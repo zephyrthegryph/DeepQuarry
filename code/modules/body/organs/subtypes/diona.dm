@@ -7,7 +7,7 @@
 	if(!diona)
 		return 0
 
-	after(target, 0.1 SECONDS, /proc/diona_nymph_splits_off, with = list(target)) // So it has time to be thrown about by the gib() proc.
+	after(target, 0.1 SECONDS, GLOBAL_PROC_REF(diona_nymph_splits_off), with = list(target)) // So it has time to be thrown about by the gib() proc.
 
 /proc/diona_nymph_splits_off(turf/target)
 	var/mob/living/carbon/alien/diona/D = new(target)

@@ -1618,7 +1618,7 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 		return
 
 	if(ai_brain)	//Cleaning up the original ai
-		own_clear(src, nameof(ai_brain), OWN_DELETE)
+		rel_clear(src, nameof(ai_brain))
 	initialize_ai_brain()
 	open_request(src, /datum/prompt/text/vv_ai_faction, PROC_REF(vv_ai_faction_chosen), answerer = user)
 	return TRUE

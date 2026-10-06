@@ -41,7 +41,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 			grant(nif().human, granted_verb(/mob/proc/nme), src)
 
 /datum/nifsoft/soulcatcher/uninstall()
-	own_clear(src, nameof(brainmobs), OWN_DELETE)
+	rel_clear(src, nameof(brainmobs))
 	if((. = ..()) && nif()?.human) //Sometimes NIFs are deleted outside of a human
 		revoke(nif().human, granted_verb(/mob/proc/nsay), src)
 		revoke(nif().human, granted_verb(/mob/proc/nme), src)
@@ -188,7 +188,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 				if(isnull(warning))
 					return
 				if(warning == "DELETE")
-					own_remove(src, nameof(brainmobs), brainpick)
+					rel_remove(src, nameof(brainmobs), brainpick)
 				return TRUE
 
 			//Must just be a flag without special handling then.

@@ -269,7 +269,7 @@ CAPABILITIES(/datum/stock)
 		LAZYSET(shareholders, who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
-	own_transfer(src, nameof(borrow_brokers), src, nameof(borrows), B) // an accepted offer: still the stock's to delete
+	rel_move(src, nameof(borrow_brokers), src, nameof(borrows), B) // an accepted offer: still the stock's to delete
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))

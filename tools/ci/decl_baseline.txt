@@ -387,11 +387,8 @@ destroy_qdel_owned	code/game/mecha/mecha.dm	rel_clear(src, nameof(weapon_equipme
 destroy_qdel_owned	code/game/mecha/mecha.dm	rel_clear(src, nameof(utility_equipment))
 destroy_qdel_owned	code/game/mecha/mecha.dm	rel_clear(src, nameof(universal_equipment))
 destroy_qdel_owned	code/game/mecha/mecha.dm	rel_clear(src, nameof(special_equipment))
-destroy_qdel_owned	code/game/mecha/mecha.dm	var/obj/item/cell/salvaged_cell = own_take(src, nameof(cell))
-destroy_qdel_owned	code/game/mecha/mecha.dm	var/obj/item/tank/salvaged_tank = own_take(src, nameof(internal_tank))
 destroy_qdel_owned	code/game/mecha/mecha.dm	rel_clear(src, nameof(equipment))
 destroy_qdel_owned	code/game/objects/effects/alien/aliens.dm	rel_clear(src, nameof(linked_node))
-destroy_qdel_owned	code/game/objects/items/robobag.dm	own_take(src, nameof(corptag))
 destroy_qdel_owned	code/modules/admin/verbs/buildmode.dm	rel_clear(src, nameof(selected_mobs))
 destroy_qdel_owned	code/modules/awaymissions/redgate.dm	rel_clear(src, nameof(target)) // the pair: other's target clears too
 destroy_qdel_owned	code/modules/flufftext/fake_attacker.dm	rel_clear(src, nameof(clients))

@@ -50,7 +50,7 @@ CAPABILITIES(/datum/system/radiation)
 		var/atom/source = pulse_information.source_ref
 		if (isnull(source))
 			profile_dropped_sources++
-			own_remove(src, nameof(processing), pulse_information)
+			rel_remove(src, nameof(processing), pulse_information)
 			continue
 
 		profile_pulse_invocations++
@@ -68,7 +68,7 @@ CAPABILITIES(/datum/system/radiation)
 		// or an overloaded tick would keep re-running a finished pulse forever.
 		if(!pulse_information.remaining_targets())
 			profile_pulses_completed++
-			own_remove(src, nameof(processing), pulse_information)
+			rel_remove(src, nameof(processing), pulse_information)
 
 		if(length(processing) && KERNEL_OVER_BUDGET)
 			profile_yields++

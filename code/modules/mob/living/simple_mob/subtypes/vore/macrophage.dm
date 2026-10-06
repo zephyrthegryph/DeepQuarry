@@ -113,7 +113,7 @@ TRACKED_BRIDGED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, C
 	. = TRUE
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	after(src, 20, PROC_REF(charge), with = list(A))
+	after(src, 2 SECONDS, PROC_REF(charge), with = list(A))
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))

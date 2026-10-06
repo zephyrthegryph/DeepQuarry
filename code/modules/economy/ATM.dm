@@ -230,7 +230,7 @@ CAPABILITIES(/obj/machinery/atm)
 			var/obj/item/I = A.actor.get_active_hand()
 			if(istype(I, /obj/item/card/id))
 				A.actor.drop_item(src)
-				rel_set(src, nameof(/obj/machinery/account_database::held_card), I)
+				rel_set(src, nameof(src.held_card), I)
 	. = OP_OK
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)

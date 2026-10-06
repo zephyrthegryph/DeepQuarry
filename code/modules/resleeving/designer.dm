@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/computer/transhuman/designer)
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)
 		disk.forceMove(get_turf(src))
-		own_take(src, nameof(disk))
+		rel_take(src, nameof(disk))
 	. = ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \

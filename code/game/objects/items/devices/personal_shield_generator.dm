@@ -208,7 +208,7 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 		return OP_OK
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
-	own_take(src, nameof(bcell))
+	rel_take(src, nameof(bcell))
 	if(active_weapon)
 		reattach_gun()
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
@@ -224,7 +224,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 		return OP_OK
 	var/mob/user = A.actor
 	fx_sparks(src, 5)
-	own_clear(src, nameof(bcell), OWN_DELETE)
+	rel_clear(src, nameof(bcell))
 	if(active_weapon)
 		reattach_gun()
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
@@ -320,7 +320,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 				rel_clear(active_weapon, nameof(active_weapon.power_supply))
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			set_shield_active(0)
 			return
 

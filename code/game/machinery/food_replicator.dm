@@ -38,7 +38,7 @@
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, nameof(container))
+			rel_take(src, nameof(container))
 	QDEL_NULL_LIST(products)
 	return ..()
 
@@ -228,7 +228,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, nameof(container))
+		rel_take(src, nameof(container))
 		return TRUE
 	return FALSE
 

@@ -138,7 +138,7 @@ CAPABILITIES(/datum/gear)
 	// gear_tweak_free_matrix_recolor swapped for gear_tweak_unified_recolor,
 	// which packs tint / palette-swap / matrix into one mode-selectable tweak (see
 	// code/datums/gear/gear_tweak_recolor.dm).
-	own_clear(src, nameof(gear_tweaks), OWN_DELETE)
+	rel_clear(src, nameof(gear_tweaks))
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_name)
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_desc)
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/item_tf_spawn)

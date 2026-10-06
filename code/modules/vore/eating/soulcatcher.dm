@@ -69,7 +69,7 @@ CAPABILITIES(/obj/soulgem)
 	forceMove(target)
 	rel_set(src, nameof(owner), target)
 	if(old_owner && old_owner.soulgem == src)
-		own_transfer(old_owner, nameof(old_owner.soulgem), target, nameof(/mob::soulgem))
+		rel_move(old_owner, nameof(old_owner.soulgem), target, nameof(/mob::soulgem))
 	else
 		rel_set(target, nameof(/mob::soulgem), src)
 

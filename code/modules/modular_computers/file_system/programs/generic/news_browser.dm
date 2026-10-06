@@ -81,7 +81,7 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 /datum/computer_file/program/newsbrowser/kill_program()
 	..()
 	requires_ntnet = TRUE
-	own_clear(src, nameof(loaded_article), OWN_DELETE)
+	rel_clear(src, nameof(loaded_article))
 	download_progress = 0
 	downloading = FALSE
 	show_archived = FALSE
@@ -102,7 +102,7 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 	downloading = 0
 	download_progress = 0
 	requires_ntnet = 1
-	own_clear(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), OWN_DELETE)
+	rel_clear(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article))
 	return OP_OK
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_clearmessage(datum/act/op/A)

@@ -211,7 +211,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		scan.forceMove(loc)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		rel_take(src, nameof(src.scan))
 	else
 		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
@@ -245,7 +245,7 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 		scan.forceMove(loc)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		rel_take(src, nameof(src.scan))
 	authenticated = null
 	screen = null
 	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))

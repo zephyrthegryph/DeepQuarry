@@ -483,7 +483,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return
 	if(current_canvas)
 		current_canvas.forceMove(drop_location())
-		own_take(src, nameof(current_canvas))
+		rel_take(src, nameof(current_canvas))
 		loaded = FALSE
 		to_chat(user, span_notice("You remove the painting from the frame."))
 		update_appearance()

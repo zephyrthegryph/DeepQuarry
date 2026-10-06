@@ -1,6 +1,6 @@
 /proc/wormhole_event(set_duration = 5 MINUTES, wormhole_duration_modifier = 1)
 	// Deferred: collecting the turfs walks the world. The global owner: a round event.
-	after(null, 0, /proc/wormhole_event_start, with = list(set_duration, wormhole_duration_modifier))
+	after(null, 0, GLOBAL_PROC_REF(wormhole_event_start), with = list(set_duration, wormhole_duration_modifier))
 
 /proc/wormhole_event_start(set_duration, wormhole_duration_modifier)
 // Only allowing these to go to the station
@@ -69,7 +69,7 @@
 			var/atom/exit = pick(exits)
 			if( !exit || !istype(exit) )	continue	//sanity
 
-			after(null, delay, /proc/create_wormhole, with = list(enter, exit, wormhole_min_duration, wormhole_max_duration))
+			after(null, delay, GLOBAL_PROC_REF(create_wormhole), with = list(enter, exit, wormhole_min_duration, wormhole_max_duration))
 			delay += sleep_duration
 
 //maybe this proc can even be used as an admin tool for teleporting players without ruining immulsions?

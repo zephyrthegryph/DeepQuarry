@@ -293,7 +293,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 		G.power_failure(announce_prob) // If we found a grid checker, then all is well.
 		found_grid_checker = TRUE
 	if(!found_grid_checker) // Otherwise lets break some stuff.
-		after(src, 1, PROC_REF(announce_power_spike))
+		after(src, 0.1 SECONDS, PROC_REF(announce_power_spike))
 		// The overloads roll through the network a machine a tick, each on the machine's clock.
 		var/i = 0
 		var/limit = rand(30, 50)

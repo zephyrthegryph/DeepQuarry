@@ -218,7 +218,7 @@ CAPABILITIES(/obj/machinery/account_database)
 
 		if(ishuman(user) && !user.get_active_hand())
 			user.put_in_hands(held_card)
-		own_take(src, nameof(/obj/machinery/account_database::held_card))
+		rel_take(src, nameof(/obj/machinery/account_database::held_card))
 
 	else
 		var/obj/item/I = user.get_active_hand()

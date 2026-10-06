@@ -1980,7 +1980,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	om_task_timed(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
-	var/obj/item/perfect_tele/old = own_take(src, nameof(src.translocator)) // handed back below, not disposed of
+	var/obj/item/perfect_tele/old = rel_take(src, nameof(src.translocator)) // handed back below, not disposed of
 	if(!move_into(src, nameof(src.translocator), T, user))
 		rel_set(src, nameof(src.translocator), old)
 		return
@@ -1996,7 +1996,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 			user.show_message("[icon2html(src, user.client)]*click!*")
 		else
 			translocator.forceMove(get_turf(src))
-		own_take(src, nameof(translocator))
+		rel_take(src, nameof(translocator))
 		play_sfx(src, SFX_MACHINES_CLICK, 0.6)
 
 /obj/item/clothing/head/fluff/nikki/proc/teleport_fail(mob/user, mob/target)

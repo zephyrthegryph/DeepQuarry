@@ -28,7 +28,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 	if(part)
 		part.forceMove(loc)
 		rel_clear(part, nameof(part.master))
-		own_take(src, nameof(part))
+		rel_take(src, nameof(part))
 	replace_with(src, C)
 	return OP_OK
 
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 		return
 	if(!COOLDOWN_FINISHED(src, shock_cooldown))
 		return
-	COOLDOWN_START(src, shock_cooldown, 50)
+	COOLDOWN_START(src, shock_cooldown, 5 SECONDS)
 
 	// special power handling
 	var/area/A = get_area(src)

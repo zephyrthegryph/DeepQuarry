@@ -100,12 +100,12 @@ CAPABILITIES(/turf/open)
 /// Shared immutable air (vacuum, planetary mixes) is only let go.
 /turf/open/lifecycle_unbind()
 	. = ..()
-	own_clear(src, nameof(active_hotspot), OWN_DELETE)
+	rel_clear(src, nameof(active_hotspot))
 	SSair?.remove_from_active(src)
 	if(immutable_atmos)
-		own_take(src, nameof(air))
+		rel_take(src, nameof(air))
 	else
-		own_clear(src, nameof(air), OWN_DELETE)
+		rel_clear(src, nameof(air))
 
 /////////////////GAS MIXTURE PROCS///////////////////
 

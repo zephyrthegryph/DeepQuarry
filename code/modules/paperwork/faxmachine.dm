@@ -63,7 +63,7 @@ MSG_DEF_SELF(faxmachine/no_scan, "there is no ID card to remove")
 	scan.forceMove(loc)
 	if(ishuman(L) && !L.get_active_hand())
 		L.put_in_hands(scan)
-		own_take(src, nameof(scan))
+		rel_take(src, nameof(scan))
 	authenticated = null
 	return TRUE
 
@@ -231,7 +231,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		scan.forceMove(loc)
 		if(ishuman(user) && !user.get_active_hand())
 			user.put_in_hands(scan)
-		own_take(src, nameof(scan))
+		rel_take(src, nameof(scan))
 	else
 		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		scan.forceMove(loc)
 		if(ishuman(user) && !user.get_active_hand())
 			user.put_in_hands(scan)
-		own_take(src, nameof(scan))
+		rel_take(src, nameof(scan))
 	authenticated = null
 	return TRUE
 
@@ -276,7 +276,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		copyitem.forceMove(loc)
 		user.put_in_hands(copyitem)
 		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, nameof(copyitem))
+		rel_take(src, nameof(copyitem))
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/proc/fax_logged_in(datum/act/op/A)

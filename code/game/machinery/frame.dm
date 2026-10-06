@@ -348,7 +348,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	icon_state = frame_type.get_icon_state(state)
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
-	own_take_all(src, nameof(components))
+	rel_take(src, nameof(components))
 	req_components = circuit.req_components.Copy()
 	for(var/A in circuit.req_components)
 		req_components[A] = circuit.req_components[A]

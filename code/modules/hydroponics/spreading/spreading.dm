@@ -2,7 +2,7 @@
 #define VINE_GROWTH_STAGES 5
 
 /proc/spacevine_infestation(potency_min=70, potency_max=100, maturation_min=5, maturation_max=15)
-	after(null, 0, /proc/spacevine_infestation_start, with = list(potency_min, potency_max, maturation_min, maturation_max)) //to stop the secrets panel hanging (the global owner: a round event)
+	after(null, 0, GLOBAL_PROC_REF(spacevine_infestation_start), with = list(potency_min, potency_max, maturation_min, maturation_max)) //to stop the secrets panel hanging (the global owner: a round event)
 
 /obj/effect/dead_plant
 	anchored = TRUE

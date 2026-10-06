@@ -425,7 +425,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 /obj/machinery/librarycomp/proc/ui_act_checkin(datum/act/op/A, ref)
 	var/datum/borrowbook/b = ref
 	if(b)
-		own_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
+		rel_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
 /obj/machinery/librarycomp/proc/ui_act_delbook(datum/act/op/A, ref)
@@ -620,13 +620,13 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	var/mob/user = A.actor
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		rel_set(src, nameof(/datum/om/edge::cache), B)
+		rel_set(src, nameof(src.cache), B)
 		break
 	add_fingerprint(user)
 	return TRUE
 
 /obj/machinery/libraryscanner/proc/ui_act_clear(datum/act/op/A)
-	rel_clear(src, nameof(/datum/om/edge::cache))
+	rel_clear(src, nameof(src.cache))
 	return TRUE
 
 /obj/machinery/libraryscanner/proc/ui_act_eject(datum/act/op/A)

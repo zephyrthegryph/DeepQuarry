@@ -65,7 +65,7 @@ CAPABILITIES(/datum/reagents/distilling)
 	heat_set_levels = levels
 
 /datum/reagents/distilling/proc/unwatch_reaction_temperatures()
-	own_clear(src, nameof(heat_set_watch), OWN_DELETE)
+	rel_clear(src, nameof(heat_set_watch))
 	heat_set_levels = null
 
 /// The holder's temperature crossed a reaction bound: react now.

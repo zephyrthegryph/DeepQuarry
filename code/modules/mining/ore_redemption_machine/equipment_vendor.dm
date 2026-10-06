@@ -168,7 +168,7 @@
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
-		own_take(src, nameof(inserted_id))
+		rel_take(src, nameof(inserted_id))
 
 /obj/machinery/mineral/equipment_vendor/draw(datum/look/look)
 	..()
@@ -251,7 +251,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	if(!inserted_id)
 		return
 	user.put_in_hands(inserted_id)
-	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
+	rel_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	add_fingerprint()
 
 /obj/machinery/mineral/equipment_vendor/proc/ui_act_purchase(datum/act/op/A, cat, name_arg)
@@ -307,7 +307,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)
 		inserted_id.forceMove(loc) //Prevents deconstructing the ORM from deleting whatever ID was inside it.
-		own_take(src, nameof(inserted_id))
+		rel_take(src, nameof(inserted_id))
 	. = ..()
 
 /**

@@ -101,7 +101,7 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 /// after() target: the AR screen comes back after an EMP.
 /obj/item/clothing/glasses/omnihud/proc/reconnect_tgar()
 	if(offline_tgarscreen && !tgarscreen)
-		own_transfer(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))
+		rel_move(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))
 
 DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud_emp_disconnect))
 
@@ -110,7 +110,7 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud
 	if(tgarscreen)
 		SStgui.close_uis(src)
 	if(tgarscreen && !offline_tgarscreen)
-		own_transfer(src, nameof(tgarscreen), src, nameof(offline_tgarscreen))
+		rel_move(src, nameof(tgarscreen), src, nameof(offline_tgarscreen))
 		after(src, 20 SECONDS, PROC_REF(reconnect_tgar))
 
 	//extra fun for non-sci variants; a small chance flip the state to the dumb 3d glasses when EMP'd

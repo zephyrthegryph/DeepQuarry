@@ -394,12 +394,12 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 				C.forceMove(WR)
 
 		// cell and tank leave our ownership and become the wreck's salvage.
-		var/obj/item/cell/salvaged_cell = own_take(src, nameof(cell))
+		var/obj/item/cell/salvaged_cell = rel_take(src, nameof(cell))
 		if(salvaged_cell)
 			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_cell)
 			salvaged_cell.forceMove(WR)
 			salvaged_cell.charge = rand(0, salvaged_cell.charge)
-		var/obj/item/tank/salvaged_tank = own_take(src, nameof(internal_tank))
+		var/obj/item/tank/salvaged_tank = rel_take(src, nameof(internal_tank))
 		if(salvaged_tank)
 			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_tank)
 			salvaged_tank.forceMove(WR)
@@ -1741,7 +1741,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!src?.slot_item(MECHA_SLOT_PILOT)) return
 	var/atom/movable/mob_container
-	own_clear(src, nameof(minihud), OWN_DELETE)
+	rel_clear(src, nameof(minihud))
 	if(ishuman(occupant))
 		mob_container = src?.slot_item(MECHA_SLOT_PILOT)
 		RemoveActions(occupant, human_occupant=1)//AEIOU

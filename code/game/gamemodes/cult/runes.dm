@@ -229,7 +229,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			SetUniversalState(/datum/universal_state/hell)
 			GLOB.narsie_cometh = 1
 
-			after(null, 10 SECONDS, /proc/narsie_call_evac) // the global owner: a round event, and the rune goes
+			after(null, 10 SECONDS, GLOBAL_PROC_REF(narsie_call_evac)) // the global owner: a round event, and the rune goes
 
 		log_and_message_admins_many(cultists, "summoned the end of days.")
 		return

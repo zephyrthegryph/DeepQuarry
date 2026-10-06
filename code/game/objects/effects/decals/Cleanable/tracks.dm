@@ -88,7 +88,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				own_remove(src, nameof(stack), track)
+				rel_remove(src, nameof(stack), track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
 			rel_add(src, nameof(stack), track)
 			var/track_idx = LAZYFIND(stack, track)
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				own_remove(src, nameof(stack), track)
+				rel_remove(src, nameof(stack), track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
 			rel_add(src, nameof(stack), track)
 			var/track_idx = LAZYFIND(stack, track)

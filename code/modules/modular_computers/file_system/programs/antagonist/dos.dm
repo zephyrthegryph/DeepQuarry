@@ -70,14 +70,14 @@ CAPABILITIES(/datum/computer_file/program/ntnet_dos)
 /datum/computer_file/program/ntnet_dos/proc/ui_act_prg_target_relay(datum/act/op/A, targid)
 	for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
 		if(R.uid == targid)
-			rel_set(src, nameof(/datum/accessory_stat_modifier::target), R)
+			rel_set(src, nameof(src.target), R)
 			break
 	return TRUE
 
 /datum/computer_file/program/ntnet_dos/proc/ui_act_prg_reset(datum/act/op/A)
 	if(target())
 		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
-		rel_clear(src, nameof(/datum/accessory_stat_modifier::target))
+		rel_clear(src, nameof(src.target))
 	executed = FALSE
 	error = ""
 	return TRUE

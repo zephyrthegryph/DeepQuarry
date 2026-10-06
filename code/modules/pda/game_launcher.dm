@@ -40,7 +40,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!voresweeper)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::voresweeper))
 		return TRUE
 	if(!voresweeper)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), new /datum/board_game/vore_sweeper(pda()))
@@ -52,7 +52,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!fourrow)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::fourrow), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::fourrow))
 		return TRUE
 	if(!fourrow)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::fourrow), new /datum/board_game/four_row(pda()))
@@ -64,7 +64,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!spacebattle)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::spacebattle))
 		return TRUE
 	if(!spacebattle)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), new /datum/board_game/space_battle(pda()))
@@ -76,7 +76,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!rpgdice)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::rpgdice))
 		return TRUE
 	if(!rpgdice)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), new /datum/board_game/rpg_dice(pda()))
@@ -88,7 +88,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!chess)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::chess), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::chess))
 		return TRUE
 	if(!chess)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::chess), new /datum/board_game/chess(pda()))
@@ -100,7 +100,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!checkers)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::checkers), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::checkers))
 		return TRUE
 	if(!checkers)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::checkers), new /datum/board_game/checkers(pda()))
@@ -112,7 +112,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!ninemens)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::ninemens), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::ninemens))
 		return TRUE
 	if(!ninemens)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::ninemens), new /datum/board_game/nine_mens(pda()))
@@ -124,7 +124,7 @@ CAPABILITIES(/datum/data/pda/app/game_launcher)
 	if(close)
 		if(!tictactoe)
 			return FALSE
-		own_clear(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), OWN_DELETE)
+		rel_clear(src, nameof(/datum/data/pda/app/game_launcher::tictactoe))
 		return TRUE
 	if(!tictactoe)
 		rel_set(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), new /datum/board_game/four_row/tic_tac_toe(pda()))
