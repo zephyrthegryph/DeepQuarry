@@ -5,40 +5,6 @@
 		update_icons_body() //Body handles eyes
 		update_eyes() //For floating eyes only
 
-/datum/om/stage/life/organs
-	order = LIFE_PHASE_TAIL + 150
-	name = "organs"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
-	of = /mob/living/carbon/human
-	woken_by = "injure/mend and body invalidate (lesions); its rewake for raw germ writes"
-
-/// MED-6: no limb carries germs or chemical traces and every internal organ is idle (life_step_idle()). Wounds, bleeding,
-/// the stance and the grip are the body's (body_clock.dm, limb_state.dm), not this stage's.
-/datum/om/stage/life/organs/idle(mob/living/carbon/human/self)
-	for(var/obj/item/organ/external/E as anything in self.organs)
-		if(E.germ_level || LAZYLEN(E.trace_chemicals))
-			return FALSE
-	for(var/obj/item/organ/I as anything in self.internal_organ_list())
-		if(!I.life_step_idle())
-			return FALSE
-	return TRUE
-
-/// Germs and organ reagents are written raw.
-/datum/om/stage/life/organs/rewake_delay(mob/living/carbon/human/self)
-	return 10 SECONDS
-
-/datum/om/stage/life/organs/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	process_organs(self)
-
-/// Internal organs, then the limbs that carry germs or chemical traces.
-/datum/om/stage/life/organs/proc/process_organs(mob/living/carbon/human/self)
-	for(var/obj/item/organ/I in self.internal_organ_list())
-		I.periodic_step()
-	for(var/obj/item/organ/external/E as anything in self.organs)
-		if(E.germ_level || LAZYLEN(E.trace_chemicals))
-			E.periodic_step()
-
 /mob/living/carbon/human/proc/handle_grasp()
 	if(!get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_R))
 		return
@@ -145,11 +111,6 @@
 	if(dna.GetUIState(DNA_UI_GENDER) ^ gender == FEMALE) // XOR will catch both cases where they do not match
 		dna.SetUIState(DNA_UI_GENDER, gender == FEMALE)
 		sync_organ_dna(dna)
-
-/// Runs the organs system now (internal organs, germs). `force` is kept for callers that want it at once.
-/mob/living/carbon/human/proc/process_organs(force = FALSE)
-	var/datum/om/stage/life/organs/S = om_stage_for(src, /datum/om/stage/life/organs)
-	S?.process_organs(src)
 
 /// The limbs that are hurt or need care: damage, wounds, a fracture, germs, or a cut-away, bleeding, destroyed, dead or
 /// mutated part. A query over the limbs.

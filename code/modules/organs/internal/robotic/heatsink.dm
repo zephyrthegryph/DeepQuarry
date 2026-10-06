@@ -5,7 +5,7 @@
 
 	organ_tag = O_HEATSINK
 
-/obj/item/organ/internal/robotic/heatsink/handle_organ_proc_special()
+/obj/item/organ/internal/robotic/heatsink/handle_organ_proc_special(cycles)
 	if(owner && owner.is_alive())
 
 		var/thermostat = owner.species.body_temperature

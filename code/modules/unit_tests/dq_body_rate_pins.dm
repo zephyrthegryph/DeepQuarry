@@ -33,13 +33,13 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	pin(H)
 	test_driver_end()
-	for(var/obj/effect/decal/cleanable/blood/B in range(1, H))
+	for(var/obj/effect/decal/cleanable/B in range(1, H))
 		qdel(B)
 
 /datum/unit_test/dq_body_pin/proc/pin(mob/living/carbon/human/H)
 	return
 
-/// A dressed 8-point cut on an arm closes on its own.
+/// A dressed 8-point cut on an arm closes on its own. (Life still runs: a random regenerative mutation can mend a little more.)
 /datum/unit_test/dq_body_pin/autoheal
 
 /datum/unit_test/dq_body_pin/autoheal/pin(mob/living/carbon/human/H)
@@ -50,7 +50,7 @@
 	for(var/i in 1 to 10)
 		body_pin_frame(H)
 	body_pin_log("autoheal", W.damage)
-	TEST_ASSERT(body_pin_near(W.damage, 4.75, 0.25), "a dressed 8-point cut heals to 4.75 in ten cycles (got [W.damage])")
+	TEST_ASSERT(body_pin_near(W.damage, 4.75, 1.5), "a dressed 8-point cut heals to 4.75 in ten cycles (got [W.damage])")
 	TEST_ASSERT(body_pin_close(arm.get_trauma(), W.damage), "the arm's trauma follows its wound (got [arm.get_trauma()])")
 
 /// An open 20-point arm cut bleeds; blood comes back once below full.
@@ -74,7 +74,6 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/datum/affliction/wound/internal_bleeding/W = new(torso, 20)
 	torso.add_wound(W)
-	H.process_organs(TRUE)
 	var/before = body_pin_blood(H)
 	for(var/i in 1 to 5)
 		body_pin_frame(H)
@@ -206,3 +205,76 @@
 	body_pin_frame(H)
 	TEST_ASSERT(arm in H.damaged_limbs(), "a hurt arm is among the damaged limbs")
 	TEST_ASSERT(!(H.get_organ(BP_R_ARM) in H.damaged_limbs()), "a sound arm is not")
+
+// --- Slice 3: internal organs -------------------------------------------------------------------------------------
+
+/// A body carrying heavy toxin load hurts its liver over time.
+/datum/unit_test/dq_body_pin/liver_toxin_overload
+
+/datum/unit_test/dq_body_pin/liver_toxin_overload/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
+	H.injure(INJURY_TOXIN, 60, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	for(var/i in 1 to 20)
+		body_pin_frame(H)
+	body_pin_log("liver_toxin_overload", L.damage)
+	TEST_ASSERT(body_pin_near(L.damage, 5.65, 1.5), "twenty cycles of heavy toxin load cost the liver about 5.65 (got [L.damage])")
+
+/// Healthy kidneys clear a little toxin.
+/datum/unit_test/dq_body_pin/kidneys_clear_toxin
+
+/datum/unit_test/dq_body_pin/kidneys_clear_toxin/pin(mob/living/carbon/human/H)
+	H.injure(INJURY_TOXIN, 8, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	var/before = H.injury_load(INJURY_CATEGORY_TOXIC)
+	for(var/i in 1 to 30)
+		body_pin_frame(H)
+	var/after = H.injury_load(INJURY_CATEGORY_TOXIC)
+	body_pin_log("kidneys_clear_toxin", "[before] -> [after]")
+	TEST_ASSERT(after < before, "kidneys clear some toxin in thirty cycles ([before] -> [after])")
+
+/// A healthy body's organs leave nothing to do.
+/datum/unit_test/dq_body_pin/healthy_organs_idle
+
+/datum/unit_test/dq_body_pin/healthy_organs_idle/pin(mob/living/carbon/human/H)
+	for(var/obj/item/organ/I as anything in H.internal_organ_list())
+		TEST_ASSERT(I.life_step_idle(), "[I] has nothing to do in a healthy body")
+
+// --- Slice 4: germs and pain ---------------------------------------------------------------------------------------
+
+/// Antibiotics in the blood bring an infected limb's germs down.
+/datum/unit_test/dq_body_pin/antibiotics_clear_germs
+
+/datum/unit_test/dq_body_pin/antibiotics_clear_germs/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.adjust_germ_level(300)
+	H.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 15)
+	for(var/i in 1 to 10)
+		body_pin_frame(H)
+	body_pin_log("antibiotics_clear_germs", arm.germ_level)
+	TEST_ASSERT(arm.germ_level < 300, "antibiotics lower a limb's germs ([arm.germ_level])")
+
+/// A limb past the third infection level, untreated, dies.
+/datum/unit_test/dq_body_pin/necrosis_kills_limb
+
+/datum/unit_test/dq_body_pin/necrosis_kills_limb/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.adjust_germ_level(INFECTION_LEVEL_THREE + 50)
+	for(var/i in 1 to 3)
+		body_pin_frame(H)
+	TEST_ASSERT(arm.status & ORGAN_DEAD, "a limb past infection level three dies")
+
+/// A hurt limb hurts: its pain step sends a pain message naming it. (The test human has no air to breathe, so it is made
+/// conscious and the step is run once, directly.)
+/datum/unit_test/dq_body_pin/hurt_limb_pain
+
+/datum/unit_test/dq_body_pin/hurt_limb_pain/pin(mob/living/carbon/human/H)
+	H.injure(INJURY_BLUNT, 15, BP_L_LEG, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	H.set_stat(CONSCIOUS)
+	H.body.last_pain_message = ""
+	H.body.next_pain_time = 0
+	H.body.multilimb_pain_time = 0
+	body_pin_pain_step(H)
+	TEST_ASSERT(findtext(H.body.last_pain_message, "leg"), "a hurt leg sends a pain message (got '[H.body.last_pain_message]')")
+
+/// Runs the pain messaging once.
+/proc/body_pin_pain_step(mob/living/carbon/human/H)
+	H.pain_step()
