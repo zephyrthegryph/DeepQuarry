@@ -108,7 +108,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 		return
 	open_request(src, /datum/prompt/text/admin_pm_popup, PROC_REF(admin_pm_popup_replied), answerer = answering_user, question = msg, title = "Admin PM from-[sender_key]", sender_ckey = sender_ckey)
 
-/client/proc/cmd_admin_pm(whom, msg, datum/ticket/T)
+/client/proc/cmd_admin_pm(whom, msg, datum/ticket/T, mob/token_actor)
 	if(prefs.muted & MUTE_ADMINHELP)
 		to_chat(src, span_admin_pm_warning("Error: Admin-PM: You are unable to use admin PM-s (muted)."))
 		return
@@ -157,7 +157,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	var/rawmsg = msg
 
-	var/keywordparsedmsg = keywords_lookup(msg)
+	var/keywordparsedmsg = keywords_lookup(msg, FALSE, token_actor)
 
 	if(admin_can(recipient, 0))
 		if(holder)	//both are admins
@@ -183,7 +183,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	else
 		if(holder)	//sender is an admin but recipient is not. Do BIG RED TEXT
 			if(!recipient.current_ticket())
-				new /datum/ticket(msg, recipient, TRUE, 1, mob)
+				new /datum/ticket(msg, recipient, TRUE, 1, mob, token_actor)
 
 			to_chat(recipient, span_admin_pm_warning(span_huge(span_bold("-- Administrator private message --"))))
 			to_chat(recipient, span_admin_pm_warning("Admin PM from-" + span_bold("[key_name(src, recipient, 0)]") + ": [msg]"))
