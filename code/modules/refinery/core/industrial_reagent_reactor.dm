@@ -92,10 +92,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 	. += "The internal temperature is [GM.return_temperature()]k at [GM.return_pressure()]kpa. It is currently in a [toggle_mode ? "pumping cycle, outputting stored chemicals" : "distilling cycle, accepting input chemicals"]."
 	tutorial(REFINERY_TUTORIAL_SINGLEOUTPUT, .)
 
-/obj/machinery/reagent_refinery/reactor/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. != ITEM_INTERACT_SUCCESS)
-		return
+/obj/machinery/reagent_refinery/reactor/rewrenched()
 	update_gas_network()
 	toggle_mode = REACTOR_MODE_INTAKE
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)

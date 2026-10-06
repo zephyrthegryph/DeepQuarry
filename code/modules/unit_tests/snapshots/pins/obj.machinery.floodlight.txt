@@ -53,5 +53,5 @@ human|/obj/item menu: Climb
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, drag_buckle, floodlight_silicon_use, gen_robot_interaction_swallow, item, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use, use_crowbar, use_screwdriver
+keys: climb.climb, climb.climb_menu, drag_buckle, floodlight_silicon_use, gen_robot_interaction_swallow, item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use, use_crowbar, use_screwdriver
 

@@ -162,6 +162,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
  * * Presence of ASCII special control characters (horizontal tab and new line not included).
  * */
 /proc/reject_bad_text(text, max_length = 512, ascii_only = TRUE)
+	READS_FROM() // the text it is given, nothing else
 	if(ascii_only)
 		if(length(text) > max_length)
 			return null

@@ -1,5 +1,5 @@
-/obj/machinery/pipelayer|human|none => |machine_panel:needs a screwdriver
-/obj/machinery/pipelayer|robot|none => |machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/pipelayer|human|none => |
+/obj/machinery/pipelayer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/pipelayer|ai|none => |
 /obj/machinery/pipelayer|ghost|none => |
 

@@ -64,5 +64,5 @@ human|/obj/item/cell menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/cell menu: Insert cell
 human|/obj/item/cell menu: Toggle
 human|/obj/item/cell click: Click: Insert cell
-keys: climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, use_screwdriver, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, use_screwdriver, use_wrench
 

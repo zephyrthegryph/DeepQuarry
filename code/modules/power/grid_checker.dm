@@ -36,12 +36,6 @@ TRACKED(/obj/machinery/power/grid_checker, power_failing)
 		look.state("gridchecker_on")
 		look.light(2, 2, "#A8B0F8")
 
-/obj/machinery/power/grid_checker/screwdriver_act(mob/user, obj/item/W)
-	var/result = ..()
-	if(ITEM_INTERACT_CONSUMED(result))
-		opened = panel_open
-	return result
-
 /obj/machinery/power/grid_checker/proc/crowbar_used(datum/act/op/A)
 	return OP_DECLINE
 
@@ -131,10 +125,12 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 	on_wire(WIRE_ALLOW_MANUAL2, cut = PROC_REF(manual_wire_cut))
 	on_wire(WIRE_ALLOW_MANUAL3, cut = PROC_REF(manual_wire_cut))
 	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_touched), pulse = PROC_REF(shock_wire_touched))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
 	op("grid_checker_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_grid_checker_use)))
+	extend("machine_panel", then(PROC_REF(panel_synced)))
+	extend("machine_panel_close", then(PROC_REF(panel_synced)))
 
 
 /obj/machinery/power/grid_checker/proc/wire_lights()
@@ -179,3 +175,7 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 	var/datum/notice/wire_pulsed/P = A
 	var/datum/notice/wire_cut/C = A
 	shock(istype(P) ? P.user : C.user, 70)
+
+/// After the base screwdriver: the checker's own flag follows the panel.
+/obj/machinery/power/grid_checker/proc/panel_synced(datum/act/op/A)
+	opened = panel_open

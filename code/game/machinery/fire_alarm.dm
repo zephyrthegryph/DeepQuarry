@@ -42,8 +42,9 @@ CAPABILITIES(/obj/machinery/firealarm)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(firealarm_shot))))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("cut_out", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut the wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wires_cut_out)))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -169,13 +170,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	update_icon()
 	return OP_OK
 
-/obj/machinery/firealarm/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
+/// The wirecutters behind the open panel: the wires come out and the alarm comes off the wall.
+/obj/machinery/firealarm/proc/wires_cut_out(datum/act/op/A)
+	var/obj/item/tool = A.held
+	act_message(A.actor, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
 	playsound(src, tool.usesound, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	return dismantle() ? OP_OK : OP_DECLINE
 
 /obj/machinery/firealarm/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor

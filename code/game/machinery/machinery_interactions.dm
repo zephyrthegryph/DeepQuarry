@@ -60,19 +60,6 @@
 
 // ---- Shared interactions ----
 
-/// Open the machine's interface: the old `if(..()) return; tgui_interact(user)`.
-/datum/interaction/machine_hand/open_ui
-	id = "machine_open_ui"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui
-
-/// The same, for types whose attack_hand opened the interface without the machinery checks.
-/datum/interaction/machine_hand/ungated/open_ui
-	id = "machine_open_ui_ungated"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /atom/proc/interaction_open_ui
-
 /// Old attackby: `if(default_part_replacement(user, W)) return`. Shows the parts, and swaps in better ones.
 /datum/interaction/machine_item/part_replacement
 	id = "machine_part_replacement"

@@ -1,6 +1,6 @@
-/obj/machinery/suspension_gen|human|none => |emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver
-/obj/machinery/suspension_gen|robot|none => |emag:needs a cryptographic sequencer,machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/suspension_gen|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/suspension_gen|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/suspension_gen|ai|none => |
 /obj/machinery/suspension_gen|ghost|none => |
-/obj/machinery/suspension_gen|human|/obj/item/card/emag => emag|machine_panel:needs a screwdriver
+/obj/machinery/suspension_gen|human|/obj/item/card/emag => emag|
 

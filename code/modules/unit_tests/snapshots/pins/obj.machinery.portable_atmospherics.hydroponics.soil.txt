@@ -78,5 +78,5 @@ human|/obj/item/shovel menu: Set Light
 human|/obj/item/shovel menu: Toggle Tray Lid
 human|/obj/item/shovel menu: Use
 human|/obj/item/shovel click: Click: Dig
-keys: bolt, close_lid, dig, drag_buckle, fill_in, freezer, gen_observer_hydroponics_ghost_harvest, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, remove_label, sample, set_light, tank_block, tend, tk_harvest, toggle_lid, use_item
+keys: bolt, close_lid, dig, drag_buckle, fill_in, freezer, gen_observer_hydroponics_ghost_harvest, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, remove_label, sample, set_light, tank_block, tend, tk_harvest, toggle_lid, use_item
 

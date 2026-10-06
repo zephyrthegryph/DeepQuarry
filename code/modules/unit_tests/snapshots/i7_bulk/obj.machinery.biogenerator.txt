@@ -1,5 +1,5 @@
-/obj/machinery/biogenerator|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
-/obj/machinery/biogenerator|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/biogenerator|human|none => |
+/obj/machinery/biogenerator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/biogenerator|ai|none => |
 /obj/machinery/biogenerator|ghost|none => |
 

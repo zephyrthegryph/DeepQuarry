@@ -9,8 +9,9 @@ robot|none click: nothing
 ai|none menu: Project
 ai|none click: nothing
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Disconnect monitor
 human|/obj/item/tool/screwdriver menu: Request AI presence
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Disconnect monitor
 human|/obj/item/tool/crowbar menu: Request AI presence
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Request AI presence
@@ -30,5 +31,5 @@ human|/obj/item/card/id menu: Request AI presence
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Request AI presence
 human|/obj/item click: nothing
-keys: drag_buckle, gen_robot_interaction_swallow, gen_silicon_holopad_silicon_use, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: disconnect_display, drag_buckle, gen_robot_interaction_swallow, gen_silicon_holopad_silicon_use, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor
 

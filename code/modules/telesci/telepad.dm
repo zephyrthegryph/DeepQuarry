@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/machinery/telepad, \
 	return default_part_replacement(user, W) ? TRUE : FALSE
 
 CAPABILITIES(/obj/machinery/telepad)
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 
 /obj/machinery/telepad/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor

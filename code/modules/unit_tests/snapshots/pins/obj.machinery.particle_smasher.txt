@@ -54,5 +54,5 @@ human|/obj/item/reagent_containers/glass/beaker click: Click: Attach container
 human|/obj/item menu: Eject Particle Focus Contents
 human|/obj/item menu: Store
 human|/obj/item click: Click: Store
-keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, secure, store, swipe_id
+keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, secure, store, swipe_id
 

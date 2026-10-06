@@ -1,5 +1,5 @@
-/obj/machinery/partslathe|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/partslathe|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/partslathe|human|none => |
+/obj/machinery/partslathe|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/partslathe|ai|none => |
 /obj/machinery/partslathe|ghost|none => |
 

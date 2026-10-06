@@ -56,5 +56,5 @@ human|/obj/item menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item menu: Hit
 human|/obj/item menu: Toggle (refused: the shield generator needs to be firmly secured to the floor first)
 human|/obj/item click: Click: Hit
-keys: climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, hit, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_repair, toggle, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, hit, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, toggle, use_wrench
 

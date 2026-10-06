@@ -86,7 +86,9 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	extend("machine_panel", then(PROC_REF(panel_worked)))
+	extend("machine_panel_close", then(PROC_REF(panel_worked)))
 
 /obj/machinery/power/quantumpad/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -119,17 +121,6 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 		look.state(initial(icon_state))
 
 // Panel flips retry power cable connections so you don't have to decon the whole thing.
-/obj/machinery/power/quantumpad/screwdriver_act(mob/user, obj/item/tool)
-	var/result = ..()
-	if(!ITEM_INTERACT_CONSUMED(result))
-		return result
-	var/original_powernet = power_region
-	if(power_region)
-		disconnect_from_network()
-	connect_to_network()
-	if(power_region != original_powernet)
-		changed(src)
-	return result
 
 /// Old attack_hand: standard gated pattern (`. = ..(); if(.) return`).
 /datum/interaction/machine_hand/quantumpad_use
@@ -297,3 +288,12 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 /// the linked_pad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/power/quantumpad/proc/linked_pad() as /obj/machinery/power/quantumpad
 	return linked_pad
+
+/// After the base screwdriver: the pad re-joins the power region under it.
+/obj/machinery/power/quantumpad/proc/panel_worked(datum/act/op/A)
+	var/original_powernet = power_region
+	if(power_region)
+		disconnect_from_network()
+	connect_to_network()
+	if(power_region != original_powernet)
+		changed(src)

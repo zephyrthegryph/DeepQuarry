@@ -47,5 +47,5 @@ human|/obj/item/cell menu: Climb (refused: There's a material processor in the w
 human|/obj/item/cell menu: Insert power cell (refused: There is already a power cell installed.)
 human|/obj/item/cell menu: Ui open
 human|/obj/item/cell click: Click: Insert power cell
-keys: cell_in, cell_out, climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, power, tank_bay.holding.insert, ui_open, volume_adj
+keys: cell_in, cell_out, climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, power, tank_bay.holding.insert, ui_open, volume_adj
 

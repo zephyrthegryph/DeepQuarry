@@ -1,5 +1,5 @@
-/obj/machinery/power/emitter/gyrotron|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/power/emitter/gyrotron|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/power/emitter/gyrotron|human|none => |
+/obj/machinery/power/emitter/gyrotron|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/emitter/gyrotron|ai|none => |
 /obj/machinery/power/emitter/gyrotron|ghost|none => |
 

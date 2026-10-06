@@ -51,11 +51,12 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
 	item_throw(stat = STAT_SHOOT_INVENTORY)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(throw_frame)), when = cond_all(STAT_OPERABLE, STAT_SHOOT_INVENTORY))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(is_powered_for_stocking_holds), because = PROC_REF(is_powered_for_stocking_refusal))), then(PROC_REF(smartfridge_interaction_item)))
 	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
 
 /obj/machinery/smartfridge/proc/wire_lights()
 	return list(
@@ -260,14 +261,10 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		return OP_OK
 	return OP_DECLINE
 
-/obj/machinery/smartfridge/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/smartfridge/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
+/// The wirecutters or a multitool behind the open panel: the fridge's window, where its wires are.
+/obj/machinery/smartfridge/proc/wire_tool_used(datum/act/op/A)
+	attack_hand(A.actor)
+	return OP_OK
 
 DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 /obj/machinery/smartfridge/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)

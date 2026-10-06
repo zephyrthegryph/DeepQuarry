@@ -1,5 +1,5 @@
-/obj/machinery/doorbell_chime|human|none => |machine_panel:needs a screwdriver
-/obj/machinery/doorbell_chime|robot|none => |machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/doorbell_chime|human|none => |
+/obj/machinery/doorbell_chime|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/doorbell_chime|ai|none => |
 /obj/machinery/doorbell_chime|ghost|none => |
 

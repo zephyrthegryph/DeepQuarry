@@ -66,5 +66,5 @@ human|/obj/item menu: Connect techweb
 human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, connect_techweb, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, lockdown_server, lock_console, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, connect_techweb, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, lockdown_server, lock_console, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_gripper, use_item
 

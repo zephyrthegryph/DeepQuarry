@@ -58,6 +58,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), nameof(stat)))
 	op("reagent_refinery_drain", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), when(req(PROC_REF(has_reagents_holder_holds))), needs(req_reagents(0, more = TRUE, because = MSG(reagent_refinery/nothing_to_drain))), then(PROC_REF(interaction_drain)))
 	op("reagent_refinery_set_transfer_amount", menu(), label("Set transfer amount"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_transfer_amount)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Secure"), then(PROC_REF(wrench_used)))
 
 /obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
 	var/before = reagents ? reagents.total_volume : 0
@@ -103,12 +104,15 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	to_chat(user, "You drain \the [src] into \the [C].")
 	return OP_OK
 
-/obj/machinery/reagent_refinery/wrench_act(mob/user, obj/item/tool)
+/// The wrench secures or unsecures the machine, but never onto a tile another refinery machine holds.
+/obj/machinery/reagent_refinery/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!anchored)
 		for(var/obj/machinery/reagent_refinery/other in contents_of(loc))
 			if(other != src)
 				to_chat(user, span_warning("You cannot anchor \the [src] until \the [other] is moved out of the way!"))
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 	playsound(src, tool.usesound, 75, TRUE)
 	set_anchored(!anchored)
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
@@ -117,7 +121,12 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	update_neighbours()
 	update_icon()
 	wake_refinery_line()
-	return ITEM_INTERACT_SUCCESS
+	rewrenched()
+	return OP_OK
+
+/// After the wrench secured or unsecured the machine (a reactor resets its gas line).
+/obj/machinery/reagent_refinery/proc/rewrenched()
+	return
 
 /// Updates the icons of all neighbour machines, used when connecting.
 /obj/machinery/reagent_refinery/proc/update_neighbours()

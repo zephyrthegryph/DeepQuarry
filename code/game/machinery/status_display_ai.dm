@@ -98,9 +98,6 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	attack_hand(user)
 	return TRUE
 
-/obj/machinery/ai_status_display/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
-
 /// Old attack_ai: pick the displayed emotion.
 /obj/machinery/ai_status_display/proc/ai_status_display_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/ai_emotions = get_ai_emotions(user.ckey)
@@ -138,3 +135,6 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 		cut_overlays()
 	else
 		update()
+
+CAPABILITIES(/obj/machinery/ai_status_display)
+	display_disconnect_op()

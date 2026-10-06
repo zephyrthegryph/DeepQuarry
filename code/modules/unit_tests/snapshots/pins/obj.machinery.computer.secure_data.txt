@@ -78,5 +78,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: add_c, cleartemp, climb.climb, climb.climb_menu, del_all, del_c, del_r, del_r_2, disconnect, drag_buckle, d_rec, edit, edit_notes, gen_robot_interaction_swallow, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, new, open_ui_fingerprint, photo_front, photo_side, print_p, scan, screen, search, secure_data_eject_id, secure_data_insert_id, sync_r, ui_open, use_gripper, use_item
+keys: add_c, cleartemp, climb.climb, climb.climb_menu, del_all, del_c, del_r, del_r_2, disconnect, drag_buckle, d_rec, edit, edit_notes, gen_robot_interaction_swallow, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, new, open_ui_fingerprint, photo_front, photo_side, print_p, scan, screen, search, secure_data_eject_id, secure_data_insert_id, sync_r, ui_open, use_gripper, use_item
 

@@ -82,35 +82,39 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 	icon_state = pick(postertypes)
 	update_icon()
 
-/obj/machinery/holoposter/multitool_act(mob/user, obj/item/tool)
-	src.add_fingerprint(user)
-	if(has_stat(NOPOWER))
-		return ITEM_INTERACT_BLOCKING
-	play_sfx(src, SFX_ITEMS_PENCLICK, 1.2)
-	open_request(src, /datum/prompt/choice, PROC_REF(poster_chosen), answerer = user, question = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+/// The multitool works a powered poster (an unpowered one takes the click and does nothing).
+/obj/machinery/holoposter/proc/is_powered(datum/act/op/A)
+	return !has_stat(NOPOWER)
 
-/obj/machinery/holoposter/proc/poster_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/choice = A.answer.value
-	if(has_stat(NOPOWER))
-		return
+/// The posters the multitool's question offers.
+/obj/machinery/holoposter/proc/poster_choices(datum/act/A)
+	return postertypes + "random"
+
+/// The multitool's answer: that poster, or random rotation.
+/obj/machinery/holoposter/proc/poster_chosen(datum/act/op/A)
+	add_fingerprint(A.actor)
+	play_sfx(src, SFX_ITEMS_PENCLICK, 1.2)
+	var/choice = A.answer?.value
+	if(!choice || has_stat(NOPOWER))
+		return OP_OK
 	icon_state = choice
 	if(icon_state == "random")
 		atom_fix()
 		icon_forced = FALSE
 		schedule_rotation()
 		set_rand_sprite()
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	icon_forced = TRUE
 	cancel_after(src, "holoposter_rotation")
 	atom_fix()
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/holoposter)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = "Available Posters", "title" = "Holographic Poster", "choices" = computed(PROC_REF(poster_choices)), "timeout" = 0)),
+		then(PROC_REF(poster_chosen)))
 
 /// An EMP breaks the poster.
 /obj/machinery/holoposter/proc/holoposter_emp(datum/act/hit/emp/A)

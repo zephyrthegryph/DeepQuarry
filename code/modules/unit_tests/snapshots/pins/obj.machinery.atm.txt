@@ -15,6 +15,7 @@ ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Deposit cash (refused: needs a 0 Thaler)
+human|/obj/item/tool/screwdriver menu: Disconnect monitor
 human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/screwdriver menu: Insert card (refused: needs a card)
 human|/obj/item/tool/screwdriver menu: Ui open
@@ -87,5 +88,5 @@ human|/obj/item/card/emag menu: Insert card
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Ui open
-keys: atm_deposit_cash, atm_insert_card, atm_use, attempt_auth, balance_statement, change_security_level, drag_buckle, emag_gated, e_withdrawal, gen_robot_interaction_swallow, insert_card, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print_transaction, transfer, ui_open, withdrawal
+keys: atm_deposit_cash, atm_insert_card, atm_use, attempt_auth, balance_statement, change_security_level, disconnect_display, drag_buckle, emag_gated, e_withdrawal, gen_robot_interaction_swallow, insert_card, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, print_transaction, transfer, ui_open, withdrawal
 

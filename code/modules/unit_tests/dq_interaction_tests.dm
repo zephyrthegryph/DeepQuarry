@@ -64,19 +64,97 @@
 	LAZYADD(done, interaction.id)
 	return TRUE
 
-/// A machine with every Maintainable flag, no waits, and a recorded dismantle.
-/obj/machinery/dq_maint_probe
+/// The legacy engine's fixture for the Menu, examine lines, screentips and snapshots: the four tool interactions machines declared before
+/// they became ops (machinery_maintenance.dm), on a plain object, so the legacy resolver keeps a tool-driven probe of its own.
+/obj/dq_maint_probe
 	name = "maintenance probe"
-	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH | MACHINE_MAINT_WELDER_REPAIR
-	maintenance_wrench_time = 0
-	maintenance_weld_time = 0
-	use_power = USE_POWER_OFF
 	anchored = TRUE
+	max_integrity = 100
+	var/panel_open = FALSE
 	var/dismantled = 0
 
-/obj/machinery/dq_maint_probe/dismantle()
+/obj/dq_maint_probe/declare_interactions(list/into)
+	..()
+	into += list(
+		/datum/interaction/dq_test_maint/panel,
+		/datum/interaction/dq_test_maint/deconstruct,
+		/datum/interaction/dq_test_maint/anchor,
+		/datum/interaction/dq_test_maint/repair,
+	)
+
+/datum/interaction/dq_test_maint
+	category = INTERACTION_CAT_MAINTAIN
+	default_action = INPUT_ACTION_USE
+
+/datum/interaction/dq_test_maint/panel
+	id = "machine_panel"
+	name = "Open maintenance panel"
+	priority = 20
+	tool = TOOL_SCREWDRIVER
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/dq_maint_probe/proc/toggle_panel
+
+/datum/interaction/dq_test_maint/panel/display_name(mob/actor, atom/target)
+	var/obj/dq_maint_probe/probe = target
+	return probe.panel_open ? "Close maintenance panel" : "Open maintenance panel"
+
+/datum/interaction/dq_test_maint/deconstruct
+	id = "machine_deconstruct"
+	name = "Deconstruct"
+	priority = 15
+	tool = TOOL_CROWBAR
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/dq_maint_probe/proc/panel_is_open, "the maintenance panel is closed"))
+	effect = /obj/dq_maint_probe/proc/take_apart
+
+/datum/interaction/dq_test_maint/anchor
+	id = "machine_anchor"
+	name = "Secure"
+	priority = 10
+	tool = TOOL_WRENCH
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/dq_maint_probe/proc/panel_is_closed, "the maintenance panel is open"))
+	effect = /obj/dq_maint_probe/proc/toggle_anchor
+
+/datum/interaction/dq_test_maint/anchor/display_name(mob/actor, atom/target)
+	var/obj/dq_maint_probe/probe = target
+	return probe.anchored ? "Unsecure" : "Secure"
+
+/datum/interaction/dq_test_maint/repair
+	id = "machine_repair"
+	name = "Repair"
+	category = INTERACTION_CAT_REPAIR
+	priority = 10
+	tool = TOOL_WELDER
+	requires = list(
+		REQ_REACH_ADJACENT,
+		REQ_ON(PRED_TARGET, /obj/dq_maint_probe/proc/is_damaged, "it isn't damaged"),
+		REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"),
+	)
+	effect = /obj/dq_maint_probe/proc/weld_repair
+
+/obj/dq_maint_probe/proc/toggle_panel(mob/actor, obj/item/held, datum/interaction/interaction)
+	panel_open = !panel_open
+	return TRUE
+
+/obj/dq_maint_probe/proc/take_apart(mob/actor, obj/item/held, datum/interaction/interaction)
 	dismantled++
 	return TRUE
+
+/obj/dq_maint_probe/proc/toggle_anchor(mob/actor, obj/item/held, datum/interaction/interaction)
+	set_anchored(!anchored)
+	return TRUE
+
+/obj/dq_maint_probe/proc/weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
+	repair_damage(max_integrity)
+	return TRUE
+
+/obj/dq_maint_probe/proc/panel_is_open(mob/actor, atom/target, obj/item/held)
+	return panel_open ? TRUE : FALSE
+
+/obj/dq_maint_probe/proc/panel_is_closed(mob/actor, atom/target, obj/item/held)
+	return panel_open ? FALSE : TRUE
+
+/obj/dq_maint_probe/proc/is_damaged(mob/actor, atom/target, obj/item/held)
+	return uses_integrity && get_integrity() < max_integrity
 
 /// The ids in a resolution, as "available|blocked:reason,...".
 /// An interaction id as snapshots record it: a generic id's collision suffix (the md5 that
@@ -108,7 +186,7 @@
 /datum/unit_test/dq_interaction_definitions
 	/// Ids with a dedicated test below. Add yours when you add a definition.
 	var/static/list/tested_ids = list(
-		"machine_panel", "machine_deconstruct", "machine_anchor", "machine_repair",
+		"machine_panel", "machine_deconstruct", "machine_anchor", "machine_repair", // the legacy fixture on /obj/dq_maint_probe
 		"lattice_item", // dq_interaction_lattice_item: a lattice only exists over open space
 		"dq_test_high", "dq_test_tie_a", "dq_test_tie_b", "dq_test_low", "dq_test_blocked", "dq_test_ghostly",
 		"dq_actor_observe", "dq_actor_handless", "dq_actor_tool", // dq_actor_adapter_tests.dm
@@ -184,87 +262,6 @@
 	TEST_ASSERT_EQUAL(rods.get_amount(), 4, "the upgrade should use one rod")
 	qdel(catwalk)
 	gap.ChangeTurf(old_type)
-
-/// Open and close the maintenance panel.
-/datum/unit_test/dq_interaction_machine_panel
-
-/datum/unit_test/dq_interaction_machine_panel/Run()
-	var/turf/T = test_floor()
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, T)
-	var/datum/interaction/panel = INTERACTION(/datum/interaction/maintainable/panel)
-
-	TEST_ASSERT_EQUAL(panel.why_not(H, machine, null), "needs a screwdriver", "without a screwdriver")
-	TEST_ASSERT_NULL(panel.why_not(H, machine, screwdriver), "with a screwdriver, adjacent")
-	TEST_ASSERT_EQUAL(panel.display_name(H, machine), "Open maintenance panel", "named for a closed panel")
-	TEST_ASSERT(panel.perform(H, machine, screwdriver), "opening the panel runs")
-	TEST_ASSERT(machine.panel_open, "the panel is open")
-	TEST_ASSERT_EQUAL(panel.display_name(H, machine), "Close maintenance panel", "named for an open panel")
-	TEST_ASSERT(panel.perform(H, machine, screwdriver), "closing the panel runs")
-	TEST_ASSERT(!machine.panel_open, "the panel is closed again")
-
-	machine.maintenance_flags = NONE
-	TEST_ASSERT(!panel.applies_to(machine), "not offered without MACHINE_MAINT_PANEL")
-
-/// Deconstruct needs a crowbar and an open panel.
-/datum/unit_test/dq_interaction_machine_deconstruct
-
-/datum/unit_test/dq_interaction_machine_deconstruct/Run()
-	var/turf/T = test_floor()
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, T)
-	var/datum/interaction/deconstruct = INTERACTION(/datum/interaction/maintainable/deconstruct)
-
-	TEST_ASSERT_EQUAL(deconstruct.why_not(H, machine, crowbar), "the maintenance panel is closed", "a closed panel blocks it")
-	TEST_ASSERT(!deconstruct.perform(H, machine, crowbar), "blocked, it does nothing")
-	TEST_ASSERT_EQUAL(machine.dismantled, 0, "not dismantled while blocked")
-	machine.set_panel_open(TRUE)
-	TEST_ASSERT(deconstruct.perform(H, machine, crowbar), "with the panel open it runs")
-	TEST_ASSERT_EQUAL(machine.dismantled, 1, "dismantled once")
-
-/// Secure and unsecure need a wrench and a closed panel.
-/datum/unit_test/dq_interaction_machine_anchor
-
-/datum/unit_test/dq_interaction_machine_anchor/Run()
-	var/turf/T = test_floor()
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
-	var/datum/interaction/anchor = INTERACTION(/datum/interaction/maintainable/anchor)
-
-	TEST_ASSERT_EQUAL(anchor.display_name(H, machine), "Unsecure", "an anchored machine is unsecured")
-	TEST_ASSERT(anchor.perform(H, machine, wrench), "unsecuring runs")
-	TEST_ASSERT(!machine.anchored, "unsecured")
-	TEST_ASSERT_EQUAL(anchor.display_name(H, machine), "Secure", "a loose machine is secured")
-	machine.set_panel_open(TRUE)
-	TEST_ASSERT_EQUAL(anchor.why_not(H, machine, wrench), "the maintenance panel is open", "an open panel blocks it")
-	machine.set_panel_open(FALSE)
-	TEST_ASSERT(anchor.perform(H, machine, wrench), "securing runs")
-	TEST_ASSERT(machine.anchored, "secured")
-	machine.maintenance_wrench_time = 2 SECONDS
-	wrench.toolspeed = 0.5
-	TEST_ASSERT_EQUAL(anchor.duration_for(H, machine, wrench), 1 SECOND, "the wait is the machine's wrench time scaled by the tool's speed")
-
-/// Weld repair needs a lit welder and damage.
-/datum/unit_test/dq_interaction_machine_repair
-
-/datum/unit_test/dq_interaction_machine_repair/Run()
-	var/turf/T = test_floor()
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/weldingtool/welder = allocate(/obj/item/weldingtool, T)
-	var/datum/interaction/repair = INTERACTION(/datum/interaction/maintainable/repair)
-
-	TEST_ASSERT_EQUAL(repair.why_not(H, machine, welder), "it isn't damaged", "an intact machine needs no repair")
-	machine.take_damage(machine.max_integrity / 2, BRUTE, MELEE, FALSE)
-	TEST_ASSERT(machine.get_integrity() < machine.max_integrity, "the probe took damage")
-	TEST_ASSERT_EQUAL(repair.why_not(H, machine, welder), "the welding tool must be on", "an unlit welder is refused")
-	welder.set_welding(TRUE)
-	TEST_ASSERT(repair.perform(H, machine, welder), "repair runs")
-	TEST_ASSERT_EQUAL(machine.get_integrity(), machine.max_integrity, "fully repaired")
-	TEST_ASSERT_EQUAL(repair.category, INTERACTION_CAT_REPAIR, "repair is in the Repair category")
 
 // ---- Resolver ----
 
@@ -351,34 +348,25 @@
 /datum/unit_test/dq_interaction_snapshots
 	var/static/list/snapshot_types = list(
 		/obj/machinery/washing_machine,
-		/obj/machinery/pipelayer,
-		/obj/machinery/dq_maint_probe,
+		/obj/dq_maint_probe,
 	)
 	var/static/list/expected = list(
-		"/obj/machinery/washing_machine|human|none => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|screwdriver => machine_panel,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|crowbar => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|wrench => machine_anchor,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|welder => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|robot|screwdriver => machine_panel,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|none => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|screwdriver => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|crowbar => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|wrench => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|welder => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|robot|screwdriver => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|gen_robot_interaction_swallow:not possible right now,washing_machine_climb_out:you aren't inside it",
 		"/obj/machinery/washing_machine|ghost|screwdriver => |",
 		"/obj/machinery/washing_machine|ai|none => |",
-		"/obj/machinery/pipelayer|human|none => |machine_panel:needs a screwdriver",
-		"/obj/machinery/pipelayer|human|screwdriver => machine_panel|",
-		"/obj/machinery/pipelayer|human|crowbar => |machine_panel:needs a screwdriver",
-		"/obj/machinery/pipelayer|human|wrench => |machine_panel:needs a screwdriver",
-		"/obj/machinery/pipelayer|human|welder => |machine_panel:needs a screwdriver",
-		"/obj/machinery/pipelayer|robot|screwdriver => machine_panel|gen_robot_interaction_swallow:not possible right now",
-		"/obj/machinery/pipelayer|ghost|screwdriver => |",
-		"/obj/machinery/pipelayer|ai|none => |",
-		"/obj/machinery/dq_maint_probe|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
-		"/obj/machinery/dq_maint_probe|human|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
-		"/obj/machinery/dq_maint_probe|human|crowbar => |machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,machine_repair:needs a welder",
-		"/obj/machinery/dq_maint_probe|human|wrench => machine_anchor|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_repair:needs a welder",
-		"/obj/machinery/dq_maint_probe|human|welder => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:it isn't damaged",
-		"/obj/machinery/dq_maint_probe|robot|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder,gen_robot_interaction_swallow:not possible right now",
-		"/obj/machinery/dq_maint_probe|ghost|screwdriver => |",
-		"/obj/machinery/dq_maint_probe|ai|none => |",
+		"/obj/dq_maint_probe|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
+		"/obj/dq_maint_probe|human|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
+		"/obj/dq_maint_probe|human|crowbar => |machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,machine_repair:needs a welder",
+		"/obj/dq_maint_probe|human|wrench => machine_anchor|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_repair:needs a welder",
+		"/obj/dq_maint_probe|human|welder => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:it isn't damaged",
+		"/obj/dq_maint_probe|robot|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
+		"/obj/dq_maint_probe|ghost|screwdriver => |",
+		"/obj/dq_maint_probe|ai|none => |",
 	)
 
 /datum/unit_test/dq_interaction_snapshots/Run()
@@ -423,27 +411,6 @@
 	for(var/line in expected)
 		TEST_ASSERT(line in actual, "missing snapshot: [line]")
 
-/// The Maintainable interactions follow the machine's flags, and converted types carry no hand-written maintenance hints.
-/datum/unit_test/dq_interaction_maintainable_flags
-
-/datum/unit_test/dq_interaction_maintainable_flags/Run()
-	var/static/list/by_flag = list(
-		"[MACHINE_MAINT_PANEL]" = /datum/interaction/maintainable/panel,
-		"[MACHINE_MAINT_FRAME]" = /datum/interaction/maintainable/deconstruct,
-		"[MACHINE_MAINT_WRENCH]" = /datum/interaction/maintainable/anchor,
-		"[MACHINE_MAINT_WELDER_REPAIR]" = /datum/interaction/maintainable/repair,
-	)
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, test_floor())
-	var/list/candidates = interaction_candidates(machine)
-	for(var/flag_text in by_flag)
-		var/datum/interaction/maintainable/interaction = INTERACTION(by_flag[flag_text])
-		TEST_ASSERT_EQUAL(interaction.maintenance_flag, text2num(flag_text), "[interaction.id] is offered by its flag")
-		TEST_ASSERT(interaction in candidates, "machines declare [interaction.id]")
-		machine.maintenance_flags = text2num(flag_text)
-		TEST_ASSERT(interaction.applies_to(machine), "[interaction.id] applies with its flag alone")
-		machine.maintenance_flags = NONE
-		TEST_ASSERT(!interaction.applies_to(machine), "[interaction.id] doesn't apply without its flag")
-
 // ---- Menu, examine and screentips ----
 
 /// The Menu lists available interactions with keys, blocked ones with reasons, mob actions and verbs.
@@ -451,7 +418,7 @@
 
 /datum/unit_test/dq_interaction_menu_data/Run()
 	var/turf/T = test_floor()
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, T)
+	var/obj/dq_maint_probe/machine = allocate(/obj/dq_maint_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, T)
 	TEST_ASSERT(H.put_in_active_hand(screwdriver), "the human holds a screwdriver")
@@ -488,7 +455,7 @@
 
 /datum/unit_test/dq_interaction_screentips/Run()
 	var/turf/T = test_floor()
-	var/obj/machinery/dq_maint_probe/machine = allocate(/obj/machinery/dq_maint_probe, T)
+	var/obj/dq_maint_probe/machine = allocate(/obj/dq_maint_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
 	TEST_ASSERT_EQUAL(interaction_screentip_text(H, machine, null), "Maintenance probe", "nothing to do: just the name")

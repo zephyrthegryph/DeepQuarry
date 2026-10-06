@@ -24,5 +24,5 @@ human|/obj/item/card/id menu: Pay
 human|/obj/item/card/id click: Click: Pay
 human|/obj/item menu: Pay
 human|/obj/item click: Click: Pay
-keys: clean_order, confirm_order, drag_buckle, gen_robot_interaction_swallow, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_repair, pay, pick_device
+keys: clean_order, confirm_order, drag_buckle, gen_robot_interaction_swallow, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, pay, pick_device
 
