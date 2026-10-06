@@ -1,4 +1,4 @@
-/obj/machinery/navbeacon|human|none => navbeacon_toggle_lock|navbeacon_use:you don't have the dexterity
-/obj/machinery/navbeacon|robot|none => navbeacon_toggle_lock|gen_robot_interaction_swallow:not possible right now,navbeacon_use:you don't have the dexterity
+/obj/machinery/navbeacon|human|none => gen_item_interaction_toggle_lock|gen_hand_ungated_interaction_open_ui:you don't have the dexterity
+/obj/machinery/navbeacon|robot|none => gen_item_interaction_toggle_lock|gen_robot_interaction_swallow:not possible right now,gen_hand_ungated_interaction_open_ui:you don't have the dexterity
 /obj/machinery/navbeacon|ai|none => |
 /obj/machinery/navbeacon|ghost|none => |

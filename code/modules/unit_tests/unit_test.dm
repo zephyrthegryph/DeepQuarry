@@ -884,6 +884,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/runtimes_before = GLOB.total_runtimes
 	var/list/sites_before = SSexpedition?.sites?.Copy()
 	var/list/globals_before = unit_test_globals_snapshot()
+	var/list/gravity_before = unit_test_gravity_snapshot()
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -975,6 +976,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/leak = release_unit_test_block(block, test)
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
 	unit_test_globals_guard(globals_before, test_path)
+	unit_test_gravity_guard(gravity_before, test_path)
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
@@ -1033,6 +1035,19 @@ GLOBAL_VAR(dq_test_select_names)
 			log_test("STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). If a later test fails only in a long run, this is a suspect: change it with set_global() in the test.")
 		else if(!(isnum(was) && isnum(value))) // a number that moved is a counter: quiet
 			log_test("STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)")
+
+/// Every area's gravity, as area -> has_gravity: an area's gravity outlives the test that switched it (a gravity generator destroyed, a holodeck
+/// program), and every later test's mobs then drift.
+/proc/unit_test_gravity_snapshot()
+	. = list()
+	for(var/area/A in world)
+		.[A] = A.has_gravity
+
+/// Logs "STATE LEAK" for each area whose gravity the test changed (the state guard's rule: it flags, it does not restore).
+/proc/unit_test_gravity_guard(list/before, test_path)
+	for(var/area/A as anything in before)
+		if(!QDELETED(A) && A.has_gravity != before[A])
+			log_test("STATE LEAK: [test_path] left [A] ([A.type]) with has_gravity = [A.has_gravity] (was [before[A]]). Its mobs drift in every later test: put it back (gravitychange()) in the test.")
 
 /// Expedition sites are global (each holds a whole z-level) and outlive the test block, so a test
 /// that generates one must release it, through defer_cleanup() so a failing assert can't skip

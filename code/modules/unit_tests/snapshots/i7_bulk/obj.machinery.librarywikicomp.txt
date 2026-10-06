@@ -1,4 +1,4 @@
-/obj/machinery/librarywikicomp|human|none => wikicomp_open_ui|
-/obj/machinery/librarywikicomp|robot|none => wikicomp_open_ui|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/librarywikicomp|human|none => |
+/obj/machinery/librarywikicomp|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/librarywikicomp|ai|none => |
 /obj/machinery/librarywikicomp|ghost|none => |

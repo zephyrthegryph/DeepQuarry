@@ -54,6 +54,7 @@ CAPABILITIES(/obj/item/bodybag)
 
 /obj/structure/closet/body_bag
 	name = "body bag"
+	collects_in_play = FALSE // unfolded on the floor, it takes nothing lying there (a mapped bag still holds what was mapped into it)
 	desc = "A plastic bag designed for the storage and transportation of cadavers."
 	icon = 'icons/obj/closets/bodybag.dmi'
 	closet_appearance = null

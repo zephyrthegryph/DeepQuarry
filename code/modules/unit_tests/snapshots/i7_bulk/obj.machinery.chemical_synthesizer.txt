@@ -1,6 +1,4 @@
-/obj/machinery/chemical_synthesizer|human|none => chem_synthesizer_use|machine_anchor:needs a wrench,chem_synthesizer_add_cartridge:needs a chemical dispenser cartridge,chem_synthesizer_add_catalyst:needs a  
-/obj/machinery/chemical_synthesizer|robot|none => chem_synthesizer_use|machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,chem_synthesizer_add_cartridge:needs a chemical dispenser cartridge,chem_synthesizer_add_catalyst:needs a  
+/obj/machinery/chemical_synthesizer|human|none => |machine_anchor:needs a wrench
+/obj/machinery/chemical_synthesizer|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chemical_synthesizer|ai|none => |
 /obj/machinery/chemical_synthesizer|ghost|none => gen_observer_chem_synthesizer_ghost_view|
-/obj/machinery/chemical_synthesizer|human|/obj/item/reagent_containers/chem_disp_cartridge => chem_synthesizer_add_cartridge,chem_synthesizer_use|machine_anchor:needs a wrench,chem_synthesizer_add_catalyst:needs a  
-/obj/machinery/chemical_synthesizer|human|/obj/item/reagent_containers/glass => chem_synthesizer_use|machine_anchor:needs a wrench,chem_synthesizer_add_cartridge:needs a chemical dispenser cartridge,chem_synthesizer_add_catalyst:it already has a beaker

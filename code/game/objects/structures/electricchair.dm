@@ -11,7 +11,11 @@
 	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
 	return
 
+/// The ledger slot its kit sits in: a chair's only other slot is its buckle seat, which takes mobs, so `part` names this one.
+#define SLOT_ECHAIR_KIT "echair_kit"
+
 CAPABILITIES(/obj/structure/bed/chair/e_chair)
+	slot(SLOT_ECHAIR_KIT, accepts = /obj/item/assembly/shock_kit, capacity = 1)
 	without("dismantle")
 	op("unwire", tool(TOOL_WRENCH), wait(0), label("Unwire"), then(PROC_REF(back_to_chair)))
 	op("e_chair_toggle_effect", menu(), label("Toggle Electric Chair"), then(PROC_REF(e_chair_toggle_effect)))

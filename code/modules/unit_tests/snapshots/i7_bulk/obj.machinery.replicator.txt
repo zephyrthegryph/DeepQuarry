@@ -1,5 +1,5 @@
-/obj/machinery/replicator|human|none => machine_open_ui_ungated|replicator_insert:needs an item
-/obj/machinery/replicator|robot|none => machine_open_ui_ungated|gen_robot_interaction_swallow:not possible right now,replicator_insert:needs an item
+/obj/machinery/replicator|human|none => |gen_insert_interaction_insert:needs an item
+/obj/machinery/replicator|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_insert:needs an item
 /obj/machinery/replicator|ai|none => |
 /obj/machinery/replicator|ghost|none => |
-/obj/machinery/replicator|human|/obj/item => machine_open_ui_ungated|replicator_insert:you cannot put the item into the machine
+/obj/machinery/replicator|human|/obj/item => |gen_insert_interaction_insert:you cannot put the item into the machine

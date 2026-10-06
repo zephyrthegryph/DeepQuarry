@@ -1,5 +1,4 @@
-/obj/machinery/computer/turbine_computer|human|none => machine_open_ui|turbine_computer_set_ident:needs a multitool,turbine_computer_swallow_item:needs an item
-/obj/machinery/computer/turbine_computer|robot|none => machine_open_ui|gen_robot_interaction_swallow:not possible right now,turbine_computer_set_ident:needs a multitool,turbine_computer_swallow_item:needs an item
+/obj/machinery/computer/turbine_computer|human|none => |
+/obj/machinery/computer/turbine_computer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/turbine_computer|ai|none => |
 /obj/machinery/computer/turbine_computer|ghost|none => |
-/obj/machinery/computer/turbine_computer|human|/obj/item => turbine_computer_swallow_item,machine_open_ui|turbine_computer_set_ident:needs a multitool

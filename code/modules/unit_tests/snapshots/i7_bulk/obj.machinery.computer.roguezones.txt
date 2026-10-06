@@ -1,4 +1,4 @@
-/obj/machinery/computer/roguezones|human|none => roguezones_use|
-/obj/machinery/computer/roguezones|robot|none => roguezones_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/roguezones|human|none => |
+/obj/machinery/computer/roguezones|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/roguezones|ai|none => |
 /obj/machinery/computer/roguezones|ghost|none => |

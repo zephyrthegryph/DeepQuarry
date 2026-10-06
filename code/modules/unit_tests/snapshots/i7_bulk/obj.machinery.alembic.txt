@@ -1,7 +1,4 @@
-/obj/machinery/alembic|human|none => alembic_brew,alembic_take_reagent|alembic_load_reagent:needs a blood ruby,alembic_load_base:needs an item,alembic_no_use:needs an item
-/obj/machinery/alembic|robot|none => alembic_brew,alembic_take_reagent|gen_robot_interaction_swallow:not possible right now,alembic_load_reagent:needs a blood ruby,alembic_load_base:needs an item,alembic_no_use:needs an item
+/obj/machinery/alembic|human|none => |
+/obj/machinery/alembic|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/alembic|ai|none => |
 /obj/machinery/alembic|ghost|none => |
-/obj/machinery/alembic|human|/obj/item/potion_material => alembic_load_reagent,alembic_no_use,alembic_brew,alembic_take_reagent|alembic_load_base:needs an item
-/obj/machinery/alembic|human|/obj/item/potion_base => alembic_load_base,alembic_no_use,alembic_brew,alembic_take_reagent|alembic_load_reagent:needs a blood ruby
-/obj/machinery/alembic|human|/obj/item => alembic_no_use,alembic_brew,alembic_take_reagent|alembic_load_reagent:needs a blood ruby,alembic_load_base:needs an item

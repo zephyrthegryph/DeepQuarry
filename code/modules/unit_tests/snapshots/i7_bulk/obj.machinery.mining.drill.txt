@@ -1,5 +1,4 @@
-/obj/machinery/mining/drill|human|none => drill_use,drill_unload|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,drill_attackby:needs an item
-/obj/machinery/mining/drill|robot|none => drill_use,drill_unload|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,drill_attackby:needs an item
+/obj/machinery/mining/drill|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/mining/drill|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/mining/drill|ai|none => |
 /obj/machinery/mining/drill|ghost|none => |
-/obj/machinery/mining/drill|human|/obj/item => drill_attackby,drill_use,drill_unload|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar

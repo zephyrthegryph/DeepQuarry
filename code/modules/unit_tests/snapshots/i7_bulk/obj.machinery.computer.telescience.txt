@@ -1,6 +1,4 @@
-/obj/machinery/computer/telescience|human|none => machine_open_ui|telescience_insert_crystal:needs a bluespace crystal,telescience_insert_gps:needs a global positioning system
-/obj/machinery/computer/telescience|robot|none => machine_open_ui|gen_robot_interaction_swallow:not possible right now,telescience_insert_crystal:needs a bluespace crystal,telescience_insert_gps:needs a global positioning system
+/obj/machinery/computer/telescience|human|none => |
+/obj/machinery/computer/telescience|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/telescience|ai|none => |
 /obj/machinery/computer/telescience|ghost|none => |
-/obj/machinery/computer/telescience|human|/obj/item/bluespace_crystal => telescience_insert_crystal,machine_open_ui|telescience_insert_gps:needs a global positioning system
-/obj/machinery/computer/telescience|human|/obj/item/gps => telescience_insert_gps,machine_open_ui|telescience_insert_crystal:needs a bluespace crystal

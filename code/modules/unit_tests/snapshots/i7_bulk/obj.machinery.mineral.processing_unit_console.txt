@@ -1,5 +1,4 @@
-/obj/machinery/mineral/processing_unit_console|human|none => processing_console_open_ui|processing_console_insert_id:needs an identification card
-/obj/machinery/mineral/processing_unit_console|robot|none => processing_console_open_ui|gen_robot_interaction_swallow:not possible right now,processing_console_insert_id:needs an identification card
+/obj/machinery/mineral/processing_unit_console|human|none => |
+/obj/machinery/mineral/processing_unit_console|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/mineral/processing_unit_console|ai|none => |
 /obj/machinery/mineral/processing_unit_console|ghost|none => |
-/obj/machinery/mineral/processing_unit_console|human|/obj/item/card/id => processing_console_insert_id,processing_console_open_ui|

@@ -1,5 +1,4 @@
-/obj/machinery/libraryscanner|human|none => libraryscanner_open_ui|libraryscanner_insert_book:needs a book
-/obj/machinery/libraryscanner|robot|none => libraryscanner_open_ui|gen_robot_interaction_swallow:not possible right now,libraryscanner_insert_book:needs a book
+/obj/machinery/libraryscanner|human|none => |
+/obj/machinery/libraryscanner|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/libraryscanner|ai|none => |
 /obj/machinery/libraryscanner|ghost|none => |
-/obj/machinery/libraryscanner|human|/obj/item/book => libraryscanner_insert_book,libraryscanner_open_ui|

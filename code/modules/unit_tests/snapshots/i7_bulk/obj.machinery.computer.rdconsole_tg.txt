@@ -1,5 +1,4 @@
-/obj/machinery/computer/rdconsole_tg|human|none => rdconsole_open_ui|rdconsole_insert_disk:needs a disk
-/obj/machinery/computer/rdconsole_tg|robot|none => rdconsole_open_ui|gen_robot_interaction_swallow:not possible right now,rdconsole_insert_disk:needs a disk
+/obj/machinery/computer/rdconsole_tg|human|none => |
+/obj/machinery/computer/rdconsole_tg|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/rdconsole_tg|ai|none => |
 /obj/machinery/computer/rdconsole_tg|ghost|none => |
-/obj/machinery/computer/rdconsole_tg|human|/obj/item/disk => rdconsole_insert_disk,rdconsole_open_ui|

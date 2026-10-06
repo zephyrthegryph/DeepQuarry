@@ -1,5 +1,5 @@
 /obj/machinery/button/remote/airlock/survival_pod|human|none => button_press|
-/obj/machinery/button/remote/airlock/survival_pod|robot|none => button_press,gen_silicon_silicon_pressed|gen_robot_interaction_swallow:not possible right now
-/obj/machinery/button/remote/airlock/survival_pod|ai|none => gen_silicon_silicon_pressed|
+/obj/machinery/button/remote/airlock/survival_pod|robot|none => button_press|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/button/remote/airlock/survival_pod|ai|none => |
 /obj/machinery/button/remote/airlock/survival_pod|ghost|none => |
 /obj/machinery/button/remote/airlock/survival_pod|human|/obj/item => button_press|

@@ -1,4 +1,4 @@
-/obj/machinery/computer/pod/old/syndicate|human|none => pod_open_ui|pod_syndicate_open_ui:access denied
-/obj/machinery/computer/pod/old/syndicate|robot|none => pod_open_ui|gen_robot_interaction_swallow:not possible right now,pod_syndicate_open_ui:access denied
+/obj/machinery/computer/pod/old/syndicate|human|none => |gen_hand_interaction_open_ui_impl:access denied
+/obj/machinery/computer/pod/old/syndicate|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_hand_interaction_open_ui_impl:access denied
 /obj/machinery/computer/pod/old/syndicate|ai|none => |
 /obj/machinery/computer/pod/old/syndicate|ghost|none => |

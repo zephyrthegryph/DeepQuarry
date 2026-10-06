@@ -1,4 +1,4 @@
-/obj/machinery/computer/crew|human|none => crew_monitor_use|
-/obj/machinery/computer/crew|robot|none => crew_monitor_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/crew|human|none => |
+/obj/machinery/computer/crew|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/crew|ai|none => |
 /obj/machinery/computer/crew|ghost|none => |

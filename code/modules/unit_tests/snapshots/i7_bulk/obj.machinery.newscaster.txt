@@ -1,5 +1,5 @@
-/obj/machinery/newscaster|human|none => newscaster_open|newscaster_item_open:needs an item
-/obj/machinery/newscaster|robot|none => newscaster_open|gen_robot_interaction_swallow:not possible right now,newscaster_item_open:needs an item
+/obj/machinery/newscaster|human|none => gen_hand_ungated_interaction_open|gen_insert_interaction_as_touch:needs an item
+/obj/machinery/newscaster|robot|none => gen_hand_ungated_interaction_open|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_as_touch:needs an item
 /obj/machinery/newscaster|ai|none => |
 /obj/machinery/newscaster|ghost|none => |
-/obj/machinery/newscaster|human|/obj/item => newscaster_open,newscaster_item_open|
+/obj/machinery/newscaster|human|/obj/item => gen_hand_ungated_interaction_open,gen_insert_interaction_as_touch|

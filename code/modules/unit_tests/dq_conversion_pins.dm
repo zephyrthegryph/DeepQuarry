@@ -51,11 +51,21 @@
 		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
+	// The rows read the actor's state (the toilet's Flush is offered silently to a mob that is not awake): the human stays awake for the whole
+	// recording, however long it runs on the test floor's air.
+	var/mob/living/carbon/human/pin_human = actors["human"]
+	pin_human.enable_godmode()
+	// A gravity generator going away switches its area's gravity off (as in play): the room gets its gravity back after the sweep, or every later
+	// test's mobs drift (dq_p2_closet/drag_stuffs_a_person_into_an_open_closet).
+	var/area/sweep_room = get_area(T)
+	var/sweep_gravity = sweep_room.has_gravity
 	var/list/actual_by_type = list()
 	// a turf is pinned in place of the tile beside the actors and turned back afterwards (a turf is never qdel'd)
 	var/turf/beside = get_step(T, EAST)
 	var/beside_type = beside?.type
 	for(var/type in expected_by_type)
+		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
+		rand_seed(1)
 		if(ispath(type, /turf))
 			if(!beside)
 				actual_by_type[type] = list("no tile to pin a turf on")
@@ -70,6 +80,8 @@
 			continue
 		actual_by_type[type] = dq_pin_lines(target, T, actors)
 		qdel(target)
+	if(sweep_room.has_gravity != sweep_gravity)
+		sweep_room.gravitychange(sweep_gravity)
 	own_turf_contents(T)
 	var/report = dq_snapshot_compare(DQ_PIN_DIR, "pins", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)

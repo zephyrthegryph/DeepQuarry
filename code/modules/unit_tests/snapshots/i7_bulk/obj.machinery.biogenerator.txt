@@ -1,6 +1,4 @@
-/obj/machinery/biogenerator|human|none => biogenerator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_part_replacement:needs a rapid part exchange device,biogenerator_insert:needs an item
-/obj/machinery/biogenerator|robot|none => biogenerator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,machine_part_replacement:needs a rapid part exchange device,biogenerator_insert:needs an item
+/obj/machinery/biogenerator|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/biogenerator|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/biogenerator|ai|none => |
 /obj/machinery/biogenerator|ghost|none => |
-/obj/machinery/biogenerator|human|/obj/item/storage/part_replacer => machine_part_replacement,biogenerator_insert,biogenerator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
-/obj/machinery/biogenerator|human|/obj/item => biogenerator_insert,biogenerator_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_part_replacement:needs a rapid part exchange device

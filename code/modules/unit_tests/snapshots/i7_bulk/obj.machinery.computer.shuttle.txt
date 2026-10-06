@@ -1,5 +1,5 @@
-/obj/machinery/computer/shuttle|human|none => |shuttle_authorize:needs a card
-/obj/machinery/computer/shuttle|robot|none => |gen_robot_interaction_swallow:not possible right now,shuttle_authorize:needs a card
+/obj/machinery/computer/shuttle|human|none => |gen_insert_interaction_authorize:needs a card
+/obj/machinery/computer/shuttle|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_authorize:needs a card
 /obj/machinery/computer/shuttle|ai|none => |
 /obj/machinery/computer/shuttle|ghost|none => |
-/obj/machinery/computer/shuttle|human|/obj/item/card => shuttle_authorize|
+/obj/machinery/computer/shuttle|human|/obj/item/card => gen_insert_interaction_authorize|

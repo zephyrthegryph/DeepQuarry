@@ -1,5 +1,4 @@
-/obj/machinery/nuclearbomb|human|none => nuclearbomb_use,nuclearbomb_make_deployable|nuclearbomb_insert_disk:needs a nuclear authentication disk
-/obj/machinery/nuclearbomb|robot|none => nuclearbomb_use|gen_robot_interaction_swallow:not possible right now,nuclearbomb_insert_disk:needs a nuclear authentication disk,nuclearbomb_make_deployable:you don't have the dexterity to do this
+/obj/machinery/nuclearbomb|human|none => |
+/obj/machinery/nuclearbomb|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/nuclearbomb|ai|none => |
 /obj/machinery/nuclearbomb|ghost|none => |
-/obj/machinery/nuclearbomb|human|/obj/item/disk/nuclear => nuclearbomb_use,nuclearbomb_make_deployable|nuclearbomb_insert_disk:not deployed

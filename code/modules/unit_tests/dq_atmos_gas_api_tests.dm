@@ -43,8 +43,8 @@
 	TEST_ASSERT_EQUAL(gas_sample(null).pressure, 0, "no mixture reads empty")
 	qdel(M)
 
-/// A body and a gas meet in one conserved operation (heat_equalize(), the heat domain), and the pipe network that owns the gas hears it with no
-/// mark from the caller.
+/// A body and a gas meet in one conserved operation (heat_equalize(), the heat domain), and the gas's own Rust revision moves with no mark from
+/// the caller or the heat procs (a gas watch reads that change tracking, dq_gas_watch_hears_heat_writes).
 /datum/unit_test/dq_gas_api/body_heat_exchange
 /datum/unit_test/dq_gas_api/body_heat_exchange/Run()
 	var/datum/pipe_network/N = new
@@ -55,11 +55,11 @@
 	var/body_capacity = vg_heat_reservoir_state(r[1], r[2])[2]
 	var/gas_capacity = N.air.heat_capacity()
 	var/energy = gas_capacity * 80 + body_capacity * BODYTEMP_NORMAL
-	var/before = N.revision
+	var/before = N.air.revision()
 	heat_equalize(N.air, body)
 	TEST_ASSERT(abs(body.get_temperature() - N.air.return_temperature()) < 0.01, "both end at one temperature")
 	TEST_ASSERT(abs(gas_capacity * N.air.return_temperature() + body_capacity * body.get_temperature() - energy) < max(1, energy * 1e-5), "energy is conserved")
-	TEST_ASSERT(N.revision > before, "the owning network's revision moves")
+	TEST_ASSERT(N.air.revision() != before, "the gas's revision moves")
 	qdel(body)
 	qdel(N)
 

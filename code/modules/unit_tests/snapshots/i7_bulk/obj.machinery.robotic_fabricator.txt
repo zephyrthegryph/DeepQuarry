@@ -1,6 +1,4 @@
-/obj/machinery/robotic_fabricator|human|none => |fabricator_insert_steel:needs an item,fabricator_reject:needs an item
-/obj/machinery/robotic_fabricator|robot|none => |gen_robot_interaction_swallow:not possible right now,fabricator_insert_steel:needs an item,fabricator_reject:needs an item
+/obj/machinery/robotic_fabricator|human|none => |
+/obj/machinery/robotic_fabricator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/robotic_fabricator|ai|none => |
 /obj/machinery/robotic_fabricator|ghost|none => |
-/obj/machinery/robotic_fabricator|human|/obj/item/stack/material => fabricator_insert_steel,fabricator_reject|
-/obj/machinery/robotic_fabricator|human|/obj/item => fabricator_reject|fabricator_insert_steel:needs an item

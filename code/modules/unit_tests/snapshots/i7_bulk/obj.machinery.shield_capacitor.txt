@@ -1,6 +1,5 @@
-/obj/machinery/shield_capacitor|human|none => shield_capacitor_use|emag:needs a cryptographic sequencer,shield_capacitor_id_swipe:needs an identification card
-/obj/machinery/shield_capacitor|robot|none => shield_capacitor_use|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,shield_capacitor_id_swipe:needs an identification card
+/obj/machinery/shield_capacitor|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/shield_capacitor|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shield_capacitor|ai|none => |
 /obj/machinery/shield_capacitor|ghost|none => |
-/obj/machinery/shield_capacitor|human|/obj/item/card/id => shield_capacitor_id_swipe,shield_capacitor_use|emag:needs a cryptographic sequencer
-/obj/machinery/shield_capacitor|human|/obj/item/card/emag => emag,shield_capacitor_use|shield_capacitor_id_swipe:needs an identification card
+/obj/machinery/shield_capacitor|human|/obj/item/card/emag => emag|
