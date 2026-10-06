@@ -21,8 +21,6 @@ B1:code/controllers/subsystems/profiler.dm:SSmobs 1
 B1:code/controllers/subsystems/ticker.dm:SSemergency_shuttle 1
 B1:code/datums/behaviours/sellable.dm:SSsupply 2
 B1:code/datums/datum.dm:SSgarbage 1
-B1:code/game/gamemodes/changeling/state/changeling.dm:SStranscore 2
-B1:code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_tunnel/dark_tunneling.dm:SSmapping 1
 B1:code/datums/ghost_spawn_options.dm:SSticker 1
 B1:code/datums/lifecycle/batch.dm:SSair 2
 B1:code/datums/loot/loot.dm:SSatoms 1
@@ -43,6 +41,7 @@ B1:code/game/atom/atom_materialize.dm:SSatoms 3
 B1:code/game/atom/atoms_initializing_EXPENSIVE.dm:SSatoms 1
 B1:code/game/atoms_movable.dm:SSticker 2
 B1:code/game/gamemodes/calamity/calamity.dm:SSantag 2
+B1:code/game/gamemodes/changeling/state/changeling.dm:SStranscore 2
 B1:code/game/gamemodes/cult/narsie.dm:SSemergency_shuttle 1
 B1:code/game/gamemodes/cult/runes.dm:SSticker 1
 B1:code/game/gamemodes/game_mode.dm:SSantag 8
@@ -155,6 +154,7 @@ B1:code/modules/benchmarks/scenarios.dm:SSair 10
 B1:code/modules/benchmarks/scenarios.dm:SSexpedition 2
 B1:code/modules/benchmarks/scenarios.dm:SSexplosions 1
 B1:code/modules/benchmarks/scenarios.dm:SSradiation 7
+B1:code/modules/body/organs/subtypes/diona.dm:SSplants 1
 B1:code/modules/client/client%20procs.dm:SSassets 2
 B1:code/modules/client/preferences/editors/occupation.dm:SSjob 3
 B1:code/modules/client/preferences/editors/robot_chassis.dm:SSrobot_sprites 1
@@ -220,6 +220,7 @@ B1:code/modules/media/walkpod.dm:SSmedia_tracks 1
 B1:code/modules/mining/mine_turfs.dm:SSticker 1
 B1:code/modules/mining/shelter_atoms.dm:SSmapping 2
 B1:code/modules/mob/dead/observer/observer.dm:SSticker 1
+B1:code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_tunnel/dark_tunneling.dm:SSmapping 1
 B1:code/modules/mob/living/carbon/human/species/station/alraune.dm:SSplants 1
 B1:code/modules/mob/living/living.dm:SSticker 2
 B1:code/modules/mob/living/silicon/ai/latejoin.dm:SSticker 2
@@ -236,7 +237,6 @@ B1:code/modules/mob/new_player/lobby_browser.dm:SSticker 10
 B1:code/modules/mob/new_player/new_player.dm:SSjob 2
 B1:code/modules/mob/new_player/new_player.dm:SSticker 9
 B1:code/modules/modular_computers/NTNet/NTNet.dm:SSatoms 1
-B1:code/modules/body/organs/subtypes/diona.dm:SSplants 1
 B1:code/modules/overmap/champagne.dm:SSshuttles 3
 B1:code/modules/overmap/sectors.dm:SSshuttles 2
 B1:code/modules/overmap/ships/computers/shuttle.dm:SSshuttles 3
