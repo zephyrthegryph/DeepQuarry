@@ -33,7 +33,7 @@
 CAPABILITIES(/obj/effect/anomaly/flux)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("flux_shock", hand(), ungated(), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
-	op("flux_shock_item", item(/obj/item), priority(below("scan_anomaly")), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
+	op("flux_shock_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
 
 /// Something walked into it (the bump action's notice).
 /obj/effect/anomaly/flux/proc/bumped_into(datum/act/A)
