@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(!isobserver(ghost))
 		return
 	var/mob/living/body = ghost.mind?.current
-	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && om_value_of(body, EFFECT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
+	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && stat_value(body, STAT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
 			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"))
 			if(isnull(_answer_k78))

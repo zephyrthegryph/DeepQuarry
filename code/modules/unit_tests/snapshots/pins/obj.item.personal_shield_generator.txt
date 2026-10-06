@@ -29,11 +29,12 @@ human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver menu: Remove cell
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/screwdriver menu: Toggle Gun (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Shield (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/screwdriver click: Click: Remove cell
 human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
@@ -69,11 +70,12 @@ human|/obj/item/multitool menu: Collect (refused: needs a storage)
 human|/obj/item/multitool menu: Customise (refused: needs an item)
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool menu: Set the shield colour
 human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/multitool menu: Toggle Gun (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Shield (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: Click: Use
+human|/obj/item/multitool click: Click: Set the shield colour
 human|/obj/item/weldingtool menu: Alternate use
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
@@ -135,5 +137,5 @@ human|/obj/item/storage menu: Toggle Gun (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Shield (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
-keys: alt, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand, item, toggle_shield_effect, weapon_toggle_effect
+keys: alt, destroy_cell, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand, item, recolor, remove_cell, toggle_shield_effect, weapon_toggle_effect
 

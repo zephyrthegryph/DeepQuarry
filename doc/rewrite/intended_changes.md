@@ -2108,3 +2108,19 @@ conversion pins (`snapshots/pins/`, re-blessed after review).
   with a lighter or any welder (lit or not, as before) after 2 s.
 - **The girder's hulk smash**: its offered_when asked a girder proc of the actor, which never answered, so it was never offered; the
   girder stays legacy (it reads mob mutations) and keeps that.
+
+## Relevance is a stat (rewrite/om-life)
+
+`EFFECT_RELEVANCE` on the OM contribution store is `STAT_RELEVANCE` (MAX, on `/datum`): `om_observe`/`om_unobserve`/`om_relevance`
+are `hold()`/`release()`/`stat_value()`. Same levels, same sources (a datum source deleted drops its hold, as before); the OM
+cadences still follow it through `relevance_changed()` until the framework goes. No behaviour change intended.
+- **Suspension is a stat too.** `EFFECT_SUSPENDED` is `STAT_SUSPENDED` (ANY, on `/datum`): `om_suspend`/`om_unsuspend` are
+  `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the OM timers and cadences read the stat;
+  `suspended_changed()` resumes them. No behaviour change intended. `life_sweep` after both: h512 149.8 ms/s for 3413
+  frames, mix 33.4 ms/s.
+- **Grave markers ask, then carve at once**: the screwdriver asks the name and then the epitaph as op steps and carves both together
+  (the legacy carving took the material's hardness per line, after the questions; a tool op's wait always comes before its questions,
+  so the wait is gone rather than put in front of them). The item marker no longer also strikes after asking (its proc returned NONE).
+- **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
+  out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
+  door's catch-all for held items.

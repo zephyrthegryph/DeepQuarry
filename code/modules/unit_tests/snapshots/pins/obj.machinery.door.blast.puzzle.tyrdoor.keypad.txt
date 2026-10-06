@@ -51,6 +51,7 @@ human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Use (refused: hold Disarm)
 human|/obj/item/tool/wirecutters menu: Use (refused: hold Grab)
 human|/obj/item/tool/wirecutters click: Click: Swallow
+human|/obj/item/multitool menu: Enter the code
 human|/obj/item/multitool menu: Open
 human|/obj/item/multitool menu: Open (refused: Access denied.)
 human|/obj/item/multitool menu: Strike
@@ -59,7 +60,7 @@ human|/obj/item/multitool menu: Swallow
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Use (refused: hold Disarm)
 human|/obj/item/multitool menu: Use (refused: hold Grab)
-human|/obj/item/multitool click: Click: Swallow
+human|/obj/item/multitool click: Click: Enter the code
 human|/obj/item/weldingtool menu: Open
 human|/obj/item/weldingtool menu: Open (refused: Access denied.)
 human|/obj/item/weldingtool menu: Strike
@@ -105,5 +106,5 @@ human|/obj/item menu: Use
 human|/obj/item menu: Use (refused: hold Disarm)
 human|/obj/item menu: Use (refused: hold Grab)
 human|/obj/item click: Click: Swallow
-keys: doors.close, doors.open, emag.subvert, emag.use, force_generic, force_xeno, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, mend, pry, pry_broken, puzzle_door_touch, puzzle_door_use_disarm, puzzle_door_use_grab, puzzle_door_use_harm, puzzle_door_use_help, repair, strike, swallow
+keys: doors.close, doors.open, emag.subvert, emag.use, enter_code, force_generic, force_xeno, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, mend, pry, pry_broken, puzzle_door_touch, puzzle_door_use_disarm, puzzle_door_use_grab, puzzle_door_use_harm, puzzle_door_use_help, repair, strike, swallow
 
