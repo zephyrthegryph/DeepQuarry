@@ -639,12 +639,9 @@ CAPABILITIES(/obj/machinery/power/rtg)
 
 /obj/machinery/power/rtg/fake_gen/RefreshParts()
 	return
-/// No parts to replace, and its mapped sprite.
+/// No parts to replace.
 CAPABILITIES(/obj/machinery/power/rtg/fake_gen)
 	without("part_replacement.replace")
-
-/obj/machinery/power/rtg/fake_gen/draw(datum/look/look)
-	return
 
 /obj/machinery/power/rtg/fake_gen/grid
 	desc = "An array of conventional power storage units, for when the added charge longivity and cost of a SMES unit is unneded or impractical."
