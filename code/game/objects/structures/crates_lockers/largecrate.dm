@@ -40,7 +40,7 @@ CAPABILITIES(/obj/structure/largecrate)
 		if(isanimal(AM))
 			var/mob/living/simple_mob/AMBLINAL = AM
 			if(!AMBLINAL.mind)
-				AMBLINAL.ghostjoin = 1
+				AMBLINAL.set_ghostjoin(1)
 				AMBLINAL.ghostjoin_icon()
 				registry_join(REGISTRY_GHOST_PODS, AMBLINAL)
 	act_message(user, src, MSG_SELF(span_notice("You pry open %T%.")), \

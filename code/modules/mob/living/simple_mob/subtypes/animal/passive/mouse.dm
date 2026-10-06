@@ -68,7 +68,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_i
 		. = ..()
 	else
 		. = ..()
-	ghostjoin = TRUE
+	set_ghostjoin(TRUE)
 	ghostjoin_icon()
 
 

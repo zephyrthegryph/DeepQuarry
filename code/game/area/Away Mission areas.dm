@@ -73,7 +73,7 @@
 		return
 	var/datum/ai_brain/brain = M.ai_brain
 	if(ghostjoin)
-		M.ghostjoin = TRUE
+		M.set_ghostjoin(TRUE)
 		M.ghostjoin_icon()
 	if(!brain)
 		return

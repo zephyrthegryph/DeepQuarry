@@ -228,6 +228,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
 		return OP_DECLINE
+	return OP_OK
 
 /obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You have collected %T%!")), \

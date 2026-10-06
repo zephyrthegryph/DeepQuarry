@@ -10,52 +10,52 @@
 	var/valve_open = 0
 	COOLDOWN_DECLARE(toggle)
 
-DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
-/obj/item/transfer_valve/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/// Old attackby: attach a tank (two at most) or an unsecured assembly to the valve controls.
+/obj/item/transfer_valve/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	var/turf/location = get_turf(src) // For admin logs
 	if(istype(item, /obj/item/tank))
 		if(tank_one && tank_two)
 			to_chat(user, span_warning("There are already two tanks attached, remove one first."))
-			return TRUE
+			return OP_OK
 
 		if(!tank_one)
 			if(!move_into(src, nameof(src.tank_one), item, user))
-				return TRUE
+				return OP_OK
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 		else if(!tank_two)
 			if(!move_into(src, nameof(src.tank_two), item, user))
-				return TRUE
+				return OP_OK
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 			message_admins("[key_name_admin(user)] attached both tanks to a transfer valve. [ADMIN_JMP(location)]")
 			log_game("[key_name_admin(user)] attached both tanks to a transfer valve.")
 
 		update_icon()
 		SStgui.update_uis(src) // update all UIs attached to src
+		return OP_OK
 //TODO: Have this take an assemblyholder
 	else if(isassembly(item))
-		var/obj/item/assembly/A = item
-		if(A.secured)
+		var/obj/item/assembly/AS = item
+		if(AS.secured)
 			to_chat(user, span_notice("The device is secured."))
-			return TRUE
+			return OP_OK
 		if(attached_device)
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
-			return TRUE
-		if(!move_into(src, nameof(src.attached_device), A, user))
-			return TRUE
+			return OP_OK
+		if(!move_into(src, nameof(src.attached_device), AS, user))
+			return OP_OK
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
-		rel_set(A, nameof(A.holder), src)
-		A.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
+		rel_set(AS, nameof(AS.holder), src)
+		AS.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
 
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
 		message_admins("[key_name_admin(user)] attached a [item] to a transfer valve. [ADMIN_JMP(location)]")
 		log_game("[key_name_admin(user)] attached a [item] to a transfer valve.")
 		rel_set(src, nameof(attacher), user)
 		SStgui.update_uis(src) // update all UIs attached to src
-	return TRUE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/transfer_valve/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
@@ -72,8 +72,11 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 	if(isturf(loc))
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
-/obj/item/transfer_valve/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: the valve's window.
+/obj/item/transfer_valve/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
+	return OP_OK
 
 CAPABILITIES(/obj/item/transfer_valve)
 	interface("TransferValve", state = nameof(GLOB.tgui_inventory_state))
@@ -83,6 +86,8 @@ CAPABILITIES(/obj/item/transfer_valve)
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("device", ui_act("device"), then(PROC_REF(ui_act_device)))
 	op("remove_device", ui_act("remove_device"), then(PROC_REF(ui_act_remove_device)))
+	op("attach", inputs(item(/obj/item/tank), item(/obj/item/assembly)), label("Attach"), then(PROC_REF(interaction_item)))
+	op("view", in_hand(), then(PROC_REF(interaction_self)))
 
 /obj/item/transfer_valve/ui_data(datum/act/eval/A)
 	var/list/data = list()

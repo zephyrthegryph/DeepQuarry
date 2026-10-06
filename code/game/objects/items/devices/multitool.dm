@@ -32,26 +32,41 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 	var/uplink = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/multitool, uplink)
 
-/obj/item/multitool/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(uplink)
-		return
+CAPABILITIES(/obj/item/multitool)
+	ref_one(nameof(selected_io), /datum/integrated_io)
+	// the old attack_self: a wired connection is cleared; otherwise the multitool's menu
+	op("menu", in_hand(), when(cond_not(nameof(uplink))),
+		asks(/datum/prompt/choice, fields = list("title" = "Multitool Menu", "question" = computed(PROC_REF(menu_question)), "choices" = list("Switch Mode", "Clear Buffers", "Cancel"), "buttons" = TRUE, "timeout" = 0), when = PROC_REF(no_wired_connection)),
+		then(PROC_REF(menu_chosen)))
+	// an uplink multitool opens its hidden uplink instead
+	op("uplink", in_hand(), when(nameof(uplink)), then(PROC_REF(open_uplink)))
 
+/obj/item/multitool/proc/open_uplink(datum/act/op/A)
+	item_hidden_uplink(src)?.trigger(A.actor)
+	return OP_OK
+
+/obj/item/multitool/proc/menu_question(datum/act/A)
+	return "What do you want to do with \the [src]?"
+
+/// No wired connection is held: the menu is asked.
+/obj/item/multitool/proc/no_wired_connection(datum/act/op/A)
+	return !selected_io
+
+/// Old attack_self: clear the wired connection, or what the menu picked.
+/obj/item/multitool/proc/menu_chosen(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(selected_io())
 		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
 		update_icon()
-		return
-
-	update_icon()
-	open_request(src, /datum/prompt/choice, PROC_REF(menu_chosen), answerer = user, title = "Multitool Menu", question = "What do you want to do with \the [src]?", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/multitool/proc/menu_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	switch(A.answer.value)
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(!R)
+		update_icon()
+		return OP_OK
+	switch(R.value)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
 			rel_clear(src, nameof(buffer))
@@ -65,9 +80,10 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 			mode_switch(user)
 		else
 			to_chat(user,span_notice("You lower \the [src]."))
-			return
+			return OP_OK
 
 	update_icon()
+	return OP_OK
 
 /obj/item/multitool/proc/mode_switch(mob/living/user)
 	if(mode_index + 1 > modes.len) mode_index = 1
