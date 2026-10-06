@@ -32,16 +32,13 @@
 /obj/machinery/atmospherics/pipe/vent/pipeline_expansion()
 	return list(node1)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/vent/appearance_overlays()
-	. = list()
+/obj/machinery/atmospherics/pipe/vent/draw(datum/look/look)
+	..()
 	if(node1)
-		icon_state = "intact"
-
-		set_dir(get_dir(src, node1))
-
+		look.state("intact")
+		look.set_dir(get_dir(src, node1))
 	else
-		icon_state = "exposed"
+		look.state("exposed")
 
 /obj/machinery/atmospherics/pipe/vent/atmos_init()
 	var/connect_direction = dir

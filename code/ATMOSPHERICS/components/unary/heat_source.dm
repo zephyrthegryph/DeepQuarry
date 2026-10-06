@@ -73,17 +73,17 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 		update_icon()
 
 
-/// Appearance reader: 0 unconnected, 1 connected idle, 2 connected and heating.
-/obj/machinery/atmospherics/unary/heater/proc/appearance_heater_state()
-	if(!node)
-		return 0
-	return (use_power && heating) ? 2 : 1
+/// Unconnected, connected and idle, or working.
+/obj/machinery/atmospherics/unary/heater/draw(datum/look/look)
+	..()
+	if(!node) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+		look.state("heater_0")
+	else
+		look.state((use_power && heating) ? "heater_1" : "heater")
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_state", list(
-	"0" = list(APPEARANCE_ICON_STATE = "heater_0"),
-	"1" = list(APPEARANCE_ICON_STATE = "heater"),
-	"2" = list(APPEARANCE_ICON_STATE = "heater_1"),
-))
+/obj/machinery/atmospherics/unary/heater/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(heating))
 
 
 // ---- its work: woken by its gas, its switch and its thermostat; nothing polls ----

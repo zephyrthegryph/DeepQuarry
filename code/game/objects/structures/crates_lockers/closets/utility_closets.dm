@@ -121,41 +121,45 @@
 	desc = "It's a storage unit for tools."
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/engineering/tools
 
-/obj/structure/closet/toolcloset/Initialize(mapload)
-	starts_with = list()
-	if(prob(40))
-		starts_with += /obj/item/clothing/suit/storage/hazardvest
-	if(prob(70))
-		starts_with += /obj/item/flashlight
-	if(prob(70))
-		starts_with += /obj/item/tool/screwdriver
-	if(prob(70))
-		starts_with += /obj/item/tool/wrench
-	if(prob(70))
-		starts_with += /obj/item/weldingtool
-	if(prob(70))
-		starts_with += /obj/item/tool/crowbar
-	if(prob(70))
-		starts_with += /obj/item/tool/wirecutters
-	if(prob(70))
-		starts_with += /obj/item/t_scanner
-	if(prob(20))
-		starts_with += /obj/item/storage/belt/utility
-	if(prob(30))
-		starts_with += /obj/item/stack/cable_coil/random
-	if(prob(30))
-		starts_with += /obj/item/stack/cable_coil/random
-	if(prob(30))
-		starts_with += /obj/item/stack/cable_coil/random
-	if(prob(20))
-		starts_with += /obj/item/multitool
-	if(prob(5))
-		starts_with += /obj/item/clothing/gloves/yellow
-	if(prob(40))
-		starts_with += /obj/item/clothing/head/hardhat
-	if(prob(30))
-		starts_with += /obj/item/reagent_containers/spray/windowsealant
-	return ..()
+CAPABILITIES(/obj/structure/closet/toolcloset)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/toolcloset/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
+	if(R.chance(40))
+		. += /obj/item/clothing/suit/storage/hazardvest
+	if(R.chance(70))
+		. += /obj/item/flashlight
+	if(R.chance(70))
+		. += /obj/item/tool/screwdriver
+	if(R.chance(70))
+		. += /obj/item/tool/wrench
+	if(R.chance(70))
+		. += /obj/item/weldingtool
+	if(R.chance(70))
+		. += /obj/item/tool/crowbar
+	if(R.chance(70))
+		. += /obj/item/tool/wirecutters
+	if(R.chance(70))
+		. += /obj/item/t_scanner
+	if(R.chance(20))
+		. += /obj/item/storage/belt/utility
+	if(R.chance(30))
+		. += /obj/item/stack/cable_coil/random
+	if(R.chance(30))
+		. += /obj/item/stack/cable_coil/random
+	if(R.chance(30))
+		. += /obj/item/stack/cable_coil/random
+	if(R.chance(20))
+		. += /obj/item/multitool
+	if(R.chance(5))
+		. += /obj/item/clothing/gloves/yellow
+	if(R.chance(40))
+		. += /obj/item/clothing/head/hardhat
+	if(R.chance(30))
+		. += /obj/item/reagent_containers/spray/windowsealant
 
 /*
  * Radiation Closet

@@ -2,6 +2,8 @@
 // Tanks - These are implemented as pipes with large volume
 //
 /obj/machinery/atmospherics/pipe/tank
+	/// Its sprite (the map sprite is "<this>_map").
+	var/tank_state = "air"
 	icon = 'icons/atmos/tank.dmi'
 	icon_state = "air_map"
 
@@ -18,7 +20,9 @@
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY
 	density = TRUE
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "air")))
+/obj/machinery/atmospherics/pipe/tank/draw(datum/look/look)
+	..()
+	look.state(tank_state)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 	climb()
@@ -81,10 +85,11 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/tank/oxygen
+	tank_state = "o2"
 	name = "Pressure Tank (Oxygen)"
 	icon_state = "o2_map"
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/oxygen, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "o2")))
+
 
 /obj/machinery/atmospherics/pipe/tank/oxygen/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
@@ -96,11 +101,12 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/oxygen, null, list(APPE
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen
+	tank_state = "n2"
 	name = "Pressure Tank (Nitrogen)"
 	icon_state = "n2_map"
 	volume = 40000
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrogen, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "n2")))
+
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
@@ -112,10 +118,11 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrogen, null, list(AP
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide
+	tank_state = "co2"
 	name = "Pressure Tank (Carbon Dioxide)"
 	icon_state = "co2_map"
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "co2")))
+
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
@@ -127,11 +134,12 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide, null, l
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/tank/phoron
+	tank_state = "phoron"
 	name = "Pressure Tank (Phoron)"
 	icon_state = "phoron_map"
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_FUEL
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/phoron, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "phoron")))
+
 
 /obj/machinery/atmospherics/pipe/tank/phoron/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
@@ -143,10 +151,11 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/phoron, null, list(APPE
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide
+	tank_state = "n2o"
 	name = "Pressure Tank (Nitrous Oxide)"
 	icon_state = "n2o_map"
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrous_oxide, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "n2o")))
+
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide/Initialize(mapload)
 	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
@@ -158,11 +167,12 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrous_oxide, null, li
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/tank/methane
+	tank_state = "ch4"
 	name = "Pressure Tank (Methane)"
 	icon_state = "ch4_map"
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_FUEL
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/methane, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "ch4")))
+
 
 /obj/machinery/atmospherics/pipe/tank/methane/Initialize(mapload)
 	. = ..()
