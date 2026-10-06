@@ -105,6 +105,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	var/valid_access = list(ACCESS_SECURITY) //Default access is security, to be overriden or expanded as desired
 	holo = TRUE
 
+TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
+
 /obj/item/clothing/accessory/badge/holo/cord
 	icon_state = "holobadge-cord"
 	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
@@ -112,38 +114,41 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null, "The badge is already cracked.")
 
 /obj/item/clothing/accessory/badge/holo/mark_emagged()
-	emagged = TRUE
+	set_emagged(TRUE)
 /obj/item/clothing/accessory/badge/holo/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	emagged = 1
+	set_emagged(TRUE)
 	to_chat(user, span_danger("You crack the holobadge security checks."))
 	return 1
 
 CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
-	op("holobadge_imprint_item", item(/obj/item), then(PROC_REF(holobadge_imprint_item)))
+	op("holobadge_imprint_item", item(/obj/item), needs(req(PROC_REF(imprint_credentials_holds), because = PROC_REF(imprint_credentials_refusal))), then(PROC_REF(holobadge_imprint_item)))
+
+/obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_holds(datum/act/op/A)
+	return isnull(imprint_credentials_refusal(A))
+
+/obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_refusal(datum/act/op/A)
+	var/obj/item/card/id/id_card
+	if(istype(A.held, /obj/item/card/id))
+		id_card = A.held
+	else if(istype(A.held, /obj/item/pda))
+		var/obj/item/pda/pda = A.held
+		id_card = pda.id
+	else
+		return null
+	if(!id_card)
+		return "The PDA has no ID card to imprint."
+	for(var/access in valid_access)
+		if((access in id_card.GetAccess()) || emagged)
+			return null
+	return "[src] rejects your insufficient access rights."
 
 /// Old attackby: imprint ID details.
 /obj/item/clothing/accessory/badge/holo/proc/holobadge_imprint_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	if(istype(O, /obj/item/card/id) || istype(O, /obj/item/pda))
-
-		var/obj/item/card/id/id_card = null
-
-		if(istype(O, /obj/item/card/id))
-			id_card = O
-		else
-			var/obj/item/pda/pda = O
-			id_card = pda.id
-
-		var/found = FALSE
-		for(var/access in valid_access)
-			if((access in id_card.GetAccess()) || emagged)
-				to_chat(user, "You imprint your ID details onto the badge.")
-				set_name(user.real_name)
-				found = TRUE
-				break
-		if(!found)
-			to_chat(user, "[src] rejects your insufficient access rights.")
+		to_chat(user, "You imprint your ID details onto the badge.")
+		set_name(user.real_name)
 		return OP_PASS
 	return OP_DECLINE
 
@@ -423,4 +428,3 @@ CAPABILITIES(/obj/item/storage/box/dosimeter)
 		/obj/item/paper/dosimeter_manual,
 		/obj/item/clothing/accessory/dosimeter,
 		/obj/item/dosimeter_film)))
-
