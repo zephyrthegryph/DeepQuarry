@@ -239,6 +239,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			var/datum/entry/verb_hook = verb_entry_hook_entry(E)
 			. += hook_make(HOOK_CHANGE, null, verb_hook, verb_hook, C, A, serial)
 		return
+	if(E.kind == ENTRY_MODES)
+		// A type-level modes(var): a write of the var is picked up at the drain and the mode follows it (modes.dm).
+		if(!A)
+			var/datum/entry/watch = modes_watch_entry(E)
+			. += hook_make(HOOK_CHANGE, null, watch, watch, C, A, serial)
+		return
 	if(E.kind == ENTRY_EVERY)
 		// A type-level every() held by its own when = parks while the condition is false; this hook wakes it (every.dm).
 		if(!A && !isnull(E.args["when"]) && !length(C.whens))
@@ -278,7 +284,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	var/list/hooks = list()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
-		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE && E.kind != ENTRY_EVERY && E.kind != ENTRY_VERB))
+		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE && E.kind != ENTRY_EVERY && E.kind != ENTRY_VERB && E.kind != ENTRY_MODES))
 			continue
 		hooks += hooks_from_entry(E, C, null)
 	GLOB.hook_tables[T] = hooks
@@ -447,6 +453,15 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			if(ENTRY_CHANCE)
 				if(!TEST_ROLL(part.args["percent"]))
 					return FALSE
+			if(ENTRY_COALESCE)
+				// coalesce(interval): the parts after it run once per window, from a timer (coalesce.dm); this trigger only opens or joins the window.
+				coalesce_trigger(H, A, part)
+				return FALSE
+			if(ENTRY_GO)
+				// go(/datum/capability/x): sets the mode of the holder (modes.dm). A go() that ends the state running this very entry ends the entry.
+				modes_go(A, part)
+				if(A.activation?.dead)
+					return TRUE
 			if(ENTRY_THEN)
 				var/reply = hook_call(H, part.args["handler"], A)
 				if(reply == HOOK_DECLINE)
@@ -522,6 +537,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	for(var/datum/hook/H as anything in holder.rx.hooks.Copy())
 		if(H.activation == A && H.source_entry == E)
 			holder.rx.hooks -= H
+			coalesce_cancel(holder, H)
 			H.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	if(!length(holder.rx.hooks))
 		holder.rx.hooks = null

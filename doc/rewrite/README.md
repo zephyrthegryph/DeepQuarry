@@ -56,6 +56,7 @@ beside the old forms.
 | [construction.md](construction.md) | Primitives, joints, ladder presets, conservation test |
 | [pools.md](pools.md) | `/datum/pooled`, reset, poison |
 | [scheduling_and_kernel.md](scheduling_and_kernel.md) | `kernel_tick` phases, systems, work, urgent requests |
+| [ai_packs.md](ai_packs.md) | AI packs, states and standings (approved 2026-10-06): the engine forms `coalesce()`, `modes()`, `stance()` and the pack, brain and tactic design built on them |
 | [life_sequences.md](life_sequences.md) | Sequences (entity-major kernel work: steps as procs, `after` edges, `should_run`, parking as membership), Mob Life's landing spot, the S1-S4 waves |
 | [rust.md](rust.md) | `vg_frame`, outbox, watches, no mirrors |
 | [dx_conventions.md](dx_conventions.md) | The rules and CI lints |
