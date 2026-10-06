@@ -4811,12 +4811,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(test_machine_idle(gas_heater), "switched-off gas heater remained scheduled")
 	var/obj/machinery/power/thermoregulator/regulator = new(T)
 	regulator.set_on(FALSE)
-	TEST_ASSERT(test_machine_idle(regulator), "switched-off thermoregulator remained scheduled")
-	MACHINE_SLEEP(regulator)
-	regulator.set_on(TRUE)
-	var/regulator_wakes = regulator.machine_wake_count
-	regulator.wake_for_state_change()
-	TEST_ASSERT(regulator.machine_wake_count > regulator_wakes, "enabling a thermoregulator did not wake it")
+	regulator.reconsider()
+	TEST_ASSERT(!regulator.regulating, "a switched-off thermoregulator has no work")
 	var/obj/machinery/portable_atmospherics/canister/air/airlock/airlock_canister = new(T)
 	var/gauge_band = airlock_canister.gauge_band
 	TEST_ASSERT_EQUAL(airlock_canister.pressure_band(), gauge_band, "minor canister pressure change moved the gauge")
@@ -7561,25 +7557,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/power/thermoregulator/R = new(T)
 	R.set_on(TRUE)
-	R.target_temp = T20C
-	R.hibernate_until_temperature_changes()
-	MACHINE_SLEEP(R) // what the machine_step() caller's PROCESS_KILL does
-	TEST_ASSERT(om_watch_armed(R, "gas"), "settled thermoregulator did not arm its eligibility watch")
-	var/regulator_wakes = R.gas_dependency_wake_count
+	R.set_target_temp(T20C)
 	heat_set(T.air, T20C + 0.5, HEAT_SOURCE_OTHER)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
-	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes, "sub-degree drift inside the deadband woke a thermoregulator")
-	TEST_ASSERT(om_watch_armed(R, "gas"), "the thermoregulator woke by another path before its watch was tested")
+	TEST_ASSERT(!R.gas_wake_condition(), "sub-degree drift inside the deadband gives a thermoregulator no work")
 	heat_set(T.air, T20C + 5, HEAT_SOURCE_OTHER)
 	TEST_ASSERT(abs(T.air.return_temperature() - (T20C + 5)) < 0.01, "the test floor's air did not take the out-of-deadband temperature")
-	for(var/i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(R.gas_dependency_wake_count > regulator_wakes)
-			break
-		if(!(i % 256))
-			stoplag()
-	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes + 1, "leaving the deadband did not wake the thermoregulator exactly once")
+	TEST_ASSERT(R.gas_wake_condition(), "leaving the deadband gives the thermoregulator work")
 	qdel(R)
 	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 

@@ -19,7 +19,6 @@
 		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
 		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
-		/obj/machinery/power/thermoregulator,
 		/obj/machinery/air_sensor,
 		/obj/machinery/computer/general_air_control/fuel_injection,
 		/obj/machinery/portable_atmospherics/hydroponics,
@@ -397,12 +396,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// with work and no armed watch is a lost wake, which the OM audit reports.
 /datum/om/stage/machine/power/step/idle(obj/machinery/M)
 	return om_watch_armed(M) || !M.step_has_work()
-
-/datum/om/stage/machine/power/step/turbinemotor
-	of = /obj/machinery/power/turbinemotor
-
-/datum/om/stage/machine/power/step/thermoregulator
-	of = /obj/machinery/power/thermoregulator
 
 /datum/om/stage/machine/power/step/air_sensor
 	of = /obj/machinery/air_sensor

@@ -1590,3 +1590,12 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   `draw(look)` from tracked `driven` and `speed_band`.
 - **Bug fixed:** after a stroke the turbine handed its input side `remove(volume_ratio)` (0.2 moles) instead of `remove_ratio(volume_ratio)` (its
   share by volume), so nearly all the gas was dumped to the output and the head flipped. Its two sides now settle at one pressure.
+
+## The thermoregulator (rewrite/pipenet-full)
+
+- It works on `every(when = regulating)`: on, bolted, on the grid and its room a degree or more off its target. A gas watch on its room's air
+  (temperature), its switch, its target (tracked `target_temp`) and moving it reconsider; the OM watch, the periodic declaration and MACHINE_WAKE
+  are gone, and it left the machine pipeline roster. The heat itself stays the thermal domain's `heat_pump`.
+- Its hand switch (empty hand), wrench and multitool target (an `asks()` number in degrees C) are ops; a hand on an unbolted one is refused with a
+  reason (it did nothing). The Southern Cross and Cryogaia regulators keep their own step and wrench (the Cryogaia one's message is the shared
+  one). Its look is `draw(look)`; its display is an `examine_line()`.
