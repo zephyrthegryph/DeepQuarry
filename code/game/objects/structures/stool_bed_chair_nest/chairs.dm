@@ -35,7 +35,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 	var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	E.set_dir(dir)
-	if(!move_into(E, nameof(E.part), SK, user)) // out of the hand, into the chair
+	if(!move_into(E, nameof(E.part), SK, user, ledger_slot = SLOT_ECHAIR_KIT)) // out of the hand, into the chair's kit slot (its default is the buckle seat)
 		spent(E)
 		return OP_REFUSED
 	rel_set(SK, nameof(SK.master), E)
