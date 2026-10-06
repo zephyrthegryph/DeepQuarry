@@ -97,7 +97,7 @@ Limb and organ damage procs are **body-internal**:
 `limb.apply_wound_damage()`, `limb.heal_wound_damage()` (detached limbs
 only), `organ.apply_lesion_damage()`, `organ.restore_lesions()` (detached
 organs only) and `organ.bench_damage()` (a loose organ). Outside
-`code/modules/body` and `code/modules/organs` code calls `injure()` /
+`code/modules/body` code calls `injure()` /
 `mend()`; `tools/ci/check_grep.sh` ("organ damage outside the body") enforces
 it. `/obj/item/organ/take_damage()` is the item-integrity proc and does
 nothing to organs. There are no organ pre-damage signals.

@@ -207,7 +207,7 @@ init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_sta
 init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
 init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-init_visuals	code/modules/organs/subtypes/nano.dm	icon_state = "posi"
+init_visuals	code/modules/body/organs/subtypes/nano.dm	icon_state = "posi"
 init_visuals	code/modules/overmap/events/overmap_event.dm	icon_state = pick(event_icon_states)
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/ships/engines/gas_thruster.dm	icon_state = "exhaust"
@@ -363,9 +363,9 @@ init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_set(src, 
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	rel_set(src, nameof(battery), new cell_type(src))
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	rel_set(src, nameof(battery), new/obj/item/cell(src))
 init_new_child	code/modules/multiz/hoist.dm	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
-init_new_child	code/modules/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
-init_new_child	code/modules/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
-init_new_child	code/modules/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
+init_new_child	code/modules/body/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
+init_new_child	code/modules/body/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
+init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 init_new_child	code/modules/paperwork/paperplane.dm	rel_set(src, nameof(internalPaper), new /obj/item/paper(src))

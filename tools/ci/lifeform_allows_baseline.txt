@@ -225,9 +225,9 @@ allow_matches_form	code/modules/multiz/hoist.dm	// ALLOW(init/CTOR_ARGS): ndir i
 allow_matches_form	code/modules/nifsoft/nif.dm	// ALLOW(init/CTOR_ARGS): wear and load_data are constructor arguments from whoever builds it
 allow_matches_form	code/modules/nifsoft/software/13_soulcatcher.dm	// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
 allow_matches_form	code/modules/nifsoft/software/14_commlink.dm	// ALLOW(init/CTOR_ARGS): soft is a constructor argument from whoever builds it
-allow_matches_form	code/modules/organs/internal/malignant/malignant.dm	// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
-allow_matches_form	code/modules/organs/organ_stump.dm	// ALLOW(init/CTOR_ARGS): internal and limb are constructor arguments from whoever builds it
-allow_matches_form	code/modules/organs/subtypes/machine.dm	// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
+allow_matches_form	code/modules/body/organs/internal/malignant/malignant.dm	// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
+allow_matches_form	code/modules/body/organs/organ_stump.dm	// ALLOW(init/CTOR_ARGS): internal and limb are constructor arguments from whoever builds it
+allow_matches_form	code/modules/body/organs/subtypes/machine.dm	// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
 allow_matches_form	code/modules/overmap/bluespace_rift.dm	// ALLOW(init/CTOR_ARGS): new_partner is a constructor argument from whoever builds it
 allow_matches_form	code/modules/overmap/ships/engines/gas_thruster.dm	// ALLOW(init/CTOR_ARGS): ndir and flame are constructor arguments from whoever builds it
 allow_matches_form	code/modules/overmap/ships/landable.dm	// ALLOW(init/CTOR_ARGS): shuttle_name is a constructor argument from whoever builds it
