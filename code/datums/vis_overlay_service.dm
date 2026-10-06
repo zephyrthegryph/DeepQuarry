@@ -26,6 +26,8 @@ CAPABILITIES(/datum/system/vis_overlays)
 		var/key = current_run[length(current_run)]
 		var/obj/effect/overlay/vis/overlay = current_run[key]
 		current_run.len--
+		if(!overlay)
+			continue // taken out of the cache since this sweep's snapshot
 		if(!overlay.unused && !length(overlay.vis_locs))
 			EXPIRY_STAMP(overlay, unused, CLOCK_WORLD)
 		else if(overlay.unused && ELAPSED(overlay, unused, CLOCK_WORLD) > overlay.cache_expiration)
