@@ -247,26 +247,26 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	brig.timer_end()
 	TEST_ASSERT(!brig.timing && !after_pending(brig, "end"), "a finished brig timer kept a timer pending")
 
-/// Started work (code/library/machine/started_work.dm): a machine whose step finds it unpowered stops its work and waits for power, and its
-/// work starts again by itself when power returns.
+/// Started work (code/library/machine/started_work.dm): the work of a machine that is not operable parks (no step runs) and runs again by
+/// itself when power returns.
 /datum/unit_test/dq_started_work_waits_for_power
 
 /datum/unit_test/dq_started_work_waits_for_power/Run()
 	test_driver_begin()
-	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, test_floor())
-	igniter.set_on(TRUE)
-	igniter.stat_add(NOPOWER)
-	work_start(igniter)
-	test_time(MACHINE_SERVICE_INTERVAL + 1)
-	TEST_ASSERT(!work_started(igniter), "an unpowered igniter's step stopped its work")
-	TEST_ASSERT(cap_key_get(igniter, STARTED_WORK_WAITING_POWER), "and it waits for power")
-	igniter.stat_remove(NOPOWER)
-	test_time(1)
-	TEST_ASSERT(work_started(igniter), "power returning restarted its work")
-	TEST_ASSERT(!cap_key_get(igniter, STARTED_WORK_WAITING_POWER), "and it no longer waits")
-	work_stop(igniter)
-	TEST_ASSERT(!work_started(igniter), "work_stop() stops it")
-	igniter.set_on(FALSE)
+	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
+	M.work = 100
+	M.set_powered(FALSE)
+	work_start(M)
+	test_time(MACHINE_SERVICE_INTERVAL * 3)
+	TEST_ASSERT_EQUAL(M.steps, 0, "an unpowered machine's work parked")
+	M.set_powered(TRUE)
+	test_time(MACHINE_SERVICE_INTERVAL * 2)
+	TEST_ASSERT(M.steps > 0, "power returning un-parked it")
+	var/ran = M.steps
+	M.stat_add(BROKEN)
+	test_time(MACHINE_SERVICE_INTERVAL * 3)
+	TEST_ASSERT_EQUAL(M.steps, ran, "a broken machine's work parked")
+	work_stop(M)
 	test_driver_end()
 
 #endif

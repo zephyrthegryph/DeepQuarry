@@ -39,7 +39,7 @@ OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, list("stat"))
 /// Spills loot while unpowered (the declaration above runs it only then).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/paradoxrift)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(unpowered), wakes_on = list(nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(unpowered), wakes_on = list(nameof(stat)), unpowered = TRUE)
 
 /obj/machinery/paradoxrift/proc/work_step(datum/act/timer/A)
 	if(prob(0.5*build_eff))

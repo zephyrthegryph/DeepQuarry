@@ -75,16 +75,16 @@
 
 /datum/unit_test/dq_machine_work_parks_unpowered/Run()
 	test_driver_begin()
-	var/obj/machinery/igniter/M = allocate(/obj/machinery/igniter, test_floor())
+	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
+	M.work = 100
 	M.set_powered(FALSE)
-	M.set_on(TRUE)
 	work_start(M)
 	test_time(MACHINE_SERVICE_INTERVAL + 1)
-	TEST_ASSERT(!work_started(M), "an unpowered machine's work parked")
+	TEST_ASSERT_EQUAL(M.steps, 0, "an unpowered machine's work parked")
 	M.set_powered(TRUE)
-	test_time(1)
-	TEST_ASSERT(work_started(M), "power returning un-parked it")
-	M.set_on(FALSE)
+	test_time(MACHINE_SERVICE_INTERVAL + 1)
+	TEST_ASSERT(M.steps > 0, "power returning un-parked it")
+	work_stop(M)
 	test_driver_end()
 
 #endif

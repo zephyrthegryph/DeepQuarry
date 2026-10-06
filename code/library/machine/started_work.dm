@@ -9,6 +9,7 @@
 //   started_work(step = PROC_REF(x), starts = PROC_REF(y))      started from its initialization when y(A) answers TRUE
 //   started_work(step = PROC_REF(x), when = nameof(v))          ...and it runs only while `when` holds as well (a stat, a tracked var)
 //   started_work(step = PROC_REF(x), wakes_on = list(nameof(v)))   ...and any change of v starts it again (work that waits on a state)
+//   started_work(step = PROC_REF(x), unpowered = TRUE)          ...and it runs while the machine is not operable too (a step that reads power itself)
 //   started_work(step = PROC_REF(x), gate = PROC_REF(y))        ...and a step runs only when y(A) answers TRUE (a computed test, asked each
 //                                                                interval; a list of PROC_REFs must all answer TRUE)
 //
@@ -18,7 +19,7 @@
 MSG_DEF_SELF(started_work/stopped, "It isn't running.")
 MSG_DEF_SELF(started_work/running, "It is running.")
 
-CAPABILITY_TYPE(started_work, CAP_STARTED_WORK, /datum/capability/lib/started_work, key = NONE, step = null, interval = MACHINE_SERVICE_INTERVAL, starts = FALSE, when = null, wakes_on = null, gate = null)
+CAPABILITY_TYPE(started_work, CAP_STARTED_WORK, /datum/capability/lib/started_work, key = NONE, step = null, interval = MACHINE_SERVICE_INTERVAL, starts = FALSE, when = null, wakes_on = null, gate = null, unpowered = FALSE)
 cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = MSG(started_work/running))
 
 /datum/capability/lib/started_work
@@ -26,6 +27,8 @@ cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = M
 
 /datum/capability/lib/started_work/entries()
 	var/gate = when ? cond_all(STARTED_WORK_ACTIVE, when) : STARTED_WORK_ACTIVE
+	if(!unpowered)
+		gate = cond_all(gate, STAT_OPERABLE) // an unpowered or broken machine's work parks and costs nothing
 	. = list(
 		every(interval, then(CAP_PROC(run_step)), when = gate),
 		on_change(nameof(/obj/machinery::stat), ANY, then(CAP_PROC(condition_changed))))

@@ -60,7 +60,6 @@ MSG_DEF_SELF(robot_fabricator/busy, "The fabricator is already building a part."
 MSG_DEF_SELF(robot_fabricator/metal, "The fabricator does not have enough metal.")
 
 CAPABILITIES(/obj/machinery/robotic_fabricator)
-	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reads = list("stat"))
 	interface("AncientDroneFab")
 	extend("ui_open", needs(req_operable()))
 	op("build_l_arm", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_l_arm)))

@@ -136,6 +136,7 @@ TRACKED(/obj/machinery, active_power_usage)
 TRACKED(/obj/machinery, power_channel)
 
 CAPABILITIES(/obj/machinery)
+	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reason = MSG(machine/inoperable), reads = list("stat"))
 	owns_one(nameof(circuit), /obj/item/circuitboard)
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)

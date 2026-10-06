@@ -137,7 +137,6 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 /datum/capability/def/machine_basics/entries()
 	var/list/entries = list(
 		breakable(repair),
-		contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reason = MSG(machine/inoperable), reads = list("stat")),
 		op("slash", hand(), label("Slash"), priority(OP_PRIORITY_CLAW), \
 			when(TYPE_PROC_REF(/atom, claw_slash_offered)), \
 			then(TYPE_PROC_REF(/atom, claw_slash)), says(MSG(machine/slash))),

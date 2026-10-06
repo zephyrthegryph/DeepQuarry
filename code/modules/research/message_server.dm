@@ -75,7 +75,7 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), nameof(stat)), unpowered = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)

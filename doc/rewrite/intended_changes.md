@@ -2413,3 +2413,10 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   conveyor interfaces that show it.
 * **`MACHINE_WAKE` on a machine with no started work does nothing**, as it already did for every machine that had left the pipeline (hydroponics
   trays woken by chem smoke, for one).
+
+## Machines: started work parks while the machine is not operable (rewrite/machine-stats)
+
+* **A machine's started work runs only while `STAT_OPERABLE` holds.** Unpowered, broken, panel-open (maintenance) and EMP'd machines no longer step;
+  their work resumes by itself when they work again. Before, each step ran and refused (or ended its work and waited for power). The 13 machines
+  whose step reads power itself (the distillery, exonet node, magnet, ATM, recharge station, cooking appliances and others) declare `unpowered = TRUE`
+  and run as before. `STAT_OPERABLE` is now contributed by every machine (the stat bits, `stat_bits_allow()`), not only machine_basics machines.

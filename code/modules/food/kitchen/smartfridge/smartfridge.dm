@@ -36,7 +36,7 @@ STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
-	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(nameof(stat)), unpowered = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
