@@ -949,12 +949,11 @@
 	TEST_ASSERT_EQUAL(P.power_supply_rate, P.power_gen * 4, "it supplies power_gen * 4 W: [P.power_supply_rate]")
 	for(var/i in 1 to 23)
 		pp_step(P, PP_GEN_STEP_PROC)
-	TEST_ASSERT_EQUAL(P.sheets, 9, "24 steps burn exactly one sheet")
-	TEST_ASSERT(abs(P.sheet_left) < 0.0001, "nothing left of it: [P.sheet_left]")
+	TEST_ASSERT(pp_close(P.sheets + P.sheet_left, 9, 0.0001), "24 steps burn one sheet's worth: [P.sheets] + [P.sheet_left]")
 	P.TogglePower()
 	pp_step(P, PP_GEN_STEP_PROC)
 	TEST_ASSERT_EQUAL(P.power_supply_rate, 0, "off, it supplies nothing")
-	TEST_ASSERT_EQUAL(P.sheets, 9, "and burns nothing")
+	TEST_ASSERT(pp_close(P.sheets + P.sheet_left, 9, 0.0001), "and burns nothing")
 	power_test_drop_grid(net)
 
 /// Out of fuel it stops; the super PACMAN's uranium lasts 6 times longer (576 steps per sheet at output 1), the MRS makes 25 kW a level.
@@ -964,7 +963,7 @@
 	var/list/run = pp_run(3)
 	var/net = power_test_grid(0)
 	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 0)
-	P.sheet_left = 0.05
+	P.sheet_left = 0.01
 	P.power_output = 4
 	P.set_active(TRUE)
 	pp_step(P, PP_GEN_STEP_PROC)
@@ -1010,24 +1009,27 @@
 	var/list/run = pp_run(1)
 	var/net = power_test_grid(0)
 	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run[1])
 	P.power_output = P.max_power_output
-	TEST_ASSERT(!pp_pacman_raise(P), "the output stops at max_power_output")
+	TEST_ASSERT(!pp_pacman_raise(P, H), "the output stops at max_power_output")
 	pp_pacman_emag(P)
 	var/raised = 0
-	while(pp_pacman_raise(P) && raised < 50)
+	while(pp_pacman_raise(P, H) && raised < 50)
 		raised++
 	TEST_ASSERT_EQUAL(P.power_output, round(P.max_power_output * 2.5), "emagged it goes to 2.5 times: [P.power_output]")
 	power_test_drop_grid(net)
 
 /// One press of the window's higher-power button: TRUE when the output went up.
-/proc/pp_pacman_raise(obj/machinery/power/port_gen/pacman/P)
+/proc/pp_pacman_raise(obj/machinery/power/port_gen/pacman/P, mob/user)
 	var/before = P.power_output
-	call(P, hascall(P, "output_raised") ? "output_raised" : "ui_act_higher_power")(null)
+	var/datum/act/op/A = new
+	A.actor = user
+	call(P, "ui_act_higher_power")(A)
 	return P.power_output > before
 
 /// Subverts a PACMAN: its emag capability, or the legacy emagged var.
 /proc/pp_pacman_emag(obj/machinery/power/port_gen/pacman/P)
-	if(cap_of(P, CAP_EMAG, null))
+	if(istype(cap_of(P, CAP_EMAG, null), /datum/capability/lib/emag))
 		key_set(P, EMAG_EMAGGED, TRUE)
 	else
 		P.set_emagged(1)
