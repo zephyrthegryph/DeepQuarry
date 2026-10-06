@@ -67,15 +67,16 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 	COOLDOWN_START(src, spamcheck, 2 SECONDS)
 	do_broadcast(user, message)
 
-DECLARE_EMAG(/obj/item/megaphone, PROC_REF(on_emag), null, null)
+CAPABILITIES(/obj/item/megaphone)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-/obj/item/megaphone/mark_emagged()
-	emagged = TRUE
-/obj/item/megaphone/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+
+/obj/item/megaphone/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("You overload [src]'s voice synthesizer."))
 	emagged = TRUE
 	insults = rand(1, 3)//to prevent caps spam.
-	return TRUE
+	return OP_OK
 
 /obj/item/megaphone/super
 	name = "gigaphone"

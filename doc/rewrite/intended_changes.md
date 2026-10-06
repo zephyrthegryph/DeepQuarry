@@ -1637,3 +1637,10 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   examine line while the panel is open; installing the super I/O coil is a 30 s op.
 - Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
   the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
+- **Emags on items are the emag library** (`emag(then(PROC_REF(on_emag)), repeatable =, powered = FALSE)`): a sequencer that
+  works now also says the library's "You subvert X with Y" line, and pays one use (the legacy handlers' counts were 0 or 1).
+  A handler that did nothing declines: the card goes on to its other uses. The defib kit works its paddles' emag by key.
+- **Timed tool uses are op waits**: the vehicle cage (wrench 6 s, cutters 7 s) and salvageable wrecks (crowbar 17 s) say a
+  begin line to the user as well as onlookers, and the wait scales by the tool's speed as every tool op does.
+- **The window tint button's cutters**: with the panel shut they go on to the legacy tool handling instead of being swallowed.
+- **The portable sign asks its direction as an op step** (`asks()`), so the question is the op's and the answer is re-checked.

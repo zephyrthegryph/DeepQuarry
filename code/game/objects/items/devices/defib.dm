@@ -20,6 +20,7 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/defib_kit)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(bcell), /obj/item/cell, starts = nameof(bcell))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -109,13 +110,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	update_icon()
 	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
-/obj/item/defib_kit/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer on the kit works its paddles (their own emag, by key); the kit pays the card when they took it.
+/obj/item/defib_kit/proc/on_emag(datum/act/op/A)
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
-	if(paddles)
-		. = emag_target(paddles, remaining_charges, user, emag_source)
-		update_icon()
-	return
+	if(!paddles)
+		return OP_DECLINE
+	var/used = emag_target(paddles, 1, A.actor, A.held)
+	update_icon()
+	return (used != EMAG_DECLINED && used > 0) ? OP_OK : OP_DECLINE
 
 //checks that the base unit is in the correct slot to be used
 /obj/item/defib_kit/proc/slot_check()
@@ -537,22 +539,25 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 /obj/item/shockpaddles/proc/make_announcement(message, msg_class)
 	audible_message(span_bold(span_info("\The [src]") + " [message]"), span_info("\The [src] vibrates slightly."), runemessage = "buzz")
 
-DECLARE_EMAG_REPEATABLE(/obj/item/shockpaddles, PROC_REF(on_emag), null)
-/obj/item/shockpaddles/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/shockpaddles/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(safety)
 		safety = 0
 		to_chat(user, span_warning("You silently disable \the [src]'s safety protocols with the cryptographic sequencer."))
 		update_icon()
-		return 1
+		return OP_OK
 	else
 		safety = 1
 		to_chat(user, span_notice("You silently enable \the [src]'s safety protocols with the cryptographic sequencer."))
 		update_icon()
-		return 1
+		return OP_OK
 
-DAMAGE_REACTION(/obj/item/shockpaddles, DAMAGE_EMP, PROC_REF(paddles_emp))
+CAPABILITIES(/obj/item/shockpaddles)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(paddles_emp)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
 /// An EMP scrambles the safety.
-/obj/item/shockpaddles/proc/paddles_emp(datum/damage_packet/packet)
+/obj/item/shockpaddles/proc/paddles_emp(datum/act/A)
 	var/new_safety = rand(0, 1)
 	if(safety != new_safety)
 		safety = new_safety
@@ -653,10 +658,11 @@ CAPABILITIES(/obj/item/shockpaddles/standalone)
 	)
 	set_fail_counter(max(fail_counter - 1, 0))
 
-/obj/item/shockpaddles/standalone/paddles_emp(datum/damage_packet/packet)
-	. = ..()
+/obj/item/shockpaddles/standalone/paddles_emp(datum/act/A)
+	..()
+	var/datum/notice/hit/emp/N = A
 	var/new_fail = 0
-	switch(packet.severity)
+	switch(N.packet.severity)
 		if(1)
 			new_fail = max(fail_counter, 20)
 			visible_message("\The [src]'s reactor overloads!")

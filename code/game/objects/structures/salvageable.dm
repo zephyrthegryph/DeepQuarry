@@ -13,17 +13,17 @@
 			new path (loc)
 	return
 
-/obj/structure/salvageable/crowbar_act(mob/user, obj/item/I)
-	playsound(src, I.usesound, 50, 1)
-	var/actual_time = I.toolspeed * 170
-	act_message(user, src, MSG_SELF(span_notice("You start salvaging from %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins salvaging from %T%.")))
-	om_task_timed(user, actual_time, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
-	return TRUE
+MSG_DEF(salvageable/start, "You start salvaging from %T%.", "%U% begins salvaging from %T%.")
+MSG_DEF(salvageable/done, "You salvage %T%.", "%U% has salvaged %T%.")
 
-/obj/structure/salvageable/proc/crowbar_act_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You salvage %T%.")), MSG_OTHERS(span_notice("%U% has salvaged %T%.")))
+CAPABILITIES(/obj/structure/salvageable)
+	op("salvage", tool(TOOL_CROWBAR), label("Salvage"), wait(17 SECONDS), begins(MSG(salvageable/start)), says(MSG(salvageable/done)), then(PROC_REF(salvaged)))
+
+/// The crowbar's wait ran out: the parts fall out and the wreck is gone.
+/obj/structure/salvageable/proc/salvaged(datum/act/op/A)
 	dismantle()
-	consume(src, user)
+	consume(src, A.actor)
+	return OP_OK
 
 //Types themself, use them, but not the parent object
 
@@ -200,10 +200,9 @@
 	. = ..()
 	icon_state = "bliss[rand(0,1)]"
 
-/obj/structure/salvageable/bliss/crowbar_act(mob/user, obj/item/I)
-	. = ..()
-	if(.)
-		play_sfx(src, SFX_MACHINES_SHUTDOWN)
+/obj/structure/salvageable/bliss/salvaged(datum/act/op/A)
+	play_sfx(src, SFX_MACHINES_SHUTDOWN)
+	return ..()
 
 ///////////////////
 //// COMPUTERS ////

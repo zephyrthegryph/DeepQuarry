@@ -2504,6 +2504,7 @@ DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/t
 CAPABILITIES(/obj/item/toy/snake_popper)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Old attack_self.
 /obj/item/toy/snake_popper/proc/interaction_self(datum/act/op/A)
@@ -2570,11 +2571,12 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 		return ITEM_INTERACT_FAILURE
 	return NONE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/toy/snake_popper, PROC_REF(on_emag), null)
-/obj/item/toy/snake_popper/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/toy/snake_popper/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(real != 2)
 		real = 2
 		to_chat(user, span_notice("You short out the bluespace refill system of [src]."))
+	return OP_OK
 
 /*
  * Professor Who universal ID
