@@ -73,7 +73,6 @@ SOURCE_DEF(mutation_hulk)
 	var/on_increase
 
 /// Status id -> /datum/status_policy, built once at global init from status_policy_rows().
-GLOBAL_LIST_INIT(status_policies, status_policies_build())
 
 /// The policy table's source rows: list(STAT_X, field = value, ...).
 GLOBAL_LIST_INIT(status_policy_rows, list(
@@ -101,6 +100,8 @@ GLOBAL_LIST_INIT(status_policy_rows, list(
 		list(STAT_JITTERY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended),
 ))
 
+GLOBAL_LIST(status_policies)
+
 /proc/status_policies_build()
 	. = list()
 	for(var/list/row as anything in GLOB.status_policy_rows)
@@ -113,6 +114,9 @@ GLOBAL_LIST_INIT(status_policy_rows, list(
 
 /// Status id -> /datum/status_policy.
 /proc/status_policies()
+	// Built on first use: GLOB init order is not declaration order, so the rows may not exist yet at global init.
+	if(!GLOB.status_policies)
+		GLOB.status_policies = status_policies_build()
 	return GLOB.status_policies
 
 /// The policy of status `id`.
