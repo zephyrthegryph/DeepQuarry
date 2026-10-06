@@ -47,6 +47,7 @@ beside the old forms.
 
 | Document | Covers |
 |---|---|
+| [framework_gaps.md](framework_gaps.md) | Open framework gaps and what is missing from the design |
 | [foundation.md](foundation.md) | Overview, vocabulary, design rules, the target APC example |
 | [state_and_relations.md](state_and_relations.md) | `TRACKED`, `READERS`, generated reads, relation kinds, source counts |
 | [reactions.md](reactions.md) | Triggers, static vs dynamic, notices, timers, urgent vs wake |

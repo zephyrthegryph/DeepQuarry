@@ -125,32 +125,27 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 		if(src.l_leg)	return OP_PASS
 		if(!move_into(src, nameof(src.l_leg), W, user))
 			return OP_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
 		if(src.r_leg)	return OP_PASS
 		if(!move_into(src, nameof(src.r_leg), W, user))
 			return OP_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
 		if(src.l_arm)	return OP_PASS
 		if(!move_into(src, nameof(src.l_arm), W, user))
 			return OP_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
 		if(src.r_arm)	return OP_PASS
 		if(!move_into(src, nameof(src.r_arm), W, user))
 			return OP_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
 		if(src.chest)	return OP_PASS
 		if(W:wires_const && W:cell)
 			if(!move_into(src, nameof(src.chest), W, user))
 				return OP_PASS
-			src.update_icon()
 		else if(!W:wires_const)
 			to_chat(user, span_warning("You need to attach wires_const to it first!"))
 		else
@@ -161,7 +156,6 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 		if(W:flash2 && W:flash1)
 			if(!move_into(src, nameof(src.head), W, user))
 				return OP_PASS
-			src.update_icon()
 		else
 			to_chat(user, span_warning("You need to attach a flash to it first!"))
 
