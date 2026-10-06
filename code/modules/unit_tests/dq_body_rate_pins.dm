@@ -33,7 +33,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	pin(H)
 	test_driver_end()
-	for(var/obj/effect/decal/cleanable/blood/B in range(1, H))
+	for(var/obj/effect/decal/cleanable/B in range(1, H))
 		qdel(B)
 
 /datum/unit_test/dq_body_pin/proc/pin(mob/living/carbon/human/H)
@@ -206,3 +206,35 @@
 	body_pin_frame(H)
 	TEST_ASSERT(arm in H.damaged_limbs(), "a hurt arm is among the damaged limbs")
 	TEST_ASSERT(!(H.get_organ(BP_R_ARM) in H.damaged_limbs()), "a sound arm is not")
+
+// --- Slice 3: internal organs -------------------------------------------------------------------------------------
+
+/// A body carrying heavy toxin load hurts its liver over time.
+/datum/unit_test/dq_body_pin/liver_toxin_overload
+
+/datum/unit_test/dq_body_pin/liver_toxin_overload/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
+	H.injure(INJURY_TOXIN, 60, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	for(var/i in 1 to 20)
+		body_pin_frame(H)
+	body_pin_log("liver_toxin_overload", L.damage)
+	TEST_ASSERT(body_pin_near(L.damage, 5.65, 1.5), "twenty cycles of heavy toxin load cost the liver about 5.65 (got [L.damage])")
+
+/// Healthy kidneys clear a little toxin.
+/datum/unit_test/dq_body_pin/kidneys_clear_toxin
+
+/datum/unit_test/dq_body_pin/kidneys_clear_toxin/pin(mob/living/carbon/human/H)
+	H.injure(INJURY_TOXIN, 8, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	var/before = H.injury_load(INJURY_CATEGORY_TOXIC)
+	for(var/i in 1 to 30)
+		body_pin_frame(H)
+	var/after = H.injury_load(INJURY_CATEGORY_TOXIC)
+	body_pin_log("kidneys_clear_toxin", "[before] -> [after]")
+	TEST_ASSERT(after < before, "kidneys clear some toxin in thirty cycles ([before] -> [after])")
+
+/// A healthy body's organs leave nothing to do.
+/datum/unit_test/dq_body_pin/healthy_organs_idle
+
+/datum/unit_test/dq_body_pin/healthy_organs_idle/pin(mob/living/carbon/human/H)
+	for(var/obj/item/organ/I as anything in H.internal_organ_list())
+		TEST_ASSERT(I.life_step_idle(), "[I] has nothing to do in a healthy body")
