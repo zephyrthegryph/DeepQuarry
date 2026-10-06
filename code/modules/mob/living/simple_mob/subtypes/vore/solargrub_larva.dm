@@ -187,7 +187,8 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
 
 /// 0 stopped, 1 idle drain, 2 active drain.
-OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/abstract_grub_machine/var/draining = 1
+TRACKED_BRIDGED(/obj/machinery/abstract_grub_machine, draining, CHANGE_MACHINE_SETTINGS)
 // ALLOW(init/INSTANCE_STATE): rolls its power use and binds to the grub it is made inside
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
