@@ -115,7 +115,6 @@
 
 /atom/movable/proc/lifecycle_expire_now()
 	PRIVATE_PROC(TRUE)
-	// ALLOW(lifecycle): this is the expire() verb's own timed delete
 	qdel(src)
 
 /atom/movable/proc/lifecycle_arm_lifetime()
@@ -202,7 +201,6 @@
 /// or deleted (gibbed) along the way.
 /mob/living/proc/lifecycle_on_death_finalized()
 	if(delete_on_death && stat == DEAD && !QDELETED(src))
-		// ALLOW(lifecycle): this is the delete_on_death declaration's own delete
 		qdel(src)
 
 // ---- destroy_effects (declared, phase 6) ----
