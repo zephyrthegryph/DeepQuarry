@@ -33,6 +33,7 @@
 		padding_material = get_material_by_name(padding)
 	force = round(material.blunt_damage()*0.4)
 	changed(src)
+	changed(src)
 
 /obj/item/stool/padded
 	material_key = MAT_STEEL
@@ -68,11 +69,13 @@
 /obj/item/stool/proc/add_padding(padding_type)
 	padding_material = get_material_by_name(padding_type)
 	changed(src)
+	changed(src)
 
 /obj/item/stool/proc/remove_padding()
 	if(padding_material)
 		padding_material.place_sheet(get_turf(src), 1)
 		padding_material = null
+	changed(src)
 	changed(src)
 
 /obj/item/stool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

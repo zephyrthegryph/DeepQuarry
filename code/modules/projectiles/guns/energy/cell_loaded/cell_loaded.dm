@@ -165,7 +165,9 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 			return
 		if(!move_into(src, nameof(src.stored_ammo), B, user))
 			return
+		changed(src)
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
+	changed(src)
 	if(istype(loc, /obj/item/gun/projectile/cell_loaded)) // Update the HUD if we're in a gun + have a user. Not that one should be able to reload the mag while it's in a gun, but just in caaaaase.
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc
 		var/mob/living/M = cell_load.loc

@@ -105,9 +105,11 @@ TRACKED(/obj/item/flamethrower, lit)
 			if(!check_fuel())
 				set_lit(FALSE)
 			changed(src)
+			changed(src)
 		else
 			to_chat(user, span_notice("There is not enough pressure in [src]'s tank!"))
 			set_lit(FALSE)
+			changed(src)
 			changed(src)
 		// prevent spam
 		COOLDOWN_START(src, operating, 1.5 SECONDS)

@@ -336,6 +336,7 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 		for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 			ES.stop_showing()
 	changed(src)
+	changed(src)
 
 /obj/item/tvcamera/proc/camera_toggle_audio(mob/user)
 	radio.ToggleBroadcast()

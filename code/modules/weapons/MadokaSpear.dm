@@ -28,11 +28,14 @@
 	force = initial(force)
 	name = "[initial(name)]"
 	changed(src)
+	changed(src)
 
 /obj/item/oldtwohanded/proc/wield()
 	wielded = 1
 	force = force_wielded
 	name = "[initial(name)] (Wielded)"
+	changed(src)
+	changed(src)
 	changed(src)
 
 TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))

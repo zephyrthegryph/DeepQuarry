@@ -76,6 +76,7 @@ DECLARE_GAS(/obj/item/tank/phoron, "air_contents", "volume", T20C, list(GAS_PHOR
 			return OP_PASS
 		rel_set(src, nameof(src.master), F)
 		changed(F)
+		changed(F)
 	return OP_PASS
 
 /obj/item/tank/vox	//Can't be a child of phoron or the gas amount gets screwey.

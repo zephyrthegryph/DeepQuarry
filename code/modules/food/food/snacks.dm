@@ -3960,6 +3960,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	user.put_in_hands( box )
 	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
 	changed(box)
+	changed(box)
 	return OP_OK
 
 /// The held box is another one, not this one used in hand.
@@ -3988,6 +3989,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
 	src.boxes.Add( boxestoadd )
 	changed(box)
+	changed(box)
 	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
 	return OP_OK
 
@@ -4005,6 +4007,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	if( boxes.len > 0 )
 		boxtotagto = boxes[boxes.len]
 	boxtotagto.boxtag = copytext("[boxtotagto.boxtag][R?.value]", 1, 30)
+	changed(boxtotagto)
 	changed(boxtotagto)
 	return OP_OK
 

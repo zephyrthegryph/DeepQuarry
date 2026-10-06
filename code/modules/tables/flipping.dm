@@ -119,6 +119,7 @@
 			T.flip(direction)
 	take_damage(rand(5, 10), BRUTE, MELEE)
 	update_connections(1)
+	changed(src)
 
 	return 1
 
@@ -132,5 +133,6 @@
 			T.unflip()
 
 	update_connections(1)
+	changed(src)
 
 	return 1

@@ -107,6 +107,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	removed_cell.forceMove(get_turf(src))
 	rel_clear(src, nameof(attached_cell))
 	act_message(user, src, MSG_SELF("You remove %I% from %T%."), MSG_OTHERS("%U% removes a cell from %T%."), item = removed_cell)
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/ammo_magazine/smart/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -132,6 +133,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	I.forceMove(src)
 	rel_set(src, nameof(attached_cell), I)
 	act_message(user, src, MSG_SELF("You install %I% into %T%."), MSG_OTHERS("%U% installs a cell in %T%."), item = I)
+	changed(src)
 
 /obj/item/ammo_magazine/smart/proc/cell_removed(mob/user)
 	if(!attached_cell())
@@ -140,6 +142,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	user.put_in_hands(attached_cell())
 	act_message(user, src, MSG_SELF("You remove \the [attached_cell()] from %T%."), MSG_OTHERS("%U% removes a cell from %T%."))
 	rel_clear(src, nameof(attached_cell))
+	changed(src)
 
 // Finds the cell for the magazine, used by rechargers
 /obj/item/ammo_magazine/smart/get_cell()

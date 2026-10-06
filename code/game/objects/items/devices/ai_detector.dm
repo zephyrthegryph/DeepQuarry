@@ -32,6 +32,7 @@ TRACKED(/obj/item/multitool/ai_detector, detect_state)
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
 	set_detect_state(new_detect_state)
+	changed(src)
 	update_warning(old_detect_state, new_detect_state)
 	return
 

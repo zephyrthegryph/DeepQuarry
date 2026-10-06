@@ -989,10 +989,12 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 		wielded = 1
 		force = 15
 		name = "[base_name] (wielded)"
+		changed(src)
 	else
 		wielded = 0
 		force = 8
 		name = "[base_name]"
+	changed(src)
 	..()
 
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

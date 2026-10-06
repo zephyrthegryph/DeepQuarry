@@ -189,6 +189,7 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/shockpaddles/proc/set_cooldown(delay)
 	cooldown = 1
 	changed(src)
+	changed(src)
 
 	after(src, delay, PROC_REF(recharged))
 
@@ -200,6 +201,7 @@ CAPABILITIES(/obj/item/defib_kit)
 	else
 		wielded = 0
 		name = initial(name)
+	changed(src)
 	changed(src)
 	..()
 
@@ -712,6 +714,7 @@ CAPABILITIES(/obj/item/shockpaddles/standalone)
 /obj/item/shockpaddles/proc/recharged()
 	if(cooldown)
 		cooldown = 0
+		changed(src)
 		changed(src)
 
 		make_announcement("beeps, \"Unit is re-energized.\"", "notice")

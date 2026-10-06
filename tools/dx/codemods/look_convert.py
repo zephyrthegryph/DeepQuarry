@@ -823,6 +823,13 @@ def draw_coverage(ix, t):
             for d in ds:
                 rel, s, e = ix.draws[d][0]
                 plans[d] = {"lines": ix.files[rel].lines[s + 1 : e]}
+            # look_parts() overrides of every type in the chain (a subtype's part is drawn through the root's call)
+            for (pt, name), defs in ix.proc_defs.items():
+                if name == "look_parts" and ix.related(pt, t):
+                    rel, s, e = defs[0]
+                    plans.setdefault(pt, {"lines": []})
+                    plans[pt]["lines"] = plans[pt]["lines"] + ix.files[rel].lines[s + 1 : e]
+            ds = sorted(plans)
             covered, untracked = verdict(ix, ds, plans)
             _coverage_cache[key] = (True, covered, untracked)
     return _coverage_cache[key]

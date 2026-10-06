@@ -551,6 +551,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	to_chat(user,span_notice("You put [lottery_price] credits worth of chips into the Wheel of Fortune and it pings to notify of your lottery ticket registered!"))
 	cashmoney.worth -= lottery_price
 	changed(cashmoney)
+	changed(cashmoney)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
@@ -1050,6 +1051,7 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 
 	// All sleeping dialogs are done and the collar is re-validated — charge now.
 	cashmoney.worth -= charge
+	changed(cashmoney)
 	changed(cashmoney)
 
 	if(cashmoney.worth <= 0)

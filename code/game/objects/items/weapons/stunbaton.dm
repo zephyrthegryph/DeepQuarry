@@ -86,6 +86,7 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 	if(bcell)
 		if(bcell.charge < hitcost)
 			status = 0
+			changed(src)
 
 /obj/item/melee/baton/draw(datum/look/look)
 	..()
@@ -111,6 +112,7 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 	if(status && grip_safety && !taped_safety)
 		status = 0
 		visible_message(span_warning("\The [src]'s grip safety engages!"))
+	changed(src)
 
 /obj/item/melee/baton/examine(mob/user)
 	. = ..()
@@ -131,6 +133,7 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 				if(!move_into(src, nameof(src.bcell), W, user))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
+				changed(src)
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
@@ -162,6 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 			own_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
+			changed(src)
 			return TRUE
 		return FALSE
 	else

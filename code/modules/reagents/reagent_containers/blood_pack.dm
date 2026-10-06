@@ -37,6 +37,7 @@
 
 /obj/item/reagent_containers/blood/on_reagent_change()
 	changed(src)
+	changed(src)
 
 /obj/item/reagent_containers/blood/draw(datum/look/look)
 	..()

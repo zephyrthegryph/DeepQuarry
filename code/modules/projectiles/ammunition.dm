@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	. = BB
 	own_take(src, nameof(BB))
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
+	changed(src)
 
 /// Mass reloading: one matching shell from `floor` into the box every half second.
 /obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
@@ -58,6 +59,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	if(!bullet)
 		return STEP_DONE
 	move_into(box, nameof(box.stored_ammo), bullet)
+	changed(box)
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
 
@@ -228,6 +230,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			return
 		if(!move_into(src, nameof(src.stored_ammo), C, user))
 			return
+		changed(src)
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W
 		if(L.caliber != caliber)
@@ -243,7 +246,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		AC.forceMove(src)
 		own_transfer(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
+		changed(L)
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
+	changed(src)
 
 /// Old attack_self: this dumps all the bullets right on the floor.
 /obj/item/ammo_magazine/proc/magazine_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -260,6 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
 		own_take_all(src, nameof(stored_ammo))
+		changed(src)
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
 		return
@@ -274,6 +280,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
+				changed(src)
 				return TRUE
 	return FALSE
 
@@ -388,6 +395,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
+				changed(src)
 				return TRUE
 	return FALSE
 

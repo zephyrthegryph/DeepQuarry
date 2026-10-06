@@ -42,6 +42,7 @@
 	H.name = "handful of [a.caliber] rounds"
 	for(var/obj/item/ammo_casing/C in list(a, b))
 		move_into(H, nameof(H.stored_ammo), C, user)
+	changed(H)
 	return H
 
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
@@ -69,6 +70,8 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 		if(moved)
 			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [length(stored_ammo)]."))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 0.5)
+		changed(other)
+		changed(src)
 		if(!length(other.stored_ammo))
 			consume(other, user)
 		return

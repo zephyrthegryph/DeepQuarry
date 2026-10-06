@@ -233,6 +233,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the maintenance panel of %T%.")), \
 		MSG_OTHERS(span_filter_notice("%U% [panel_open ? "opens" : "closes"] the maintenance panel of %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/smartfridge/wrench_act(mob/user, obj/item/tool)
@@ -277,6 +278,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 		rel_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
+	changed(src)
 
 /obj/machinery/smartfridge/proc/vend(datum/stored_item/I, count)
 	var/amount = I.get_amount()
@@ -287,6 +289,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	for(var/i = 1 to min(amount, count))
 		I.get_product(get_turf(src))
 	SStgui.update_uis(src)
+	changed(src)
 
 /// Old attack_hand.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -355,6 +358,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	throw_item.throw_at(target,16,3,src)
 	src.visible_message(span_warning("[src] launches [throw_item.name] at [target.name]!"))
 	SStgui.update_uis(src)
+	changed(src)
 	return TRUE
 
 /*

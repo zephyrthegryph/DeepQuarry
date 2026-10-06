@@ -55,6 +55,7 @@
 		weaken_force = initial(weaken_force)
 		name = "[initial(name)] (wielded)"
 		changed(src)
+		changed(src)
 	else
 		wielded = 0
 		if(status)
@@ -66,6 +67,7 @@
 		launch_force = launch_force_unwielded
 		weaken_force = weaken_force_unwielded
 		name = "[initial(name)]"
+	changed(src)
 	changed(src)
 	..()
 
@@ -116,6 +118,7 @@
 	. = ..()
 	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
+	changed(src)
 /obj/item/melee/shock_maul/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on
 		if(bcell)

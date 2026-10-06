@@ -36,10 +36,12 @@
 		wielded = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
+		changed(src)
 	else
 		wielded = 0
 		force = force_unwielded
 		name = "[base_name]"
+	changed(src)
 	..()
 
 /obj/item/material/twohanded/update_force()
@@ -53,6 +55,7 @@
 	force = force_unwielded
 	throwforce = round(force*thrown_force_divisor)
 
+	changed(src)
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(15))
@@ -108,11 +111,13 @@
 		pry = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
+		changed(src)
 	else
 		wielded = 0
 		pry = 0
 		force = force_unwielded
 		name = "[base_name]"
+	changed(src)
 	..()
 
 /obj/item/material/twohanded/fireaxe/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -234,11 +239,13 @@
 		pry = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
+		changed(src)
 	else
 		wielded = 0
 		pry = 0
 		force = force_unwielded
 		name = "[base_name]"
+	changed(src)
 	..()
 
 /obj/item/material/twohanded/sledgehammer/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)

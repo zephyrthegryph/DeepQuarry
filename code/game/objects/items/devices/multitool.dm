@@ -41,8 +41,10 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	if(selected_io())
 		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
+		changed(src)
 		return
 
+	changed(src)
 	open_request(src, /datum/prompt/choice, PROC_REF(menu_chosen), answerer = user, title = "Multitool Menu", question = "What do you want to do with \the [src]?", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /obj/item/multitool/proc/menu_chosen(datum/act/request/A)

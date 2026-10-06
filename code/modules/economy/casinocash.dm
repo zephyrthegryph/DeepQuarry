@@ -125,6 +125,7 @@
 	if(worth > 0)
 		if(update)
 			changed(src)
+			changed(src)
 		return worth
 	else
 		spent(src)
@@ -133,6 +134,7 @@
 /obj/item/spacecasinocash/proc/set_worth(new_worth = 0, update = 1)
 	worth = max(0, new_worth)
 	if(update)
+		changed(src)
 		changed(src)
 	return worth
 
@@ -313,6 +315,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	if(worth > 0)
 		if(update)
 			changed(src)
+			changed(src)
 		return worth
 	else
 		spent(src)
@@ -321,6 +324,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 /obj/item/spacecasinocash_fake/proc/set_worth(new_worth = 0, update = 1)
 	worth = max(0, new_worth)
 	if(update)
+		changed(src)
 		changed(src)
 	return worth
 

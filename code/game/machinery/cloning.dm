@@ -343,6 +343,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.connecting), src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
+	changed(multitool)
 	return ITEM_INTERACT_SUCCESS
 
 /// A sequencer forces an emergency ejection.
