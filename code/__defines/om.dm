@@ -111,10 +111,8 @@
 #define OM_EFFECT_PLAIN 0
 #define OM_EFFECT_CLOCK_MULT 1
 #define OM_EFFECT_CLOCK_INHIBIT 2
-#define OM_EFFECT_SUSPEND 4
 
 // Built-in effect ids (library.dm defines the rest).
-#define EFFECT_SUSPENDED "om_suspended"
 
 // Grant kinds (effects with COMBINE_SUM_PER_KEY).
 #define GRANT_ABILITY "grant_ability"

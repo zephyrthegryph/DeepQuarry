@@ -371,7 +371,7 @@
 	M.set_transforming(TRUE)
 	seq_run_frame_now(M, LIFE_SEQ)
 	TEST_ASSERT_EQUAL(counter.runs_on(M), 1, "steps no condition gates run while transforming")
-	TEST_ASSERT(!om_value_of(M, EFFECT_SUSPENDED), "transforming is not a suspension")
+	TEST_ASSERT(!stat_value(M, STAT_SUSPENDED), "transforming is not a suspension")
 	M.set_transforming(FALSE)
 
 /// A trait state's step joins the table while the state is attached.
@@ -561,12 +561,12 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
 	life_test_advance(LIFE_CYCLE_SECONDS)
-	om_suspend(H, H)
-	TEST_ASSERT(om_value_of(H, EFFECT_SUSPENDED), "suspended")
+	hold(H, STAT_SUSPENDED, TRUE, H)
+	TEST_ASSERT(stat_value(H, STAT_SUSPENDED), "suspended")
 	var/before = life_test_frames(H)
 	life_test_advance(LIFE_CYCLE_SECONDS * 5)
 	TEST_ASSERT_EQUAL(life_test_frames(H), before, "a suspended mob runs no frame")
-	om_unsuspend(H, H)
+	release(H, STAT_SUSPENDED, H)
 	life_test_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT(life_test_frames(H) > before, "a resumed mob runs again")
 
@@ -987,7 +987,7 @@
 /datum/unit_test/life_om/status_raises_once/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	om_suspend(H, H) // no frames (raises are counted while the mob listens for its own changes)
+	hold(H, STAT_SUSPENDED, TRUE, H) // no frames (raises are counted while the mob listens for its own changes)
 	sched.test_raises = list()
 	H.status_at_least(STAT_STUNNED, 2)
 	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "starting a stun raises the status channel once")

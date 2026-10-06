@@ -318,9 +318,6 @@
 		if(OM_EFFECT_CLOCK_MULT, OM_EFFECT_CLOCK_INHIBIT)
 			om_clock_changed(rec, eff.clock_idx)
 			om_timers_rate_changed(rec)
-		if(OM_EFFECT_SUSPEND)
-			om_sync_all(rec)
-			om_timers_rate_changed(rec)
 	eff.on_changed(E, old, new_value)
 	var/bits = eff.channel | CHANGE_EFFECTS
 	var/list/keys = eff.publishes ? list(eff.publishes) : null
@@ -610,12 +607,13 @@
 	om_native_relevance(E, level)
 	changed(E, CHANGE_RELEVANCE) // ALLOW(sys_manual_push): the stat changed; its channel readers (the sequence sweep, OM cadences) still listen by channel
 
-/// Suspends every cadence and wake of `E` while `source` holds it.
-/proc/om_suspend(datum/E, datum/source)
-	return om_hold(E, EFFECT_SUSPENDED, source, TRUE)
-
-/proc/om_unsuspend(datum/E, datum/source)
-	return om_release(E, EFFECT_SUSPENDED, source)
+/// STAT_SUSPENDED of `E` flipped: the OM record's cadences and own-clock timers stop or resume with it.
+/proc/suspended_changed(datum/E)
+	var/datum/om/rec/rec = E.om_rec
+	if(!rec)
+		return
+	om_sync_all(rec)
+	om_timers_rate_changed(rec)
 
 #undef OM_C_EFFECT
 #undef OM_C_SOURCE

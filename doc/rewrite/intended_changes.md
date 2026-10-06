@@ -2039,3 +2039,7 @@ Design: `reagents.md`.
 `EFFECT_RELEVANCE` on the OM contribution store is `STAT_RELEVANCE` (MAX, on `/datum`): `om_observe`/`om_unobserve`/`om_relevance`
 are `hold()`/`release()`/`stat_value()`. Same levels, same sources (a datum source deleted drops its hold, as before); the OM
 cadences still follow it through `relevance_changed()` until the framework goes. No behaviour change intended.
+- **Suspension is a stat too.** `EFFECT_SUSPENDED` is `STAT_SUSPENDED` (ANY, on `/datum`): `om_suspend`/`om_unsuspend` are
+  `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the OM timers and cadences read the stat;
+  `suspended_changed()` resumes them. No behaviour change intended. `life_sweep` after both: h512 149.8 ms/s for 3413
+  frames, mix 33.4 ms/s.

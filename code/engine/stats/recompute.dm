@@ -218,6 +218,8 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	// Relevance moved: the sequences sweeping E and the OM cadences that read it follow (code/datums/om/contribution.dm).
 	else if(def.id == STAT_RELEVANCE)
 		relevance_changed(E, new_value || RELEVANCE_NONE)
+	else if(def.id == STAT_SUSPENDED)
+		suspended_changed(E)
 	return TRUE
 
 /// The value a stat holds now, without computing it.
