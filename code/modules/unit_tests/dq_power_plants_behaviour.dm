@@ -918,3 +918,131 @@
 #undef PP_FIELD_STEP
 #undef PP_INJECTOR_STEP
 #undef PP_TRAP_STEP
+
+// ============================================================================================ portable generators and RTGs
+
+#define PP_GEN_STEP_PROC "gen_step"
+#define PP_RTG_STEP "rtg_step"
+
+/// A PACMAN of `type` bolted to test grid `net` with `sheets` of fuel.
+/datum/unit_test/dq_pp/proc/pp_pacman(turf/T, net, sheets = 10, type = /obj/machinery/power/port_gen/pacman)
+	var/obj/machinery/power/port_gen/pacman/P = allocate(type, T)
+	P.set_anchored(TRUE)
+	power_test_join(net, P)
+	P.sheets = sheets
+	return P
+
+/// PACMAN fuel use: a step burns power_output / time_per_sheet sheets (output 4 of a basic PACMAN: 4/96 a step, so a sheet lasts 24 steps),
+/// and supplies power_gen * power_output W (a persistent supply) while it runs.
+/datum/unit_test/dq_pp/pacman_fuel_use
+
+/datum/unit_test/dq_pp/pacman_fuel_use/run_pp()
+	var/list/run = pp_run(1)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
+	P.power_output = 4
+	P.TogglePower()
+	TEST_ASSERT(P.active, "a fuelled, bolted, wired PACMAN starts")
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT_EQUAL(P.sheets, 9, "the first step opens a sheet")
+	TEST_ASSERT(pp_close(P.sheet_left, 1 - 4 / 96, 0.000001), "and burns 4/96 of it: [P.sheet_left]")
+	TEST_ASSERT_EQUAL(P.power_supply_rate, P.power_gen * 4, "it supplies power_gen * 4 W: [P.power_supply_rate]")
+	for(var/i in 1 to 23)
+		pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT_EQUAL(P.sheets, 9, "24 steps burn exactly one sheet")
+	TEST_ASSERT(abs(P.sheet_left) < 0.0001, "nothing left of it: [P.sheet_left]")
+	P.TogglePower()
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT_EQUAL(P.power_supply_rate, 0, "off, it supplies nothing")
+	TEST_ASSERT_EQUAL(P.sheets, 9, "and burns nothing")
+	power_test_drop_grid(net)
+
+/// Out of fuel it stops; the super PACMAN's uranium lasts 6 times longer (576 steps per sheet at output 1), the MRS makes 25 kW a level.
+/datum/unit_test/dq_pp/pacman_fuel_out
+
+/datum/unit_test/dq_pp/pacman_fuel_out/run_pp()
+	var/list/run = pp_run(3)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 0)
+	P.sheet_left = 0.05
+	P.power_output = 4
+	P.set_active(TRUE)
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(!P.active, "a PACMAN without the fuel for a step stops")
+	TEST_ASSERT_EQUAL(P.power_supply_rate, 0, "and supplies nothing")
+	var/obj/machinery/power/port_gen/pacman/super/S = pp_pacman(run[2], net, 1, /obj/machinery/power/port_gen/pacman/super)
+	TEST_ASSERT_EQUAL(S.time_per_sheet, 576, "a super PACMAN's sheet lasts 576 steps at output 1")
+	var/obj/machinery/power/port_gen/pacman/mrs/M = pp_pacman(run[3], net, 1, /obj/machinery/power/port_gen/pacman/mrs)
+	TEST_ASSERT_EQUAL(initial(M.power_gen), 25000, "an MRS makes 25 kW a level")
+	TEST_ASSERT_EQUAL(M.max_safe_output, 8, "safely up to level 8")
+	power_test_drop_grid(net)
+
+/// Heat: running at output 4 the core heats toward 56..76 + 4 * 50 K (+ the room's offset from 20 C); above max_temperature (300) it
+/// overheats a count a step; switched off it cools by (T - room) / 40 (2..20) a step.
+/datum/unit_test/dq_pp/pacman_heat
+
+/datum/unit_test/dq_pp/pacman_heat/run_pp()
+	var/list/room = pp_room(T20C, o2 = MOLES_O2STANDARD, n2 = MOLES_N2STANDARD)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(room[1], net, 50)
+	P.power_output = 4
+	P.TogglePower()
+	for(var/i in 1 to 60)
+		pp_step(P, PP_GEN_STEP_PROC)
+	log_test("PACMAN at output 4 after 60 steps: [P.temperature] K")
+	TEST_ASSERT(P.temperature >= 200 && P.temperature <= 280, "it settles in its band (256..276 K at 1 atm 20 C): [P.temperature]")
+	TEST_ASSERT_EQUAL(P.overheating, 0, "below 300 it does not overheat")
+	P.temperature = 310
+	P.power_output = 5
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(P.overheating >= 1, "above 300 it overheats: [P.overheating]")
+	P.TogglePower()
+	P.temperature = 200
+	P.overheating = 0
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(pp_close(P.temperature, 200 - round((200 - 20) / 40, 1), 0.01), "off, it cools by (T - 20) / 40: [P.temperature]")
+	power_test_drop_grid(net)
+
+/// An emag lets the output go to 2.5 times the safe maximum.
+/datum/unit_test/dq_pp/pacman_emag_limit
+
+/datum/unit_test/dq_pp/pacman_emag_limit/run_pp()
+	var/list/run = pp_run(1)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
+	P.power_output = P.max_power_output
+	TEST_ASSERT(!pp_pacman_raise(P), "the output stops at max_power_output")
+	pp_pacman_emag(P)
+	var/raised = 0
+	while(pp_pacman_raise(P) && raised < 50)
+		raised++
+	TEST_ASSERT_EQUAL(P.power_output, round(P.max_power_output * 2.5), "emagged it goes to 2.5 times: [P.power_output]")
+	power_test_drop_grid(net)
+
+/// One press of the window's higher-power button: TRUE when the output went up.
+/proc/pp_pacman_raise(obj/machinery/power/port_gen/pacman/P)
+	var/before = P.power_output
+	call(P, hascall(P, "output_raised") ? "output_raised" : "ui_act_higher_power")(null)
+	return P.power_output > before
+
+/// Subverts a PACMAN: its emag capability, or the legacy emagged var.
+/proc/pp_pacman_emag(obj/machinery/power/port_gen/pacman/P)
+	if(cap_of(P, CAP_EMAG, null))
+		key_set(P, EMAG_EMAGGED, TRUE)
+	else
+		P.set_emagged(1)
+
+/// RTGs supply power_gen every step: 1000 W per part rating (a basic RTG: 2000 W with its two basic parts), the advanced one 1250 per rating.
+/datum/unit_test/dq_pp/rtg_output
+
+/datum/unit_test/dq_pp/rtg_output/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/power/rtg/R = allocate(/obj/machinery/power/rtg, run[1])
+	var/rating = R.total_component_rating_of_type(/obj/item/stock_parts)
+	TEST_ASSERT_EQUAL(R.power_gen, 1000 * rating, "a basic RTG makes 1000 W a rating: [R.power_gen] at rating [rating]")
+	var/obj/machinery/power/rtg/advanced/A = allocate(/obj/machinery/power/rtg/advanced, run[1])
+	rating = A.total_component_rating_of_type(/obj/item/stock_parts)
+	TEST_ASSERT_EQUAL(A.power_gen, 1250 * rating, "an advanced one 1250 W a rating: [A.power_gen] at rating [rating]")
+
+#undef PP_GEN_STEP_PROC
+#undef PP_RTG_STEP
