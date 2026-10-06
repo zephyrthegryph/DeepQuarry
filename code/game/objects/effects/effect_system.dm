@@ -277,14 +277,15 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	opacity = FALSE
 	var/strength = 5 // How much damage to do inside each affect()
 
-DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/effect/smoke/elemental)
+	every(2 SECONDS, then(PROC_REF(elemental_step)))
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
-/obj/effect/effect/smoke/elemental/periodic_step()
+/obj/effect/effect/smoke/elemental/proc/elemental_step(datum/act/timer/A)
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
