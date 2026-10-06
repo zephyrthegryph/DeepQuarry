@@ -45,6 +45,47 @@ FALLS_THROUGH = ("USE", "VERB")  # an effect whose return is ignored (always han
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
 
 
+REQ_PROC_CLAUSE = re.compile(r"^(?:REQ_TARGET_STATE\((/[\w/]+?)/proc/(\w+)\)|REQ_ON\(PRED_TARGET,\s*(/[\w/]+?)/proc/(\w+),\s*(\"[^\"\\]*\"|null)\)|REQ_PROC\(/proc/(\w+),\s*(\"[^\"\\]*\"|null)\))$")
+REQ_FIELD_CLAUSE = re.compile(r"^(?:REQ_BECAUSE\()?REQ_FIELD(_NOT)?\(\"(\w+)\"\)(?:,\s*(\"[^\"\\]*\")\))?$")
+
+
+def translate_req(clause, t, kind):
+    """One legacy requirement clause of a spec -> (the needs() part, [helper proc texts]); None when it has no translation (residue `requires`).
+
+    The old clause procs take (actor, target, held) and answer TRUE to pass, or FALSE / a text reason to refuse (code/datums/properties/predicates.dm);
+    the op's requirement is a pure `x(datum/act/op/A)` answering TRUE/FALSE with a reason proc beside it, so each proc gets two thin wrappers that call it
+    as the old evaluator did (the target is the holder: src)."""
+    clause = clause.strip()
+    if clause in ("REQ_INTERACTION_REACH", "REQ_SELF_USE_REACH"):
+        return ("", [])  # the binding's own reach (hand() / in_hand())
+    if clause == "REQ_REACH_ADJACENT":
+        return ("req_adjacent()", [])
+    fm = REQ_FIELD_CLAUSE.match(clause)
+    if fm:
+        value = "FALSE" if fm.group(1) else "TRUE"
+        because = (", because = %s" % fm.group(3)) if fm.group(3) else ""
+        return ("req_is(nameof(%s), %s%s)" % (fm.group(2), value, because), [])
+    pm = REQ_PROC_CLAUSE.match(clause)
+    if not pm:
+        return None
+    if pm.group(2):
+        owner, proc, fallback, call = pm.group(1), pm.group(2), "null", "%s(A.actor, src, A.held)" % pm.group(2)
+    elif pm.group(4):
+        owner, proc, fallback, call = pm.group(3), pm.group(4), pm.group(5), "%s(A.actor, src, A.held)" % pm.group(4)
+    else:
+        owner, proc, fallback, call = None, pm.group(6), pm.group(7), "%s(A.actor, src, A.held)" % pm.group(6)
+    if owner and not (owner == t or t.startswith(owner + "/")):
+        return None
+    holds = "%s_holds" % proc
+    why = "%s_refusal" % proc
+    reason = fallback if fallback != "null" else "/datum/msg/req_failed"
+    helpers = [
+        "/// Requirement (was REQ_* %s): the legacy check answers TRUE to pass.\n%s/proc/%s(datum/act/op/A)\n\tvar/answer = %s\n\treturn !istext(answer) && !!answer" % (proc, t, holds, call),
+        "/// Why %s refuses: the legacy check's text, else the clause's own reason.\n%s/proc/%s(datum/act/op/A)\n\tvar/answer = %s\n\treturn istext(answer) ? answer : %s" % (holds, t, why, call, reason),
+    ]
+    return ("req(PROC_REF(%s), because = PROC_REF(%s))" % (holds, why), helpers)
+
+
 def call_end(lines, i):
     """Index of the last line of the macro call that starts on line i (parentheses balanced, strings respected), or None."""
     depth = 0
@@ -277,21 +318,35 @@ def main():
                 stance = "I_HURT"
             elif suffix == "_PEACEFUL":
                 stance = "I_HELP"
+            carried = False
+            req_parts, req_helpers = [], []
             if kind == "INSERT":
-                if len(a) != 3:
-                    bad = "requires" if len(a) > 3 else "interaction_forms"
+                if len(a) < 3:
+                    bad = "interaction_forms"
                     break
-                held_type, effect, name = a
+                held_type, effect, name = a[:3]
+                extra = a[3:]
             else:
-                carried = False
-                if kind == "VERB" and len(a) == 3 and a[2] == "REQ_IN_INVENTORY":
-                    a = a[:2]
-                    carried = True
-                if len(a) != 2:
-                    bad = "requires" if len(a) > 2 else "interaction_forms"
+                if len(a) < 2:
+                    bad = "interaction_forms"
                     break
-                name, effect = a
+                name, effect = a[:2]
+                extra = a[2:]
                 held_type = None
+            for clause in extra:
+                if clause == "REQ_IN_INVENTORY":
+                    carried = True
+                    continue
+                got_req = translate_req(clause, t, kind)
+                if got_req is None:
+                    bad = "requires"
+                    break
+                rp, rh = got_req
+                if rp:
+                    req_parts.append(rp)
+                req_helpers += rh
+            if bad:
+                break
             if name != "null" and not re.match(r'^"[^"\\]*"$', name):
                 bad = "interaction_forms"
                 break
@@ -302,7 +357,7 @@ def main():
             if held_type is not None and not re.match(r"^/[\w/]+$", held_type):
                 bad = "interaction_forms"
                 break
-            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": kind != "INSERT" and carried, "stance": stance, "default": suffix.startswith("_DEFAULT")})
+            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": carried, "stance": stance, "default": suffix.startswith("_DEFAULT"), "req_parts": req_parts, "req_helpers": req_helpers})
         if bad:
             residue[t] = bad
             continue
@@ -430,6 +485,23 @@ def main():
         if bad:
             residue[t] = bad
             continue
+        # the requirement wrappers (translate_req): one per proc per type, emitted before the first handler that needs it
+        emitted = set()
+        for h in handlers:
+            for hp in h["spec"].get("req_helpers", []):
+                hname = re.search(r"^/[\w/]+/proc/(\w+)\(", hp, re.M).group(1)
+                if hname in emitted:
+                    continue
+                if defs_by_name.get(hname) or re.search(r"\b" + hname + r"\b", tree_text):
+                    bad = "name_clash"
+                    break
+                emitted.add(hname)
+                h["helpers"].append(hp)
+            if bad:
+                break
+        if bad:
+            residue[t] = bad
+            continue
         for h in handlers:
             if h["spec"]["kind"] == "VERB" or h["spec"]["default"]:
                 continue
@@ -495,8 +567,9 @@ def main():
                     parts.append("priority(OP_PRIORITY_DEFAULT)")
                 if s["name"]:
                     parts.append("label(%s)" % s["name"])
-                if s.get("carried"):
-                    parts.append("needs(carried())")
+                needs_parts = (["carried()"] if s.get("carried") else []) + s.get("req_parts", [])
+                if needs_parts:
+                    parts.append("needs(%s)" % ", ".join(needs_parts))
                 parts += h["ask_parts"]
                 parts.append("then(PROC_REF(%s))" % s["proc"])
                 entries.append(", ".join(parts) + ")")

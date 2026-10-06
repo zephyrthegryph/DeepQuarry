@@ -1,0 +1,38 @@
+human|none menu: Place on tray
+human|none menu: Push in
+human|none click: nothing
+robot|none menu: Place on tray
+robot|none menu: Push in
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Place on tray
+human|/obj/item/tool/screwdriver menu: Push in
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Place on tray
+human|/obj/item/tool/crowbar menu: Push in
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Place on tray
+human|/obj/item/tool/wrench menu: Push in
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Place on tray
+human|/obj/item/tool/wirecutters menu: Push in
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Place on tray
+human|/obj/item/multitool menu: Push in
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Place on tray
+human|/obj/item/weldingtool menu: Push in
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Place on tray
+human|/obj/item/stack/cable_coil menu: Push in
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Place on tray
+human|/obj/item/stack/material/steel menu: Push in
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Place on tray
+human|/obj/item/card/id menu: Push in
+human|/obj/item/card/id click: nothing
+keys: gen_drag_interaction_drag_buckle, m_tray_drag, m_tray_hand
+
