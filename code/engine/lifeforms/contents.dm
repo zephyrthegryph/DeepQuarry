@@ -1,10 +1,10 @@
-// OWNER in starts_args and make_args(), contains(type, slot =, count =) for initial contents, owns_many(..., count =) and knows(LANGUAGE)
+// OWNER in starts_args and make_args(), initial_contents(type, slot =, count =) for initial contents, owns_many(..., count =) and knows(LANGUAGE)
 // (doc/rewrite/final_api.html section 6 "Lifecycle forms", form 6).
 //
 //	CAPABILITIES(/obj/item/storage/box/syringes)
-//		contains(/obj/item/reagent_containers/syringe, count = 7)
+//		initial_contents(/obj/item/reagent_containers/syringe, count = 7)
 //	CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy)
-//		contains(/obj/item/clothing/accessory/armor, slot = SLOT_ACCESSORIES, when = nameof(starts_armored))
+//		initial_contents(/obj/item/clothing/accessory/armor, slot = SLOT_ACCESSORIES, when = nameof(starts_armored))
 //	CAPABILITIES(/obj/item/implanter/loyalty)
 //		owns_one(nameof(imp), starts = /obj/item/implant/loyalty, starts_args = list(OWNER))      // new /obj/item/implant/loyalty(loc, src)
 //		owns_many(nameof(spares), /obj/item/cell, count = 2, starts = /obj/item/cell/high)
@@ -12,17 +12,17 @@
 //		knows(LANGUAGE_ROOTGLOBAL)
 //		knows(LANGUAGE_GALCOM)
 //
-// contains() replaces an Initialize() that only did `new /T(src)`: the contents are made when the holder initializes (after its capabilities,
+// initial_contents() replaces an Initialize() that only did `new /T(src)`: the contents are made when the holder initializes (after its capabilities,
 // so a storage slot exists), in nullspace, then moved into `slot` (a declared slot id) or plainly into the holder. `count` makes several; `args`
 // are constructor arguments (OWNER is the holder); `when =` gates it on a condition read at init. What it makes rolls from the holder's stream
 // (rolls.dm). knows(LANGUAGE) gives a mob a language when it initializes (add_language()).
 //
-// OWNER is a placeholder for the instance that does the creating: in starts_args, contains(args =) and make_args() it becomes the holder; in
+// OWNER is a placeholder for the instance that does the creating: in starts_args, initial_contents(args =) and make_args() it becomes the holder; in
 // a make(..., x = OWNER) call it becomes `by =`.
 
-/proc/contains(type, slot = null, count = 1, when = null, args = null)
+/proc/initial_contents(type, slot = null, count = 1, when = null, args = null)
 	if(!ispath(type))
-		declare_report("contains(): the first argument is a type, got [type]")
+		declare_report("initial_contents(): the first argument is a type, got [type]")
 		return null
 	return entry_make(ENTRY_CONTAINS, null, list("type" = type, "slot" = slot, "count" = count, "when" = when, "args" = args))
 

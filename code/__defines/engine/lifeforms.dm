@@ -1,7 +1,7 @@
 // The lifecycle forms (doc/rewrite/final_api.html section 6 "Lifecycle forms"; engine in code/engine/lifeforms/).
 //
 // Nine declaration forms take the work Initialize() overrides, raw qdel(src) and `usr` did: rolls(), param()/make(), registry()/radio_listen(),
-// adjacency(), per_type(), OWNER/contains()/knows(), starts_as()/derives(), declared lifetimes (lives_while(), the caused endings) and input with
+// adjacency(), per_type(), OWNER/initial_contents()/knows(), starts_as()/derives(), declared lifetimes (lives_while(), the caused endings) and input with
 // an actor (click_on(), drag_onto(), hover(), tooltip(), with_actor()). What stays a macro is what a declaration names as a constant.
 
 // ---- entry kinds ----

@@ -156,7 +156,8 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 		var/by = E.args["by"]
 		if(!by)
 			continue
-		var/list/at = GLOB.lifeform_indexes[E.args["id"]]?.filed[holder]
+		var/datum/lifeform_index/I = GLOB.lifeform_indexes[E.args["id"]]
+		var/list/at = I?.filed[holder]
 		if(!at)
 			continue
 		var/z = (by & REG_Z) && T ? "[T.z]" : null

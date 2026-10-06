@@ -12,7 +12,7 @@ the entries go into the type's CAPABILITIES block (made when it has none):
              R.weighted). Expressions that call anything but the random procs and a few pure helpers are left alone.
   params     `Initialize(mapload, a, b)` whose statements store each argument: `v = a`, `src.v = a`, `rel_set(src, nameof(v), a)`,
              `if(!isnull(a)) v = a`, `if(a) v = a`, `set_dir(a)` / `if(a) set_dir(a)`: param(nameof(v), pos = N) for the N-th argument.
-  contains   `new /T(src)` (statements alone): contains(/T), repeated ones with count =.
+  contains   `new /T(src)` (statements alone): initial_contents(/T), repeated ones with count =.
   knows      `add_language(LANGUAGE_X)`: knows(LANGUAGE_X).
 
 The classes combine: an override of rolls and contains statements converts. Idempotent. Run `analyze gen` afterwards.
@@ -263,7 +263,7 @@ def plan_override(proc):
             plan.entries = [e for e in plan.entries if not e.startswith(("rolls(nameof(pixel_x)", "rolls(nameof(pixel_y)"))]
             plan.entries.insert(0, "rolls(ROLL_PIXEL, PIXEL_JITTER(%s))" % mx.group(2))
     for t, n in contains_counts.items():
-        plan.entries.append("contains(%s%s)" % (t, ", count = %d" % n if n > 1 else ""))
+        plan.entries.append("initial_contents(%s%s)" % (t, ", count = %d" % n if n > 1 else ""))
     # A var rolled twice (if/else chains) is one roll proc already; two entries for one var keep the last.
     seen = set()
     entries = []

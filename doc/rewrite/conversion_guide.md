@@ -327,8 +327,8 @@ codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py
 | `set_frequency(frequency)` in `Initialize()` and a hand-written retune | `radio_listen(freq = nameof(frequency), filter = RADIO_X)`; the frequency var must be `TRACKED` |
 | `update_neighbours()` / `update_connections(1)` in `Initialize()` and `on_destroy()` | `adjacency(ADJ_KIND_X, into = nameof(connections), changed = PROC_REF(update_icon))` |
 | an `Initialize()` that builds the same list for every instance | `per_type(nameof(table), PROC_REF(build_table))` |
-| `new /obj/item/x(src)` in `Initialize()` | `contains(/obj/item/x)`, `contains(/obj/item/x, count = 3)`, `contains(/obj/item/x, slot = SLOT_X)` |
-| `new /obj/item/x(src, src)` (the child told its owner) | `starts_args = list(OWNER)` on the `owns_one`, or `contains(/obj/item/x, args = list(OWNER))` |
+| `new /obj/item/x(src)` in `Initialize()` | `initial_contents(/obj/item/x)`, `initial_contents(/obj/item/x, count = 3)`, `initial_contents(/obj/item/x, slot = SLOT_X)` |
+| `new /obj/item/x(src, src)` (the child told its owner) | `starts_args = list(OWNER)` on the `owns_one`, or `initial_contents(/obj/item/x, args = list(OWNER))` |
 | `add_language(LANGUAGE_X)` in a mob's `Initialize()` | `knows(LANGUAGE_X)` |
 | `open()` / `toggle()` in a mapped variant's `Initialize()` | `starts_as("door.open")` (an op key) or `starts_as(COVER_OPEN)` (a state key) |
 | a var recomputed in every setter of what it reads | `derives(nameof(v), PROC_REF(compute), from = list(nameof(a), nameof(b)))`; the inputs must be `TRACKED` |
@@ -341,7 +341,7 @@ codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py
 What to know:
 
 * **Order.** Params, `per_type` tables and rolls run at the root of the `Initialize()` chain, before the type's code after `..()`; a value a
-  map edit, a param or `make()` gave suppresses its roll. `contains()`, `knows()`, `starts_as()`, `derives()`, registries, radio, adjacency
+  map edit, a param or `make()` gave suppresses its roll. `initial_contents()`, `knows()`, `starts_as()`, `derives()`, registries, radio, adjacency
   and scopes run with the capabilities' init. A plain datum runs the same from `New()` (the generator sets `lifeform_declared`).
 * **Seeds.** A roll draws from a stream seeded by the round seed and the map position, or by its creator's stream. `rolls_fix_seed(n)` in a
   test makes a map roll the same twice. The distributions do not change; the realisation does (`intended_changes.md`).

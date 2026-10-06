@@ -10,7 +10,7 @@
 //	radio_listen(freq =, filter =)                       a radio listener that retunes when its var changes             registry.dm
 //	adjacency(KIND, dirs =, connects =, into =, when =)  a tracked neighbour relation the engine keeps (index in Rust)    adjacency.dm
 //	per_type(var, PROC_REF(build))                       a lazily built read-only per-type table                        per_type.dm
-//	contains(type, slot =, count =) · knows(LANGUAGE)    initial contents and languages; OWNER in starts_args           contents.dm
+//	initial_contents(type, slot =, count =) · knows(LANGUAGE)    initial contents and languages; OWNER in starts_args           contents.dm
 //	starts_as(STATE) · derives(target, PROC_REF, from =) an op's effects at creation; a tracked computed value           derives.dm
 //	lives_while(scope, watches =) · on_ending(PROC_REF)  a scoped lifetime; spent()/consumed()/destroyed()/dissolved()  lifetimes.dm
 //	click_on/drag_onto/hover(op) · tooltip(PROC_REF)     input with an actor bound to ops; with_actor(actor, CALLBACK)   input.dm
@@ -22,7 +22,7 @@
 // Order for one instance, inside the root of the Initialize() chain (section 6 "Order for one instance", steps 1a and 5a):
 //	preinit:  make() arguments were applied in /atom/New(); positional constructor arguments map to param(pos =); params are checked; per_type
 //	          tables are bound; rolls() roll (a map-edited or param-given value suppresses its roll)
-//	init:     contains() and knows() create contents; starts_as() runs; derives() compute; registry(), radio_listen() and adjacency() join;
+//	init:     initial_contents() and knows() create contents; starts_as() runs; derives() compute; registry(), radio_listen() and adjacency() join;
 //	          lives_while() arms its scope
 //	destroy:  on_ending() runs, the "ended" notice goes out with its cause, then registries, radio and adjacency are left
 

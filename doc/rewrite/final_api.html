@@ -1195,7 +1195,7 @@ starts_args = list(...)                    <span class="c">// constructor argume
   <div class="tbl"><table>
     <thead><tr><th>Moment</th><th>Form</th></tr></thead>
     <tbody>
-      <tr><td>Per-instance setup</td><td>Declared, not written: <code>rolls()</code> for randomness, <code>param()</code>/<code>make()</code> for constructor arguments, <code>contains()</code> and <code>starts =</code> for contents, <code>starts_as()</code> for a starting state, <code>derives()</code>, <code>registry()</code>, <code>radio_listen()</code>, <code>adjacency()</code>, <code>per_type()</code>, <code>knows()</code> (<a href="#lifeforms">Lifecycle forms</a>); capability setup from <code>on_holder_init(A)</code>. An <code>Initialize(mapload, ...)</code> override that remains sets per-instance state no form says and carries <code>ALLOW(init/CODE)</code></td></tr>
+      <tr><td>Per-instance setup</td><td>Declared, not written: <code>rolls()</code> for randomness, <code>param()</code>/<code>make()</code> for constructor arguments, <code>initial_contents()</code> and <code>starts =</code> for contents, <code>starts_as()</code> for a starting state, <code>derives()</code>, <code>registry()</code>, <code>radio_listen()</code>, <code>adjacency()</code>, <code>per_type()</code>, <code>knows()</code> (<a href="#lifeforms">Lifecycle forms</a>); capability setup from <code>on_holder_init(A)</code>. An <code>Initialize(mapload, ...)</code> override that remains sets per-instance state no form says and carries <code>ALLOW(init/CODE)</code></td></tr>
       <tr><td>Placed in the world / removed</td><td><code>on_materialize()</code> / <code>on_dematerialize()</code></td></tr>
       <tr><td>After init, timed</td><td><code>after_init(delay, parts...)</code> (an <code>after()</code> armed when the instance initializes, <a href="#time">section 3</a>)</td></tr>
       <tr><td>Map-load-only atoms</td><td><code>map_resolver(PROC_REF(x))</code>. Resolved atoms are never initialized</td></tr>
@@ -1236,7 +1236,7 @@ starts_args = list(...)                    <span class="c">// constructor argume
   <h3 id="lifeforms">Lifecycle forms</h3>
   <div class="prose">
     <p>Nine forms take what an <code>Initialize()</code> override, a <code>qdel(src)</code> or a read of <code>usr</code> did by hand. Each is an entry of a <code>CAPABILITIES</code> block or an engine verb (<code>code/engine/lifeforms/</code>; one test file per form, <code>dq_lifeform_*_tests.dm</code>). Where an entry follows a var (a registry key, a radio frequency, a <code>derives()</code> input, a scope), the var publishes its writes: it is <code>TRACKED</code> or written through a setter that calls <code>tracked_changed()</code>.</p>
-    <p><strong>Names.</strong> Two generator names of the approved design clash with BYOND and are renamed: <code>range</code> is BYOND's own proc and <code>between</code> is a clamp macro here, so the number generator is <code>range_of(lo, hi, step)</code>. <code>chance(p)</code> is the existing op part, read as a generator inside <code>rolls()</code>. A roller's draws are <code>R.number()</code>, <code>R.choose()</code>, <code>R.chance()</code>, <code>R.weighted()</code>, <code>R.unit()</code> (BYOND's <code>rand</code>, <code>pick</code>, <code>prob</code> cannot be proc names).</p>
+    <p><strong>Names.</strong> <code>contains()</code> of the approved design is <code>initial_contents()</code>: a CAPABILITIES block compiles as a proc of its type, where <code>contains</code> is the atom's own proc. Two generator names of the approved design clash with BYOND and are renamed: <code>range</code> is BYOND's own proc and <code>between</code> is a clamp macro here, so the number generator is <code>range_of(lo, hi, step)</code>. <code>chance(p)</code> is the existing op part, read as a generator inside <code>rolls()</code>. A roller's draws are <code>R.number()</code>, <code>R.choose()</code>, <code>R.chance()</code>, <code>R.weighted()</code>, <code>R.unit()</code> (BYOND's <code>rand</code>, <code>pick</code>, <code>prob</code> cannot be proc names).</p>
   </div>
 
   <h4>1. rolls(): per-instance randomness</h4>
@@ -1247,7 +1247,7 @@ rolls_fix_seed(seed)                                                       <span
   <div class="prose">
     <ul>
       <li><strong>When.</strong> At the root of the <code>Initialize()</code> chain (a plain datum: <code>New()</code>), before the type's code after <code>..()</code> reads the value. <code>ROLL_PIXEL</code> with <code>PIXEL_JITTER(n)</code> sets both pixel offsets.</li>
-      <li><strong>Seeded.</strong> Each instance draws from its own stream: the round seed with its map position (turf and index among the same type there) for a map-loaded instance, its creator's stream for an instance created while another initializes (<code>contains()</code>, starts, <code>make(..., by =)</code>), otherwise the round seed and a creation serial. A draw is <code>md5</code> of the stream and a counter: native, stable across builds.</li>
+      <li><strong>Seeded.</strong> Each instance draws from its own stream: the round seed with its map position (turf and index among the same type there) for a map-loaded instance, its creator's stream for an instance created while another initializes (<code>initial_contents()</code>, starts, <code>make(..., by =)</code>), otherwise the round seed and a creation serial. A draw is <code>md5</code> of the stream and a counter: native, stable across builds.</li>
       <li><strong>Suppressed</strong> when the target already differs from its compiled default: a map edit, a <code>param()</code> or a <code>make()</code> argument wins.</li>
       <li><strong>Gated and ordered.</strong> <code>when =</code> is a condition read after the rolls before it; <code>from = list(nameof(a))</code> makes the engine roll <code>a</code> first, and a cycle is a declaration error.</li>
     </ul>
@@ -1292,12 +1292,12 @@ adjacency_seen(holder, KIND)                                    <span class="c">
   <div class="sig">per_type(nameof(var), PROC_REF(build))</div>
   <div class="prose"><p>The first instance of the type calls <code>build()</code>; every instance's var names that one table before its init code runs. A subtype re-declaring it gets its own. The table is read-only: the <code>lifeforms</code> lint rejects a write to the var outside its build proc (<code>per_type_write</code>).</p></div>
 
-  <h4>6. OWNER, contains(), owns_many(count =) and knows()</h4>
-  <div class="sig">contains(type, slot = null, count = 1, when = null, args = list(OWNER, ...))
+  <h4>6. OWNER, initial_contents(), owns_many(count =) and knows()</h4>
+  <div class="sig">initial_contents(type, slot = null, count = 1, when = null, args = list(OWNER, ...))
 owns_many(nameof(var), type, count = N, starts = T)
 starts_args = list(OWNER) · make_args(owner = OWNER)          <span class="c">// OWNER: the holder (in make(): by =)</span>
 knows(LANGUAGE_X, when = null)</div>
-  <div class="prose"><p><code>contains()</code> replaces an <code>Initialize()</code> that only did <code>new /T(src)</code>: the contents are made with the capabilities' init, in nullspace, then moved into the slot or the holder, rolling from the holder's stream. <code>knows()</code> gives a mob a language at init.</p></div>
+  <div class="prose"><p><code>initial_contents()</code> replaces an <code>Initialize()</code> that only did <code>new /T(src)</code>: the contents are made with the capabilities' init, in nullspace, then moved into the slot or the holder, rolling from the holder's stream. <code>knows()</code> gives a mob a language at init.</p></div>
 
   <h4>7. starts_as() and derives()</h4>
   <div class="sig">starts_as("cap.op_key" | STATE_KEY)
