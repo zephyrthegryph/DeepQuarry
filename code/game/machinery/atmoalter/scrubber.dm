@@ -177,6 +177,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/draw(datum/look/look)
+	..()
 	look.state((on && operable()) ? "scrubber:1" : "scrubber:0")
 
 /// One service interval while it is on: loose or dead, it switches off.

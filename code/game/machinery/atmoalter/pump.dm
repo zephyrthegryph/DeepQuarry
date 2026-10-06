@@ -232,6 +232,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 	name = "[name] (ID [id])"
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/draw(datum/look/look)
+	..()
 	look.state((on && operable()) ? "siphon:1" : "siphon:0")
 
 /// One service interval while it is on: loose or dead, it switches off.
