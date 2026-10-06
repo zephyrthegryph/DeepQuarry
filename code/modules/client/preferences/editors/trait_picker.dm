@@ -55,8 +55,7 @@
 		"negative_traits" = paths_to_text(GLOB.negative_traits),
 	)
 
-UI_ACT(/datum/preference_editor/trait_picker, "add_trait", ui_act_add_trait, UI_ARG_VALUE("category"), UI_ARG_PATH("trait_path", /datum))
-UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_add_trait)
+/datum/preference_editor/trait_picker/proc/ui_act_add_trait(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/trait_path = params["trait_path"]
 	if(!trait_path)
 		return PREF_UPDATE_REJECTED
@@ -66,8 +65,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_add_trait)
 	preferences.update_many(om_callable(src, PROC_REF(add_trait_atomic), preferences, list_type, trait_path))
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/trait_picker, "remove_trait", ui_act_remove_trait, UI_ARG_VALUE("category"), UI_ARG_PATH("trait_path", /datum))
-UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_remove_trait)
+/datum/preference_editor/trait_picker/proc/ui_act_remove_trait(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/trait_path = params["trait_path"]
 	var/list_type = pref_for_category(params["category"])
 	if(!trait_path || !list_type)
@@ -77,14 +75,12 @@ UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_remove_trait)
 	preferences.update_preference_by_type(list_type, current)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/trait_picker, "toggle_cheating", ui_act_toggle_cheating)
-UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_toggle_cheating)
+/datum/preference_editor/trait_picker/proc/ui_act_toggle_cheating(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/cur = preferences.read_preference(/datum/preference/numeric/human/traits_cheating)
 	preferences.update_preference_by_type(/datum/preference/numeric/human/traits_cheating, !cur)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/trait_picker, "set_blood_color", ui_act_set_blood_color)
-UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_set_blood_color)
+/datum/preference_editor/trait_picker/proc/ui_act_set_blood_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// open BYOND's color picker so the user can actually pick a color.
 	var/current = preferences.read_preference(/datum/preference/color/human/blood_color) || "#A10808"
 	open_request(src, /datum/prompt/color/prefs, PROC_REF(blood_color_picked), answerer = user, title = "Color picker", question = "Blood color", default = current, preferences = preferences)
@@ -124,3 +120,33 @@ UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_set_blood_color)
 	for(var/path in path_list)
 		out += "[path]"
 	return out
+
+/// /datum/preference_editor/trait_picker's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/trait_picker/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("add_trait")
+			typed = payload_args(src, params, list("category" = null, "trait_path" = schema_path(/datum)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_add_trait(user, typed, preferences, null, action)
+		if("remove_trait")
+			typed = payload_args(src, params, list("category" = null, "trait_path" = schema_path(/datum)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_remove_trait(user, typed, preferences, null, action)
+		if("toggle_cheating")
+			typed = payload_args(src, params, list())
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_toggle_cheating(user, typed, preferences, null, action)
+		if("set_blood_color")
+			typed = payload_args(src, params, list())
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_blood_color(user, typed, preferences, null, action)
+	return ..()
