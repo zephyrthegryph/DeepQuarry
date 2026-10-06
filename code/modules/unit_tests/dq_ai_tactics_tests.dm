@@ -465,6 +465,35 @@
 	TEST_ASSERT_EQUAL(W.tick(B, G, null), DQ_BEHAVIOR_DONE, "scavenge did not finish with the grenade in reach")
 	TEST_ASSERT_EQUAL(G.loc, S, "scavenge did not pick the grenade up")
 
+/// Throwing: the grenade leaves the hand, is primed and flies at the cluster.
+/datum/unit_test/dq_ai_tactic_throw_grenade_starts
+
+/datum/unit_test/dq_ai_tactic_throw_grenade_starts/Run()
+	var/list/pair = ai_pair(ai_floor(0), ai_floor(4), /mob/living/simple_mob/combat_ai_tactics_subject/handed)
+	var/mob/living/simple_mob/S = pair[1]
+	var/mob/living/carbon/human/H = pair[2]
+	var/datum/ai_brain/B = S.ai_brain
+	var/obj/item/grenade/G = allocate(/obj/item/grenade)
+	S.put_in_hands(G)
+	var/datum/ai_behavior/throw_grenade/T = dq_get_behavior(/datum/ai_behavior/throw_grenade)
+	TEST_ASSERT_EQUAL(T.start(B, get_turf(H), G), DQ_BEHAVIOR_DONE, "throw_grenade is a single-tick action")
+	TEST_ASSERT(G.loc != S, "the grenade stayed in the thrower's hand")
+	TEST_ASSERT(G.active, "the grenade was not primed")
+	TEST_ASSERT(!S.checkClickCooldown(), "throwing did not start the attack cooldown")
+
+/// The aimed shot fires a held gun and stamps the attack; a bare gun may refuse, so only the stamp-or-refusal pairing is pinned.
+/datum/unit_test/dq_ai_tactic_aimed_shot_starts
+
+/datum/unit_test/dq_ai_tactic_aimed_shot_starts/Run()
+	var/list/pair = ai_pair(ai_floor(0), ai_floor(4), /mob/living/simple_mob/combat_ai_tactics_subject/handed)
+	var/mob/living/simple_mob/S = pair[1]
+	var/datum/ai_brain/B = S.ai_brain
+	var/obj/item/gun/G = allocate(/obj/item/gun)
+	S.put_in_hands(G)
+	var/datum/ai_behavior/aimed_shot/A = dq_get_behavior(/datum/ai_behavior/aimed_shot)
+	TEST_ASSERT_EQUAL(A.start(B, pair[2], G), DQ_BEHAVIOR_DONE, "aimed_shot is a single-tick action")
+	TEST_ASSERT(B.last_attack_at, "aimed_shot did not stamp last_attack_at")
+
 // --- maul_unconscious -------------------------------------------------------------------------
 
 /datum/unit_test/dq_ai_tactic_maul_unconscious
