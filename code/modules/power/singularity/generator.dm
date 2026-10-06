@@ -19,10 +19,8 @@
 
 /// Collapses into a singularity once particles have charged it; each hit wakes it to check.
 /obj/machinery/the_singularitygen/machine_step()
-	var/turf/T = get_turf(src)
 	if(src.energy >= 200)
-		new creation_type(T, 50)
-		if(src) qdel(src)
+		replace_with(src, creation_type, 50)
 	return PROCESS_KILL
 
 /obj/machinery/the_singularitygen/declare_interactions(list/into)
@@ -52,10 +50,7 @@
 	user.drop_from_inventory(W)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " installs %I% onto %T%."), item = W)
 	consume(W, user)
-	var/turf/T = get_turf(src)
-	var/new_machine = /obj/machinery/particle_smasher
-	new new_machine(T)
-	qdel(src)
+	replace_with(src, /obj/machinery/particle_smasher)
 
 /obj/machinery/the_singularitygen/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)

@@ -1886,7 +1886,7 @@
 					to_chat(self, span_danger("You lose directional control!"))
 					self.status_at_least(EFFECT_CONFUSED, 10)
 		if (toxic_load >= 45 && !HAS_SYNTHETIC_BIOLOGY(self))
-			spawn self.vomit()
+			after(self, 0, TYPE_PROC_REF(/mob/living, vomit))
 
 
 	//0.1% chance of playing a scary sound to someone who's in complete darkness

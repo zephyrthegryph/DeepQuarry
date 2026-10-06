@@ -18,6 +18,7 @@
 		/obj/item/clothing/gloves/fingerless,
 		/obj/item/clothing/head/soft)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/cargotech/Initialize(mapload)
 	if(prob(75))
 		starts_with += /obj/item/storage/backpack
@@ -60,6 +61,7 @@
 		/obj/item/clothing/head/beret/qm,
 		/obj/item/clothing/shoes/boots/winter/supply)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/quartermaster/Initialize(mapload)
 	if(prob(75))
 		starts_with += /obj/item/storage/backpack
@@ -123,6 +125,7 @@
 		/obj/item/clothing/shoes/boots/winter/mining,
 		/obj/item/stack/marker_beacon/thirty)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/lumber/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/industrial

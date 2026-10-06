@@ -6,6 +6,7 @@
 	max_integrity = 10
 	explosion_resistance = 1
 
+// ALLOW(init/CTOR_ARGS): source_projector is a constructor argument from whoever builds it
 /obj/structure/holosign/Initialize(mapload, source_projector)
 	. = ..()
 	if(source_projector)

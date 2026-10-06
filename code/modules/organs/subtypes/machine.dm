@@ -42,6 +42,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	owns_one(nameof(stored_mmi), /obj/item/mmi)
 
 
+// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
 /obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
 	. = ..(mapload, internal)
 	if(!ishuman(owner) || ismannequin(owner))
@@ -104,6 +105,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	var/mob/living/holder_mob = loc
 	if(istype(holder_mob))
 		holder_mob.drop_from_inventory(src)
+	// ALLOW(lifecycle): the MMI holder is discarded once its MMI is out
 	qdel(src)
 /obj/item/organ/internal/mmi_holder/posibrain
 	name = "positronic brain interface"

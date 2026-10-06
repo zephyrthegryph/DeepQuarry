@@ -29,6 +29,7 @@
 	secure = "secure_"
 	icon_state = "l_secure_windoor_assembly01"
 
+// ALLOW(init/CTOR_ARGS): start_dir and constructed are constructor arguments from whoever builds it
 /obj/structure/windoor_assembly/Initialize(mapload, start_dir=NORTH, constructed=0)
 	. = ..()
 	if(constructed)

@@ -11,6 +11,7 @@
 	var/custombasedesc = null
 	var/custombasecolor = null
 
+// ALLOW(init/CTOR_ARGS): spill_name, spill_color, spill_reagentid, new_amount, ckey_user and ckey_spawn are constructor arguments from whoever builds it
 /obj/effect/decal/cleanable/blood/reagent/Initialize(mapload, spill_name, spill_color, spill_reagentid, new_amount, ckey_user, ckey_spawn)
 	. = ..()
 	switch(spill_reagentid)	//To ensure that if people spill some liquids, it wont cause issues with spawning, like spilling blood. Also allow for spilling of certain things to

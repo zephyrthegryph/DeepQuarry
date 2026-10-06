@@ -1507,3 +1507,9 @@ The codemods are `tools/codemods/init_overrides.py`, `qdel_src.py` and `review.p
   the old cutout now resolve to the new one.
 * **Mech equipment destroyed with its exosuit goes with `expire(0)`** instead of a bare `spawn` before `qdel()`: the delete is a timer owned by the
   equipment, run after the current call returns, as the spawn did.
+* **qdel(src) is banned** (`qdel_src` lint, hard ban): every self-delete is a verb or carries an `ALLOW(lifecycle)` reason. Converted to
+  `replace_with()`: a cut-apart closet (steel), the singularity generator (its singularity, or the particle smasher once installed), a box
+  crumpled into its trash (then put in the user's hands, as before).
+* **Bare `spawn` is counted by the scheduler lint.** The shuttle turf's breaklight refresh is `after(src, 0)` (a turf changed meanwhile drops
+  the timer, which replaces the type check), a suffocating carbon gasps at once (the other gasp branch never spawned), and a toxin-loaded
+  human vomits on `after(self, 0)`.

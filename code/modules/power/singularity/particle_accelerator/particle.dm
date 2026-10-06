@@ -37,6 +37,7 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 	movement_range = 25
 	energy = 50
 
+// ALLOW(init/CTOR_ARGS): dir is a constructor argument from whoever builds it
 /obj/effect/accelerated_particle/Initialize(mapload, dir = 2)
 	. = ..()
 	set_dir(dir)
@@ -93,6 +94,7 @@ DECLARE_REPEAT(/obj/effect/accelerated_particle, 0.1 SECONDS, move, null)
 			movement_range = 0 // left the map: fall through to the deletion below
 	movement_range--
 	if(movement_range <= 0)
+		// ALLOW(lifecycle): the particle is spent when its range runs out
 		qdel(src)
 		return REPEAT_STOP
 

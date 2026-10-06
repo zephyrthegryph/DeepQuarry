@@ -39,6 +39,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
+// ALLOW(init/CTOR_ARGS): _material and _colour are constructor arguments from whoever builds it
 /obj/item/fuel_assembly/Initialize(mapload, _material, _colour)
 	. = ..()
 	fuel_type = _material
@@ -121,6 +122,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 			strength = 250
 		)
 		explosion(src.loc, 1, 2, 4, 6)
+		// ALLOW(lifecycle): the blitz rod detonates on impact
 		qdel(src)
 
 DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(null, PROC_REF(interaction_item)))

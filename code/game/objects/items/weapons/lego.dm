@@ -51,5 +51,6 @@
 				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.gib()
 			play_sfx(src, SFX_MISC_LEGODEATH)
+			// ALLOW(lifecycle): the cursed brick is spent once someone steps on it
 			qdel(src)
 	..()

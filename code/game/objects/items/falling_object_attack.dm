@@ -28,6 +28,7 @@ CAPABILITIES(/obj/effect/calldown_attack)
 	mouse_opacity = 0
 	icon = 'icons/effects/random_stuff_vr.dmi'
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/illusionary_fall/Initialize(mapload)
 	. = ..()
 	icon_state = "[rand(1,33)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form

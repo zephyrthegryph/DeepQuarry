@@ -73,6 +73,7 @@
 	light_on = TRUE
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
+// ALLOW(init/CTOR_ARGS): _range, _power, _color and _duration are constructor arguments from whoever builds it
 /obj/effect/dummy/lighting_obj/Initialize(mapload, _range, _power, _color, _duration)
 	. = ..()
 	if(!isnull(_range))

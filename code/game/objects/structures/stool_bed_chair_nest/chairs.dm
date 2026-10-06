@@ -722,33 +722,43 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appea
 	base_icon = "bay_chair"
 	buckle_movable = 1
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/red/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CARPET)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/brown/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BROWN)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/teal/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_TEAL)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/black/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BLACK)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/green/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_GREEN)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/purple/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_PURPLE)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/blue/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BLUE)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/beige/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BEIGE)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/lime/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_LIME)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/chair/padded/yellow/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_YELLOW)
 
@@ -758,33 +768,43 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, TYPE_PROC_REF(/atom, appea
 	icon_state = "bay_comfychair_preview"
 	base_icon = "bay_comfychair"
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/red/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CARPET)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/brown/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BROWN)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/teal/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_TEAL)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/black/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BLACK)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/green/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_GREEN)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/purple/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_PURPLE)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/blue/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BLUE)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/beige/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_BEIGE)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/lime/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_LIME)
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/chair/bay/comfy/yellow/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, new_material, MAT_CLOTH_YELLOW)
 

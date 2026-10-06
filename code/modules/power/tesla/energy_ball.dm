@@ -23,6 +23,7 @@
 	var/energy_to_lower = -20
 	resistance_flags = BOMB_PROOF
 
+// ALLOW(init/CTOR_ARGS): starting_energy and is_miniball are constructor arguments from whoever builds it
 /obj/singularity/energy_ball/Initialize(mapload, starting_energy = 50, is_miniball = FALSE)
 	. = ..()
 	miniball = is_miniball
@@ -90,6 +91,7 @@
 	if (energy <= 0)
 		log_game("TESLA([x],[y],[z]) Collapsed entirely.")
 		investigate_log("collapsed.", I_SINGULO)
+		// ALLOW(lifecycle): an energy ball out of energy collapses
 		qdel(src)
 		return TRUE
 

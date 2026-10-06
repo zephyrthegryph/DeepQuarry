@@ -6,6 +6,7 @@
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/grass, grass_icon_choice, null)
 
+// ALLOW(init/CTOR_ARGS): grass_icon is a constructor argument from whoever builds it
 /obj/structure/flora/grass/Initialize(mapload, grass_icon)
 	var/list/icon_choice = TYPE_TABLE_GET(src, grass_icon_choice)
 	if(icon_choice)

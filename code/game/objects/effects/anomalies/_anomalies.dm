@@ -29,6 +29,7 @@ CAPABILITIES(/obj/effect/anomaly)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
 	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
 
+// ALLOW(init/CTOR_ARGS): new_lifespan and drops_core are constructor arguments from whoever builds it
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 

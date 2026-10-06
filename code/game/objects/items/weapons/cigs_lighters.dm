@@ -458,6 +458,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 	slot_flags = SLOT_EARS
 	throwforce = 1
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset and transform rolled at random for each instance
 /obj/item/trash/cigbutt/Initialize(mapload)
 	. = ..()
 	randpixel_xy()

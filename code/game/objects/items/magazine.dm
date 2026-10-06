@@ -69,6 +69,7 @@
 		"JOINING THE NAVY? HERE'S 15 EXPERT TIPS FOR AVOIDING BRAIN PARASITES"
 	)
 
+// ALLOW(init/INSTANCE_STATE): pixel_x, icon_state, headline and name rolled at random for each instance
 /obj/item/tabloid/Initialize(mapload)
 	. = ..()
 

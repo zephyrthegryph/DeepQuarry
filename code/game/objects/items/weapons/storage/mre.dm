@@ -368,6 +368,7 @@ TRACKED(/obj/item/storage/box/tgmc_mre, isopened)
 	/// The one reagent the flavour adds (a per-instance pick, so not a declaration).
 	var/seasoning
 
+// ALLOW(init/CTOR_ARGS): newflavor is a constructor argument from whoever builds it
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload, newflavor)
 	determinetype(newflavor)
 	desc = "A packaged [flavor] from a Meal Ready-to-Eat, there is a lengthy list of [pick("obscure", "arcane", "unintelligible", "revolutionary", "sophisticated", "unspellable")] ingredients and addictives printed on the back."

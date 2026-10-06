@@ -327,6 +327,7 @@ CAPABILITIES(/obj/item/card_fluff)
 /obj/item/card/emag/used
 	uses = 1
 
+// ALLOW(init/INSTANCE_STATE): uses rolled at random for each instance
 /obj/item/card/emag/used/Initialize(mapload)
 	. = ..()
 	uses = rand(1, 5)
