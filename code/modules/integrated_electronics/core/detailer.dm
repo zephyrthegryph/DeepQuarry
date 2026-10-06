@@ -27,9 +27,7 @@
 
 /obj/item/integrated_electronics/detailer/draw(datum/look/look)
 	..()
-	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color")
-	detail_overlay.color = detail_color
-	look.overlay(detail_overlay)
+	look.overlay(look_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color", color = detail_color))
 
 /obj/item/integrated_electronics/detailer/ui_data(datum/act/eval/A)
 	var/list/data = list()

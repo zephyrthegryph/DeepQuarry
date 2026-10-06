@@ -93,11 +93,11 @@ CAPABILITIES(/obj/machinery/injector_maker)
 
 /// The small injector rack has room.
 /obj/machinery/injector_maker/proc/small_rack_free(datum/act/op/A)
-	return count_small_injector < capacity_small_injector // ALLOW(reads): the rack is counted when an injector is offered to it, never from a cached menu
+	return count_small_injector < capacity_small_injector
 
 /// The large injector rack has room.
 /obj/machinery/injector_maker/proc/large_rack_free(datum/act/op/A)
-	return count_large_injector < capacity_large_injector // ALLOW(reads): the rack is counted when an injector is offered to it, never from a cached menu
+	return count_large_injector < capacity_large_injector
 
 /// The held injector is empty.
 /obj/machinery/injector_maker/proc/injector_empty(datum/act/op/A)

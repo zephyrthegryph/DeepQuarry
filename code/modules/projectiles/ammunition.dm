@@ -59,7 +59,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	if(!bullet)
 		return STEP_DONE
 	move_into(box, nameof(box.stored_ammo), bullet)
-	changed(box)
+	box.update_icon()
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
 
@@ -206,6 +206,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		var/datum/material/forged = get_material_by_name(forge_material)
 		if(forged)
 			set_forged_material(forged)
+	update_icon()
 
 DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	INTERACT_ITEM("Load", PROC_REF(magazine_interaction_item)), \
@@ -230,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			return
 		if(!move_into(src, nameof(src.stored_ammo), C, user))
 			return
-		changed(src)
+		update_icon()
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W
 		if(L.caliber != caliber)
@@ -246,9 +247,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		AC.forceMove(src)
 		own_transfer(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
-		changed(L)
+		L.update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	changed(src)
+	update_icon()
 
 /// Old attack_self: this dumps all the bullets right on the floor.
 /obj/item/ammo_magazine/proc/magazine_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -265,7 +266,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
 		own_take_all(src, nameof(stored_ammo))
-		changed(src)
+		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
 		return
@@ -280,7 +281,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
-				changed(src)
+				update_icon()
 				return TRUE
 	return FALSE
 
@@ -316,12 +317,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	if(latent_rounds && loc && !isturf(loc) && !loc.latent_contents)
 		make_rounds_real()
 
-/obj/item/ammo_magazine/draw(datum/look/look)
-	..()
-	look_parts(look)
-
-/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
-/obj/item/ammo_magazine/proc/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_magazine/appearance_overlays()
+	. = list()
 	if(multiple_sprites)
 		//find the lowest key greater than or equal to length(stored_ammo)
 		var/new_state = null
@@ -330,7 +328,8 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			if (threshold >= ammo_count())
 				new_state = LAZYACCESS(ammo_states, idx)
 				break
-		look.state((new_state)? new_state : initial(icon_state))
+		icon_state = (new_state)? new_state : initial(icon_state)
+
 
 /obj/item/ammo_magazine/examine(mob/user)
 	. = ..()
@@ -395,7 +394,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
-				changed(src)
+				update_icon()
 				return TRUE
 	return FALSE
 

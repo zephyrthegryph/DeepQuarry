@@ -48,6 +48,7 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	// apply speed
 	move_delay = 0.5
 	turn_off()	//so engine verbs are correctly set
+	update_icon()
 
 	if(prob(20))
 		callme = pick(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))
@@ -113,13 +114,15 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 /obj/vehicle/train/engine/janicart/latch(obj/vehicle/train/T, mob/user)
 	return // nothing latchs to this!
 
-/obj/vehicle/train/engine/janicart/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/janicart, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/vehicle/train/engine/janicart/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!open)
 		var/image/O = image(icon = 'icons/obj/vehicles.dmi', icon_state = "pussywagon_overlay", dir = src.dir)
 		O.layer = FLY_LAYER
 		O.plane = MOB_PLANE
-		look.overlay(O)
+		. += O
 
 /obj/vehicle/train/engine/janicart/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

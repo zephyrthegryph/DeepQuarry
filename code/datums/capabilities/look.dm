@@ -536,6 +536,14 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 		LAZYREMOVE(engine.look_flashes, state)
 	changed(A)
 
+/// A layer built in one call: a draw writes nothing, not even the members of an image it made, so a tinted, faded or re-planed
+/// layer is made here and handed to look.overlay(). (mutable_appearance() takes the layer, plane, alpha and flags; this adds the colour.)
+/proc/look_appearance(icon, icon_state = "", color = null, alpha = 255, layer = FLOAT_LAYER, plane = FLOAT_PLANE, appearance_flags = NONE)
+	var/mutable_appearance/MA = mutable_appearance(icon, icon_state, layer, plane, alpha, appearance_flags)
+	if(!isnull(color))
+		MA.color = color
+	return MA
+
 /// A movable's generic emissive blocker is a copy of its sprite taken at init (/atom/movable/Initialize()). When a look
 /// changes the sprite, the copy follows it, so the blocker keeps the shape of what is drawn rather than of the state the
 /// type started in.

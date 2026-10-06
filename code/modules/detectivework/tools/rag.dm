@@ -102,12 +102,13 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 	else
 		name = "dry [initial(name)]"
 
-/obj/item/reagent_containers/glass/rag/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/atom, appearance_overlays), list("rag_lit"))
+/obj/item/reagent_containers/glass/rag/appearance_overlays()
+	. = list()
 	if(rag_lit)
-		look.state("raglit")
+		icon_state = "raglit"
 	else
-		look.state("rag")
+		icon_state = "rag"
 
 	var/obj/item/reagent_containers/food/drinks/bottle/B = loc
 	if(istype(B))

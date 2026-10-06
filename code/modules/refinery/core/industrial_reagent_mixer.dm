@@ -34,7 +34,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 		if(reagents.total_volume <= 0)
 			set_mixer_angle(mixer_angle + (mixer_rotation_rate))
 			set_mixer_angle((360 + mixer_angle) % 360)
-			changed(src)
+			update_icon()
 		set_got_input(FALSE)
 		return
 
@@ -48,34 +48,35 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 		return
 	set_mixer_angle(mixer_angle + (mixer_rotation_rate))
 	set_mixer_angle((360 + mixer_angle) % 360)
-	changed(src)
+	update_icon()
 	set_got_input(FALSE)
 
-/obj/machinery/reagent_refinery/mixer/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/mixer/appearance_overlays()
+	. = list()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20) percent = 2
-			if(20 to 40) percent = 4
-			if(40 to 60) percent = 6
-			if(60 to 80) percent = 8
-			if(80 to INFINITY) percent = 10
+			if(5 to 20)			percent = 2
+			if(20 to 40) 		percent = 4
+			if(40 to 60)		percent = 6
+			if(60 to 80)		percent = 8
+			if(80 to INFINITY)	percent = 10
 		var/image/filling = image(icon, loc, "mixer_r_[percent]",dir = dir)
 		filling.color = reagents.get_color()
-		look.overlay(filling)
+		. += filling
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "mixer_cons", dir = dir)
-	look.overlay(pipe)
+	. += pipe
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "mixer_dot_[ got_input ? "on" : "off" ]")
-			look.overlay(dot)
-		look.overlay(update_input_connection_overlays("mixer_intakes"))
+			. += dot
+		. += update_input_connection_overlays("mixer_intakes")
 	// Get mixer overlay
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
-	look.overlay(arm)
+	. += arm
 
 /obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
 	into += list(
@@ -127,7 +128,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 	// If we transfered anything, then inform process() of it!
 	if(.)
 		set_got_input(TRUE)
-		changed(src)
+		update_icon()
 
 /obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
 	. = ..()

@@ -18,7 +18,7 @@
 			AC.forceMove(src)
 			own_transfer(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 			moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
-		changed(L)
+		L.update_icon()
 	return TRUE
 
 /obj/item/ammo_magazine/asval

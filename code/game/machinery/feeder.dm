@@ -8,12 +8,13 @@
 OM_FIELD_VIEW(/obj/machinery/feeder, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
 OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE_MACHINE_OCCUPANT)
 /// Feeds while a patient and a container are attached.
-/obj/machinery/feeder/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/feeder/appearance_overlays()
+	. = list()
 	if(attached())
-		look.state("feeding")
+		icon_state = "feeding"
 	else
-		look.state("")
+		icon_state = ""
 
 
 	if(beaker)
@@ -23,17 +24,17 @@ OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE
 
 			var/percent = round((reagents.total_volume / beaker.volume) * 100)
 			switch(percent)
-				if(0 to 9) filling.icon_state = "reagent0"
-				if(10 to 19) filling.icon_state = "reagent10"
-				if(20 to 44) filling.icon_state = "reagent20"
-				if(45 to 59) filling.icon_state = "reagent45"
-				if(60 to 74) filling.icon_state = "reagent60"
-				if(75 to 89) filling.icon_state = "reagent75"
-				if(90 to 94) filling.icon_state = "reagent90"
-				if(95 to INFINITY) filling.icon_state = "reagent100"
+				if(0 to 9)		filling.icon_state = "reagent0"
+				if(10 to 19) 	filling.icon_state = "reagent10"
+				if(20 to 44)	filling.icon_state = "reagent20"
+				if(45 to 59)	filling.icon_state = "reagent45"
+				if(60 to 74)	filling.icon_state = "reagent60"
+				if(75 to 89)	filling.icon_state = "reagent75"
+				if(90 to 94)	filling.icon_state = "reagent90"
+				if(95 to INFINITY)	filling.icon_state = "reagent100"
 
 			filling.icon += reagents.get_color()
-			look.overlay(filling)
+			. += filling
 
 CAPABILITIES(/obj/machinery/feeder)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
@@ -52,13 +53,13 @@ CAPABILITIES(/obj/machinery/feeder)
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
 		rel_clear(src, nameof(attached))
-		changed(src)
+		update_icon()
 		return
 
 	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(user, null, others = "%U% inserts the feeding tube into \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
-		changed(src)
+		update_icon()
 
 
 /obj/machinery/feeder/declare_interactions(list/into)
@@ -82,7 +83,7 @@ CAPABILITIES(/obj/machinery/feeder)
 	if(!move_into(src, nameof(src.beaker), W, user))
 		return TRUE
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
-	changed(src)
+	update_icon()
 	return TRUE
 
 /// Old attackby: fell off the end for anything else, silently doing nothing (no ..() call).
@@ -99,7 +100,7 @@ CAPABILITIES(/obj/machinery/feeder)
 	playsound(src, tool.usesound, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
-	changed(src)
+	update_icon()
 	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
@@ -117,11 +118,13 @@ CAPABILITIES(/obj/machinery/feeder)
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
 			rel_clear(src, nameof(attached))
+			update_icon()
 			return
 	// Give food
 	if(beaker && beaker.volume > 0)
 		var/transfer_amount = 2
 		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
+		update_icon()
 
 /// Old attack_hand: took out the beaker, or fell through to ..() when there was none.
 /datum/interaction/machine_hand/feeder_take_beaker
@@ -135,7 +138,7 @@ CAPABILITIES(/obj/machinery/feeder)
 		return FALSE
 	beaker.forceMove(get_turf(src))
 	own_take(src, nameof(beaker))
-	changed(src)
+	update_icon()
 	return TRUE
 
 /obj/machinery/feeder/examine(mob/user)

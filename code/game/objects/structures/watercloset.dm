@@ -639,15 +639,16 @@ CAPABILITIES(/obj/machinery/shower)
 	. = ..()
 	. += span_notice("You can <b>alt-click</b> to change the temperature.")
 
-/obj/machinery/shower/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/shower/appearance_overlays()
+	. = list()
 	if(on)
 		if(reagent_id == REAGENT_ID_WATER)
-			look.overlay(image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir))
+			. += image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
 		else
 			var/mutable_appearance/colorful_shower = image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
 			colorful_shower.color = reagents.get_color() //Whatever the fuck happens to be spewing out of here.
-			look.overlay(colorful_shower)
+			. += colorful_shower
 
 /obj/machinery/shower/proc/handle_mist()
 	// If there is no mist, and the shower was turned on (on a non-freezing temp): make mist in 5 seconds

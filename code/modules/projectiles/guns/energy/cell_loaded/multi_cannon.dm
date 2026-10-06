@@ -22,8 +22,10 @@
 	recoil = FALSE
 	fire_sound = SFX_WEAPONS_ENERGY_LASER_STRONG // New firesound, overwrites the sfx from the macrobatteries.
 
-/obj/item/gun/projectile/multi_cannon/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/multi_cannon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/projectile/multi_cannon/appearance_overlays()
+	. = list()
+	. += ..()
 	var/istate = "healcannon_0"
 	var/indicator_colour = null
 	if(istype(chambered,/obj/item/ammo_casing/macrobattery)) //should never not happen. but. you never, never know with this damn, cursed game.
@@ -46,16 +48,16 @@
 
 	var/image/x = image(icon = icon, icon_state = istate)
 	x.color = indicator_colour
-	look.overlay(x)
+	. += x
 
 /obj/item/gun/projectile/multi_cannon/load_ammo()
 	.=..()
 	consume_next_projectile()
-	changed(src)
+	update_icon()
 
 /obj/item/gun/projectile/multi_cannon/unload_ammo(mob/user, allow_dump=1)
 	.=..()
-	changed(src)
+	update_icon()
 	rel_clear(src, nameof(chambered))
 
 /obj/item/gun/projectile/multi_cannon/get_ammo_count() // Custom handling for the Curabitur.

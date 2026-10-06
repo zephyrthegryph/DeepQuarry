@@ -48,7 +48,8 @@ pub fn is_reactive(proc: &Proc, needs_names: &HashSet<String>) -> bool {
     if proc.path.starts_with("/datum/capability") {
         return REACTIVE_CAP.contains(&proc.name.as_str()) || needs_names.contains(&proc.name);
     }
-    if proc.name == "draw" {
+    if proc.name == "draw" || proc.name == "look_parts" {
+        // look_parts(look) is a chain's provider dispatch, called only from its draw (the draw sweep): it is the draw's body
         return proc.params.iter().any(|p| p.contains("look"));
     }
     REACTIVE_ANY.contains(&proc.name.as_str()) || needs_names.contains(&proc.name)

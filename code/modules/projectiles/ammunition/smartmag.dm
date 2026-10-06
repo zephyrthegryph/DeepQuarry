@@ -54,11 +54,13 @@ CAPABILITIES(/obj/item/ammo_magazine/smart)
 	else
 		. += span_warning("\The [src] does not appear to have a power source installed.")
 
-/obj/item/ammo_magazine/smart/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_magazine/smart/appearance_overlays()
+	. = list()
 	if(attached_cell())
-		look.state("smartmag-filled")
+		icon_state = "smartmag-filled"
 	else
-		look.state("smartmag-empty")
+		icon_state = "smartmag-empty"
 
 // Emagging lets you remove bullets from your bullet-making magazine
 DECLARE_EMAG(/obj/item/ammo_magazine/smart, PROC_REF(on_emag), null, null)
@@ -107,7 +109,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	removed_cell.forceMove(get_turf(src))
 	rel_clear(src, nameof(attached_cell))
 	act_message(user, src, MSG_SELF("You remove %I% from %T%."), MSG_OTHERS("%U% removes a cell from %T%."), item = removed_cell)
-	changed(src)
+	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/ammo_magazine/smart/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -133,7 +135,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	I.forceMove(src)
 	rel_set(src, nameof(attached_cell), I)
 	act_message(user, src, MSG_SELF("You install %I% into %T%."), MSG_OTHERS("%U% installs a cell in %T%."), item = I)
-	changed(src)
+	update_icon()
 
 /obj/item/ammo_magazine/smart/proc/cell_removed(mob/user)
 	if(!attached_cell())
@@ -142,7 +144,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	user.put_in_hands(attached_cell())
 	act_message(user, src, MSG_SELF("You remove \the [attached_cell()] from %T%."), MSG_OTHERS("%U% removes a cell from %T%."))
 	rel_clear(src, nameof(attached_cell))
-	changed(src)
+	update_icon()
 
 // Finds the cell for the magazine, used by rechargers
 /obj/item/ammo_magazine/smart/get_cell()

@@ -14,9 +14,12 @@
 /obj/structure/table/rack/update_desc()
 	return
 
-/obj/structure/table/rack/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/table/rack/appearance_overlays()
+	. = list()
 	if(material()) // for rack colors based on materials
-		look.set_color(material().icon_colour)
+		color = material().icon_colour
+	return .
 
 /obj/structure/table/rack/holorack
 	can_dismantle = FALSE

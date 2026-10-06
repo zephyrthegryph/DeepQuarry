@@ -1,7 +1,7 @@
 /obj/machinery/embedded_controller/radio icon: icons/obj/airlock_machines.dmi
-/obj/machinery/embedded_controller/radio state: airlock_control_off
+/obj/machinery/embedded_controller/radio state: airlock_control_standby
 /obj/machinery/embedded_controller/radio dir: 2
-/obj/machinery/embedded_controller/radio overlay: icons/obj/airlock_machines.dmi:airlock_control_off:8:#000000
+/obj/machinery/embedded_controller/radio overlay: icons/obj/airlock_machines.dmi:airlock_control_standby:8:#000000
 /obj/machinery/embedded_controller/radio/airlock icon: icons/obj/airlock_machines.dmi
 /obj/machinery/embedded_controller/radio/airlock state: airlock_control_standby
 /obj/machinery/embedded_controller/radio/airlock dir: 2

@@ -3871,39 +3871,40 @@ MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
 MSG_DEF_SELF(pizzabox/too_high, "The stack is too high!")
 MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn't work!")
 
-/obj/item/pizzabox/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/pizzabox/appearance_overlays()
+	. = list()
 
 
 	// Set appropriate description
 	if( open && pizza )
-		look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
+		desc = "A box suited for pizzas. It appears to have a [pizza.name] inside."
 	else if( boxes.len > 0 )
-		look.identity(desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile.")
+		desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile."
 
 		var/obj/item/pizzabox/topbox = boxes[boxes.len]
 		var/toptag = topbox.boxtag
 		if( toptag != "" )
-			look.identity(desc = "[desc] The box on top has a tag, it reads: '[toptag]'.")
+			desc = "[desc] The box on top has a tag, it reads: '[toptag]'."
 	else
-		look.identity(desc = "A box suited for pizzas.")
+		desc = "A box suited for pizzas."
 
 		if( boxtag != "" )
-			look.identity(desc = "[desc] The box has a tag, it reads: '[boxtag]'.")
+			desc = "[desc] The box has a tag, it reads: '[boxtag]'."
 
 	// Icon states and overlays
 	if( open )
 		if( ismessy )
-			look.state("pizzabox_messy")
+			icon_state = "pizzabox_messy"
 		else
-			look.state("pizzabox_open")
+			icon_state = "pizzabox_open"
 
 		if( pizza )
 			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state) // Icons for bad pizza
 			pizzaimg.pixel_y = -3
-			look.overlay(pizzaimg)
+			. += pizzaimg
 
-		return
+		return .
 	else
 		// Stupid code because byondcode sucks
 		var/doimgtag = 0
@@ -3918,9 +3919,9 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 		if( doimgtag )
 			var/image/tagimg = image('icons/obj/food.dmi', icon_state = "pizzabox_tag")
 			tagimg.pixel_y = boxes.len * 3
-			look.overlay(tagimg)
+			. += tagimg
 
-	look.state("pizzabox[boxes.len+1]")
+	icon_state = "pizzabox[boxes.len+1]"
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
@@ -3930,6 +3931,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	open = !open
 	if( open && pizza )
 		set_ismessy(1)
+	update_icon()
 	return OP_OK
 
 /obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
@@ -3946,6 +3948,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	user.put_in_hands( pizza )
 	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
 	own_take(src, nameof(pizza))
+	update_icon()
 	return OP_OK
 
 /// A stack of boxes, with the one it is in held in the other hand.
@@ -3959,8 +3962,8 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	boxes -= box
 	user.put_in_hands( box )
 	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-	changed(box)
-	changed(box)
+	box.update_icon()
+	update_icon()
 	return OP_OK
 
 /// The held box is another one, not this one used in hand.
@@ -3988,8 +3991,8 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	box.forceMove(src)
 	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
 	src.boxes.Add( boxestoadd )
-	changed(box)
-	changed(box)
+	box.update_icon()
+	update_icon()
 	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
 	return OP_OK
 
@@ -3998,6 +4001,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	var/obj/item/I = A.held
 	if(!move_into(src, nameof(src.pizza), I, user))
 		return OP_REFUSED
+	update_icon()
 	to_chat(user, span_warning("You put \the [I] in \the [src]!"))
 	return OP_OK
 
@@ -4007,8 +4011,8 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	if( boxes.len > 0 )
 		boxtotagto = boxes[boxes.len]
 	boxtotagto.boxtag = copytext("[boxtotagto.boxtag][R?.value]", 1, 30)
-	changed(boxtotagto)
-	changed(boxtotagto)
+	boxtotagto.update_icon()
+	update_icon()
 	return OP_OK
 
 /obj/item/pizzabox/margherita

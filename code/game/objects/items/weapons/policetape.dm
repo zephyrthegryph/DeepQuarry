@@ -110,8 +110,9 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	req_one_access = list(ACCESS_ENGINE,ACCESS_ATMOSPHERICS)
 	color = COLOR_DEEP_SKY_BLUE
 
-/obj/item/taperoll/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/taperoll, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/taperoll/appearance_overlays()
+	. = list()
 	var/image/overlay = image(icon = src.icon)
 	overlay.appearance_flags = RESET_COLOR
 	if(ismob(loc))
@@ -119,17 +120,20 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			overlay.icon_state = "start"
 		else
 			overlay.icon_state = "stop"
-		look.overlay(overlay)
+		. += overlay
 
 
 /obj/item/taperoll/dropped(mob/user, equipping, slot)
+	update_icon()
 	return ..()
 
 /obj/item/taperoll/pickup(mob/user)
+	update_icon()
 	return ..()
 
 /// Old attack_hand.
 /obj/item/taperoll/proc/interaction_hand(datum/act/op/A)
+	update_icon()
 	return OP_DECLINE
 
 CAPABILITIES(/obj/item/taperoll)
@@ -141,10 +145,12 @@ CAPABILITIES(/obj/item/taperoll)
 	if(!get_start())
 		rel_set(src, nameof(start), get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
+		update_icon()
 	else
 		rel_set(src, nameof(end), get_turf(src))
 		if(get_start().y != get_end().y && get_start().x != get_end().x || get_start().z != get_end().z)
 			rel_clear(src, nameof(start))
+			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
 			return OP_OK
 
@@ -165,6 +171,7 @@ CAPABILITIES(/obj/item/taperoll)
 					possible_dirs |= window.dir
 			if(!possible_dirs)
 				rel_clear(src, nameof(start))
+				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
 				return OP_OK
 			if(possible_dirs & (NORTH|SOUTH))
@@ -180,6 +187,7 @@ CAPABILITIES(/obj/item/taperoll)
 						TP.tape_dir += dir
 				changed(TP)
 			rel_clear(src, nameof(start))
+			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
 			return OP_OK
 
@@ -228,6 +236,7 @@ CAPABILITIES(/obj/item/taperoll)
 			cur = get_step_towards(cur,get_end())
 		if (!can_place)
 			rel_clear(src, nameof(start))
+			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
 			return OP_OK
 
@@ -271,6 +280,7 @@ CAPABILITIES(/obj/item/taperoll)
 				break
 			cur = get_step_towards(cur,get_end())
 		rel_clear(src, nameof(start))
+		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
 		return OP_OK
 	return OP_OK

@@ -54,6 +54,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	if(program)
 		program.periodic_step()
 
+	update_icon()
 	if(!program || !program.memory["processing"])
 		return PROCESS_KILL
 
@@ -93,19 +94,17 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
-/obj/machinery/embedded_controller/radio/draw(datum/look/look)
-	..()
-	look_parts(look)
-
-/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
-/obj/machinery/embedded_controller/radio/proc/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/embedded_controller/radio/appearance_overlays()
+	. = list()
 	if(on && program)
 		if(program.memory["processing"])
-			look.state("airlock_control_process")
+			icon_state = "airlock_control_process"
 		else
-			look.state("airlock_control_standby")
+			icon_state = "airlock_control_standby"
 	else
-		look.state("airlock_control_off")
+		icon_state = "airlock_control_off"
+
 
 /obj/machinery/embedded_controller/radio/post_signal(datum/signal/signal, radio_filter = null)
 	signal.transmission_method = TRANSMISSION_RADIO

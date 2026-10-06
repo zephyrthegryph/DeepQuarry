@@ -1,23 +1,23 @@
 /obj/structure/cliff icon: icons/obj/flora/rocks.dmi
-/obj/structure/cliff state: cliff-2
+/obj/structure/cliff state: 
 /obj/structure/cliff dir: 2
 /obj/structure/cliff overlay: icons/obj/flora/rocks.dmi::8:#000000
 /obj/structure/cliff/automatic icon: icons/obj/flora/rocks.dmi
 /obj/structure/cliff/automatic state: cliff-1c
 /obj/structure/cliff/automatic dir: 1
 /obj/structure/cliff/automatic overlay: ::-32767
-/obj/structure/cliff/automatic overlay: icons/obj/flora/rocks.dmi:cliff-1c:8:#000000 x2
+/obj/structure/cliff/automatic overlay: icons/obj/flora/rocks.dmi:cliffbuilder:8:#000000 x2
 /obj/structure/cliff/automatic/corner icon: icons/obj/flora/rocks.dmi
 /obj/structure/cliff/automatic/corner state: cliff-5-corner
 /obj/structure/cliff/automatic/corner dir: 5
 /obj/structure/cliff/automatic/corner overlay: ::-32767
-/obj/structure/cliff/automatic/corner overlay: icons/obj/flora/rocks.dmi:cliff-5-corner:8:#000000 x2
+/obj/structure/cliff/automatic/corner overlay: icons/obj/flora/rocks.dmi:cliffbuilder-corner:8:#000000 x2
 /obj/structure/cliff/automatic/ramp icon: icons/obj/flora/rocks.dmi
 /obj/structure/cliff/automatic/ramp state: cliff-5-ramp
 /obj/structure/cliff/automatic/ramp dir: 5
-/obj/structure/cliff/automatic/ramp overlay: icons/obj/flora/rocks.dmi:cliff-5-ramp:8:#000000
+/obj/structure/cliff/automatic/ramp overlay: icons/obj/flora/rocks.dmi:cliffbuilder-ramp:8:#000000
 /obj/structure/cliff/bottom icon: icons/obj/flora/rocks.dmi
-/obj/structure/cliff/bottom state: cliff-2-bottom
+/obj/structure/cliff/bottom state: 
 /obj/structure/cliff/bottom dir: 2
 /obj/structure/cliff/bottom overlay: icons/obj/flora/rocks.dmi::8:#000000
 

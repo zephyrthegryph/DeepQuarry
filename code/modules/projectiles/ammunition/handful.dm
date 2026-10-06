@@ -42,7 +42,7 @@
 	H.name = "handful of [a.caliber] rounds"
 	for(var/obj/item/ammo_casing/C in list(a, b))
 		move_into(H, nameof(H.stored_ammo), C, user)
-	changed(H)
+	H.update_icon()
 	return H
 
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
@@ -70,19 +70,21 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 		if(moved)
 			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [length(stored_ammo)]."))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 0.5)
-		changed(other)
-		changed(src)
+		update_icon()
+		other.update_icon()
 		if(!length(other.stored_ammo))
 			consume(other, user)
 		return
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
 	return FALSE
 
-/obj/item/ammo_magazine/handful/look_parts(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/handful, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_magazine/handful/appearance_overlays()
+	. = list()
+	. += ..()
 	// Name tracks the count so the stack reads clearly at a glance.
 	if(caliber)
-		look.identity(name = "handful of [caliber] rounds")
+		name = "handful of [caliber] rounds"
 
 // When a handful empties through normal use, get rid of it rather than leaving an
 // invisible empty stack lying around.

@@ -29,6 +29,7 @@
 		if(R) // Sanity check the reagent
 			set_canister(R.name,R.id)
 			reagents.add_reagent(R.id, volume)
+	update_icon()
 
 /obj/item/reagent_containers/chem_canister/examine(mob/user)
 	. = ..()
@@ -70,7 +71,7 @@
 				if(C.reagents.total_volume >= C.reagents.maximum_volume)
 					continue
 				reagents.trans_to_obj(C, amount_per_transfer_from_this)
-				changed(src)
+				update_icon()
 				SStgui.update_uis(DISP)
 				to_chat(user, span_notice("You fill \the [target] with '\the [src]."))
 				return
@@ -92,27 +93,28 @@
 
 		var/trans = src.reagents.trans_to_obj(target, amount_per_transfer_from_this)
 		to_chat(user, span_notice("You transfer [trans] units of the solution to \the [target]."))
-		changed(src)
+		update_icon()
 
 	else
 		return ..()
 
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
-	changed(src)
+	update_icon()
 
-/obj/item/reagent_containers/chem_canister/draw(datum/look/look)
-	..()
-	var/drawn_state = look.state_so_far(src)
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/chem_canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/reagent_containers/chem_canister/appearance_overlays()
+	. = list()
+	. += ..()
 	if(reagents && reagents.total_volume > 0)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(0 to 25) percent = 25
-			if(25 to 50) percent = 50
-			if(50 to 75) percent = 75
-			if(75 to INFINITY) percent = 100
-		var/image/chems = image(icon, icon_state = "[drawn_state]_c[percent]", dir = NORTH)
+			if(0 to 25)			percent = 25
+			if(25 to 50)		percent = 50
+			if(50 to 75)		percent = 75
+			if(75 to INFINITY)	percent = 100
+		var/image/chems = image(icon, icon_state = "[icon_state]_c[percent]", dir = NORTH)
 		chems.color = reagents.get_color()
-		look.overlay(chems)
+		. += chems
 
 
 // Preloads

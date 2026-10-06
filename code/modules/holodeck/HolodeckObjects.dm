@@ -315,7 +315,7 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
-	changed(src)
+	update_icon()
 	add_fingerprint(user)
 	return TRUE
 
@@ -327,16 +327,17 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		else
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
-		changed(src)
+		update_icon()
 	return FALSE
 
-/obj/item/holo/esword/draw(datum/look/look)
-	..()
-	var/drawn_state = look.state_so_far(src)
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[drawn_state]_blade")
+DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/holo/esword/appearance_overlays()
+	. = list()
+	. += ..()
+	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
 	if(active)
-		look.overlay(blade_overlay)
+		. += blade_overlay
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		H.update_inv_l_hand()

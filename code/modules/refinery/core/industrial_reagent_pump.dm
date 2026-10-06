@@ -17,6 +17,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
+	update_icon()
 
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/input)
@@ -42,12 +43,13 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 		return amount_per_transfer_from_this
 	return 0
 
-/obj/machinery/reagent_refinery/pump/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/pump/appearance_overlays()
+	. = list()
 	if(reagents && reagents.total_volume >= 5)
 		var/image/filling = image(icon, loc, "pump_r",dir = dir)
 		filling.color = reagents.get_color()
-		look.overlay(filling)
+		. += filling
 
 /obj/machinery/reagent_refinery/pump/declare_interactions(list/into)
 	into += list(

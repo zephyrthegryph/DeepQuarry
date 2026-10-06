@@ -69,6 +69,7 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	to_chat(user, "You twist the valve and pop the tank out of [src].")
 	user.put_in_hands(tank())
 	rel_clear(src, nameof(tank))
+	update_icon()
 
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
 	if(contents_count(item_storage) > 0)
@@ -101,6 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 			return INTERACTION_HANDLED_PASS
 		rel_set(src, nameof(tank), W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
+		update_icon()
 	else if(istype(W))
 		item_storage.try_insert(W, user)
 
@@ -161,14 +163,15 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		spent(removed)
 	..()
 
-/obj/item/gun/launcher/pneumatic/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/gun/launcher/pneumatic/appearance_overlays()
+	. = list()
 	if(tank())
-		look.state("pneumatic-tank")
-		look.held_state("pneumatic-tank")
+		icon_state = "pneumatic-tank"
+		item_state = "pneumatic-tank"
 	else
-		look.state("pneumatic")
-		look.held_state("pneumatic")
+		icon_state = "pneumatic"
+		item_state = "pneumatic"
 
 	if (ismob(src.loc))
 		var/mob/M = src.loc

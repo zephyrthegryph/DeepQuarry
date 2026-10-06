@@ -26,6 +26,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
+	update_icon()
 
 /obj/machinery/reagent_refinery/filter/refinery_step()
 	if(!anchored)
@@ -55,15 +56,15 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 		if(target && reagents.total_volume > 0)
 			transfer_tank( reagents, target, dir)
 
-/obj/machinery/reagent_refinery/filter/draw(datum/look/look)
-	..()
-	var/drawn_state = look.state_so_far(src)
-	drawn_state = look.state("filter_[filter_side == 1 ? "r" : "l"]")
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/filter/appearance_overlays()
+	. = list()
+	icon_state = "filter_[filter_side == 1 ? "r" : "l"]"
 
 	if(reagents && reagents.total_volume > 0)
-		var/image/filling = image(icon, loc, "[drawn_state]_r",dir = dir)
+		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
 		filling.color = reagents.get_color()
-		look.overlay(filling)
+		. += filling
 
 /obj/machinery/reagent_refinery/filter/declare_interactions(list/into)
 	into += list(
@@ -155,7 +156,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 		return
 
 	filter_side *= -1
-	changed(src)
+	update_icon()
 
 /obj/machinery/reagent_refinery/filter/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

@@ -339,11 +339,13 @@ CAPABILITIES(/obj/structure/frame)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-/obj/structure/frame/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/frame/appearance_overlays()
+	. = list()
+	. += ..()
 	if(frame_type.icon_override)
-		look.set_icon(frame_type.icon_override)
-	look.state(frame_type.get_icon_state(state))
+		icon = frame_type.icon_override
+	icon_state = frame_type.get_icon_state(state)
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
 	own_take_all(src, nameof(components))
@@ -382,6 +384,7 @@ CAPABILITIES(/obj/structure/frame)
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		set_density(TRUE)
 
+	update_icon()
 
 	make_rotatable()
 
@@ -423,7 +426,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				else
 					install_part(user,P)
 
-	changed(src)
+	update_icon()
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)

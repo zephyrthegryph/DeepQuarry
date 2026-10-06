@@ -165,32 +165,34 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 			return
 		if(!move_into(src, nameof(src.stored_ammo), B, user))
 			return
-		changed(src)
+		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	changed(src)
+	update_icon()
 	if(istype(loc, /obj/item/gun/projectile/cell_loaded)) // Update the HUD if we're in a gun + have a user. Not that one should be able to reload the mag while it's in a gun, but just in caaaaase.
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc
 		var/mob/living/M = cell_load.loc
 		if(istype(M))
 			M?.hud_used?.update_ammo_hud(M, cell_load)
 
-/obj/item/ammo_magazine/cell_mag/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/ammo_magazine/cell_mag/appearance_overlays()
+	. = list()
 	if(!length(stored_ammo))
-		return
+		return .
 
 	var/current = 0
 	for(var/obj/item/ammo_casing/microbattery/batt as anything in stored_ammo)
 		var/image/cap = image(icon, icon_state = "[capname]_cap")
 		cap.color = batt.type_color
 		cap.pixel_x = current * x_offset //Caps don't need a pixel_y offset
-		look.overlay(cap)
+		. += cap
 
 		if(batt.shots_left)
 			var/ratio = CEILING(((batt.shots_left / initial(batt.shots_left)) * 4), 1) //4 is how many lights we have a sprite for
 			var/image/charge = image(icon, icon_state = "[chargename]_charge-[ratio]")
 			charge.color = "#29EAF4" //Could use battery color but eh.
 			charge.pixel_x = current * x_offset
-			look.overlay(charge)
+			. += charge
 
 		current++ //Increment for offsets
 
@@ -226,9 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 
 /obj/item/ammo_casing/microbattery/look_parts(datum/look/look)
 
-	var/image/ends = image(icon, icon_state = "[initial(icon_state)]_ends")
-	ends.color = type_color
-	look.overlay(ends)
+	look.overlay(look_appearance(icon, "[initial(icon_state)]_ends", color = type_color))
 
 /obj/item/ammo_casing/microbattery/expend()
 	shots_left--

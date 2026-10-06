@@ -46,6 +46,7 @@
 	. = ..()
 	var/image/I = new(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", layer = src.layer + 0.2) //over mobs
 	add_overlay(I)
+	update_icon()
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/engine/Move(atom/newloc, direct = 0, movetime)
@@ -366,16 +367,18 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	else
 		set_anchored(TRUE)
 
-/obj/vehicle/train/engine/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/vehicle/train/engine/appearance_overlays()
+	. = list()
+	. += ..()
 	var/image/O = image(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", dir = src.dir)
 	O.layer = FLY_LAYER
 	O.plane = MOB_PLANE
-	look.overlay(O)
+	. += O
 
 /obj/vehicle/train/engine/set_dir()
 	..()
-	changed(src)
+	update_icon()
 
 //-------------------------------------------------------
 // Cargo tugs for reagent transport from chemical refinery
@@ -406,6 +409,7 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/Initialize(mapload)
 	. = ..()
+	update_icon()
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/output)
 	make_sellable(/datum/sellable/trolley_tank)
@@ -456,6 +460,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 	to_chat(user,"You drain \the [src] into the \the [G].")
 	reagents.trans_to_holder( G.reagents, G.reagents.maximum_volume)
+	update_icon()
 	return TRUE
 
 /// Old attackby: a multitool repaints it the answered colour.
@@ -463,6 +468,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	var/new_paint = A.step_value("paint")
 	if(new_paint)
 		paint_color = new_paint
+		update_icon()
 	return TRUE
 
 /obj/vehicle/train/trolley_tank/proc/label_title(datum/act/op/A)
@@ -495,31 +501,32 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	. = ..()
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 
-/obj/vehicle/train/trolley_tank/draw(datum/look/look)
-	..()
-	var/drawn_state = look.state_so_far(src)
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/vehicle/train/trolley_tank/appearance_overlays()
+	. = list()
+	. += ..()
 	if(reagents && reagents.total_volume > 0)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 10) percent = 10
-			if(10 to 20) percent = 20
-			if(20 to 30) percent = 30
-			if(30 to 40) percent = 40
-			if(40 to 50) percent = 50
-			if(50 to 60) percent = 60
-			if(60 to 70) percent = 70
-			if(70 to 80) percent = 80
-			if(80 to 90) percent = 90
-			if(90 to INFINITY) percent = 100
-		var/image/chems = image(icon, icon_state = "[drawn_state]_r_[percent]", dir = NORTH)
+			if(5 to 10)			percent = 10
+			if(10 to 20) 		percent = 20
+			if(20 to 30) 		percent = 30
+			if(30 to 40) 		percent = 40
+			if(40 to 50)		percent = 50
+			if(50 to 60)		percent = 60
+			if(60 to 70)		percent = 70
+			if(70 to 80)		percent = 80
+			if(80 to 90)		percent = 90
+			if(90 to INFINITY)	percent = 100
+		var/image/chems = image(icon, icon_state = "[icon_state]_r_[percent]", dir = NORTH)
 		chems.color = reagents.get_color()
-		look.overlay(chems)
-	var/image/Bodypaint = image(icon, icon_state = "[drawn_state]_c", dir = NORTH)
+		. += chems
+	var/image/Bodypaint = image(icon, icon_state = "[icon_state]_c", dir = NORTH)
 	Bodypaint.color = paint_color
-	look.overlay(Bodypaint)
+	. += Bodypaint
 
 /obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
-	changed(src)
+	update_icon()
 
 /obj/vehicle/train/engine/ownership()
 	. = ..()

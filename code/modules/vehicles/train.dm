@@ -67,10 +67,7 @@
 		return
 	..()
 
-/// The look (the draw sweep: from its template).
-/obj/vehicle/train/draw(datum/look/look)
-	..()
-	look.state("[initial(icon_state)][open ? "_open" : ""]")
+APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 
 //-------------------------------------------
 // Vehicle procs

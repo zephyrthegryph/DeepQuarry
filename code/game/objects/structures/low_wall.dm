@@ -26,10 +26,7 @@
 	var/datum/material/material
 	var/grille_type
 
-/// The look (the draw sweep: from its layers).
-/obj/structure/low_wall/draw(datum/look/look)
-	..()
-	look.state("blank")
+DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
 
 CAPABILITIES(/obj/structure/low_wall)
 	smoothing()
@@ -216,10 +213,10 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 
 // Bay's version
 /// Draws itself entirely: drop the parent's keyed declarations.
-/obj/structure/low_wall/bay/draw(datum/look/look)
-	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
-	look.state(null)
+APPEARANCE_NONE(/obj/structure/low_wall/bay)
+DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/low_wall/bay/appearance_overlays()
+	. = list()
 
 	var/image/I
 	var/main_color = material.icon_colour
@@ -230,7 +227,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		else
 			I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
 			I.color = main_color
-		look.overlay(I)
+		. += I
 
 	if(stripe_color)
 		for(var/i = 1 to 4)
@@ -239,28 +236,28 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			else
 				I = image(icon, "stripe[connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
-			look.overlay(I)
+			. += I
 
 // Eris's version
 /// Draws itself entirely: drop the parent's keyed declarations.
-/obj/structure/low_wall/eris/draw(datum/look/look)
-	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
-	look.state(null)
+APPEARANCE_NONE(/obj/structure/low_wall/eris)
+DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/low_wall/eris/appearance_overlays()
+	. = list()
 
 	var/image/I
 	var/main_color = material.icon_colour
 	for(var/i = 1 to 4)
 		I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
 		I.color = main_color
-		look.overlay(I)
+		. += I
 
 		if(other_connections[i] != "0")
 			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
 			I.plane = ABOVE_OBJ_PLANE
 			I.layer = ABOVE_WINDOW_LAYER
 			I.color = main_color
-			look.overlay(I)
+			. += I
 
 /// Emitters and the like can't take a low wall down in one shot.
 /obj/structure/low_wall/projectile_damage(obj/item/projectile/P, def_zone)

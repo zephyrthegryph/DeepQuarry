@@ -1,6 +1,6 @@
 /obj/structure/barricade/sandbag icon: icons/obj/sandbags.dmi
 /obj/structure/barricade/sandbag state: blank
 /obj/structure/barricade/sandbag dir: 2
-/obj/structure/barricade/sandbag overlay: icons/obj/sandbags.dmi:blank:8:#000000 x2
+/obj/structure/barricade/sandbag overlay: icons/obj/sandbags.dmi:blank:8:#000000
 /obj/structure/barricade/sandbag overlay: icons/obj/sandbags.dmi:sandbags0:-32767 x4
 

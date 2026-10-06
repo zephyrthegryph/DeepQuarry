@@ -183,17 +183,18 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		item_state = "[icon_state]"
 		w_class = ITEMSIZE_SMALL
-	changed(src)
+	update_icon()
 	add_fingerprint(user)
 	return TRUE
 
-/obj/item/toy/sword/draw(datum/look/look)
-	..()
-	var/drawn_state = look.state_so_far(src)
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[drawn_state]_blade")
+DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/toy/sword/appearance_overlays()
+	. = list()
+	. += ..()
+	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
 	if(active)
-		look.overlay(blade_overlay)
+		. += blade_overlay
 	var/mob/living/carbon/human/holder = loc
 	if(istype(holder))
 		holder.update_inv_l_hand()
@@ -225,6 +226,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 		return
 	if(A.answer.value)
 		lcolor = sanitize_hexcolor(A.answer.value)
+	update_icon()
 
 /obj/item/toy/sword/examine(mob/user)
 	. = ..()
@@ -238,7 +240,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 		else
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
-		changed(src)
+		update_icon()
 	return INTERACTION_HANDLED_PASS
 /obj/item/toy/katana
 	name = "replica katana"

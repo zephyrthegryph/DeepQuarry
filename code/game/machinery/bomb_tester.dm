@@ -47,7 +47,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 /// A simulation that is running takes no new settings.
 /obj/machinery/bomb_tester/proc/not_simulating(datum/act/op/A)
-	return !simulating // ALLOW(reads): the run is read when a button is pressed, never from a cached menu
+	return !simulating
 
 /obj/machinery/bomb_tester/Initialize(mapload)
 	. = ..()

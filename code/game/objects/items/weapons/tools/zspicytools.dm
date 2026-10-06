@@ -28,12 +28,14 @@
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
 
-/obj/item/weldingtool/lasercannon/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/item/weldingtool/lasercannon/appearance_overlays()
+	. = list()
 	// Lights
 	if(welding && flame_intensity)
-		look.light(flame_intensity, flame_intensity, flame_color)
+		set_light(flame_intensity, flame_intensity, flame_color)
 	else
-		look.light_off()
+		set_light(0)
 
 //	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
 	var/mob/M = loc

@@ -57,6 +57,10 @@ class Residue(Exception):
     pass
 
 
+# id(locals set of a provider body) -> the locals that body builds itself (provider_lines() fills it for translate_stmt())
+BUILT_LOCALS = {}
+
+
 def code_and_comment(raw):
     code = strip_code(raw)
     kept = raw[: len(code.rstrip())]
@@ -410,6 +414,8 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
     if re.search(r"(?<![\w.])(overlays|underlays)(?!\w)", text):
         raise Residue("reads_layers")
     locals_ = set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)", text))
+    # the locals the body builds itself (an image, a matrix, a list): a call on one changes nothing outside the draw
+    BUILT_LOCALS[id(locals_)] = set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(?:image|mutable_appearance|matrix|icon|list|new)\b", text))
     # the state local: the body reads its own icon_state (anything but a plain write)
     state_reads = False
     for c in codes:
@@ -553,7 +559,7 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
         return stmt
     # a call on a local (a matrix being turned, an image being built) changes nothing of the holder
     lm = re.match(r"^([A-Za-z_]\w*)\s*\??\.\s*[A-Za-z_]\w*\s*\(.*\)$", code)
-    if lm and lm.group(1) in locals_:
+    if lm and lm.group(1) in BUILT_LOCALS.get(id(locals_), ()):
         return fix_expr(stmt, state_reads)
     # a shared appearance cache filled on a miss (GLOB.x_cache[key] = built) is a memo, not state
     if re.match(r"^GLOB\.\w*cache\w*\[[^\]]*\]\s*=(?!=)", code):
@@ -741,7 +747,28 @@ def plan_component(ix, comp):
                 provider_sets_state[t] = True
             lines += body
         plans[t] = {"lines": lines}
+    for t in comp:
+        lint_shape(plans[t]["lines"] + plans[t].get("parts", []))
     return plans
+
+
+def lint_shape(lines):
+    """Residue for generated lines a draw may not hold (sys/dx_reactive): a write to a member of anything, or a read through another object
+    (anything but src, look, GLOB, the reagents relation, or a local the body built: an image, a matrix, a list)."""
+    text = "\n".join(strip_code(x) for x in lines)
+    built = set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(?:image|mutable_appearance|matrix|icon|list|look_appearance|emissive_appearance)\b", text))
+    for code in text.split("\n"):
+        c = code.strip()
+        c = re.sub(r"^(?:else\s+)?if\s*\((?:[^()]|\([^()]*\))*\)\s*", "", c)
+        if re.match(r"^[A-Za-z_]\w*(?:\s*\??\.\s*[A-Za-z_]\w*)+\s*(?:=(?!=)|\+=|-=|\|=|\*=)", c) and not c.startswith("look."):
+            raise Residue("member_write")
+        for m in re.finditer(r"(?<![\w.\]\)\"'/:])([A-Za-z_]\w*)\s*\??\.\s*([A-Za-z_]\w*)", code):
+            root, seg = m.group(1), m.group(2)
+            if root in ("look", "src", "GLOB", "reagents", "world") or root in built or seg in ("len", "type", "parent_type"):
+                continue
+            if re.match(r"^[A-Z][A-Z0-9_]+$", root) or root.startswith("SS"):
+                continue
+            raise Residue("hop_read")
 
 
 def none_lines(t, ancestor_lines):

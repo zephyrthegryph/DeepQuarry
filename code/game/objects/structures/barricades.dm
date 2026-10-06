@@ -140,10 +140,11 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	consume(src)
 	return
 
-/obj/structure/barricade/sandbag/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/barricade/sandbag/appearance_overlays()
+	. = list()
 	if(!material)
-		return
+		return .
 
 	var/image/I
 
@@ -151,7 +152,9 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 		var/connect = connections?[i] || 0
 		I = image('icons/obj/sandbags.dmi', "sandbags[connect]", dir = 1<<(i-1))
 		I.color = material.icon_colour
-		look.overlay(I)
+		. += I
+
+	return .
 
 /obj/structure/barricade/sandbag/update_connections(propagate = 0, obj/structure/barricade/sandbag/ignore = null)
 	if(!material)
@@ -169,7 +172,7 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 
 	connections = string_list(dirs_to_corner_states(dirs))
 
-	changed(src)
+	update_icon()
 
 /obj/structure/barricade/sandbag/proc/can_join_with(obj/structure/barricade/sandbag/S)
 	if(material == S.material)

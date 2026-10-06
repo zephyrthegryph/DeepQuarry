@@ -555,7 +555,7 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	own_transfer(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
 	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
-	changed(H)
+	H.update_icon()
 	var/mob/user = task.actor
 	user.hud_used?.update_ammo_hud(user, src)
 	task.count++
@@ -624,7 +624,7 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))
 					play_sfx(src, SFX_WEAPONS_EMPTY)
 					user.hud_used?.update_ammo_hud(user, src)
-		changed(AM)
+		AM.update_icon()
 	else if(istype(A, /obj/item/ammo_casing))
 		var/obj/item/ammo_casing/C = A
 		if(caliber != C.caliber)

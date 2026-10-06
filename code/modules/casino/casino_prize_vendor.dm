@@ -289,7 +289,7 @@
 		if(cashmoney.worth <= 0)
 			consume(cashmoney, user)
 		else
-			changed(cashmoney)
+			cashmoney.update_icon()
 			changed(cashmoney)
 	return 1
 

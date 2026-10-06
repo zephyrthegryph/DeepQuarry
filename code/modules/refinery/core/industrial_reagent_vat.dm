@@ -32,28 +32,29 @@
 
 	refinery_transfer()
 
-/obj/machinery/reagent_refinery/vat/draw(datum/look/look)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/reagent_refinery/vat/appearance_overlays()
+	. = list()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20) percent = 2
-			if(20 to 40) percent = 4
-			if(40 to 60) percent = 6
-			if(60 to 80) percent = 8
-			if(80 to INFINITY) percent = 10
+			if(5 to 20)			percent = 2
+			if(20 to 40) 		percent = 4
+			if(40 to 60)		percent = 6
+			if(60 to 80)		percent = 8
+			if(80 to INFINITY)	percent = 10
 		var/image/filling = image(icon, loc, "vat_r_[percent]",dir = dir)
 		filling.color = reagents.get_color()
-		look.overlay(filling)
+		. += filling
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "vat_cons", dir = dir)
-	look.overlay(pipe)
+	. += pipe
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]")
-			look.overlay(dot)
-		look.overlay(update_input_connection_overlays("vat_intakes"))
+			. += dot
+		. += update_input_connection_overlays("vat_intakes")
 
 /obj/machinery/reagent_refinery/vat/examine(mob/user, infix, suffix)
 	. = ..()
@@ -91,7 +92,7 @@
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
-	changed(src)
+	update_icon()
 	return TRUE
 
 /// The old MouseDrop_T's second branch: dumps a reagent container into the vat.
@@ -113,7 +114,7 @@
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
-	changed(src)
+	update_icon()
 	return TRUE
 
 /obj/machinery/reagent_refinery/vat/declare_interactions(list/into)

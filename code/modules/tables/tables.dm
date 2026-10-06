@@ -155,10 +155,9 @@ CAPABILITIES(/obj/structure/table)
 /// Redraws and renames the table and its neighbours, and sets its strength for what it is made of now.
 /obj/structure/table/proc/refresh_layers()
 	update_connections(TRUE)
-	changed(src)
+	update_icon()
 	for(var/obj/structure/table/T in oview(src, 1))
-		changed(T)
-		changed(T)
+		T.update_icon()
 	update_desc()
 	update_material()
 
@@ -231,11 +230,13 @@ CAPABILITIES(/obj/structure/table)
 	var/obj/item/stack/tile/carpet/C = A.held
 	carpeted_type = C.type
 	set_carpeted(TRUE)
+	update_icon()
 	return OP_OK
 
 /obj/structure/table/proc/carpet_lifted(datum/act/op/A)
 	new carpeted_type(loc)
 	set_carpeted(FALSE)
+	update_icon()
 	return OP_OK
 
 /obj/structure/table/proc/is_damaged(datum/act/A)
@@ -285,6 +286,7 @@ CAPABILITIES(/obj/structure/table)
 	color = "#ffffff"
 	alpha = 255
 	update_connections()
+	update_icon()
 	update_desc()
 	update_material()
 
@@ -380,39 +382,36 @@ CAPABILITIES(/obj/structure/table)
 		I.alpha = talpha
 	return I
 
-/obj/structure/table/draw(datum/look/look)
-	..()
-	look_parts(look)
-
-/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
-/obj/structure/table/proc/look_parts(datum/look/look)
+DECLARE_APPEARANCE_PROC(/obj/structure/table, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/structure/table/appearance_overlays()
+	. = list()
 	if(flipped != 1)
-		look.state("blank")
+		icon_state = "blank"
 
 		// Base frame shape. Mostly done for glass/diamond tables, where this is visible.
 		for(var/i = 1 to 4)
 			var/image/I = get_table_image(icon, connections?[i] || 0, 1<<(i-1))
-			look.overlay(I)
+			. += I
 
 		// Standard table image
 		if(material())
 			for(var/i = 1 to 4)
 				var/connect = connections?[i] || 0
 				var/image/I = get_table_image(icon, "[material().table_icon_base]_[connect]", 1<<(i-1), material().icon_colour, 255 * material().opacity)
-				look.overlay(I)
+				. += I
 
 		// Reinforcements
 		if(reinforced())
 			for(var/i = 1 to 4)
 				var/connect = connections?[i] || 0
 				var/image/I = get_table_image(icon, "[reinforced().icon_reinf]_[connect]", 1<<(i-1), reinforced().icon_colour, 255 * reinforced().opacity)
-				look.overlay(I)
+				. += I
 
 		if(carpeted)
 			for(var/i = 1 to 4)
 				var/connect = connections?[i] || 0
 				var/image/I = get_table_image(icon, "carpet_[connect]", 1<<(i-1))
-				look.overlay(I)
+				. += I
 	else
 		var/type = 0
 		var/tabledirs = 0
@@ -429,24 +428,25 @@ CAPABILITIES(/obj/structure/table)
 			if (tabledirs & turn(dir,-90))
 				type += "+"
 
-		look.state("flip[type]")
+		icon_state = "flip[type]"
 		if(material())
 			var/image/I = image(icon, "[material().table_icon_base]_flip[type]")
 			I.color = material().icon_colour
 			I.alpha = 255 * material().opacity
-			look.overlay(I)
-			look.identity(name = "[material().display_name] table")
+			. += I
+			name = "[material().display_name] table"
 		else
-			look.identity(name = "table frame")
+			name = "table frame"
 
 		if(reinforced())
 			var/image/I = image(icon, "[reinforced().icon_reinf]_flip[type]")
 			I.color = reinforced().icon_colour
 			I.alpha = 255 * reinforced().opacity
-			look.overlay(I)
+			. += I
 
 		if(carpeted)
-			look.overlay("carpet_flip[type]")
+			. += "carpet_flip[type]"
+
 
 /// Flood-fills the connected tables into `found` (a transient working list) and returns it.
 /obj/structure/table/proc/get_all_connected_tables(list/found)
