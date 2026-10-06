@@ -11,8 +11,6 @@ doc_unknown_name	doc/rewrite/kernel.md	native_dispatch(vg_drain_events()) // the
 doc_unknown_name	doc/rewrite/kernel.md	native_dispatch(vg_drain_events()) // the ONLY drain; typed events -> OM_EMIT_WORLD
 doc_unknown_name	doc/rewrite/kernel.md	return alist("gas" = vg_gas_stats(), "heat" = vg_heat_stats(), "laws" = vg_world_laws())
 doc_unknown_name	doc/rewrite/kernel.md	return process_pipenets() // STEP_YIELD while budget runs out
-doc_unknown_name	doc/rewrite/kernel.md	M.set_step_waiting_power(FALSE)
-doc_unknown_name	doc/rewrite/kernel.md	M.set_step_waiting_power(FALSE)
 doc_unknown_name	doc/rewrite/kernel.md	. += floor_machine() // includes powered(): joins /datum/system/power
 doc_unknown_name	doc/rewrite/kernel.md	flush_pump_transfers()
 doc_unknown_name	doc/rewrite/kernel.md	return wake_dirty_gas_subscribers() // STEP_YIELD mid-batch, as today

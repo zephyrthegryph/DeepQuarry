@@ -18,7 +18,6 @@
 //! the step-coverage check reads every file, exempt ones included, except the unit-test probes.
 
 use std::borrow::Cow;
-use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 

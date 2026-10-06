@@ -2400,3 +2400,16 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   power region, the grid checker's flag, the firework launcher's redraw, the anomaly harvester lets go). The six wall displays share
   `display_disconnect_op()` (2 s, needs a board). The chemical dispenser's and synthesizer's cartridge removal ask on the op. The drill's
   label op asks instead of opening its prompt from the effect.
+
+## Machines: the machine pipeline is deleted (rewrite/machine-stats)
+
+* **A fire alarm's lockdown countdown ticks as started work.** It is the same count (one service interval a step, the alarm trips at zero), now an
+  `every()` that runs only while `timing` and the alarm is operable; nothing in the game starts it on a plain fire alarm. The old stage also
+  looked for a hotspot once at spawn; the hotspot check now runs only inside the countdown (a hotspot reaches an alarm through its heat rule).
+* **The distillery runs as started work.** It starts when switched on and parks when it has nothing left, and a power or breakage change gives it
+  one more step (it used to wake on the same changes through channels). The gas watch it never armed is not replaced.
+* **A machine's high gear (`speed_process`) no longer moves its work to a faster lane.** The fast-lane step it ran called the machine's
+  `machine_step()`, which no converted machine defines, so the gear already did nothing to the work; the field stays for the mining and
+  conveyor interfaces that show it.
+* **`MACHINE_WAKE` on a machine with no started work does nothing**, as it already did for every machine that had left the pipeline (hydroponics
+  trays woken by chem smoke, for one).
