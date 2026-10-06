@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "1d1c61d72c9d9c37"
+#define VERDIGRIS_ABI "d0b2c17ab797176e"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -250,6 +250,10 @@
 
 // verdigris/domains/gas/src/reaction_energy.rs
 #define GAS_REACTION_STERILIZATION 5
+
+/// Extent: the crystal's device energy; the deltas are the phoron and oxygen it exhales.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_SUPERMATTER 22
 
 // verdigris/domains/gas/src/reaction_energy.rs
 #define GAS_REACTION_TRITIUM_FIRE 3
@@ -516,6 +520,11 @@
 /// because the define scanner reads plain literals only.
 // verdigris/core/src/units.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
+
+/// The supermatter's exhaust, per unit of its device energy (its power times
+/// its reaction power modifier): the heat it releases into the gas it took.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define SUPERMATTER_THERMAL_RELEASE 10000.0
 
 /// 0 degrees Celsius, K.
 // verdigris/core/src/units.rs

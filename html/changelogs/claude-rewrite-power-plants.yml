@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The supermatter, singularity engine, emitters, collectors and particle accelerator run on the final engine forms."
+  - bugfix: "The admin alert for a containment failure while a singularity exists now fires."
+  - bugfix: "A field generator near the map edge no longer errors when raising its fields."
