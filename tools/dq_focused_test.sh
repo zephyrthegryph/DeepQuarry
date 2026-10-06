@@ -40,15 +40,34 @@ usage() {
 	exit 2
 }
 
-# Every /datum/unit_test type defined in code/, without the prefix (one per line).
+# The .dm files the unit-test build compiles: deepquarry.dme's includes plus code/modules/unit_tests/_unit_tests.dm's (relative to that
+# folder), as repo paths, one per line. A test type in a file nothing includes is not in the .dmb: focusing it names a test the world
+# doesn't have, which fails the run (and the boot gate) for no reason.
+included_files() {
+	{
+		awk -F'"' '/^#include "code.*\.dm"/ { print $2 }' deepquarry.dme
+		awk -F'"' '/^#include ".*\.dm"/ { print "code/modules/unit_tests/" $2 }' code/modules/unit_tests/_unit_tests.dm
+	} | tr -d '\015' | tr '\134' '/' |
+		awk '{ n = split($0, a, "/"); k = 0; for (i = 1; i <= n; i++) { if (a[i] == "..") k--; else if (a[i] != ".") b[++k] = a[i] } o = b[1]; for (i = 2; i <= k; i++) o = o "/" b[i]; print o }'
+}
+
+# Every /datum/unit_test type defined in a compiled file, without the prefix (one per line).
 test_types() {
 	# git grep reads the worktree in-process (about 0.5 s); a recursive grep over
 	# code/ takes minutes on Windows. --untracked picks up new files. One awk
-	# pass strips the prefix and dedupes.
+	# pass keeps the compiled files' types, strips the prefix and dedupes.
 	{
-		git grep -h -o -E --untracked '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' -- 'code/*.dm' 2>/dev/null \
-			|| grep -rhoE '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' code --include='*.dm'
-	} | awk '{ sub(/^\/datum\/unit_test\//, ""); sub(/[[:space:]]+$/, ""); if (!seen[$0]++) print }'
+		included_files | sed 's/^/INCLUDED /'
+		git grep -H -o -E --untracked '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' -- 'code/*.dm' 2>/dev/null \
+			|| grep -rHoE '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' code --include='*.dm'
+	} | awk '
+		/^INCLUDED / { inc[substr($0, 10)] = 1; next }
+		{
+			i = index($0, ":"); file = substr($0, 1, i - 1); name = substr($0, i + 1)
+			if (!(file in inc)) next
+			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name)
+			if (!seen[name]++) print name
+		}'
 }
 
 args=()
