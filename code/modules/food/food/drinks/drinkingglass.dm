@@ -141,6 +141,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/cola, nu
 	volume = 100
 	MATERIAL_BULK(MAT_PLASTIC, 2000)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/Initialize(mapload)
 	. = ..()
 	icon_state = pick("fitness-cup_black", "fitness-cup_red", "fitness-cup_black")

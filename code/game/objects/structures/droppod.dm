@@ -18,6 +18,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 /obj/structure/drop_pod/polite
 	polite = TRUE
 
+// ALLOW(init/CTOR_ARGS): A and auto_open are constructor arguments from whoever builds it
 /obj/structure/drop_pod/Initialize(mapload, atom/movable/A, auto_open = FALSE)
 	. = ..()
 	if(A)

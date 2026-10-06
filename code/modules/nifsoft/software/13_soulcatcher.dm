@@ -448,6 +448,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	icon_state = "beacon"
 	var/tmp/mob/living/parent_human
 
+// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
 /mob/observer/eye/ar_soul/Initialize(mapload, human)
 	. = ..()
 	var/mob/brainmob = loc

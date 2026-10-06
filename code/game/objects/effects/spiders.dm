@@ -68,6 +68,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/spider/stickyweb/Initialize(mapload)
 	if(prob(50))
 		icon_state = "stickyweb2"
@@ -94,6 +95,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	var/spider_type = /obj/effect/spider/spiderling
 	var/faction = FACTION_SPIDERS
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
@@ -162,6 +164,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier, \
 			/mob/living/simple_mob/animal/giant_spider/ion))
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/spider/spiderling/Initialize(mapload, atom/parent)
 	. = ..()
 	pixel_x = rand(6,-6)
@@ -305,6 +308,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 	icon_state = "cocoon1"
 	max_integrity = 15
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/spider/cocoon/Initialize(mapload)
 	. = ..()
 	icon_state = pick("cocoon1","cocoon2","cocoon3")

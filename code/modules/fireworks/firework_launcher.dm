@@ -13,6 +13,7 @@
 	EXPIRY_DECLARE(last_launch)
 	var/launch_cooldown = 5 MINUTES
 
+// ALLOW(init/INSTANCE_STATE): takes its built parts and stamps its cooldown so a rebuild cannot skip it
 /obj/machinery/firework_launcher/Initialize(mapload)
 	. = ..()
 

@@ -33,6 +33,7 @@ CAPABILITIES(/obj/structure/low_wall)
 	climb()
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
+// ALLOW(init/CTOR_ARGS): materialtype is a constructor argument from whoever builds it
 /obj/structure/low_wall/Initialize(mapload, materialtype)
 	. = ..()
 	var/turf/T = loc

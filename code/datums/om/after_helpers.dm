@@ -6,6 +6,7 @@
 
 /// om_after() target: deletes the owner.
 /datum/proc/om_qdel_self()
+	// ALLOW(lifecycle): this is the generic delete-me handler that timers name
 	qdel(src)
 
 /// om_after() target: deletes the owner as one batched destroy

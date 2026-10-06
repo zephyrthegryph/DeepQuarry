@@ -639,6 +639,11 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/why = keeps_reason(A)
 	if(why)
 		return why
+	// A window button's op answers in its window: it stops when the window is gone or no longer interactive (the legacy prompts asked
+	// their window after every answer).
+	var/datum/tgui/pressed_in = A.window_ui()
+	if(pressed_in && (QDELETED(pressed_in) || QDELETED(pressed_in.src_object()) || pressed_in.status != STATUS_INTERACTIVE))
+		return /datum/msg/op/stopped
 	for(var/cond in oplan.conds)
 		if(!op_cond(A, cond))
 			return /datum/msg/op/not_available

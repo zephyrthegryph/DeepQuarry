@@ -23,6 +23,7 @@
 		/obj/item/storage/belt/hydro,
 		/obj/item/material/fishing_net/butterfly_net)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/hydroponics/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/clothing/suit/storage/apron

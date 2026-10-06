@@ -24,6 +24,7 @@ CAPABILITIES(/obj/structure/gravemarker)
 CAPABILITIES(/datum/prompt/text/grave_carving)
 	ref_one(nameof(tool), /obj/item)
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/structure/gravemarker/Initialize(mapload, material_name)
 	. = ..()
 	if(!material_name)

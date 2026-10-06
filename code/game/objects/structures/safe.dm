@@ -23,6 +23,7 @@ FLOOR SAFES
 	var/maxspace = 24	//the maximum combined w_class of stuff in the safe
 
 
+// ALLOW(init/INSTANCE_STATE): tumbler_1_pos, tumbler_1_open, tumbler_2_pos and tumbler_2_open rolled at random for each instance
 /obj/structure/safe/Initialize(mapload)
 	. = ..()
 	tumbler_1_pos = rand(0, 72)

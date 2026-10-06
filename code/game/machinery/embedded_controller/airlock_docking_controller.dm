@@ -18,6 +18,7 @@
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 	owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking)
 
+// ALLOW(init/INSTANCE_STATE): its docking program is made from the program tag and name the map set
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
 	. = ..()
 	// The port owns its running program (program); docking_program is a typed view of it.

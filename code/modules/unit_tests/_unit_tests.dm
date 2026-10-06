@@ -189,6 +189,7 @@
 #include "dq_init_settle_tests.dm"
 #include "dq_init_forms_behaviour_tests.dm"
 #include "dq_init_children_tests.dm"
+#include "dq_init_codemod_tests.dm"
 #include "dq_lifecycle_forms_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"
@@ -1103,6 +1104,8 @@
 #include "round2_matrix_active_colour.dm"
 
 #include "round2_event_trigger_initial_denial.dm"
+
+#include "round2_resleeving_console_requests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

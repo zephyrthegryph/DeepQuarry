@@ -276,6 +276,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 		updateSilicate()
 		update_nearby_tiles(need_rebuild=1)
 
+// ALLOW(init/CTOR_ARGS): start_dir and constructed are constructor arguments from whoever builds it
 /obj/structure/window/Initialize(mapload, start_dir=null, constructed=0)
 	. = ..()
 	update_rad_insulation()

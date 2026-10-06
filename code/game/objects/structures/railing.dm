@@ -26,6 +26,7 @@
 	icon_modifier = "grey_"
 	icon_state = "grey_railing0"
 
+// ALLOW(init/CTOR_ARGS): constructed is a constructor argument from whoever builds it
 /obj/structure/railing/Initialize(mapload, constructed = 0)
 	. = ..()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.

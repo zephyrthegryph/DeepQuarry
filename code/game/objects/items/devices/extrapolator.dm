@@ -27,6 +27,7 @@
 	/// Cooldown for when the extrapolator can be used next.
 	COOLDOWN_DECLARE(usage_cooldown)
 
+// ALLOW(init/CTOR_ARGS): starting_scanner is a constructor argument from whoever builds it
 /obj/item/extrapolator/Initialize(mapload, obj/item/stock_parts/scanning_module/starting_scanner)
 	. = ..()
 	starting_scanner = starting_scanner || default_scanning_module

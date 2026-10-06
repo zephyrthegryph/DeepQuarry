@@ -8,6 +8,7 @@
 	anchored = 1.0
 	density = 0
 
+// ALLOW(init/INSTANCE_STATE): pixel_x, pixel_y and icon_state rolled at random for each instance
 /obj/structure/event/present/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-10,10)

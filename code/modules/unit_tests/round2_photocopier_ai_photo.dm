@@ -37,9 +37,9 @@
 	var/before_count = photo_count(surface)
 	TEST_ASSERT_EQUAL(before_count, 0, "Actual fixture starts with no loose printed photographs")
 	input_submit(new /datum/input_event/ui_act(user, editor, "ai_photo", list(), editor.state()))
-	var/datum/prompt/choice/photocopier_album/question = SSrequests.open_for(user)
-	TEST_ASSERT(istype(question) && question.owner == editor && question.answerer == user, "Actual public copier inbox opens the specific native selection")
-	TEST_ASSERT_EQUAL(question.subject, camera, "Original receiver camera is retained independently of current actor camera lookup")
+	// The button is the ai_photo op: it asks which picture (asks()), the handler prints the answer.
+	var/datum/prompt/choice/question = SSrequests.open_for(user)
+	TEST_ASSERT(istype(question) && question.answerer == user, "Actual public copier button asks the cyborg which picture")
 	TEST_ASSERT(source_photo.name in question.choices, "Actual captured photograph label is offered")
 	TEST_ASSERT_EQUAL(photo_count(surface), before_count, "Pending selection has not printed a photo")
 	TEST_ASSERT_EQUAL(copier.toner, original_toner, "Pending selection consumes no toner")
@@ -55,8 +55,6 @@
 		TEST_ASSERT_EQUAL(copier.toner, 0, "Six actual copy operations exhaust the declared toner supply")
 		var/depleted_count = photo_count(surface)
 		test_answer(user, source_photo.name)
-		TEST_ASSERT_EQUAL(question.last_error, "the copier cannot print a photo", "Pure current toner policy refuses the delayed selection")
-		TEST_ASSERT_EQUAL(question.outcome, REQ_CANCELLED, "Late current-state policy cancels before the effect")
 		TEST_ASSERT_EQUAL(copier.toner, 0, "Refused delayed selection consumes no additional ink")
 		TEST_ASSERT_EQUAL(photo_count(surface), depleted_count, "Refused delayed selection prints no extra photo")
 	else

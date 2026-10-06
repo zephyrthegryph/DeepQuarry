@@ -39,6 +39,7 @@
 
 	var/global/amount = 0
 
+// ALLOW(init/INSTANCE_STATE): takes the beacon on its tile as home and numbers itself
 /mob/living/bot/mulebot/Initialize(mapload)
 	. = ..()
 

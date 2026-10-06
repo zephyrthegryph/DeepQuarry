@@ -31,6 +31,7 @@
 	M.Turn(angle)
 	transform = M
 
+// ALLOW(init/CTOR_ARGS): angle_override, p_x, p_y, color_override and scaling are constructor arguments from whoever builds it
 /obj/effect/projectile/Initialize(mapload, angle_override, p_x, p_y, color_override, scaling = 1)
 	. = ..()
 	if(angle_override && p_x && p_y && color_override && scaling)
@@ -54,6 +55,7 @@
 /obj/effect/projectile_lighting
 	var/owner
 
+// ALLOW(init/CTOR_ARGS): color, range, intensity and owner_key are constructor arguments from whoever builds it
 /obj/effect/projectile_lighting/Initialize(mapload, color, range, intensity, owner_key)
 	. = ..()
 	set_light(range, intensity, color)

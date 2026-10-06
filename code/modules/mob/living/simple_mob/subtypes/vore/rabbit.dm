@@ -49,6 +49,7 @@
 	EXPIRY_DECLARE(last_pet) // This tracks the last time someone patted us.
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
+// ALLOW(init/INSTANCE_STATE): rolls its fur colour
 /mob/living/simple_mob/vore/rabbit/Initialize(mapload)
 	. = ..()
 

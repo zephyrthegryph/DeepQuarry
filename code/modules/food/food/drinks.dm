@@ -27,6 +27,7 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+// ALLOW(init/INSTANCE_STATE): cant_open rolled at random for each instance
 /obj/item/reagent_containers/food/drinks/Initialize(mapload)
 	. = ..()
 	if (prob(cant_chance))

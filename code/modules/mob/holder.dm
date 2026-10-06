@@ -24,6 +24,7 @@
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
+// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 /obj/item/holder/Initialize(mapload, mob/held)
 	. = ..()
 	if(!ismob(held))
@@ -119,6 +120,7 @@
 
 /obj/item/holder/proc/cleanup_check()
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
+		// ALLOW(lifecycle): the mob holder ends once its mob is out of it
 		qdel(src)
 
 /// Releases the mob from inside the holder. Calls forceMove() which calls Exited(). Then does cleanup for the client's eye location.
@@ -182,6 +184,7 @@
 
 /obj/item/holder/pai
 
+// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 /obj/item/holder/pai/Initialize(mapload, mob/held)
 	. = ..()
 	item_state = held.icon_state
@@ -303,6 +306,7 @@
 	item_icons = null
 	w_class = ITEMSIZE_SMALL
 
+// ALLOW(init/INSTANCE_STATE): lays down the bird it holds
 /obj/item/holder/bird/Initialize(mapload)
 	. = ..()
 	held_mob?.lay_down()

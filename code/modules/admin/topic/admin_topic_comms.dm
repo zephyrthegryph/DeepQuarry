@@ -12,7 +12,15 @@ TOPIC_ACTION(/datum/admins, "FaxReply", PROC_REF(topic_faxreply), TOPIC_REF("Fax
 		to_chat(owner(), span_filter_adminlog("The person you are trying to contact does not have functional radio equipment."))
 		return
 
-	var/input = topic_ask(user, args, "a31", /datum/om/prompt/text, message = "Please enter a message to reply to [key_name(L)] via their headset.", title = "Outgoing message from CentCom")
+	var/question = "Please enter a message to reply to [key_name(L)] via their headset."
+	var/datum/request/replayed = comms_topic_request(user, args, "a31")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		var/list/saved_href = original_href.Copy()
+		saved_href -= "comms_topic_request"
+		open_request(src, /datum/prompt/text/admin_comms_topic, PROC_REF(comms_topic_answered), answerer = user, captured = list("href" = saved_href), step_name = "a31", question = question, title = "Outgoing message from CentCom")
+		return
+	var/input = replayed.value
 	if(!input || QDELETED(L))
 		return
 
@@ -32,7 +40,15 @@ TOPIC_ACTION(/datum/admins, "FaxReply", PROC_REF(topic_faxreply), TOPIC_REF("Fax
 		to_chat(user, span_filter_adminlog("The person you are trying to contact is not wearing a headset"))
 		return
 
-	var/input = topic_ask(user, args, "a32", /datum/om/prompt/text, message = "Please enter a message to reply to [key_name(H)] via their headset.", title = "Outgoing message from a shadowy figure...")
+	var/question = "Please enter a message to reply to [key_name(H)] via their headset."
+	var/datum/request/replayed = comms_topic_request(user, args, "a32")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		var/list/saved_href = original_href.Copy()
+		saved_href -= "comms_topic_request"
+		open_request(src, /datum/prompt/text/admin_comms_topic, PROC_REF(comms_topic_answered), answerer = user, captured = list("href" = saved_href), step_name = "a32", question = question, title = "Outgoing message from a shadowy figure...")
+		return
+	var/input = replayed.value
 	if(!input || QDELETED(H))
 		return
 
@@ -84,3 +100,34 @@ TOPIC_ACTION(/datum/admins, "FaxReply", PROC_REF(topic_faxreply), TOPIC_REF("Fax
 	rel_set(P, nameof(P.sender), sender)
 
 	P.adminbrowse(user)
+
+/datum/prompt/text/admin_comms_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_comms_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/admin_comms_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/admin_comms_topic/refusal(given)
+	return null
+
+/datum/admins/proc/comms_topic_request(mob/user, list/args, key)
+	RETURN_TYPE(/datum/request)
+	var/list/href = args[TOPIC_HREF]
+	var/datum/request/replayed = href["comms_topic_request"]
+	if(!istype(replayed, /datum/prompt/text/admin_comms_topic) || replayed.owner != src || replayed.answerer != user || replayed.outcome != REQ_ANSWERED || replayed.is_open() || QDELETED(replayed) || replayed.handler != PROC_REF(comms_topic_answered) || replayed.step_name != key)
+		return null
+	return replayed
+
+/datum/admins/proc/comms_topic_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/original_href = A.answer.captured["href"]
+	var/list/replayed_href = original_href.Copy()
+	replayed_href["comms_topic_request"] = A.answer
+	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)

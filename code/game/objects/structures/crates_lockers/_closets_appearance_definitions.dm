@@ -1,3 +1,4 @@
+// ALLOW(init/CTOR_ARGS): newappearance is a constructor argument from whoever builds it
 /obj/structure/closet/debug/Initialize(mapload, newappearance)
 	closet_appearance = newappearance
 	. = ..()

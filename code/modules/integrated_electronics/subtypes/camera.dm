@@ -30,6 +30,7 @@
 CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 	owns_one(nameof(camera), /obj/machinery/camera/intcircuit)
 
+// ALLOW(init/INSTANCE_STATE): gets its own camera network id and the camera that uses it
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
@@ -114,6 +115,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 	var/see_dark = FALSE
 
+// ALLOW(init/CTOR_ARGS): network_id and darkvis are constructor arguments from whoever builds it
 /obj/machinery/camera/intcircuit/Initialize(mapload, network_id, darkvis)
 	if(network_id)
 		network = list(network_id)

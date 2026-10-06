@@ -16,9 +16,12 @@
 	aspect = ASPECT_FORCE
 	toggled = 1
 	var/damage_to_energy_multiplier = 30.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 600 energy cost
-/obj/item/spell/shield/Initialize(mapload, coreless)
-	. = ..()
-	set_light(3, 2, l_color = "#006AFF")
+
+/obj/item/spell/shield
+	light_range = 3
+	light_power = 2
+	light_color = "#006AFF"
+	light_on = TRUE
 
 /obj/item/spell/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(user.incapacitated())

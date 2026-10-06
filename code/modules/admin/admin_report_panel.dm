@@ -68,6 +68,7 @@ CAPABILITIES(/datum/admin_report)
 
 /datum/admin_report/proc/ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the report panel closes for good on its close action
 	qdel(src)
 	return OP_OK
 

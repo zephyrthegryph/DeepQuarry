@@ -14,6 +14,7 @@
 
 	var/atom/parent
 
+// ALLOW(init/CTOR_ARGS): particle_path and particle_flags are constructor arguments from whoever builds it
 /obj/effect/abstract/particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
 	. = ..()
 	if(!loc)

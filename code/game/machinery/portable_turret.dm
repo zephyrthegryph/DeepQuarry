@@ -270,6 +270,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 			new /obj/item/assembly/prox_sensor(loc)
 	else
 		to_chat(user, span_notice("You remove the turret but did not manage to salvage anything."))
+	// ALLOW(lifecycle): the salvaged turret is removed after its parts drop
 	qdel(src)
 	return OP_OK
 

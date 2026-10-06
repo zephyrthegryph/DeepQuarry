@@ -383,6 +383,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	var/wielded = 0
 	var/cooldown = 0
 
+// ALLOW(init/CTOR_ARGS): shield_gen is a constructor argument from whoever builds it
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
 	rel_set(src, nameof(linked_generator), shield_gen)

@@ -29,6 +29,7 @@
 <b>Integrity:</b> Generally very survivable. Susceptible to being destroyed by acid."}
 	return dat
 
+// ALLOW(init/CTOR_ARGS): db_key is a constructor argument from whoever builds it
 /obj/item/implant/backup/Initialize(mapload, db_key)
 	. = ..()
 	if(!isnull(db_key))
@@ -157,11 +158,11 @@ CAPABILITIES(/obj/item/backup_implanter)
 	icon_state = "implant"
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
 
-/obj/item/storage/box/backup_kit/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 7)
-		new /obj/item/implantcase/backup(src)
-	new /obj/item/implanter(src)
+/obj/item/storage/box/backup_kit
+	starts_with = list(
+		/obj/item/implantcase/backup = 7,
+		/obj/item/implanter = 1,
+	)
 
 /*
 /obj/item/implant/backup/full

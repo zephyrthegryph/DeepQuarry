@@ -31,6 +31,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 
 TYPE_TABLE_DECLARE(/obj/item/laser_pointer, pointer_forced_diode, null)
 
+// ALLOW(init/CTOR_ARGS): laser_path is a constructor argument from whoever builds it
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	var/forced_diode = TYPE_TABLE_GET(src, pointer_forced_diode)
 	if(forced_diode)

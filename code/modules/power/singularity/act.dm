@@ -41,6 +41,7 @@
 	if(simulated)
 		ex_act(1)
 		if(src)
+			// ALLOW(lifecycle): the singularity eats the object
 			qdel(src)
 		return 2
 
@@ -66,6 +67,7 @@
 	return
 
 /obj/machinery/power/supermatter/shard/singularity_act()
+	// ALLOW(lifecycle): the singularity eats the shard
 	qdel(src)
 	return 5000
 
@@ -81,6 +83,7 @@
 	SetUniversalState(/datum/universal_state/supermatter_cascade)
 	log_admin("New super singularity made by eating a SM crystal [prints]. Last touched by [forensic_data?.get_lastprint()].")
 	message_admins("New super singularity made by eating a SM crystal [prints]. Last touched by [forensic_data?.get_lastprint()].")
+	// ALLOW(lifecycle): the singularity eats the crystal
 	qdel(src)
 	return 50000
 

@@ -185,6 +185,7 @@ TYPE_TABLE_DECLARE(/datum/affliction/lesion, lesion_symptom_table, null)
 		if(istype(O))
 			O.remove_lesion(src)
 		else
+			// ALLOW(lifecycle): a healed lesion outside an organ ends
 			qdel(src)
 		return healed
 	sync()

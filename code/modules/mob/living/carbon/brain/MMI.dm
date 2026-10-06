@@ -330,6 +330,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	ghost_query_type = /datum/ghost_query/drone_brain
 	is_digital_robot = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
 /obj/item/mmi/digital/robot/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/brain/view = get_occupant()
@@ -374,6 +375,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	..()
 	icon_state = "posibrain"
 
+// ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
 /obj/item/mmi/digital/posibrain/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/brain/view = get_occupant()

@@ -56,6 +56,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/weatherlily, null, lis
 	desc = "A strange plant."
 	icon_state = "tyrflora"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/tyr/flowers/Initialize(mapload)
 	. = ..()
 	icon_state = "tyrflora[rand(1, 5)]gb"
@@ -82,6 +83,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mutatedmeat, null, lis
 
 	var/static/list/possible_states = list("crystal", "generator","core", "hilt")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/prop/alien/prototype/Initialize(mapload)
 	. = ..()
 	icon_state = pick(possible_states)

@@ -91,6 +91,7 @@
 	if(!COOLDOWN_FINISHED(src, hasShocked))
 		return 0
 	if(!FG1() || !FG2())
+		// ALLOW(lifecycle): a field without both generators collapses
 		qdel(src)
 		return 0
 	if(isliving(user))

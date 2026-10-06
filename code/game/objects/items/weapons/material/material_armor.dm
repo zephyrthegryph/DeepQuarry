@@ -10,6 +10,7 @@
 	var/material_slowdown_modifier = 0
 	var/material_slowdown_multiplier = 0.5
 
+// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
 /obj/item/clothing/Initialize(mapload, material_key)
 	. = ..()
 	if(!material_key)
@@ -24,6 +25,7 @@
 /obj/item/clothing/proc/set_material(new_material)
 	material = get_material_by_name(new_material)
 	if(!material)
+		// ALLOW(lifecycle): armour made of an unknown material cannot exist
 		qdel(src)
 	else
 		name = "[material.display_name] [initial(name)]"

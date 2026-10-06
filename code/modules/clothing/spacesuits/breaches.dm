@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 	owns_many(nameof(breaches))
 	op("space_suit_patch_item", item(/obj/item/stack/material), then(PROC_REF(space_suit_patch_item)))
 
+// ALLOW(init/INSTANCE_STATE): remembers the name it was given, a map or loadout edit, before breaches rename it
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	base_name = "[name]"

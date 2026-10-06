@@ -208,6 +208,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 		var/obj/item/paper/P = pages[1]
 		user.drop_from_inventory(src)
 		user.put_in_hands(P)
+		// ALLOW(lifecycle): a bundle down to one page becomes that page
 		qdel(src)
 		return TRUE
 	if(page > length(pages))

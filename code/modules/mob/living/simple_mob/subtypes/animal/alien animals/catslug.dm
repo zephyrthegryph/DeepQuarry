@@ -277,6 +277,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	item_state = "catslug"
 
+// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 /obj/item/holder/catslug/Initialize(mapload, mob/held)
 	. = ..()
 	color = held.color

@@ -7,6 +7,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_solgov_rank_fleet_flag, list(
 	"o10_alt" = list("name" = "ranks (O-10 fleet admiral)", "desc" = "Insignia denoting the rank of Fleet Admiral."),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/solgov/rank/fleet/flag/Initialize(mapload)
 	apply_variant()
 	. = ..()

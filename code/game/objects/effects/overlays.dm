@@ -54,6 +54,7 @@
 	layer = ABOVE_MOB_LAYER
 	mouse_opacity = 0
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /obj/effect/overlay/wallrot/Initialize(mapload)
 	. = ..()
 	pixel_x += rand(-10, 10)

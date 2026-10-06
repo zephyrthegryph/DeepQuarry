@@ -88,8 +88,7 @@ CAPABILITIES(/obj/item/storage/box)
 /// The box is gone and its trash is in the hand.
 /obj/item/storage/box/proc/make_trash(mob/user)
 	play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER, 0.6)
-	var/obj/item/crumpled = new src.trash()
-	qdel(src)
+	var/obj/item/crumpled = replace_with(src, trash)
 	user.put_in_hands(crumpled)
 
 /obj/item/storage/box/survival

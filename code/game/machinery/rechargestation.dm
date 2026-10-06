@@ -33,6 +33,7 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, list("unbroken", "cell"))
 
+// ALLOW(init/INSTANCE_STATE): takes its built parts and the high-capacity cell among them
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

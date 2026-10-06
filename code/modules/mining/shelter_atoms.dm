@@ -832,6 +832,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	pixel_y = -4
 	max_n_of_items = 100
 
+// ALLOW(init/INSTANCE_STATE): stocks the items the map placed on its tile
 /obj/machinery/smartfridge/survival_pod/Initialize(mapload)
 	. = ..()
 	for(var/obj/item/O in contents_of(loc))

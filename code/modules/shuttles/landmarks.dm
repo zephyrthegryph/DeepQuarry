@@ -132,6 +132,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	flags = SLANDMARK_FLAG_AUTOSET
 	var/original_name = null // Save our mapped-in name so we can rebuild our name when moving sectors.
 
+// ALLOW(init/INSTANCE_STATE): tags itself with its coordinates and a random id
 /obj/effect/shuttle_landmark/automatic/Initialize(mapload)
 	original_name = name
 	landmark_tag += "-[x]-[y]-[z]-[random_id("landmarks",1,9999)]"

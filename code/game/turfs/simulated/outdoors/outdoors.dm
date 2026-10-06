@@ -188,6 +188,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	icon = 'icons/turf/outdoors_vr.dmi'
 	icon_base = "dirt0"
 
+// ALLOW(init/INSTANCE_STATE): rolls its dirt pattern for each tile
 /turf/simulated/floor/outdoors/newdirt/Initialize(mapload)
 	var/possibledirts = list(
 		"dirt0" = 150,
@@ -212,6 +213,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	edge_blending_priority = 2
 	initial_flooring = /datum/decl/flooring/outdoors/newdirt
 
+// ALLOW(init/INSTANCE_STATE): rolls its dirt pattern for each tile
 /turf/simulated/floor/outdoors/newdirt_nograss/Initialize(mapload)
 	var/possibledirts = list(
 		"dirt0" = 200,
@@ -257,6 +259,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	throw_range = 20
 	no_variants = FALSE
 
+// ALLOW(init/INSTANCE_STATE): rolls its sidewalk wear pattern for each tile
 /turf/simulated/floor/outdoors/sidewalk/Initialize(mapload)
 	var/possibledirts = list(
 		"[initial(icon_state)]" = 150,

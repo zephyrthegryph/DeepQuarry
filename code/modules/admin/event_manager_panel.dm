@@ -22,6 +22,7 @@ DECLARE_UI(/datum/event_manager_panel, "EventManagerPanel", UI_TITLE("Event Mana
 
 /datum/event_manager_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the event panel lives only while its window is open
 	qdel(src)
 
 UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_panel{events_paused:bool,report_at_round_end:bool,selected_severity:unknown,selected_time_left_minutes:num,available_events:list,new_event:list,selected_container_ref:text,severities:list,next_events:list,running_events:list}")

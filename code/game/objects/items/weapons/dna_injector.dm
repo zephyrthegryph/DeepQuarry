@@ -140,6 +140,7 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 
 	if (user)
 		user.drop_from_inventory(src)
+	// ALLOW(lifecycle): the injector is used up by the injection
 	qdel(src)
 	return uses
 

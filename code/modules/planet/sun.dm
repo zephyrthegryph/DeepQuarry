@@ -199,6 +199,7 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 	alpha = 0
 	color = "#FFFFFF"
 
+// ALLOW(init/CTOR_ARGS): newdir and newstate are constructor arguments from whoever builds it
 /atom/movable/sun_visuals_overlap/Initialize(mapload, newdir, newstate)
 	. = ..()
 	icon_state = newstate

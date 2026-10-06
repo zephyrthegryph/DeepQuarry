@@ -354,6 +354,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/flour, null, list(REAGENT_ID_FLOUR = 200))
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 /obj/item/reagent_containers/food/condiment/carton/flour/Initialize(mapload)
 	. = ..()
 	randpixel_xy()

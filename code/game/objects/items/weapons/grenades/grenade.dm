@@ -116,4 +116,5 @@ CAPABILITIES(/obj/item/grenade)
 	if(duration > 0)
 		after(src, 1 SECOND, PROC_REF(effect_spraying), with = list(spraying, --duration))
 		return
+	// ALLOW(lifecycle): the grenade is spent once its spray runs out
 	qdel(src)

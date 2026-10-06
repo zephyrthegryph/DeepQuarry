@@ -158,6 +158,7 @@ CAPABILITIES(/datum/cinematic)
 	for(var/mob/locked_mob in locked?.Copy())
 		unlock_mob(locked_mob)
 
+	// ALLOW(lifecycle): a cinematic that has stopped has released every viewer and ends
 	qdel(src)
 
 /// Locks a mob, preventing them from moving, being hurt, or acting

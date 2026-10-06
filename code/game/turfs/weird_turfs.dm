@@ -7,6 +7,7 @@
 	icon_state = "dark"
 	can_dirty = FALSE
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this tile glows
 /turf/simulated/floor/weird_things/dark/Initialize(mapload)
 	. = ..()
 	if(prob(5))

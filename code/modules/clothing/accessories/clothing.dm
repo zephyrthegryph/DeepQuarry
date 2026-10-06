@@ -95,6 +95,7 @@
 /obj/item/clothing/accessory/hawaiian_random
 	name = "random hawaiian shirt"
 
+// ALLOW(init/INSTANCE_STATE): picks its shirt colour at random
 /obj/item/clothing/accessory/hawaiian_random/Initialize(mapload)
 	var/random_color = pick("blue", "pink", "red", "yellow", "cyan")
 	icon_state = "hawaiian_[random_color]"
@@ -104,6 +105,7 @@
 /obj/item/clothing/accessory/hawaiian/random_flower
 	name = "flower-pattern shirt"
 
+// ALLOW(init/INSTANCE_STATE): icon_state and color rolled at random for each instance
 /obj/item/clothing/accessory/hawaiian/random_flower/Initialize(mapload)
 	if(prob(50))
 		icon_state = "hawaiian_red"
@@ -142,6 +144,7 @@
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel out of touch."
 	icon_state = "miamivice"
 
+// ALLOW(init/INSTANCE_STATE): picks its tropical shirt variant at random
 /obj/item/clothing/accessory/tropical_random/Initialize(mapload)
 	. = ..()
 	var/obj/item/clothing/accessory/new_item = pick(/obj/item/clothing/accessory/tropical,

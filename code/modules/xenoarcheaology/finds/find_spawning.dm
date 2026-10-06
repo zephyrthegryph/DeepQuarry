@@ -20,6 +20,7 @@
 		return
 	new /obj/item/archaeological_find(target.loc, ask.number)
 
+// ALLOW(init/CTOR_ARGS): new_item_type is a constructor argument from whoever builds it
 /obj/item/archaeological_find/Initialize(mapload, new_item_type)
 	. = ..()
 	if(new_item_type)

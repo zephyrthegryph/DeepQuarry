@@ -18,6 +18,7 @@
 /obj/item/stool/padded
 	icon_state = "stool_padded_preview" //set for the map
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/item/stool/Initialize(mapload, new_material, new_padding_material)
 	. = ..()
 	if(!new_material)

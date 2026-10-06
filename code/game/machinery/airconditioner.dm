@@ -116,6 +116,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heat_pump_watts), nameof(target_temp), HEAT_PUMP_BOTH, FALSE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(thermoregulator_emp))))
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/power/thermoregulator/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

@@ -47,6 +47,7 @@
 	allow_mind_transfer = TRUE
 
 // Pepe is love, not hate.
+// ALLOW(init/INSTANCE_STATE): name and desc rolled at random for each instance
 /mob/living/simple_mob/vore/aggressive/frog/Initialize(mapload)
 	. = ..()
 	if(rand(1,1000000) == 1)

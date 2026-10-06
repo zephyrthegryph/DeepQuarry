@@ -242,6 +242,7 @@ CAPABILITIES(/datum/plane_holder)
 	var/state = FALSE //Saves cost with the lists
 	var/mob/my_mob
 
+// ALLOW(init/CTOR_ARGS): M is a constructor argument from whoever builds it
 /atom/movable/screen/plane_master/augmented/Initialize(mapload, mob/M)
 	. = ..()
 	rel_set(src, nameof(my_mob), M)

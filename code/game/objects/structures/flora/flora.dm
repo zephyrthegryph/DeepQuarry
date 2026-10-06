@@ -116,6 +116,7 @@ EXTEND_INTERACTIONS(/obj/structure/flora, \
 	harvest_loot = list(/obj/item/stack/material/fiber = 1)
 	max_harvests = 1
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/bush/Initialize(mapload)
 	. = ..()
 	icon_state = "snowbush[rand(1, 6)]"
@@ -167,6 +168,7 @@ EXTEND_INTERACTIONS(/obj/structure/flora, \
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/ausbushes, ausbush_icon_choice, null)
 
+// ALLOW(init/CTOR_ARGS): bush_icon is a constructor argument from whoever builds it
 /obj/structure/flora/ausbushes/Initialize(mapload, bush_icon)
 	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
 	if(icon_choice)

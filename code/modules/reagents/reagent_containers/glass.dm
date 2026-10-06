@@ -67,6 +67,7 @@ MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.
 MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
 MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
 
+// ALLOW(init/INSTANCE_STATE): remembers the name and description it was given, a map or loadout edit, for its label
 /obj/item/reagent_containers/glass/Initialize(mapload)
 	. = ..()
 	base_name = name

@@ -125,6 +125,7 @@ CAPABILITIES(/obj/item/powersink)
 		play_sfx(src, SFX_EFFECTS_SCREECH)
 	if(power_drained >= max_power)
 		explosion(src.loc, 3,6,9,12)
+		// ALLOW(lifecycle): the power sink explodes once it has drained its fill
 		qdel(src)
 		return
 	PN = attached()?.get_power_region() || 0

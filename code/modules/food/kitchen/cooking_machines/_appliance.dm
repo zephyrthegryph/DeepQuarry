@@ -54,6 +54,7 @@ CAPABILITIES(/obj/machinery/appliance)
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/appliance/Initialize(mapload)
 	. = ..()
 

@@ -265,6 +265,7 @@
 
 	attacker.drop_from_inventory(src)
 	src.moveToNullspace()
+	// ALLOW(lifecycle): the grab is spent on the headbutt
 	qdel(src)
 	return
 

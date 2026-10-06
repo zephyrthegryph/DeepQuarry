@@ -10,6 +10,7 @@
 	var/obj/item/extinguisher/has_extinguisher
 	var/opened = 0
 
+// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
 /obj/structure/extinguisher_cabinet/Initialize(mapload, dir, building = 0)
 	. = ..()
 

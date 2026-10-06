@@ -19,6 +19,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
+// ALLOW(init/CTOR_ARGS): new_overmind is a constructor argument from whoever builds it
 /obj/structure/blob/Initialize(mapload, new_overmind)
 	if(new_overmind)
 		rel_set(src, nameof(overmind), new_overmind)

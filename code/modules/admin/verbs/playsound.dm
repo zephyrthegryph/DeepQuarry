@@ -9,8 +9,19 @@ GLOBAL_VAR_INIT(internet_sound_cooldown, 0)
 GLOBAL_LIST_EMPTY(sounds_cache) // ALLOW(cache): admin-uploaded sound list, not a keyed cache
 
 ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all players.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
+	// Replay only the actual ended request, through the public admin dispatcher.
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if((istype(resumed, /datum/prompt/choice/admin_global_sound_replay) || istype(resumed, /datum/prompt/number/admin_global_sound_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(play_sound_replay_answered) && S == resumed.captured["original_sound"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/freq = 1
-	var/vol = verb_ask(user, "a1", args, /datum/om/prompt/number, message = "What volume would you like the sound to play at?", default = 100, max = 100, min = 1)
+	if(!("a1" in replay_answers))
+		replay_answers["original_sound"] = args[2]
+		open_request(src, /datum/prompt/number/admin_global_sound_replay, PROC_REF(play_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", question = "What volume would you like the sound to play at?", default = 100, max_value = 100, min_value = 1)
+		return
+	var/vol = replay_answers["a1"]
 	if(isnull(vol))
 		return
 	if(!vol)
@@ -29,7 +40,11 @@ ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all play
 
 	GLOB.sounds_cache += S
 
-	var/res = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "Show the title of this song ([S]) to the players?\nOptions 'Yes' and 'No' will play the sound.", choices = list("Yes", "No", "Cancel"))
+	if(!("a2" in replay_answers))
+		replay_answers["original_sound"] = args[2]
+		open_request(src, /datum/prompt/choice/admin_global_sound_replay, PROC_REF(play_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a2", question = "Show the title of this song ([S]) to the players?\nOptions 'Yes' and 'No' will play the sound.", choices = list("Yes", "No", "Cancel"))
+		return
+	var/res = replay_answers["a2"]
 	if(isnull(res))
 		return
 	if(!res)
@@ -69,13 +84,24 @@ ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a so
 	feedback_add_details("admin_verb", "Play Direct Mob Sound")
 
 ADMIN_VERB(play_z_sound, R_SOUNDS, "Play Z Sound", "Plays a sound to a single z-level.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
+	// Replay only the actual ended request, through the public admin dispatcher.
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if((istype(resumed, /datum/prompt/choice/admin_z_sound_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(play_z_sound_replay_answered) && S == resumed.captured["original_sound"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/target_z = user.mob.z
 	var/sound/uploaded_sound = sound(S, repeat = 0, wait = 1, channel = 777)
 	uploaded_sound.priority = 250
 
 	GLOB.sounds_cache += S
 
-	var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Do you ready?\nSong: [S]\nNow you can also play this sound using \"Play Server Sound\".", title = "Confirmation request", choices = list("Play","Cancel"))
+	if(!("a4" in replay_answers))
+		replay_answers["original_sound"] = args[2]
+		open_request(src, /datum/prompt/choice/admin_z_sound_replay, PROC_REF(play_z_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a4", question = "Do you ready?\nSong: [S]\nNow you can also play this sound using \"Play Server Sound\".", title = "Confirmation request", choices = list("Play", "Cancel"))
+		return
+	var/_answer_a4 = replay_answers["a4"]
 	if(isnull(_answer_a4))
 		return
 	if(_answer_a4 != "Play")
@@ -262,17 +288,30 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	feedback_add_details("admin_verb", "Play Internet Sound")
 
 ADMIN_VERB(play_web_sound, R_SOUNDS, "Play Internet Sound", "Plays a sound from the internet to all players.", ADMIN_CATEGORY_FUN_SOUNDS)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_web_sound_replay) || istype(resumed, /datum/prompt/text/admin_web_sound_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(play_web_sound_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/ytdl = CONFIG_GET(string/invoke_youtubedl)
 	if(!ytdl)
 		to_chat(user, span_boldwarning("Youtube-dl was not configured, action unavailable"), confidential = TRUE) //Check config.txt for the INVOKE_YOUTUBEDL value
 		return
 
 	if(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown))
-		var/override = verb_ask(user, "override", args, /datum/om/prompt/choice/alert, message = "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. Would you like to override?", title = "Musicalis Interruptus", choices = list("No","Yes"))
+		if(!("override" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_web_sound_replay, PROC_REF(play_web_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "override", buttons = TRUE, question = "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. Would you like to override?", title = "Musicalis Interruptus", choices = list("No","Yes"))
+			return
+		var/override = replay_answers["override"]
 		if(override != "Yes")
 			return
 
-	var/web_sound_input = verb_ask(user, "a6", args, /datum/om/prompt/text, message = "Enter content URL (supported sites only, leave blank to stop playing)", title = "Play Internet Sound")
+	if(!("a6" in replay_answers))
+		open_request(src, /datum/prompt/text/admin_web_sound_replay, PROC_REF(play_web_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a6", question = "Enter content URL (supported sites only, leave blank to stop playing)", title = "Play Internet Sound")
+		return
+	var/web_sound_input = replay_answers["a6"]
 	if(isnull(web_sound_input))
 		return
 
@@ -301,3 +340,109 @@ ADMIN_VERB(stop_sounds, R_SOUNDS, "Stop All Playing Sounds", "Stops all playing 
 #undef SHELLEO_STDOUT
 #undef SHELLEO_STDERR
 
+
+/datum/prompt/choice/admin_web_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_web_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_web_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_web_sound_replay/refusal(given)
+	return null
+
+/datum/prompt/text/admin_web_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_web_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/admin_web_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/admin_verb/play_web_sound/proc/play_web_sound_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_global_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_global_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_global_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_global_sound_replay/refusal(given)
+	return null
+
+/datum/admin_verb/play_sound/proc/play_sound_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_sound"], A.answer)
+
+/datum/prompt/choice/admin_z_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_z_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_z_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_z_sound_replay/refusal(given)
+	return null
+
+/datum/admin_verb/play_z_sound/proc/play_z_sound_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_sound"], A.answer)
+
+/datum/prompt/number/admin_global_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_global_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/number/admin_global_sound_replay/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/admin_global_sound_replay/refusal(given)
+	return null

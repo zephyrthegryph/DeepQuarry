@@ -10,6 +10,7 @@
 	var/deploying
 	var/deployed
 
+// ALLOW(init/CTOR_ARGS): autoopen is a constructor argument from whoever builds it
 /obj/structure/droppod_door/Initialize(mapload, autoopen)
 	. = ..()
 	if(autoopen)

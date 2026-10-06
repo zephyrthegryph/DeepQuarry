@@ -123,6 +123,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 
+// ALLOW(init/CTOR_ARGS): ndir is a constructor argument from whoever builds it
 /obj/structure/hoist/Initialize(mapload, ndir)
 	. = ..()
 	dir = ndir

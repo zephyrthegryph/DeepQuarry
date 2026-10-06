@@ -41,6 +41,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/clothing/head/chameleon/changeling
@@ -62,6 +63,7 @@ CAPABILITIES(/obj/item/clothing/head/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/clothing/suit/chameleon/changeling
@@ -87,6 +89,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/clothing/shoes/chameleon/changeling
@@ -112,6 +115,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/storage/backpack/chameleon/changeling
@@ -140,6 +144,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting. // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			AM.forceMove(get_turf(loc))
+		// ALLOW(lifecycle): the changeling tears its grown bag off and it is gone
 		qdel(src)
 
 /obj/item/clothing/gloves/chameleon/changeling
@@ -166,6 +171,7 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/clothing/mask/chameleon/changeling
@@ -192,6 +198,7 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/clothing/glasses/chameleon/changeling
@@ -213,6 +220,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown clothing off and it is gone
 		qdel(src)
 
 /obj/item/storage/belt/chameleon/changeling
@@ -238,6 +246,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown belt off and it is gone
 		qdel(src)
 
 /obj/item/card/id/syndicate/changeling
@@ -265,6 +274,7 @@ CAPABILITIES(/obj/item/card/id/syndicate/changeling)
 		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
+		// ALLOW(lifecycle): the changeling tears its grown card off and it is gone
 		qdel(src)
 
 /obj/item/card/id/syndicate/changeling/Click() //Since we can't hold it in our hands, and attack_hand() doesn't work if it in inventory...

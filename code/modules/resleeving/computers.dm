@@ -385,6 +385,9 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_menu)
 /// Prompts re-run the action with the same params.
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "sleeve", act_sleeve, UI_ARG_NUM("mode"))
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
+	return sleeve_request_stage(ui, params["mode"])
+
+/obj/machinery/computer/transhuman/resleeving/proc/sleeve_request_stage(datum/tgui/ui, mode, atom/selected_body, consent)
 	. = TRUE
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(!istype(active_mr))
@@ -395,7 +398,6 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 		set_temp("Error: No sleevers detected.", "danger")
 		rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 		return
-	var/mode = params["mode"]
 	var/override
 	var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
 	if(!istype(sleever))
@@ -417,7 +419,10 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 				subtargets += H
 			if(subtargets.len)
 				var/oc_sanity = sleever.get_occupant()
-				var/_answer_k417 = act_ask(ui.user, action, params, ui, "k417", /datum/om/prompt/choice, message = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", title = "Resleeving Target", choices = subtargets)
+				if(isnull(selected_body))
+					open_request(ui, /datum/prompt/choice/resleeving_body, TYPE_PROC_REF(/datum/tgui, resleeving_body_answered), answerer = ui.user, choices = subtargets, question = "Multiple bodies detected. Select target for resleeving of [active_mr.mindname] manually. Sleeving of primary body is unsafe with sub-contents, and is not listed.", captured = list("mode" = mode, "consent" = consent))
+					return
+				var/_answer_k417 = selected_body
 				if(isnull(_answer_k417))
 					return
 				override = _answer_k417
@@ -434,7 +439,10 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 
 	//Body to sleeve into, but mind is in another living body.
 	if(active_mr.mind_ref.current && active_mr.mind_ref.current.stat < DEAD) //Mind is in a body already that's alive
-		var/answer = act_ask(active_mr.mind_ref.current, action, params, ui, "k431", /datum/om/prompt/choice/alert, message = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)", title = "Resleeving", choices = list("No","Yes"))
+		if(isnull(consent))
+			open_request(ui, /datum/prompt/choice/resleeving_consent, TYPE_PROC_REF(/datum/tgui, resleeving_consent_answered), answerer = active_mr.mind_ref.current, subject = selected_body, choices = list("No", "Yes"), buttons = TRUE, captured = list("mode" = mode))
+			return
+		var/answer = consent
 		if(isnull(answer))
 			return
 		//They declined to be moved.
@@ -447,6 +455,52 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 	sleever.putmind(active_mr, mode, override, db_key = db_key)
 	set_temp("Initiating resleeving...")
 	rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
+
+/datum/tgui/proc/resleeving_body_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/computer/transhuman/resleeving/console = src_object()
+	if(console.sleeve_request_stage(src, A.answer.captured["mode"], A.answer.value, A.answer.captured["consent"]))
+		SStgui.update_uis(console)
+
+/datum/tgui/proc/resleeving_consent_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/computer/transhuman/resleeving/console = src_object()
+	if(console.sleeve_request_stage(src, A.answer.captured["mode"], A.answer.subject, A.answer.value))
+		SStgui.update_uis(console)
+
+/datum/prompt/choice/resleeving_body
+	title = "Resleeving Target"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/resleeving_body/normalize(given)
+	return isatom(given) ? given : null
+
+/datum/prompt/choice/resleeving_body/refusal(given)
+	return null
+
+/datum/prompt/choice/resleeving_body/recheck_extra()
+	var/datum/tgui/original_ui = owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
+		return "gone"
+	var/obj/machinery/computer/transhuman/resleeving/console = original_ui.src_object()
+	if(!istype(console) || QDELETED(console))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	if(!console.ui_act_allowed(original_ui.user, "sleeve", original_ui, original_ui.state()))
+		return "the sleeve action is unavailable"
+	return null
+
+/datum/prompt/choice/resleeving_consent
+	parent_type = /datum/prompt/choice/resleeving_body
+	question = "Someone is attempting to restore a backup of your mind. Do you want to abandon this body, and move there? You MAY suffer memory loss! (Same rules as CMD apply)"
+	title = "Resleeving"
+
+/datum/prompt/choice/resleeving_consent/normalize(given)
+	return istext(given) ? given : null
 
 /// Why `active_mr` can't be sleeved into the resleever's occupant, or null when it can.
 /obj/machinery/computer/transhuman/resleeving/proc/sleeve_body_error(obj/machinery/transhuman/resleever/sleever, datum/transhuman/mind_record/active_mr)

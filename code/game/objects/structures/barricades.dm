@@ -9,6 +9,7 @@
 	max_integrity = 100
 	var/datum/material/material
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/structure/barricade/Initialize(mapload, material_name)
 	. = ..()
 	if(!material_name)
@@ -110,6 +111,7 @@ EXTEND_INTERACTIONS(/obj/structure/barricade, \
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "blank"
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/structure/barricade/sandbag/Initialize(mapload, material_name)
 	if(!material_name)
 		material_name = MAT_CLOTH

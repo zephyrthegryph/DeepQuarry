@@ -8,6 +8,7 @@
 	var/uses = 1.0
 
 
+// ALLOW(init/INSTANCE_STATE): activation_emote and uses rolled at random for each instance
 /obj/item/implant/freedom/Initialize(mapload)
 	. = ..()
 	activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")

@@ -13,6 +13,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	var/tmp/datum/seed/seed_static
 	var/modified = 0
 
+// ALLOW(init/CTOR_ARGS): _seed_type is a constructor argument from whoever builds it
 /obj/item/seeds/Initialize(mapload, _seed_type)
 	if(_seed_type in SSplants.seeds)
 		seed_type = _seed_type
@@ -77,6 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/random
 	seed_type = null
 
+// ALLOW(init/INSTANCE_STATE): creates a random seed for this packet
 /obj/item/seeds/random/Initialize(mapload)
 	proto_set(src, nameof(seed_static), SSplants.create_random_seed())
 	seed_type = seed().name

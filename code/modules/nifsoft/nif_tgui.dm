@@ -62,6 +62,7 @@ CAPABILITIES(/obj/item/nif)
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/act/notice/A)
 	EVENT_HANDLER
+	// ALLOW(lifecycle): the NIF menu ends with its owner
 	qdel(src)
 
 /datum/nif_menu/proc/on_client_login(datum/act/notice/A)

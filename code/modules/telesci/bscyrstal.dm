@@ -8,6 +8,7 @@
 	w_class = ITEMSIZE_TINY
 	var/blink_range = 8 // The teleport range when crushed/thrown at someone.
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /obj/item/bluespace_crystal/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-5, 5)
@@ -43,6 +44,7 @@ CAPABILITIES(/obj/item/bluespace_crystal)
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
 		dephase_shadekin() // mess with shadekins
+		// ALLOW(lifecycle): the crystal fizzles away on impact
 		qdel(src)
 
 // Artifical bluespace crystal, doesn't give you much research.

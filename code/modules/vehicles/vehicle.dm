@@ -270,6 +270,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 			cell.update_icon()
 			own_take(src, nameof(cell))
 
+	// ALLOW(lifecycle): the vehicle explodes
 	qdel(src)
 
 /obj/vehicle/atom_destruction(damage_flag)

@@ -29,4 +29,5 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	detonate(TRUE) // See above for this sinful choice
 	playsound(src, blast_sound, 50, 1, 5)
+	// ALLOW(lifecycle): the grenade is spent once it detonates
 	qdel(src)

@@ -25,6 +25,7 @@ CAPABILITIES(/obj/structure/bonfire)
 
 TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/structure/bonfire/Initialize(mapload, material_name)
 	var/forced_material = TYPE_TABLE_GET(src, forced_bonfire_material)
 	if(forced_material)

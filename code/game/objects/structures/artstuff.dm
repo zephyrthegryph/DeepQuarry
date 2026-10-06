@@ -427,6 +427,7 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 	desc_with_canvas = "A painting hung where only the determined can reach it."
 	persistence_id = "away_area"
 
+// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
 /obj/structure/sign/painting/Initialize(mapload, dir, building)
 	. = ..()
 	if(persistence_id)

@@ -466,6 +466,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 
 	apply_layer(MOB_WATER_LAYER)
 
+// ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)
 	. = ..()
 	if(tree_chance && prob(tree_chance) && !check_density())
@@ -639,6 +640,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		dog.adjust_affinity(15)
 
+	// ALLOW(lifecycle): the fur tree is cut down
 	qdel(src)
 
 /obj/structure/flora/tree/fur/wall
@@ -921,6 +923,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	icon = 'icons/obj/landmark_vr.dmi'
 	icon_state = "transition"
 
+// ALLOW(init/INSTANCE_STATE): names itself after the area it is placed in
 /obj/effect/landmark/stardog/Initialize(mapload)
 	. = ..()
 	var/area/a = get_area(src)
@@ -1430,6 +1433,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 		)
 	var/faction = FACTION_MACROBACTERIA
 
+// ALLOW(init/INSTANCE_STATE): rolls how long until the door opens
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)

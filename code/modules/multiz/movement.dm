@@ -703,6 +703,7 @@
 	else
 		for(var/atom/movable/A in contents_of(src))
 			A.fall_impact(hit_atom, damage_min, damage_max, silent = TRUE)
+		// ALLOW(lifecycle): the exosuit is destroyed by a planetary fall
 		qdel(src)
 
 	// And hurt the floor.

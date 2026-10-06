@@ -11,6 +11,7 @@
 CAPABILITIES(/obj/item/disk/botany)
 	owns_many(nameof(genes))
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /obj/item/disk/botany/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-5,5)
@@ -42,10 +43,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	name = "flora disk box"
 	desc = "A box of flora data disks, apparently."
 
-/obj/item/storage/box/botanydisk/Initialize(mapload)
-	. = ..()
-	for(var/i = 0;i<7;i++)
-		new /obj/item/disk/botany(src)
+/obj/item/storage/box/botanydisk
+	starts_with = list(
+		/obj/item/disk/botany = 7,
+	)
 
 /obj/machinery/botany
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -66,6 +67,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/failed_task = 0
 	var/disk_needs_genes = 0
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/botany/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

@@ -37,6 +37,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 /// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
 	if(!controller() || !site() || QDELETED(site()))
+		// ALLOW(lifecycle): the teardown job ends when its site or controller is gone
 		qdel(src)
 		return
 	turfs = block(locate(1, 1, z_level), locate(world.maxx, world.maxy, z_level))
@@ -60,6 +61,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 /datum/expedition_teardown_job/proc/finish()
 	turfs = null
 	if(!controller() || !site() || QDELETED(site()))
+		// ALLOW(lifecycle): the teardown job ends when its site or controller is gone
 		qdel(src)
 		return
 	var/site_name = site().name
@@ -71,6 +73,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
 	own_clear(src, nameof(site), OWN_DELETE)
+	// ALLOW(lifecycle): the teardown job ends once its site has been released
 	qdel(src)
 
 // The expedition system (was SSexpedition). On demand: the lifecycle poll is parked

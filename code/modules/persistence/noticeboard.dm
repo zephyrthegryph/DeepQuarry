@@ -20,6 +20,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
 	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
 
+// ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
 /obj/structure/noticeboard/Initialize(mapload)
 	. = ..()
 

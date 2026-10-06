@@ -75,6 +75,7 @@
 	icon = 'icons/obj/seeds.dmi'
 	icon_state = "blank"
 
+// ALLOW(init/CTOR_ARGS): newseed is a constructor argument from whoever builds it
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Initialize(mapload,datum/seed/newseed)
 	. = ..()
 	if(isopenturf(loc))
@@ -89,11 +90,13 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/remove_dead()
 	..()
+	// ALLOW(lifecycle): the invisible soil exists only to hold its plant
 	qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/harvest()
 	..()
 	if(!seed) // Repeat harvests are a thing.
+		// ALLOW(lifecycle): the invisible soil exists only to hold its plant
 		qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/die()

@@ -218,6 +218,7 @@
 
 	else
 		act_message(src, null, others = span_warning("%U% quivers slightly, then splits apart with a wet slithering noise."))
+		// ALLOW(lifecycle): the diona splits into nymphs and the body is gone
 		qdel(src)
 
 /mob/living/carbon/human/proc/self_diagnostics()

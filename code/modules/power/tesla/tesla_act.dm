@@ -20,6 +20,7 @@
 /obj/machinery/nuclearbomb/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..()
 	if(explosive)
+		// ALLOW(lifecycle): the tesla destroys the bomb so it cannot blow up again
 		qdel(src)//like the singulo, tesla deletes it. stops it from exploding over and over
 
 /obj/machinery/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
@@ -35,11 +36,13 @@
 	if(isEmpProof())
 		return
 	..()
+	// ALLOW(lifecycle): the tesla destroys the camera so it cannot blow up again
 	qdel(src) //to prevent bomb testing camera from exploding over and over forever
 
 /obj/machinery/light/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(explosive)
 		explosion(loc, 0, 0, 0/*flame_range = 5*/, adminlog = FALSE)
+		// ALLOW(lifecycle): the tesla bursts the light
 		qdel(src)
 		return
 	set_on(TRUE)
@@ -49,6 +52,7 @@
 	..() //extend the zap
 	visible_message(span_danger("[src] is blown apart by the bolt of electricity!"), span_danger("You hear a metallic screeching sound."))
 	dump_contents()
+	// ALLOW(lifecycle): the tesla blows the closet apart
 	qdel(src)
 
 /obj/structure/reagent_dispensers/fueltank/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
@@ -65,6 +69,7 @@
 
 /obj/machinery/gravity_generator/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..()
+	// ALLOW(lifecycle): the tesla destroys the generator part so it cannot blow up again
 	qdel(src)//like the singulo, tesla deletes it. stops it from exploding over and over
 
 /obj/machinery/power/rtg/abductor/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)

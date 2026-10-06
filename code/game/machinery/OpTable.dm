@@ -46,6 +46,7 @@ CAPABILITIES(/obj/machinery/optable)
 	if(user.has_mutation(HULK))
 		act_message(user, src, others = span_danger("%U% destroys %T%!"))
 		set_density(FALSE)
+		// ALLOW(lifecycle): a hulk smashes the operating table apart
 		qdel(src)
 	return TRUE
 

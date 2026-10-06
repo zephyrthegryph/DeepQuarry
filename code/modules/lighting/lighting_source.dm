@@ -186,6 +186,7 @@
 	var/atom/source_atom = src.source_atom
 
 	if (QDELETED(source_atom))
+		// ALLOW(lifecycle): the light source ends with the atom that casts it
 		qdel(src)
 		return
 
@@ -202,6 +203,7 @@
 		update = TRUE
 
 	if (!light_range || !light_power)
+		// ALLOW(lifecycle): a light source with no range or power ends
 		qdel(src)
 		return
 

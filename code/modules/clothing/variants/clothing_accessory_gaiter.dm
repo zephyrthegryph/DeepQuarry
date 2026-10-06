@@ -11,6 +11,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_gaiter, list(
 	"snow" = list("name" = "white neck gaiter", "icon_state" = "gaiter_snow"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/gaiter/Initialize(mapload)
 	apply_variant()
 	. = ..()

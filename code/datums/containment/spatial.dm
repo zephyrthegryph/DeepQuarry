@@ -91,6 +91,7 @@
 /// ```
 /proc/contents_of(atom/A, type)
 	RETURN_TYPE(/list)
+	READS_FROM() // what a thing holds is asked when a choice is made, never cached
 	if(!A)
 		return list()
 	if(!type)

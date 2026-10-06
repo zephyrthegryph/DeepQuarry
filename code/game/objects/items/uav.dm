@@ -364,6 +364,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	visible_message(span_danger("[src] shorts out and explodes!"))
 	power_down()
 	var/turf/T = get_turf(src)
+	// ALLOW(lifecycle): the drone shorts out and explodes
 	qdel(src)
 	explosion(T, -1, 0, 1, 2) //Not very large
 

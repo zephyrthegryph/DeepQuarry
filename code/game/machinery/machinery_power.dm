@@ -88,6 +88,7 @@
 	var/tmp/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
 
 // Do not do power stuff in New/Initialize until after ..()
+// ALLOW(init/FRAMEWORK): the machinery base of the init chain reports its draw and joins its area's power
 /obj/machinery/Initialize(mapload)
 	. = ..()
 	// only add this if we init on a non-turf (and non-null)

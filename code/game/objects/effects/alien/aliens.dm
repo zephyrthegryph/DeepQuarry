@@ -40,6 +40,7 @@
 	var/obj/effect/alien/weeds/node/linked_node
 	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
+// ALLOW(init/CTOR_ARGS): node and newcolor are constructor arguments from whoever builds it
 /obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
 	. = ..()
 	if(isspace(loc) || delete_me)
@@ -254,6 +255,7 @@ CAPABILITIES(/obj/effect/alien/weeds)
 CAPABILITIES(/obj/effect/alien/acid)
 	owns_one(nameof(target), /atom)
 
+// ALLOW(init/CTOR_ARGS): target is a constructor argument from whoever builds it
 /obj/effect/alien/acid/Initialize(mapload, target)
 	. = ..()
 	rel_set(src, nameof(target), target)

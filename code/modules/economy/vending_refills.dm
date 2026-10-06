@@ -26,6 +26,7 @@
 			return TRUE
 	return FALSE
 
+// ALLOW(init/INSTANCE_STATE): names itself after the refill type it was given
 /obj/item/refill_cartridge/autoname/Initialize(mapload)
 	. = ..()
 	if(refill_type && ispath(refill_type))
