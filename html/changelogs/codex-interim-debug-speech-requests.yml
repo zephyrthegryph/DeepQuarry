@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Expedition debugging and force-speech prompts now use native requests."
