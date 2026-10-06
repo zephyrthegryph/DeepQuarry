@@ -658,7 +658,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			// ALLOW(lifecycle): the RCD deconstructs the window
 			qdel(src)
 			return TRUE
 	return FALSE

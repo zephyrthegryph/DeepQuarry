@@ -350,7 +350,6 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	if(!turf_clear(T))
 		T = get_turf(src)
 	new /obj/effect/decal/cleanable/confetti(T)
-	// ALLOW(lifecycle): the tumour pops into confetti
 	qdel(src)
 */
 
@@ -528,7 +527,6 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 		thalers -= 1
 		spawn_money(1, T)
 
-	// ALLOW(lifecycle): the tumour pops into money
 	qdel(src)
 */
 
