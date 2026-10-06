@@ -18,7 +18,13 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 				targets["[T.mob.real_name](as [T.mob.name]) - [T]"] = T
 		else
 			targets["(No Mob) - [T]"] = T
-	var/target = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "To whom shall we send a message?", title = "Admin PM", choices = sortList(targets))
+	var/target
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	if(istype(resumed, /datum/prompt/choice/admin_pm_panel_selection) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(pm_panel_selection_answered))
+		target = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_pm_panel_selection, PROC_REF(pm_panel_selection_answered), answerer = user.mob, question = "To whom shall we send a message?", title = "Admin PM", choices = sortList(targets))
+		return
 	if(isnull(target))
 		return
 	if(!target) //Admin canceled
@@ -211,3 +217,28 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 			continue
 		if(X.key!=key && X.key!=recipient.key)	//check client/X is an admin and isn't the sender or recipient
 			to_chat(X, span_admin_pm_notice(span_bold("PM: [key_name(src, X, 0)]-&gt;[key_name(recipient, X, 0)]:") + " [keywordparsedmsg]"))
+
+/datum/prompt/choice/admin_pm_panel_selection
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_SERVER|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_pm_panel_selection/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_pm_panel_selection/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_pm_panel_selection/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/cmd_admin_pm_panel/proc/pm_panel_selection_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
