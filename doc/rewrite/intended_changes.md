@@ -1807,3 +1807,15 @@ Pinned by `dq_pp/gravgen_*` (2 charge a step, gravity at 100 and off at 0, the b
   generator's window (`perform_op(..., "ui_open")`) instead of re-running the main part's legacy attack procs. The window opens to an empty hand
   (the legacy "Use"); held tools no longer show a "Use" entry that did nothing.
 - The middle part draws the charge overlay from its main part (`draw()`); no raw overlays. Hits are `extend(/datum/act/hit/...)`.
+
+## Power plants: solars (rewrite/power-plants)
+
+Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscured or off the controller's network); unchanged.
+
+- **The controller steps for real.** Its legacy `machine_step()` returned PROCESS_KILL after one run and nothing woke it again, so a manual
+  rotation rate never advanced the target angle and an unlinked tracker or a panel moved to another network kept its link. It now steps on
+  `every(MACHINE_SERVICE_INTERVAL, when = operable)`: manual tracking turns a degree every 36000 / rate deciseconds, as the window says, and
+  stale links drop (its panel check clears once done, where the flag used to stay set).
+- Ops: the panel's and tracker's crowbar (2 s and 5 s), a hostile swing at a panel, the controller's screwdriver (2 s) and its window (an
+  empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
+  `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).

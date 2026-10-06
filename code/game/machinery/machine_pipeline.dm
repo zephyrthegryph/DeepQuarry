@@ -90,7 +90,6 @@
 		/obj/machinery/power/sensor,
 		/obj/machinery/power/shield_generator,
 		/obj/machinery/power/singularity_beacon,
-		/obj/machinery/power/solar_control,
 		/obj/machinery/power/supply_beacon,
 		/obj/machinery/power/turbine,
 		/obj/machinery/pump,

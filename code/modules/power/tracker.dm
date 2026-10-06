@@ -18,9 +18,12 @@
 	var/tmp/obj/machinery/power/solar_control/control
 	var/SOLAR_MAX_DIST = 60 // ition // ours are >40 away
 
-/obj/machinery/power/tracker/Initialize(mapload, glass_type)
-	. = ..()
-	update_icon()
+MSG_DEF(tracker/glass_off, "You take the glass off the solar tracker.", "%U% takes the glass off the solar tracker.")
+
+// The solar tracker: linked to its controller, it turns toward the sun and the controller's panels follow. A crowbar takes its glass off.
+CAPABILITIES(/obj/machinery/power/tracker)
+	ref_one(nameof(control), /obj/machinery/power/solar_control)
+	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(5 SECONDS), says(MSG(tracker/glass_off)), then(PROC_REF(remove_glass_done)))
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
@@ -52,19 +55,14 @@
 	if(power_region && (power_region == control().power_region)) //update if we're still in the same grid
 		control().cdir = angle
 
-/obj/machinery/power/tracker/crowbar_act(mob/user, obj/item/W)
-	play_sfx(src, SFX_MACHINES_CLICK)
-	act_message(user, null, others = span_notice("%U% begins to take the glass off the solar tracker."))
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(remove_glass_done), list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/tracker/proc/remove_glass_done(mob/user)
+/// The glass is off: an anchored tracker assembly and the sheets are left.
+/obj/machinery/power/tracker/proc/remove_glass_done(datum/act/op/A)
 	var/obj/item/solar_assembly/S = new(loc)
-	S.tracker = TRUE
+	S.set_tracker(TRUE)
 	S.set_anchored(TRUE)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	act_message(user, null, others = span_notice("%U% takes the glass off the tracker."))
 	replace_with(src, glass_type, 2)
+	return OP_OK
 
 // Tracker Electronic
 
