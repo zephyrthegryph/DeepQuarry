@@ -1644,3 +1644,7 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   begin line to the user as well as onlookers, and the wait scales by the tool's speed as every tool op does.
 - **The window tint button's cutters**: with the panel shut they go on to the legacy tool handling instead of being swallowed.
 - **The portable sign asks its direction as an op step** (`asks()`), so the question is the op's and the answer is re-checked.
+- **Object verbs keep their legacy base requirements** (reach and an actor who can act: `needs(req_adjacent(), req_capable())`
+  on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
+- **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
+  handled and goes on, as before.
