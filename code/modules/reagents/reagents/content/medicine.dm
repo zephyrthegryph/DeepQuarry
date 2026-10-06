@@ -1421,7 +1421,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		dq_set_was_bloodied(I, null)
 	for(var/obj/effect/decal/cleanable/blood/B in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood))
-		spent(B)
+		dissolved(B)
 
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T

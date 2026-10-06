@@ -267,7 +267,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	QDEL_NULL(eyeobj)
 	for(var/mob/observer/eye/other as anything in eyes_list())
 		if(!QDELETED(other))
-			destroyed(other)
+			ended_with(other, src)
 	destroy_eyeobj()
 	..()
 
@@ -984,7 +984,7 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 /mob/living/silicon/ai/proc/core_blast(datum/act/hit/explosion/A)
 	if(A.packet.severity != 1)
 		return HOOK_DECLINE
-	destroyed(src)
+	destroyed(src, null, "explosion")
 	return TRUE
 
 DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_overlays), list())

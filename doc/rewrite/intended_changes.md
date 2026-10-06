@@ -1718,3 +1718,17 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
   handled and goes on, as before.
+
+## Ending causes audited (rewrite/lifecycle-forms-2)
+
+- The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
+  list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
+  before. The reviewed state is `tools/ci/ending_causes_snapshot.txt` (`ending_sites.py --update/--check`).
+- Three verbs join spent/consumed/destroyed/dissolved: `lapsed(thing, by)` (END_EXPIRED now: a status effect's duration, a capped history,
+  an animation or flash), `replaced_by(thing, successor)` (END_REPLACED for a transformation whose successor the caller already made: mob
+  transforms, evolutions, soulstone constructs, organ and limb swaps, a turf change) and `ended_with(thing, owner)` (END_OWNER for an
+  owner's teardown: `on_destroy()` loops, a container's leftovers, windows and huds whose host is gone).
+- Digestion, stomach acid, cleaning reagents and acid melting are `dissolved`; eating, feeding, grinding, recipes and machines that take an
+  item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
+  `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
+  they are `spent` (a discarded temporary) or `replaced_by`.

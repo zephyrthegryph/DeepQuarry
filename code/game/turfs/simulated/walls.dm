@@ -143,7 +143,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/proc/clear_plants()
 	for(var/obj/effect/overlay/wallrot/WR in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
-		spent(WR)
+		dissolved(WR)
 	for(var/obj/effect/plant/plant in range(src, 1))
 		if(!plant.floor) //shrooms drop to the floor
 			plant.floor = 1
@@ -1303,12 +1303,12 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			var/datum/material/M = GLOB.name_to_material[the_rcd.material_to_use]
 			new_T.set_material(M, the_rcd.make_rwalls ? M : null, girder_material)
 			new_T.add_hiddenprint(user)
-			spent(src, user)
+			replaced_by(src, new_T)
 			return TRUE
 
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			destroyed(src, user)
+			destroyed(src, user, "rcd")
 			return TRUE
 
 //////////////////////////////////////
@@ -1326,7 +1326,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			destroyed(src, user)
+			destroyed(src, user, "rcd")
 			return TRUE
 	return FALSE
 
@@ -1378,7 +1378,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			destroyed(src, user)
+			destroyed(src, user, "rcd")
 			return TRUE
 		if(RCD_WINDOWGRILLE)
 			if(destroyed)
@@ -1443,7 +1443,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			destroyed(src, user)
+			destroyed(src, user, "rcd")
 			return TRUE
 	return FALSE
 
@@ -1797,7 +1797,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 /// simply removes its atom goes through here, so the removal has one site (D-qdel).
 /atom/proc/rcd_deconstruct(mob/living/user)
 	to_chat(user, span_notice("You deconstruct \the [src]."))
-	destroyed(src, user)
+	destroyed(src, user, "rcd")
 
 /// Shared rcd_values() results, keyed by "mode|delay|cost". Callers only read them.
 GLOBAL_LIST_EMPTY(rcd_value_entries)

@@ -24,14 +24,28 @@
 // required one. OWNER as a value is the caller (`by =`, default: the instance whose code is running the make is unknown to DM, so pass it).
 //
 // built_from(nameof(var)) takes make(..., parts = list(...)): the parts move into the instance and the var holds them, before init.
+//
+// `apply = PROC_REF(x)` is for a param the type puts into effect through a setter (a material key, a colour, a lifespan): x(value) runs at
+// init, after the capabilities and initial contents (where the old `Initialize(mapload, arg)` called it after `..()`), with the param's value,
+// given or not. A subtype that only changed the value passed up (`..(mapload, MAT_IRON)`) sets the var's default instead.
+//
+//	CAPABILITIES(/obj/structure/simple_door)
+//		param(nameof(material_name), pos = 1, apply = PROC_REF(set_material))
+//	/obj/structure/simple_door/iron
+//		material_name = MAT_IRON
+//
+// A positional argument that is null is not given: the var keeps its default (the `arg || default` the old overrides wrote).
 
-/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null)
+/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null)
 	if(!istext(var_name))
 		declare_report("param(): the var is nameof(var), got [var_name]")
 		return null
 	if(ispath(schema, /datum))
 		schema = schema_ref(schema)
-	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos))
+	if(!isnull(apply) && !istext(apply))
+		declare_report("param([var_name]): apply = is PROC_REF(x), got [apply]")
+		apply = null
+	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply))
 
 /proc/built_from(var_name)
 	return entry_make(ENTRY_BUILT_FROM, "built_from", list("var" = var_name))
@@ -114,7 +128,7 @@ GLOBAL_LIST_EMPTY(param_given)
 	var/list/given = list()
 	for(var/i in 2 to length(new_args))
 		var/var_name = P.param_pos["[i - 1]"]
-		if(var_name)
+		if(var_name && !isnull(new_args[i]))
 			param_write(A, var_name, new_args[i])
 			given += var_name
 	if(length(given))
@@ -199,3 +213,15 @@ GLOBAL_LIST_EMPTY(param_given)
 		rel_set(D, var_name, value)
 		return
 	D.vars[var_name] = value // ALLOW(api): a param is written before init, as a map edit would be
+
+/// At init: each param declared with apply = is put into effect through its setter, with its value (given, defaulted or the compiled one).
+/proc/params_apply(datum/holder, datum/lifeform_plan/P)
+	for(var/datum/centry/C as anything in P.param_applies)
+		var/datum/entry/E = C.item
+		var/var_name = E.args["var"]
+		try
+			call(holder, E.args["apply"])(holder.vars[var_name])
+		catch(var/exception/e)
+			stack_trace("param([var_name], apply = [E.args["apply"]]) on [holder.type]: [e] ([e.file]:[e.line])")
+		if(QDELETED(holder))
+			return

@@ -75,18 +75,18 @@
 		handle_restless()
 
 	for(var/obj/effect/decal/cleanable/C in contents_of(loc))
-		spent(C)
+		consumed(C, src)
 	for(var/obj/item/organ/O in contents_of(loc))
-		spent(O)
+		consumed(O, src)
 	var/detected = FALSE
 	for(var/obj/effect/overmap/event/E in contents_of(loc))
 		detected = TRUE
 		if(istype(E, /obj/effect/overmap/event/carp))
-			spent(E)
+			consumed(E, src)
 			continue
 		else if(!held_hazard && prob(hazard_pickup_chance))
 			held_hazard = E.type
-			spent(E)
+			consumed(E, src)
 			return
 	if(held_hazard && !detected && prob(hazard_drop_chance))
 		if(!(locate_within(loc, /obj/effect/overmap/visitable/sector)))

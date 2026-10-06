@@ -1493,7 +1493,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		return
 	to_chat(user, "Removed [rem_organ] from [M].")
 	rem_organ.removed()
-	consumed(rem_organ, src)
+	spent(rem_organ, src)
 
 /// A VV AI brain setup: captured scalar answers advance only after each live admin re-check.
 /mob/proc/vv_ai_faction_chosen(datum/act/request/A)

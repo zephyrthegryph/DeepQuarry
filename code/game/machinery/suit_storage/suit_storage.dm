@@ -330,13 +330,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 				MASK.wash(CLEAN_SCRUB)
 		else //It was supercycling, destroy everything
 			if(HELMET)
-				spent(HELMET)
+				destroyed(HELMET, src, BURN)
 				own_take(src, nameof(HELMET))
 			if(SUIT)
-				spent(SUIT)
+				destroyed(SUIT, src, BURN)
 				own_take(src, nameof(SUIT))
 			if(MASK)
-				spent(MASK)
+				destroyed(MASK, src, BURN)
 				own_take(src, nameof(MASK))
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 			isbroken = 1

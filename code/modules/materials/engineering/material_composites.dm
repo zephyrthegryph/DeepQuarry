@@ -214,7 +214,7 @@
 	var/turf/spill_target = get_turf(src)
 	if(spill_target)
 		reagents?.splash(spill_target, reagents.total_volume)
-	destroyed(src)
+	destroyed(src, null, BRUTE)
 
 /obj/item/reagent_containers/examine(mob/user)
 	. = ..()

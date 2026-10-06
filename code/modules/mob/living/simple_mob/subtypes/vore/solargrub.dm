@@ -116,7 +116,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	new chosen_form(get_turf(src))
 */
 	new adult_forms(get_turf(src)) //Added this line to spawn the only form because the above is commented out.
-	spent(src)
+	replaced_by(src)
 
 /mob/living/simple_mob/vore/solargrub //active noms
 	vore_bump_chance = 50

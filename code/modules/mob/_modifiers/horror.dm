@@ -151,7 +151,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/eyes/new_organ = new /obj/item/organ/internal/eyes/horror()
 	O.removed(unfortunate_soul)
-	spent(O)
+	replaced_by(O, new_organ)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -162,7 +162,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/heart/new_organ = new /obj/item/organ/internal/heart/horror()
 	O.removed(unfortunate_soul)
-	spent(O)
+	replaced_by(O, new_organ)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"

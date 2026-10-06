@@ -76,7 +76,7 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 		return
 	var/obj/structure/grille/GR = locate_on(T, /obj/structure/grille)
 	if(GR)
-		spent(GR)
+		destroyed(GR, src)
 		return
 	for(var/obj/structure/reagent_dispensers/fueltank/Fuel in turf_contents_of_type(T, /obj/structure/reagent_dispensers/fueltank))
 		Fuel.ex_act(2)
@@ -87,7 +87,7 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 			return
 	var/obj/structure/foamedmetal/F = locate_on(T, /obj/structure/foamedmetal)
 	if(F)
-		spent(F)
+		destroyed(F, src)
 		return
 	var/obj/structure/inflatable/I = locate_on(T, /obj/structure/inflatable)
 	if(I)

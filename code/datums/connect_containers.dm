@@ -55,7 +55,7 @@
 
 /datum/connect_containers/proc/handle_tracked_qdel(datum/act/notice/A)
 	EVENT_HANDLER
-	spent(src)
+	ended_with(src)
 
 /datum/connect_containers/proc/update_hooks(atom/movable/moved_thing)
 	if(!ismovable(moved_thing.loc) || !listener)

@@ -307,7 +307,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 		var/obj/machinery/disposal/deliveryChute/P = new(src.loc)
 		transfer_fingerprints_to(P)
 		P.set_dir(dir)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalconstruct/hides_under_flooring()

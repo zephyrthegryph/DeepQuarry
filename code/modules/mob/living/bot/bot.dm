@@ -448,7 +448,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	if(paicard)
 		ejectpai()
 	release_vore_contents()
-	destroyed(src)
+	destroyed(src, null, "explosion")
 
 /mob/living/bot/is_sentient()
 	if(paicard)

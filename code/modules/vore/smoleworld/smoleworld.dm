@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 
 /obj/structure/smoletrack/ghosts_can_use_rotate_verbs()
 	return CONFIG_GET(flag/ghost_interaction)
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return
 
 // Road pieces
@@ -254,7 +254,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 
 //Ruins go asplode same as buildings if attacked
 /// Old attackby: any hit with an item blows the ruins apart.
@@ -292,7 +292,7 @@ DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruin
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return
 
 //buildings

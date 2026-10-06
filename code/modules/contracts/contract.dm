@@ -158,7 +158,7 @@ CAPABILITIES(/datum/contract_negotiation_clause)
 	configure_contract(contract, context)
 	finalize_contract_authoring(contract, context)
 	if(!contract.finalize_offer(offer_duration))
-		consumed(contract)
+		spent(contract)
 		return null
 	return contract
 

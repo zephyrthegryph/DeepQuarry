@@ -71,7 +71,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	new /obj/item/stack/material/steel(loc, 4)
 	for(var/obj/item/I in contents)
 		I.forceMove(loc)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
 MSG_DEF_SELF(filingcabinet/empty, "It's empty.")

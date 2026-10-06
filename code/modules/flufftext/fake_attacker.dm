@@ -15,7 +15,7 @@
 	for(var/client/C in clients)
 		live_clients++
 	if(!live_clients)
-		spent(src)
+		ended_with(src)
 
 /obj/effect/fake_attacker/set_dir(newdir)
 	if(!(newdir in GLOB.cardinal))

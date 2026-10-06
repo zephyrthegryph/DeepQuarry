@@ -27,7 +27,7 @@
 		if((O.type == I.item_path) && (O.name == I.item_name))
 			mod_amount(I,O.get_amount())
 			hasRecord = TRUE
-			spent(O)
+			consumed(O, src)
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())
