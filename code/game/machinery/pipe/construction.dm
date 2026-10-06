@@ -41,6 +41,7 @@ Buildable meters
  * @param loc Location
  * @pipe_type
  */
+// ALLOW(init/CTOR_ARGS): _pipe_type, _dir and make_from are constructor arguments from whoever builds it
 /obj/item/pipe/Initialize(mapload, _pipe_type, _dir, obj/machinery/atmospherics/make_from)
 	if(make_from)
 		make_from_existing(make_from)
@@ -230,6 +231,7 @@ CAPABILITIES(/obj/item/pipe)
 			to_chat(user, span_warning("There's nothing to connect this pipe section to!"))
 		return null
 	transfer_fingerprints_to(M)
+	// ALLOW(lifecycle): the pipe item becomes the pipe it was fastened into
 	qdel(src)
 	return M
 

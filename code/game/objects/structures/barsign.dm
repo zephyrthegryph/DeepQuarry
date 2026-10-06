@@ -27,6 +27,7 @@
 		else
 			. += "It says '[icon_state]'"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/sign/double/barsign/Initialize(mapload)
 	. = ..()
 	icon_state = pick(get_valid_states())

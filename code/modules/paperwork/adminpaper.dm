@@ -155,6 +155,7 @@ CAPABILITIES(/obj/item/paper/admin)
 
 /obj/item/paper/admin/proc/ui_act_cancel(datum/act/op/A)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the admin paper draft is discarded on cancel
 	qdel(src)
 	return TRUE
 

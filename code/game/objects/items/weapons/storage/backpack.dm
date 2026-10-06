@@ -66,6 +66,7 @@ CAPABILITIES(/obj/item/storage/backpack)
 	var/tilted = 0
 	icon_state = "holdingduffle"
 
+// ALLOW(init/INSTANCE_STATE): icon_state and tilted rolled at random for each instance
 /obj/item/storage/backpack/holding/duffle/Initialize(mapload)
 	. = ..()
 	if(prob(50))
@@ -181,6 +182,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding)
 	var/can_tilt = 1
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
 
+// ALLOW(init/INSTANCE_STATE): icon_state and tilted rolled at random for each instance
 /obj/item/storage/backpack/dufflebag/Initialize(mapload)
 	. = ..()
 	if(prob(50))

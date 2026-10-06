@@ -61,6 +61,7 @@ CAPABILITIES(/obj/item/melee/umbrella)
 		H.update_inv_r_hand()
 
 // Randomizes color
+// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 /obj/item/melee/umbrella/random/Initialize(mapload)
 	. = ..()
 	color = get_random_colour()

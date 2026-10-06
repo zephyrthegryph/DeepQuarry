@@ -30,6 +30,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 
+// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
 /obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload, skip_cell)
 	. = ..()
 

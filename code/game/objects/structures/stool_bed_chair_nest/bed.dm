@@ -27,6 +27,7 @@
 	var/can_unpad = TRUE
 	var/can_dismantle = TRUE
 
+// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
 /obj/structure/bed/Initialize(mapload, new_material, new_padding_material)
 	..()
 	color = null

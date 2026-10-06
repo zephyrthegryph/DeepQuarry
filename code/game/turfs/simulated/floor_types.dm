@@ -146,9 +146,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 			us.underlays = list(landed_on)
 			appearance = us
 
-		spawn
-			if(istype(src, /turf/simulated/shuttle))
-				update_breaklights() // Update only if this coordinate is still a shuttle turf.
+		after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 		return
 
 	if(!under)
@@ -191,9 +189,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 
 	appearance = us
 
-	spawn
-		if(istype(src, /turf/simulated/shuttle))
-			update_breaklights() // Update only if this coordinate is still a shuttle turf.
+	after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 
 	return under
 

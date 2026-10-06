@@ -361,8 +361,7 @@ CAPABILITIES(/obj/structure/closet)
 /// An open closet is cut apart into a sheet of steel (what it held is already on its tile).
 /obj/structure/closet/proc/cut_apart(datum/act/op/A)
 	playsound(src, A.held.usesound, 50)
-	new /obj/item/stack/material/steel(loc)
-	qdel(src)
+	replace_with(src, /obj/item/stack/material/steel)
 	return OP_OK
 
 /// A laundry basket with something in it is emptied onto the tile of an open closet; an empty one is put down like anything else.

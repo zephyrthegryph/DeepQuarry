@@ -10,6 +10,7 @@
 	edge =  TRUE
 	injury_kind = INJURY_CUT
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /obj/item/material/star/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-12, 12)

@@ -55,7 +55,7 @@
 	if(self.losebreath>0) //Suffocating so do not take a breath
 		self.AdjustLosebreath(-1)
 		if (prob(10) && !isbelly(self.loc)) //Gasp per 10 ticks? Sounds about right.
-			spawn self.emote("gasp")
+			self.emote("gasp")
 	else if(self.breath_blocked()) //No ventilation (closed airway, apnea): no gas exchange at all.
 		if(prob(10) && !isbelly(self.loc))
 			self.emote("gasp")

@@ -9,6 +9,7 @@
 	generic_filth = TRUE
 	persistent = FALSE
 
+// ALLOW(init/CTOR_ARGS): amt and nologs are constructor arguments from whoever builds it
 /obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload, amt=1, nologs=1)
 	if(!isturf(loc))
 		return INITIALIZE_HINT_QDEL
@@ -53,6 +54,7 @@
 	icon_state = "mustard"
 	anchored = FALSE
 
+// ALLOW(init/CTOR_ARGS): amt and d are constructor arguments from whoever builds it
 /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload, amt = 1, d = 0)
 	set_dir(d) //Setting this direction means you won't get torched by your own flamethrower.
 	if(istype(loc, /turf/simulated))

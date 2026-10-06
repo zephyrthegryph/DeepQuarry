@@ -173,7 +173,6 @@ nameof_unrelated	code/modules/modular_computers/file_system/programs/research/em
 nameof_unrelated	code/modules/modular_computers/file_system/programs/research/email_administration.dm	rel_clear(src, nameof(/datum/tgui_module/email_client::current_account))
 nameof_unrelated	code/modules/modular_computers/file_system/programs/research/email_administration.dm	rel_set(src, nameof(/datum/tgui_module/email_client::current_message), received_message)
 nameof_unrelated	code/modules/modular_computers/file_system/programs/research/email_administration.dm	rel_set(src, nameof(/datum/tgui_module/email_client::current_account), email_account)
-nameof_unrelated	code/modules/overmap/ships/computers/helm.dm	rel_add(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R, sec_name)
 nameof_unrelated	code/modules/reagents/machinery/chem_master.dm	own_take(src, nameof(/obj/machinery/biogenerator::beaker))
 nameof_unrelated	code/modules/reagents/machinery/dispenser/dispenser2.dm	own_take(src, nameof(/datum/cooking_item::container))
 nameof_unrelated	code/modules/research/tg/rdmachines.dm	on_change(nameof(/atom/movable::anchored), ANY, then(PROC_REF(anchor_moved)))

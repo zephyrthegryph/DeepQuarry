@@ -105,6 +105,7 @@
 	w_class = ITEMSIZE_SMALL
 	var/static/list/possible_states = list("health", "spider", "slime", "emp", "species", "egg", "vent", "mindshock", "viral", "gland")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/prop/alien/junk/Initialize(mapload)
 	. = ..()
 	icon_state = pick(possible_states)

@@ -91,6 +91,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 			to_chat(new_ai, span_danger("<h2>You've run into a unfixable bug with AI eye code. \
 In order to create a new multicam, you will have to select a different camera first before trying to add one, or ask an admin to fix you. \
 Whatever you did that made the last camera window disappear-- don't do that again.</h2>"))
+		// ALLOW(lifecycle): a multicam window without its AI eye is closed
 		qdel(src)
 		return
 	if(ai)

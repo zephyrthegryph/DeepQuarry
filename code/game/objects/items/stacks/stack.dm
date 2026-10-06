@@ -44,6 +44,7 @@ CAPABILITIES(/obj/item/stack)
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
 
+// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
 /obj/item/stack/Initialize(mapload, starting_amount)
 	. = ..()
 	if(!stacktype)
@@ -130,6 +131,7 @@ CAPABILITIES(/obj/item/stack)
 /obj/item/stack/proc/ui_act_make(datum/act/op/A, multiplier, datum/stack_recipe/ref)
 	var/mob/user = A.actor
 	if(get_amount() < 1)
+		// ALLOW(lifecycle): an empty stack has nothing left to make anything from
 		qdel(src)
 		return
 
@@ -259,6 +261,7 @@ CAPABILITIES(/obj/item/stack)
 			if(istype( loc, /obj/item/storage))
 				var/obj/item/storage/holder = loc
 				holder.remove_from_storage( src, null)
+			// ALLOW(lifecycle): a stack used down to nothing is gone
 			qdel(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
 		return 1
 	else
@@ -304,6 +307,7 @@ CAPABILITIES(/obj/item/stack)
 
 	// Can set it to 0 without qdel if you really want
 	if(amount == 0 && !no_limits)
+		// ALLOW(lifecycle): a stack set to zero is gone
 		qdel(src)
 		return FALSE
 

@@ -136,6 +136,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && spawn_diona_nymph(get_turf(src)))
+		// ALLOW(lifecycle): the removed limb becomes a nymph
 		qdel(src)
 
 /obj/item/organ/internal/diona
@@ -152,6 +153,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
+		// ALLOW(lifecycle): the removed organ becomes a nymph
 		qdel(src)
 
 /obj/item/organ/internal/diona/periodic_step()
@@ -236,6 +238,7 @@
 	if(istype(H) && (!H.organs || !H.organs.len))
 		H.death()
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
+		// ALLOW(lifecycle): the removed organ becomes a nymph
 		qdel(src)
 
 /obj/item/organ/external/head/no_eyes/diona

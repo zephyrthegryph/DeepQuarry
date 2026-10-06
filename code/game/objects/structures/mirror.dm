@@ -15,6 +15,7 @@
 CAPABILITIES(/obj/structure/mirror)
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror)
 
+// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
 /obj/structure/mirror/Initialize(mapload, dir, building = 0)
 	. = ..()
 	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))

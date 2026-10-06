@@ -65,6 +65,7 @@
 				D.open()
 		if(istype(T,/turf/simulated/wall))
 			T.dismantle_wall(1)
+	// ALLOW(lifecycle): the charge is spent once it detonates
 	qdel(src)
 
 CAPABILITIES(/obj/item/syndie/c4explosive)

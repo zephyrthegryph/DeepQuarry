@@ -221,6 +221,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 	var/chaos
 	special_handling = TRUE
 
+// ALLOW(init/INSTANCE_STATE): icon_state, chaos, name and desc rolled at random for each instance
 /obj/item/a_gift/advanced/Initialize(mapload)
 	. = ..()
 	if(prob(1))

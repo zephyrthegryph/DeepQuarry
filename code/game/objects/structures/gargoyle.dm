@@ -29,6 +29,7 @@
 OM_FIELD_VIEW(/obj/structure/gargoyle, mob/living/carbon/human, WR_gargoyle, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 
+// ALLOW(init/CTOR_ARGS): H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert and discard_clothes are constructor arguments from whoever builds it
 /obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
 	. = ..()
 	if(isspace(loc) || isopenspace(loc))
