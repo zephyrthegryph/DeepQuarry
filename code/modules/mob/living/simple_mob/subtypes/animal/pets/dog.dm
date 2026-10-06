@@ -119,33 +119,33 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	makes_dirt = FALSE // no more dirt
 	holder_type = /obj/item/holder/corgi
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Ian
-	of = /mob/living/simple_mob/animal/passive/dog/corgi/Ian
+/mob/living/simple_mob/animal/passive/dog/corgi/Ian/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Ian/perform(mob/living/simple_mob/animal/passive/dog/corgi/Ian/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/dog/corgi/Ian/life_type_post(datum/seq_frame/life/F)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!self.stat && !self.resting && !self?.buckled_to())
-		self.turns_since_scan++
-		if(self.turns_since_scan > 5)
-			self.turns_since_scan = 0
-			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				rel_clear(self, nameof(self.movement_target))
-			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				rel_clear(self, nameof(self.movement_target))
-				for(var/obj/item/reagent_containers/food/snacks/S in oview(self,7))
+	if(!src.stat && !src.resting && !src?.buckled_to())
+		src.turns_since_scan++
+		if(src.turns_since_scan > 5)
+			src.turns_since_scan = 0
+			if((src.movement_target) && !(isturf(src.movement_target.loc) || ishuman(src.movement_target.loc) ))
+				rel_clear(src, nameof(src.movement_target))
+			if(!src.movement_target || !(src.movement_target.loc in oview(src, 7)) )
+				rel_clear(src, nameof(src.movement_target))
+				for(var/obj/item/reagent_containers/food/snacks/S in oview(src,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						rel_set(self, nameof(self.movement_target), S)
+						rel_set(src, nameof(src.movement_target), S)
 						break
-			if(self.movement_target)
-				after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+			if(src.movement_target)
+				after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 		if(prob(1))
-			after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases their tail")))
-			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
+			after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases their tail")))
+			src.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //LISA! SQUEEEEEEEEE~
 /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
@@ -165,19 +165,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 
 //Lisa already has a cute bow!
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa
-	of = /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
+/mob/living/simple_mob/animal/passive/dog/corgi/Lisa/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa/perform(mob/living/simple_mob/animal/passive/dog/corgi/Lisa/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/dog/corgi/Lisa/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(!self.stat && !self.resting && !self?.buckled_to())
-		self.turns_since_scan++
-		if(self.turns_since_scan > 15)
-			self.turns_since_scan = 0
+	if(!src.stat && !src.resting && !src?.buckled_to())
+		src.turns_since_scan++
+		if(src.turns_since_scan > 15)
+			src.turns_since_scan = 0
 			var/alone = TRUE
 			var/ian = FALSE
-			for(var/mob/M in oviewers(7, self))
+			for(var/mob/M in oviewers(7, src))
 				if(istype(M, /mob/living/simple_mob/animal/passive/dog/corgi/Ian))
 					if(M.client)
 						alone = FALSE
@@ -187,14 +187,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 				else
 					alone = FALSE
 					break
-			if(alone && ian && self.puppies < 4)
-				if(self.near_camera(self) || self.near_camera(ian))
+			if(alone && ian && src.puppies < 4)
+				if(src.near_camera(src) || src.near_camera(ian))
 					return
-				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(self.loc)
+				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(src.loc)
 
 		if(prob(1))
-			after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases her tail")))
-			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
+			after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases her tail")))
+			src.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //NARSIAN HAS COME
 /mob/living/simple_mob/animal/passive/dog/corgi/narsian

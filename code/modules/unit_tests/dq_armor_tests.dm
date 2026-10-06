@@ -146,7 +146,7 @@
 	var/landed_kind
 
 /datum/unit_test/dq_armor_sharp_to_blunt/proc/on_explained(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injury_explained/event = N
 	landed_kind = event.landed_kind
 

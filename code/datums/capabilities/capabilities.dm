@@ -280,7 +280,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 	for(var/key in holder.cap_data)
 		var/datum/D = holder.cap_data[key]
 		if(isdatum(D))
-			destroyed(D)
+			ended_with(D, holder)
 	holder.cap_data = null
 
 

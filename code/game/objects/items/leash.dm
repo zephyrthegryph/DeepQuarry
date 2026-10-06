@@ -199,7 +199,7 @@ CAPABILITIES(/obj/item/leash)
 	return OP_OK
 
 /obj/item/leash/proc/on_master_move(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/leash_pet = src?.leash_pet()
 	//Make sure the dom still has a pet
 	if(!src?.leash_master() || !leash_pet)
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/item/leash)
 		clear_leash()
 
 /obj/item/leash/proc/on_pet_move(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	//This should only work if there is a pet and a master.
 	if(!src?.leash_master() || !src?.leash_pet())
 		return

@@ -145,7 +145,7 @@ SYSTEM_DEF(pois)
 		return
 	// Actually load it
 	template_to_use.load(T)
-	consumed(poi_to_load, src)
+	spent(poi_to_load, src)
 
 /// load_poi() as a job. TRUE when the load is pending: poi_loaded() runs when it finishes.
 /datum/system/pois/proc/load_poi_async(obj/effect/landmark/poi_loader/poi_to_load)

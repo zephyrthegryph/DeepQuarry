@@ -2,3 +2,4 @@
 /obj/structure/alien|robot|none => alien_item,alien_hand|alien_hand_harm:combat mode is off
 /obj/structure/alien|ai|none => |
 /obj/structure/alien|ghost|none => |
+

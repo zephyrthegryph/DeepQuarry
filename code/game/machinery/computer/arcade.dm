@@ -1076,7 +1076,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		if(3)
 			src.visible_message(span_danger("[src] explodes!"))
 			explosion(src.loc, 1,2,4)
-			spent(src)
+			destroyed(src, null, "explosion")
 
 #undef ORION_TRAIL_WINTURN
 #undef ORION_TRAIL_RAIDERS

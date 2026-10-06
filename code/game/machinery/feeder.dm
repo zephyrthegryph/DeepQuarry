@@ -106,7 +106,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 	if(beaker)
 		beaker.forceMove(get_turf(src))
 		own_take(src, nameof(beaker))
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
 /obj/machinery/feeder/machine_step()

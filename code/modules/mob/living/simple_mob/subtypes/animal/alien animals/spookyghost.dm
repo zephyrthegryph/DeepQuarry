@@ -167,16 +167,16 @@
 		if(L.status_units(EFFECT_HALLUCINATING) <= 100)
 			L.status_adjust(EFFECT_HALLUCINATING, rand(1,10))
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/spooky_ghost
-	of = /mob/living/simple_mob/vore/alienanimals/spooky_ghost
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/spooky_ghost/perform(mob/living/simple_mob/vore/alienanimals/spooky_ghost/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post(datum/seq_frame/life/F)
 	..()
-	var/turf/T = get_turf(self)
+	var/turf/T = get_turf(src)
 	if(!T)
 		return
 	if(T.get_lumcount() >= 0.5)
-		self.injure(INJURY_BURN, 1, source = T) // Light sears it.
+		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
 	after_init(35 SECONDS, then(PROC_REF(fade_out)))

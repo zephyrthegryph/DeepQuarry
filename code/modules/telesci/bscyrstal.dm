@@ -39,7 +39,7 @@ CAPABILITIES(/obj/item/bluespace_crystal)
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
 		dephase_shadekin() // mess with shadekins
-		destroyed(src)
+		destroyed(src, null, BRUTE)
 
 // Artifical bluespace crystal, doesn't give you much research.
 

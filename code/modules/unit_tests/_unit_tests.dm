@@ -195,6 +195,7 @@
 #include "dq_lifeform_contents_tests.dm"
 #include "dq_lifeform_derives_tests.dm"
 #include "dq_lifeform_input_tests.dm"
+#include "dq_ending_causes_tests.dm"
 #include "dq_lifeform_lifetimes_tests.dm"
 #include "dq_lifeform_params_tests.dm"
 #include "dq_lifeform_per_type_tests.dm"

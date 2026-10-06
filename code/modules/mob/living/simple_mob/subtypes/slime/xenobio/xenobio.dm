@@ -56,15 +56,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 	icon_rest = icon_dead
 	. += ..()
 
-/datum/om/stage/life/special/slime/xenobio
-	of = /mob/living/simple_mob/slime/xenobio
+/mob/living/simple_mob/slime/xenobio/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/perform(mob/living/simple_mob/slime/xenobio/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
+/mob/living/simple_mob/slime/xenobio/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
 
-		if(self.victim)
-			self.handle_consumption()
+		if(src.victim)
+			src.handle_consumption()
 
 	..()
 
@@ -206,7 +206,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 			var/mob/living/simple_mob/slime/new_slime = pick(babies)
 			new_slime.universal_speak = universal_speak
 			move_player(src, new_slime, "slime split")
-			spent(src)
+			replaced_by(src, new_slime)
 		else
 			to_chat(src, span_warning("I am not ready to reproduce yet..."))
 	else

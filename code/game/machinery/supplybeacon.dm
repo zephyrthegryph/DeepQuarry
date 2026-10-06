@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/supply_beacon)
 	layer = MOB_LAYER - 0.1
 	stat = 0
 
-	/// om_after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
+	/// after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
 	var/drop_delay = 450
 	var/drop_type
 

@@ -229,7 +229,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
 	rel_clear(src, nameof(real_crate))
-	consumed(src)
+	replaced_by(src)
 	return TRUE
 
 
@@ -413,7 +413,7 @@ CAPABILITIES(/obj/effect/floormimic)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
-	consumed(src)
+	dissolved(src)
 	return TRUE
 
 /obj/effect/floormimic/tile

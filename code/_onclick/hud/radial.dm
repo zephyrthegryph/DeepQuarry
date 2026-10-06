@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(parent())
 		icon_state = parent().radial_slice_icon
 
-/// om_after() target: hovering clicks, once the entry animation has played.
+/// after() target: hovering clicks, once the entry animation has played.
 /atom/movable/screen/radial/slice/proc/enable_hover_click()
 	click_on_hover = TRUE
 

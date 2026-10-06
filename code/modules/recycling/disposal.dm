@@ -249,7 +249,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(T)
 				AM.pipe_eject(0)
-			destroyed(H)
+			ended_with(H, src)
 			..()
 			return
 
@@ -394,7 +394,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 // called when welded
 /obj/structure/disposalpipe/broken/welded()
-	destroyed(src)
+	destroyed(src, null, "deconstructed")
 
 // called when movable is expelled from a disposal pipe or outlet
 // by default does nothing, override for special behaviour

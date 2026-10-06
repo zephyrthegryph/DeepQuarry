@@ -24,7 +24,11 @@
 //	spent(item, by)               used up (a charge, a single-use tool, an empty pack)
 //	consumed(item, by)            eaten, drunk, absorbed by `by`
 //	destroyed(thing, by, cause)   broken, burnt, blown up (cause: a damage type or a short text)
-//	dissolved(thing, by)          melted, dissolved, decayed into nothing
+//	dissolved(thing, by)          melted, dissolved, digested, washed away or decayed into nothing
+//	lapsed(thing, by)             its time ran out (a duration, a history window, an animation): the immediate form of expire()
+//	replaced_by(thing, successor) superseded by `successor` (a transformation, an evolution, a rebuilt part) that the caller already made;
+//	                              replace_with() when the caller wants the successor made and slotted for it
+//	ended_with(thing, owner)      ended because its owner or host is ending or gone (a teardown of what an owner held)
 //	expire(after) · replace_with(path, ...) · consume(item, actor) · slot_clear(slot)   (kept, code/datums/lifecycle/verbs.dm)
 //
 // Every ending publishes /datum/notice/ended on the thing, with its cause and who caused it (when anything listens: on_notice(/datum/notice/ended)
@@ -116,6 +120,19 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 /// Melted, dissolved or decayed into nothing.
 /proc/dissolved(datum/thing, datum/by = null)
 	return lifeform_end(thing, END_DISSOLVED, by)
+
+/// Its time ran out: a duration, a capped history, a one-shot animation. expire(after) arms the same ending for later.
+/proc/lapsed(datum/thing, datum/by = null)
+	return lifeform_end(thing, END_EXPIRED, by)
+
+/// Superseded by `successor`, which the caller already made (a transformed mob, an evolved form, a rebuilt part). Only the cause is recorded:
+/// replace_with() is the verb that also builds the successor and hands it the original's slot.
+/proc/replaced_by(datum/thing, datum/successor = null)
+	return lifeform_end(thing, END_REPLACED, successor)
+
+/// Ended because `owner` is ending or has gone: the teardown of what an owner held, done by hand where no owns_one/lives_while declares it.
+/proc/ended_with(datum/thing, datum/owner = null)
+	return lifeform_end(thing, END_OWNER, owner)
 
 // ---- the ending ----
 

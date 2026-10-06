@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		. += span_notice("The whole machine can be [span_bold("pried")] apart.")
 
 /obj/machinery/ore_silo/proc/on_item_consumed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/matcontainer_item_consumed/event = N
 	var/obj/item/item_inserted = event.item
 	var/mats_consumed = event.mats_consumed
@@ -70,7 +70,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
 
 /obj/machinery/ore_silo/proc/log_sheets_ejected(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/matcontainer_stack_retrieved/event = N
 	var/obj/item/stack/material/sheets = event.new_stack
 	var/atom/context = event.context

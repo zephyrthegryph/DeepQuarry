@@ -152,7 +152,7 @@ CAPABILITIES(/datum/tooltip)
 	return TRUE
 
 /datum/tooltip/proc/on_target_qdel(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	hide()
 	rel_clear(src, nameof(last_target))
 

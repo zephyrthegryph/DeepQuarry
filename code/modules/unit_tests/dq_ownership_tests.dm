@@ -363,7 +363,7 @@ CAPABILITIES(/datum/own_test_child)
 /// Makes an entity nothing owns or references except its own record (a pending timer).
 /proc/own_rec_audit_make_dropped()
 	var/datum/own_test_child/A = new
-	om_after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
+	after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
 
 /datum/own_test_field_holder
 OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, null, CHANGE_MACHINE_SETTINGS)

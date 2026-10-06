@@ -522,12 +522,12 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	H.mob_size = mob_size
 	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
 	if(old_root)
-		consumed(old_root, H)
+		replaced_by(old_root, H)
 	// Parts left over outside the tree (loose after a refused placement).
 	for(var/obj/item/organ/stray as anything in H.organs?.Copy())
-		consumed(stray, H)
+		replaced_by(stray, H)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
-		consumed(stray, H)
+		replaced_by(stray, H)
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()

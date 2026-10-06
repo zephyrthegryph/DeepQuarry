@@ -664,42 +664,42 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	if(ghostjoin)
 		ghostjoin_icon()
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi
-	of = /mob/living/simple_mob/vore/alienanimals/teppi
+/mob/living/simple_mob/vore/alienanimals/teppi/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi/perform(mob/living/simple_mob/vore/alienanimals/teppi/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/teppi/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive") || QDELETED(self))
+	if(!F.alive() || QDELETED(src))
 		return
-	self.wantpet += rand(0,2) * self.affection_factor
-	self.amount_grown += rand(1,5)
+	src.wantpet += rand(0,2) * src.affection_factor
+	src.amount_grown += rand(1,5)
 	var/not_hungy = FALSE
-	if(self.nutrition >= 500)
+	if(src.nutrition >= 500)
 		not_hungy = TRUE
-	if(self.amount_grown >= 1000)
-		if(self.teppi_adult)
-			if(not_hungy && !self.teppi_wool)
-				self.adjust_nutrition(-rand(250,500))
-				self.teppi_wool = TRUE
-				self.breedable = TRUE
-				self.meat_amount += rand(0,2)
-				self.update_icon()
+	if(src.amount_grown >= 1000)
+		if(src.teppi_adult)
+			if(not_hungy && !src.teppi_wool)
+				src.adjust_nutrition(-rand(250,500))
+				src.teppi_wool = TRUE
+				src.breedable = TRUE
+				src.meat_amount += rand(0,2)
+				src.update_icon()
 		else if (not_hungy)
-			var/nutrition_cost = 500 + (self.nutrition / 2)
-			self.adjust_nutrition(-nutrition_cost)
-			replace_with(self, /mob/living/simple_mob/vore/alienanimals/teppi, self.store_teppi_data(self))
+			var/nutrition_cost = 500 + (src.nutrition / 2)
+			src.adjust_nutrition(-nutrition_cost)
+			replace_with(src, /mob/living/simple_mob/vore/alienanimals/teppi, src.store_teppi_data(src))
 			return
 		else
-			act_message(self, null, null, MSG_OTHERS("%U% whines pathetically..."), runemessage = "whines")
+			act_message(src, null, null, MSG_OTHERS("%U% whines pathetically..."), runemessage = "whines")
 			if(prob(50))
-				play_sfx(self, SFX_VOICE_TEPPI_WHINE1)
+				play_sfx(src, SFX_VOICE_TEPPI_WHINE1)
 			else
-				play_sfx(self, SFX_VOICE_TEPPI_WHINE2)
-			self.amount_grown -= rand(100,250)
+				play_sfx(src, SFX_VOICE_TEPPI_WHINE2)
+			src.amount_grown -= rand(100,250)
 	if(not_hungy)
-		self.do_breeding()
-	if(!self.client && prob(0.5))
-		self.teppi_sound()
+		src.do_breeding()
+	if(!src.client && prob(0.5))
+		src.teppi_sound()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/do_breeding()
 	if(!breedable || prevent_breeding)

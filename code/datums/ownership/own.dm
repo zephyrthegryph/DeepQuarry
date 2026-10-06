@@ -171,7 +171,7 @@
 						return
 				else if(AM.loc != H)
 					return // it already left the holder: not the holder's to drop or delete
-	spent(value)
+	ended_with(value, holder)
 
 /// Owned-child release hook: `child` is leaving holder.var_name (disposed, taken or moved out),
 /// still intact. For consequences outside the child: a media source's listeners, a tooltip's
@@ -337,7 +337,7 @@
 		adopted = _own_set(dest, dest_var, value, into = FALSE)
 	if(!adopted)
 		OWN_REPORT("own_transfer of [value.type] from [from.type].[from_var] to [dest.type].[dest_var] refused; destroying it")
-		consumed(value)
+		spent(value)
 	return adopted
 
 /// Moves `value` into dest.dest_var from wherever it is owned now (own_transfer() from its current

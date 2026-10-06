@@ -145,7 +145,7 @@
 
 		if(!client.asset_json_update_queued)
 			client.asset_json_update_queued = TRUE
-			om_after_realtime(1 SECONDS, TYPE_PROC_REF(/client, asset_cache_update_json), client)
+			after(1 SECONDS, TYPE_PROC_REF(/client, asset_cache_update_json), client, clock = CLOCK_WORLD)
 		return TRUE
 	return FALSE
 

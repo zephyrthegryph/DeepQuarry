@@ -124,92 +124,93 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 				ai_busy_begin()
 				do_infest(src, A)
 				ai_busy_end()
-/datum/om/stage/life/special/animal/sif/leech
-	of = /mob/living/simple_mob/animal/sif/leech
 
-/datum/om/stage/life/special/animal/sif/leech/perform(mob/living/simple_mob/animal/sif/leech/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/sif/leech/life_special_due()
+	return TRUE
+
+/mob/living/simple_mob/animal/sif/leech/life_special(datum/seq_frame/life/F)
 	if(prob(5))
-		self.randomized_reagent = pick(self.produceable_chemicals)
+		src.randomized_reagent = pick(src.produceable_chemicals)
 
-	var/turf/T = get_turf(self)
-	if(istype(T, /turf/simulated/floor/water) && self.loc == T && !self.stat)	// Are we sitting in water, and alive?
-		self.alpha = max(5, self.alpha - 10)
-		if(self.chemicals + 1 < self.max_chemicals / 3)
-			self.chemicals++
+	var/turf/T = get_turf(src)
+	if(istype(T, /turf/simulated/floor/water) && src.loc == T && !src.stat)	// Are we sitting in water, and alive?
+		src.alpha = max(5, src.alpha - 10)
+		if(src.chemicals + 1 < src.max_chemicals / 3)
+			src.chemicals++
 	else
-		self.alpha = min(255, self.alpha + 20)
+		src.alpha = min(255, src.alpha + 20)
 
-	if(!self.client && !self.host)
-		self.infest_target = pick(self.bodypart_targets)
+	if(!src.client && !src.host)
+		src.infest_target = pick(src.bodypart_targets)
 
-	if(self.host && !self.stat && !self.host.stat)
-		if(self.ai_brain)
-			self.ai_brain.set_hostile(FALSE)
-			self.ai_brain.lose_target()
-		self.alpha = 5
-		if(self.host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !self.docile)	// Overwhelms the leech with food.
+	if(src.host && !src.stat && !src.host.stat)
+		if(src.ai_brain)
+			src.ai_brain.set_hostile(FALSE)
+			src.ai_brain.lose_target()
+		src.alpha = 5
+		if(src.host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !src.docile)	// Overwhelms the leech with food.
 			var/message = "We feel the rush of cardiac pluripotent cells in your host's blood, lulling us into docility."
-			to_chat(self, span_warning(message))
-			self.docile = TRUE
-			if(self.chemicals + 5 <= self.max_chemicals)
-				self.chemicals += 5
+			to_chat(src, span_warning(message))
+			src.docile = TRUE
+			if(src.chemicals + 5 <= src.max_chemicals)
+				src.chemicals += 5
 
-		else if(self.docile)
+		else if(src.docile)
 			var/message = "We shake off our lethargy as the pluripotent cell count declines in our host's blood."
-			to_chat(self, span_notice(message))
-			self.docile = FALSE
+			to_chat(src, span_notice(message))
+			src.docile = FALSE
 
-		if(!self.host.reagents.has_reagent(self.passive_reagent))
-			self.host.reagents.add_reagent(self.passive_reagent, 5)
-			self.chemicals -= 3
+		if(!src.host.reagents.has_reagent(src.passive_reagent))
+			src.host.reagents.add_reagent(src.passive_reagent, 5)
+			src.chemicals -= 3
 
-		if(!self.docile && ishuman(self.host) && self.chemicals < self.max_chemicals)
-			var/mob/living/carbon/human/H = self.host
+		if(!src.docile && ishuman(src.host) && src.chemicals < src.max_chemicals)
+			var/mob/living/carbon/human/H = src.host
 			H.remove_blood(1)
 			if(!H.reagents.has_reagent(REAGENT_ID_INAPROVALINE))
 				H.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 1)
-			self.chemicals += 2
+			src.chemicals += 2
 
-		if(!self.client && !self.docile)	// Automatic 'AI' to manage damage levels.
+		if(!src.client && !src.docile)	// Automatic 'AI' to manage damage levels.
 			// The leech lives in its host: it senses every affliction (no profile).
-			var/list/demand = self.host.treatment_demand()
-			if(demand_urgency(demand, list(TREAT_TISSUE_REPAIR, TREAT_HEMOSTATIC)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
-				self.host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
-				self.chemicals -= 30
+			var/list/demand = src.host.treatment_demand()
+			if(demand_urgency(demand, list(TREAT_TISSUE_REPAIR, TREAT_HEMOSTATIC)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
+				src.host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
+				src.chemicals -= 30
 
-			if(demand_urgency(demand, list(TREAT_ANTITOXIN)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
+			if(demand_urgency(demand, list(TREAT_ANTITOXIN)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
 				var/randomchem = pickweight(list(REAGENT_ID_TRAMADOL = 7, REAGENT_ID_ANTITOXIN = 15, REAGENT_ID_FROSTOIL = 3))
-				self.host.reagents.add_reagent(randomchem, 5)
-				self.chemicals -= 50
+				src.host.reagents.add_reagent(randomchem, 5)
+				src.chemicals -= 50
 
-			if(demand_urgency(demand, list(TREAT_BURN_CARE)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
-				self.host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
-				self.host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
-				self.chemicals -= 50
+			if(demand_urgency(demand, list(TREAT_BURN_CARE)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
+				src.host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
+				src.host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
+				src.chemicals -= 50
 
-			if(demand_urgency(demand, list(TREAT_OXYGENATION)) >= LEECH_TREAT_URGENCY && self.chemicals > 50)
-				self.host.reagents.add_reagent(REAGENT_ID_IRON, 10)
-				self.chemicals -= 40
+			if(demand_urgency(demand, list(TREAT_OXYGENATION)) >= LEECH_TREAT_URGENCY && src.chemicals > 50)
+				src.host.reagents.add_reagent(REAGENT_ID_IRON, 10)
+				src.chemicals -= 40
 
-			if(demand?[TREAT_NEURAL_REPAIR] && self.chemicals > 100)
-				self.host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
-				self.host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
-				self.chemicals -= 100
+			if(demand?[TREAT_NEURAL_REPAIR] && src.chemicals > 100)
+				src.host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
+				src.host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
+				src.chemicals -= 100
 
-			if(prob(30) && self.chemicals > 50)
-				self.inject_meds(self.randomized_reagent)
+			if(prob(30) && src.chemicals > 50)
+				src.inject_meds(src.randomized_reagent)
 
 			var/heartless_mod = 0
-			if(ishuman(self.host))	// Species without hearts mean the worm gets hungry faster, if AI controlled.
-				var/mob/living/carbon/human/H = self.host
+			if(ishuman(src.host))	// Species without hearts mean the worm gets hungry faster, if AI controlled.
+				var/mob/living/carbon/human/H = src.host
 				if(!H.species.has_organ[O_HEART])
 					heartless_mod = 1
 
 			if(prob(15 + (20 * heartless_mod)))
-				self.feed_on_random_organ()
+				src.feed_on_random_organ()
 	//legacy else-clause emptied (was ai_holder reset).
-	if(self.host && self.host.stat == DEAD && istype(get_turf(self.host), /turf/simulated/floor/water))
-		self.leave_host()
+	if(src.host && src.host.stat == DEAD && istype(get_turf(src.host), /turf/simulated/floor/water))
+		src.leave_host()
 
 /mob/living/simple_mob/animal/sif/leech/verb/infest()
 	set category = VERB_CAT_ABILITIES_LEECH

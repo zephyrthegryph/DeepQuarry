@@ -278,7 +278,7 @@
 	if(fully_created)
 		fit_viewport() // its wingets go through DX-exec
 	else //Delayed to avoid wingets from Login calls.
-		om_after_realtime(1 SECONDS, VERB_REF(fit_viewport), src)
+		after(1 SECONDS, VERB_REF(fit_viewport), src, clock = CLOCK_WORLD)
 
 /client/verb/fix_stat_panel()
 	set name = "Fix Stat Panel"

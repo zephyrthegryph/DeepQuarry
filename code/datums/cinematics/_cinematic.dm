@@ -43,7 +43,7 @@
 	var/datum/callback/special_callback
 	/// How long for the final screen remains shown
 	var/cleanup_time = 30 SECONDS
-	/// How long the intro plays before the blast (the blast runs on an om_after() timer).
+	/// How long the intro plays before the blast (the blast runs on an after() timer).
 	/// Callers that act at the blast wait initial(intro_time).
 	var/intro_time = 0
 	/// Whether the cinematic turns off ooc when played globally.
@@ -84,7 +84,7 @@ CAPABILITIES(/datum/cinematic)
 		// Close watcher ui's, too, so they can watch it.
 		SStgui.close_user_uis(watching_mob)
 
-	// Actually plays the animation (its later frames run on om_after() timers; nothing sleeps).
+	// Actually plays the animation (its later frames run on after() timers; nothing sleeps).
 	play_cinematic()
 
 	// Cleans up after it's done playing.
@@ -100,7 +100,7 @@ CAPABILITIES(/datum/cinematic)
 
 /// Whenever another cinematic starts to play over us, we have the chacne to block it.
 /datum/cinematic/proc/handle_replacement_cinematics(datum/act/play_cinematic/play)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/cinematic/other = play.cinematic
 
 	// Stop our's and allow others to play if we're local and it's global
@@ -112,7 +112,7 @@ CAPABILITIES(/datum/cinematic)
 
 /// Hooked to mob_client_login on each watching mob.
 /datum/cinematic/proc/on_watcher_client_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/watching_mob = A.target
 	var/datum/notice/mob_client_login/event = A
 	show_to(watching_mob, event.client)

@@ -88,7 +88,7 @@
 
 			to_chat(new_mob, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))
 
-			spent(M)
+			replaced_by(M, new_mob)
 			return
 		else
 			to_chat(M, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))

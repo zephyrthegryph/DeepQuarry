@@ -113,7 +113,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	signal_strength = get_signal_to(current_uav())
 	if(!signal_strength)
 		clear_current()

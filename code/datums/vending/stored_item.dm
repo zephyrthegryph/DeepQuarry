@@ -46,7 +46,7 @@
 /datum/stored_item/on_destroy(force)
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)
-			destroyed(product)
+			ended_with(product, src)
 	rel_clear(src, nameof(instances))
 	stored = null
 	..()
@@ -104,7 +104,7 @@
 	else if(hash != dq_stock_pristine_hash(item_path, variant))
 		return FALSE
 	amount += collapse_units(product)
-	destroyed(product)
+	consumed(product, src)
 	return TRUE
 
 /// Latent units one collapsed product adds.

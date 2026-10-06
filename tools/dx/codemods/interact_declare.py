@@ -42,10 +42,13 @@ KINDS = {
     "ALT": "hand()",
     "DRAG": "item(/atom/movable)",
     "TK": "tk()",
+    # a silicon's use (the old attack_ai/attack_robot adapter): the interface binding, reach as far as the silicon sees
+    "SILICON": "remote()",
+    "ROBOT": "remote()",
 }
 # the macro's own name: INTERACT_<BASE><suffix>; _AS takes the stance as its first argument, _HOSTILE and _PEACEFUL fix it, _DEFAULT is the type's default for
 # the input (tried after everything else it offers)
-SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|ALT|TK|VERB)(_AS|_HOSTILE|_PEACEFUL|_DEFAULT_AS|_DEFAULT)?$")
+SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|ALT|TK|VERB|SILICON|ROBOT)(_AS|_HOSTILE|_PEACEFUL|_DEFAULT_AS|_DEFAULT)?$")
 STANCE_LITERAL = re.compile(r"^I_(HELP|DISARM|GRAB|HURT)$")
 FALLS_THROUGH = ("USE", "VERB")  # an effect whose return is ignored (always handled): every other kind falls through to the next candidate on a falsy return
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
@@ -69,8 +72,13 @@ def translate_req(clause, t, kind):
     fm = REQ_FIELD_CLAUSE.match(clause)
     if fm:
         value = "FALSE" if fm.group(1) else "TRUE"
-        because = (", because = %s" % fm.group(3)) if fm.group(3) else ""
-        return ("req_is(nameof(%s), %s%s)" % (fm.group(2), value, because), [])
+        if not fm.group(3):
+            return ("req_is(nameof(%s), %s)" % (fm.group(2), value), [])
+        # a reason is a message type, never text (a text `because` is read as a proc name)
+        text = fm.group(3).strip('"')
+        msg = "%s/%s" % (t.split("/")[-1], fm.group(2))
+        sentence = text[:1].upper() + text[1:] + ("" if text.endswith((".", "!", "?")) else ".")
+        return ("req_is(nameof(%s), %s, because = MSG(%s))" % (fm.group(2), value, msg), ['MSG_DEF_SELF(%s, "%s")' % (msg, sentence)])
     pm = REQ_PROC_CLAUSE.match(clause)
     if not pm:
         return None
@@ -637,7 +645,8 @@ def main():
         emitted = set()
         for h in handlers:
             for hp in h["spec"].get("req_helpers", []):
-                hname = re.search(r"^/[\w/]+/proc/(\w+)\(", hp, re.M).group(1)
+                hm = re.search(r"^/[\w/]+/proc/(\w+)\(", hp, re.M) or re.search(r"^MSG_DEF\w*\(([\w/]+),", hp)
+                hname = hm.group(1)
                 if hname in emitted:
                     continue
                 if defs_by_name.get(hname) or re.search(r"\b" + hname + r"\b", tree_text):
@@ -714,6 +723,8 @@ def main():
                 parts = ['op("%s"' % h["key"], h["binding"]]
                 if s["kind"] in ("HAND_UNGATED", "ALT"):
                     parts.append("ungated()")
+                if s["kind"] == "ROBOT":
+                    parts.append("when(req(/mob/living/silicon/robot, of = ON_ACTOR))")
                 if h["gesture"]:
                     parts.append("gesture(%s)" % h["gesture"])
                 if s["stance"]:

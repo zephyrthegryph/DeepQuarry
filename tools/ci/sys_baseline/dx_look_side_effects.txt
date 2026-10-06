@@ -1,9 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_look_side_effects.py (doc/rewrite/systems.md); shrink-only, target 0
-dx_appearance_side_effect	code/ATMOSPHERICS/pipes/manifold.dm	underlays.Cut()
-dx_appearance_side_effect	code/ATMOSPHERICS/pipes/manifold4w.dm	underlays.Cut()
-dx_appearance_side_effect	code/ATMOSPHERICS/pipes/universal.dm	underlays.Cut()
-dx_appearance_side_effect	code/ATMOSPHERICS/pipes/universal.dm	underlays.Cut()
-dx_appearance_side_effect	code/ATMOSPHERICS/pipes/vent.dm	set_dir(get_dir(src, node1))
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_NONE
 dx_appearance_side_effect	code/_onclick/hud/ability_screen_objects.dm	invisibility = INVISIBILITY_ABSTRACT
 dx_appearance_side_effect	code/_onclick/hud/screen_objects.dm	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")

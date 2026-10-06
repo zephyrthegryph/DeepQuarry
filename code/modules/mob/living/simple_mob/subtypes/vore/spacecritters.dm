@@ -61,7 +61,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	if(mind)
 		src.mind.transfer_to(L)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
-	spent(src)
+	replaced_by(src, L)
 
 /mob/living/simple_mob/vore/spacecritter/proc/duplicate()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% splits into two!")))
@@ -91,27 +91,27 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
 
 
-/datum/om/stage/life/type_post/simple_mob/vore/spacecritter/solarray
-	of = /mob/living/simple_mob/vore/spacecritter/solarray
+/mob/living/simple_mob/vore/spacecritter/solarray/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/spacecritter/solarray/perform(mob/living/simple_mob/vore/spacecritter/solarray/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/spacecritter/solarray/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.icon_state != self.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
-		var/turf/moth_loc = get_turf(self)
+	if(src.icon_state != src.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
+		var/turf/moth_loc = get_turf(src)
 		if(isturf(moth_loc) && moth_loc.return_air()) // XGM turf.air → LINDA return_air()
 			var/datum/gas_mixture/env = moth_loc.return_air() //Gets all the information on the local air.
 			var/transfer_moles = 0.25 * env.total_moles() //The bigger the room, the harder it is to heat the room.
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
 			if(removed)
-				var/heat_transfer = removed.get_thermal_energy_change(self.set_temperature)
+				var/heat_transfer = removed.get_thermal_energy_change(src.set_temperature)
 				var/environment_temperature = env.return_temperature()
 				if(heat_transfer > 0 && environment_temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
-					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater
+					heat_transfer = min(heat_transfer , src.heating_power) //limit by the power rating of the heater
 					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
 
-				else if(heat_transfer > 0 && environment_temperature < self.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
-					self.heating_power = self.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
-					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
+				else if(heat_transfer > 0 && environment_temperature < src.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
+					src.heating_power = src.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
+					heat_transfer = min(heat_transfer , src.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
 					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
 
 				else
@@ -122,7 +122,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 
 
 	//Since I'm changing hyper mode to be variable we need to store old power
-	self.original_temp = self.heating_power
+	src.original_temp = src.heating_power
 
 /mob/living/simple_mob/vore/spacecritter/solarray/galaxyray
 	name = "galaxy ray"
@@ -153,12 +153,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 
 	var/chilltemp = -20
 
-/datum/om/stage/life/special/vore/spacecritter/livingice
-	of = /mob/living/simple_mob/vore/spacecritter/livingice
+/mob/living/simple_mob/vore/spacecritter/livingice/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/vore/spacecritter/livingice/perform(mob/living/simple_mob/vore/spacecritter/livingice/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.cold_aura()
+/mob/living/simple_mob/vore/spacecritter/livingice/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.cold_aura()
 	..()
 
 /mob/living/simple_mob/vore/spacecritter/livingice/proc/cold_aura()
@@ -195,12 +195,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	evolvekey = "/obj/item/stack/material/uranium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
 
-/datum/om/stage/life/special/vore/spacecritter/radcrab
-	of = /mob/living/simple_mob/vore/spacecritter/radcrab
+/mob/living/simple_mob/vore/spacecritter/radcrab/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/vore/spacecritter/radcrab/perform(mob/living/simple_mob/vore/spacecritter/radcrab/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.irradiate()
+/mob/living/simple_mob/vore/spacecritter/radcrab/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
 	..()
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/proc/irradiate()

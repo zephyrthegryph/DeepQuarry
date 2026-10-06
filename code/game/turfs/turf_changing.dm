@@ -86,7 +86,7 @@
 	cut_overlays(TRUE)
 	unmake_z_transparent()
 	changing_turf = TRUE
-	spent(src)
+	replaced_by(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
 	for(var/list/post_change as anything in post_change_callbacks)
@@ -109,7 +109,7 @@
 		rel_set(old_shandler, nameof(old_shandler.holder), W)
 	else
 		if(old_shandler) // the new turf can't hold one
-			spent(old_shandler)
+			ended_with(old_shandler, src)
 		if(istype(W_sim) && (SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
 			rel_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
 			W_sim.shandler.manualInit()

@@ -1725,6 +1725,20 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
 - Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
 
+## Ending causes audited (rewrite/lifecycle-forms-2)
+
+- The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
+  list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
+  before. The reviewed state is `tools/ci/ending_causes_snapshot.txt` (`ending_sites.py --update/--check`).
+- Three verbs join spent/consumed/destroyed/dissolved: `lapsed(thing, by)` (END_EXPIRED now: a status effect's duration, a capped history,
+  an animation or flash), `replaced_by(thing, successor)` (END_REPLACED for a transformation whose successor the caller already made: mob
+  transforms, evolutions, soulstone constructs, organ and limb swaps, a turf change) and `ended_with(thing, owner)` (END_OWNER for an
+  owner's teardown: `on_destroy()` loops, a container's leftovers, windows and huds whose host is gone).
+- Digestion, stomach acid, cleaning reagents and acid melting are `dissolved`; eating, feeding, grinding, recipes and machines that take an
+  item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
+  `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
+  they are `spent` (a discarded temporary) or `replaced_by`.
+
 ## Atmospherics looks (rewrite/pipenet-full)
 
 - Every `APPEARANCE_TEMPLATE`, `DECLARE_APPEARANCE` and `DECLARE_APPEARANCE_PROC` in the pipe network and its devices is a `draw(look)` with
@@ -1765,3 +1779,26 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 - Board games: UI_SUBACT rows are plain procs; each game routes its "game_action"/"setup_action" message with a `game_subaction()`/`setup_subaction()` dispatcher whose arguments go through schemas (`payload_args()` in code/engine/parts/inputs.dm). "Invite player" is an `asks()` step whose choices are the players the inviter sees. Pinned by interim_board_game_subactions.
 - Schemas: at the input boundary, `num()`/`int()` read numeric text ("3") as a number, as the legacy UI_ARG_NUM did. NaN is refused.
 - Preferences: the window is `interface(... forwards = nameof(middleware))`. Each preference editor routes its own actions with a `handle_action()` override whose arguments go through schemas (`payload_args()`), replacing the UI_ACT/UI_ACT_PREF_PROC table. "Reset slot" asks its two questions as `asks()` steps (the second only after a "Yes"). The colour pickers ("set_color_preference", the setup's "dq_pick_color") are `asks()` steps whose answer the handler writes. A preference the client may not write still refuses after the picker answers. The middleware's window data reads its window with `SStgui.get_open_ui()`. Pinned by interim_preference_editor_actions and the loadout tests.
+- **Silicon uses are `remote()` ops** (`INTERACT_SILICON`; `INTERACT_ROBOT` adds `when(req(/mob/living/silicon/robot, of = ON_ACTOR))`).
+  The curtain, the simple doors and the mirror: a cyborg beside it uses it (`needs(req_adjacent())`); the AI is not offered what it could
+  not do. The fire axe cabinet asks the actor's kind in its ops' `when()`, not in its handlers. The resin door replaces the base door's
+  hand and item with `without()`; its tear (combat mode) and its pull have disjoint stances.
+- The i7 interaction snapshots of the converted types are re-blessed (their legacy ids are ops now).
+
+## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
+
+Pinned by `code/modules/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
+form, robot and vore tests that run Life frames.
+
+* **A wake wakes the steps that read it, not the whole mob.** The pipeline's unpark woke every stage of a parked mob; the sequence clears the sleep
+  bits of the steps whose reads the change names (CHANGE_MOB_STAT, CHANGE_MOB_CLIENT and CHANGE_EXPLICIT still wake every step, LIFE_WAKE_ALL).
+  The rest stay asleep until their own reads or rewakes. Fewer steps run after a wake; none that has work is missed (the audit still runs).
+* **A woken step asks should_run() before it runs** (a rewake does not). The pipeline ran a woken stage once and then asked idle(). Steps whose
+  rule was "nothing to do until woken" (voice, fall, visible name, pulse, simple mob vitals, AFK, ambience, germs) are declared `once = TRUE`: a
+  wake by one of their reads runs them once, as before.
+* **Trait steps attached before the mob materialized now run.** `om_stage_add()` returned early for a mob whose Life pipeline was not attached yet,
+  so a trait state attached during Initialize never ticked; the mob's `on_materialize()` now adds every attached state's steps.
+* **The step profile is per step, not per mob type.** The mob service's two-minute report logs `MOB_STEP_PROFILE` lines (sampled cost per Life
+  step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
+* Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
+  Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.

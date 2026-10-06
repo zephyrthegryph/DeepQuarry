@@ -18,7 +18,7 @@
 				//mode_false_report_weight[M.config_tag] = M.false_report_weight
 				if(M.votable)
 					votable_modes += M.config_tag
-		consumed(M, src)
+		spent(M)
 	votable_modes += "extended"
 
 /datum/controller/configuration/proc/pick_mode(mode_name)

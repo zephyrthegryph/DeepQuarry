@@ -95,11 +95,11 @@
 /datum/unit_test/var/dq_part_signal_count = 0
 
 /datum/unit_test/proc/dq_count_detached(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	dq_part_signal_count++
 
 /datum/unit_test/proc/dq_count_attached(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	dq_part_signal_count++
 
 /// A blunt sever destroys the limb; what was inside it is flung out through

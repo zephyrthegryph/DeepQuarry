@@ -66,46 +66,46 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 /datum/say_list/solargrub
 	emote_see = list("squelches", "squishes")
 
-/datum/om/stage/life/type_post/simple_mob/vore/solargrub
-	of = /mob/living/simple_mob/vore/solargrub
+/mob/living/simple_mob/vore/solargrub/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/solargrub/perform(mob/living/simple_mob/vore/solargrub/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/solargrub/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive")) return
+	if(!F.alive()) return
 
-	if(!self.ai_brain.primary_threat)
+	if(!src.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
-		var/turf/S = self.loc
-		rel_set(self, nameof(self.attached), locate_on(S, /obj/structure/cable))
-		if(self.attached)
-			if(self.ai_brain) self.ai_busy_begin()
+		var/turf/S = src.loc
+		rel_set(src, nameof(src.attached), locate_on(S, /obj/structure/cable))
+		if(src.attached)
+			if(src.ai_brain) src.ai_busy_begin()
 			if(prob(2))
-				act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to sink power from the net.")))
+				act_message(src, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to sink power from the net.")))
 			if(prob(5))
-				fx_sparks(get_turf(self), 5, FALSE)
-			self.set_anchored(TRUE)
-			self.PN = self.attached.get_power_region()
-			power_draw(self.PN, self.powerdraw)
-			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
+				fx_sparks(get_turf(src), 5, FALSE)
+			src.set_anchored(TRUE)
+			src.PN = src.attached.get_power_region()
+			power_draw(src.PN, src.powerdraw)
+			src.charge = src.charge + (src.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000
-			for(var/obj/machinery/power/terminal/T in power_grid_nodes(self.PN))
+			for(var/obj/machinery/power/terminal/T in power_grid_nodes(src.PN))
 				if(istype(T.master(), /obj/machinery/power/apc))
 					var/obj/machinery/power/apc/A = T.master()
 					if(A.operating && A.cell)
 						var/cur_charge = A.cell.charge / CELLRATE
 						var/drain_val = min(apc_drain_rate, cur_charge)
 						A.cell.use(drain_val * CELLRATE)
-		else if(!self.attached && self.anchored)
-			self.set_anchored(FALSE)
-			self.PN = 0
-		if(prob(1) && self.charge >= 32000 && self.can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
-			self.set_anchored(0)
-			self.PN = 0
-			self.release_vore_contents()
-			if(self.prey_excludes)
-				rel_clear(self, nameof(self.prey_excludes))
+		else if(!src.attached && src.anchored)
+			src.set_anchored(FALSE)
+			src.PN = 0
+		if(prob(1) && src.charge >= 32000 && src.can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
+			src.set_anchored(0)
+			src.PN = 0
+			src.release_vore_contents()
+			if(src.prey_excludes)
+				rel_clear(src, nameof(src.prey_excludes))
 			GLOB.moth_amount = GLOB.moth_amount + 1
-			self.death_star()
+			src.death_star()
 
 /mob/living/simple_mob/vore/solargrub/proc/death_star()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U%'s shell rips open and evolves!")))
@@ -116,7 +116,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	new chosen_form(get_turf(src))
 */
 	new adult_forms(get_turf(src)) //Added this line to spawn the only form because the above is commented out.
-	spent(src)
+	replaced_by(src)
 
 /mob/living/simple_mob/vore/solargrub //active noms
 	vore_bump_chance = 50
@@ -156,16 +156,16 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 
-/datum/om/stage/life/light/simple_mob/vore/solargrub
-	of = /mob/living/simple_mob/vore/solargrub
+/mob/living/simple_mob/vore/solargrub/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/simple_mob/vore/solargrub/perform(mob/living/simple_mob/vore/solargrub/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/solargrub/life_light(datum/seq_frame/life/F)
 	. = ..()
-	if(. == 0 && !self.is_dead())
-		self.set_light(2.5, 1, COLOR_YELLOW)
+	if(. == 0 && !src.is_dead())
+		src.set_light(2.5, 1, COLOR_YELLOW)
 		return 1
-	else if(self.is_dead())
-		self.set_glow_override(FALSE)
+	else if(src.is_dead())
+		src.set_glow_override(FALSE)
 
 /mob/living/simple_mob/vore/solargrub/load_default_bellies()
 	. = ..()

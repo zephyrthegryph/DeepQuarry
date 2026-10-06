@@ -112,7 +112,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	deactivate(null, 0)
 	..()
 
-// A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
+// A camera sleeps on one after() timer for its earliest deadline (EMP recovery, the motion alarm
 // delay) and on signals from the mobs it tracks; it never polls.
 
 /// The earliest pending deadline (world.time), or 0 for none.

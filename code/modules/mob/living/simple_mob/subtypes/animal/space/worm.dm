@@ -89,12 +89,12 @@
 /mob/living/simple_mob/animal/space/space_worm/head/long
 	segment_count = 10
 
-/datum/om/stage/life/special/animal/space/space_worm/head
-	of = /mob/living/simple_mob/animal/space/space_worm/head
+/mob/living/simple_mob/animal/space/space_worm/head/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/space/space_worm/head/perform(mob/living/simple_mob/animal/space/space_worm/head/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/space/space_worm/head/life_special(datum/seq_frame/life/F)
 	..()
-	self.update_body_faction()
+	src.update_body_faction()
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/space/space_worm/head/appearance_overlays()
@@ -155,30 +155,30 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 	if(previous)
 		previous.death()
 
-/datum/om/stage/life/special/animal/space/space_worm
-	of = /mob/living/simple_mob/animal/space/space_worm
+/mob/living/simple_mob/animal/space/space_worm/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/space/space_worm/perform(mob/living/simple_mob/animal/space/space_worm/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/space/space_worm/life_special(datum/seq_frame/life/F)
 	..()
 
-	if(COOLDOWN_FINISHED(self, maw_cooldown_until))	// Auto-stop eating.
-		if(self.open_maw)
-			to_chat(self, span_notice("Your jaws cannot remain open.."))
-			self.set_maw(FALSE)
+	if(COOLDOWN_FINISHED(src, maw_cooldown_until))	// Auto-stop eating.
+		if(src.open_maw)
+			to_chat(src, span_notice("Your jaws cannot remain open.."))
+			src.set_maw(FALSE)
 
-	if(self.next && !(self.next in view(self,1)) && !self.z_transitioning)
-		self.Detach(1)
+	if(src.next && !(src.next in view(src,1)) && !src.z_transitioning)
+		src.Detach(1)
 
-	if(self.stat == DEAD && self.sever_chunks) // Dead chunks fall off and die immediately if we sever_chunks
-		if(self.previous)
-			self.previous.Detach(1)
-		if(self.next)
-			self.Detach(1)
+	if(src.stat == DEAD && src.sever_chunks) // Dead chunks fall off and die immediately if we sever_chunks
+		if(src.previous)
+			src.previous.Detach(1)
+		if(src.next)
+			src.Detach(1)
 
-	if(prob(self.stomachProcessProbability))
-		self.ProcessStomach()
+	if(prob(src.stomachProcessProbability))
+		src.ProcessStomach()
 
-	self.update_icon()
+	src.update_icon()
 
 	return
 
@@ -361,17 +361,17 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 				if(!istype(stomachContent,/obj/item/stack/material/phoron))
 					var/obj/item/stack/oldStack = stomachContent
 					new /obj/item/stack/material/phoron(src, oldStack.get_amount())
-					spent(oldStack)
+					dissolved(oldStack, src)
 					continue
 			else if(istype(stomachContent,/obj/item)) //converts to plasma, keeping the w_class
 				var/obj/item/oldItem = stomachContent
 				new /obj/item/stack/material/phoron(src, oldItem.w_class)
-				spent(oldItem)
+				dissolved(oldItem, src)
 				continue
 			else
 				new /obj/item/stack/material/phoron(src, flatPlasmaValue) //just flat amount
 				if(!isliving(stomachContent))
-					spent(stomachContent)
+					dissolved(stomachContent, src)
 				else
 					var/mob/living/L = stomachContent
 					if(iscarbon(L))

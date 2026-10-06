@@ -198,7 +198,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /// Event wrapper: the watched camera (or something carrying it) moved.
 /datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	update_active_camera_screen()
 
 /datum/tgui_module/camera/proc/update_active_camera_screen(datum/act/notice/N)

@@ -1610,5 +1610,5 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle5)
 	if(host().soulgem?.linked_belly() == host().vore_selected)
 		host().soulgem.linked_belly = null
 
-	consumed(host().vore_selected, src)
+	spent(host().vore_selected, src)
 	host().vore_selected = host().vore_organs[1]

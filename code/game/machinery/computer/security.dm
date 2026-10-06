@@ -673,7 +673,7 @@ DAMAGE_REACTION(/obj/machinery/computer/secure_data, DAMAGE_EMP, PROC_REF(secure
 			continue
 
 		else if(prob(1))
-			spent(R)
+			destroyed(R, null, "emp")
 			continue
 
 /obj/machinery/computer/secure_data/detective_computer

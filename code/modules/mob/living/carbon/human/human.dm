@@ -1232,7 +1232,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == identity())
 				host.release_mind(src, "revived body reclaimed its brain")
-				spent(H)
+				ended_with(H, src)
 				break
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
@@ -1464,7 +1464,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	old_species?.remove_components(src, species)
 	if(replaced)
-		spent(replaced) // the private copy proto_replace() handed back, done with now
+		replaced_by(replaced) // the private copy proto_replace() handed back, done with now
 	invalidate_factors()
 
 	if(species.language)

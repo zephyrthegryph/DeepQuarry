@@ -15,7 +15,7 @@
 
 /// Get ahead of the curve with deleting
 /datum/admins/proc/handle_tagged_del(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 
 	if(owner())

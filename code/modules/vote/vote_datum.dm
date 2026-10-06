@@ -131,7 +131,7 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	if(remaining() == 0)
 		var/result = calculate_result()
 		handle_result(result)
-		spent(src)
+		lapsed(src)
 
 // SSvote forgets it.
 /datum/vote/lifecycle_dematerialize()

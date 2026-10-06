@@ -515,13 +515,13 @@
 		var/turf/simulated/wall/W = T
 		if(locate_on(W, /obj/effect/overlay/wallrot))
 			for(var/obj/effect/overlay/wallrot/E in turf_contents_of_type(W, /obj/effect/overlay/wallrot))
-				spent(E)
+				dissolved(E)
 			W.visible_message(span_notice("The fungi are completely dissolved by the solution!"))
 
 /datum/reagent/toxin/plantbgone/touch_obj(obj/O, volume)
 	..()
 	if(istype(O, /obj/effect/plant))
-		spent(O)
+		dissolved(O)
 	else if(istype(O, /obj/effect/alien/weeds/))
 		var/obj/effect/alien/weeds/alien_weeds = O
 		alien_weeds.take_damage(rand(15, 35), BRUTE)

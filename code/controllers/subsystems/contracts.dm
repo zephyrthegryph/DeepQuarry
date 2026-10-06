@@ -106,7 +106,7 @@ SYSTEM_DEF(contracts)
 	return revision
 
 /datum/system/contracts/proc/on_mob_created(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/world_mob_created/event = A
 	var/mob/created_mob = event.mob
 	var/mob/living/carbon/human/subject = created_mob
@@ -128,7 +128,7 @@ SYSTEM_DEF(contracts)
 	refresh_physical_custody(subject)
 
 /datum/system/contracts/proc/on_custody_input_changed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/subject = A.target
 	refresh_physical_custody(subject)
 
@@ -227,7 +227,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	)
 
 /datum/system/contracts/proc/on_payment_account_status(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/world_payment_account_status/event = A
 	var/datum/money_account/account = event.account
 	if(!account || account.suspended)
@@ -280,7 +280,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	return !!queue_offer(definition.id, context, "Allied standing unlocked a higher-tier follow-up commission", "followup:[definition.id]:[completion_number]", 90)
 
 /datum/system/contracts/proc/on_medical_subject_availability(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/subject = A.target
 	queue_medical_subject_reconciliation(subject)
 
@@ -289,7 +289,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
-	// Pass only the key: om_after() drops a call whose captured datum is gone, and a subject
+	// Pass only the key: after() drops a call whose captured datum is gone, and a subject
 	// deleted before the timer fires would then leave its key pending forever (blocking every
 	// later reconciliation for that key). The handler resolves the key and copes with a gone subject.
 	after(src, 0, PROC_REF(reconcile_subject_availability), with = list(key))
@@ -312,13 +312,13 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	consider_rare_medical_case(subject)
 
 /datum/system/contracts/proc/on_medical_issues_changed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/subject = A.target
 	subject.refresh_contract_medical_eligibility()
 	consider_rare_medical_case(subject)
 
 /datum/system/contracts/proc/on_mob_death(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/world_mob_death/event = A
 	var/mob/living/dead_mob = event.living
 	if(ishuman(dead_mob))
@@ -328,7 +328,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		withdraw_rare_case_offers(dead_mob)
 
 /datum/system/contracts/proc/on_medical_subject_revived(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/subject = A.target
 	subject.contract_medical_indications = null
 	subject.refresh_contract_medical_eligibility()
@@ -481,7 +481,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
 		var/datum/contract_event/expired_event = recent_events[1]
 		recent_events.Cut(1, 2)
-		spent(expired_event)
+		lapsed(expired_event)
 	observe_opportunity_event(event)
 	var/list/subscribers = event_subscriptions[event.event_type]
 	var/list/listeners = subscribers?.Copy()

@@ -89,7 +89,7 @@
 	confirm()
 	var/mob/living/affecting = src?.grab_target()
 	if(!assailant)
-		spent(src) // Same here, except we're trying to delete ourselves.
+		ended_with(src) // Same here, except we're trying to delete ourselves.
 		return PROCESS_KILL
 
 	if(assailant.client)
