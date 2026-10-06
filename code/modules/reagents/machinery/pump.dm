@@ -25,7 +25,7 @@ CAPABILITIES(/obj/machinery/pump)
 		needs(req(PROC_REF(battery_panel_open), because = PROC_REF(battery_panel_shut_reason)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
 		then(PROC_REF(cell_inserted)))
 	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
-	op("silicon_toggle", remote(), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle"), then(PROC_REF(pump_silicon_toggle)))
+	op("silicon_toggle", remote(), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle"), then(PROC_REF(pump_silicon_toggle)))
 	reagents(200)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()

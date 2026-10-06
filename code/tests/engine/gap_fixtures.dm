@@ -348,4 +348,47 @@ CAPABILITIES(/obj/gap_asker)
 	LAZYADD(log, "named:[A.step_value("k")]")
 	return OP_OK
 
+// ---- req_actor_kind(), interface(observe =), the hand-over and conditional owns_one() policies ----
+
+/// Menu ops gated on who is acting: one only for a human, one for anything but a human.
+/obj/gap_actor_kind
+	name = "gap actor kind target"
+	var/list/ran
+
+CAPABILITIES(/obj/gap_actor_kind)
+	op("humans_only", menu(), label("Humans"), needs(req_actor_kind(/mob/living/carbon/human)), then(PROC_REF(ran_it)))
+	op("not_humans", menu(), label("Not humans"), needs(req_actor_kind(list(/mob/living/carbon/human), not = TRUE, because = /datum/msg/op/not_available)), then(PROC_REF(ran_it)))
+
+/obj/gap_actor_kind/proc/ran_it(datum/act/op/A)
+	LAZYADD(ran, A.key)
+	return OP_OK
+
+/obj/gap_actor_kind/proc/ran_text()
+	return jointext(ran, ",")
+
+/// A window with the ghost's read-only view, and a requirement shared by it.
+/obj/gap_observed_window
+	name = "gap observed window"
+	var/blocked = FALSE
+
+CAPABILITIES(/obj/gap_observed_window)
+	interface("ChemDispenser", observe = TRUE)
+	extend("ui_observe", needs(req_is(nameof(blocked), FALSE, because = /datum/msg/op/not_available)))
+
+/// Hands its part to a successor while it has one; the extra part is spilled only while the flag is set.
+/obj/gap_handover_holder
+	name = "gap handover holder"
+	var/obj/item/pen/part
+	var/obj/item/pen/kept
+	var/obj/gap_handover_successor/heir
+	var/tmp/going_out = FALSE
+
+CAPABILITIES(/obj/gap_handover_holder)
+	owns_one(nameof(part), /obj/item/pen, on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(heir), successor_var = nameof(heir.salvage))
+	owns_one(nameof(kept), /obj/item/pen, on_destroy = ON_DESTROY_SPILL, only_if = nameof(going_out))
+
+/obj/gap_handover_successor
+	name = "gap handover successor"
+	var/list/salvage
+
 #endif

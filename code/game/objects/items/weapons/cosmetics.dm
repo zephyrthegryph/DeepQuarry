@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/haircomb)
 
 CAPABILITIES(/obj/item/makeover)
 	owns_one(nameof(M), starts = /datum/tgui_module/appearance_changer/mirror/coskit)
-	op("makeover", in_hand(), label("Adjust appearance"), needs(req(/mob/living/carbon/human, of = ON_ACTOR)), then(PROC_REF(appearance_adjusted)))
+	op("makeover", in_hand(), label("Adjust appearance"), needs(req_actor_kind(/mob/living/carbon/human)), then(PROC_REF(appearance_adjusted)))
 
 /obj/item/makeover/proc/appearance_adjusted(datum/act/op/A)
 	var/mob/user = A.actor

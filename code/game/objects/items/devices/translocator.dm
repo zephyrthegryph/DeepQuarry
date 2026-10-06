@@ -432,7 +432,7 @@ CAPABILITIES(/obj/item/perfect_tele_beacon)
 	// the first pick-up of someone else's beacon warns first (otherwise the click declines to pick up)
 	op("warn", hand(), label("Pick up"), asks(/datum/prompt/choice, fields = list("title" = "OOC Warning", "question" = computed(PROC_REF(warning_text)), "choices" = list("Take It", "Leave It"), "buttons" = TRUE, "timeout" = 0), when = PROC_REF(needs_warning)), then(PROC_REF(warning_answered)))
 	// the old attack_self: eat the beacon, into a chosen belly, after a moment
-	op("eat", in_hand(), label("Eat"), needs(req(/mob/living, of = ON_ACTOR, because = /datum/msg/req_silent)),
+	op("eat", in_hand(), label("Eat"), needs(req_actor_kind(/mob/living, because = /datum/msg/req_silent)),
 		asks(/datum/prompt/choice, fields = list("title" = "Eat beacon?", "question" = "You COULD eat the beacon...", "choices" = list("Eat it!", "No, thanks."), "buttons" = TRUE, "timeout" = 0), step = "eat"),
 		asks(/datum/prompt/choice, fields = list("title" = "Select A Belly", "question" = "Which belly?", "choices" = computed(PROC_REF(belly_choices)), "timeout" = 0), step = "belly", when = PROC_REF(asks_belly)),
 		then(PROC_REF(belly_chosen)))

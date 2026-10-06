@@ -31,6 +31,7 @@ MSG_DEF_SELF(op/answer_no, "You decide against it.")
 MSG_DEF_SELF(op/timed_out, "You took too long.")
 MSG_DEF_SELF(op/hopper_full, "It's full.")
 MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
+MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// The text of a refusal reason: a /datum/msg type, or the text itself.
 /proc/reason_text(reason)
@@ -335,6 +336,30 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 /datum/entry/part/req/alive/holds(datum/act/op/A)
 	var/mob/M = A.actor
 	return !istype(M) || M.stat != DEAD
+
+/// req_actor_kind(types, because =, not = FALSE): the actor is one of the given kinds (a type or a list of types: /mob/living/silicon, /mob/observer).
+/// With not = TRUE it refuses those kinds instead ("a cyborg can't do this"). In a when() it picks the op by who is acting; in needs() it
+/// refuses everyone else with `because` (default: "That isn't something you can do."). The actor is the clicking mob, so it is never read from a var.
+/proc/req_actor_kind(types, because = null, not = FALSE, id = null)
+	return part_make(/datum/entry/part/req/actor_kind, list("types" = types, "because" = because, "not" = not, "id" = id))
+
+/datum/entry/part/req/actor_kind
+	part_name = "req_actor_kind"
+	default_reason = /datum/msg/op/wrong_actor
+
+/datum/entry/part/req/actor_kind/holds(datum/act/op/A)
+	var/datum/D = A.actor
+	var/types = src.args["types"]
+	var/match = FALSE
+	if(!isnull(D))
+		if(islist(types))
+			for(var/path in types)
+				if(istype(D, path))
+					match = TRUE
+					break
+		else
+			match = istype(D, types)
+	return src.args["not"] ? !match : match
 
 /// req_mutation(M, of = ON_ACTOR, because =): the participant (the actor by default) is a mob with mutation M (HULK, TK, ...): a hulk's smash,
 /// a telekinetic's reach. In a when() it picks the op only for such an actor; in needs() it refuses everyone else. It reads the mob's conditions

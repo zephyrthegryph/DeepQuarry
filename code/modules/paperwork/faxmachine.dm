@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
 	// the staff request form: the window's button and the menu's verb, four questions, then the ping
 	op("send_automated_staff_request", inputs(ui_act("send_automated_staff_request"), menu()), label("Staff Request Form"),
-		needs(req(list(/mob/living/carbon/human, /mob/living/silicon), of = ON_ACTOR, because = /datum/msg/req_failed), req_on_origin(ORIGIN_MENU | ORIGIN_VERB, req_adjacent()), req(PROC_REF(role_request_ready), because = MSG(fax/relays_recalibrating))),
+		needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_on_origin(ORIGIN_MENU | ORIGIN_VERB, req_adjacent()), req(PROC_REF(role_request_ready), because = MSG(fax/relays_recalibrating))),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Are you sure you want to send automated crew request?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel"), "buttons" = TRUE), step = "confirm"),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Pick the job to request.", "title" = "Job Request", "choices" = computed(PROC_REF(requestable_jobs)), "buttons" = FALSE), step = "role", when = PROC_REF(request_confirmed)),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Pick request reason.", "title" = "Request reason", "choices" = computed(PROC_REF(request_reasons)), "buttons" = FALSE), step = "reason", when = PROC_REF(request_role_picked)),
@@ -186,9 +186,9 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		then(PROC_REF(fax_department_id_answered)))
 	op("faxmachine_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req(PROC_REF(no_id_inserted_holds))), then(PROC_REF(interaction_insert_id)))
 	op("faxmachine_insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 1), label("Insert toner"), then(PROC_REF(interaction_insert_toner_impl)))
-	op("faxmachine_open_ui_silicon", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(req(/mob/living/silicon, of = ON_ACTOR)), label("Use"), then(PROC_REF(silicon_open_ui)))
+	op("faxmachine_open_ui_silicon", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon)), label("Use"), then(PROC_REF(silicon_open_ui)))
 	op("faxmachine_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
-	op("faxmachine_remove_card", menu(), label("Remove ID card"), needs(req_adjacent(), req_capable(), req(list(/mob/living/carbon/human, /mob/living/silicon), of = ON_ACTOR, because = /datum/msg/req_failed), req_is(nameof(scan), TRUE, because = MSG(faxmachine/no_scan))), then(PROC_REF(interaction_remove_card)))
+	op("faxmachine_remove_card", menu(), label("Remove ID card"), needs(req_adjacent(), req_capable(), req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_is(nameof(scan), TRUE, because = MSG(faxmachine/no_scan))), then(PROC_REF(interaction_remove_card)))
 
 /// The window data.
 /obj/machinery/photocopier/faxmachine/ui_data(datum/act/eval/A)

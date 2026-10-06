@@ -19,14 +19,14 @@
 MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
 CAPABILITIES(/obj/structure/fireaxecabinet)
-	op("item", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	// a cyborg's module only ever strikes the glass or resets the lock, as if the cabinet were locked
-	op("robot_item", item(/obj/item), label("Use"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(struck_shut)))
+	op("robot_item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(struck_shut)))
 	op("hand", hand(), label("Use"), needs(req_is(nameof(locked), FALSE, because = MSG(fireaxecabinet/locked))), then(PROC_REF(interaction_hand)))
 	op("fireaxecabinet_silicon_lock", remote(), label("Toggle lock"), then(PROC_REF(fireaxecabinet_silicon_lock)))
 	op("tk", tk(), label("Interaction tk"), then(PROC_REF(interaction_tk)))
-	op("toggle_openness_effect", menu(), label("Open/Close"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), needs(req_adjacent(), req_capable()), then(PROC_REF(toggle_openness_effect)))
-	op("remove_fire_axe_effect", menu(), label("Remove Fire Axe"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), needs(req_adjacent(), req_capable()), then(PROC_REF(remove_fire_axe_effect)))
+	op("toggle_openness_effect", menu(), label("Open/Close"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), needs(req_adjacent(), req_capable()), then(PROC_REF(toggle_openness_effect)))
+	op("remove_fire_axe_effect", menu(), label("Remove Fire Axe"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), needs(req_adjacent(), req_capable()), then(PROC_REF(remove_fire_axe_effect)))
 
 /obj/structure/fireaxecabinet/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

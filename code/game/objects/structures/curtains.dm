@@ -43,7 +43,7 @@ MSG_DEF_SELF(curtain/cut, "You cut the shower curtains.")
 
 CAPABILITIES(/obj/structure/curtain)
 	op("toggle", inputs(hand(), item(/obj/item)), label("Toggle"), then(PROC_REF(toggled)))
-	op("silicon_toggle", remote(), label("Toggle"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), needs(req_adjacent()), then(PROC_REF(toggled)))
+	op("silicon_toggle", remote(), label("Toggle"), when(req_actor_kind(/mob/living/silicon/robot)), needs(req_adjacent()), then(PROC_REF(toggled)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut down"), wait(1 SECOND), begins(MSG(curtain/cutting)), says(MSG(curtain/cut)), then(PROC_REF(cut_down)))
 
 /// The cutters' wait ran out: the curtain is plastic sheets.

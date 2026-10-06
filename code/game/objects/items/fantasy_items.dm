@@ -159,8 +159,8 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 	without("item")
 	without("item_cyborg")
 	op("wooden_touch", hand(), ungated(), then(PROC_REF(wooden_touched)))
-	op("wooden_item", item(/obj/item), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(wooden_interaction_item)))
-	op("wooden_item_cyborg", item(/obj/item), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(wooden_interaction_item_cyborg)))
+	op("wooden_item", item(/obj/item), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(wooden_interaction_item)))
+	op("wooden_item_cyborg", item(/obj/item), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(wooden_interaction_item_cyborg)))
 
 /// A touch takes the click and does nothing.
 /obj/structure/toilet/wooden/proc/wooden_touched(datum/act/op/A)
