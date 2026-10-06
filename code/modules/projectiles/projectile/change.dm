@@ -24,7 +24,7 @@
 		else
 			for(var/obj/item/W in contents_of(M))
 				if(istype(W, /obj/item/implant))	//TODO: Carn. give implants a dropped() or something
-					qdel(W)
+					spent(W, M)
 					continue
 				M.drop_from_inventory(W)
 
@@ -88,7 +88,7 @@
 
 			to_chat(new_mob, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))
 
-			qdel(M)
+			spent(M)
 			return
 		else
 			to_chat(M, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))

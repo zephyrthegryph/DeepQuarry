@@ -107,12 +107,10 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	name = "offhand"
 
 /obj/item/oldtwohanded/offhand/unwield()
-	// ALLOW(lifecycle): the offhand exists only while the spear is wielded
-	qdel(src)
+	spent(src)
 
 /obj/item/oldtwohanded/offhand/wield()
-	// ALLOW(lifecycle): the offhand exists only while the spear is wielded
-	qdel(src)
+	spent(src)
 
 APPEARANCE_NONE(/obj/item/oldtwohanded/offhand)
 

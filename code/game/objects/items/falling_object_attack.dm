@@ -28,10 +28,12 @@ CAPABILITIES(/obj/effect/calldown_attack)
 	mouse_opacity = 0
 	icon = 'icons/effects/random_stuff_vr.dmi'
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/effect/illusionary_fall/Initialize(mapload)
-	. = ..()
-	icon_state = "[rand(1,33)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+CAPABILITIES(/obj/effect/illusionary_fall)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/illusionary_fall/proc/roll_icon_state(datum/roller/R)
+	return "[R.number(1, 33)]"
 
 /obj/effect/illusionary_fall/end_fall(crushing = FALSE)
 	for(var/mob/living/L in contents_of(loc))

@@ -42,10 +42,12 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/stock_parts/matter_bin = 20
 	)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/machine/Initialize(mapload)
-	. = ..()
-	icon_state = "machine[rand(0,6)]"
+CAPABILITIES(/obj/structure/salvageable/machine)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/machine/proc/roll_icon_state(datum/roller/R)
+	return "machine[R.number(0, 6)]"
 
 /obj/structure/salvageable/computer
 	name = "broken computer"
@@ -62,10 +64,13 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/stock_parts/capacitor = 30,
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/computer/Initialize(mapload)
-	. = ..()
-	icon_state = "computer[rand(0,7)]"
+
+CAPABILITIES(/obj/structure/salvageable/computer)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/computer/proc/roll_icon_state(datum/roller/R)
+	return "computer[R.number(0, 7)]"
 
 /obj/structure/salvageable/autolathe
 	name = "broken autolathe"
@@ -109,10 +114,12 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/stack/material/silver{amount = 10} = 30
 	)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/implant_container/Initialize(mapload)
-	. = ..()
-	icon_state = "implant_container[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/implant_container)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/implant_container/proc/roll_icon_state(datum/roller/R)
+	return "implant_container[R.number(0, 1)]"
 
 /obj/structure/salvageable/data
 	name = "broken data storage"
@@ -130,10 +137,12 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/data/Initialize(mapload)
-	. = ..()
-	icon_state = "data[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/data)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/data/proc/roll_icon_state(datum/roller/R)
+	return "data[R.number(0, 1)]"
 
 /obj/structure/salvageable/server
 	name = "broken server"
@@ -154,10 +163,12 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/server/Initialize(mapload)
-	. = ..()
-	icon_state = "server[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/server)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/server/proc/roll_icon_state(datum/roller/R)
+	return "server[R.number(0, 1)]"
 
 /obj/structure/salvageable/personal
 	name = "personal terminal"
@@ -195,10 +206,12 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/computer_hardware/hard_drive/cluster = 50
 	)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/bliss/Initialize(mapload)
-	. = ..()
-	icon_state = "bliss[rand(0,1)]"
+CAPABILITIES(/obj/structure/salvageable/bliss)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/bliss/proc/roll_icon_state(datum/roller/R)
+	return "bliss[R.number(0, 1)]"
 
 /obj/structure/salvageable/bliss/salvaged(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_SHUTDOWN)
@@ -220,10 +233,12 @@ CAPABILITIES(/obj/structure/salvageable)
 		/obj/item/stock_parts/scanning_module = 40
 	)
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/salvageable/console/Initialize(mapload)
-	. = ..()
-	icon_state = "console[rand(0,2)]"
+CAPABILITIES(/obj/structure/salvageable/console)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/console/proc/roll_icon_state(datum/roller/R)
+	return "console[R.number(0, 2)]"
 
 /obj/structure/salvageable/shuttle_console
 	name = "shuttle console"

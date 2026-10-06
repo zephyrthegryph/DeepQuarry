@@ -315,7 +315,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	var/datum/material_container/materials = get_silo_material_container_datum(FALSE)
 	if(materials)
 		materials.insert_item(thing, decon_mod, src, FALSE)
-	qdel(thing)
+	destroyed(thing)
 
 /**
  * Attempts to destroy the loaded item using a provided research id.

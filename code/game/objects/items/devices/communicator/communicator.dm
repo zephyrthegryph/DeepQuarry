@@ -388,7 +388,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	for(var/mob/living/voice/voice in contents.Copy()) // ALLOW(decl): per-item message and deletion, not a drop
 		own_take_member(src, nameof(voice_mobs), voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
-		qdel(voice)
+		destroyed(voice)
 	close_connection(reason = "Connection timed out")
 	..()
 

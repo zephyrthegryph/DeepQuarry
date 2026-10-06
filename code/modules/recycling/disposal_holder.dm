@@ -114,7 +114,7 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 /obj/structure/disposalholder/proc/merge(obj/structure/disposalholder/other)
 	for(var/atom/movable/AM in other)
 		AM.forceMove(src)		// move everything in other holder to this one
-	qdel(other)
+	consumed(other, src)
 
 /obj/structure/disposalholder/proc/settag(new_tag)
 	destinationTag = new_tag

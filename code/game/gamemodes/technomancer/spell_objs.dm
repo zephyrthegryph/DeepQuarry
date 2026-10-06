@@ -280,7 +280,7 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 		put_in_hands(S)
 		return 1
 	else
-		qdel(S)
+		spent(S)
 		return 0
 
 // Proc: throw_impact()

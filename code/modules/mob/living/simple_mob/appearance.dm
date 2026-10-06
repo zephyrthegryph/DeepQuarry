@@ -64,7 +64,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 
 /mob/living/simple_mob/proc/remove_eyes()
 	cut_overlay(eye_layer)
-	qdel(eye_layer)
+	spent(eye_layer)
 	eye_layer = null
 
 /mob/living/simple_mob/gib()

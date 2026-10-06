@@ -10,8 +10,7 @@
 			play_sfx(src, SFX_SHATTER, volume = 50)
 			fx_sparks(T, 5)
 			SK.attack_dephase(T, src)
-			// ALLOW(lifecycle): the crystal fizzles away against the phased shadekin
-			qdel(src)
+			destroyed(src, M)
 
 
 // This proc is the 'Dephase grenade' check. range is changeable. 0=self, 1=3x3, 2=5x5, 3=7x7...

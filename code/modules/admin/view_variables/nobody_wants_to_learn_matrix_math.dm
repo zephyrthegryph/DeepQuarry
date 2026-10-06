@@ -17,8 +17,7 @@
 
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_close(mob/user)
-	// ALLOW(lifecycle): the matrix editor lives only while its window is open
-	qdel(src)
+	spent(src, user)
 
 CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 	interface("MatrixMathTester", rights = R_VAREDIT)

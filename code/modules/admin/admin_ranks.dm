@@ -28,12 +28,10 @@ GLOBAL_PROTECT(protected_ranks)
 	name = init_name
 	source = init_source
 	if(!source)
-		// ALLOW(lifecycle): an admin rank built without a source is a caller error and is dropped
-		qdel(src)
+		spent(src)
 		CRASH("Admin rank created without a source.")
 	if(!name)
-		// ALLOW(lifecycle): an admin rank built without a name is a caller error and is dropped
-		qdel(src)
+		spent(src)
 		CRASH("Admin rank created without name.")
 	if(init_rights)
 		rights = init_rights

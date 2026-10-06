@@ -88,7 +88,7 @@
 			if(!(existing.flags & ATOM_INITIALIZED))
 				existing.delete_me = TRUE
 				continue
-			qdel(existing)
+			spent(existing)
 
 	rel_set(src, nameof(linked_node), src)
 
@@ -290,7 +290,7 @@ DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
 			var/turf/simulated/floor/T = target
 			T.ex_act(1)
 		else if(isobj(target))
-			qdel(target)
+			spent(target)
 		consume(src)
 		return REPEAT_STOP
 

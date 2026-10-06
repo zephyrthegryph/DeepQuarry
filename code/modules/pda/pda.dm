@@ -66,6 +66,7 @@
 CAPABILITIES(/obj/item/pda)
 	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
 	owns_one(nameof(pai), /obj/item/paicard)
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()
@@ -212,8 +213,9 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 /obj/item/pda/GetID()
 	return id
 
-/obj/item/pda/MouseDrop(obj/over_object, src_location, over_location)
-	return drop_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): BYOND PDA MouseDrop supplies its initiating mob to the usability check and self-use handler.
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/pda/proc/mousedrop_input(datum/act/input/A)
+	return drop_with_actor(A.actor, A.over)
 
 /obj/item/pda/proc/drop_with_actor(mob/user, obj/over_object)
 	if((!istype(over_object, /atom/movable/screen)) && can_use(user))
@@ -307,7 +309,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		j = prob(10)
 
 	if(j && detonate) //This kills the PDA
-		qdel(P)
+		destroyed(P)
 		if(message)
 			message += "It melts in a puddle of plastic."
 		else

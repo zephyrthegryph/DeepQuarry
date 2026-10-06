@@ -262,7 +262,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 	rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), record)
 	if(istype(active_BR(), /datum/transhuman/body_record))
 		if(isnull(active_BR().ckey))
-			qdel(active_BR())
+			spent(active_BR())
 			set_temp("Error: Record corrupt.", "danger")
 		else
 			var/obj/item/implant/health/H = null
@@ -300,7 +300,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 		if(doomed in records)
 			own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
 		else
-			qdel(doomed)
+			spent(doomed)
 		set_temp("Record deleted.", "success")
 		menu = MENU_RECORDS
 	else

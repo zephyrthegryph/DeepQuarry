@@ -73,7 +73,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
 		occupantData["diagnosis"] = D.report_data()
-		qdel(D)
+		spent(D)
 		if(ishuman(occupant) && occupant.dna)
 			occupantData["bloodType"] = occupant.dna.b_type
 			occupantData["surgery"] = build_surgery_list(user)

@@ -356,8 +356,7 @@ CAPABILITIES(/obj/structure/table)
 		S = M.place_shard(loc)
 		if(S) shards += S
 	last_break_shards = shards
-	// ALLOW(lifecycle): the table breaks into its parts
-	qdel(src)
+	destroyed(src)
 	return shards
 
 /obj/structure/table/can_visually_connect_to(obj/structure/S)

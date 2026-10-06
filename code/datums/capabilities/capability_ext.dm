@@ -73,7 +73,7 @@
 			var/datum/data = A.cap_data?[C.key]
 			LAZYREMOVE(A.cap_data, C.key)
 			if(isdatum(data))
-				qdel(data) // ALLOW(lifecycle): capability data is a plain datum in the holder's cap_data table with no slot of its own; the lifecycle verbs only take atoms
+				spent(data)
 			changed(A, CHANGE_CAPABILITY)
 			return TRUE
 	return FALSE

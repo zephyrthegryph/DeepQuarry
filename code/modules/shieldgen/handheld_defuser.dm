@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/shield_diffuser)
 		// Legacy shield support
 		for(var/obj/effect/energy_field/S in turf_contents_of_type(shielded_tile, /obj/effect/energy_field))
 			if(istype(S) && cell.checked_use(10 KILOWATTS * CELLRATE))
-				qdel(S)
+				spent(S)
 
 APPEARANCE_TEMPLATE(/obj/item/shield_diffuser, "hdiffuser_{enabled?on:off}")
 

@@ -88,7 +88,7 @@
 		put_in_hands(S)
 		return 1
 	else
-		qdel(S)
+		spent(S)
 		return 0
 
 /mob/living/simple_mob/construct/cultify()

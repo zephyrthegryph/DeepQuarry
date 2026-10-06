@@ -487,7 +487,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	var/list/created_components = add_components_to_assembly(assembly, assembly_data, available_components)
 	if(!created_components || !LAZYLEN(created_components))
 		to_chat(user, span_warning("Failed to add components to assembly! No components were created."))
-		qdel(assembly)
+		spent(assembly, user)
 		if(!debug)
 			metal += total_cost
 		return

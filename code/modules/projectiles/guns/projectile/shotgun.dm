@@ -53,7 +53,7 @@
 	// We have a shell in the chamber
 	if(chambered)
 		if(chambered.caseless)
-			qdel(chambered) // Delete casing
+			spent(chambered, M) // Delete casing
 		else
 			chambered.forceMove(get_turf(src)) // Eject casing
 		rel_clear(src, nameof(chambered))

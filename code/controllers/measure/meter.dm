@@ -48,7 +48,7 @@
 
 /datum/km_stats_set/on_destroy(force)
 	for(var/datum/system_stats/S as anything in systems)
-		qdel(S) // ALLOW(lifecycle): a per-system stats datum held in a fixed slot list; the lifecycle verbs only take atoms
+		destroyed(S)
 	systems = null
 	QDEL_NULL(input)
 	rollup_base = null
@@ -59,7 +59,7 @@
 	for(var/i in 1 to KM_MAX_SYSTEMS)
 		var/datum/system_stats/S = systems[i]
 		if(S)
-			qdel(S) // ALLOW(lifecycle): a per-system stats datum held in a fixed slot list; the lifecycle verbs only take atoms
+			spent(S)
 			systems[i] = null
 	ticks = 0
 	overruns = 0
@@ -200,7 +200,7 @@
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
-		qdel(S) // ALLOW(lifecycle): a stats set is a plain datum held in a list; the lifecycle verbs only take atoms
+		destroyed(S)
 	sets = null
 	live = null
 	..()

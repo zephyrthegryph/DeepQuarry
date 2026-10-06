@@ -40,8 +40,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 
 /datum/privacy_poll_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	// ALLOW(lifecycle): the privacy poll lives only while its window is open
-	qdel(src)
+	spent(src, user)
 
 /datum/privacy_poll_dialog/proc/ui_act_vote(datum/act/op/A, choice_arg)
 	if(!isnull(choice_arg) && !(choice_arg in list(PRIVACY_OPTION_LATER, PRIVACY_OPTION_SIGNED, PRIVACY_OPTION_ANONYMOUS, PRIVACY_OPTION_NOSTATS, PRIVACY_OPTION_ABSTAIN)))
@@ -53,8 +52,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 		return
 	if(choice == PRIVACY_OPTION_LATER)
 		SStgui.close_uis(src)
-		// ALLOW(lifecycle): the privacy poll closes for good when deferred
-		qdel(src)
+		spent(src)
 		return TRUE
 	var/option
 	switch(choice)
@@ -89,8 +87,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 
 	answered = TRUE
 	SStgui.close_uis(src)
-	// ALLOW(lifecycle): the privacy poll closes for good once answered
-	qdel(src)
+	spent(src)
 
 // ============================================================
 // Player poll browser
@@ -124,8 +121,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 
 /datum/poll_browser_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	// ALLOW(lifecycle): the poll browser lives only while its window is open
-	qdel(src)
+	spent(src, user)
 
 /// A prompt flow (flow_io.dm): the list is replaced when the rows arrive.
 /datum/poll_browser_dialog/proc/refresh_poll_list()

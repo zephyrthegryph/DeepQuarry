@@ -310,7 +310,7 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 		var/datum/vehicle_dummy_load/dummy_load = load
 		rel_set(src, nameof(load), dummy_load.actual_load)
 		dummy_load.actual_load = null
-		qdel(dummy_load)
+		consumed(dummy_load, src)
 		cut_overlays()
 	..()
 

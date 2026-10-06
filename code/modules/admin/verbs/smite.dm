@@ -398,8 +398,8 @@ GLOBAL_VAR(redspace_abduction_z)
 				if(target)
 					to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))
 					target.ghostize()
-					qdel(target)
-				qdel(shadekin)
+					spent(target)
+				spent(shadekin)
 			return
 	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
 

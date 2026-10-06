@@ -39,7 +39,7 @@
 	alert.wait()
 	if (alert)
 		. = alert.choice
-		qdel(alert)
+		spent(alert, user)
 
 /**
  * # tgui_alert

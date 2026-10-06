@@ -143,7 +143,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/proc/clear_plants()
 	for(var/obj/effect/overlay/wallrot/WR in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
-		qdel(WR)
+		spent(WR)
 	for(var/obj/effect/plant/plant in range(src, 1))
 		if(!plant.floor) //shrooms drop to the floor
 			plant.floor = 1
@@ -323,7 +323,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/proc/thermitemelt_cleanup(obj/effect/overlay/O)
 	if(O)
-		qdel(O)
+		dissolved(O)
 
 /turf/simulated/wall/proc/radiate(datum/act/notice/N)
 	EVENT_HANDLER
@@ -1303,14 +1303,12 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			var/datum/material/M = GLOB.name_to_material[the_rcd.material_to_use]
 			new_T.set_material(M, the_rcd.make_rwalls ? M : null, girder_material)
 			new_T.add_hiddenprint(user)
-			// ALLOW(lifecycle): the girder becomes the wall the RCD just raised over it
-			qdel(src)
+			spent(src, user)
 			return TRUE
 
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			// ALLOW(lifecycle): the RCD deconstructs the girder
-			qdel(src)
+			destroyed(src, user)
 			return TRUE
 
 //////////////////////////////////////
@@ -1328,8 +1326,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			// ALLOW(lifecycle): the RCD deconstructs the window
-			qdel(src)
+			destroyed(src, user)
 			return TRUE
 	return FALSE
 
@@ -1381,8 +1378,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			// ALLOW(lifecycle): the RCD deconstructs the grille
-			qdel(src)
+			destroyed(src, user)
 			return TRUE
 		if(RCD_WINDOWGRILLE)
 			if(destroyed)
@@ -1447,8 +1443,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			// ALLOW(lifecycle): the RCD deconstructs the airlock
-			qdel(src)
+			destroyed(src, user)
 			return TRUE
 	return FALSE
 
@@ -1802,8 +1797,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 /// simply removes its atom goes through here, so the removal has one site (D-qdel).
 /atom/proc/rcd_deconstruct(mob/living/user)
 	to_chat(user, span_notice("You deconstruct \the [src]."))
-	// ALLOW(lifecycle): the RCD deconstructs the target
-	qdel(src)
+	destroyed(src, user)
 
 /// Shared rcd_values() results, keyed by "mode|delay|cost". Callers only read them.
 GLOBAL_LIST_EMPTY(rcd_value_entries)

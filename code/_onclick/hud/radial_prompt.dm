@@ -119,5 +119,4 @@
 	if(menu_id && GLOB.radial_menus[menu_id] == src)
 		GLOB.radial_menus -= menu_id
 	hide()
-	// ALLOW(lifecycle): a dismissed radial menu has nothing left to show
-	qdel(src)
+	spent(src)

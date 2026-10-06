@@ -190,7 +190,7 @@ TYPE_TABLE(/datum/reagent/nutriment/coating, get_data_schema, list("cooked"))
 		heat_set(lowertemp, max(min(lowertemp_temperature-2000, lowertemp_temperature / 2), 0), HEAT_SOURCE_REACTION)
 		lowertemp.react()
 		T.assume_air(lowertemp)
-		qdel(hotspot)
+		spent(hotspot)
 
 	if(volume >= 3)
 		T.wet_floor(2)

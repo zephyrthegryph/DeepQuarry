@@ -675,8 +675,7 @@ UI_ACT_PROC(/datum, ui_act_change_ui_state)
 		if(istext(value) && length(value))
 			. |= value
 		try
-			// ALLOW(lifecycle): a throwaway instance made only to read a var in the -DUI_TYPES_DUMP boot.
-			qdel(D)
+			spent(D)
 		catch(var/exception/e2)
 			log_world("ui_types_dump: [path] could not be deleted: [e2]")
 

@@ -157,8 +157,7 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 			rel_set(src, nameof(node2), target)
 			break
 	if(!node1 && !node2)
-		// ALLOW(lifecycle): a pipe that connects to nothing on either end is removed at setup
-		qdel(src)
+		spent(src)
 		return
 
 	update_icon()
@@ -285,8 +284,7 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 			break
 
 	if(!node1&&!node2)
-		// ALLOW(lifecycle): a junction that connects to nothing on either end is removed at setup
-		qdel(src)
+		spent(src)
 		return
 
 	update_icon()

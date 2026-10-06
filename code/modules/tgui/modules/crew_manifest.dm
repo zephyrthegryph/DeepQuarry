@@ -26,8 +26,7 @@ CAPABILITIES(/datum/tgui_module/crew_manifest/new_player)
 /datum/tgui_module/crew_manifest/self_deleting/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
-		// ALLOW(lifecycle): this self-deleting manifest lives only while its window is open
-		qdel(src)
+		spent(src, user)
 
 CAPABILITIES(/datum/tgui_module/crew_manifest/self_deleting)
 	interface("CrewManifest", state = nameof(GLOB.tgui_always_state))

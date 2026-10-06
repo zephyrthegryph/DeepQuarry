@@ -260,8 +260,7 @@ CAPABILITIES(/obj/structure/girder)
 	if(wall_fake)
 		T.can_open = 1
 	T.add_hiddenprint(user)
-	// ALLOW(lifecycle): the girder becomes the wall raised over it
-	qdel(src)
+	spent(src)
 	return TRUE
 
 /obj/structure/girder/proc/reinforce_with_material(obj/item/stack/material/S, mob/user) //if the verb is removed this can be renamed.

@@ -65,14 +65,14 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 		var/datum/gas_mixture/removed_out = air_out.remove_ratio(1)
 		air_all.merge(removed_in)
 		air_all.merge(removed_out)
-		qdel(removed_in)
-		qdel(removed_out)
+		spent(removed_in)
+		spent(removed_out)
 
 		var/datum/gas_mixture/returned_in = air_all.remove(volume_ratio)
 		air_in.merge(returned_in)
-		qdel(returned_in)
+		spent(returned_in)
 		air_out.merge(air_all)
-		qdel(air_all)
+		spent(air_all)
 
 	update_icon()
 

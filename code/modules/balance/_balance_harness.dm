@@ -193,7 +193,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 		entry["units"] = scenario.units || list()
 		entry["notes"] = scenario.notes || list()
 		log_test("BALANCE: [scenario_id] [entry["status"]] in [entry["duration_seconds"]]s: [length(results)] results, [length(missing)] missing, [entry["runtimes"]] runtimes[entry["error"] ? " ([entry["error"]])" : ""]")
-		qdel(scenario)
+		spent(scenario)
 		CHECK_TICK
 	var/list/document = list(
 		"kind" = "balance",

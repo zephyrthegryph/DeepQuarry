@@ -301,7 +301,7 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 		var/obj/item/petrifier/PE = LAZYACCESS(remotes, target_ref())
 		if (!QDELETED(PE))
 			PE.visible_message(span_warning("\The [PE] disappears!"))
-			qdel(PE)
+			spent(PE)
 		var/obj/item/petrifier/P = new(loc, src)
 		P.material = material
 		P.identifier = identifier

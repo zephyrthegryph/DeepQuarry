@@ -135,7 +135,7 @@ GLOBAL_LIST(fusion_reactions)
 		if(I.cur_assembly && I.cur_assembly.fuel_type == REAGENT_ID_SUPERMATTER)
 			explosion(get_turf(I), 1, 2, 3)
 			om_qdel_after(I, 5)
-	qdel(holder)
+	spent(holder)
 	explosion(origin, 1, 2, 5)
 
 	return 1

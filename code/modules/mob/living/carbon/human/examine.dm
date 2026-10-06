@@ -376,7 +376,7 @@
 	for(var/datum/diagnosis_finding/F as anything in glance?.findings_of(DIAG_FINDING_CONDITION))
 		if(F.location && ispath(F.source_type, /datum/affliction/wound_infection) && _dq_band_rank(F.band) >= _dq_band_rank(DIAG_BAND_MODERATE))
 			. += span_warning("[p_Their()] [F.location] looks very infected!")
-	qdel(glance)
+	spent(glance)
 
 /// The name records are filed under: the worn ID's, else ours.
 /mob/living/carbon/human/proc/examine_record_name()

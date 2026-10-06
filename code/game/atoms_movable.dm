@@ -152,7 +152,7 @@
 	// (moveToNullspace), which makes DM's for-in skip members — skipped ones
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
-		qdel(AM)
+		destroyed(AM)
 	own_clear(src, nameof(ledger), OWN_DELETE)
 
 	moveToNullspace()
@@ -725,7 +725,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	// cloaked_selfimage in component
 	var/image/csi = dq_get_cloaked_selfimage(src)
 	if(csi)
-		qdel(csi)
+		spent(csi)
 		dq_set_cloaked_selfimage(src, null)
 
 	//Needs to be first so people can actually see the effect, so become uninvisible first

@@ -149,7 +149,7 @@
 		if(G == src)
 			continue
 		else
-			qdel(G) //Prevent glue layering
+			spent(G) //Prevent glue layering
 */ //Not including this due to performance concerns but keeping as comments for reference.
 
 // its slug may lay more glue.

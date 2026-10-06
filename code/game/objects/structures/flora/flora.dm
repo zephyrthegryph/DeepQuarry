@@ -116,10 +116,12 @@ EXTEND_INTERACTIONS(/obj/structure/flora, \
 	harvest_loot = list(/obj/item/stack/material/fiber = 1)
 	max_harvests = 1
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/flora/bush/Initialize(mapload)
-	. = ..()
-	icon_state = "snowbush[rand(1, 6)]"
+CAPABILITIES(/obj/structure/flora/bush)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/bush/proc/roll_icon_state(datum/roller/R)
+	return "snowbush[R.number(1, 6)]"
 
 /obj/structure/flora/pottedplant
 	name = "potted plant"

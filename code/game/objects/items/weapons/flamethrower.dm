@@ -104,7 +104,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 
 			// suck out fuel and burn it
 			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.return_volume())
-			qdel(used_gas)
+			consumed(used_gas, src)
 			if(!check_fuel())
 				set_lit(FALSE)
 			update_icon()

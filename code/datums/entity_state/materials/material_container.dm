@@ -233,12 +233,12 @@
 	last_inserted_id = insert_item_materials(target, multiplier, context)
 	if(!isnull(last_inserted_id))
 		if(delete_item || target != weapon) //we could have split the stack ourselves
-			qdel(target) //item gone
+			consumed(target, src) //item gone
 		return material_amount
 	else if(!isnull(item_stack) && item_stack != target) //insertion failed, merge the split stack back into the original
 		var/obj/item/stack/inserting_stack = target
 		item_stack.add(inserting_stack.amount)
-		qdel(inserting_stack)
+		consumed(inserting_stack, src)
 
 	return MATERIAL_INSERT_ITEM_FAILURE
 //============================================================================================
@@ -374,7 +374,7 @@
 				if(!QDELETED(target_item) && was_stack_split)
 					var/obj/item/stack/inserting_stack = target_item
 					item_stack.add(inserting_stack.amount)
-					qdel(inserting_stack)
+					consumed(inserting_stack, src)
 
 				//was this the original item in the players hand? put what's left back in the player's hand
 				if(!QDELETED(original_item))
@@ -397,7 +397,7 @@
 			if(was_stack_split)
 				var/obj/item/stack/inserting_stack = target_item
 				item_stack.add(inserting_stack.amount)
-				qdel(inserting_stack)
+				consumed(inserting_stack, src)
 
 			//was this the original item in the players hand? put it back because we coudn't salvage it
 			if(!QDELETED(original_item))
@@ -450,7 +450,7 @@
 	//finally delete the items
 	for(var/obj/item/deleting as anything in to_delete)
 		if(!QDELETED(deleting)) //deleting parents also delete their children so we check
-			qdel(deleting)
+			consumed(deleting, src)
 
 /datum/material_container/proc/on_attackby(datum/act/attackby/use)
 	EVENT_HANDLER

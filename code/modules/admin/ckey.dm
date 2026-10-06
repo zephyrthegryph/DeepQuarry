@@ -57,7 +57,7 @@ CAPABILITIES(/datum/admin_set_ckey_review)
 	feedback_add_details("admin_verb","SCK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admin_set_ckey_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/admin_set_ckey
 	title = "Set CKey"

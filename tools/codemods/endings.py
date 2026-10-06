@@ -163,8 +163,9 @@ def convert(f, counts, sites, apply):
         reason = reason_at[0] if reason_at else None
         verb = choose(pname, "src" if target == "src" else "other", reason)
         by = None
+        is_global = proc is None or f.lines[proc.start].startswith("/proc/")
         if verb == "consumed" and target != "src" and not (pname and CONSUME.search(pname)):
-            by = "src"
+            by = None if is_global else "src"
         else:
             by = actor_of(proc.params() if proc else None)
             if by == target:

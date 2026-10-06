@@ -72,7 +72,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		make_from.moveToNullspace()
 		stored = make_from
 		*/
-		qdel(make_from)
+		spent(make_from)
 		set_mode(DISPOSALMODE_OFF)
 
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
@@ -365,8 +365,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	play_sfx(new_bin, SFX_MACHINES_MACHINE_DIE_SHORT)
 	fx_sparks(new_bin, 5, FALSE)
 	// Cleanup
-	// ALLOW(lifecycle): the bin is replaced by the reconfigured one
-	qdel(src)
+	spent(src, user)
 
 // mouse drop another mob or self
 //
@@ -790,8 +789,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		AM.forceMove(T)
 	//..() //*cough
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
-	// ALLOW(lifecycle): the deconstructed bin leaves its construct behind
-	qdel(src) //Parent above should do this, but that's not a thing as of writing this.
+	destroyed(src) //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them

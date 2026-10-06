@@ -268,7 +268,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
 	MACHINE_WAKE(src)
 
-	qdel(S)
+	spent(S)
 
 	GLOB.seed_planted_shift_roundstat++
 

@@ -134,7 +134,7 @@ CAPABILITIES(/datum/admin_emp_review)
 	return originator_expected && QDELETED(originator) ? "target is gone" : null
 
 /datum/admin_emp_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/admin_emp_review/proc/ask_next()
 	var/client/user = GLOB.directory[client_ckey]
@@ -229,7 +229,7 @@ CAPABILITIES(/datum/admin_explosion_review)
 	return originator_expected && QDELETED(originator) ? "target is gone" : null
 
 /datum/admin_explosion_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/admin_explosion_review/proc/ask_next()
 	var/client/user = GLOB.directory[client_ckey]

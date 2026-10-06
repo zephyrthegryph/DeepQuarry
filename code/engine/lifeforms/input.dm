@@ -45,10 +45,12 @@
 	var/atom/over
 	/// A hover: TRUE on enter, FALSE on exit.
 	var/entered = FALSE
+	/// The native hook's own arguments by name (location, control, src_location, over_location, src_control, over_control, params).
+	var/list/native
 
 /// Runs the holder's handler for one input with `actor`: a holder proc gets the context; an op key runs through perform_op(). Returns TRUE
 /// when a handler took the input.
-/proc/input_dispatch(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE)
+/proc/input_dispatch(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE, list/native = null)
 	if(!holder || QDELETED(holder))
 		return FALSE
 	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
@@ -72,6 +74,7 @@
 			A.params = params
 			A.over = over // ALLOW(ownership): a one-input context, dropped when the handler returns
 			A.entered = entered
+			A.native = native
 			A.origin = ORIGIN_CLICK
 			call(holder, handler)(A)
 			A.release()
@@ -100,7 +103,10 @@
 		var/list/pair = answer
 		title = pair[1]
 		content = length(pair) > 1 ? pair[2] : ""
-	openToolTip(user, holder, params, title = title, content = content, theme = E.args["theme"] || "")
+	var/theme = E.args["theme"]
+	if(istext(theme) && (theme in holder.vars))
+		theme = holder.vars[theme] // tooltip(theme = nameof(var)): the holder's own style
+	openToolTip(user, holder, params, title = title, content = content, theme = theme || "")
 	return TRUE
 
 /// Runs `callback` with `actor` as the acting mob (usr) for the procs below it that still read it; restores the previous one. Returns the

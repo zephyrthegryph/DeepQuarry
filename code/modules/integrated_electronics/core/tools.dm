@@ -638,7 +638,7 @@ CAPABILITIES(/datum/circuit_memory_review)
 	return review.prompt_refusal()
 
 /datum/circuit_memory_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial circuit configuration has no inventory release contract.
+	spent(src)
 
 /datum/circuit_memory_review/proc/user_value()
 	return original_client_ckey ? GLOB.directory[original_client_ckey] : actor

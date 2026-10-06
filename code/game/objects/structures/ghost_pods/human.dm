@@ -120,8 +120,7 @@
 	H.offer_spawn_rename()
 
 
-	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
-	qdel(src)
+	spent(src, M)
 
 // Manual Variant
 // This one lacks the emag option due to the fact someone has to activate it, and they will probably help the person.

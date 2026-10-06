@@ -103,7 +103,7 @@
 /obj/item/bork_medigun/proc/delete_box(list/box_segments, client/C)
 	for(var/i in box_segments)
 		C.images -= i
-		qdel(i)
+		spent(i)
 
 /obj/item/bork_medigun/proc/color_box(list/box_segments, new_color, new_time)
 	for(var/i in box_segments)

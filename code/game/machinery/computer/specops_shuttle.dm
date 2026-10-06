@@ -24,7 +24,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 /proc/specops_release_announcer(obj/item/radio/intercom/announcer)
 	if(!SSshuttles.release_specops_announcer(announcer))
-		qdel(announcer)
+		spent(announcer)
 
 /proc/specops_return(mob/user)
 	var/obj/item/radio/intercom/announcer = SSshuttles.hold_specops_announcer(new /obj/item/radio/intercom(null)) // The countdown radio speaks as A.L.I.C.E.
@@ -62,7 +62,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
-			qdel(T)
+			spent(T, user)
 
 	for(var/mob/living/carbon/bug in area_contents_of_type(end_location, /mob/living/carbon)) // If someone somehow is still in the shuttle's docking area...
 		bug.gib()
@@ -129,7 +129,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
-			qdel(T)
+			spent(T, user)
 
 	start_location.move_contents_to(end_location)
 

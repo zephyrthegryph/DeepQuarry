@@ -205,7 +205,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 	if(isliving(A))
 		to_chat(A, span_danger("[deathmessage]"))
 		log_and_message_admins("[deathalert]", A)
-		qdel(A)
+		spent(A)
 
 /obj/effect/step_trigger/death/train_lost
 	deathmessage = "You fly down the tunnel of the train at high speed for a few moments before impact kills you with sheer concussive force."

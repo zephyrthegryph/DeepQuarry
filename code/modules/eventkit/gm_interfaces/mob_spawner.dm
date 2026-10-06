@@ -82,9 +82,9 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 						var/mob/living/simple_mob/S = L
 						data["melee_damage_lower"] = S.melee_damage_lower ? S.melee_damage_lower : 0
 						data["melee_damage_upper"] = S.melee_damage_upper ? S.melee_damage_upper : 0
-						qdel(S)
-					qdel(L)
-			qdel(M)
+						spent(S, user)
+					spent(L, user)
+			spent(M, user)
 
 	return data
 
@@ -209,8 +209,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 /datum/eventkit/mob_spawner/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
-		// ALLOW(lifecycle): the mob spawner panel lives only while its window is open
-		qdel(src)
+		spent(src, user)
 
 ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an advanced version of the mob spawner.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/datum/eventkit/mob_spawner/spawner = new()

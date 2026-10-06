@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/chameleon)
 		if(!O) return
 		var/obj/effect/dummy/chameleon/C = new /obj/effect/dummy/chameleon(user.loc)
 		C.activate(O, user, saved_icon, saved_icon_state, saved_overlays, src)
-		qdel(O)
+		spent(O, user)
 		to_chat(user, span_notice("You activate the [src]."))
 		var/obj/effect/overlay/T = new/obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'

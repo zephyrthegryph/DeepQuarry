@@ -134,7 +134,7 @@
 	rel_set(B, nameof(B.loot_biome), S.biome)
 	var/dim = 14 + S.size * 4
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
-		qdel(B)
+		spent(B)
 		state = EXP_OBJ_COMPLETE
 		return
 	for(var/list/c in B.room_centers)
@@ -155,7 +155,7 @@
 			if(guard)
 				rel_add(src, nameof(tracked), guard)
 	target = max(1, length(tracked))
-	qdel(B)
+	spent(B)
 
 /datum/expedition_objective/clear_structure/check()
 	if(state == EXP_OBJ_COMPLETE)

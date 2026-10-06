@@ -8,6 +8,5 @@
 
 /datum/proc/qdel_self(datum/act/A)
 	EVENT_HANDLER
-	// ALLOW(lifecycle): qdel_self is the generic delete-me handler that hooks and timers name
-	qdel(src)
+	spent(src)
 

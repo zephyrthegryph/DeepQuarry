@@ -97,8 +97,7 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 			movement_range = 0 // left the map: fall through to the deletion below
 	movement_range--
 	if(movement_range <= 0)
-		// ALLOW(lifecycle): the particle is spent when its range runs out
-		qdel(src)
+		spent(src)
 
 /// Pushes the particle onto `dest` when a normal step was blocked. At the map edge there is no
 /// turf to push onto: the particle leaves the map (FALSE) and move() deletes it.

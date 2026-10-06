@@ -171,8 +171,7 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 
 /obj/item/megaphone/super/proc/overload_boom()
 	explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
-	// ALLOW(lifecycle): the overloaded megaphone blows up
-	qdel(src)
+	destroyed(src)
 	return
 
 /// Were INTERACT_VERB (object verbs): ACT_NONE ops, which no gesture reaches: the Menu, the radial and the command bar

@@ -130,7 +130,7 @@ CAPABILITIES(/datum/admin_memo_review)
 	return QDELETED(actor) || !GLOB.directory[client_ckey] ? "participant is gone" : null
 
 /datum/admin_memo_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/admin_memo_review/proc/answered(datum/act/request/A)
 	finish(A)

@@ -251,11 +251,11 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 
 /datum/contract_opportunity_rule/proc/add_signal(datum/contract_opportunity_signal/signal)
 	if(!signal?.id || !signal.event_type)
-		qdel(signal)
+		spent(signal)
 		return null
 	for(var/datum/contract_opportunity_signal/existing in signals)
 		if(existing.id == signal.id)
-			qdel(signal)
+			spent(signal)
 			return null
 	rel_add(src, nameof(signals), signal)
 	return signal
@@ -348,11 +348,11 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 			continue
 		var/datum/contract_opportunity_rule/rule = new rule_type
 		if(!rule.id || !length(rule.signals) || opportunity_rules[rule.id])
-			qdel(rule)
+			spent(rule)
 			continue
 		if(rule.definition_id && !definitions[rule.definition_id])
 			stack_trace("Opportunity rule [rule.id] targets missing contract definition [rule.definition_id].")
-			qdel(rule)
+			spent(rule)
 			continue
 		opportunity_rules[rule.id] = rule // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 		for(var/datum/contract_opportunity_signal/signal in rule.signals)
@@ -428,7 +428,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
 		var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
 		opportunity_history.Cut(1, 2)
-		qdel(expired)
+		spent(expired)
 
 /datum/system/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)
 	var/offer_key = "opportunity:[rule.id]:[window.bucket]"

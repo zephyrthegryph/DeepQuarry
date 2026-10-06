@@ -32,7 +32,7 @@
 /obj/machinery/door/blast/puzzle/bullet_act(obj/item/projectile/Proj)
 	if(!istype(Proj, /obj/item/projectile/test))
 		visible_message(span_cult("\The [src] is completely unaffected by \the [Proj]."))
-	qdel(Proj) //No piercing. No.
+	destroyed(Proj) //No piercing. No.
 
 /obj/machinery/door/blast/puzzle/Initialize(mapload)
 	. = ..()

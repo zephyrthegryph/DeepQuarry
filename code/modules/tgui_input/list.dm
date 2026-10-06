@@ -28,13 +28,13 @@
 		return input(user, message, title, default) as null|anything in items // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 	var/datum/tgui_list_input/input = new(user, message, title, items, default, timeout, ui_state)
 	if(input.invalid)
-		qdel(input)
+		spent(input, user)
 		return
 	input.tgui_interact(user)
 	input.wait()
 	if (input)
 		. = input.choice
-		qdel(input)
+		spent(input, user)
 
 /**
  * # tgui_list_input

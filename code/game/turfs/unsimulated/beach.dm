@@ -55,11 +55,12 @@
 	icon_state = "desert"
 	initial_flooring = /datum/decl/flooring/sand/desert
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/turf/simulated/floor/beach/sand/desert/Initialize(mapload)
-	. = ..()
-	if(prob(5))
-		icon_state = "desert[rand(0,4)]"
+CAPABILITIES(/turf/simulated/floor/beach/sand/desert)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/turf/simulated/floor/beach/sand/desert/proc/roll_icon_state(datum/roller/R)
+	return R.chance(5) ? "desert[R.number(0, 4)]" : icon_state
 
 /turf/simulated/floor/beach/coastline
 	name = "Coastline"

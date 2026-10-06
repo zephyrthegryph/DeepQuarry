@@ -174,8 +174,8 @@
 		HI.Insert(I, frame=1, delay = 5)
 		HI.Insert(J, frame=2, delay = 5)
 
-		qdel(I)
-		qdel(J)
+		spent(I)
+		spent(J)
 		H.icon = HI
 		H.hud_layerise()
 		user.mapobjs += H
@@ -291,7 +291,7 @@
 		var/icon/I = imap[i+1]
 
 		H.icon = I
-		qdel(I)
+		spent(I)
 		H.hud_layerise()
 		user.mapobjs += H
 
@@ -318,7 +318,7 @@
 /mob/proc/clearmap()
 	src.client.screen -= src.mapobjs
 	for(var/atom/movable/screen/O in mapobjs)
-		qdel(O)
+		spent(O)
 
 	mapobjs = null
 

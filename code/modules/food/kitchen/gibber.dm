@@ -32,7 +32,7 @@
 			if(isturf(input_obj.loc))
 				rel_set(src, nameof(input_plate), input_obj.loc)
 				gib_throw_dir = i
-				qdel(input_obj)
+				spent(input_obj)
 				break
 
 	if(!input_plate())

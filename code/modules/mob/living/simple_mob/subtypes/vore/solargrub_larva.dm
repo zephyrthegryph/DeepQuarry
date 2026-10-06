@@ -166,8 +166,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	var/mob/living/simple_mob/vore/solargrub/adult = new(get_turf(src))
 	adult.tracked = tracked
 //	grub.power_drained = power_drained //TODO
-	// ALLOW(lifecycle): the larva is replaced by the grub it matured into
-	qdel(src)
+	spent(src)
 
 /datum/om/stage/life/light/simple_mob/animal/solargrub_larva
 	of = /mob/living/simple_mob/animal/solargrub_larva

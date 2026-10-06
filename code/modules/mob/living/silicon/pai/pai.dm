@@ -643,7 +643,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	if(!eye_layer)
 		return
 	cut_overlay(eye_layer)
-	qdel(eye_layer)
+	spent(eye_layer)
 	eye_layer = null
 
 /// Gets icons for all four directions based on the character slot currently loaded
@@ -667,11 +667,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	dummy.set_dir(WEST)
 	var/icon/new_holo_west = getCompoundIcon(dummy)
 
-	qdel(holo_icon_south)
-	qdel(holo_icon_north)
-	qdel(holo_icon_east)
-	qdel(holo_icon_west)
-	qdel(dummy)
+	spent(holo_icon_south)
+	spent(holo_icon_north)
+	spent(holo_icon_east)
+	spent(holo_icon_west)
+	spent(dummy)
 	holo_icon_south = new_holo
 	holo_icon_north = new_holo_north
 	holo_icon_east = new_holo_east

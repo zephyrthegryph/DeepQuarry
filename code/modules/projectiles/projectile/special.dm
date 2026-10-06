@@ -127,8 +127,7 @@
 			for(var/mob/M in range(10, src))
 				if(!M.stat && !isAI(M))\
 					shake_camera(M, 3, 1)
-			// ALLOW(lifecycle): the meteor projectile is spent on impact
-			qdel(src)
+			spent(src)
 			return 1
 	else
 		return 0

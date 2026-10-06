@@ -40,7 +40,7 @@ GLOBAL_TABLE(state_refcount_overhead, GLOBAL_PROC_REF(build_state_refcount_overh
 	// One reference is this proc's `probe` variable, standing in for held_refs = 1.
 	overhead = probe.measure_refcount_overhead()
 	overhead[1] -= 1
-	qdel(probe)
+	spent(probe)
 	return overhead
 
 /datum/state_refcount_probe/proc/measure_refcount_overhead()
@@ -48,7 +48,7 @@ GLOBAL_TABLE(state_refcount_overhead, GLOBAL_PROC_REF(build_state_refcount_overh
 	var/list/internal = nodes.Copy()
 	var/list/counts = state_internal_ref_counts(nodes, internal)
 	. = list(state_refcount_excess(nodes, internal, 1, counts), state_refcount_excess(nodes, internal, 2, counts))
-	qdel(nodes[2])
+	spent(nodes[2])
 
 /// Built-in vars the incoming-reference scan skips: they are counted by the
 /// loc/contents rule above, or they cannot hold references to datums.

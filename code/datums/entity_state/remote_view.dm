@@ -31,11 +31,11 @@ CAPABILITIES(/datum/remote_view)
 	var/datum/remote_view/new_view = new view_type(src)
 	if(!new_view.start(focused_on, viewsize, vconfig_path, extra1, extra2, extra3))
 		new_view.forget_host() // never attached: nothing to restore
-		qdel(new_view)
+		spent(new_view)
 		return null
 	// Like the old component's highlander replace: the previous view goes after the new one began.
 	if(old_view && old_view != new_view && !QDELETED(old_view))
-		qdel(old_view)
+		spent(old_view)
 	rel_set(src, nameof(remote_view), new_view)
 	new_view.attach()
 	return new_view
@@ -153,8 +153,7 @@ CAPABILITIES(/datum/remote_view)
 	if(!host_mob)
 		return
 	end_view()
-	// ALLOW(lifecycle): the remote view ends when its viewer moves
-	qdel(src)
+	spent(src)
 
 /datum/remote_view/proc/on_recursive_moved_event(datum/act/notice/A)
 	EVENT_HANDLER
@@ -173,8 +172,7 @@ CAPABILITIES(/datum/remote_view)
 	if(!host_mob)
 		return
 	end_view()
-	// ALLOW(lifecycle): the remote view ends when the item carrying it moves
-	qdel(src)
+	spent(src)
 
 /datum/remote_view/proc/on_forced_endview_event(datum/act/notice/A)
 	EVENT_HANDLER
@@ -197,8 +195,7 @@ CAPABILITIES(/datum/remote_view)
 	if(!host_mob)
 		return
 	end_view()
-	// ALLOW(lifecycle): the remote view ends when its end notice arrives
-	qdel(src)
+	spent(src)
 
 /datum/remote_view/proc/on_status_effect_event(datum/act/notice/N)
 	EVENT_HANDLER
@@ -245,8 +242,7 @@ CAPABILITIES(/datum/remote_view)
 	if(host_mob.client.eye == remote_view_target)
 		return
 	// The object already changed it's view, lets not interupt it like the others
-	// ALLOW(lifecycle): the remote view ends when the viewer looks elsewhere
-	qdel(src)
+	spent(src)
 
 /datum/remote_view/proc/on_remotetarget_reset_perspective(datum/act/notice/A)
 	EVENT_HANDLER
@@ -261,8 +257,7 @@ CAPABILITIES(/datum/remote_view)
 	// This is an ugly one, but if we want to follow the other object properly we need to copy its state!
 	if(!remote_view_mob.client || !host_mob.client)
 		end_view()
-		// ALLOW(lifecycle): the remote view ends when either side has no client
-		qdel(src)
+		spent(src)
 		return
 	// Only continue to observe if their view location is the same as their turf. otherwise they are doing their own ACTUALLY-REMOTE viewing
 	// we just won't update it if you're trying to look at the remote view target of another mob as they remote view someone else!
@@ -421,8 +416,7 @@ CAPABILITIES(/datum/remote_view)
 	if(host_mob.stat == CONSCIOUS && (host_mob.has_mutation(mRemote)) && remote_mob && remote_mob.stat == CONSCIOUS)
 		return
 	end_view()
-	// ALLOW(lifecycle): the remote view ends when the mutation or a conscious target is lost
-	qdel(src)
+	spent(src)
 
 /**
  * Remote view subtype that handles look() and unlook() procs while managing the coordinator's
@@ -540,8 +534,7 @@ CAPABILITIES(/datum/remote_view)
 			OM_EMIT(check_belly, /datum/om/event/remote_view_clear)
 		for(var/obj/item/dogborg/sleeper/check_sleeper in contents_of(cache_mob))
 			OM_EMIT(check_sleeper, /datum/om/event/remote_view_clear)
-	// ALLOW(lifecycle): the remote view ends once it is decoupled to the turf
-	qdel(src)
+	spent(src)
 
 /// We were forcibly disconnected, this situation is probably a recursive hellscape, so just decouple entirely and fix it when someone moves.
 /datum/remote_view/mob_holding_item/handle_forced_endview(atom/source)

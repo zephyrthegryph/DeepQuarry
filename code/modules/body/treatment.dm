@@ -167,7 +167,7 @@ DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tag
 /proc/build_proto_reagent_tags(reagent_type)
 	var/datum/reagent/R = new reagent_type()
 	. = R.treatment_tags
-	qdel(R)
+	spent(R)
 
 /// reagent ID -> potency for every reagent that provides `tag`.
 /proc/dq_reagents_providing(tag)

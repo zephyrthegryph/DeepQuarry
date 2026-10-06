@@ -83,8 +83,7 @@
 
 /datum/connect_range/proc/handle_tracked_qdel(datum/act/notice/A)
 	EVENT_HANDLER
-	// ALLOW(lifecycle): the range connector ends with the atom it tracks
-	qdel(src)
+	spent(src)
 
 /datum/connect_range/proc/update_hooks(atom/target, atom/old_loc)
 	var/turf/current_turf = get_turf(target)

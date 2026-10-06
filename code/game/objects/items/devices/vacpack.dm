@@ -253,7 +253,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(istype(target,/obj/effect/decal/cleanable))
 		playsound(src, sucksound, auto_setting * 20, 1, -1)
 		act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
-		qdel(target)
+		consumed(target, src)
 		return
 
 	if(isliving(target))

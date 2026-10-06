@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/organ)
 		W.body.remove_affliction(W)
 	integrity_dirty = TRUE
 	if(!own_remove(src, nameof(detached_afflictions), W))
-		qdel(W)
+		spent(W)
 
 /// Apply a located injury to this limb. Returns the amount applied.
 /// Organic limbs grow cuts/punctures/bruises/burns; synthetic limbs dents,

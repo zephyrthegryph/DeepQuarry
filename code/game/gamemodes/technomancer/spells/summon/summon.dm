@@ -20,7 +20,7 @@
 		after(src, 5 SECONDS, PROC_REF(summon_arrives), with = list(E, T, user))
 
 /obj/item/spell/summon/proc/summon_arrives(obj/effect/E, turf/T, mob/living/user)
-	qdel(E)
+	spent(E, user)
 	if(owner_ref()) // We might've been dropped.
 		var/mob/living/L = new summoned_mob_type(T)
 		rel_add(core, nameof(core.summoned_mobs), L)

@@ -167,7 +167,7 @@ CAPABILITIES(/datum/pipe_network)
 	rel_clear(giver, nameof(giver.leaks))
 	giver.external_air_volumes = null
 	own_clear(giver, nameof(air), OWN_DELETE)
-	qdel(giver)
+	consumed(giver, src)
 	mark_topology_dirty()
 	return 1
 
@@ -207,7 +207,7 @@ CAPABILITIES(/datum/pipe_network)
 		normal_member.bind_network_air(src, network_air)
 	for(var/datum/gas_mixture/member_air in old_gases)
 		if(member_air != network_air && !QDELETED(member_air) && !owner_of(member_air))
-			qdel(member_air)
+			spent(member_air)
 	for(var/obj/machinery/atmospherics/normal_member in normal_members)
 		normal_member.attach_external_network_air(src)
 	mark_topology_dirty()
@@ -226,7 +226,7 @@ CAPABILITIES(/datum/pipe_network)
 	external_air_volumes[owner] = external_volume // ALLOW(ownership): reservoir -> volume numbers, drained by detach_external_air() in lifecycle_unbind(); the reservoir owns its own air
 	owner.set_port_network_air(air)
 	if(!QDELETED(external_air) && !owner_of(external_air))
-		qdel(external_air)
+		consumed(external_air, src)
 	gas_touched(air)
 	return TRUE
 

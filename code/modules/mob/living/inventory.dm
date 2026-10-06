@@ -209,8 +209,7 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 
 /datum/inventory_panel/New(mob/living/new_host)
 	if(!istype(new_host))
-		// ALLOW(lifecycle): an inventory panel without a living host is dropped
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(host), new_host)
 	. = ..()
@@ -231,8 +230,7 @@ CAPABILITIES(/datum/inventory_panel)
 
 /datum/inventory_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host)
-		// ALLOW(lifecycle): an inventory panel whose host is gone has nothing to show
-		qdel(src)
+		spent(src, user)
 		return FALSE
 	return TRUE
 
@@ -283,8 +281,7 @@ CAPABILITIES(/datum/inventory_panel)
 
 /datum/inventory_panel/human/New(mob/living/carbon/human/new_host)
 	if(!istype(new_host))
-		// ALLOW(lifecycle): a human inventory panel without a human host is dropped
-		qdel(src)
+		spent(src)
 		return
 	return ..() // Let our parent assign the host.
 

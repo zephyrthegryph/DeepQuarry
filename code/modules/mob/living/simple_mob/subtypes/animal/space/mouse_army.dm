@@ -446,8 +446,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body detonates!")))
 		exploded = 1
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-		// ALLOW(lifecycle): the ammo mouse is destroyed by its own blast
-		qdel(src)
+		destroyed(src)
 
 /// Red and black, alternating, one colour per decisecond for `steps` deciseconds.
 /proc/mouse_warning_flash(steps)
