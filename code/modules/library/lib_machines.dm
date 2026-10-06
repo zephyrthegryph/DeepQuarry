@@ -668,6 +668,8 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	return OP_OK
 
 /obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)
+	if(!source_paper)
+		return
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/b = new(src.loc)
 	b.dat = source_paper.info
@@ -676,6 +678,8 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	consumed(source_paper, src)
 
 /obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
+	if(!source_bundle)
+		return
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/bundle/b = new(src.loc)
 	b.pages = source_bundle.pages

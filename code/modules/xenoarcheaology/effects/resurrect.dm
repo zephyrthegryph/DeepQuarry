@@ -94,10 +94,12 @@
 
 /// Ten seconds after an artifact restarts a body: it wakes if its owner came back to it.
 /proc/artifact_revive_wakes(mob/living/carbon/human/H, atom/holder)
+	if(!H)
+		return
 	if(H.client && H.return_from_death("artifact resurrection", holder, REVIVE_IGNORE_WINDOW) == TRUE)
-		holder.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))
+		holder?.visible_message(span_alien("\The [H]'s eyes open in a flash of light!"))
 	else
-		holder.visible_message(span_alien("\The [H]'s body stays still...Perhaps their mind was not ready to rejoin their body."))
+		holder?.visible_message(span_alien("\The [H]'s body stays still...Perhaps their mind was not ready to rejoin their body."))
 
 /datum/artifact_effect/resurrect/DoEffectTouch(mob/user)
 	var/atom/holder = get_master_holder()

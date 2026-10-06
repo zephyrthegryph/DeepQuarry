@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/giga_drill)
 			after(src, drill_time, PROC_REF(finish_drilling), with = list(M))
 
 /obj/machinery/giga_drill/proc/finish_drilling(turf/simulated/mineral/M)
-	if(get_turf(src) == drilling_turf() && active)
+	if(istype(M) && get_turf(src) == drilling_turf() && active)
 		M.GetDrilled()
 		src.forceMove(M)
 	rel_clear(src, nameof(drilling_turf))

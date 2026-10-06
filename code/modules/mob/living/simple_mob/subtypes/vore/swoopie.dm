@@ -299,7 +299,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 		return
 	L.put_in_active_hand(Vac)
 
-// DQEdit - change_settings verb body moved to
+// change_settings verb body moved to
 // modular_dq/.../ports/swoopie.dm where it toggles mob-side swoop_pests /
 // swoop_trash vars (the legacy AI subtype is gone).
 

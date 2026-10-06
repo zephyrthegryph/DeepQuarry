@@ -341,6 +341,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
 
 /// Flops away from M, up to `steps` tiles, 0.3 s apart.
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_flee(mob/living/M, steps)
+	if(!M)
+		return
 	var/turf/T = get_step_away(src, M)
 	if(!T || !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		return

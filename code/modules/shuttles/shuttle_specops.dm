@@ -175,7 +175,7 @@ CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
 	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 		if(marauder_bay_delay(M.id)) //Doors close at the same time.
 			M.close()
-	special_ops.readyreset()//Reset firealarm after the team launched.
+	special_ops?.readyreset()//Reset firealarm after the team launched.
 
 /obj/machinery/light/small/readylight
 	brightness_range = 5

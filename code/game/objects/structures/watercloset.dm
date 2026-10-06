@@ -363,7 +363,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 
 ///Adds the object to the toilet's current_flush list.
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
-	if(flushed.loc == loc)
+	if(!QDELETED(flushed) && flushed.loc == loc)
 		flushed.forceMove(src)
 		rel_add(src, nameof(currently_held_objects), flushed)
 

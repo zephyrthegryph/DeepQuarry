@@ -2,7 +2,7 @@
 
 Date: 2026-10-06. Worktree: `E:/projects/dq-wt/codex-om-retirement-1006`.
 Branch: `codex/om-retirement-1006`; starting integration commit: `9a28a84008`.
-Four ordered slices were prepared on the integration base; only this private branch is published. Counts below distinguish actual conversions from pre-existing zeroes and partial audit evidence.
+Current status: the eligible work in all four assignments is complete, including the timer follow-up below. Reserved APIs/domains and non-handler fixes remain documented for their owners. Only this private branch is published. Counts distinguish actual conversions from pre-existing zeroes; the initial timer section records historical evidence, superseded by the follow-up section.
 
 ## Task 1: runtime verb grants and revocation
 
@@ -74,7 +74,7 @@ Commit `0bd9f5be52` removes obsolete verb declaration macros, replace the remain
 
 The native declaration fixtures passed with the macros removed; the focused batch also passed the existing condition and turf fixtures.
 
-## Task 4 / C4: delayed argument guards
+## Task 4 / C4: initial slice (historical snapshot)
 
 The source inventory distinguishes call sites from distinct handlers:
 
@@ -93,7 +93,7 @@ The consolidated `c4-final-502-coverage.csv` has:
 | `PEER_BODY_READ_CONSERVATIVE_HOLD` | 100 | Body read, but conservative unresolved closure/scope hold |
 | `PEER_CALLSITE_CLASSIFIED_NOT_FULL_TRANSITIVE_PROOF` | 100 | Call-site classification, not completed transitive behavioral proof |
 
-The durable [per-handler audit](om_retirement_timer_audit.csv) retains original base line anchors and `BaseStatus`; final statuses distinguish fixed callbacks from body-reviewed and callsite-only holds. Its `ReviewCoverage` categories explain limited evidence. Neither the 502 total nor the 239 subset should be described as 502/239 fully proven-safe handlers. The two denominators overlap and must not be added together.
+This table records the initial slice. The durable [per-handler audit](om_retirement_timer_audit.csv) now contains the follow-up dispositions below, retaining original base line anchors and `BaseStatus`. Neither inventory size nor a source disposition proves arbitrary runtime subtype behavior. The 502 total and 239 ordinary-module subset overlap and must not be added together.
 
 The final C4 changes cover **52 handler bodies in 41 production files**. Eight unnecessary projectile guards were restored after independent review, preserving the existing null-safe delegate and its diagnostic. The fancy dispenser greeting guard is included.
 
@@ -142,7 +142,7 @@ Recursive list entities, dynamic continuation callbacks, null movement/throw bui
 
 The tracked `doc/om_retirement_timer_audit.csv` records the 502 original handler entries and individual remaining reasons. Additional source inventories and unused drafts under ignored `data/codex-retire/` are supporting evidence only. The lexical inventory is not exhaustive: the separately reviewed fancy override illustrates why virtual overrides need independent review.
 
-Additional cleanup-sensitive sites remain held: recycling crusher completion must retain its power/working reset; NIF vending must retain ownership and readiness cleanup; firearm reload/burst require inventory/draw closure; artifact revival must preserve revival independently of its holder; resleeving needs an absent-record policy; toy brawls need reciprocal controller cleanup. No head-return conversion was applied to these. The CSV retains the exact source anchors and evidence limitations.
+At the initial handoff, additional cleanup-sensitive sites remained held: recycling crusher completion must retain its power/working reset; NIF vending must retain ownership and readiness cleanup; firearm reload/burst require inventory/draw closure; artifact revival must preserve revival independently of its holder; resleeving needs an absent-record policy; toy brawls need reciprocal controller cleanup. No head-return conversion was applied to these. The CSV retains the exact source anchors and evidence limitations.
 
 ## Baseline update results
 
@@ -159,3 +159,49 @@ The analyzer refreshed stale tolerances inherited from the salvaged integration 
 | Legacy-interaction ceiling | 51 | 16 |
 
 Counts are non-comment baseline rows, including existing duplicates; numeric ceilings are shown separately. Two other baseline files were reordered by the analyzer without changing their fingerprint sets. `decl_baseline` and `op_order` remain untouched.
+
+
+## Task 4 follow-up: remaining eligible callbacks completed
+
+The follow-up changes **47 callback/completion bodies in 36 production files**, bringing the branch total to **99 bodies** (initial 52 plus 47). These are small handler guards and completion cleanup corrections, not wholesale framework/domain conversions. No timer store, machine process, ownership helper, generated source or drawing implementation was edited.
+
+The **502-entry source inventory now has specific dispositions for every entry**: 230 initial explicit body decisions, 253 subsequent body/delegate decisions and 19 previously landed fixes whose source disposition was completed. The earlier 200 conservative/callsite-only holds are gone. **93 inventory entries are fixed on this branch**; the 99-body count additionally includes override/completion bodies missing from the original lexical inventory. Source dispositions distinguish existing guards, owner-bound arguments, actual delegate behavior and precise exclusions. They do not claim every arbitrary virtual subclass, outside caller or connected-client path was tested.
+
+Additional fixes cover:
+
+- Gun burst and storage loading: a vanished actor cannot consume pending ammunition; real headless users have optional HUD updates.
+- Toy battles and transit: missing opponents/pods release surviving combat/movement state, without fabricated wins or losses.
+- Book binding, injector completion and hyperpad callbacks: missing payloads do not create empty books or strand synthesis state.
+- Artifact revival and backed-up NIF restoration: optional message holders do not block the actual revival call; absent records preserve the current NIF.
+- Vacuum, toilet, antagonist spawn and transport completions: missing participants skip target work while existing consumption, flush or unload tails continue.
+- Capsule, spell and mecha shots: cancellation preserves common reset/image disposal/projectile disposal behavior.
+- Jaunt and tunnel callbacks: missing saved destinations or participants restore surviving movement/busy state and dispose surviving temporary holders/overlays. Missing vents use the surviving origin/current turf rather than dereferencing a deleted vent.
+- Cult revival, cliff landings, shuttle crash victim lists, deployment callbacks and recycler shots: absent independent actors/items are guarded before their effects.
+- Giga drilling: the genuine regression showed that `ChangeTurf()` can leave a captured mineral reference pointing to a floor. The guard therefore checks the actual mineral type, not merely non-null, and preserves relation/anchor cleanup.
+
+### Focused verification for the follow-up
+
+**35 new regression types** were added, and two existing shuttle tests were selected. All **37 distinct selected tests now have passing focused runs**. The final repair run passed ten tests, with a clean boot and no state/object leak lines. It reran only the affected tests plus the four last additions. The earlier eight-test run passed but exposed fixture global-counter restoration gaps; those fixtures were repaired and subsequently passed. The larger run exposed the replaced-mineral bug and transit/steam fixture problems; the final targeted run verified their corrections.
+
+The fixtures distinguish genuine public entry (toy battle, mineral toggle/Bump) from isolated actual timer/completion boundaries. The transit launch fixture exercises the real launch-close stage, not launch-availability rules. Jaunt fixtures exercise real resurface/reform and temporary-object cleanup without claiming connected-client rendering. The capsule fixture reaches an actor-dependent outcome through actual bounded randomization and asserts that precondition, rather than passing on an unmatched branch. No full suite, shard or E0 run was started.
+
+Final DM compile: **0 errors, 28 pre-existing unused-variable warnings**. Native generation and baseline update were rerun. The baseline updater made no additional tracked baseline changes in this guard-only follow-up; the earlier shrink totals above remain the branch totals. No ALLOW was added. Final DreamChecker: **0 diagnostics**. Full analyze check and ratchets both passed. The final typed-pilot correction was recompiled and verified separately: **1 focused test passed, 0 failed**, with no boot/state/object leak failures (`20261006T205317_c1773d841c.json`). An independent production-diff review found no introduced cleanup or logging regressions.
+
+### Remaining sites intentionally left to their owners
+
+The CSV contains every excluded entry and its reason. Concrete outstanding bugs/policies include:
+
+| Area | Required change | Why not edited here |
+|---|---|---|
+| In-belly spawn prompts | Guard the missing observer before building request text | Prompt/flow track reserved |
+| Recycling crusher/sorter and NIF vending | Guard missing item/record/person while retaining power/readiness/ownership completion | Machine pipeline, power and ownership tracks reserved |
+| Empty drink completion | Handle absent feeder while preserving trash placement and consumption | Requires changing shared consumption/ownership policy |
+| Spider vent traversal | Abort missing vents with relocation and entry relation cleanup | Requires a new ownership cleanup site |
+| Emagged arcade resolution | Make the actual arcade action's missing-user gib nullable | Unsafe read is in a non-timer delegate; handlers-only scope cannot preserve game resolution by returning early |
+| Dummy holograms, filter cleanup and transformation callbacks | Guard lost appearance participants | Actual drawing/appearance implementation reserved |
+| Admin electricity, scanner lockdown and other power callbacks | Guard lost area/target with appropriate power cleanup | Power track reserved |
+| Singularity pull / broken supermatter debris | Skip an obsolete pull or absent-location allocation | Power callbacks reserved; these are builtin/debris policy issues, not demonstrated null-member runtimes |
+| Passenger departure when both captured/current occupant are null | Decide intended empty-hatch cancellation behavior | Machine pipeline policy, not a direct null dereference |
+| Five old-order timer callers listed above | Correct owner/delay/handler argument order | Assignment permits handler changes, not these scheduling callers |
+
+Existing projectile missing-target diagnostics and their disposal paths remain intact. Dynamic rocket continuation was traced through all seven current producers: only the phase-5 imperion supplies a continuation, whose current projectile path handles missing targets through the existing diagnostics. No universal claim is made for arbitrary external proc values.
