@@ -434,7 +434,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(!member_is(SEQ_TEST, E), "a destroyed member leaves the sweep")
 	TEST_ASSERT_NULL(E.seq_states, "and its state goes")
 
-/// A step's rewake is the one timer (after(), keyed by entity, sequence and step): it wakes that step only, and a
+/// A step's rewake is a due time on the member's one rewake timer (after(), keyed by entity and sequence): it wakes that step only, and a
 /// parked member comes back for it and parks again at once when it sleeps again.
 /datum/unit_test/kernel_sequence_rewake
 
@@ -446,7 +446,7 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(S.parked, "parked")
 	TEST_ASSERT(seq_rewake_pending(E, SEQ_TEST, "se"), "se's rewake is pending")
-	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:se"), "as a TIMER relation")
+	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:rewake"), "on the member's one rewake timer, a TIMER relation")
 	E.log.Cut()
 	var/waited = 0
 	while(S.parked && waited < 60)

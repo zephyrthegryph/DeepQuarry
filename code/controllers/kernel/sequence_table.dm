@@ -69,8 +69,6 @@
 	var/list/keys
 	/// Its cost slot in the sequence (profiled frames).
 	var/slot = 0
-	/// The after() key of its rewake timer.
-	var/rewake_key
 
 /// A step of a sequence's table (see the top of this file). `when`, `after` and `reads` take one value or a list.
 /// Named seq_step() because step() is BYOND's movement proc.
@@ -293,8 +291,6 @@
 			T.by_key[k] = positions
 		positions += S.pos
 	S.slot = slot_for(S.key)
-	if(S.rewake)
-		S.rewake_key = "seq:[idx]:[S.key]"
 	if(!S.handler)
 		T.error("[S.key]: a step needs a handler")
 
