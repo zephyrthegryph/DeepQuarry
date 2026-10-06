@@ -878,11 +878,21 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	return 1
 
 ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn", "Force an antagonist template to spawn.", ADMIN_CATEGORY_EVENTS)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_force_antag_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(force_antag_latespawn_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	if(!SSticker|| !SSticker.mode)
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
-	var/antag_type = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "Choose a template.", title = "Force Latespawn", choices = SSantag.all_antag_types)
+	if(!("a14" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_force_antag_replay, PROC_REF(force_antag_latespawn_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a14", question = "Choose a template.", title = "Force Latespawn", choices = SSantag.all_antag_types)
+		return
+	var/antag_type = replay_answers["a14"]
 	if(isnull(antag_type))
 		return
 	if(!antag_type || !SSantag.all_antag_types[antag_type])
@@ -1497,6 +1507,31 @@ CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm)
 	return isnum(given) ? given : null
 
 /datum/admin_verb/restart/proc/restart_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_force_antag_replay
+	timeout = 0
+	rights = R_ADMIN|R_EVENT|R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_force_antag_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_force_antag_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_force_antag_replay/refusal(given)
+	return null
+
+/datum/admin_verb/force_antag_latespawn/proc/force_antag_latespawn_replay_answered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/mob/actor = A.request.answerer
