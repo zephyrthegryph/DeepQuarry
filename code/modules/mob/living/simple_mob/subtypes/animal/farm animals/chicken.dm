@@ -124,11 +124,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 
 	var/amount_grown = 0
 
-// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-/mob/living/simple_mob/animal/passive/chick/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-6, 6)
-	pixel_y = rand(0, 10)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/chick)
+	rolls(nameof(pixel_x), range_of(-6, 6))
+	rolls(nameof(pixel_y), range_of(0, 10))
 
 /datum/om/stage/life/type_post/simple_mob/animal/passive/chick
 	of = /mob/living/simple_mob/animal/passive/chick
@@ -144,7 +142,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 			C.ghostjoin = 1
 			C.ghostjoin_icon()
 			registry_join(REGISTRY_GHOST_PODS, C)
-			qdel(self)
+			spent(self)
 
 // Say Lists
 /datum/say_list/chicken

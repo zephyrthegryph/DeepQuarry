@@ -156,7 +156,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	if(channel && ((channel.channel_operator() == src) || netadmin_mode))
 		authed = TRUE
 	if(authed)
-		qdel(channel)
+		spent(channel)
 		active_channel = null
 		return TRUE
 

@@ -321,10 +321,10 @@
 	full.Insert(south,dir=SOUTH)
 	full.Insert(east,dir=EAST)
 	full.Insert(west,dir=WEST)
-	qdel(north)
-	qdel(south)
-	qdel(east)
-	qdel(west)
+	spent(north)
+	spent(south)
+	spent(east)
+	spent(west)
 	return full
 
 /proc/downloadImage(atom/A, dir, client/user)

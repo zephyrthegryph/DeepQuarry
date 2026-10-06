@@ -127,7 +127,7 @@
 		return shadekin
 	var/datum/shadekin/SK = new path(src, manual)
 	if(shadekin != SK) //incompatible mob
-		qdel(SK)
+		spent(SK)
 		return null
 	return SK
 

@@ -1,15 +1,23 @@
 /atom/movable/screen/nifsc
 	icon = 'icons/mob/screen_nifsc.dmi'
 
-/atom/movable/screen/nifsc/MouseEntered(location,control,params)
-	flick(icon_state + "_anim", src)
-	openToolTip(usr, src, params, title = name, content = desc)
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/nifsc/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
-/atom/movable/screen/nifsc/MouseExited()
-	closeToolTip(usr, src)
+/// Plays its hover animation when the mouse enters (hover(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/nifsc/proc/input_hovered(datum/act/input/A)
+	if(A.entered)
+		flick(icon_state + "_anim", src)
 
-/atom/movable/screen/nifsc/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): native soulcatcher HUD clicks capture the initiating actor without chaining the atom input router
+CAPABILITIES(/atom/movable/screen/nifsc)
+	click_on(PROC_REF(click_input))
+	tooltip(PROC_REF(input_tooltip))
+	hover(PROC_REF(input_hovered))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/nifsc/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/nifsc/click_with_actor(mob/user, location, control, params)
 	closeToolTip(user, src)

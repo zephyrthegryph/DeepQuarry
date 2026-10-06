@@ -100,8 +100,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 			own_clear(src, nameof(current_beam), OWN_DELETE)
 		return FALSE
 	if(get_dist(get_turf(node1.get_carrier()), get_turf(node2.get_carrier())) > initial_distance)	// The hose didn't form. Something's fucky.
-		// ALLOW(lifecycle): a hose stretched past its length snaps
-		qdel(src)
+		spent(src)
 		return FALSE
 
 	var/turf/A = get_turf(node1.get_carrier())
@@ -169,5 +168,4 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 						reagent_node2.trans_to_holder(reagent_node1, reagent_node2.maximum_volume)
 
 	else
-		// ALLOW(lifecycle): a hose that lost its ends is removed
-		qdel(src)
+		spent(src)

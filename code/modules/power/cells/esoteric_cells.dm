@@ -69,4 +69,4 @@
 		if(prob(10))
 			C4.explode(get_turf(src))
 		else
-			qdel(C4)
+			spent(C4)

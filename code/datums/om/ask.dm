@@ -190,7 +190,7 @@
 		return null
 	var/datum/tgui_list_input/om/L = new(user, message, title || "Select", choices, default, timeout, GLOB.tgui_always_state)
 	if(L.invalid)
-		qdel(L)
+		spent(L, user)
 		return null
 	return L
 

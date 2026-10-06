@@ -21,8 +21,7 @@ DAMAGE_REACTION(/obj/item/am_containment, DAMAGE_EXPLOSION, PROC_REF(jar_blast))
 /obj/item/am_containment/proc/jar_blast(datum/damage_packet/packet)
 	if(packet.severity <= 1 || (packet.severity == 2 && prob((fuel/10)-stability)))
 		explosion(get_turf(src), 1, 2, 3, 5)
-		// ALLOW(lifecycle): the antimatter jar is destroyed by a severe blast
-		qdel(src)
+		destroyed(src)
 		return DAMAGE_REACTION_BLOCK
 	stability -= 40 / (packet.severity - 1)
 	return DAMAGE_REACTION_BLOCK

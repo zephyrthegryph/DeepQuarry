@@ -12,11 +12,13 @@
 	var/tmp/datum/artifact_find/artifact_find_static
 	COOLDOWN_DECLARE(dig_cooldown)
 
-// ALLOW(init/INSTANCE_STATE): icon_state and excavation_level rolled at random for each instance
-/obj/structure/boulder/Initialize(mapload)
-	. = ..()
-	icon_state = "boulder[rand(1,4)]"
-	excavation_level = rand(5, 50)
+CAPABILITIES(/obj/structure/boulder)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(nameof(excavation_level), range_of(5, 50))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/boulder/proc/roll_icon_state(datum/roller/R)
+	return "boulder[R.number(1, 4)]"
 
 DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

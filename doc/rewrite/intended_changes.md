@@ -1644,6 +1644,60 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   begin line to the user as well as onlookers, and the wait scales by the tool's speed as every tool op does.
 - **The window tint button's cutters**: with the panel shut they go on to the legacy tool handling instead of being swallowed.
 - **The portable sign asks its direction as an op step** (`asks()`), so the question is the op's and the answer is re-checked.
+
+## Lifecycle forms (rolls, params, registries, adjacency, endings, input)
+
+The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle forms"; tests `dq_lifeform_*_tests.dm`) and the codemods that moved
+`Initialize()`, `qdel(src)` and `usr` sites onto them.
+
+* **Random per-instance values are seeded.** A `rand()`/`pick()`/`prob()` an `Initialize()` drew from the world RNG is a `rolls()` entry drawing from
+  the instance's own stream (the round seed with its map position, or its creator's stream). The distributions are the same (`range_of(a, b)` is
+  `rand(a, b)`, `pick_one()` is `pick()`, `pick_weighted()` is `pickweight()`, `chance(p)` is `prob(p)`, `PIXEL_JITTER(n)` is each pixel offset in
+  `rand(-n, n)`); the realisation differs: the same round seed rolls the same map, and the world RNG no longer advances for them.
+* **A rolled value is suppressed by a map edit or a given param.** The old overrides re-rolled a var even where the map set it (a mapped `icon_state`
+  of a random rock was overwritten); a roll now leaves a value that differs from the compiled default alone.
+* **Rolls run before the type's own init code.** An override that rolled after `..()` rolled after the capabilities initialized; a capability whose
+  `on_holder_init()` read a rolled var now sees the rolled value instead of the default.
+* **Constructor arguments are set before init.** A `param(pos = N)` writes the positional argument in `/atom/New()`, before the root of `Initialize()`,
+  where the override wrote it after `..()`: init code between sees the value instead of the default.
+* **Contents made by `contains()` are created in nullspace** and moved in with the capabilities' init, as `starts =` already did: a content's own
+  `Initialize()` sees no loc.
+* **Every ending publishes `/datum/notice/ended` with a cause** (when something listens), and the endings the verbs make record it: `expire()`
+  is `END_EXPIRED`, `replace_with()` `END_REPLACED`, `consume()` `END_CONSUMED`. Nothing listened to an ending before, so no behaviour changes.
+* **A `lives_while()` scope ends its holder when the scope ends** instead of the host's `on_destroy()` deleting it: the order changes (the holder
+  ends in the host's first destroy step, before the host's links are cleared) and the holder's ended notice says `END_OWNER`.
+* **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
+  override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
+  the previous `usr` even when the callback throws (the hand-written swaps left it set).
+## The gas turbine and its motor (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
+
+- The turbine works on `every(when = spinning)` (bolted, whole, and spinning or with a head across it); asleep it watches its two sides with
+  `gas_watch_many()` (the shared multi-mixture watch, also used now by the TEG and a pipe's sleeping leak). The motor works on
+  `every(when = converting)`, which the turbine's step reconsiders instead of MACHINE_WAKE. OM derived fields, the periodic declarations, the OM
+  watch and the `ownership()` table proc are gone; both left the machine pipeline roster. Their wrenches are ops; the turbine's look is
+  `draw(look)` from tracked `driven` and `speed_band`.
+- **Bug fixed:** after a stroke the turbine handed its input side `remove(volume_ratio)` (0.2 moles) instead of `remove_ratio(volume_ratio)` (its
+  share by volume), so nearly all the gas was dumped to the output and the head flipped. Its two sides now settle at one pressure.
+
+## The thermoregulator (rewrite/pipenet-full)
+
+- It works on `every(when = regulating)`: on, bolted, on the grid and its room a degree or more off its target. A gas watch on its room's air
+  (temperature), its switch, its target (tracked `target_temp`) and moving it reconsider; the OM watch, the periodic declaration and MACHINE_WAKE
+  are gone, and it left the machine pipeline roster. The heat itself stays the thermal domain's `heat_pump`.
+- Its hand switch (empty hand), wrench and multitool target (an `asks()` number in degrees C) are ops; a hand on an unbolted one is refused with a
+  reason (it did nothing). The Southern Cross and Cryogaia regulators keep their own step and wrench (the Cryogaia one's message is the shared
+  one). Its look is `draw(look)`; its display is an `examine_line()`.
+
+## Heat-exchanging pipes (rewrite/pipenet-full)
+
+- An HE pipe's DM work is only what Rust does not do: a body lying on it (heat equalize and the burn) and its glow. It works on
+  `every(when = tending)` (a body on it, or its glow more than 10 K behind its gas above 500 K); asleep, it watches its pipeline's gas with
+  `gas_watch_many()`. Its pipeline joining, a buckle, a move and a disconnect reconsider. The OM watch, the machine step and its roster entry are
+  gone; the dead leak branch in the step is gone (HE pipes cannot leak). The exchange itself stays the shell's heat body and the sky link.
+- Its watch is on every change of the gas, not temperature alone: a heat-domain write to a pipe region (`heat_set`) does not report a
+  temperature-only change to a gas dependency watch (reported to the thermal owner).
 - **Object verbs keep their legacy base requirements** (reach and an actor who can act: `needs(req_adjacent(), req_capable())`
   on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is

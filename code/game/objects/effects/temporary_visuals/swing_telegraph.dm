@@ -12,8 +12,6 @@
 	alpha = 160
 	color = "#ff5555"
 
-// ALLOW(init/CTOR_ARGS): set_duration is a constructor argument from whoever builds it
-/obj/effect/temp_visual/swing_telegraph/Initialize(mapload, set_duration)
-	if(set_duration)
-		duration = set_duration	// set before ..() so the auto-qdel timer uses it
-	. = ..()
+CAPABILITIES(/obj/effect/temp_visual/swing_telegraph)
+	param(nameof(duration), pos = 1)
+

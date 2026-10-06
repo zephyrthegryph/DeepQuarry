@@ -218,7 +218,7 @@
 			dent = F.band
 		else if(ispath(F.source_type, /datum/affliction/load/burn) && _dq_band_rank(F.band) > _dq_band_rank(char))
 			char = F.band
-	qdel(D)
+	spent(D, L)
 	if(dent != DIAG_BAND_NONE)
 		. += _dq_band_rank(dent) >= _dq_band_rank(DIAG_BAND_SEVERE) ? span_boldwarning("It looks severely dented!") : span_warning("It looks slightly dented.")
 	if(char != DIAG_BAND_NONE)

@@ -220,8 +220,7 @@
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()
 
-	// ALLOW(lifecycle): a throw record ends when the throw lands
-	qdel(src)
+	spent(src)
 
 /datum/thrownthing/proc/hit_atom(datum/act/notice/N)
 	EVENT_HANDLER

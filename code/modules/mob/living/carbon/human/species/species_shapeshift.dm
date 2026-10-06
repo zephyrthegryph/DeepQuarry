@@ -369,7 +369,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 			// sync the organ's damage with its wounds
 			O.update_damages()
 		else
-			qdel(O)
+			spent(O)
 
 	regenerate_icons()
 /* Our own trait system, sorry.

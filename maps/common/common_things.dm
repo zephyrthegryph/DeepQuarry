@@ -58,7 +58,7 @@
 /obj/effect/step_trigger/lost_in_space/Trigger(atom/movable/A) //replacement for shuttle dump zones because there's no empty space levels to dump to
 	if(ismob(A))
 		to_chat(A, span_danger("[deathmessage]"))
-	qdel(A)
+	spent(A)
 
 /obj/effect/step_trigger/lost_in_space/bluespace
 	deathmessage = "Everything goes blue as your component particles are scattered throughout the known and unknown universe."

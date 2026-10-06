@@ -220,7 +220,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 
 
 /datum/admin_ticket_panel_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/admin_ticket_panel_list
 	title = "List Choice"

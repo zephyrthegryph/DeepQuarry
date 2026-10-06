@@ -321,8 +321,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			message_admins(span_adminnotice("[key_name(src)] has been detected as spoofing their byond version. Connection rejected."))
 			//add_system_note("Spoofed-Byond-Version", "Detected as using a spoofed byond version.")
 			log_suspicious_login("Failed Login: [key] - Spoofed byond version")
-			// ALLOW(lifecycle): a client with a spoofed BYOND version is disconnected
-			qdel(src)
+			spent(src)
 			return
 
 		if (num2text(byond_build) in GLOB.blacklisted_builds)
@@ -333,8 +332,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			if(connecting_admin)
 				to_chat_immediate(src, "As an admin, you are being allowed to continue using this version, but please consider changing byond versions")
 			else
-				// ALLOW(lifecycle): a client on a blacklisted BYOND build is disconnected
-				qdel(src)
+				spent(src)
 				return
 
 	// A runtime in preference sanitizing (preview icon rebuilds, trait re-application) must never
@@ -421,14 +419,14 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		rel_clear(holder, nameof(holder.owner))
 		GLOB.admins -= src
 	if(skybox)
-		qdel(skybox)
+		destroyed(skybox)
 		skybox = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(fakeConversations)
-		qdel(fakeConversations)
+		destroyed(fakeConversations)
 		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
 	// panel, interaction menu, keybind editor, ...) is owned by the session.
-	qdel(session) // ALLOW(lifecycle): the connection-scoped session datum is deleted with its client; it is a plain datum, not an atom
+	destroyed(session)
 	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
@@ -792,8 +790,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	to_chat(src, span_userdanger("You have been disconnected from the server."))
 	to_chat(src, span_warning(message))
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
-	// ALLOW(lifecycle): this disconnects the client on purpose
-	qdel(src)
+	spent(src)
 
 /client/verb/toggle_fullscreen()
 	set name = "Toggle Fullscreen"

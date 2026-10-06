@@ -46,7 +46,7 @@
 		var/area/grub_area = get_area(G)
 		if(!grub_area) //Huh, really?
 			if(!get_turf(G)) //No turf either?
-				qdel(G) //Must have been nullspaced
+				spent(G) //Must have been nullspaced
 			continue
 		area_names |= grub_area.name
 	if(area_names.len)

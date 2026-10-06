@@ -151,7 +151,7 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 					set_bolted(long_airlock, is_bolted(airlock), TRUE)
 					long_airlock.name = airlock.name
 		new_object.name = object.name
-	qdel(object)
+	spent(object)
 
 /**
  * Returns the typepath of an object to replace the provided object.

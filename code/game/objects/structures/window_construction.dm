@@ -120,7 +120,7 @@
 	var/obj/item/stack/material/mats = new window.glasstype(window.loc)
 	if(window.is_fulltile())
 		mats.set_amount(4)
-	qdel(window)
+	spent(window, actor)
 	return TRUE
 
 /obj/structure/window/proc/can_dismantle(mob/actor, atom/target, obj/item/held)

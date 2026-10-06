@@ -108,7 +108,7 @@
 
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
 			for (var/obj/item/I in O)
-				qdel(I)
+				spent(I)
 
 		if ((pass_color || recipe.pass_color))
 			if(!color)

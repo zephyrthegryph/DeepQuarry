@@ -25,10 +25,12 @@
 	icon_state = "sno_keys"
 	w_class = ITEMSIZE_TINY
 
-// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
-/obj/vehicle/train/engine/quadbike/snowmobile/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/train/engine/quadbike/snowmobile/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile)
 	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))

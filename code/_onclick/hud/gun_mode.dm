@@ -4,8 +4,12 @@
 	master_ref = null
 	dir = 2
 
-/atom/movable/screen/gun/Click(location, control, params)
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND supplies the clicking mob at this native gun HUD boundary
+CAPABILITIES(/atom/movable/screen/gun)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/gun/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
 
 /atom/movable/screen/gun/click_with_actor(mob/user, location, control, params)
 	if(!user)

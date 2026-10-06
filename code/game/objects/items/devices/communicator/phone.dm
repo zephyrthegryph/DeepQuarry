@@ -116,7 +116,7 @@
 		if(4)
 			//We're connected, no need to hide everything.
 			new_voice.client?.screen.Remove(blackness)
-			qdel(blackness)
+			spent(blackness, user)
 
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [src] established."))
 			to_chat(new_voice, span_infoplain(span_bold("To talk to the person on the other end of the call, just talk normally.")))

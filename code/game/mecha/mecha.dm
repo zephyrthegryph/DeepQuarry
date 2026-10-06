@@ -396,7 +396,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/component/C = internal_components[slot]
 			if(istype(C))
 				C.detach()
-				qdel(C)
+				destroyed(C)
 	rel_clear(src, nameof(equipment))
 
 	GLOB.mech_destroyed_roundstat++
@@ -473,7 +473,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 				if(t_air)
 					t_air.merge(removed)
 				else //just delete the cabin gas, we're in space or some shit
-					qdel(removed)
+					spent(removed)
 
 // Inertial movement in space.
 // Called every process() tick (5 deciseconds).
@@ -1008,8 +1008,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		fx_sparks(src, 2, FALSE)
 	else
 		wrecked = TRUE
-		// ALLOW(lifecycle): an exosuit with no integrity left is wrecked
-		qdel(src)
+		destroyed(src)
 	return
 
 // Pilot Menu entries (old "Exosuit Interface" verbs): the pilot is inside the mech, which

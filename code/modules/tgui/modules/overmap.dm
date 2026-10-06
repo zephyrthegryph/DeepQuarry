@@ -183,8 +183,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /datum/tgui_module/ship/fullmonty/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
-		// ALLOW(lifecycle): this admin ship console lives only while its window is open
-		qdel(src)
+		spent(src, user)
 
 /datum/tgui_module/ship/fullmonty/New(host, obj/effect/overmap/visitable/ship/new_linked)
 	. = ..()

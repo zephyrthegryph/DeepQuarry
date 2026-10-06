@@ -353,7 +353,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 
 /proc/rpd_deletion_end(obj/P)
 	P.filters -= filter(type = "angular_blur", size = 30)
-	qdel(P)
+	spent(P)
 
 /obj/item/pipe_dispenser/proc/activate()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)

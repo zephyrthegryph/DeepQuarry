@@ -1,6 +1,5 @@
 /obj/proc/cultify()
-	// ALLOW(lifecycle): cult conversion destroys an object with no cult form
-	qdel(src)
+	spent(src)
 
 /obj/effect/decal/cleanable/blood/cultify()
 	return
@@ -66,19 +65,16 @@
 		invisibility = INVISIBILITY_MAXIMUM
 		set_density(FALSE)
 		anim(target = src, a_icon = 'icons/effects/effects.dmi', a_icon_state = "breakdoor", sleeptime = 10)
-		// ALLOW(lifecycle): cult conversion breaks the door down
-		qdel(src)
+		destroyed(src)
 
 /obj/machinery/door/firedoor/cultify()
-	// ALLOW(lifecycle): cult conversion destroys a firedoor outright
-	qdel(src)
+	spent(src)
 
 /obj/machinery/light/cultify()
 	replace_with(src, /obj/structure/cult/pylon)
 
 /obj/machinery/mech_sensor/cultify()
-	// ALLOW(lifecycle): cult conversion destroys the mech sensor outright
-	qdel(src)
+	spent(src)
 
 /obj/machinery/power/apc/cultify()
 	if(src.invisibility != INVISIBILITY_MAXIMUM)
@@ -118,8 +114,7 @@
 /obj/singularity/cultify()
 	var/dist = max((current_size - 2), 1)
 	explosion(get_turf(src), dist, dist * 2, dist * 4)
-	// ALLOW(lifecycle): a cultified singularity collapses in an explosion
-	qdel(src)
+	spent(src)
 
 /obj/structure/shuttle/engine/heater/cultify()
 	new /obj/structure/cult/pylon(loc)

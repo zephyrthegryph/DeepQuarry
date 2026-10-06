@@ -235,7 +235,9 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         for r in &ranges {
             let (idx, s, e) = *r;
             let kw = HOOK_FORMS[idx].kw;
-            let covers = if (kw == "because" || kw == "when") && s == e { start >= s && start <= s + 64 } else { start >= s && start < e };
+            // A named `when = PROC_REF(x)` / `because = PROC_REF(x)` covers only the reference written right after its `=`, not the next named
+            // argument of the same entry (`adjacency(..., when = nameof(v), changed = PROC_REF(y))`).
+            let covers = if (kw == "because" || kw == "when") && s == e { start >= s && start <= s + 64 && body.get(s..start).is_some_and(|t| t.trim() == "=") } else { start >= s && start < e };
             if covers && best.map(|b| s >= b.1).unwrap_or(true) {
                 best = Some(r);
             }

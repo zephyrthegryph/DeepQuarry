@@ -84,7 +84,7 @@ CAPABILITIES(/datum/admin_server_news_review)
 		message_admins("[user.key] modified the news to read:<br>[new_title]<br>[new_body]")
 
 /datum/admin_server_news_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /client/proc/get_server_news() // child of /client/
 	var/savefile/F = new(NEWSFILE)

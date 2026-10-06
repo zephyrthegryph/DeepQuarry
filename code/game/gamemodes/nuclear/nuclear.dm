@@ -22,7 +22,7 @@
 //delete all nuke disks not on a station zlevel
 /datum/game_mode/nuclear/proc/check_nuke_disks()
 	for(var/obj/item/disk/nuclear/N in REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
-		if(isNotStationLevel(N.z)) qdel(N)
+		if(isNotStationLevel(N.z)) spent(N)
 
 //checks if L has a nuke disk on their person
 /datum/game_mode/nuclear/proc/check_mob(mob/living/L)

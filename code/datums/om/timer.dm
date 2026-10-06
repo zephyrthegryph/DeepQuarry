@@ -261,7 +261,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /proc/qdel_handle(h)
 	var/datum/D = om_resolve(h)
 	if(D)
-		qdel(D)
+		spent(D)
 
 // ---------------------------------------------------------------- timers
 

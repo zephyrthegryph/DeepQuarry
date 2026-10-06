@@ -24,8 +24,8 @@
 				log_vore("[L] was inside an escaped VR mob ([self]) and has been deleted.")
 				om_stage_run_now(L, /datum/om/stage/life/vr_derez) //Recursive! Let's get EVERYONE properly out of here!
 				if(!QDELETED(L)) //This is so we don't double qdel() things when we're doing recursive removal.
-					qdel(L)
-		qdel(self) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.
+					spent(L)
+		spent(self) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.
 
 // This proc checks to see two things: 1. If we have a tf_mob_holder (we are a simple mob) and 2. If we are a human. If so, we try to exit VR properly.
 /mob/living/proc/return_from_vr()
@@ -74,8 +74,7 @@
 		drop_from_inventory(I)
 
 	ghostize(src)
-	// ALLOW(lifecycle): the VR avatar is discarded once its occupant leaves
-	qdel(src)
+	spent(src)
 
 /mob/observer/dead/proc/fake_enter_vr(landmark)
 	if(!landmark)

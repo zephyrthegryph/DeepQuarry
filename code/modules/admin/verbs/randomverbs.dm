@@ -638,7 +638,7 @@ CAPABILITIES(/datum/respawn_review)
 	return QDELETED(actor) || !picked_client() ? "participant is gone" : null
 
 /datum/respawn_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/respawn_client
 	title = "Client"
@@ -1277,7 +1277,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 
 	else if(isliving(target_mob))
 		target_mob.ghostize()
-		qdel(target_mob) //Bye
+		spent(target_mob) //Bye
 
 ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/movable in a drop pod where you are.", ADMIN_CATEGORY_FUN_DROP_POD, object as text)
 	var/list/types = typesof(/atom/movable)

@@ -380,7 +380,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 					var/mob/living/bug = AM
 					bug.gib()
 				else
-					qdel(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
+					spent(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
 	dq_destroy_collect_end()
 	var/list/radios = list()
 	for(var/area/A in shuttle_area)

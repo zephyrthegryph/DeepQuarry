@@ -358,11 +358,6 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 		if(80 to 1000)
 			. += span_info(span_red("The EMF reader is reading extremely high interference, reading [emf]mG."))
 
-// ALLOW(init/INSTANCE_STATE): emf rolled at random for each instance
-/obj/item/entrepreneur/emf/Initialize(mapload)
-	. = ..()
-	emf = rand(1,100)
-
 /obj/item/entrepreneur/emf/periodic_step()
 	if(!ismob(loc))
 		return PROCESS_KILL
@@ -370,6 +365,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 
 CAPABILITIES(/obj/item/entrepreneur/emf)
 	op("scan", in_hand(), label("Read EMF scanner"), then(PROC_REF(emf_scan_requested)))
+	rolls(nameof(emf), range_of(1, 100))
 
 /obj/item/entrepreneur/emf/proc/emf_scan_requested(datum/act/op/A)
 	var/mob/user = A.actor

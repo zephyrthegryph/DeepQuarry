@@ -601,13 +601,13 @@ CAPABILITIES(/obj/item/inflatable_dispenser)
 				to_chat(user, span_filter_notice("\The [src] is full."))
 				return
 			stored_walls++
-			qdel(A)
+			spent(A, user)
 		else
 			if(stored_doors >= max_doors)
 				to_chat(user, span_filter_notice("\The [src] is full."))
 				return
 			stored_doors++
-			qdel(A)
+			spent(A, user)
 		play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 		act_message(user, A, others = span_filter_notice("%U% deflates %T% with \the [src]!"))
 		return
@@ -617,13 +617,13 @@ CAPABILITIES(/obj/item/inflatable_dispenser)
 				to_chat(user, span_filter_notice("\The [src] is full."))
 				return
 			stored_walls++
-			qdel(A)
+			spent(A, user)
 		else
 			if(stored_doors >= max_doors)
 				to_chat(user, span_filter_notice("\The [src] is full!"))
 				return
 			stored_doors++
-			qdel(A)
+			spent(A, user)
 		act_message(user, A, others = span_filter_notice("%U% picks up %T% with \the [src]!"))
 		return
 

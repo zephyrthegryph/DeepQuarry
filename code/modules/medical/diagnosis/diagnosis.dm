@@ -51,7 +51,7 @@ CAPABILITIES(/datum/diagnosis)
 		if(existing.name == F.name && existing.location == F.location)
 			if(_dq_band_rank(F.band) > _dq_band_rank(existing.band))
 				existing.band = F.band
-			qdel(F)
+			spent(F)
 			return existing
 	rel_add(src, nameof(findings), F)
 	return F

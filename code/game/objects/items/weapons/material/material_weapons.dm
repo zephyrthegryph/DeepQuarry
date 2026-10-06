@@ -72,8 +72,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 /obj/item/material/proc/set_material(new_material)
 	material = get_material_by_name(new_material)
 	if(!material)
-		// ALLOW(lifecycle): a weapon made of an unknown material cannot exist
-		qdel(src)
+		spent(src)
 	else
 		if(named_from_material)
 			name = "[material.display_name] [initial(name)]"

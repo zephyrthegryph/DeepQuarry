@@ -368,7 +368,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 			var/obj/item/stock_parts/I = new type()
 			var/list/part_matter = I.material_totals()
 			if(!length(part_matter) || I.rating > 1)
-				qdel(I)
+				spent(I)
 				continue // Ignore parts we can't build
 
 			var/datum/category_item/partslathe/recipie = new()
@@ -378,7 +378,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 			for(var/material in part_matter)
 				recipie.resources[material] = part_matter[material]*1.25 // More expensive to produce than they are to recycle.
 			partslathe_recipies[type] = recipie
-			qdel(I)
+			spent(I)
 
 /***************************
 * Parts Lathe Recipie Type *

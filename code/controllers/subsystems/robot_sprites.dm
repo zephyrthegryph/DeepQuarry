@@ -30,7 +30,7 @@ SYSTEM_DEF(robot_sprites)
 		var/datum/robot_sprite/RS = new spath()
 
 		if(!RS.name || !RS.module_type)			// We're a technical kinda datum
-			qdel(RS)
+			spent(RS)
 			continue
 
 		all_cyborg_sprites |= RS
@@ -317,7 +317,7 @@ SYSTEM_DEF(robot_sprites)
 				if(RS.module_type in cyborg_sprites_by_module)
 					cyborg_sprites_by_module[RS.module_type] -= RS
 		all_test_sprites -= RS
-		qdel(RS)
+		spent(RS)
 
 /datum/system/robot_sprites/proc/reload_test_sprites()
 	clear_test_sprites()

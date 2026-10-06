@@ -206,7 +206,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 		if("steal")
 			var/datum/objective/steal/S = new
 			var/list/possible_items_all = S.possible_items + S.possible_items_special + "custom"
-			qdel(S)
+			spent(S)
 			open_request(src, /datum/prompt/choice/mind_objective_edit, PROC_REF(objective_detail_chosen), answerer = user, title = "Objective target", question = "Select target:", choices = possible_items_all, obj_type = obj_type)
 		else
 			objective_edit_finished(user, obj_type)
@@ -362,7 +362,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 /datum/mind/proc/take_uplink()
 	var/obj/item/uplink/hidden/H = find_syndicate_uplink()
 	if(H)
-		qdel(H)
+		spent(H)
 
 // check whether this mind's mob has been brigged for the given duration
 // have to call this periodically for the duration to work properly

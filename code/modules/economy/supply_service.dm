@@ -89,7 +89,7 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 		if(P.name)
 			supply_pack[P.name] = P
 		else
-			qdel(P)
+			spent(P)
 	initialize_cargo_market()
 
 	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
@@ -611,7 +611,7 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 			adm.sales_producer_percentages = EC.sales_producer_percentages?.Copy()
 			rel_add(src, nameof(adm_export_history), adm)
 
-			qdel(MA)
+			spent(MA)
 
 /datum/system/supply/proc/get_clear_turfs()
 	var/list/clear_turfs = list()
@@ -919,15 +919,15 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 			var/datum/money_account/personal_account = requester.mind?.initial_account()
 			var/price = order_price(new_order)
 			if(!personal_account || !personal_account.debit(price, "Supply procurement", "Personal order #[new_order.ordernum]: [S.name]", "Supply console"))
-				qdel(new_order)
-				qdel(adm_order)
+				consumed(new_order, user)
+				consumed(adm_order, user)
 				return FALSE
 			new_order.personal_order = TRUE
 			new_order.funding_account_number = personal_account.account_number
 			new_order.paid_amount = price
 	else if(personal_funding)
-		qdel(new_order)
-		qdel(adm_order)
+		consumed(new_order, user)
+		consumed(adm_order, user)
 		return FALSE
 	new_order.ordered_by = idname
 	new_order.comment = reason

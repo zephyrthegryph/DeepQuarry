@@ -30,8 +30,8 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 						"Image" = result_icon
 						)
 
-		qdel(res)
-		qdel(R)
+		spent(res)
+		spent(R)
 
 	//////////////////////// FOOD+ (basically condiments, tofu, cheese, soysauce, etc)
 	for(var/datum/decl/chemical_reaction/instant/food/CR in SSchemistry.ready().chemical_reactions)

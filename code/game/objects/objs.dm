@@ -81,7 +81,7 @@
 				if(!V.tf_mob_holder)
 					V.ghostize(0)
 					V.set_stat(DEAD)
-					qdel(V)
+					destroyed(V)
 
 	material_records_teardown(src)
 	..()
@@ -274,7 +274,7 @@ VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), 
 			for(var/obj/Obj in world)
 				if(Obj.type == O_type)
 					i++
-					qdel(Obj)
+					spent(Obj)
 				CHECK_TICK
 			if(!i)
 				to_chat(user, "No objects of this type exist")
@@ -286,7 +286,7 @@ VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), 
 			for(var/obj/Obj in world)
 				if(istype(Obj,O_type))
 					i++
-					qdel(Obj)
+					spent(Obj)
 				CHECK_TICK
 			if(!i)
 				to_chat(user, "No objects of this type exist")

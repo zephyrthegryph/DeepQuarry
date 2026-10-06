@@ -106,7 +106,7 @@
 	var/datum/map_template/southern_cross_carrier_sling/sling = new()
 	var/turf/origin = locate(167, 144, Z_LEVEL_STATION_ONE)
 	var/loaded = sling.load(origin)
-	qdel(sling)
+	spent(sling)
 	if(!loaded)
 		log_world("Southern Cross: failed to restore the carrier sling north of Dock 2.")
 	return loaded

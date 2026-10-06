@@ -56,8 +56,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	latent_discard()
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 		consume(O)
-	// ALLOW(lifecycle): the mimic crate is blasted apart
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
@@ -181,10 +180,9 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 			new_mimic.icon_state = "amimicopen"
 			new_mimic.icon_living = "amimicopen"
 		else
-			qdel(src.loc)
+			spent(src.loc)
 			new/obj/machinery/door/airlock/maintenance/common (src.loc) //Places the Airlock
-			// ALLOW(lifecycle): the mimic reverts into the airlock it imitated
-			qdel(src)//Deletes the "mimic"
+			spent(src)//Deletes the "mimic"
 			return ..()
 	else
 		return ..()
@@ -231,8 +229,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
 	rel_clear(src, nameof(real_crate))
-	// ALLOW(lifecycle): the airlock mimic dies back into a plain airlock
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 
@@ -356,13 +353,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 
 /obj/effect/floormimic/proc/awaken(mob/living/L)
 	if(!mimic_active)
-		// ALLOW(lifecycle): an inactive floor mimic is just floor and goes
-		qdel(src)
+		spent(src, L)
 		return
 	mimic_active = FALSE
 	if(!prob(mimic_chance))
-		// ALLOW(lifecycle): the floor mimic failed its roll and goes
-		qdel(src)
+		spent(src, L)
 		return
 	var/mob/living/simple_mob/vore/aggressive/mimic/floor/new_mimic = new mimic_type(drop_location())
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
@@ -382,7 +377,7 @@ CAPABILITIES(/obj/effect/floormimic)
 
 /// Any blast destroys the mimic outright.
 /obj/effect/floormimic/proc/blasted_away(datum/act/A)
-	qdel(src) // ALLOW(lifecycle): a blast destroys the mimic outright, there is nothing to hand its contents to
+	spent(src)
 	return TRUE
 
 /obj/effect/floormimic/safe
@@ -418,8 +413,7 @@ CAPABILITIES(/obj/effect/floormimic)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
-	// ALLOW(lifecycle): the floor mimic leaves no corpse when it dies
-	qdel(src)
+	consumed(src)
 	return TRUE
 
 /obj/effect/floormimic/tile

@@ -723,7 +723,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		wearer()?.worn_protection_changed()
 		user.put_in_hands(assimilated_rig)
 		assimilated_rig = null
-		qdel(tempRig)
+		spent(tempRig)
 	else
 		to_chat(user, "[src] has not assimilated a RIG. Use one on it to assimilate.")
 

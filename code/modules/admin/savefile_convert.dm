@@ -171,7 +171,7 @@ CAPABILITIES(/datum/admin_save_conversion_review)
 		to_chat(user, span_filter_adminlog("Done. [target_ckey]'s preferences.json has been converted to preferences.sav."))
 
 /datum/admin_save_conversion_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/text/admin_convert_ckey
 	rights = R_ADMIN

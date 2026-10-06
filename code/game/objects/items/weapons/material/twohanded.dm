@@ -130,7 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 			var/obj/structure/window/W = A
 			W.shatter()
 		else if(istype(A,/obj/structure/grille))
-			qdel(A)
+			consumed(A, src)
 		else if(istype(A,/obj/effect/plant))
 			var/obj/effect/plant/P = A
 			P.die_off()
@@ -255,7 +255,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 			var/obj/structure/window/W = A
 			W.shatter()
 		else if(istype(A,/obj/structure/grille))
-			qdel(A)
+			consumed(A, src)
 		else if(istype(A,/obj/effect/plant))
 			var/obj/effect/plant/P = A
 			P.die_off()

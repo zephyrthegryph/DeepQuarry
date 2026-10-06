@@ -266,7 +266,7 @@ GLOBAL_PROTECT(affliction_triggers_by_kind)
 		// have no authored produces; skip those naturally.
 		var/datum/affliction_trigger/c = new T()
 		if(!length(c.produces))
-			qdel(c)
+			spent(c)
 			continue
 		GLOB.affliction_triggers_all += c
 		// Index by the cause's PARENT type (the kind), not its own

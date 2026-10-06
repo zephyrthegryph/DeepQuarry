@@ -635,7 +635,7 @@
 		var/mob/living/dominated_brain/db = M
 		if(db.loc != db.pred_body)
 			to_chat(db, span_danger("You aren't inside of a brain anymore!!!"))
-			qdel(db)	//Oh no, dominated brains shouldn't exist outside of the body, so if we got here something went very wrong.
+			spent(db)	//Oh no, dominated brains shouldn't exist outside of the body, so if we got here something went very wrong.
 			return
 		else
 			pb = db.pred_body
@@ -749,7 +749,7 @@
 		var/mob/living/dominated_brain/db = M
 		if(db.loc != db.pred_body)
 			to_chat(db, span_danger("You aren't inside of a brain anymore!!!"))
-			qdel(db)	//Oh no, dominated brains shouldn't exist outside of the body, so if we got here something went very wrong.
+			spent(db)	//Oh no, dominated brains shouldn't exist outside of the body, so if we got here something went very wrong.
 			return
 		else
 			pb = db.pred_body

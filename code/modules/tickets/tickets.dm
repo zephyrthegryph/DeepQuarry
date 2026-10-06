@@ -207,10 +207,9 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/current_state
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
-// ALLOW(init/CTOR_ARGS): name and state are constructor arguments from whoever builds it
-/obj/effect/statclick/ticket_list/Initialize(mapload, name, state)
-	current_state = state
-	. = ..()
+
+CAPABILITIES(/obj/effect/statclick/ticket_list)
+	param(nameof(current_state), pos = 2)
 
 /obj/effect/statclick/ticket_list/Click()
 	GLOB.tickets.BrowseTickets(current_state, usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
@@ -260,8 +259,7 @@ CAPABILITIES(/datum/ticket)
 	//clean the input msg
 	var/msg = sanitize(copytext(raw_msg,1,MAX_MESSAGE_LEN))
 	if(!msg || !C || !C.mob)
-		// ALLOW(lifecycle): a ticket with no message or no client is never opened
-		qdel(src)
+		spent(src, user)
 		return
 
 	id = ++ticket_counter
@@ -282,7 +280,7 @@ CAPABILITIES(/datum/ticket)
 
 	var/parsed_message = keywords_lookup(msg, FALSE, token_actor)
 
-	rel_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
+	rel_set(src, nameof(statclick), make(/obj/effect/statclick/ticket, at = null, ticket_datum = src))
 	_interactions = list()
 
 	if(is_bwoink)
@@ -409,7 +407,7 @@ CAPABILITIES(/datum/ticket)
 		to_chat(user, span_warning("This user already has an active ticket, cannot reopen this one."))
 		return
 
-	rel_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
+	rel_set(src, nameof(statclick), make(/obj/effect/statclick/ticket, at = null, ticket_datum = src))
 	switch(state)
 		if(AHELP_CLOSED)
 			feedback_dec("ticket_close")
@@ -658,10 +656,9 @@ CAPABILITIES(/datum/ticket)
 	var/tmp/datum/ticket/ticket_datum
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
-// ALLOW(init/CTOR_ARGS): T is a constructor argument from whoever builds it
-/obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
-	rel_set(src, nameof(ticket_datum), T)
-	. = ..()
+
+CAPABILITIES(/obj/effect/statclick/ticket)
+	param(nameof(ticket_datum), pos = 1)
 
 /obj/effect/statclick/ticket/update()
 	return ..(ticket_datum().name)

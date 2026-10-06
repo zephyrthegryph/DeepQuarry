@@ -49,7 +49,7 @@ CAPABILITIES(/datum/event/rogue_drone)
 		D.z = using_map.admin_levels[1]
 		D.loot_list = list()
 
-		qdel(D)
+		spent(D)
 		num_recovered++
 
 	if(num_recovered > length(drones_list) * 0.75)

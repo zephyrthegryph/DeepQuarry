@@ -377,7 +377,7 @@
 
 	extgps = gps_list // Compiled by the GPS
 
-	qdel(cumulative) // Don't want spare GPS units building up in the contents
+	spent(cumulative) // Don't want spare GPS units building up in the contents
 
 	return list(
 			intgps,

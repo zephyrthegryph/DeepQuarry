@@ -22,8 +22,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 DECLARE_UI_STATE(/datum/secrets_menu, ADMIN_STATE(R_HOLDER))
 
 /datum/secrets_menu/tgui_close()
-	// ALLOW(lifecycle): the secrets menu lives only while its window is open
-	qdel(src)
+	spent(src)
 
 DECLARE_UI(/datum/secrets_menu, "Secrets")
 
@@ -501,14 +500,14 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_alter_narsie)
 UI_ACT(/datum/secrets_menu, "remove_all_clothing", ui_act_remove_all_clothing)
 UI_ACT_PROC(/datum/secrets_menu, ui_act_remove_all_clothing)
 	for(var/obj/item/clothing/O in world)
-		qdel(O)
+		spent(O)
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 
 UI_ACT(/datum/secrets_menu, "remove_internal_clothing", ui_act_remove_internal_clothing)
 UI_ACT_PROC(/datum/secrets_menu, ui_act_remove_internal_clothing)
 	for(var/obj/item/clothing/under/O in world)
-		qdel(O)
+		spent(O)
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 

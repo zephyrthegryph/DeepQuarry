@@ -224,7 +224,7 @@
 	if(D?.mind)
 		D.mind.transfer_to(target)
 		target.languages |= D.languages
-	qdel(D)
+	spent(D, user)
 	// D21: through set_species() (languages, verbs, components, factors, body invalidation),
 	// keeping the host body's organs.
 	target.set_species(SPECIES_DIONA, keep_organs = TRUE)

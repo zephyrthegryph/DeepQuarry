@@ -38,7 +38,7 @@
 
 /// Frees the port behind `handle` (after Rust has removed it).
 /proc/rust_free_pipe_port(handle)
-	qdel(rust_pipe_port_of(handle))
+	spent(rust_pipe_port_of(handle))
 
 /// An entity handle's World slot index (a component's entity-index field).
 /proc/vg_entity_index(handle)
@@ -222,7 +222,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	if(network.rust_authoritative)
 		rel_remove(network, nameof(network.normal_members), src)
 		return
-	qdel(network)
+	spent(network)
 
 /// One topology edit (RUST_PIPE_OP_*), applied to the Rust network now;
 /// rust_commit_pending_pipenets() commits the batch and rebuilds wrappers.
@@ -573,9 +573,9 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		rel_clear(line, nameof(line.network))
 		atmos_air_set(line, nameof(line.air), null)
 		rel_clear(line, nameof(line.leaks))
-		qdel(line)
+		spent(line)
 	// The network owns the retired region mixture: destroyed with it.
-	qdel(network)
+	spent(network)
 
 /datum/system/air/proc/rust_materialize_pipe_region(list/transition)
 	var/region = transition["region"]

@@ -179,7 +179,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	else
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		var/healthy = D?.band == DIAG_BAND_NONE && D.status == DIAG_STATUS_ALIVE
-		qdel(D)
+		consumed(D)
 		if(healthy)
 			release_treated_occupant(occupant)
 			return FALSE
@@ -235,7 +235,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 		occupantData["critical"] = occupant.is_critical()
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
-		qdel(D)
+		spent(D)
 		occupantData["bodyTemperature"] = occupant.body_temperature()
 	data["occupant"] = occupantData
 

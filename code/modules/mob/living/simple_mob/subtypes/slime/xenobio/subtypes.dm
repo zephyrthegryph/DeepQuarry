@@ -187,8 +187,7 @@
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
-	// ALLOW(lifecycle): the slime is consumed by its own inferno
-	qdel(src)
+	consumed(src)
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
@@ -659,8 +658,7 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 	if(stat != DEAD)
 		explosion(src.loc, 0, 2, 4) // A bit weaker since the suicide charger tended to gib the poor sod being targeted.
 		if(src) // Delete ourselves if the explosion didn't do it.
-			// ALLOW(lifecycle): the slime is consumed by its own explosion
-			qdel(src)
+			consumed(src)
 
 /mob/living/simple_mob/slime/xenobio/oil/proc/suicide_bomb(mob/living/L)
 	log_and_message_admins("has suicide-bombed themselves while trying to kill \the [L].", src)

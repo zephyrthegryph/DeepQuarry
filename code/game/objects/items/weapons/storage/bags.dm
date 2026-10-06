@@ -208,7 +208,7 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 			new S.type(location, S.max_amount)
 		if(remainder)
 			new S.type(location, remainder)
-		qdel(S)
+		spent(S, user)
 	update_icon()
 
 // Instead of removing
