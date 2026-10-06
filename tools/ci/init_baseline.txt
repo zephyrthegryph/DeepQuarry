@@ -1213,7 +1213,6 @@ world_reads	code/game/machinery/gear_dispenser.dm	GLOB.gear_distributed_to["[typ
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_assistance |= department
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_supplies |= department
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_information |= department
-world_reads	code/game/machinery/supplybeacon.dm	if(!drop_type) drop_type = pick(GLOB.supply_drop)
 world_reads	code/game/machinery/teleporter.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/teleporter.dm	for(direction in GLOB.cardinal)
 world_reads	code/game/objects/effects/anomalies/anomalies_weather.dm	for(var/spread_dir in GLOB.alldirs)

@@ -108,9 +108,17 @@ def main():
                     continue
                 st = stmts_of(f, p)
                 params = p.params() or []
-                if not st or len(st) != 1:
+                if not st:
                     continue
-                m = ONE.match(st[0].code)
+                fallthrough = False
+                if len(st) == 2 and st[1].code in ("return ..()", "..()", ". = ..()") and st[1].indent == 2 and st[0].code.startswith("if(!") and st[0].code.endswith(")"):
+                    # if(!x(usr, ...)) return ..(): the handler says when the parent's native hook runs
+                    m = ONE.match(st[0].code[4:-1])
+                    fallthrough = True
+                elif len(st) == 1:
+                    m = ONE.match(st[0].code)
+                else:
+                    continue
                 if not m:
                     continue
                 target = m.group(1)
@@ -121,7 +129,8 @@ def main():
                 handler = "%s_input" % name.lower()
                 entry = ("click_on(PROC_REF(%s))" if kind == "click" else "drag_onto(PROC_REF(%s))") % handler
                 body = ["/// The native %s's actor and arguments, handed over by the engine (%s, code/engine/lifeforms/input.dm)." % (name, entry.split("(")[0] + "()"),
-                        "%s/proc/%s(datum/act/input/A)" % (ty, handler), "\treturn %s" % call]
+                        "%s/proc/%s(datum/act/input/A)" % (ty, handler)]
+                body += (["	if(!%s)" % call, "		return INPUT_FALLTHROUGH"] if fallthrough else ["	return %s" % call])
                 plans.append((p.start, [p], ty, [entry], body))
                 counts[kind] += 1
                 if a.sites:

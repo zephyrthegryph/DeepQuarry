@@ -26,6 +26,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/security/telescreen/bodycamera, M
 
 CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	owns_one(nameof(bradio), starts = /obj/item/radio)
+	click_on(PROC_REF(click_input))
 
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
 
@@ -60,9 +61,10 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	else if(operable())
 		bradio?.on = TRUE
 
-/obj/machinery/computer/security/telescreen/bodycamera/Click(location, control, params)
-	if(!handle_click_with_actor(usr, params)) // ALLOW(sys_usr_outside_verb): Native monitor click captures its actor while preserving conditional parent input routing.
-		..()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/machinery/computer/security/telescreen/bodycamera/proc/click_input(datum/act/input/A)
+	if(!handle_click_with_actor(A.actor, A.params))
+		return INPUT_FALLTHROUGH
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/handle_click_with_actor(mob/user, params)
 	var/list/modifiers = params2list(params)

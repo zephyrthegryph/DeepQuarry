@@ -1,7 +1,8 @@
 // allow teshari to always be scooped, as long as pref is enabled
-/mob/living/MouseDrop(atom/over_object)
-	if(!micro_scoop_with_actor(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native micro-carry drag supplies its actor before the unchanged parent fallback.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/mob/living/proc/mousedrop_input(datum/act/input/A)
+	if(!micro_scoop_with_actor(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /mob/living/proc/micro_scoop_with_actor(mob/user, atom/over_object)
 	// make sure src (The dragged) is human

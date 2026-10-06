@@ -1,7 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/usr_use.py (doc/rewrite/systems.md); shrink-only, target 0
-usr_outside_verb	code/_helpers/mobs.dm	var/temp = usr
-usr_outside_verb	code/_helpers/mobs.dm	usr = user_mob
-usr_outside_verb	code/_helpers/mobs.dm	usr = temp
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().get_path_astar(usr, target, get_turf(usr))
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().get_path_jps(usr, target, get_turf(usr))
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
@@ -19,12 +16,6 @@ usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to set locked config entry [type] to '[str_val]'")
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config access of [entry_type] attempted by [key_name(usr)]")
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config rewrite of [entry_type] to [new_val] attempted by [key_name(usr)]")
-usr_outside_verb	code/controllers/measure/synthetic.dm	var/mob/saved_user = usr
-usr_outside_verb	code/controllers/measure/synthetic.dm	usr = user
-usr_outside_verb	code/controllers/measure/synthetic.dm	usr = saved_user
-usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	var/old_usr = usr
-usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	usr = admin.mob
-usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	usr = old_usr
 usr_outside_verb	code/controllers/subsystems/ticker.dm	if(usr && !check_rights(R_SERVER, TRUE))
 usr_outside_verb	code/datums/callback.dm	if(usr)
 usr_outside_verb	code/datums/callback.dm	rel_set(src, nameof(user), usr)
@@ -68,12 +59,6 @@ usr_outside_verb	code/modules/admin/admin_attack_log.dm	/proc/log_and_message_ad
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
-usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/lastusr = usr
-usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = handler
-usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = lastusr
-usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/lastusr = usr
-usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = handler
-usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = lastusr
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	to_chat(usr, "Calling Del() is not allowed", confidential = TRUE)
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	to_chat(usr, "Proccall on [target.type]/proc/[procname] is disallowed!", confidential = TRUE)
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/user_identifier = usr ? usr.client?.ckey : GLOB.AdminProcCaller

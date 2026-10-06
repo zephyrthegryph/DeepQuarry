@@ -19,10 +19,7 @@ GLOBAL_DATUM_INIT(km_synthetic, /datum/km_synthetic, new)
 
 /// `user` clicks `target` as if a client had: /atom/Click under its own usr. The user is restored after.
 /proc/km_synthetic_click(mob/user, atom/target)
-	var/mob/saved_user = usr
-	usr = user
-	target.Click(get_turf(target), "mapwindow.map", "")
-	usr = saved_user
+	with_actor(user, target, "Click", get_turf(target), "mapwindow.map", "")
 
 /// A no-op input in the synthetic lane.
 /datum/input_event/synthetic

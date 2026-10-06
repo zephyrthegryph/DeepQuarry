@@ -76,9 +76,9 @@
 			A.entered = entered
 			A.native = native
 			A.origin = ORIGIN_CLICK
-			call(holder, handler)(A)
+			var/reply = call(holder, handler)(A)
 			A.release()
-			return TRUE
+			return reply != INPUT_FALLTHROUGH // INPUT_FALLTHROUGH: the native override goes on to ..()
 		if(istext(handler))
 			perform_op(actor, holder, handler, null, ORIGIN_CLICK)
 			return TRUE
@@ -111,11 +111,17 @@
 
 /// Runs `callback` with `actor` as the acting mob (usr) for the procs below it that still read it; restores the previous one. Returns the
 /// callback's result.
-/proc/with_actor(mob/actor, datum/callback/callback)
+/proc/with_actor(mob/actor, datum/callback/callback, ...)
 	var/mob/previous = usr
 	usr = actor
 	try
-		. = callback.Invoke()
+		if(istype(callback))
+			. = length(args) > 2 ? callback.Invoke(arglist(args.Copy(3))) : callback.Invoke()
+		else // with_actor(actor, target, proc_ref, args...): the same without a callback datum (GLOBAL_PROC as the target for a global proc)
+			var/target = callback
+			var/proc_ref = args[3]
+			var/list/rest = args.Copy(4)
+			. = target == GLOBAL_PROC ? call(proc_ref)(arglist(rest)) : call(target, proc_ref)(arglist(rest))
 	catch(var/exception/e)
 		usr = previous
 		throw e
