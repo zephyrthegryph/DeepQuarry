@@ -74,9 +74,10 @@
 
 		var/protection = null
 		var/potential_temperature_delta = null
-		var/new_temperature = L.body_temperature()
+		var/starting_temperature = L.body_temperature()
+		var/new_temperature = starting_temperature
 
-		if(target_temperature >= T20C) // Make it cold.
+		if(target_temperature < starting_temperature) // Move toward a colder target.
 			protection = L.get_cold_protection(target_temperature)
 			potential_temperature_delta = 75
 			new_temperature = max(new_temperature - potential_temperature_delta, target_temperature)
@@ -87,7 +88,7 @@
 
 		var/temp_factor = abs(protection - 1)
 
-		new_temperature = round(new_temperature * temp_factor)
+		new_temperature = starting_temperature + (new_temperature - starting_temperature) * temp_factor
 		L.set_bodytemperature(new_temperature)
 	// The last metroid has escaped from captivity, the galaxy is no longer safe.
 		if(istype(L, /mob/living/simple_mob/vore/alienanimals/space_jellyfish) && target_temperature <= T0C)
