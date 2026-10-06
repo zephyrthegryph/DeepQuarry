@@ -65,8 +65,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 
 /// A blob bursts the tank outright.
 /obj/structure/reagent_dispensers/proc/dispenser_blob_burst(datum/act/hit/blob/A)
-	// ALLOW(lifecycle): the blob bursts the tank
-	qdel(src)
+	destroyed(src)
 	return TRUE
 
 /// Old click_alt.
@@ -297,8 +296,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	else if (reagents.total_volume > 50)
 		explosion(src.loc,-1,1,2)
 	if(src)
-		// ALLOW(lifecycle): the fuel tank explodes
-		qdel(src)
+		destroyed(src)
 
 /// Heat behaviour rule: a fuel tank explodes above 500 C.
 /obj/structure/reagent_dispensers/fueltank/proc/rule_explode(datum/rule/rule)
@@ -571,8 +569,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
 /obj/structure/reagent_dispensers/cookingoil/proc/explode()
 	reagents.splash_area(get_turf(src), 3)
 	visible_message(span_danger("The [src] bursts open, spreading oil all over the area."))
-	// ALLOW(lifecycle): the oil tank bursts open
-	qdel(src)
+	destroyed(src)
 
 /obj/structure/reagent_dispensers/bloodbarrel
 	name = "blood barrel"

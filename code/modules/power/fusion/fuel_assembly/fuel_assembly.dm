@@ -122,8 +122,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 			strength = 250
 		)
 		explosion(src.loc, 1, 2, 4, 6)
-		// ALLOW(lifecycle): the blitz rod detonates on impact
-		qdel(src)
+		destroyed(src)
 
 DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

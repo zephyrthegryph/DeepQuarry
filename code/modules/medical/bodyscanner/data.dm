@@ -33,7 +33,7 @@
 	occupantData["diagnosis"] = D.report_data()
 	occupantData["healthBand"] = D.band
 	occupantData["worstFinding"] = D.worst_finding_band()
-	qdel(D)
+	spent(D)
 
 	// Pass-through fields the upstream layer still expects (vore prey
 	// detection etc.). dq_build_tgui_data fills them via the existing

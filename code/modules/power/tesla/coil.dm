@@ -138,8 +138,7 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	new_coil.set_anchored(anchored)
 
 	to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))
-	// ALLOW(lifecycle): the coil is swapped for its modified version built above
-	qdel(src)
+	spent(src, user)
 	return OP_OK
 
 /obj/machinery/power/tesla_coil/proc/coil_act(power, explosive, current_jumps)

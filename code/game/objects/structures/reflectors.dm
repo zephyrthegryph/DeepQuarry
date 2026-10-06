@@ -86,7 +86,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	LAZYINITLIST(has_projectiles)
 	has_projectiles[angle_key] += caught_damage
 	om_task_periodic(src, PERIODIC_REFLECTORS)
-	qdel(P)
+	spent(P)
 
 /obj/structure/reflector/set_dir(new_dir)
 	return ..(NORTH)

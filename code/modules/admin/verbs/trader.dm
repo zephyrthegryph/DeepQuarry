@@ -80,7 +80,7 @@ CAPABILITIES(/datum/admin_trader_dispatch_review)
 	trigger_trader_visit()
 
 /datum/admin_trader_dispatch_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/admin_trader_dispatch
 	rights = R_ADMIN|R_EVENT

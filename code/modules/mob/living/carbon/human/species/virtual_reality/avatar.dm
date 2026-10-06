@@ -133,5 +133,4 @@
 		if(I)
 			unEquip(I,force = TRUE)
 	release_vore_contents(include_absorbed = TRUE, silent = TRUE)
-	// ALLOW(lifecycle): the VR avatar is discarded once it is emptied
-	qdel(src)
+	spent(src)

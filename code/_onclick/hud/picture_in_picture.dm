@@ -39,8 +39,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 /atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	if(component == button_x)
 		user?.client?.close_popup("camera-[REF(src)]")
-		// ALLOW(lifecycle): the close button ends this picture-in-picture view
-		qdel(src)
+		spent(src, user)
 	else if(component == button_expand)
 		set_view_size(width+1, height+1)
 	else if(component == button_shrink)
@@ -71,7 +70,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	add_overlay(move_tab)
 
 	if(!button_x)
-		rel_set(src, nameof(button_x), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_x), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "close"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -84,7 +83,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	vis_contents += button_x
 
 	if(!button_expand)
-		rel_set(src, nameof(button_expand), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_expand), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "expand"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -97,7 +96,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	vis_contents += button_expand
 
 	if(!button_shrink)
-		rel_set(src, nameof(button_shrink), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_shrink), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "shrink"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -110,7 +109,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	vis_contents += button_shrink
 
 	if(!button_pop)
-		rel_set(src, nameof(button_pop), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_pop), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "pop"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'

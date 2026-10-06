@@ -568,7 +568,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
 		own_take_member(src, nameof(component_parts), C)
-		qdel(C)
+		spent(C)
 		// Made in nullspace: new(src) already put it inside, and the move then refused ("it is already there").
 		C = new /obj/item/cell/high()
 		move_into(src, CONTAINER_SLOT_INTERNALS, C)
@@ -684,8 +684,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	A.update_desc()
 	A.update_icon()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
-	// ALLOW(lifecycle): the dismantled machine is replaced by the frame built above
-	qdel(src)
+	destroyed(src)
 	return 1
 
 /**

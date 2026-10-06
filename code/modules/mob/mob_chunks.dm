@@ -42,7 +42,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		return
 	if(!length(C.om_rec?.watches_in))
 		GLOB.mob_chunks -= "[id]"
-		qdel(C)
+		spent(C)
 		return
 	changed(C, bits)
 

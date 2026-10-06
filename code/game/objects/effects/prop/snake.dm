@@ -23,14 +23,9 @@
 // Relation view: is the snake hunting a specific atom? (Will always try to meander toward this target.)
 	var/atom/hunting
 
-// ALLOW(init/CTOR_ARGS): hunt_target and Creator are constructor arguments from whoever builds it
-/obj/effect/temporary_effect/pulse/snake/Initialize(mapload, atom/hunt_target, atom/Creator)
-	. = ..()
-	if(hunt_target)
-		rel_set(src, nameof(hunting), hunt_target)
-
-	if(Creator)
-		rel_set(src, nameof(creator), Creator)
+CAPABILITIES(/obj/effect/temporary_effect/pulse/snake)
+	param(nameof(hunting), pos = 1)
+	param(nameof(creator), pos = 2)
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
 	snake_pulse_wait()

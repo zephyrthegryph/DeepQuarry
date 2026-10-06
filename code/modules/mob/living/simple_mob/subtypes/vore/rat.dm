@@ -121,7 +121,7 @@
 			if(get_dist(self,S) <=1)
 				visible_emote("hungrily devours \the [S].")
 				play_sfx(self, SFX_ITEMS_EATFOOD, volume = rand(10,50))
-				qdel(S)
+				spent(S)
 				hunger = 0
 				food = null
 			else
@@ -187,7 +187,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 /// Feed the rat your food to satisfy it.
 /mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(datum/act/op/A)
 	var/obj/item/O = A.held
-	qdel(O)
+	consumed(O)
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	hunger = 0
 	food = null

@@ -122,7 +122,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 		var/datum/diagnosis/D = R.diagnose(/datum/diagnostic_profile/robot_analyzer)
 		for(var/datum/diagnosis_finding/F as anything in D?.findings)
 			UNTYPED_LIST_ADD(faults, list("name" = F.name, "band" = F.band, "location" = F.location))
-		qdel(D)
+		spent(D)
 	data["faults"] = faults
 
 	return data

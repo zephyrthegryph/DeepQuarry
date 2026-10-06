@@ -107,17 +107,13 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/weak	//This is for the loadout
 	degrade_time = 2.5 MINUTES
 
-// ALLOW(init/INSTANCE_STATE): id rolled at random for each instance
-/obj/item/implant/tracking/Initialize(mapload, ...)
-	. = ..()
-	id = rand(1, 1000)
-
 /// Watches its host every 2 s from implantation until it melts down.
 /obj/item/implant/tracking/var/tracking_active = FALSE
 TRACKED(/obj/item/implant/tracking, tracking_active)
 CAPABILITIES(/obj/item/implant/tracking)
 	every(2 SECONDS, then(PROC_REF(tracking_step)), when = nameof(tracking_active))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(tracking_implant_emp))))
+	rolls(nameof(id), range_of(1, 1000))
 
 /obj/item/implant/tracking/post_implant(mob/source)
 	set_tracking_active(TRUE)
@@ -246,8 +242,7 @@ Implant Specifics:<BR>"}
 	msg = replace_characters(msg, replacechars)
 	if(findtext(msg,phrase))
 		activate()
-		// ALLOW(lifecycle): the explosive implant is spent once it goes off
-		qdel(src)
+		spent(src)
 
 /obj/item/implant/explosive/proc/limb_boom()
 	if(!part)
@@ -257,13 +252,11 @@ Implant Specifics:<BR>"}
 		istype(part,/obj/item/organ/external/head))
 		part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
 		explosion(get_turf(imp_in()), -1, -1, 1, 3)
-		// ALLOW(lifecycle): the explosive implant is spent once it goes off
-		qdel(src)
+		spent(src)
 	else
 		explosion(get_turf(imp_in()), -1, -1, 1, 3)
 		part.droplimb(0,DROPLIMB_BLUNT)
-		// ALLOW(lifecycle): the explosive implant is spent once it goes off
-		qdel(src)
+		spent(src)
 
 /obj/item/implant/explosive/activate()
 	if (malfunction == MALFUNCTION_PERMANENT)
@@ -966,8 +959,7 @@ CAPABILITIES(/obj/item/implanter/compliance)
 		else
 			part.droplimb(0,DROPLIMB_BLUNT)
 	explosion(get_turf(imp_in()), -1, -1, 1, 3)
-	// ALLOW(lifecycle): the explosive implant is spent once it goes off
-	qdel(src)
+	spent(src)
 
 /// Relation view: imp in (reads null once it is gone).
 /obj/item/implant/proc/imp_in() as /mob

@@ -57,7 +57,7 @@ SYSTEM_DEF(inactivity)
 
 			log_and_message_admins("being kicked for AFK[information][adminlinks]", C.mob)
 
-			qdel(C)
+			spent(C)
 			number_kicked++
 
 		if (KERNEL_OVER_BUDGET)

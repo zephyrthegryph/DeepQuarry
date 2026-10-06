@@ -170,8 +170,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 					for(var/datum/language/L in A.identity().languages)
 						A.add_language(L.name)
 			feedback_inc("cyborg_ais_created",1)
-			// ALLOW(lifecycle): the finished core becomes the AI that was just built in its place
-			qdel(src)
+			destroyed(src, user)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -252,8 +251,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 	if(card)
 		card.clear()
 
-	// ALLOW(lifecycle): the inactive core is replaced by the AI loaded into it
-	qdel(src)
+	spent(src, user)
 
 /obj/structure/AIcore/deactivated/proc/check_malf(mob/living/silicon/ai/ai)
 	if(!ai)

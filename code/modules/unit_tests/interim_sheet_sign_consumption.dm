@@ -57,7 +57,7 @@
 	TEST_ASSERT(user.put_in_active_hand(sign), "the portable sign starts in the actor's active hand")
 	var/obj/item/tool/screwdriver/tool = allocate(/obj/item/tool/screwdriver, T)
 	TEST_ASSERT(user.put_in_inactive_hand(tool), "the actual screwdriver occupies the other hand")
-	TEST_ASSERT(sign.screwdriver_act(user, tool), "the screwdriver on a portable sign asks for a direction")
+	test_click(user, sign, tool) // the screwdriver on a portable sign asks for a direction
 	if(sticky)
 		add_trait(sign, TRAIT_NODROP, "interim_sign_refasten")
 		TEST_ASSERT(sign.loc.release_refusal(sign, user), "the actual portable sign refuses release")

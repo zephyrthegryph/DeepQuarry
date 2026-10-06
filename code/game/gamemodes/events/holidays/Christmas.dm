@@ -12,7 +12,7 @@
 		evil_tree.icon_living = evil_tree.icon_state
 		evil_tree.icon_dead = evil_tree.icon_state
 		evil_tree.icon_gib = evil_tree.icon_state
-		qdel(xmas)
+		spent(xmas)
 
 /obj/item/toy/xmas_cracker
 	name = "xmas cracker"

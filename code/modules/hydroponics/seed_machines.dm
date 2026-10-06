@@ -10,12 +10,7 @@
 
 CAPABILITIES(/obj/item/disk/botany)
 	owns_many(nameof(genes))
-
-// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-/obj/item/disk/botany/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5,5)
-	pixel_y = rand(-5,5)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 
 DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interaction_self)))
 

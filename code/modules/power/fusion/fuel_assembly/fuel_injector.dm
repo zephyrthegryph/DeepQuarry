@@ -158,5 +158,4 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 
 /obj/machinery/fusion_fuel_injector/proc/blitz_boom()
 	explosion(loc,2,3,4,8)
-	// ALLOW(lifecycle): the injector blows up
-	qdel(src)
+	spent(src)

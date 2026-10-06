@@ -36,8 +36,7 @@
 			else
 				gender = NEUTER
 	else
-		// ALLOW(lifecycle): a shard of an unknown material cannot exist
-		qdel(src)
+		spent(src)
 
 DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/shard/appearance_overlays()
@@ -50,17 +49,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearanc
 		color = "#ffffff"
 		alpha = 255
 
-/obj/item/material/shard/welder_act(mob/user, obj/item/W)
+CAPABILITIES(/obj/item/material/shard)
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+/obj/item/material/shard/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!material.shard_can_repair)
-		return ..()
+		return OP_DECLINE
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
 		var/atom/product_location = loc
 		var/datum/material/product_material = material
 		if(!consume(src, user))
-			return TRUE
+			return OP_OK
 		product_material.place_sheet(product_location, 1)
-	return TRUE
+	return OP_OK
 
 /obj/item/material/shard/afterattack(atom/target, mob/living/carbon/human/user as mob, proximity)
 	if(!proximity)

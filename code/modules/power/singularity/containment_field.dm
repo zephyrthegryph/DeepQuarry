@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/containment_field)
 		if(istype(A,/obj/machinery/containment_field) || istype(A,/obj/effect) || istype(A,/obj/singularity))
 			return
 		else
-			qdel(A)
+			destroyed(A)
 
 /obj/machinery/containment_field/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
@@ -85,8 +85,7 @@ CAPABILITIES(/obj/machinery/containment_field)
 	if(!COOLDOWN_FINISHED(src, hasShocked))
 		return 0
 	if(!FG1() || !FG2())
-		// ALLOW(lifecycle): a field without both generators collapses
-		qdel(src)
+		spent(src, user)
 		return 0
 	if(isliving(user))
 		COOLDOWN_START(src, hasShocked, 2 SECONDS)

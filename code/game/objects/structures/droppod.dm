@@ -84,7 +84,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O == src)
 			continue
-		qdel(O)
+		destroyed(O)
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		L.gib()
 

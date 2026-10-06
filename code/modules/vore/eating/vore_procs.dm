@@ -75,7 +75,7 @@
 	var/message_range = task.message_range
 	for(var/obj/item/grab/G in prey?.grabbed_by_list())
 		if(G?.grab_assailant() == user)
-			qdel(G)
+			consumed(G)
 	devour_and_move_prey(user, prey, pred, belly, message_range)
 
 /proc/devour_and_move_prey(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, message_range)
@@ -91,7 +91,7 @@
 			if(M.loc == H) // In case nom_atom failed somehow.
 				M.forceMove(get_turf(user))
 		rel_clear(H, nameof(H.held_mob))
-		qdel(H)
+		consumed(H, user)
 	else
 		belly.nom_atom(prey, user)
 

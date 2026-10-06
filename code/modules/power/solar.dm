@@ -487,8 +487,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		A.state = 3
 		A.icon_state = "computer_3"
 		A.set_anchored(TRUE)
-		// ALLOW(lifecycle): the console comes off into its frame
-		qdel(src)
+		spent(src, user)
 	else
 		to_chat(user, span_blue("You disconnect the monitor."))
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
@@ -500,8 +499,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		A.state = 4
 		A.icon_state = "computer_4"
 		A.set_anchored(TRUE)
-		// ALLOW(lifecycle): the console comes off into its frame
-		qdel(src)
+		spent(src, user)
 
 /obj/machinery/power/solar_control/machine_step()
 	if(!operable())

@@ -37,7 +37,7 @@
 			var/mob/M = G?.grab_target()
 			M.forceMove(src)
 			consume(G, user)
-			qdel(M)
+			consumed(M, src)
 		else
 			to_chat(user, span_danger("They are too big for the spike, try something smaller!"))
 	return TRUE

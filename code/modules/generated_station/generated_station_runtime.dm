@@ -196,14 +196,14 @@
 			continue
 		var/turf/control_turf = generated_station_control_turf(core)
 		if(!control_turf)
-			qdel(core)
+			spent(core)
 			continue
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
 		rel_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
-		qdel(core)
+		spent(core)
 	// Landmarks are useful publication anchors, but they must not be a failure
 	// route for a required gameplay object. A late structural/furnishing pass can
 	// legitimately replace a landmark's original turf. Reconstruct any missing
@@ -253,7 +253,7 @@
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
 	own_take(repairer, nameof(repairer.result))
-	qdel(repairer)
+	spent(repairer)
 	return succeeded
 
 /datum/expedition_site/proc/generated_station_status_text()

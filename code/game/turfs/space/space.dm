@@ -85,7 +85,7 @@
 		if(!AM.anchored)
 			AM.throw_at(get_step(src,reverse_direction(direction)), 5, 1)
 		else if (istype(AM, /obj/effect/decal))
-			qdel(AM) //No more space blood coming with the shuttle
+			spent(AM) //No more space blood coming with the shuttle
 
 /turf/space/is_space()
 	return 1
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
 				return INTERACTION_HANDLED_PASS
-			qdel(L)
+			spent(L, user)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
@@ -189,7 +189,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 
 	if(src.x <= 1)
 		if(istype(A, /obj/effect/meteor)||istype(A, /obj/effect/space_dust))
-			qdel(A)
+			spent(A)
 			return
 
 		var/list/cur_pos = src.get_global_map_pos()
@@ -206,7 +206,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 				A.loc.Entered(A)
 	else if (src.x >= world.maxx)
 		if(istype(A, /obj/effect/meteor))
-			qdel(A)
+			spent(A)
 			return
 
 		var/list/cur_pos = src.get_global_map_pos()
@@ -223,7 +223,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 				A.loc.Entered(A)
 	else if (src.y <= 1)
 		if(istype(A, /obj/effect/meteor))
-			qdel(A)
+			spent(A)
 			return
 		var/list/cur_pos = src.get_global_map_pos()
 		if(!cur_pos) return
@@ -240,7 +240,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 
 	else if (src.y >= world.maxy)
 		if(istype(A, /obj/effect/meteor)||istype(A, /obj/effect/space_dust))
-			qdel(A)
+			spent(A)
 			return
 		var/list/cur_pos = src.get_global_map_pos()
 		if(!cur_pos) return

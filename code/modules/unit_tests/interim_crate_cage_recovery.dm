@@ -34,7 +34,7 @@
 	TEST_ASSERT(vehicle in cage.slot_contents(CONTAINER_SLOT_VEHICLE_CAGE), "actual loading registers the vehicle in the declared cage slot")
 	TEST_ASSERT_EQUAL(cage.paint_color, vehicle.paint_color, "actual loading copies the vehicle paint")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/material/steel)), 0, "the floor starts without returned steel")
-	cage.tool_disassemble_tool_done(user, tool)
+	test_op_handler(cage, "taken_apart", user, tool)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(cage), "actual tool completion consumes the cage")
 	TEST_ASSERT(!QDELETED(vehicle), "the original loaded vehicle survives disassembly")

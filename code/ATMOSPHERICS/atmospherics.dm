@@ -285,8 +285,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 			var/obj/item/pipe/trinary/flippable/flip = I
 			flip.icon_state = "[flip.icon_state][flip.mirrored ? "m" : ""]"
 		transfer_fingerprints_to(I)
-	// ALLOW(lifecycle): the deconstructed device leaves the pipe item built above in its place
-	qdel(src)
+	destroyed(src)
 
 // Return the neighboring nodes whose physical links must be refreshed during construction.
 /obj/machinery/atmospherics/proc/get_neighbor_nodes_for_init()

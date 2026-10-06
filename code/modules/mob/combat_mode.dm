@@ -166,8 +166,12 @@
 	var/off_state = "intent_help"
 	var/on_state = "intent_harm"
 
-/atom/movable/screen/combat_mode/Click(location, control, params)
-	return toggle_combat_mode_with_actor(usr) // ALLOW(sys_usr_outside_verb): native HUD Click supplies the initiating mob for the combat toggle
+CAPABILITIES(/atom/movable/screen/combat_mode)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/combat_mode/proc/click_input(datum/act/input/A)
+	return toggle_combat_mode_with_actor(A.actor)
 
 /atom/movable/screen/combat_mode/proc/toggle_combat_mode_with_actor(mob/user)
 	if(user)

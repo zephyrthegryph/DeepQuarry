@@ -10,8 +10,8 @@
 
 /mob/living/carbon/brain/gib()
 	if(istype(container, /obj/item/mmi))
-		qdel(container)//Gets rid of the MMI if there is one
+		destroyed(container)//Gets rid of the MMI if there is one
 	if(loc)
 		if(istype(loc,/obj/item/organ/internal/brain))
-			qdel(loc)//Gets rid of the brain item
+			destroyed(loc)//Gets rid of the brain item
 	..(null,1)

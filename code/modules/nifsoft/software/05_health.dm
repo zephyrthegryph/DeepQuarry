@@ -52,7 +52,7 @@
 				var/turf/T = get_turf(H)
 				var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 				a.autosay("[H.real_name] has been put in emergency stasis, located at ([T.x],[T.y],[T.z])!", "[H.real_name]'s NIF", "Medical")
-				qdel(a)
+				spent(a)
 
 		//Handle the actions in each mode
 
@@ -137,7 +137,7 @@
 						var/turf/T = get_turf(S)
 						var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 						a.autosay("[S.real_name] is in critical condition, located at ([T.x],[T.y],[T.z])!", "[S.real_name]'s NIF", "Medical")
-						qdel(a)
+						spent(a)
 
 		/* //Chomp Comment out, using our solution instead of their backport and edit of our solution.
 		if(mode == 2 && HP_percent < -0.4) //lets inform someone who might be able to help us that we got toasted and roasted
@@ -147,7 +147,7 @@
 				var/turf/T = get_turf(S)
 				var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 				a.autosay("[S.real_name] is in a critical condition, located at ([T.x],[T.y],[T.z])!", "[S.real_name]'s NIF", "Medical")
-				qdel(a)
+				spent(a)
 		*/ //Chomp comment out END
 
 		return TRUE

@@ -71,4 +71,4 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 	return
 
 /datum/spell/aoe_turf/conjure/proc/conjure_animation(atom/movable/overlay/animation, turf/target)
-	qdel(animation)
+	spent(animation)

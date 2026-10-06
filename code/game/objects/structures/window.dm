@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 		if(isliving(G?.grab_target()))
 			var/mob/living/M = G?.grab_target()
 			var/state = G.state
-			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
+			consumed(W, src)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
@@ -619,13 +619,20 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 		rel_set(multitool, nameof(multitool.connectable), src)
 		multitool.update_icon()
 
-/obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)
+MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
+
+CAPABILITIES(/obj/machinery/button/windowtint)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(windowtint/wires_cut)), then(PROC_REF(wires_cut)))
+
+/// The cutters through an open panel: the wires come out and the button comes off the wall.
+/obj/machinery/button/windowtint/proc/wires_cut(datum/act/op/A)
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
+		return OP_DECLINE // a shut panel: the cutters go on to the legacy tool handling, as before
 	playsound(src, tool.usesound, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	dismantle()
+	return OP_OK
 
 /* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/structure/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -637,7 +644,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			spent(src, user)
 			return TRUE
 	return FALSE
 */

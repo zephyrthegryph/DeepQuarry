@@ -53,3 +53,5 @@ interact /obj/item/teleportation_scroll request_in_effect
 interact /obj/item/hand_tele request_in_effect
 interact /obj/item/poi/broken_drone_circuit unknown_read
 interact /obj/item/toy/acorn_branch unknown_read
+# A question opened from the emag handler: asks() on the op, by hand.
+emag /obj/item/sleevemate request_in_effect

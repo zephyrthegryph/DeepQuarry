@@ -170,7 +170,7 @@ CAPABILITIES(/obj/item/robotanalyzer)
 		return
 	user.show_message(D.render_chat(), 1)
 	log_diagnosis(user, M, D)
-	qdel(D)
+	spent(D, M)
 
 /// One upgrade line of the upgrade scan, from the upgrade's own detection.
 /obj/item/robotanalyzer/proc/show_upgrade_line(mob/user, mob/living/silicon/robot/R, upgrade_type, upgrade_name)

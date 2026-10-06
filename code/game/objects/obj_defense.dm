@@ -122,8 +122,7 @@
 		item.forceMove(get_turf(src))
 
 	//delete our self
-	// ALLOW(lifecycle): this is the generic deconstruct once the debris has dropped
-	qdel(src)
+	destroyed(src)
 
 ///what happens when the obj's integrity reaches zero.
 /// Destruction (damage.md §6): debris entries first, then each slot's drop policy.

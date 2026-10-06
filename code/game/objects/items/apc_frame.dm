@@ -42,7 +42,7 @@ MSG_DEF_SELF(apc_frame/cut_terminal, "You cut the cables and disassemble the unu
 	for(var/obj/machinery/power/terminal/T in turf_contents_of_type(spot, /obj/machinery/power/terminal))
 		new /obj/item/stack/cable_coil(spot, 10)
 		op_tell(user, /datum/msg/apc_frame/cut_terminal)
-		qdel(T)
+		spent(T)
 	user.drop_from_inventory(src, spot) // built on the wall, not in the hand: replace_with() hands the successor the original's slot
 	replace_with(src, /obj/machinery/power/apc, mount_dir(A.target, user), TRUE)
 	return OP_OK

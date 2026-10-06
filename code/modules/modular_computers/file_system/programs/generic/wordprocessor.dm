@@ -44,15 +44,15 @@
 	if(!HDD)
 		return
 	if(!HDD.remove_file(F))
-		qdel(backup)
+		spent(backup)
 		return 0
 	F.stored_data = loaded_data
 	F.calculate_size()
 	if(!HDD.store_file(F))
 		HDD.store_file(backup)
-		qdel(F) // detached by remove_file() and not stored again
+		spent(F) // detached by remove_file() and not stored again
 		return 0
-	qdel(backup)
+	spent(backup)
 	set_is_edited(0)
 	return TRUE
 

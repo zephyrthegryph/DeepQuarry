@@ -6,7 +6,7 @@
 	// Exercise the actual probability table with deterministic edge chances, without replacing its effect.
 	wreck.salvageable_parts = list(/obj/item/stock_parts/console_screen = 100, /obj/item/stock_parts/capacitor = 0)
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/structure/frame)), 0, "the wreck starts without a returned machine frame")
-	wreck.crowbar_act_timed_done(user)
+	test_op_handler(wreck, "salvaged", user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(wreck), "actual salvage completion immediately consumes the broken machine")
 	TEST_ASSERT_NULL(locate_within(T, /obj/structure/salvageable/machine), "salvage leaves no duplicate broken machine")

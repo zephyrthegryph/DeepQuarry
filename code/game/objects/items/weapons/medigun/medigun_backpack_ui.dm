@@ -26,7 +26,7 @@
 		patienthealth = H.vitality()
 		var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/automation)
 		patientdiagnosis = D?.report_data()
-		qdel(D)
+		spent(D)
 		patientstatus = H.stat
 		if(H.vessel)
 			bloodData["volume"] = round(H.vessel.get_reagent_amount("blood"))

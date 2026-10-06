@@ -158,7 +158,7 @@
 		var/datum/config_entry/test = _entries[esname]
 		if(test)
 			log_config_error("Error: [test.type] has the same name as [E.type]: [esname]! Not initializing [E.type]!")
-			qdel(E)
+			spent(E)
 			continue
 		_entries[esname] = E
 		_entries_by_type[I] = E

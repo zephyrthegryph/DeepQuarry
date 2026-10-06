@@ -42,7 +42,7 @@ TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 			for(var/obj/item/ore/ore in range(1, src))
 				if(ore.Adjacent(src) && ((get_dir(src, ore) & dir) || ore.loc == loc)) //we can reach it and it's in front of us? grab it!
 					ore_box.stored_ore[ore.material]++
-					qdel(ore)
+					spent(ore)
 
 
 /obj/mecha/working/ripley/firefighter
@@ -99,7 +99,7 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 	var/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/HC = new /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp
 	HC.attach(src)
 	for(var/obj/item/mecha_parts/mecha_tracking/B in slot_contents())//Deletes the beacon so it can't be found easily
-		qdel (B)
+		spent(B)
 
 /obj/mecha/working/ripley/antique
 	name = "APLU \"Geiger\""

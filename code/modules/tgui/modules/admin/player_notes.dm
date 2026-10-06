@@ -13,8 +13,7 @@
 /datum/tgui_module/player_notes/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
-		// ALLOW(lifecycle): the notes window lives only while it is open
-		qdel(src)
+		spent(src, user)
 
 /datum/tgui_module/player_notes/proc/filter_ckeys(page, filter, mob/user)
 	var/savefile/S=new("data/player_notes.sav")
@@ -121,8 +120,7 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 /datum/tgui_module/player_notes_info/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
-		// ALLOW(lifecycle): the notes window lives only while it is open
-		qdel(src)
+		spent(src, user)
 
 CAPABILITIES(/datum/tgui_module/player_notes_info)
 	interface("PlayerNotesInfo", rights = R_ADMIN|R_MOD|R_EVENT|R_DEBUG)

@@ -464,7 +464,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	// other_deleted = DELETE_ME: the holders go with D, once every view naming D is cleared.
 	for(var/datum/S as anything in doomed)
 		if(!QDELETED(S))
-			qdel(S) // ALLOW(lifecycle): rel_one/rel_many(other_deleted = DELETE_ME)
+			spent(S)
 	var/datum/own_table/T = own_table_of(D)
 	for(var/var_name in T.ref_vars)
 		var/value = D.vars[var_name]

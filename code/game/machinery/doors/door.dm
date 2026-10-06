@@ -517,7 +517,7 @@ CAPABILITIES(/obj/machinery/door)
 	// LINDA type so doors still extinguish fire underneath when they close.
 	var/obj/effect/hotspot/hotspot = locate_within(loc, /obj/effect/hotspot)
 	if(hotspot)
-		qdel(hotspot)
+		spent(hotspot)
 
 	return TRUE
 

@@ -8,12 +8,13 @@
 	anchored = 1.0
 	density = 0
 
-// ALLOW(init/INSTANCE_STATE): pixel_x, pixel_y and icon_state rolled at random for each instance
-/obj/structure/event/present/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-10,10)
-	pixel_y = rand(-10,10)
-	icon_state = "gift[pick("1", "2", "3")]_[pick("g", "r", "b", "y", "p")]"
+CAPABILITIES(/obj/structure/event/present)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/event/present/proc/roll_icon_state(datum/roller/R)
+	return "gift[R.choose(list("1", "2", "3"))]_[R.choose(list("g", "r", "b", "y", "p"))]"
 
 /obj/structure/event/santa_sack
 

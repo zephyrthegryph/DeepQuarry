@@ -115,7 +115,7 @@
 		to_file(file(filename), json_encode(to_store))
 
 /datum/persistent/proc/RemoveValue(atom/value)
-	qdel(value)
+	spent(value)
 
 /datum/persistent/proc/GetAdminSummary(mob/user, can_modify)
 	var/list/my_tracks = SSpersistence.tracking_values[type]

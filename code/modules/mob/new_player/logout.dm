@@ -11,9 +11,8 @@
 
 	if(!spawning)//Here so that if they are spawning and log out, the other procs can play out and they will have a mob to come back to.
 		key = null//We null their key before deleting the mob, so they are properly kicked out.
-		qdel(mind) // mind is a relation view: the framework clears it as the mind dies
-		// ALLOW(lifecycle): the lobby mob is discarded when its player logs out
-		qdel(src)
+		spent(mind) // mind is a relation view: the framework clears it as the mind dies
+		spent(src)
 	return
 
 /mob/new_player/proc/disable_lobby_browser()

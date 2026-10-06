@@ -38,7 +38,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		. += span_notice("Vitals of [victim()]:")
 		var/datum/diagnosis/D = victim().diagnose(/datum/diagnostic_profile/vitals_monitor)
 		var/vitals_text = D?.render_vitals_text()
-		qdel(D)
+		spent(D, user)
 		if(vitals_text)
 			. += span_notice(vitals_text)
 

@@ -44,7 +44,7 @@
 /obj/item/spell/projectile/var/shot_ready = FALSE
 
 /obj/item/spell/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
-	qdel(target_image)
+	spent(target_image, user)
 	if(!owner_ref())
 		return // We got dropped before the firing occured.
 	shot_ready = TRUE

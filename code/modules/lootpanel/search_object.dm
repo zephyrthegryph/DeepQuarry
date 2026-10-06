@@ -67,8 +67,7 @@
 	if(QDELETED(src))
 		return
 
-	// ALLOW(lifecycle): the loot panel entry ends when its item moves
-	qdel(src)
+	spent(src)
 
 /// Parent tile has been altered, entire search needs reset
 /datum/search_object/proc/on_turf_change(datum/act/notice/A)

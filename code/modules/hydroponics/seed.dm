@@ -274,7 +274,7 @@
 			splatter(T,thrown)
 		if(origin_turf)
 			origin_turf.visible_message(span_danger("The [thrown.name] explodes!"))
-		qdel(thrown)
+		destroyed(thrown)
 		return
 
 	if(isliving(target))
@@ -288,7 +288,7 @@
 		splatter(origin_turf,thrown)
 		if(origin_turf)
 			origin_turf.visible_message(span_danger("The [thrown.name] splatters against [target]!"))
-		qdel(thrown)
+		destroyed(thrown)
 
 /datum/seed/proc/handle_environment(turf/current_turf, datum/gas_mixture/environment, light_supplied, check_only)
 

@@ -95,7 +95,7 @@ SYSTEM_DEF(pois)
 			for(var/turf/T in turfs_to_clean)
 				for(var/atom/movable/AM in contents_of(T))
 					//++deleted_atoms
-					qdel(AM)
+					spent(AM)
 
 /// Picks the template a POI loader places and clears its footprint. Null when there is nothing to place.
 /datum/system/pois/proc/prepare_poi(obj/effect/landmark/poi_loader/poi_to_load)
@@ -145,7 +145,7 @@ SYSTEM_DEF(pois)
 		return
 	// Actually load it
 	template_to_use.load(T)
-	qdel(poi_to_load)
+	consumed(poi_to_load, src)
 
 /// load_poi() as a job. TRUE when the load is pending: poi_loaded() runs when it finishes.
 /datum/system/pois/proc/load_poi_async(obj/effect/landmark/poi_loader/poi_to_load)

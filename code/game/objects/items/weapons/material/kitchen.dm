@@ -23,11 +23,12 @@
 
 DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 
-// ALLOW(init/INSTANCE_STATE): pixel_y rolled at random for each instance
-/obj/item/material/kitchen/utensil/Initialize(mapload)
-	. = ..()
-	if (prob(60))
-		src.pixel_y = rand(0, 4)
+CAPABILITIES(/obj/item/material/kitchen/utensil)
+	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
+	return R.chance(60) ? R.number(0, 4) : pixel_y
 
 DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/kitchen/utensil/appearance_overlays()

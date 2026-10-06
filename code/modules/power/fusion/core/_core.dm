@@ -189,7 +189,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 		material_sample.forceMove(src)
 	if(round(old_fusion_strength / 25) != round((LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0) / 25))
 		visible_message(span_notice("Colored bands crawl across [src]'s sample cradle as the fusion field changes the stock's lattice."))
-	qdel(batch)
+	spent(batch)
 
 /obj/machinery/power/fusion_core/proc/jumpstart(field_temperature)
 	field_strength = 501 // Generally a good size.

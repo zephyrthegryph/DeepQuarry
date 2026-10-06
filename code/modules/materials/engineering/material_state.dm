@@ -200,7 +200,7 @@ CAPABILITIES(/datum/material_build)
 		if(!record)
 			continue
 		LAZYREMOVE(O.cap_data, key)
-		qdel(record) // ALLOW(lifecycle): a material record is a plain datum in the holder's cap_data with no slot of its own; the lifecycle verbs only take atoms
+		spent(record)
 
 /// The material an item was engineered from (the /obj/item compatibility field), or null.
 /proc/material_engineered_id(obj/item/I)

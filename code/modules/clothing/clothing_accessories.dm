@@ -55,8 +55,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 			return TRUE
 	return FALSE
 
-/obj/item/clothing/MouseDrop(obj/over_object)
-	return drop_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native clothing drag supplies its actor without invoking parent input routing.
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/clothing/proc/mousedrop_input(datum/act/input/A)
+	return drop_with_actor(A.actor, A.over)
 
 /obj/item/clothing/proc/drop_with_actor(mob/user, obj/over_object)
 	if (over_object && (ishuman(user) || issmall(user)))

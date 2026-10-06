@@ -323,7 +323,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 		occupantData["critical"] = occupant.is_critical()
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
-		qdel(D)
+		spent(D)
 		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.body_temperature()

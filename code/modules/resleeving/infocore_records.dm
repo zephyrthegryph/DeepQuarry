@@ -367,7 +367,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == H.identity())
 				host.release_mind(H, "regrown body reclaimed its brain")
-				qdel(CH)
+				spent(CH, H)
 				break
 
 	// Traitgenes Disable all traits currently active, before species.produceCopy() applies them during updatednastate(). Relevant here as genetraits may not match prior dna!

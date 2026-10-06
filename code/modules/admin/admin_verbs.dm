@@ -731,7 +731,7 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	if(!istype(to_remove))
 		return
 
-	qdel(to_remove)
+	spent(to_remove)
 	log_admin("[key_name(user)] removed the spell [chosen_spell] from [key_name(removal_target)].")
 	message_admins("[key_name_admin(user)] removed the spell [chosen_spell] from [key_name_admin(removal_target)].")
 	feedback_add_details("admin_verb","RS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -950,7 +950,7 @@ ADMIN_VERB(removetickets, R_ADMIN, "Security Tickets", "Allows one to remove tic
 			log_and_message_admins("removed a security ticket from the global list: \"[input]\"", user)
 
 	else
-		tgui_alert_async(user, "The ticket list is empty.","Empty")
+		open_request(user.mob, /datum/prompt/choice/security_ticket_empty_notification, null, answerer = user.mob, question = "The ticket list is empty.", title = "Empty", choices = list("Ok"))
 
 ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the database.", ADMIN_CATEGORY_GAME)
 	var/obj/machinery/librarycomp/our_comp
@@ -1289,3 +1289,11 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	if(!user)
 		return
 	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/security_ticket_empty_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/security_ticket_empty_notification/recheck_extra()
+	return answerer?.client ? null : "gone"

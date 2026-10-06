@@ -62,7 +62,7 @@
 	var/obj/item/storage/secure/briefcase/sec_briefcase = new(H)
 	sec_briefcase.latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/briefcase_item in sec_briefcase) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		qdel(briefcase_item)
+		spent(briefcase_item, H)
 	for(var/i=3, i>0, i--)
 		new /obj/item/spacecash/c1000(sec_briefcase)
 	new /obj/item/gun/energy/crossbow(sec_briefcase)

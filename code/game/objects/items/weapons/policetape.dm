@@ -406,7 +406,7 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 		if(T == src)
 			continue
 		if(T.tape_dir & get_dir(T, src))
-			qdel(T)
+			destroyed(T, user)
 
 	consume(src, user) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
 	return

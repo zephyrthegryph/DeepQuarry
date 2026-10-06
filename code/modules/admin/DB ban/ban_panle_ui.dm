@@ -24,8 +24,7 @@
 /datum/tgui_ban_panel/tgui_close()
 	rel_clear(src, nameof(holder))
 	rel_clear(src, nameof(admin_datum))
-	// ALLOW(lifecycle): the ban panel lives only while its window is open
-	qdel(src)
+	spent(src)
 
 CAPABILITIES(/datum/tgui_ban_panel)
 	interface("BanPanel", title = "Ban Panel", rights = R_BAN)
@@ -111,7 +110,7 @@ CAPABILITIES(/datum/tgui_ban_panel)
 
 	admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid, FALSE, user)
 	if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
-		qdel(playermob.client)
+		spent(playermob.client)
 
 	return TRUE
 

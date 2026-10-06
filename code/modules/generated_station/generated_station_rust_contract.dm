@@ -29,7 +29,7 @@ GLOBAL_LIST_INIT(generated_station_rust_room_role_table_default, list("reception
 		"security_tier" = prng.next_range(1, 3),
 		"size_class" = width * height < 3600 ? "compact" : (width * height > 6400 ? "large" : "standard"),
 	)
-	qdel(prng)
+	spent(prng)
 	return metadata
 
 /// Builds the authoritative fixture registry without stringifying type paths.
@@ -49,9 +49,9 @@ GLOBAL_LIST_INIT(generated_station_rust_room_role_table_default, list("reception
 					var/datum/generated_room_feature/feature = new feature_type
 					if(feature.id && feature.atom_type)
 						registry[feature.id] = feature.atom_type
-					qdel(feature)
-				qdel(fragment)
-			qdel(definition)
+					spent(feature)
+				spent(fragment)
+			spent(definition)
 	QDEL_LIST(catalog)
 	return registry
 
@@ -154,7 +154,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 						"icon_file" = "[initial(preview_atom_type.icon)]",
 						"icon_state" = "[initial(preview_atom_type.icon_state)]",
 					))
-					qdel(feature)
+					spent(feature)
 				fragments += list(list(
 					"id" = fragment.id,
 					"width" = fragment.width,
@@ -166,7 +166,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 					"occupied_offsets" = fragment.occupied_offsets.Copy(),
 					"features" = features,
 				))
-				qdel(fragment)
+				spent(fragment)
 			rooms += list(list(
 				"id" = "[department.id]-[role]",
 				"department_id" = department.id,
@@ -232,7 +232,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 				"aesthetic_id" = definition.room_style.aesthetic_id,
 				"fragments" = list(),
 			))
-			qdel(definition)
+			spent(definition)
 	var/list/settings = list(
 		"hull_thickness" = 1,
 		"corridor_width" = 2,
@@ -409,10 +409,10 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 				room_definition = generated_compact_room_definition_for(room_department.definition().id, row["role"])
 			else if(row["definition_id"] == "[room_department.definition().id]-micro-[row["role"]]")
 				room_definition = generated_micro_room_definition_for(room_department.definition().id, row["role"])
-			qdel(full_definition)
+			spent(full_definition)
 		var/list/allowed_roles = room_department ? generated_station_rust_room_roles(room_department.definition().id) : list()
 		var/valid_room_definition = room_definition && (row["role"] in allowed_roles) && room_definition.id == row["definition_id"]
-		qdel(room_definition)
+		spent(room_definition)
 		if(!istext(id) || !length(id))
 			return generated_station_rust_decode_failure(spec, errors, "Room record has no valid ID.")
 		if(rooms[id])
@@ -434,7 +434,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 	var/list/tile_zones = list()
 	var/list/tile_flags = list()
 	if(!generated_station_rust_decode_tiles(spec, tile_rows, nodes, rooms, errors, tile_classes, tile_owners, tile_zones, tile_flags))
-		qdel(spec)
+		spent(spec)
 		return null
 	var/list/door_ids = list()
 	var/list/door_coordinates = list()
@@ -500,17 +500,17 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			edge.path += list(list(point[1], point[2]))
 		rel_add(spec, nameof(spec.layout_edges), edge)
 	if(!generated_station_rust_decode_content(spec, rooms, content_room_rows, fixture_rows, network_rows, root["content_quality"], errors))
-		qdel(spec)
+		spent(spec)
 		return null
 	var/datum/generated_station_validation_result/validation = spec.validate()
 	if(!validation.is_valid())
 		for(var/datum/generated_station_validation_issue/issue in validation.issues)
 			if(issue.severity == GENERATED_STATION_ISSUE_ERROR)
 				errors += "[issue.code]@[issue.subject_id]: [issue.message]"
-		qdel(validation)
-		qdel(spec)
+		spent(validation)
+		spent(spec)
 		return null
-	qdel(validation)
+	spent(validation)
 	return spec
 
 /proc/generated_station_rust_content_direction(value)
@@ -585,7 +585,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		fixture.blocks_movement = !!row["blocks_movement"]
 		for(var/list/access_point in row["required_access"])
 			if(!generated_station_rust_content_point_valid(access_point, spec.grid_width, spec.grid_height))
-				qdel(fixture)
+				spent(fixture)
 				errors += "Rust fixture [row["id"]] has invalid access coordinates."
 				return FALSE
 			fixture.required_access["[access_point["x"] + 1],[access_point["y"] + 1]"] = TRUE
@@ -600,13 +600,13 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		network.kind = row["kind"]
 		for(var/list/point in row["backbone"])
 			if(!generated_station_rust_content_point_valid(point, spec.grid_width, spec.grid_height))
-				qdel(network)
+				spent(network)
 				errors += "Rust network [row["id"]] has invalid backbone coordinates."
 				return FALSE
 			network.backbone += list(list(point["x"] + 1, point["y"] + 1))
 		for(var/fixture_id in row["endpoint_fixture_ids"])
 			if(!fixture_ids_seen["[fixture_id]"])
-				qdel(network)
+				spent(network)
 				errors += "Rust network [row["id"]] references an unknown endpoint fixture."
 				return FALSE
 			network.endpoint_fixture_ids += fixture_id
@@ -706,7 +706,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 
 /proc/generated_station_rust_decode_failure(datum/generated_station_spec/spec, list/errors, message)
 	errors += message
-	qdel(spec)
+	spent(spec)
 	return null
 
 #undef GENERATED_STATION_RUST_SCHEMA

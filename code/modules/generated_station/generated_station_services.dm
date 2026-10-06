@@ -138,8 +138,8 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 				var/datum/generated_room_definition/first_definition = generated_room_definition_for(department_id, roles[1])
 				var/datum/generated_room_definition/second_definition = generated_room_definition_for(department_id, roles[2])
 				if(!first_definition || !second_definition)
-					qdel(first_definition)
-					qdel(second_definition)
+					spent(first_definition)
+					spent(second_definition)
 					continue
 				var/first_span = first_size - (shape_shift < 0)
 				var/second_span = second_size - (shape_shift > 0)
@@ -149,8 +149,8 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 				var/second_height = split_vertical ? interior_height : second_span
 				var/valid = first_definition.accepts_dimensions(first_width, first_height) && second_definition.accepts_dimensions(second_width, second_height)
 				var/score = valid ? first_definition.dimension_score(first_width, first_height) + second_definition.dimension_score(second_width, second_height) + (shape_shift ? 2 : 0) : -1
-				qdel(first_definition)
-				qdel(second_definition)
+				spent(first_definition)
+				spent(second_definition)
 				if(score < 0 || (best && score <= best[3]))
 					continue
 				best = list(split_vertical, first_size, score, shape_shift)
@@ -291,14 +291,14 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 		var/room_width = room_bounds[3] - room_bounds[1] + 1
 		var/room_height = room_bounds[4] - room_bounds[2] + 1
 		if(!definition?.accepts_dimensions(room_width, room_height))
-			qdel(definition)
+			spent(definition)
 			for(var/datum/generated_station_module/failed_module as anything in department_modules)
 				if(!own_remove(result, nameof(result.modules), failed_module))
-					qdel(failed_module) // ALLOW(lifecycle): a planned module the failed result never adopted
+					spent(failed_module)
 			department_modules.Cut()
 			return FALSE
 		var/has_authored_fragment = length(definition.fragment_options)
-		qdel(definition)
+		spent(definition)
 		var/datum/generated_station_module/module = new
 		module.id = "[node.id]-[role]-[i <= length(roles) ? 1 : 2]"
 		module.department_node_id = node.id

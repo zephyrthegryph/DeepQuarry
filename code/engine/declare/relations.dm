@@ -85,6 +85,7 @@
  */
 /proc/starts_make(datum/holder, starts, list/starts_args, loc)
 	. = list()
+	starts_args = starts_args_resolve(holder, starts_args) // OWNER is the holder (code/engine/lifeforms/contents.dm)
 	if(istype(starts, /datum/entry))
 		var/datum/entry/inner = starts
 		switch(inner.kind)

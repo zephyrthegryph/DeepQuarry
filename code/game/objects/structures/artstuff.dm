@@ -445,6 +445,7 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 
 CAPABILITIES(/obj/structure/sign/painting)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -455,11 +456,12 @@ CAPABILITIES(/obj/structure/sign/painting)
 		try_rename(user)
 	return TRUE
 
-/obj/structure/sign/painting/wirecutter_act(mob/user, obj/item/I)
+/obj/structure/sign/painting/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(current_canvas)
 		unframe_canvas(user)
-		return TRUE
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/structure/sign/painting/examine(mob/user)
 	. = ..()

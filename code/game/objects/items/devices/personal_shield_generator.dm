@@ -41,6 +41,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -82,10 +83,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		if(bcell.rigged)
 			. += "A red flashing 'WARNING' is visible on the display, noting that the cell is unstable and requires replacement."
 
-DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield_generator_emp))
-/// An EMP on a running shield may burn or corrupt its cell.
-/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/damage_packet/packet)
-	var/severity = packet.severity
+/// An EMP on a running shield may burn or corrupt its cell (on_notice in its CAPABILITIES).
+/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	if(bcell && shield_active)
 		switch(severity)
 			if(1) //Point blank EMP shots have a good chance of burning the cell charge.

@@ -360,7 +360,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 		return 1
 	if(folder == "Deleted")
 		rel_remove(current_account(), nameof(/datum/computer_file/data/email_account::deleted), M)
-		qdel(M)
+		spent(M)
 	else
 		var/datum/computer_file/data/email_account/mailbox = current_account()
 		rel_add(mailbox, nameof(/datum/computer_file/data/email_account::deleted), M)

@@ -48,4 +48,4 @@
 	heat_set(lowertemp, max(min(lowertemp_temperature - 2000, lowertemp_temperature / 2), 0), HEAT_SOURCE_REACTION)
 	lowertemp.react()
 	T.assume_air(lowertemp)
-	qdel(hotspot)
+	spent(hotspot)

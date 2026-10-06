@@ -251,7 +251,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 			B.dismantle()
 		else if(istype(A,/obj/structure/grille))
 			visible_message(span_warning("\The [A] crumples under the force of the impact!"))
-			qdel(A)
+			consumed(A, src)
 		else if(istype(A, /turf/simulated/wall))
 			var/turf/simulated/wall/W = A
 			if(W.density)

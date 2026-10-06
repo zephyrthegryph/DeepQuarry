@@ -251,7 +251,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	for (var/obj/machinery/containment_field/F as anything in fields?.Copy())
 		if (QDELETED(F))
 			continue
-		qdel(F)
+		spent(F)
 	for(var/obj/machinery/field_generator/FG as anything in connected_gens?.Copy())
 		rel_remove(src, nameof(connected_gens), FG) // symmetric: FG forgets us too
 		if (QDELETED(FG))

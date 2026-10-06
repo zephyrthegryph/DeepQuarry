@@ -32,7 +32,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	var/datum/hose_connector/HC = new connector_type()
 	if(!HC.attach(src, set_unique_name))
 		log_world("hose_connector: [connector_type] refused carrier [src] ([type])")
-		qdel(HC)
+		spent(HC)
 		return null
 	return HC
 
@@ -73,7 +73,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 /datum/hose_connector/lifecycle_prerelease()
 	..()
 	if(my_hose)
-		qdel(my_hose)
+		spent(my_hose)
 	if(carrier)
 		revoke(carrier, granted_verb(/atom/proc/disconnect_hose), src)
 		// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
@@ -135,7 +135,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	if(carrier.Adjacent(user))
 		act_message(user, carrier, others = "%U% disconnects \the hose from %T%.")
 		my_hose.disconnect(user)
-		qdel(my_hose) // the hose is shared by both ends; its death clears both views
+		spent(my_hose, user) // the hose is shared by both ends; its death clears both views
 
 /datum/hose_connector/proc/connect(datum/hose/H = null)
 	rel_set(src, nameof(my_hose), H)

@@ -70,7 +70,7 @@
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 		client.screen -= alert
-	qdel(alert)
+	spent(alert)
 
 /atom/movable/screen/alert
 	icon = 'icons/mob/screen_alert.dmi'
@@ -83,11 +83,12 @@
 	var/alerttooltipstyle = ""
 	var/no_underlay // Don't underlay the UI style's blank template icon under this
 
-/atom/movable/screen/alert/MouseEntered(location,control,params)
-	openToolTip(usr, src, params, title = name, content = desc, theme = alerttooltipstyle)
+CAPABILITIES(/atom/movable/screen/alert)
+	tooltip(PROC_REF(input_tooltip), theme = nameof(alerttooltipstyle))
 
-/atom/movable/screen/alert/MouseExited()
-	closeToolTip(usr, src)
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
 //Gas alerts
 /atom/movable/screen/alert/not_enough_oxy
@@ -270,8 +271,12 @@ or something covering your eyes."
 If you're feeling frisky, right click on yourself and select \"Remove embedded object\" to pull the object out."
 	icon_state = "embeddedobject"
 
-/atom/movable/screen/alert/embeddedobject/Click()
-	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native embedded-object alert captures its actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/alert/embeddedobject)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/embeddedobject/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/alert/embeddedobject/click_with_actor(mob/user, location, control, params)
 	if(isliving(user))
@@ -296,8 +301,12 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 	desc = "You're on fire. Stop, drop and roll to put the fire out or move to a vacuum area."
 	icon_state = "fire"
 
-/atom/movable/screen/alert/fire/Click()
-	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native alert click captures its actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/alert/fire)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/fire/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/alert/fire/click_with_actor(mob/user, location, control, params)
 	if(isliving(user))
@@ -393,8 +402,12 @@ so as to remain in compliance with the most up-to-date laws."
 	icon_state = "template"
 	timeout = 300
 
-/atom/movable/screen/alert/notify_cloning/Click()
-	click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native cloning alert captures its actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/alert/notify_cloning)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/notify_cloning/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/alert/notify_cloning/click_with_actor(mob/user, location, control, params)
 	if(!user || !user.client) return
@@ -415,8 +428,12 @@ so as to remain in compliance with the most up-to-date laws."
 	name = "Legcuffed"
 	desc = "You're legcuffed, which slows you down considerably. Click the alert to free yourself."
 
-/atom/movable/screen/alert/restrained/Click()
-	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native alert click captures its actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/alert/restrained)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/restrained/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/alert/restrained/click_with_actor(mob/user, location, control, params)
 	if(isliving(user))
@@ -429,8 +446,12 @@ so as to remain in compliance with the most up-to-date laws."
 	desc = "A Administrator would like to chat with you. \
 	Click here to begin."
 
-/atom/movable/screen/alert/open_ticket/Click()
-	click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native ticket alert captures its actor without adding parent input routing.
+CAPABILITIES(/atom/movable/screen/alert/open_ticket)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/open_ticket/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
 
 /atom/movable/screen/alert/open_ticket/click_with_actor(mob/user, location, control, params)
 	if(!user || !user.client) return

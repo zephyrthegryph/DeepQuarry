@@ -67,7 +67,7 @@ CAPABILITIES(/datum/prompt/text/mob_type)
 
 	if(!M || !ismob(M))
 		to_chat(src, "Type path is not a mob (new_type = [new_type]) in change_mob_type(). Contact a coder.")
-		qdel(M)
+		spent(M)
 		return
 
 	if( istext(new_name) )

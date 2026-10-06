@@ -2423,10 +2423,8 @@ CAPABILITIES(/obj/item/toy/russian_revolver)
 	max_shots = 1
 	var/fake_bullets = 0
 
-// ALLOW(init/INSTANCE_STATE): fake_bullets rolled at random for each instance
-/obj/item/toy/russian_revolver/trick_revolver/Initialize(mapload)
-	. = ..()
-	fake_bullets = rand(2, 7)
+CAPABILITIES(/obj/item/toy/russian_revolver/trick_revolver)
+	rolls(nameof(fake_bullets), range_of(2, 7))
 
 /obj/item/toy/russian_revolver/trick_revolver/examine(mob/user)
 	. = ..()
@@ -2495,15 +2493,15 @@ DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/t
 	var/popped = 0
 	var/real = 0
 
-// ALLOW(init/INSTANCE_STATE): real rolled at random for each instance
-/obj/item/toy/snake_popper/Initialize(mapload)
-	. = ..()
-	if(prob(0.1))
-		real = 1
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/toy/snake_popper/proc/roll_real(datum/roller/R)
+	return R.chance(0.1) ? 1 : real
 
 CAPABILITIES(/obj/item/toy/snake_popper)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	rolls(nameof(real), PROC_REF(roll_real))
 
 /// Old attack_self.
 /obj/item/toy/snake_popper/proc/interaction_self(datum/act/op/A)
@@ -2537,7 +2535,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 	var/obj/O = A.held
 	if(istype(O, /obj/item/toy/plushie/snakeplushie) || !real)
 		if(popped && !real)
-			qdel(O)
+			consumed(O, src)
 			popped = 0
 			icon_state = "tastybread"
 	return OP_PASS
@@ -2570,11 +2568,12 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 		return ITEM_INTERACT_FAILURE
 	return NONE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/toy/snake_popper, PROC_REF(on_emag), null)
-/obj/item/toy/snake_popper/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/toy/snake_popper/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(real != 2)
 		real = 2
 		to_chat(user, span_notice("You short out the bluespace refill system of [src]."))
+	return OP_OK
 
 /*
  * Professor Who universal ID
@@ -2695,6 +2694,7 @@ APPEARANCE_TEMPLATE(/obj/item/toy/desk, "{initial(icon_state)}{on?-on:}")
 CAPABILITIES(/obj/item/toy/desk)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// Old attack_self.
 /obj/item/toy/desk/proc/interaction_self(datum/act/op/A)
@@ -2708,8 +2708,9 @@ CAPABILITIES(/obj/item/toy/desk)
 	activate(user)
 	return TRUE
 
-/obj/item/toy/desk/MouseDrop(mob/user as mob) // Code from Paper bin, so you can still pick up the deck
-	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native tabletop-item drag captures its initiating actor separately from its drop destination.
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/toy/desk/proc/mousedrop_input(datum/act/input/A)
+	return pickup_with_actor(A.actor, A.over)
 
 /obj/item/toy/desk/proc/pickup_with_actor(mob/user, mob/destination)
 	if((user && user == destination && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))

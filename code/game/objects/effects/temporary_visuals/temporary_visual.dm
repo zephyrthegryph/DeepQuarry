@@ -24,8 +24,6 @@
 /obj/effect/temp_visual/dir_setting
 	randomdir = FALSE
 
-// ALLOW(init/CTOR_ARGS): set_dir is a constructor argument from whoever builds it
-/obj/effect/temp_visual/dir_setting/Initialize(mapload, set_dir)
-	if(set_dir)
-		dir = set_dir
-	. = ..()
+CAPABILITIES(/obj/effect/temp_visual/dir_setting)
+	param(nameof(dir), pos = 1)
+

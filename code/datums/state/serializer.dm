@@ -273,8 +273,8 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		if(!probe_ctx.errors)
 			.[name] = encoded
 		probe_ctx.errors = null
-	qdel(probe_ctx)
-	qdel(probe)
+	spent(probe_ctx)
+	spent(probe)
 
 /// Encodes one value. `where` names the var for error messages.
 /datum/state_context/proc/encode_value(value, where)
@@ -406,7 +406,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		return null
 	finish_tree()
 	if(errors)
-		qdel(D)
+		spent(D)
 		return null
 	return D
 
@@ -455,7 +455,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			batch += existing
 		removed += batch
 		for(var/atom/movable/existing as anything in batch)
-			qdel(existing)
+			consumed(existing)
 	while(length(batch))
 	// Vars still pointing at the removed contents were set by Initialize; the
 	// delta sets them again if the saved object had them.

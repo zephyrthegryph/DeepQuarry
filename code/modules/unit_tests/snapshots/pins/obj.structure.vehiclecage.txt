@@ -11,11 +11,13 @@ human|/obj/item/tool/crowbar menu: Load vehicle
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Load vehicle
+human|/obj/item/tool/wrench menu: Take apart
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wrench click: Click: Take apart
+human|/obj/item/tool/wirecutters menu: Cut apart
 human|/obj/item/tool/wirecutters menu: Load vehicle
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/tool/wirecutters click: Click: Cut apart
 human|/obj/item/multitool menu: Load vehicle
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
@@ -32,5 +34,5 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Load vehicle
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-keys: drag, gen_drag_interaction_drag_buckle, hand
+keys: cut_bolts, drag, gen_drag_interaction_drag_buckle, hand, unbolt
 

@@ -29,7 +29,7 @@
 	var/mob/living/silicon/robot/D = task.actor
 	var/mob/M = task.M
 	to_chat(D, span_danger("You carefully and thoroughly decompile [M], storing as much of its resources as you can within yourself."))
-	qdel(M)
+	spent(M)
 	new/obj/effect/decal/cleanable/blood/oil(get_turf(src))
 
 	if(metal)
@@ -57,7 +57,7 @@
 		if(has_trait(M, TRAIT_AMBIENT_PEST_MOB))
 			src.loc.visible_message(span_danger("[src.loc] sucks [M] into its decompiler. There's a horrible crunching noise."),span_danger("It's a bit of a struggle, but you manage to suck [M] into your decompiler. It makes a series of visceral crunching noises."))
 			new/obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-			qdel(M)
+			consumed(M, src)
 			if(wood)
 				wood.add_charge(2000)
 			if(plastic)
@@ -131,7 +131,7 @@
 		else
 			continue
 
-		qdel(W)
+		consumed(W, src)
 		grabbed_something = 1
 
 	if(grabbed_something)

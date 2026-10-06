@@ -70,8 +70,7 @@ CAPABILITIES(/obj/singularity)
 		if(1.0)
 			if(prob(25))
 				investigate_log("has been destroyed by an explosion.", I_SINGULO)
-				// ALLOW(lifecycle): a severe blast destroys the singularity
-				qdel(src)
+				spent(src)
 			else
 				energy += 50
 		if(2.0 to 3.0)
@@ -251,8 +250,7 @@ CAPABILITIES(/obj/singularity)
 /obj/singularity/proc/check_energy()
 	if (energy <= 0)
 		investigate_log("collapsed.", I_SINGULO)
-		// ALLOW(lifecycle): a singularity out of energy collapses
-		qdel(src)
+		spent(src)
 		return 0
 
 	switch (energy) //Some of these numbers might need to be changed up later -Mport.

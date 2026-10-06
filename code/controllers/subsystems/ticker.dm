@@ -266,7 +266,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		//Deleting Startpoints but we need the ai point to AI-ize people later
 		if (S.name != "AI")
-			qdel(S)
+			spent(S)
 
 	if(CONFIG_GET(flag/sql_enabled))
 		statistic_cycle() // Polls population totals regularly and stores them in an SQL DB -- TLE
@@ -381,7 +381,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 			// Created their playable character, delete their /mob/new_player
 			if(new_char)
-				qdel(player)
+				consumed(player)
 				if(new_char.client)
 					new_char.client.init_verbs()
 

@@ -231,8 +231,7 @@ CAPABILITIES(/obj/item/pipe)
 			to_chat(user, span_warning("There's nothing to connect this pipe section to!"))
 		return null
 	transfer_fingerprints_to(M)
-	// ALLOW(lifecycle): the pipe item becomes the pipe it was fastened into
-	qdel(src)
+	spent(src, user)
 	return M
 
 //called when a turf is attacked with a pipe item
@@ -273,7 +272,7 @@ DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_N
 /proc/build_pipe_init_dirs(type, dir)
 	var/obj/machinery/atmospherics/temp = new type(null, dir)
 	. = temp.get_init_dirs()
-	qdel(temp)
+	spent(temp)
 
 //
 // Meters are special - not like any other pipes or components

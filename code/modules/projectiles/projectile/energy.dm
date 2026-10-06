@@ -331,12 +331,8 @@
 	speed = 1.6
 	var/particle_type
 
-// ALLOW(init/CTOR_ARGS): particle is a constructor argument from whoever builds it
-/obj/item/projectile/energy/anomaly/Initialize(mapload, particle)
-	. = ..()
-	if(particle)
-		particle_type = particle
-
+CAPABILITIES(/obj/item/projectile/energy/anomaly)
+	param(nameof(particle_type), pos = 1)
 
 /obj/item/projectile/energy/phase/bolt
 	range = 4

@@ -37,10 +37,8 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	///List of all `/datum/design` stored on the disk.
 	var/list/blueprints
 
-// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
-/obj/item/disk/design_disk/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
+CAPABILITIES(/obj/item/disk/design_disk)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /**
  * Used for special interactions with a techweb when uploading the designs.

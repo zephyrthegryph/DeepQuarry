@@ -48,7 +48,7 @@ ADMIN_VERB(camera_view, R_DEBUG, "Camera Range Display", "Globally changes the c
 		GLOB.camera_range_display_status = TRUE
 
 	for(var/obj/effect/debugging/camera_range/C in REGISTRY_MEMBERS(REGISTRY_DEBUGGING_EFFECTS))
-		qdel(C)
+		spent(C)
 
 	if(GLOB.camera_range_display_status)
 		for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
@@ -58,7 +58,7 @@ ADMIN_VERB(camera_view, R_DEBUG, "Camera Range Display", "Globally changes the c
 ADMIN_VERB_VISIBILITY(sec_camera_report, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(sec_camera_report, R_DEBUG, "Camera Report", "Gives a report of the camera state (Only use on a test server).", ADMIN_CATEGORY_MAPPING_TESTS)
 	if(!SSticker.HasRoundStarted())
-		tgui_alert_async(user,"Game init not ready.","Sec Camera Report")
+		open_request(user.mob, /datum/prompt/choice/mapping_camera_notification, null, answerer = user.mob, question = "Game init not ready.", title = "Sec Camera Report", choices = list("Ok"))
 		return 0
 
 	var/list/obj/machinery/camera/CL = list()
@@ -103,14 +103,14 @@ ADMIN_VERB(intercom_view, R_DEBUG, "Intercom Range Display", "Displays the inter
 		GLOB.intercom_range_display_status = TRUE
 
 	for(var/obj/effect/debugging/marker/M in REGISTRY_MEMBERS(REGISTRY_DEBUGGING_EFFECTS))
-		qdel(M)
+		spent(M)
 
 	if(GLOB.intercom_range_display_status)
 		for(var/obj/item/radio/intercom/I in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			for(var/turf/T in orange(7,I))
 				var/obj/effect/debugging/marker/F = new/obj/effect/debugging/marker(T)
 				if (!(F in view(7,I.loc)))
-					qdel(F)
+					spent(F)
 	feedback_add_details("admin_verb","mIRD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 // deleted ZAS-only admin debug verbs (testZAScolors / testZAScolors_remove /
@@ -234,3 +234,11 @@ ADMIN_VERB(disable_mapping_verbs, R_DEBUG, "Disable Mapping Verbs", "Disable all
 	question = "Which type path?"
 	title = "Path?"
 	var/level
+
+/datum/prompt/choice/mapping_camera_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/mapping_camera_notification/recheck_extra()
+	return answerer?.client ? null : "gone"

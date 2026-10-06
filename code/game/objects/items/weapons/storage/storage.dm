@@ -859,7 +859,7 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 /proc/build_type_storage_cost(path)
 	var/obj/item/probe = new_unmaterialized(path, null)
 	. = probe.get_storage_cost()
-	qdel(probe)
+	spent(probe)
 
 /obj/item/proc/get_storage_cost()
 	if (storage_cost)

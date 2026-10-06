@@ -548,8 +548,7 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 	..()
 
 /obj/item/disk/nuclear/touch_map_edge()
-	// ALLOW(lifecycle): the disk leaves the map at its edge and respawns elsewhere
-	qdel(src)
+	spent(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/nuclearbomb/step_start_condition()

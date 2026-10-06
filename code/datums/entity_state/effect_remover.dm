@@ -47,5 +47,5 @@
 		om_run(on_clear_callback, target, user)
 
 	if(!QDELETED(target))
-		qdel(target)
+		spent(target, user)
 

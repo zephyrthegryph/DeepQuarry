@@ -78,7 +78,7 @@
 		to_chat(gargoyle(), span_warning("You can't transform just yet again! Wait for another [round(time_to_wait,0.1)] seconds!"))
 		return
 	if(istype(gargoyle().loc, /obj/structure/gargoyle))
-		qdel(gargoyle().loc)
+		spent(gargoyle().loc)
 	else if(isturf(gargoyle().loc))
 		new /obj/structure/gargoyle(gargoyle().loc, gargoyle())
 

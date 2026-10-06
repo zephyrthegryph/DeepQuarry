@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 		O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 		user.drop_from_inventory(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
-			qdel(O)
+			spent(O)
 			O = src
 	else
 		O = src
@@ -1389,10 +1389,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	update_clothing_icon()
 	worn_protection_changed()
 
-// ALLOW(init/INSTANCE_STATE): sensor_mode rolled at random for each instance
-/obj/item/clothing/under/rank/Initialize(mapload)
-	sensor_mode = pick(0,1,2,3)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/under/rank)
+	rolls(nameof(sensor_mode), pick_one(list(0, 1, 2, 3)))
 
 /obj/item/clothing/ownership()
 	. = ..()
