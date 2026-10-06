@@ -19,9 +19,9 @@
 	var/unlocked = 0
 	var/open = 0
 
-DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	reagents(200)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
 

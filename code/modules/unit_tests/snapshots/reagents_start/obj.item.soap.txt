@@ -1,0 +1,25 @@
+/obj/item/soap vol=5 holder=/datum/reagents 
+/obj/item/soap/nanotrasen vol=5 holder=/datum/reagents 
+/obj/item/soap/homemade vol=5 holder=/datum/reagents 
+/obj/item/soap/deluxe vol=5 holder=/datum/reagents 
+/obj/item/soap/syndie vol=5 holder=/datum/reagents 
+/obj/item/soap/space_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/water_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/fire_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/rainbow_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/diamond_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/uranium_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/silver_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/brown_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/white_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/grey_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/pink_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/purple_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/blue_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/cyan_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/green_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/yellow_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/orange_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/red_soap vol=5 holder=/datum/reagents 
+/obj/item/soap/golden_soap vol=5 holder=/datum/reagents 
+

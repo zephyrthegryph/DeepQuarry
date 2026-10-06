@@ -58,10 +58,10 @@
 	var/efficiency = 1
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
+	reagents(600, holder = /datum/reagents/distilling)
 	owns_one(nameof(InputBeaker), /obj/item/reagent_containers/glass)
 	owns_one(nameof(OutputBeaker), /obj/item/reagent_containers/glass)
 
-DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, 600, null, /datum/reagents/distilling)
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/Initialize(mapload)
 	. = ..()

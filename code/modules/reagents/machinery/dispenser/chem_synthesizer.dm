@@ -81,9 +81,9 @@
 OM_FIELD(/obj/machinery/chemical_synthesizer, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
 /// Refills its cartridges while it recharges at all (full, it sleeps until a cartridge is drawn or added).
 // The reagents datum acts as the machine's reaction vessel.
-DECLARE_REAGENTS(/obj/machinery/chemical_synthesizer, 600, null)
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	reagents(600)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), wakes_on = list(nameof(_recharge_reagents)))
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	interface("ChemSynthesizer")

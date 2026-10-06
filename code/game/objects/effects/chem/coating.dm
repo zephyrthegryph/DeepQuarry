@@ -6,7 +6,8 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "dirt"
 
-DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
+CAPABILITIES(/obj/effect/decal/cleanable/chemcoating)
+	reagents(100)
 
 /obj/effect/decal/cleanable/chemcoating/Initialize(mapload)
 	. = ..()

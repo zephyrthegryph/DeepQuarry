@@ -18,7 +18,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 	///How long it takes to mop a tile.
 	var/mop_time = 4 SECONDS
 
-DECLARE_REAGENTS(/obj/item/mop, 30, null)
+CAPABILITIES(/obj/item/mop)
+	reagents(30)
 
 /obj/item/mop/afterattack(atom/A, mob/user, proximity)
 	if(!proximity) return

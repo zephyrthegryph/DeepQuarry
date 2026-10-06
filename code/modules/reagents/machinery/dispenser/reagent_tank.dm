@@ -27,10 +27,7 @@
 /obj/structure/reagent_dispensers/proc/interaction_item(datum/act/op/A)
 	return OP_PASS
 
-/// The tank's reagents: 5000 units, filled by each kind of tank (refine(CAP_REAGENTS, add =) adds to what it inherits).
-/obj/structure/reagent_dispensers/capabilities()
-	. = ..()
-	. += reagents(5000)
+/// The tank's reagents: 5000 units (reagents() in its CAPABILITIES block); each kind of tank adds to or replaces the contents with configure(reagents(add = | starts =)).
 
 /obj/structure/reagent_dispensers/Initialize(mapload)
 	. = ..()
@@ -58,6 +55,7 @@
 	return "[src]"
 
 CAPABILITIES(/obj/structure/reagent_dispensers)
+	reagents(5000)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
 	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
 	op("reagent_dispenser_set_aptft", menu(), label("Set transfer amount"), when(PROC_REF(has_transfer_amounts)), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(reagent_dispenser_set_aptft)))
@@ -95,11 +93,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 	icon_state = "water"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/watertank/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 1000))
 
 CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
+	configure(reagents(add = list(REAGENT_ID_WATER = 1000)))
 	climb()
 	op("watertank_interaction_item", item(/obj/item), then(PROC_REF(watertank_interaction_item)))
 
@@ -108,9 +104,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 	desc = "A highly-pressurized water tank made to hold vast amounts of water.."
 	icon_state = "water_high"
 
-/obj/structure/reagent_dispensers/watertank/high/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 4000))
+CAPABILITIES(/obj/structure/reagent_dispensers/watertank/high)
+	configure(reagents(add = list(REAGENT_ID_WATER = 4000)))
 
 /obj/structure/reagent_dispensers/watertank/barrel
 	name = "water barrel"
@@ -126,11 +121,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 	var/modded = 0
 	var/obj/item/assembly_holder/rig = null
 
-/obj/structure/reagent_dispensers/fueltank/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_FUEL = 1000))
 
 CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
+	configure(reagents(add = list(REAGENT_ID_FUEL = 1000)))
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
@@ -141,9 +134,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	desc = "A highly-pressurized fuel tank made to hold vast amounts of fuel."
 	icon_state = "fuel_high"
 
-/obj/structure/reagent_dispensers/fueltank/high/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FUEL = 4000))
+CAPABILITIES(/obj/structure/reagent_dispensers/fueltank/high)
+	configure(reagents(starts = list(REAGENT_ID_FUEL = 4000)))
 
 //Foam
 /obj/structure/reagent_dispensers/foam
@@ -152,11 +144,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	icon_state = "foam"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/foam/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FIREFOAM = 1000))
 
 CAPABILITIES(/obj/structure/reagent_dispensers/foam)
+	configure(reagents(starts = list(REAGENT_ID_FIREFOAM = 1000)))
 	climb()
 
 //Helium3
@@ -166,11 +156,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/foam)
 	icon_state = "he3"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/he3/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_HELIUM3 = 1000))
 
 CAPABILITIES(/obj/structure/reagent_dispensers/he3)
+	configure(reagents(starts = list(REAGENT_ID_HELIUM3 = 1000)))
 	climb()
 
 /*
@@ -327,9 +315,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	amount_per_transfer_from_this = 45
 	flags = WALL_ITEM
 
-/obj/structure/reagent_dispensers/peppertank/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/peppertank)
+	configure(reagents(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000)))
 
 /obj/structure/reagent_dispensers/virusfood
 	name = "Virus Food Dispenser"
@@ -340,9 +327,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/virusfood/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_VIRUSFOOD = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/virusfood)
+	configure(reagents(starts = list(REAGENT_ID_VIRUSFOOD = 1000)))
 
 /obj/structure/reagent_dispensers/acid
 	name = "Sulphuric Acid Dispenser"
@@ -353,9 +339,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/acid/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_SACID = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/acid)
+	configure(reagents(starts = list(REAGENT_ID_SACID = 1000)))
 
 /obj/structure/reagent_dispensers/water_cooler
 	name = "Water-Cooler"
@@ -514,11 +499,9 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	icon_state = "beertankTEMP"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/beerkeg/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_BEER = 1000))
 
 CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
+	configure(reagents(starts = list(REAGENT_ID_BEER = 1000)))
 	climb()
 
 /obj/structure/reagent_dispensers/beerkeg/wood
@@ -531,9 +514,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
 	desc = "A wine casket with a tap on it."
 	icon_state = "beertankfantasy"
 
-/obj/structure/reagent_dispensers/beerkeg/wine/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_REDWINE = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg/wine)
+	configure(reagents(starts = list(REAGENT_ID_REDWINE = 1000)))
 
 /obj/structure/reagent_dispensers/beerkeg/fakenuke
 	name = "nuclear beer keg"
@@ -549,11 +531,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
 	icon_state = "oiltank"
 	amount_per_transfer_from_this = 120
 
-/obj/structure/reagent_dispensers/cookingoil/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_COOKINGOIL = 5000))
 
 CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
+	configure(reagents(starts = list(REAGENT_ID_COOKINGOIL = 5000)))
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 
@@ -594,9 +574,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel)
 	amount_per_transfer_from_this = 60
 	anchored = 1
 
-/obj/structure/reagent_dispensers/space_cleaner/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_CLEANER = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/space_cleaner)
+	configure(reagents(starts = list(REAGENT_ID_CLEANER = 1000)))
 
 /obj/structure/reagent_dispensers/fueltank/ownership()
 	. = ..()

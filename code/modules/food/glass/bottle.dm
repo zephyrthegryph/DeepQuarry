@@ -341,7 +341,8 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
 	name = "glucose container"
 	desc = "A container of glucose. Used to treat bloodloss through a hardsuit in unconscious patients."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose, null, list(REAGENT_ID_GLUCOSE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose)
+	configure(reagents(add = list(REAGENT_ID_GLUCOSE = 100)))
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose/Initialize(mapload)
 	. = ..()

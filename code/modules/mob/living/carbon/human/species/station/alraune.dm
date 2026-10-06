@@ -163,7 +163,8 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/fruitgland, poison_options, list( \
 								REAGENT_ID_PAINENZYME \
 	))
 
-DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
+CAPABILITIES(/obj/item/organ/internal/fruitgland)
+	configure(reagents(volume = nameof(usable_volume)))
 
 
 /obj/item/organ/internal/fruitgland/organ_tick(cycles)

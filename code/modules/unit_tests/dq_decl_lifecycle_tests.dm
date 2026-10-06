@@ -63,13 +63,13 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 	. += owns(nameof(mapped_part), policy = OWN_CONTAINED, starts = /obj/item/dq_decl_part)
 
 CAPABILITIES(/obj/item/dq_decl_probe)
+	reagents(nameof(volume), starts = list(REAGENT_ID_WATER = 10))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(helper), starts = /datum/dq_decl_owned_child)
 	owns_many(nameof(spares), starts = list(/obj/item/dq_decl_part = 2))
 	after_init(2 SECONDS, then(PROC_REF(timer_done)))
 
 DECLARE_GAS(/obj/item/dq_decl_probe, "air_contents", 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
-DECLARE_REAGENTS(/obj/item/dq_decl_probe, "volume", list(REAGENT_ID_WATER = 10))
 DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "mode", list("off" = list(APPEARANCE_ICON_STATE = "beaker"), "on" = list(APPEARANCE_ICON_STATE = "beakerlarge", APPEARANCE_OVERLAYS = list("lid_beaker"))))
 DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "lid", list("1" = list(APPEARANCE_OVERLAYS = list("lid_beakerlarge"))))
 DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)
@@ -91,11 +91,13 @@ DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_co
 
 /// Adds to the parent's reagents (the old ..() chain added too) and tints.
 /obj/item/dq_decl_probe/sub
-DECLARE_REAGENTS_TINTED(/obj/item/dq_decl_probe/sub, 60, list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5))
+CAPABILITIES(/obj/item/dq_decl_probe/sub)
+	configure(reagents(volume = 60, add = list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5), tint = TRUE))
 
 /// Starts with no declared reagents at all.
 /obj/item/dq_decl_probe/dry
-DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
+CAPABILITIES(/obj/item/dq_decl_probe/dry)
+	without(CAP_REAGENTS)
 
 /// How many of A's overlays show icon state `state` (add_overlay() re-adds priority overlays, so
 /// the raw length is no measure).
@@ -128,17 +130,13 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	TEST_ASSERT_EQUAL(uppertext(copytext(sub.color, 1, 8)), uppertext(copytext(sub.reagents.get_color(), 1, 8)), "the tinted form colours from the reagents")
 
 	var/obj/item/dq_decl_probe/dry/dry = allocate(/obj/item/dq_decl_probe/dry, T)
-	TEST_ASSERT(isnull(dry.reagents), "DECLARE_NO_REAGENTS drops the inherited holder")
+	TEST_ASSERT(isnull(dry.reagents), "without(CAP_REAGENTS) drops the inherited holder")
 
 	var/obj/machinery/shower/dq_decl_probe/shower = allocate(/obj/machinery/shower/dq_decl_probe, T)
 	TEST_ASSERT_EQUAL(shower.reagents.maximum_volume, 50, "the shower's holder follows reaction_volume")
 	TEST_ASSERT_EQUAL(shower.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 50, "the shower fills with its reagent_id")
 	TEST_ASSERT_EQUAL(shower.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "and not hardcoded water")
 
-	var/datum/lifecycle_decls/a = lifecycle_decls_of(probe)
-	var/obj/item/dq_decl_probe/other = allocate(/obj/item/dq_decl_probe, T)
-	TEST_ASSERT(a == lifecycle_decls_of(other), "one declaration table per type")
-	TEST_ASSERT(a.reagent_contents == lifecycle_decls_of(other).reagent_contents, "the contents list is the type's, not the instance's")
 
 /datum/unit_test/dq_decl_children
 

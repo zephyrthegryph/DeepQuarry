@@ -1,0 +1,3 @@
+/obj/structure/bed/bath vol=300 holder=/datum/reagents 
+/obj/structure/bed/bath/material_treatment vol=200 holder=/datum/reagents 
+

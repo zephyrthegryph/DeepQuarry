@@ -108,43 +108,56 @@ MSG_DEF(condiment/swallow, "You swallow some of the contents of %I%.", "%U% swal
 	desc = "Used in cooking various dishes."
 	icon_state = "enzyme"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/enzyme, null, list(REAGENT_ID_ENZYME = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/enzyme)
+	configure(reagents(add = list(REAGENT_ID_ENZYME = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/sugar, null, list(REAGENT_ID_SUGAR = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/sugar)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/ketchup, null, list(REAGENT_ID_KETCHUP = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/ketchup)
+	configure(reagents(add = list(REAGENT_ID_KETCHUP = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/mustard, null, list(REAGENT_ID_MUSTARD = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/mustard)
+	configure(reagents(add = list(REAGENT_ID_MUSTARD = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/hotsauce, null, list(REAGENT_ID_CAPSAICIN = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/hotsauce)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 50)))
 
 /obj/item/reagent_containers/food/condiment/cookingoil
 	name = REAGENT_COOKINGOIL
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/cookingoil, null, list(REAGENT_ID_COOKINGOIL = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/cookingoil)
+	configure(reagents(add = list(REAGENT_ID_COOKINGOIL = 50)))
 
 /obj/item/reagent_containers/food/condiment/cornoil
 	name = REAGENT_CORNOIL
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/cornoil, null, list(REAGENT_ID_CORNOIL = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/cornoil)
+	configure(reagents(add = list(REAGENT_ID_CORNOIL = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/coldsauce, null, list(REAGENT_ID_FROSTOIL = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/coldsauce)
+	configure(reagents(add = list(REAGENT_ID_FROSTOIL = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/soysauce, null, list(REAGENT_ID_SOYSAUCE = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/soysauce)
+	configure(reagents(add = list(REAGENT_ID_SOYSAUCE = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/vinegar, null, list(REAGENT_ID_VINEGAR = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/vinegar)
+	configure(reagents(add = list(REAGENT_ID_VINEGAR = 50)))
 
 /obj/item/reagent_containers/food/condiment/yeast
 	name = REAGENT_YEAST
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/yeast, null, list(REAGENT_ID_YEAST = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/yeast)
+	configure(reagents(add = list(REAGENT_ID_YEAST = 50)))
 
 /obj/item/reagent_containers/food/condiment/sprinkles
 	name = REAGENT_SPRINKLES
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/sprinkles, null, list(REAGENT_ID_SPRINKLES = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/sprinkles)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 50)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/barbeque, null, list(REAGENT_ID_BARBECUE = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/barbeque)
+	configure(reagents(add = list(REAGENT_ID_BARBECUE = 50)))
 
 /obj/item/reagent_containers/food/condiment/small
 	max_transfer_amount = 20
@@ -162,7 +175,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/barbeque, null, lis
 	center_of_mass_x = 17
 	center_of_mass_y = 11
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/saltshaker, null, list(REAGENT_ID_SODIUMCHLORIDE = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/saltshaker)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 20)))
 
 /obj/item/reagent_containers/food/condiment/small/peppermill //Keeping name here to save map based headaches
 	name = "pepper shaker"
@@ -171,7 +185,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/saltshaker, n
 	center_of_mass_x = 17
 	center_of_mass_y = 11
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/peppermill, null, list(REAGENT_ID_BLACKPEPPER = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/peppermill)
+	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 20)))
 
 /obj/item/reagent_containers/food/condiment/small/peppergrinder
 	name = "pepper mill"
@@ -180,14 +195,16 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/peppermill, n
 	center_of_mass_x = 17
 	center_of_mass_y = 11
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/peppergrinder, null, list(REAGENT_ID_BLACKPEPPER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/peppergrinder)
+	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 30)))
 
 /obj/item/reagent_containers/food/condiment/small/sugar
 	name = REAGENT_ID_SUGAR
 	desc = "Sweetness in a bottle"
 	icon_state = "sugarsmall"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/sugar, null, list(REAGENT_ID_SUGAR = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/sugar)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 20)))
 
 //MRE condiments and drinks.
 
@@ -204,21 +221,24 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/sugar, null, 
 	desc = "Contains 5u of table salt."
 	icon_state = "packet_small_white"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/salt, null, list(REAGENT_ID_SODIUMCHLORIDE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/salt)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/pepper
 	name = "pepper packet"
 	desc = "Contains 5u of black pepper."
 	icon_state = "packet_small_black"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/pepper, null, list(REAGENT_ID_BLACKPEPPER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/pepper)
+	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/sugar
 	name = "sugar packet"
 	desc = "Contains 5u of refined sugar."
 	icon_state = "packet_small_white"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/sugar, null, list(REAGENT_ID_SUGAR = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/sugar)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/jelly
 	name = "jelly packet"
@@ -226,7 +246,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/sugar,
 	icon_state = "packet_medium"
 	volume = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/jelly, null, list(REAGENT_ID_CHERRYJELLY = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/jelly)
+	configure(reagents(add = list(REAGENT_ID_CHERRYJELLY = 10)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/honey
 	name = "honey packet"
@@ -234,77 +255,89 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/jelly,
 	icon_state = "packet_medium"
 	volume = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/honey, null, list(REAGENT_ID_HONEY = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/honey)
+	configure(reagents(add = list(REAGENT_ID_HONEY = 10)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/capsaicin
 	name = "hot sauce packet"
 	desc = "Contains 5u of hot sauce. Enjoy in moderation."
 	icon_state = "packet_small_red"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/capsaicin, null, list(REAGENT_ID_CAPSAICIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/capsaicin)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/ketchup
 	name = "ketchup packet"
 	desc = "Contains 5u of ketchup."
 	icon_state = "packet_small_red"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/ketchup, null, list(REAGENT_ID_KETCHUP = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/ketchup)
+	configure(reagents(add = list(REAGENT_ID_KETCHUP = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/mayo
 	name = "mayonnaise packet"
 	desc = "Contains 5u of mayonnaise."
 	icon_state = "packet_small_white"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/mayo, null, list(REAGENT_ID_MAYO = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/mayo)
+	configure(reagents(add = list(REAGENT_ID_MAYO = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/soy
 	name = "soy sauce packet"
 	desc = "Contains 5u of soy sauce."
 	icon_state = "packet_small_black"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/soy, null, list(REAGENT_ID_SOYSAUCE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/soy)
+	configure(reagents(add = list(REAGENT_ID_SOYSAUCE = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/coffee
 	name = "coffee powder packet"
 	desc = "Contains 5u of coffee powder. Mix with 25u of water and heat."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/coffee, null, list(REAGENT_ID_COFFEEPOWDER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/coffee)
+	configure(reagents(add = list(REAGENT_ID_COFFEEPOWDER = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/tea
 	name = "tea powder packet"
 	desc = "Contains 5u of black tea powder. Mix with 25u of water and heat."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/tea, null, list(REAGENT_ID_TEA = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/tea)
+	configure(reagents(add = list(REAGENT_ID_TEA = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/cocoa
 	name = "cocoa powder packet"
 	desc = "Contains 5u of cocoa powder. Mix with 25u of water and heat."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/cocoa, null, list(REAGENT_ID_COCO = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/cocoa)
+	configure(reagents(add = list(REAGENT_ID_COCO = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/grape
 	name = "grape juice powder packet"
 	desc = "Contains 5u of powdered grape juice. Mix with 15u of water."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/grape, null, list(REAGENT_ID_INSTANTGRAPE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/grape)
+	configure(reagents(add = list(REAGENT_ID_INSTANTGRAPE = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/orange
 	name = "orange juice powder packet"
 	desc = "Contains 5u of powdered orange juice. Mix with 15u of water."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/orange, null, list(REAGENT_ID_INSTANTORANGE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/orange)
+	configure(reagents(add = list(REAGENT_ID_INSTANTORANGE = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/watermelon
 	name = "watermelon juice powder packet"
 	desc = "Contains 5u of powdered watermelon juice. Mix with 15u of water."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/watermelon, null, list(REAGENT_ID_INSTANTWATERMELON = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/watermelon)
+	configure(reagents(add = list(REAGENT_ID_INSTANTWATERMELON = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/apple
 	name = "apple juice powder packet"
 	desc = "Contains 5u of powdered apple juice. Mix with 15u of water."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/apple, null, list(REAGENT_ID_INSTANTAPPLE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/apple)
+	configure(reagents(add = list(REAGENT_ID_INSTANTAPPLE = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/protein
 	name = "protein powder packet"
@@ -312,21 +345,31 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/apple,
 	icon_state = "packet_medium"
 	volume = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/protein, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/crayon
 	name = "crayon powder packet"
 	desc = "Contains 10u of powdered crayon. Mix with 30u of water."
 	volume = 10
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/generic, null, list(REAGENT_ID_CRAYONDUST = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/red, null, list(REAGENT_ID_CRAYONDUSTRED = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/orange, null, list(REAGENT_ID_CRAYONDUSTORANGE = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/yellow, null, list(REAGENT_ID_CRAYONDUSTYELLOW = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/green, null, list(REAGENT_ID_CRAYONDUSTGREEN = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/blue, null, list(REAGENT_ID_CRAYONDUSTBLUE = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/purple, null, list(REAGENT_ID_CRAYONDUSTPURPLE = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/grey, null, list(REAGENT_ID_CRAYONDUSTGREY = 10))
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon/brown, null, list(REAGENT_ID_CRAYONDUSTBROWN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/generic)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUST = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/red)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTRED = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/orange)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTORANGE = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/yellow)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTYELLOW = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/green)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTGREEN = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/blue)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTBLUE = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/purple)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTPURPLE = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/grey)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTGREY = 10)))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/crayon/brown)
+	configure(reagents(add = list(REAGENT_ID_CRAYONDUSTBROWN = 10)))
 
 //End of MRE stuff.
 
@@ -352,9 +395,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/crayon
 	center_of_mass_y = 8
 	amount_per_transfer_from_this = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/flour, null, list(REAGENT_ID_FLOUR = 200))
 
 CAPABILITIES(/obj/item/reagent_containers/food/condiment/carton/flour)
+	configure(reagents(add = list(REAGENT_ID_FLOUR = 200)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /obj/item/reagent_containers/food/condiment/carton/flour/rustic
@@ -371,7 +414,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/condiment/carton/flour)
 	center_of_mass_y = 8
 	amount_per_transfer_from_this = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/sugar, null, list(REAGENT_ID_SUGAR = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/carton/sugar)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 100)))
 
 /obj/item/reagent_containers/food/condiment/carton/sugar/rustic
 	name = "sugar sack"
@@ -387,39 +431,45 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/carton/sugar, null,
 	volume = 40
 	looks_like_contents = FALSE
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/spacespice, null, list(REAGENT_ID_SPACESPICE = 40))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/spacespice)
+	configure(reagents(add = list(REAGENT_ID_SPACESPICE = 40)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/protein_powder
 	name = "protein powder packet"
 	desc = "Contains 5u of regular protein powder. Mix with 25u of water and enjoy."
 	icon_state = "protein_powder1"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder, null, list(REAGENT_ID_PROTEINPOWDER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder)
+	configure(reagents(add = list(REAGENT_ID_PROTEINPOWDER = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/protein_powder/vanilla
 	name = "vanilla protein powder packet"
 	desc = "Contains 5u of vanilla flavored protein powder. Mix with 25u of water and enjoy."
 	icon_state = "protein_powder2"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/vanilla, null, list(REAGENT_ID_VANILLAPROTEINPOWDER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/vanilla)
+	configure(reagents(add = list(REAGENT_ID_VANILLAPROTEINPOWDER = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/protein_powder/banana
 	name = "banana protein powder packet"
 	desc = "Contains 5u of banana flavored protein powder. Mix with 25u of water and enjoy."
 	icon_state = "protein_powder3"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/banana, null, list(REAGENT_ID_BANANAPROTEINPOWDER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/banana)
+	configure(reagents(add = list(REAGENT_ID_BANANAPROTEINPOWDER = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/protein_powder/chocolate
 	name = "chocolate protein powder packet"
 	desc = "Contains 5u of chocolate flavored protein powder. Mix with 25u of water and enjoy."
 	icon_state = "protein_powder4"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/chocolate, null, list(REAGENT_ID_CHOCOLATEPROTEINPOWDER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/chocolate)
+	configure(reagents(add = list(REAGENT_ID_CHOCOLATEPROTEINPOWDER = 5)))
 
 /obj/item/reagent_containers/food/condiment/small/packet/protein_powder/strawberry
 	name = "strawberry protein powder packet"
 	desc = "Contains 5u of strawberry flavored protein powder. Mix with 25u of water and enjoy."
 	icon_state = "protein_powder5"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/strawberry, null, list(REAGENT_ID_STRAWBERRYPROTEINPOWDER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment/small/packet/protein_powder/strawberry)
+	configure(reagents(add = list(REAGENT_ID_STRAWBERRYPROTEINPOWDER = 5)))

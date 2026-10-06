@@ -39,7 +39,8 @@
 
 /obj/item/reagent_containers/food/snacks/meat/xeyakin
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/xeyakin, null, list(REAGENT_ID_XEYAKIN_BLOOD = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/xeyakin)
+	configure(reagents(add = list(REAGENT_ID_XEYAKIN_BLOOD = 2)))
 
 
 /datum/reagent/xeyakinblood

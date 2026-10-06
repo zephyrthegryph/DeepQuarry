@@ -9,7 +9,8 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	maintenance_wrench_time = 2 SECONDS
 
-DECLARE_REAGENTS(/obj/machinery/pump_relay, 200, null)
+CAPABILITIES(/obj/machinery/pump_relay)
+	reagents(200)
 
 /obj/machinery/pump_relay/Initialize(mapload)
 	. = ..()

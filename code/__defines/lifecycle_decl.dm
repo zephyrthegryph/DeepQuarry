@@ -9,7 +9,7 @@
 //                subtype Initialize() code may read right after `. = ..()`:
 //                  (starting occupants: owns_one / owns_many with starts =, made first)
 //                  1. gas contents     DECLARE_GAS
-//                  2. reagents         DECLARE_REAGENTS
+//                  (reagents: reagents() in CAPABILITIES, code/library/reagents/reagents.dm)
 //                  3. appearance       DECLARE_APPEARANCE
 //   materialize  (/atom/on_materialize(), after registries, rules and OM start):
 //                  4. registries       DECLARE_REGISTRY (conditional ones are joined here)
@@ -35,25 +35,6 @@
 /// GASES: list(GAS_O2 = kPa, ...) at TEMP kelvin (moles = P*V / (R*T)).
 #define DECLARE_GAS(PATH, VAR, VOLUME, TEMP, GASES) _LIFECYCLE_DECL(PATH, set_gas(VAR, VOLUME, TEMP, GASES))
 
-/// 2. LEGACY: the foundation form is `reagents(volume, starts = list(...))` in capabilities(), with
-/// `refine(CAP_REAGENTS, starts = ...)` on subtypes and `without(., CAP_REAGENTS)` for DECLARE_NO_REAGENTS
-/// (code/datums/capabilities/library/reagents.dm; doc/rewrite/lifecycle.md section 9). Never mix the forms in a chain.
-/// Starting reagents at init: create_reagents(VOLUME) then add CONTENTS
-/// (list(REAGENT_ID_X = amount, ...), or null for an empty holder). VOLUME: a number, a var
-/// name ("volume"), or null to keep the parent's. CONTENTS ADD to the parent's declared contents,
-/// the way the old `. = ..(); reagents.add_reagent(...)` chain added to the parent's; the
-/// declaration table is shared by the type, the per-instance reagent datums exist only in the
-/// holder (empty holders already share one empty list).
-#define DECLARE_REAGENTS(PATH, VOLUME, CONTENTS) _LIFECYCLE_DECL(PATH, set_reagents(VOLUME, CONTENTS, null, FALSE))
-/// A holder of VOLUME holding the reagent named by the instance var ID_VAR, AMOUNT units
-/// (a number, or the name of an instance var); both read per atom at init.
-#define DECLARE_REAGENT_FROM_VAR(PATH, VOLUME, ID_VAR, AMOUNT) _LIFECYCLE_DECL(PATH, set_reagent_var(VOLUME, ID_VAR, AMOUNT))
-/// DECLARE_REAGENTS, then `color = reagents.get_color()` (pills, patches).
-#define DECLARE_REAGENTS_TINTED(PATH, VOLUME, CONTENTS) _LIFECYCLE_DECL(PATH, set_reagents(VOLUME, CONTENTS, null, TRUE))
-/// DECLARE_REAGENTS with a /datum/reagents subtype for the holder.
-#define DECLARE_REAGENTS_TYPED(PATH, VOLUME, CONTENTS, HOLDER) _LIFECYCLE_DECL(PATH, set_reagents(VOLUME, CONTENTS, HOLDER, FALSE))
-/// Drops every inherited reagent declaration (holder and contents); a later line may declare anew.
-#define DECLARE_NO_REAGENTS(PATH) _LIFECYCLE_DECL(PATH, clear_reagents())
 
 /// 4. Appearance by state, as layers (doc/rewrite/systems.md section 1; the other appearance
 /// declarations and the runtime: code/__defines/sys_appearance.dm, code/datums/sys/appearance.dm).

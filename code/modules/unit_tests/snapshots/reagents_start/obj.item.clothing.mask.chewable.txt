@@ -1,0 +1,10 @@
+/obj/item/clothing/mask/chewable vol=0 holder=/datum/reagents 
+/obj/item/clothing/mask/chewable/tobacco vol=50 holder=/datum/reagents 
+/obj/item/clothing/mask/chewable/tobacco/cheap vol=50 holder=/datum/reagents nicotine=2
+/obj/item/clothing/mask/chewable/tobacco/fine vol=50 holder=/datum/reagents nicotine=3
+/obj/item/clothing/mask/chewable/tobacco/nico vol=50 holder=/datum/reagents nicotine=2
+/obj/item/clothing/mask/chewable/candy vol=50 holder=/datum/reagents sugar=2
+/obj/item/clothing/mask/chewable/candy/gum vol=50 holder=/datum/reagents orangejuice=10,sugar=2
+/obj/item/clothing/mask/chewable/candy/lolli vol=50 holder=/datum/reagents limejuice=20,sugar=2
+/obj/item/clothing/mask/chewable/candy/pocky vol=50 holder=/datum/reagents chocolate=5,sugar=2
+

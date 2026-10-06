@@ -11,7 +11,6 @@
 OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
 /// Boils its container while heating (start_boiling() .. end_boil()).
 // The holder resizes to match the boiling container.
-DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/distilling)
 
 /obj/machinery/bunsen_burner/declare_interactions(list/into)
 	into += list(
@@ -122,6 +121,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 /// Boils its container; runs while heating (declared).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
+	reagents(1, holder = /datum/reagents/distilling)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
 
 /obj/machinery/bunsen_burner/proc/work_step(datum/act/timer/A)
