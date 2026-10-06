@@ -169,4 +169,7 @@ GLOBAL_LIST_EMPTY(topic_tables)
 
 // ALLOW(sys_topic_override): the one core dispatcher every href on a datum reaches.
 /datum/Topic(href, list/href_list)
+	// An href that reaches here without the inbox (the admin holder's own) is still an op when one names it.
+	if(op_topic_href(usr, src, href_list))
+		return TRUE
 	return topic_dispatch(src, usr, href_list)

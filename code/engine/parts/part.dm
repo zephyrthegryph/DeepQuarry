@@ -257,8 +257,11 @@
 /datum/entry/part/ui_arg
 	part_name = "arg"
 
-/proc/arg(name, datum/schema/schema = null, from = null)
-	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from))
+/// optional = TRUE: a link or button may leave the value out, and the handler gets null (a present value still crosses the schema).
+/// among = SOURCE: a ref arg names its thing by the text of its ref, and is looked up only in SOURCE (TOPIC_IN_MOBS, TOPIC_IN_WORLD, TOPIC_IN_CONTENTS, a
+/// proc on the holder that returns the list to search, ...: topic_resolve_ref()) instead of anywhere locate() reaches.
+/proc/arg(name, datum/schema/schema = null, from = null, optional = FALSE, among = null)
+	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from, "optional" = optional, "among" = among))
 
 // ---- select parts (each replaces one column of what the binding implies) ----
 
