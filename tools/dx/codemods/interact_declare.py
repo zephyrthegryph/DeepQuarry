@@ -12,6 +12,12 @@ import subprocess
 import sys
 from collections import defaultdict
 
+# the hand-conversion list of the items/structures wave (tools/codemods/exclusions.txt, "interact" lines)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "codemods"))
+from _excl import excluded  # noqa: E402
+
+EXCLUDED = excluded("interact")
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, SETTINGS, body_range, collect_vars, holder_vars_of, related, split_args, strip_code, words_in  # noqa: E402
 
@@ -43,6 +49,78 @@ SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|
 STANCE_LITERAL = re.compile(r"^I_(HELP|DISARM|GRAB|HURT)$")
 FALLS_THROUGH = ("USE", "VERB")  # an effect whose return is ignored (always handled): every other kind falls through to the next candidate on a falsy return
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
+
+
+REQ_PROC_CLAUSE = re.compile(r"^(?:REQ_TARGET_STATE\((/[\w/]+?)/proc/(\w+)\)|REQ_ON\(PRED_TARGET,\s*(/[\w/]+?)/proc/(\w+),\s*(\"[^\"\\]*\"|null)\)|REQ_PROC\(/proc/(\w+),\s*(\"[^\"\\]*\"|null)\))$")
+REQ_FIELD_CLAUSE = re.compile(r"^(?:REQ_BECAUSE\()?REQ_FIELD(_NOT)?\(\"(\w+)\"\)(?:,\s*(\"[^\"\\]*\")\))?$")
+
+
+def translate_req(clause, t, kind):
+    """One legacy requirement clause of a spec -> (the needs() part, [helper proc texts]); None when it has no translation (residue `requires`).
+
+    The old clause procs take (actor, target, held) and answer TRUE to pass, or FALSE / a text reason to refuse (code/datums/properties/predicates.dm);
+    the op's requirement is a pure `x(datum/act/op/A)` answering TRUE/FALSE with a reason proc beside it, so each proc gets two thin wrappers that call it
+    as the old evaluator did (the target is the holder: src)."""
+    clause = clause.strip()
+    if clause in ("REQ_INTERACTION_REACH", "REQ_SELF_USE_REACH"):
+        return ("", [])  # the binding's own reach (hand() / in_hand())
+    if clause == "REQ_REACH_ADJACENT":
+        return ("req_adjacent()", [])
+    fm = REQ_FIELD_CLAUSE.match(clause)
+    if fm:
+        value = "FALSE" if fm.group(1) else "TRUE"
+        because = (", because = %s" % fm.group(3)) if fm.group(3) else ""
+        return ("req_is(nameof(%s), %s%s)" % (fm.group(2), value, because), [])
+    pm = REQ_PROC_CLAUSE.match(clause)
+    if not pm:
+        return None
+    if pm.group(2):
+        owner, proc, fallback, call = pm.group(1), pm.group(2), "null", "%s(A.actor, src, A.held)" % pm.group(2)
+    elif pm.group(4):
+        owner, proc, fallback, call = pm.group(3), pm.group(4), pm.group(5), "%s(A.actor, src, A.held)" % pm.group(4)
+    else:
+        owner, proc, fallback, call = None, pm.group(6), pm.group(7), "%s(A.actor, src, A.held)" % pm.group(6)
+    if owner and not (owner == t or t.startswith(owner + "/")):
+        return None
+    holds = "%s_holds" % proc
+    why = "%s_refusal" % proc
+    reason = fallback if fallback != "null" else "/datum/msg/req_failed"
+    helpers = [
+        "/// Requirement (was REQ_* %s): the legacy check answers TRUE to pass.\n%s/proc/%s(datum/act/op/A)\n\tvar/answer = %s\n\treturn !istext(answer) && !!answer" % (proc, t, holds, call),
+        "/// Why %s refuses: the legacy check's text, else the clause's own reason.\n%s/proc/%s(datum/act/op/A)\n\tvar/answer = %s\n\treturn istext(answer) ? answer : %s" % (holds, t, why, call, reason),
+    ]
+    return ("req(PROC_REF(%s), because = PROC_REF(%s))" % (holds, why), helpers)
+
+
+CONVERTED_NAMES = {"item": "Use", "hand": "Use", "self": "Use", "alt": "Alternate use", "drag": "Drop onto"}
+
+
+def legacy_name(spec, vars_by_type):
+    """dq_interaction_name_from_effect() / dq_interaction_insert_name() of a spec with a null name, or None when it cannot be known here."""
+    if spec["kind"] == "INSERT":
+        held = spec["held"]
+        parts = held.split("/")
+        name = None
+        for n in range(len(parts), 1, -1):
+            v = vars_by_type.get("/".join(parts[:n]))
+            if v:
+                name = v
+                break
+        if not name:
+            return None
+        name = name.strip().strip('"')
+        if "\\" in name or "[" in name:
+            return None
+        article = "an" if name[:1].lower() in "aeiou" else "a"
+        return "Insert %s %s" % (article, name)
+    tail = spec["proc"]
+    marker = tail.rfind("interaction_")
+    if marker != -1 and (marker == 0 or tail[marker - 1] == "_"):
+        conv = CONVERTED_NAMES.get(tail[marker + len("interaction_") :])
+        if conv:
+            return conv
+    tail = tail.replace("_", " ")
+    return tail[:1].upper() + tail[1:]
 
 
 def call_end(lines, i):
@@ -130,19 +208,44 @@ def main():
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1]
         args = [a for a in args if a != only]
-    tested = set()
+    tested_calls = defaultdict(set)  # handler name -> the receiver types a unit test calls it on (None: unknown)
+    tested_sites = defaultdict(list)
+    test_rewrites = []
     if "--files" in sys.argv:
         names = args
     else:
         names = subprocess.check_output(["git", "ls-files", "-z", "*.dm"]).decode("utf-8", "surrogateescape").split("\0")
         # a handler a unit test calls by name (the legacy signature: user, held, interaction) cannot change shape under it: the type is left to a hand conversion
         # that rewrites the test (residue handler_tested)
+        # A call is attributed to the receiver's declared type (`var/T/x` or a `T/x` parameter above it); an unresolved receiver or a name in a
+        # string (hascall(M, "name")) could be anything and counts for every type.
         for n in names:
             if n.startswith(TEST_DIRS) and n.endswith(".dm"):
                 try:
-                    tested.update(re.findall(r"[A-Za-z_]\w*", open(n, encoding="utf-8", errors="surrogateescape").read()))
+                    tlines = open(n, encoding="utf-8", errors="surrogateescape").read().splitlines()
                 except OSError:
-                    pass
+                    continue
+                for ti, tl in enumerate(tlines):
+                    for cm in re.finditer(r"\b(\w+)\s*\.\s*(\w+)\s*\(", tl):
+                        recv, pname = cm.group(1), cm.group(2)
+                        rtype = None
+                        for k in range(ti, max(-1, ti - 200), -1):
+                            vm = re.search(r"(?:var/|[(,]\s*)(/?[\w/]+)/" + re.escape(recv) + r"\b", tlines[k])
+                            if vm:
+                                rtype = "/" + vm.group(1).lstrip("/")
+                                break
+                        tested_calls[pname].add(rtype)
+                        tested_sites[pname].append("%s:%d" % (n, ti + 1))
+                    for sm in re.finditer(r'(?:\b\w+\((\w+),\s*)?"(\w+)"', tl):
+                        recv, pname = sm.group(1), sm.group(2)
+                        rtype = None
+                        for k in range(ti, max(-1, ti - 200), -1) if recv else ():
+                            vm = re.search(r"(?:var/|[(,]\s*)(/?[\w/]+)/" + re.escape(recv) + r"\b", tlines[k])
+                            if vm:
+                                rtype = "/" + vm.group(1).lstrip("/")
+                                break
+                        tested_calls[pname].add(rtype)
+                        tested_sites[pname].append("%s:%d" % (n, ti + 1))
         names = [n for n in names if n and not n.startswith(SKIP)]
     files = {}
     code_lines = {}
@@ -178,6 +281,20 @@ def main():
     def_re = re.compile(r"^/[\w/]+/(proc/)?\w+\(")
     tree_lines = []
     vars_by_type = collect_vars(files)
+    # type -> its `name = "..."` (the insert names the legacy menu derived from the held type)
+    type_names = {}
+    for _f in files.values():
+        _cur = None
+        for _l in _f.lines:
+            if not _l:
+                continue
+            if _l[0] == "/":
+                _hm = re.match(r"^(/[\w/]+)\s*(//.*)?$", _l)
+                _cur = _hm.group(1) if _hm else None
+            elif _cur and _l.startswith(chr(9) + "name = "):
+                _nm = re.match(r'^	name = "([^"]*)"', _l)
+                if _nm:
+                    type_names.setdefault(_cur, _nm.group(1))
     # The ops the CAPABILITIES blocks already declare, per type: (binding, gesture) of each. A converted op that takes the same input as one of a related
     # type's would clash with it (ops accumulate down the tree), so the type is left to a hand conversion that orders them.
     ops_by_type = defaultdict(list)
@@ -207,18 +324,37 @@ def main():
     mention_idx = defaultdict(set)  # identifier -> the types whose procs mention it (outside macro calls and definitions)
     tok = re.compile(r"(?<![\w./])[A-Za-z_]\w*")
     dre0 = re.compile(r"^(/[\w/]+?)/(?:proc/)?\w+\(")
+    # A type-level line names its own type's procs: the entries of a CAPABILITIES(T) block, and a macro whose first
+    # argument is the type (DECLARE_EMAG(T, PROC_REF(x)), DAMAGE_REACTION(T, ...)) mention x of T, not of any type.
+    cap_owner = re.compile(r"^(?:CAPABILITIES|STATE_GRAPH)\((/[\w/]+)\)")
+    macro_owner = re.compile(r"^[A-Z][A-Z0-9_]+\((/[\w/]+)\s*[,)]")
     for rel, f in files.items():
+        if rel.replace("\\", "/").startswith("tools/"):
+            continue  # codemod fixtures are not the tree
         owner = ""
+        block_owner = None
         for i, l in enumerate(f.lines):
             tree_lines.append(l)
             dm0 = dre0.match(l)
             if dm0:
                 owner = dm0.group(1)
+                block_owner = None
+            line_owner = owner
+            if l and l[0] not in "\t /":
+                block_owner = None
+            cm0 = cap_owner.match(l or "")
+            if cm0:
+                block_owner = cm0.group(1)
+            mm0 = macro_owner.match(l or "")
+            if block_owner and (cm0 or (l and l[0] in "\t ")):
+                line_owner = block_owner
+            elif mm0 and not cm0:
+                line_owner = mm0.group(1)
             if (rel, i) in span_lines or dm0:
                 continue
             for w in tok.findall(strip_code(l)):
-                mention_idx[w].add(owner)
-                mention_count[(w, owner)] += 1
+                mention_idx[w].add(line_owner)
+                mention_count[(w, line_owner)] += 1
     tree_text = "\n".join(tree_lines)
     defs_by_name = defaultdict(list)
     dre = re.compile(r"^(/[\w/]+?)/(?:proc/)?(\w+)\(([^)]*)\)\s*(//.*)?$")
@@ -228,11 +364,35 @@ def main():
                 dm = dre.match(l)
                 if dm:
                     defs_by_name[dm.group(2)].append((dm.group(1), rel, i, dm.group(3)))
-    op_keys = set(re.findall(r'\bop\("([^"]+)"', tree_text))
+    # op keys by the type whose CAPABILITIES block declares them: a key must be unique in a type tree, not in the world
+    op_keys_by_type = defaultdict(set)
+    for _rel, _f in files.items():
+        _owner = None
+        for _l in _f.lines:
+            _cm = re.match(r"^CAPABILITIES\((/[\w/]+)\)", _l or "")
+            if _cm:
+                _owner = _cm.group(1)
+                continue
+            if _l and _l[0] not in "\t ":
+                _owner = None
+            if _owner:
+                for _k in re.findall(r'\bop\("([^"]+)"', _l or ""):
+                    op_keys_by_type[_owner].add(_k)
+
+    def key_taken(key, t):
+        # the type, its ancestors (path prefixes) and its descendants
+        parts = t.split("/")
+        for n in range(2, len(parts) + 1):
+            if key in op_keys_by_type.get("/".join(parts[:n]), ()):
+                return True
+        return any(key in ks for u, ks in op_keys_by_type.items() if u.startswith(t + "/"))
     residue = {}
     plans = {}
     for t, rs in sorted(decls.items()):
         if only and t != only:
+            continue
+        if t in EXCLUDED:
+            residue[t] = "excluded"
             continue
         if len(rs) != 1:
             residue[t] = "interaction_forms"
@@ -277,21 +437,35 @@ def main():
                 stance = "I_HURT"
             elif suffix == "_PEACEFUL":
                 stance = "I_HELP"
+            carried = False
+            req_parts, req_helpers = [], []
             if kind == "INSERT":
-                if len(a) != 3:
-                    bad = "requires" if len(a) > 3 else "interaction_forms"
+                if len(a) < 3:
+                    bad = "interaction_forms"
                     break
-                held_type, effect, name = a
+                held_type, effect, name = a[:3]
+                extra = a[3:]
             else:
-                carried = False
-                if kind == "VERB" and len(a) == 3 and a[2] == "REQ_IN_INVENTORY":
-                    a = a[:2]
-                    carried = True
-                if len(a) != 2:
-                    bad = "requires" if len(a) > 2 else "interaction_forms"
+                if len(a) < 2:
+                    bad = "interaction_forms"
                     break
-                name, effect = a
+                name, effect = a[:2]
+                extra = a[2:]
                 held_type = None
+            for clause in extra:
+                if clause == "REQ_IN_INVENTORY":
+                    carried = True
+                    continue
+                got_req = translate_req(clause, t, kind)
+                if got_req is None:
+                    bad = "requires"
+                    break
+                rp, rh = got_req
+                if rp:
+                    req_parts.append(rp)
+                req_helpers += rh
+            if bad:
+                break
             if name != "null" and not re.match(r'^"[^"\\]*"$', name):
                 bad = "interaction_forms"
                 break
@@ -302,7 +476,7 @@ def main():
             if held_type is not None and not re.match(r"^/[\w/]+$", held_type):
                 bad = "interaction_forms"
                 break
-            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": kind != "INSERT" and carried, "stance": stance, "default": suffix.startswith("_DEFAULT")})
+            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": carried, "stance": stance, "default": suffix.startswith("_DEFAULT"), "req_parts": req_parts, "req_helpers": req_helpers})
         if bad:
             residue[t] = bad
             continue
@@ -349,9 +523,14 @@ def main():
             if others or outside - self_mentions > 0:
                 bad = "handler_shared"
                 break
-            if s["proc"] in tested:
+            # a test that calls the handler on an unknown receiver blocks; one that calls it on a related type is rewritten to the driver by hand
+            # (--sites lists them under "test caller")
+            callers_t = tested_calls.get(s["proc"], set())
+            if None in callers_t:
                 bad = "handler_tested"
                 break
+            if any(related(rt, t) for rt in callers_t):
+                test_rewrites.extend("%s/%s <- %s" % (t, s["proc"], site) for site in tested_sites[s["proc"]])
             body = "\n".join(strip_code(l) for l in body_lines)
             # INTERACTION_HANDLED_PASS (handled, the input not used up) is read only as a return value: `return OP_PASS`; any other use of it is residue
             stray_pass = re.sub(r"\breturn\s+INTERACTION_HANDLED_PASS\b", "", body)
@@ -396,9 +575,9 @@ def main():
         for h in handlers:
             proc = h["spec"]["proc"]
             key = re.sub(r"^interaction_", "", proc) or proc
-            if key in used or key in op_keys:
+            if key in used or key_taken(key, t):
                 key = proc
-            if key in used or key in op_keys:
+            if key in used or key_taken(key, t):
                 bad = "key_clash"
                 break
             used.add(key)
@@ -425,6 +604,23 @@ def main():
                     break
                 h["ask_parts"].append(text)
                 h["helpers"] += helpers
+            if bad:
+                break
+        if bad:
+            residue[t] = bad
+            continue
+        # the requirement wrappers (translate_req): one per proc per type, emitted before the first handler that needs it
+        emitted = set()
+        for h in handlers:
+            for hp in h["spec"].get("req_helpers", []):
+                hname = re.search(r"^/[\w/]+/proc/(\w+)\(", hp, re.M).group(1)
+                if hname in emitted:
+                    continue
+                if defs_by_name.get(hname) or re.search(r"\b" + hname + r"\b", tree_text):
+                    bad = "name_clash"
+                    break
+                emitted.add(hname)
+                h["helpers"].append(hp)
             if bad:
                 break
         if bad:
@@ -477,6 +673,13 @@ def main():
             continue
         for key in mine:
             claimed[key].append(t)
+    # --dirs a b ...: the whole tree is read (callers, tests, related types), but only declarations in these directories convert
+    if "--dirs" in sys.argv:
+        want = [d.rstrip("/") + "/" for d in sys.argv[sys.argv.index("--dirs") + 1 :] if not d.startswith("--")]
+        for t in list(plans):
+            if not any(plans[t]["decl"][1].replace("\\", "/").startswith(d) for d in want):
+                del plans[t]
+        residue = {t: why for t, why in residue.items() if any(decls[t][0][1].replace("\\", "/").startswith(d) for d in want)}
     converted_ops = sum(len(p["handlers"]) for p in plans.values())
     if not check:
         for t, plan in sorted(plans.items()):
@@ -495,8 +698,14 @@ def main():
                     parts.append("priority(OP_PRIORITY_DEFAULT)")
                 if s["name"]:
                     parts.append("label(%s)" % s["name"])
-                if s.get("carried"):
-                    parts.append("needs(carried())")
+                else:
+                    # the name the legacy menu derived (code/datums/interactions/compact.dm): kept, so the pinned rows do not change wording
+                    derived = legacy_name(s, type_names)
+                    if derived:
+                        parts.append('label("%s")' % derived)
+                needs_parts = (["carried()"] if s.get("carried") else []) + s.get("req_parts", [])
+                if needs_parts:
+                    parts.append("needs(%s)" % ", ".join(needs_parts))
                 parts += h["ask_parts"]
                 parts.append("then(PROC_REF(%s))" % s["proc"])
                 entries.append(", ".join(parts) + ")")
@@ -578,6 +787,10 @@ def main():
     if "--why" in sys.argv:
         for t, why in sorted(residue.items()):
             print("WHY	%s	%s	%s" % (why, t, " ; ".join(r[0][:3] + ":" + r[4][:110] for r in decls[t])))
+    if sites:
+        for tr in sorted(set(test_rewrites)):
+            if tr.split(" <- ")[0].rsplit("/", 1)[0] in plans:
+                print("    test caller to rewrite: " + tr)
     for why, ts in sorted(by.items(), key=lambda kv: -len(kv[1])):
         print("    %-20s %4d" % (why, len(ts)))
         if sites:

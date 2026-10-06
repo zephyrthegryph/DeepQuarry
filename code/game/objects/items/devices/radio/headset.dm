@@ -27,6 +27,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
 	without("ui_open")
+	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds), because = PROC_REF(can_insert_key_refusal))), then(PROC_REF(interaction_item)))
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -84,7 +85,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	return "[..()][append]"
 
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key", REQ_TARGET_STATE(/obj/item/radio/headset/proc/can_insert_key)))
 
 /// Requirement: a free key slot.
 /obj/item/radio/headset/proc/can_insert_key(mob/user, atom/target, obj/item/held)
@@ -92,7 +92,19 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		return "the headset can't hold another key"
 	return TRUE
 
-/obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement (was REQ_* can_insert_key): the legacy check answers TRUE to pass.
+/obj/item/radio/headset/proc/can_insert_key_holds(datum/act/op/A)
+	var/answer = can_insert_key(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_insert_key_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/radio/headset/proc/can_insert_key_refusal(datum/act/op/A)
+	var/answer = can_insert_key(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/radio/headset/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!keyslot1)
 		move_into(src, nameof(src.keyslot1), W, user)
 
@@ -104,10 +116,12 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 
 	return TRUE
 
-/obj/item/radio/headset/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/headset/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!keyslot1 && !keyslot2)
 		to_chat(user, span_notice("This headset doesn't have any encryption keys! How useless..."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	for(var/ch_name in channels)
 		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
@@ -121,7 +135,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	recalculateChannels()
 	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/radio/headset/recalculateChannels(setDescription = FALSE, register = TRUE)
 	src.channels = list()

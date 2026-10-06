@@ -19,6 +19,7 @@ CAPABILITIES(/obj/item/communicator)
 	owns_many(nameof(cam_plane_masters))
 	owns_many(nameof(voice_mobs))
 	owns_one(nameof(camera), starts = /obj/machinery/camera/communicator)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(communicator_emp)))
 
 
 // Proc: setup_tgui_camera()

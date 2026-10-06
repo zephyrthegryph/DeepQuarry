@@ -141,6 +141,8 @@ CAPABILITIES(/obj/item/radio)
 	op("specFreq", ui_act("specFreq", arg("channel", num())), then(PROC_REF(ui_act_specfreq)))
 	op("subspace", ui_act("subspace"), then(PROC_REF(ui_act_subspace)))
 	op("toggleLoudspeaker", ui_act("toggleLoudspeaker"), then(PROC_REF(ui_act_toggleloudspeaker)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(radio_emp)))
 
 /// The guard every window button of the family asks first (a subtype overrides it).
 /obj/item/radio/proc/ui_gate(datum/act/op/A)
@@ -680,9 +682,10 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		else
 			. += span_notice("\The [src] can not be modified or attached!")
 
-/obj/item/radio/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /obj/item/radio/beacon))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	b_stat = !b_stat
 	if(!istype(src, /obj/item/radio/beacon))
 		if (b_stat)
@@ -691,12 +694,11 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 			user.show_message(span_notice("\The [src] can no longer be modified or attached!"))
 			//Foreach goto(83)
 		add_fingerprint(user)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	return OP_OK
 
-DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 /// An EMP switches the radio's microphone, speaker and channels off.
-/obj/item/radio/proc/radio_emp(datum/damage_packet/packet)
+/obj/item/radio/proc/radio_emp(datum/act/A)
 	broadcasting = FALSE
 	listening = FALSE
 	for (var/ch_name in channels)
@@ -744,10 +746,12 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	recalculateChannels()
 	return TRUE
 
-/obj/item/radio/borg/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/borg/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!keyslot)
 		to_chat(user, "This radio doesn't have any encryption keys!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	for(var/ch_name in channels)
 		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
@@ -756,7 +760,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	recalculateChannels()
 	to_chat(user, "You pop out the encryption key in the radio!")
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/radio/borg/recalculateChannels()
 	src.channels = list()

@@ -154,7 +154,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 			plating_color = plating_colors[tiletype]
 	update_icon()
 
-/obj/structure/catwalk/crowbar_act(mob/user, obj/item/C)
+CAPABILITIES(/obj/structure/catwalk)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+/obj/structure/catwalk/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(plated_tile)
 		hatch_open = !hatch_open
 		if(hatch_open)
@@ -165,7 +169,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 			play_sfx(src, SFX_ITEMS_DECONSTRUCT, 2)
 			to_chat(user, span_notice("You shut \the [src]'s maintenance hatch."))
 		update_icon()
-	return TRUE
+	return OP_OK
 
 /obj/structure/catwalk/refresh_neighbors()
 	return

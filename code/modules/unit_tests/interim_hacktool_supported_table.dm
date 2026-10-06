@@ -28,7 +28,7 @@
 		TEST_ASSERT(!tool.full_override && tool.max_level == 4 && tool.hackspeed == 1, "The actual base tool retains its original hacking configuration")
 	TEST_ASSERT(actor.put_in_active_hand(tool), "The real actor holds the actual hacktool")
 	TEST_ASSERT(actor.put_in_inactive_hand(screwdriver), "The real actor holds the actual mode-switching screwdriver")
-	tool.screwdriver_act(actor, screwdriver)
+	test_op_handler(tool, "screwdriver_used", actor, screwdriver)
 	TEST_ASSERT(tool.in_hack_mode, "The actual public tool interaction enables hacking mode")
 	TEST_ASSERT_EQUAL(unsupported.loc, T, "The actual unsupported pen starts on its original floor after crate construction")
 	TEST_ASSERT_EQUAL(tool.attempt_hack(actor, unsupported), 0, "The real unsupported pen is refused by target-family membership")

@@ -45,19 +45,9 @@
 		after(O, 0.1 SECONDS, TYPE_PROC_REF(/turf/simulated/open, update)) // This lattice may be supporting things on top of it.  If it's being deleted, they need to fall down.
 	..()
 
-/obj/structure/lattice/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/lattice_item,
-	)
-	..()
-
-/// Old attackby: place a floor tile on the turf underneath, or upgrade with rods.
-/datum/interaction/entry_item/lattice_item
-	id = "lattice_item"
-	name = "Use"
-	effect = /obj/structure/lattice/proc/interaction_item
-
-/obj/structure/lattice/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
+/obj/structure/lattice/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/turf/T = get_turf(src)
 		T.attackby(C, user) //BubbleWrap - hand this off to the underlying turf instead
@@ -67,12 +57,18 @@
 		return TRUE
 	return TRUE
 
-/obj/structure/lattice/welder_act(mob/user, obj/item/C)
+CAPABILITIES(/obj/structure/lattice)
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/obj/structure/lattice/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	var/obj/item/weldingtool/WT = C.get_welder()
 	if(WT.welding && WT.remove_fuel(0, user))
 		to_chat(user, span_notice("Slicing lattice joints ..."))
 		replace_with(src, /obj/item/stack/rods, 1)
-	return TRUE
+	return OP_OK
 
 /// Redraws next tick; requests before then share the one pending redraw.
 /obj/structure/lattice/proc/updateOverlays()

@@ -9,7 +9,7 @@
 	TEST_ASSERT_EQUAL(charge.blast_heavy, 2, "actual seismic charge starts at heavy blast power two")
 	TEST_ASSERT_EQUAL(laser.rating, 1, "actual unimbued laser starts at the original component rating")
 	TEST_ASSERT(user.put_in_active_hand(tool), "actor holds the canonical screwdriver")
-	charge.screwdriver_act(user, tool)
+	test_op_handler(charge, "screwdriver_used", user, tool)
 	TEST_ASSERT(charge.open_panel, "actual screwdriver action opens the charge panel")
 	TEST_ASSERT(user.unEquip(tool, T), "actor legitimately releases original screwdriver")
 	TEST_ASSERT(user.put_in_active_hand(laser), "actor holds exact original laser")

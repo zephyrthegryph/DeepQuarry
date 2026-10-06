@@ -37,6 +37,11 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	op("sign", ui_act("sign"), then(PROC_REF(ui_act_sign)))
 	op("bucket", ui_act("bucket"), then(PROC_REF(ui_act_bucket)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(janicart_blast))))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Use item"), then(PROC_REF(interaction_alt)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Mount bucket"), then(PROC_REF(interaction_drag)))
 
 /obj/structure/janitorialcart/proc/equip_janicart_item(mob/user, obj/item/I)
 	if(!equippable_item_whitelist)
@@ -135,37 +140,20 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	else
 		. += "[icon2html(src, user.client)] There is no bucket mounted on it!"
 
-/// Old MouseDrop_T: mount a dragged mop bucket.
-/datum/interaction/entry_drag/janitorialcart_drag
-	id = "janitorialcart_drag"
-	name = "Mount bucket"
-	effect = /obj/structure/janitorialcart/proc/interaction_drag
-
-/obj/structure/janitorialcart/proc/interaction_drag(mob/living/user, atom/movable/O, datum/interaction/interaction)
+/obj/structure/janitorialcart/proc/interaction_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/movable/O = A.held
 	if (istype(O, /obj/structure/mopbucket) && !mybucket)
 		move_into(src, nameof(src.mybucket), O, user)
 		setTguiIcon("mybucket", mybucket)
 		user.balloon_alert(user, "you mount the [O] on the janicart.")
 		update_icon()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
-/obj/structure/janitorialcart/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/janitorialcart_item,
-		/datum/interaction/entry_alt/janitorialcart_alt,
-		/datum/interaction/entry_hand/janitorialcart_hand,
-		/datum/interaction/entry_drag/janitorialcart_drag,
-	)
-	..()
-
-/// Old attackby: wet a mop/rag/soap, empty the bucket, equip a tool, or drop trash in the bag.
-/datum/interaction/entry_item/janitorialcart_item
-	id = "janitorialcart_item"
-	name = "Use"
-	effect = /obj/structure/janitorialcart/proc/interaction_item
-
-/obj/structure/janitorialcart/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/janitorialcart/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/reagent_containers/glass/rag) || istype(I, /obj/item/soap))
 		if (mybucket)
 			if(I.reagents.total_volume < I.reagents.maximum_volume)
@@ -207,11 +195,12 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		//This prevents dumb stuff like splashing the cart with the contents of a container, after putting said container into trash
 	return TRUE
 
-/obj/structure/janitorialcart/wrench_act(mob/user, obj/item/I)
+/obj/structure/janitorialcart/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_items)
-		return TRUE
+		return OP_OK
 	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/janitorialcart/proc/wrench_act_timed_done(mob/user)
 	dismantle(user)
@@ -219,13 +208,8 @@ CAPABILITIES(/obj/structure/janitorialcart)
 //New Altclick functionality!
 //Altclick the cart with a mop to stow the mop away
 //Altclick the cart with a reagent container to pour things into the bucket without putting the bottle in trash
-/// Old click_alt: stow a mop, or pour a reagent container into the bucket.
-/datum/interaction/entry_alt/janitorialcart_alt
-	id = "janitorialcart_alt"
-	name = "Use item"
-	effect = /obj/structure/janitorialcart/proc/interaction_alt
-
-/obj/structure/janitorialcart/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/janitorialcart/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.incapacitated() || !Adjacent(user))	return TRUE
 	var/obj/I = user.get_active_hand()
 	if(istype(I, /obj/item/mop))
@@ -236,13 +220,8 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		update_icon()
 	return TRUE
 
-/// Old attack_hand: open the UI.
-/datum/interaction/entry_hand/janitorialcart_hand
-	id = "janitorialcart_hand"
-	name = "Use"
-	effect = /obj/structure/janitorialcart/proc/interaction_hand
-
-/obj/structure/janitorialcart/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/janitorialcart/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

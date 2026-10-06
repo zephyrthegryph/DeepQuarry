@@ -86,19 +86,22 @@
 	M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/tray)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/tray/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/tray/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/material/kitchen/rollingpin))
 		if(!COOLDOWN_FINISHED(src, shield_bash))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
 		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
 		COOLDOWN_START(src, shield_bash, 2.5 SECONDS)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /*
 ===============~~~~~================================~~~~~====================

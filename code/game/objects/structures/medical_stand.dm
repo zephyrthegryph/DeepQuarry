@@ -27,6 +27,7 @@ CAPABILITIES(/obj/structure/medical_stand)
 	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
 	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
 	op("medical_stand_interaction_item", item(/obj/item), then(PROC_REF(medical_stand_interaction_item)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 
@@ -367,17 +368,18 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		return TRUE
 	return OP_DECLINE
 
-/obj/structure/medical_stand/wrench_act(mob/user, obj/item/W)
+/obj/structure/medical_stand/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(valve_opened)
 		to_chat(user, span_warning("Close the valve first."))
-		return TRUE
+		return OP_OK
 	if(!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]."))
-		return TRUE
+		return OP_OK
 	is_loosen = !is_loosen
 	act_message(user, null, MSG_SELF(span_notice("You [is_loosen ? "loosen" : "tighten"] the nut holding [tank] in place.")), \
 		MSG_OTHERS(span_notice("%U% [is_loosen ? "loosens" : "tightens"] the nut holding [tank] in place.")))
-	return TRUE
+	return OP_OK
 
 /obj/structure/medical_stand/examine(mob/user)
 	. = ..()

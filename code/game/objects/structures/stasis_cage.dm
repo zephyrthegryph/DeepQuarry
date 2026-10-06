@@ -15,18 +15,10 @@
 	if(A)
 		contain(A)
 
-/obj/structure/stasis_cage/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/stasis_cage_release,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Release", PROC_REF(stasis_cage_robot_release)))
-	..()
-
-/// Old attack_hand: release the contained animal.
-/datum/interaction/entry_hand/stasis_cage_release
-	id = "stasis_cage_release"
-	name = "Release"
-	effect = /obj/structure/stasis_cage/proc/interaction_release
+EXTEND_INTERACTIONS(/obj/structure/stasis_cage, \
+	INTERACT_HAND("Release", PROC_REF(interaction_release)), \
+	INTERACT_ROBOT("Release", PROC_REF(stasis_cage_robot_release)), \
+)
 
 /obj/structure/stasis_cage/proc/interaction_release(mob/user, obj/item/held, datum/interaction/interaction)
 	release()
