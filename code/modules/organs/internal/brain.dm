@@ -112,7 +112,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 /obj/item/organ/internal/brain/digitize()
 	replace_self_with(/obj/item/organ/internal/mmi_holder/robot)
 
-/obj/item/organ/internal/brain/handle_germ_effects()
+/obj/item/organ/internal/brain/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

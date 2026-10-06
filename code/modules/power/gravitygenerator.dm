@@ -5,9 +5,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 // Gravity Generator
 //
 
-#define POWER_IDLE 0
-#define POWER_UP 1
-#define POWER_DOWN 2
 
 #define GRAV_NEEDS_SCREWDRIVER 0
 #define GRAV_NEEDS_WELDING 1
@@ -153,8 +150,8 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	without("ui_open")
 	op("gentoggle", ui_act("gentoggle"), then(PROC_REF(ui_act_gentoggle)))
 
-/// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
-OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, POWER_IDLE, CHANGE_MACHINE_SETTINGS)
+/// GRAVGEN_IDLE (0), GRAVGEN_UP or GRAVGEN_DOWN; non-idle means it is spinning up or down (machine_step()).
+OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, GRAVGEN_IDLE, CHANGE_MACHINE_SETTINGS)
 /// Not BROKEN (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
 OM_DERIVE_FIELD(/obj/machinery/gravity_generator/main, unbroken, list("stat"))
 /obj/machinery/gravity_generator/main/proc/unbroken()
@@ -323,7 +320,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 /obj/machinery/gravity_generator/main/get_status()
 	if(has_stat(BROKEN))
 		return "fix[min(broken_state, 3)]"
-	return on || charging_state != POWER_IDLE ? "on" : "off"
+	return on || charging_state != GRAVGEN_IDLE ? "on" : "off"
 
 // Set the charging state based on power/breaker.
 /obj/machinery/gravity_generator/main/proc/set_power()
@@ -335,24 +332,24 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 
 	// Charging state FSM
 	switch(charging_state)
-		if(POWER_UP)
+		if(GRAVGEN_UP)
 			if(!new_state) // Can start spin down during spin up
-				set_charging_state(POWER_DOWN)
-		if(POWER_DOWN)
+				set_charging_state(GRAVGEN_DOWN)
+		if(GRAVGEN_DOWN)
 			if(new_state) // Can start spin up during spin down
-				set_charging_state(POWER_UP)
-		if(POWER_IDLE)
+				set_charging_state(GRAVGEN_UP)
+		if(GRAVGEN_IDLE)
 			if(!new_state && use_power == USE_POWER_ACTIVE) // Can start spin down during running
-				set_charging_state(POWER_DOWN)
+				set_charging_state(GRAVGEN_DOWN)
 			else if(new_state && use_power == USE_POWER_IDLE) // Can start spin up during stopped
-				set_charging_state(POWER_UP)
+				set_charging_state(GRAVGEN_UP)
 
-	investigate_log("is now [charging_state == POWER_UP ? "charging" : "discharging"].", "gravity")
+	investigate_log("is now [charging_state == GRAVGEN_UP ? "charging" : "discharging"].", "gravity")
 	update_icon()
 
 // Set the state of the gravity.
 /obj/machinery/gravity_generator/main/proc/set_gravity_state(new_state)
-	set_charging_state(POWER_IDLE)
+	set_charging_state(GRAVGEN_IDLE)
 	set_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
 	// Sound the alert if gravity was just enabled or disabled.
@@ -381,15 +378,15 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 /// Spins up or down while charging; settled (or broken) it sleeps until set_power() starts a
 /// charge again.
 /obj/machinery/gravity_generator/main/machine_step()
-	if(charging_state != POWER_IDLE)
-		if(charging_state == POWER_UP && charge_count >= 100)
+	if(charging_state != GRAVGEN_IDLE)
+		if(charging_state == GRAVGEN_UP && charge_count >= 100)
 			set_gravity_state(1)
-		else if(charging_state == POWER_DOWN && charge_count <= 0)
+		else if(charging_state == GRAVGEN_DOWN && charge_count <= 0)
 			set_gravity_state(0)
 		else
-			if(charging_state == POWER_UP)
+			if(charging_state == GRAVGEN_UP)
 				charge_count += 2
-			else if(charging_state == POWER_DOWN)
+			else if(charging_state == GRAVGEN_DOWN)
 				charge_count -= 2
 
 			if(charge_count % 4 == 0 && prob(75)) // Let them know it is charging/discharging.
@@ -497,9 +494,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 	<li>Add additional plasteel plating.</li>
 	<li>Secure the additional plating with a wrench.</li></ol>"}
 
-#undef POWER_IDLE
-#undef POWER_UP
-#undef POWER_DOWN
 
 #undef GRAV_NEEDS_SCREWDRIVER
 #undef GRAV_NEEDS_WELDING

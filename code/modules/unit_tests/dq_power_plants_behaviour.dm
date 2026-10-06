@@ -1048,3 +1048,74 @@
 
 #undef PP_GEN_STEP_PROC
 #undef PP_RTG_STEP
+
+// ============================================================================================ the gravity generator
+
+#define PP_GRAV_STEP "spin_step"
+
+/// A gravity generator (no parts) on a clear floor in a powered area.
+/datum/unit_test/dq_pp/proc/pp_gravgen(turf/T)
+	var/area/room = get_area(T)
+	room.requires_power = FALSE
+	var/obj/machinery/gravity_generator/main/G = allocate(/obj/machinery/gravity_generator/main, T)
+	G.power_change()
+	return G
+
+/datum/unit_test/dq_pp/proc/pp_gravgen_done(obj/machinery/gravity_generator/main/G, turf/T)
+	var/area/room = get_area(T)
+	room.requires_power = initial(room.requires_power)
+
+/// Spin-up: from 0 the charge rises 2 a step; at 100 gravity comes on (the generator draws its active power) and it settles.
+/datum/unit_test/dq_pp/gravgen_spin_up
+
+/datum/unit_test/dq_pp/gravgen_spin_up/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
+	G.charge_count = 0
+	G.set_use_power(USE_POWER_IDLE)
+	G.set_charging_state(GRAVGEN_UP)
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charge_count, 2, "a step adds 2")
+	for(var/i in 1 to 49)
+		pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charge_count, 100, "50 steps reach 100")
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_UP, "still spinning")
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_IDLE, "at 100 it settles")
+	TEST_ASSERT_EQUAL(G.use_power, USE_POWER_ACTIVE, "and gravity is on")
+	pp_gravgen_done(G, run[1])
+
+/// Spin-down: the charge falls 2 a step; at 0 gravity goes off.
+/datum/unit_test/dq_pp/gravgen_spin_down
+
+/datum/unit_test/dq_pp/gravgen_spin_down/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
+	G.charge_count = 4
+	G.set_use_power(USE_POWER_ACTIVE)
+	G.set_charging_state(GRAVGEN_DOWN)
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charge_count, 2, "a step takes 2")
+	pp_step(G, PP_GRAV_STEP)
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_IDLE, "at 0 it settles")
+	TEST_ASSERT_EQUAL(G.use_power, USE_POWER_IDLE, "and gravity is off")
+	pp_gravgen_done(G, run[1])
+
+/// The breaker: off while running starts the spin-down; on again while spinning down starts the spin-up.
+/datum/unit_test/dq_pp/gravgen_breaker
+
+/datum/unit_test/dq_pp/gravgen_breaker/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
+	G.set_charging_state(GRAVGEN_IDLE)
+	G.set_use_power(USE_POWER_ACTIVE)
+	G.breaker = FALSE
+	G.set_power()
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_DOWN, "the breaker off spins it down")
+	G.breaker = TRUE
+	G.set_power()
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_UP, "back on, it spins up again")
+	pp_gravgen_done(G, run[1])
+
+#undef PP_GRAV_STEP
