@@ -532,9 +532,6 @@ CAPABILITIES(/obj/item/storage/fancy/vials)
 CAPABILITIES(/obj/item/storage/lockbox/vials)
 	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_SMALL))
 
-/obj/item/storage/lockbox/vials/Initialize(mapload)
-	. = ..()
-
 /// The box shows how many vials it holds, its lock's light, and the cover while it is locked.
 /obj/item/storage/lockbox/vials/draw(datum/look/look)
 	. = ..()
@@ -571,9 +568,6 @@ CAPABILITIES(/obj/item/storage/fancy/heartbox)
 		/obj/item/reagent_containers/food/snacks/chocolatepiece,
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle)))
-
-/obj/item/storage/fancy/heartbox/Initialize(mapload)
-	. = ..()
 
 /obj/item/storage/fancy/heartbox/draw(datum/look/look)
 	. = ..()

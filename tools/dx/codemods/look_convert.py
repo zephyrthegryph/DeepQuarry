@@ -158,6 +158,14 @@ class Index:
                             self.writes[t].add(wm.group(1))
                         for wm in re.finditer(r"(?<![\w.])(?:src\.)?set_(\w+)\(", code):
                             self.writes[t].add(wm.group(1))
+                        # a list changed in place: LAZYSET(x, ...), x[k] = v, x.Cut(), x.Add()...
+                        for wm in re.finditer(r"\b(?:LAZY\w+|UNTYPED_LIST_\w+|listclearnulls)\(\s*(?:src\.)?([a-z_]\w*)\b", code):
+                            self.writes[t].add(wm.group(1))
+                        for wm in re.finditer(r"(?<![\w.])(?:src\.)?([a-z_]\w*)\[[^\]]*\]\s*(?:=(?!=)|\+=|-=|\|=)", code):
+                            self.writes[t].add(wm.group(1))
+                        for wm in re.finditer(r"(?<![\w.])(?:src\.)?([a-z_]\w*)\.(?:Cut|Add|Remove|Insert|Swap|Splice|Copy)\(", code):
+                            if not wm.group(0).endswith("Copy("):
+                                self.writes[t].add(wm.group(1))
                     if name == "appearance_overlays":
                         self.providers[t].append((rel, i, end))
                     elif name == "draw":

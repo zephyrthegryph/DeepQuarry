@@ -106,7 +106,10 @@ DECLARE_INTERACTIONS(/obj/machinery/button/remote, INTERACT_SILICON("Toggle", PR
 /obj/machinery/button/remote/proc/appearance_powered()
 	return has_stat(NOPOWER) ? 0 : 1
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0:-p}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/remote/draw(datum/look/look)
+	..()
+	look.state("doorctrl[appearance_powered() ? "0" : "-p"]")
 
 /*
 	Airlock remote control
@@ -207,7 +210,10 @@ CAPABILITIES(/obj/machinery/button/remote/blast_door)
 	. = ..()
 	icon_state = "stuffedbear"
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/remote/blast_door/bear/draw(datum/look/look)
+	..()
+	look.state("stuffedbear")
 
 
 /*
@@ -281,7 +287,10 @@ CAPABILITIES(/obj/machinery/button/remote/driver)
 /obj/machinery/button/remote/driver/proc/appearance_active()
 	return (active && !has_stat(NOPOWER)) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher{appearance_active?act:btt}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/remote/driver/draw(datum/look/look)
+	..()
+	look.state("launcher[appearance_active() ? "act" : "btt"]")
 
 /*
 	Shieldgen remote control
@@ -333,7 +342,6 @@ TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
 
 /obj/machinery/button/remote/blast_door/single_use/trigger()
 	set_has_been_pressed(TRUE)
-	update_icon()
 	..()
 
 
@@ -350,7 +358,11 @@ TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
 	to_chat(A.actor, span_notice("You hear a heavy mechanism open somewhere in the distance."))
 	icon_state = pressed_state
 
-APPEARANCE_NONE(/obj/machinery/button/remote/blast_door/single_use/slab)
+/// The look (the draw sweep: from APPEARANCE_NONE).
+/obj/machinery/button/remote/blast_door/single_use/slab/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab1
 	name = "Button Slab 1"

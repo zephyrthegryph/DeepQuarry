@@ -85,9 +85,6 @@ CAPABILITIES(/obj/item/storage/box/wormcan)
 		/obj/item/reagent_containers/food/snacks/worm,
 		/obj/item/reagent_containers/food/snacks/wormdeluxe)))
 
-/obj/item/storage/box/wormcan/Initialize(mapload)
-	. = ..()
-
 /obj/item/storage/box/wormcan/draw(datum/look/look)
 	. = ..()
 	if(held_count() == 0)

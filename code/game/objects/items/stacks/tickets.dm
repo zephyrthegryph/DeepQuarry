@@ -7,9 +7,6 @@
 	w_class = ITEMSIZE_TINY
 	max_amount = 30
 
-/obj/item/stack/arcadeticket/Initialize(mapload)
-	. = ..()
-
 /// The pile shows how many tickets there are in steps.
 /obj/item/stack/arcadeticket/look_state()
 	switch(get_amount())

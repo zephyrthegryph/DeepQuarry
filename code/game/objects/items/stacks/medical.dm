@@ -534,9 +534,6 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 /obj/item/stack/medical/advanced
 	icon = 'icons/obj/stacks_vr.dmi'
 
-/obj/item/stack/medical/advanced/Initialize(mapload)
-	. = ..()
-
 /// The pack shows how many are left in steps.
 /obj/item/stack/medical/advanced/look_state()
 	switch(amount)

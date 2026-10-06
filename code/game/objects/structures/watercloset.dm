@@ -41,7 +41,6 @@ CAPABILITIES(/obj/structure/toilet)
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
 	open = round(rand(0, 1))
-	update_icon()
 	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(teleplumb_crystal)
@@ -73,7 +72,10 @@ CAPABILITIES(/obj/structure/toilet)
 		AM.forceMove(src.loc)
 	rel_clear(src, nameof(currently_held_objects))
 
-APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}")
+/// The look (the draw sweep: from its template).
+/obj/structure/toilet/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][open][cistern]")
 
 /obj/structure/toilet/proc/crystal_answered(datum/act/request/A)
 	if(!A.answer)
@@ -141,7 +143,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 		return TRUE
 
 	open = !open
-	update_icon()
+	changed(src)
 	return TRUE
 
 /// Old attack_ai: the hand's Use, except for a cyborg that is remote viewing or has no client.
@@ -213,7 +215,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	var/mob/living/GM = task.target
 	if(!open) //Someone closed it while we were trying to swirlie. Rude.
 		open = TRUE //Open it.
-		update_icon()
+		changed(src)
 	if(!refilling)
 		act_message(user, GM, MSG_SELF(span_notice("You give %T% a swirlie!")), \
 			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
@@ -540,7 +542,7 @@ CAPABILITIES(/obj/machinery/shower)
 		MSG_OTHERS(span_notice("%U% [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!")), \
 		MSG_BLIND("You hear grinding porcelain."))
 	cistern = !cistern
-	update_icon()
+	changed(src)
 
 /obj/structure/toilet/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

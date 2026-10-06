@@ -35,9 +35,6 @@
 	w_class = ITEMSIZE_NORMAL
 	var/open = FALSE
 
-/obj/item/melee/umbrella/Initialize(mapload)
-	. = ..()
-
 TRACKED(/obj/item/melee/umbrella, open)
 
 CAPABILITIES(/obj/item/melee/umbrella)

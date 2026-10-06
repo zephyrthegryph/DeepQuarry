@@ -2178,7 +2178,8 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   the first refresh, after the whole init. So a type whose init changes what it shows now shows it at once: the armed bear trap
   (`/obj/item/beartrap/start_active`) is armed, cliffs show their `cliff-2` sprite (they were blank until something redrew them), the suit dispenser,
   the anomaly harvester and the shutoff monitor show their light and panel overlays, and a robot's flash lying loose shows burnt (it has no robot to
-  draw power from; in a robot it reads the robot's cell, as before).
+  draw power from; in a robot it reads the robot's cell, as before). Energy weapons (`/obj/item/melee/energy`) carry their blade colour from
+  creation; the provider that tints them ran only on their first redraw.
 * **A subtype's declared look wins over the parent's init.** The mouse hole (`/obj/structure/mob_spawner/mouse_nest/mousehole`) declared
   `tunnel_hole`, but the nest's init wrote its state after the declaration had drawn, so it showed a trash pile; it shows its hole now.
 * **The used autoinjector keeps its spent sprite** through a draw of its own; its init wrote the state by hand, which a draw would redraw over.

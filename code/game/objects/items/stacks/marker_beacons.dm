@@ -45,9 +45,6 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 /obj/item/stack/marker_beacon/hundred
 	amount = 100
 
-/obj/item/stack/marker_beacon/Initialize(mapload)
-	. = ..()
-
 /obj/item/stack/marker_beacon/examine(mob/user)
 	. = ..()
 	. += span_notice("Use in-hand to place a [singular_name].")

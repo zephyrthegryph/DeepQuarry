@@ -21,7 +21,7 @@
 		om_unlink(src, had_item, /datum/om/relation/gripper_holding)
 	var/holding_item = get_wrapped_item()
 	// Feedback
-	update_icon()
+	changed(src)
 
 	if(had_item && !holding_item) // Dropped
 		our_robot.playsound_local(get_turf(our_robot), 'sound/machines/click.ogg', 50)
@@ -382,12 +382,11 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gripper/appearance_overlays()
-	. = list()
+/obj/item/gripper/draw(datum/look/look)
+	..()
 	var/obj/item/wrapped = get_wrapped_item()
 	if(!wrapped)
-		return .
+		return
 
 	// Draw the held item as a mini-image in the gripper itself
 	var/mutable_appearance/item_display = new(wrapped)
@@ -396,7 +395,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 	item_display.pixel_y = 0
 	item_display.plane = plane
 	item_display.layer = layer + 0.01
-	. += item_display
+	look.overlay(item_display)
 
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no

@@ -288,7 +288,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 		return SETUP_WARNING
 
 	found.trigger()
-	found.update_icon()
 	return SETUP_OK
 
 

@@ -68,7 +68,7 @@
 	injury_kinds = active_injury_kinds
 	w_class = active_w_class
 	play_sfx(src, SFX_WEAPONS_SABERON)
-	update_icon()
+	changed(src)
 	set_light(lrange, lpower, lcolor)
 
 /obj/item/melee/energy/proc/deactivate(mob/living/user)
@@ -86,7 +86,7 @@
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
 	w_class = initial(w_class)
-	update_icon()
+	changed(src)
 	set_light(0,0)
 
 /obj/item/melee/energy/proc/use_charge(cost)
@@ -159,7 +159,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 				if(!move_into(src, nameof(src.bcell), W, user))
 					return FALSE
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
+				changed(src)
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 	return FALSE
@@ -170,7 +170,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 		return OP_DECLINE
 	rainbow = !rainbow
 	to_chat(user, span_notice("You manipulate the color controller in [src]."))
-	update_icon()
 	return OP_OK
 
 /obj/item/melee/energy/proc/screwdriver_used(datum/act/op/A)
@@ -182,25 +181,23 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 	own_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
-	update_icon()
 	return OP_OK
 
 /obj/item/melee/energy/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/energy/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
+/obj/item/melee/energy/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[drawn_state]_blade")
 	blade_overlay.color = lcolor
-	color = lcolor
+	look.set_color(lcolor)
 	if(rainbow)
-		blade_overlay = mutable_appearance(icon, "[icon_state]_blade_rainbow")
+		blade_overlay = mutable_appearance(icon, "[drawn_state]_blade_rainbow")
 		blade_overlay.color = "FFFFFF"
-		color = "FFFFFF"
+		look.set_color("FFFFFF")
 	if(active)
-		. += blade_overlay
+		look.overlay(blade_overlay)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		H.update_inv_l_hand()
@@ -234,7 +231,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 		return
 	if(A.answer.value)
 		lcolor = sanitize_hexcolor(A.answer.value)
-	update_icon()
 	if(active)
 		set_light(lrange, lpower, lcolor)
 
@@ -585,14 +581,12 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	colorable = FALSE
 	lcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/energy/sword/altevian/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/melee/energy/sword/altevian/draw(datum/look/look)
+	..()
 	if(active)
-		icon_state = "[initial(icon_state)]_active"
+		look.state("[initial(icon_state)]_active")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 /obj/item/melee/energy/blade/dropped(mob/user, equipping, slot)
 	. = ..()

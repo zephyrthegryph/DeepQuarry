@@ -26,7 +26,10 @@
 	var/datum/material/material
 	var/grille_type
 
-DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/low_wall/draw(datum/look/look)
+	..()
+	look.state("blank")
 
 CAPABILITIES(/obj/structure/low_wall)
 	smoothing()
@@ -213,10 +216,10 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 
 // Bay's version
 /// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/low_wall/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/low_wall/bay/appearance_overlays()
-	. = list()
+/obj/structure/low_wall/bay/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 	var/image/I
 	var/main_color = material.icon_colour
@@ -227,7 +230,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appear
 		else
 			I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
 			I.color = main_color
-		. += I
+		look.overlay(I)
 
 	if(stripe_color)
 		for(var/i = 1 to 4)
@@ -236,28 +239,28 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appear
 			else
 				I = image(icon, "stripe[connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
-			. += I
+			look.overlay(I)
 
 // Eris's version
 /// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/low_wall/eris)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/low_wall/eris/appearance_overlays()
-	. = list()
+/obj/structure/low_wall/eris/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 	var/image/I
 	var/main_color = material.icon_colour
 	for(var/i = 1 to 4)
 		I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
 		I.color = main_color
-		. += I
+		look.overlay(I)
 
 		if(other_connections[i] != "0")
 			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
 			I.plane = ABOVE_OBJ_PLANE
 			I.layer = ABOVE_WINDOW_LAYER
 			I.color = main_color
-			. += I
+			look.overlay(I)
 
 /// Emitters and the like can't take a low wall down in one shot.
 /obj/structure/low_wall/projectile_damage(obj/item/projectile/P, def_zone)
@@ -347,34 +350,34 @@ CAPABILITIES(/obj/structure/grille/bay)
 
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
-APPEARANCE_NONE(/obj/structure/grille/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/grille/bay/appearance_overlays()
-	. = list()
+/obj/structure/grille/bay/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
 	if(destroyed)
 		if(on_frame)
-			icon_state = "broke_onframe"
+			look.state("broke_onframe")
 		else
-			icon_state = "broken"
+			look.state("broken")
 	else
 		var/image/I
-		icon_state = ""
+		look.state("")
 		if(on_frame)
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille_onframe[connections[i]]", dir = 1<<(i-1))
-				. += I
+				look.overlay(I)
 		else
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille[connections[i]]", dir = 1<<(i-1))
-				. += I
+				look.overlay(I)
 
 /**
  * The window types for both types of short walls

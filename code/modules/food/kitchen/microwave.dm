@@ -94,7 +94,6 @@ CAPABILITIES(/obj/machinery/microwave)
 	default_apply_parts()
 
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
-	update_icon()
 
 
 // its contents are disposed and a pAI inside is ejected.
@@ -116,16 +115,19 @@ CAPABILITIES(/obj/machinery/microwave)
 		return "bloody"
 	return "clean"
 
-APPEARANCE_TEMPLATE(/obj/machinery/microwave, "mw{operating?1:}")
-DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_condition", list(
-	"b" = list(APPEARANCE_ICON_STATE = "mwb"),
-	"bloody" = list(APPEARANCE_ICON_STATE = "mwbloody0"),
-))
-DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_bloody_operating", list(
-	"1" = list(APPEARANCE_ICON_STATE = "mwbloody1"),
-))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/microwave/draw(datum/look/look)
+	..()
+	look.state("mw[operating ? "1" : ""]")
+	switch("[appearance_mw_condition()]")
+		if("b")
+			look.state("mwb")
+		if("bloody")
+			look.state("mwbloody0")
+	if(appearance_mw_bloody_operating() == 1)
+		look.state("mwbloody1")
+
 // The cooking pot keeps its own procedural icon override (fantasy_items.dm) that never calls the parent.
-APPEARANCE_NONE(/obj/machinery/microwave/cookingpot)
 
 /// Appearance reader: bloody (not broken) and running.
 /obj/machinery/microwave/proc/appearance_mw_bloody_operating()
@@ -133,7 +135,7 @@ APPEARANCE_NONE(/obj/machinery/microwave/cookingpot)
 
 /obj/machinery/microwave/proc/post_state_change()
 	update_static_data_for_all_viewers()
-	update_icon()
+	changed(src)
 	SStgui.update_uis(src)
 
 EXTEND_INTERACTIONS(/obj/machinery/microwave, \
