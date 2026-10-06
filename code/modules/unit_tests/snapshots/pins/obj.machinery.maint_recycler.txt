@@ -32,6 +32,7 @@ human|/obj/item/stack/material/steel menu: Insert (refused: its door isn't open)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Insert
 human|/obj/item/card/id menu: Insert (refused: its door isn't open)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Insert
 human|/obj/item menu: Insert (refused: its door isn't open)

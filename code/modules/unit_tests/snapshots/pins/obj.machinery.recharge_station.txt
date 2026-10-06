@@ -68,6 +68,7 @@ human|/obj/item/card/id menu: Eject Recharger
 human|/obj/item/card/id menu: Enter Recharger
 human|/obj/item/card/id menu: Put in recharger (refused: needs a grab)
 human|/obj/item/card/id menu: Put in recharger (refused: needs a mob)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/card/id click: nothing
 human|/obj/item/storage/part_replacer menu: Eject Recharger

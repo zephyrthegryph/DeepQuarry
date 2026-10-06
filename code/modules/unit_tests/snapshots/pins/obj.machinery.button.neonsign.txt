@@ -35,6 +35,7 @@ human|/obj/item/stack/material/steel menu: Press
 human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Press
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
 human|/obj/item menu: Press

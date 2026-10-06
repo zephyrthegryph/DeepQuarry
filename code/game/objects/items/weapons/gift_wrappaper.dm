@@ -15,8 +15,6 @@
 	item_state = "gift1"
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
-	///Var used for attack_hand chain.
-	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE
 
 /obj/item/a_gift/Initialize(mapload)
@@ -80,12 +78,13 @@ CAPABILITIES(/obj/effect/spresent)
 	consume(src, user)
 	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction_open_gift)))
+CAPABILITIES(/obj/item/a_gift)
+	// the old attack_self: open it (an advanced present rolls its own loot table)
+	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open_gift)))
 
 /// Old attack_self.
-/obj/item/a_gift/proc/interaction_open_gift(mob/M, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/obj/item/a_gift/proc/interaction_open_gift(datum/act/op/A)
+	var/mob/M = A.actor
 	var/gift_type = pick(
 		/obj/item/storage/wallet,
 		/obj/item/storage/photo_album,
@@ -130,14 +129,14 @@ DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction
 		/obj/item/storage/belt/utility/full,
 		/obj/item/clothing/accessory/tie/horrible)
 
-	if(!ispath(gift_type,/obj/item))	return
+	if(!ispath(gift_type,/obj/item))	return OP_OK
 
 	var/obj/item/I = new gift_type(M)
 	M.remove_from_mob(src)
 	M.put_in_hands(I)
 	I.add_fingerprint(M)
 	consume(src, M)
-	return
+	return OP_OK
 
 /*
  * Wrapping Paper
@@ -226,7 +225,6 @@ CAPABILITIES(/obj/item/wrapping_paper)
 	item_state = "chomp_present"
 	plane = ABOVE_MOB_PLANE
 	var/chaos
-	special_handling = TRUE
 
 CAPABILITIES(/obj/item/a_gift/advanced)
 	rolls(nameof(chaos), chance(1))
@@ -244,11 +242,9 @@ CAPABILITIES(/obj/item/a_gift/advanced)
 /obj/item/a_gift/advanced/proc/roll_chaos_desc(datum/roller/R)
 	return chaos ? "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!" : desc
 
-// ALLOW(interactions): its Open replaces the basic gift's Open (a different loot table)
-DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(interaction_open_advanced)))
-
 /// Old attack_self. WIP - ALWAYS add more items to list! - Jack
-/obj/item/a_gift/advanced/proc/interaction_open_advanced(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/item/a_gift/advanced/interaction_open_gift(datum/act/op/A)
+	var/mob/M = A.actor
 	var/gift_type_advanced = pick(
 		/obj/item/binoculars/spyglass,
 		/obj/item/bodysnatcher,
@@ -387,7 +383,6 @@ DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(in
 		/obj/item/storage/box/casino/costume_sexyclown,
 		/obj/item/storage/box/casino/costume_nyangirl) // Enable End
 
-
 	var/gift_type_chaos = pick(
 		/obj/item/dnainjector/set_trait/hulk,
 		/obj/item/spellbook,
@@ -411,4 +406,4 @@ DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(in
 	I.add_fingerprint(M)
 
 	consume(src, M)
-	return
+	return OP_OK

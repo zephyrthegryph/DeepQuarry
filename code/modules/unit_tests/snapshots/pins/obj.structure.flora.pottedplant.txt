@@ -30,6 +30,7 @@ human|/obj/item/stack/material/steel menu: Hide item (refused: That is too large
 human|/obj/item/stack/material/steel menu: Search
 human|/obj/item/stack/material/steel click: Click: Hide item
 human|/obj/item/card/id menu: Hide item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Search
 human|/obj/item/card/id click: Click: Hide item
 human|/obj/item menu: Hide item (refused: That is too large to fit.)

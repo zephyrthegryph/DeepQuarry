@@ -46,6 +46,16 @@ CAPABILITIES(/obj/item/uav)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	// the old attack_hand: on the floor, a radial of what to do with it (elsewhere the click declines to the ordinary hand)
+	op("handle", hand(), label("Handle"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(handle_options)), "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), when = PROC_REF(uav_on_floor)),
+		then(PROC_REF(option_chosen)))
+	// the old attackby: a pairing computer pairs it, a cell goes in
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// a pen writes its nickname
+	op("nickname", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Nickname"), priority(OP_PRIORITY_PART + 1),
+		asks(/datum/prompt/text, fields = list("title" = "Nickname", "question" = computed(PROC_REF(nickname_question)), "default" = computed(PROC_REF(current_nickname)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
+		then(PROC_REF(nickname_entered)))
 
 /obj/item/uav/loaded
 	cell_type = /obj/item/cell/high
@@ -72,32 +82,31 @@ CAPABILITIES(/obj/item/uav)
 	else if(get_integrity() <= (max_integrity/2))
 		. += span_warning("It looks pretty beaten up...")
 
-DECLARE_INTERACTIONS(/obj/item/uav, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/obj/item/uav/proc/uav_on_floor(datum/act/op/A)
+	return lies_on_floor(src)
 
-/// Old attack_hand.
-/obj/item/uav/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	//Has to be on the ground to work with it properly
-	if(!isturf(loc))
-		return FALSE
-
-	var/list/options = list(
+/obj/item/uav/proc/handle_options(datum/act/op/A)
+	return list(
 		"Pick Up" = radial_pickup,
 		"(Dis)Assemble" = radial_wrench,
 		"Toggle Power" = radial_power,
 		"Pairing Mode" = radial_pair)
-	open_request(src, /datum/prompt/choice, PROC_REF(option_chosen), answerer = user, choices = options, anchor = src, require_near = !issilicon(user), radial = TRUE, autopick_single_option = TRUE, timeout = 0)
-	return TRUE
 
-/obj/item/uav/proc/option_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	if(!user || user.incapacitated() || !isturf(loc))
-		return
-	switch(A.answer.value)
+/obj/item/uav/proc/nickname_question(datum/act/op/A)
+	return "Enter a nickname for [src]"
+
+/obj/item/uav/proc/current_nickname(datum/act/op/A)
+	return nickname
+
+/// Old attack_hand: the radial's choice (it has to be on the ground to work with it properly).
+/obj/item/uav/proc/option_chosen(datum/act/op/A)
+	if(!isturf(loc))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	if(!R?.value || user.incapacitated())
+		return OP_OK
+	switch(R.value)
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
@@ -119,12 +128,15 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		if("Pairing Mode")
 			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
 				toggle_pairing(user)
+	return OP_OK
 
 /obj/item/uav/proc/attack_hand_timed_done(mob/user)
 	return toggle_packed(user)
 
 /// Old attackby.
-/obj/item/uav/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/uav/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
 		rel_add(MC, nameof(MC.paired_uavs), src)
@@ -135,23 +147,23 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	else if(istype(I, /obj/item/cell) && !cell)
 		task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
-	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
-		open_request(src, /datum/prompt/text, PROC_REF(nickname_entered), answerer = user, title = "Nickname", question = "Enter a nickname for [src]", default = nickname, max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
-/obj/item/uav/proc/nickname_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/tmp_label = A.answer.value
+/obj/item/uav/proc/nickname_entered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_PASS
+	var/mob/user = A.actor
+	var/tmp_label = R.value
 	if(length(tmp_label) > 50 || length(tmp_label) < 3)
 		to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
 	else
 		to_chat(user, span_notice("You scribble your new nickname on the side of [src]."))
 		nickname = tmp_label
 		desc = initial(desc) + " This one has "  + span_notice("'[nickname]'") + " scribbled on the side."
+	return OP_PASS
 
 /obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
 	to_chat(user, span_notice("You insert [I] into [nickname]."))

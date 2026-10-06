@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel menu: Toggle (refused: the shield generator
 human|/obj/item/stack/material/steel click: Click: Hit
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Swipe ID
 human|/obj/item/card/id menu: Toggle (refused: the shield generator needs to be firmly secured to the floor first)
 human|/obj/item/card/id click: Click: Swipe ID

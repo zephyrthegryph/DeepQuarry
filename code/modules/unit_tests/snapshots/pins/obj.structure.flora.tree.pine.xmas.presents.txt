@@ -39,6 +39,7 @@ human|/obj/item/stack/material/steel menu: Search for sticks
 human|/obj/item/stack/material/steel menu: Take a present
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Search for sticks
 human|/obj/item/card/id menu: Take a present
 human|/obj/item/card/id menu: Use

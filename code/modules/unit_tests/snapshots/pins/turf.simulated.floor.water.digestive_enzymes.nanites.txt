@@ -129,6 +129,7 @@ human|/obj/item/card/id menu: Graffiti
 human|/obj/item/card/id menu: Hit the floor (refused: combat mode is off)
 human|/obj/item/card/id menu: Hit the floor (refused: hold Disarm)
 human|/obj/item/card/id menu: Interface
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id menu: Turf item
 human|/obj/item/card/id click: Click: Fill

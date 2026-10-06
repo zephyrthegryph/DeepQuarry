@@ -43,6 +43,7 @@ human|/obj/item/stack/material/steel menu: Start
 human|/obj/item/stack/material/steel click: Click: Start
 human|/obj/item/card/id menu: Eject Processor
 human|/obj/item/card/id menu: Insert
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Start
 human|/obj/item/card/id click: Click: Start
 keys: drag_buckle, eject, gen_robot_interaction_swallow, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, start

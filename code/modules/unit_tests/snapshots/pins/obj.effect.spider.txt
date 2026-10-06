@@ -21,6 +21,7 @@ human|/obj/item/stack/cable_coil click: Click: Hit web
 human|/obj/item/stack/material/steel menu: Hit web
 human|/obj/item/stack/material/steel click: Click: Hit web
 human|/obj/item/card/id menu: Hit web
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Hit web
 human|/obj/item/mop_deploy menu: Hit web
 human|/obj/item/mop_deploy menu: Insert a mop

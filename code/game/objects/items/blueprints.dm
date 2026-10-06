@@ -58,31 +58,83 @@
 		if(!charges)
 			. += "There seems to be no more room for any more edits!"
 
-DECLARE_INTERACTIONS(/obj/item/areaeditor, \
-	INTERACT_USE("Read", PROC_REF(areaeditor_text)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+TRACKED(/obj/item/areaeditor, charges)
 
-/// Old attackby.
-/obj/item/areaeditor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(uses_charges && (charges < initial_charges) && istype(W, /obj/item/areaeditor)) //Do we have a reason to add charges? And is it something that COULD add charges?
-		var/missing_charges = initial_charges-charges
-		var/obj/item/areaeditor/blueprint = W
-		if(blueprint.station_master) //Master can refill.
-			charges = initial_charges
-			to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
-			return INTERACTION_HANDLED_PASS
-		else if(blueprint.uses_charges && blueprint.charges) //Getting from another with limited charges.
-			open_request(src, /datum/prompt/number/blueprint_charge_review, PROC_REF(blueprint_charges_answered), answerer = user, subject = blueprint, title = "[blueprint]", question = "How many charges do you want to add to the [src]?", default = missing_charges, charge_limit = blueprint.charges)
-			return INTERACTION_HANDLED_PASS
-		else if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
-			to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
+CAPABILITIES(/obj/item/areaeditor)
+	// the old attack_self: read it
+	op("read", in_hand(), label("Read"), then(PROC_REF(read_editor)))
+	// another editor tops up a limited one's charges (a master refills it; a limited one gives the number asked)
+	op("add_charges", item(/obj/item/areaeditor), label("Add material"),
+		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(donor_title)), "question" = computed(PROC_REF(charges_question)), "default" = computed(PROC_REF(missing_charges)), "min_value" = 0, "max_value" = computed(PROC_REF(donor_charges)), "timeout" = 0), when = PROC_REF(asks_charges)),
+		then(PROC_REF(interaction_item)))
+	// the old object verbs
+	op("room_colors", menu(), label("Show Room Colors"), needs(carried()), then(PROC_REF(verb_room_colors)))
+	op("area_colors", menu(), label("Show Area Colors"), needs(carried()), then(PROC_REF(verb_area_colors)))
+	op("remove_colors", menu(), label("Remove Area Colors"), needs(carried()), then(PROC_REF(verb_remove_colors)))
+
+/obj/item/areaeditor/proc/verb_room_colors(datum/act/op/A)
+	seeRoomColors_effect(A.actor)
+	return OP_OK
+
+/obj/item/areaeditor/proc/verb_area_colors(datum/act/op/A)
+	seeAreaColors_effect(A.actor)
+	return OP_OK
+
+/obj/item/areaeditor/proc/verb_remove_colors(datum/act/op/A)
+	seeAreaColors_remove_effect(A.actor)
+	return OP_OK
+
+/// The old attack_self: the editor's page (a plain area editor only builds it; the blueprints show theirs).
+/obj/item/areaeditor/proc/read_editor(datum/act/op/A)
+	areaeditor_text(A.actor)
+	return OP_OK
+
+/// The number is asked when this editor is short of charges and the other is a limited one with charges to give.
+/obj/item/areaeditor/proc/asks_charges(datum/act/op/A)
+	var/obj/item/areaeditor/blueprint = A.held
+	return uses_charges && charges < initial_charges && !blueprint.station_master && blueprint.uses_charges && blueprint.charges
+
+/obj/item/areaeditor/proc/donor_title(datum/act/op/A)
+	return "[A.held]"
+
+/obj/item/areaeditor/proc/charges_question(datum/act/op/A)
+	return "How many charges do you want to add to the [src]?"
+
+/obj/item/areaeditor/proc/missing_charges(datum/act/op/A)
+	return initial_charges - charges
+
+/obj/item/areaeditor/proc/donor_charges(datum/act/op/A)
+	var/obj/item/areaeditor/blueprint = A.held
+	return blueprint.charges
+
+/// Old attackby: another editor adds material to a limited one.
+/obj/item/areaeditor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/areaeditor/blueprint = A.held
+	if(!uses_charges || charges >= initial_charges) //Do we have a reason to add charges?
+		return OP_DECLINE
+	if(blueprint.station_master) //Master can refill.
+		set_charges(initial_charges)
+		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
+		return OP_PASS
+	if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
+		to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
+		return OP_PASS
+	var/datum/prompt/R = A.answer
+	if(isnull(R?.value))
+		to_chat(user, span_notice("You decide not to add any more material."))
+		return OP_PASS
+	var/to_add = min(R.value, initial_charges - charges)
+	if(blueprint.charges >= to_add)
+		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
+		blueprint.set_charges(blueprint.charges - to_add)
+		set_charges(charges + to_add)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		charges_not_added(user)
+	return OP_PASS
 
 /// Old attack_self: builds the area editing page, which subtypes add to and show. Convert this to TGUI some time.
-/obj/item/areaeditor/proc/areaeditor_text(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/areaeditor_text(mob/user)
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
@@ -214,11 +266,13 @@ TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 	uses_charges = 1
 	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
-EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_REF(interaction_read_blueprints)))
-
 /// Old attack_self: the area editor's page, plus the station and wiring pages, shown.
-/obj/item/areaeditor/blueprints/proc/interaction_read_blueprints(mob/user, obj/item/held, datum/interaction/interaction)
-	. = areaeditor_text(user, held, interaction)
+/obj/item/areaeditor/blueprints/read_editor(datum/act/op/A)
+	interaction_read_blueprints(A.actor)
+	return OP_OK
+
+/obj/item/areaeditor/blueprints/proc/interaction_read_blueprints(mob/user)
+	. = areaeditor_text(user)
 	var/area/A = get_area(user)
 	if(!legend)
 		if(get_area_type(get_area(user)) == AREA_STATION)
@@ -317,49 +371,6 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			message += "</p>"
 			return message
 	return ""
-
-/// Moving charges from another blueprint; only an actual answer checks its hand/capability gates.
-/datum/prompt/number/blueprint_charge_review
-	timeout = 0
-	var/charge_limit
-
-/datum/prompt/number/blueprint_charge_review/present(mob/user)
-	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, charge_limit, 0, timeout, TRUE, GLOB.tgui_always_state)
-	rel_set(box, nameof(box.prompt), src)
-	box.tgui_interact(user)
-	return box
-
-/datum/prompt/number/blueprint_charge_review/recheck_extra()
-	if(isnull(value))
-		return null
-	var/mob/user = answerer
-	if(!istype(user) || !subject || (user.get_active_hand() != subject && user.get_inactive_hand() != subject))
-		return "not holding it"
-	if(user.incapacitated())
-		return "not able to"
-
-/obj/item/areaeditor/proc/blueprint_charges_answered(datum/act/request/context)
-	if(!context.answer)
-		var/obj/item/areaeditor/donor = context.request.subject
-		var/mob/user = context.request.answerer
-		if(QDELETED(donor) || QDELETED(user))
-			return
-		if(isnull(context.request.value) && (context.request.outcome == REQ_CANCELLED || context.request.outcome == REQ_TIMED_OUT))
-			to_chat(context.request.answerer, span_notice("You decide not to add any more material."))
-		return
-	. = blueprint_charges_apply(context)
-
-/obj/item/areaeditor/proc/blueprint_charges_apply(datum/act/request/context)
-	var/datum/prompt/number/blueprint_charge_review/ask = context.answer
-	var/mob/user = ask.answerer
-	var/obj/item/areaeditor/blueprint = ask.subject
-	var/to_add = min(ask.value, initial_charges - charges)
-	if(blueprint.charges >= to_add)
-		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
-		blueprint.charges -= to_add
-		charges += to_add
-	else
-		charges_not_added(user)
 
 /obj/item/areaeditor/proc/charges_not_added(mob/user)
 	to_chat(user, span_notice("You decide not to add any more material to the [src]"))
@@ -565,7 +576,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 	if(AO && istype(AO,/obj/item/areaeditor))
 		if(AO.uses_charges)
-			AO.charges -= 1
+			AO.set_charges(AO.charges - (1))
 
 	var/list/zLevels = using_map.station_levels.Copy()
 	for(var/datum/planet/PL in SSplanets.planets)
@@ -710,7 +721,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	to_chat(creator, span_notice("You have created a new area, named [newA.name]. It is now weather proof, and constructing an APC will allow it to be powered."))
 	message_admins("[key_name(creator, creator.client)] just made a new area called [newA.name] ](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[creator]'>?</A>) at ([creator.x],[creator.y],[creator.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[creator.x];Y=[creator.y];Z=[creator.z]'>JMP</a>)")
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
-	charges -= 5
+	set_charges(charges - (5))
 
 	after(src, 0.5 SECONDS, "interact")
 	return
@@ -761,7 +772,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 
 //Nice verbs for the engineer to see where areas start/end.
 
-/obj/item/areaeditor/proc/seeRoomColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/seeRoomColors_effect(mob/user)
 
 	// If standing somewhere we can expand from, use expand perms, otherwise create
 	var/canOverwrite = (get_area_type(get_area(user)) & can_expand_areas_in) ? can_expand_areas_into : can_create_areas_into
@@ -785,7 +796,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 		LAZYADD(areaColor_turfs, T)
 	to_chat(user, span_notice("The space covered by the new area is highlighted in green."))
 
-/obj/item/areaeditor/proc/seeAreaColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/seeAreaColors_effect(mob/user)
 
 	// Remove any existing
 	seeAreaColors_remove_effect(user)
@@ -801,7 +812,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 			user << image(areaColor, T, "blueprints", TURF_LAYER)
 			LAZYADD(areaColor_turfs, T)
 
-/obj/item/areaeditor/proc/seeAreaColors_remove_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/seeAreaColors_remove_effect(mob/user)
 
 	LAZYCLEARLIST(areaColor_turfs)
 	if(user?.client?.images.len)
@@ -816,20 +827,21 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	var/created_area = 0
 	var/area_cooldown = 0
 
-/// Requirement: one area per paper, and not too often.
-/obj/item/paper/proc/can_create_area(mob/user, atom/target, obj/item/held)
-	if(created_area)
-		return "this paper has already been used to create an area"
-	if(user.stat || !COOLDOWN_FINISHED(src, area_cooldown))
-		return "you recently used this paper to try to create an area, wait one minute before using it again"
-	return TRUE
+TRACKED(/obj/item/paper, created_area)
 
-/obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(paper/area_made, "This paper has already been used to create an area.")
+
+/// The paper's "Create Area" verb (declared with the paper, paper.dm): one area per paper, and not too often.
+/obj/item/paper/proc/create_area_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!COOLDOWN_FINISHED(src, area_cooldown))
+		to_chat(user, span_warning("You recently used this paper to try to create an area, wait one minute before using it again."))
+		return OP_OK
 	COOLDOWN_START(src, area_cooldown, 60 SECONDS) //Anti spam.
 
 	create_new_area(user)
 	add_fingerprint(user)
-	return
+	return OP_OK
 
 /proc/get_new_area_type(area/A) //1 = can build in. 0 = can not build in.
 	if (!A)
@@ -997,18 +1009,6 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	return
 
 #undef BP_MAX_ROOM_SIZE
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/areaeditor, \
-	INTERACT_VERB("Show Room Colors", PROC_REF(seeRoomColors_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Show Area Colors", PROC_REF(seeAreaColors_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove Area Colors", PROC_REF(seeAreaColors_remove_effect), REQ_IN_INVENTORY), \
-)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/paper, \
-	INTERACT_VERB("Create Area", PROC_REF(create_area_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/paper/proc/can_create_area)), \
-)
 
 /datum/prompt/choice/blueprint_expand
 	title = "Area Expansion"

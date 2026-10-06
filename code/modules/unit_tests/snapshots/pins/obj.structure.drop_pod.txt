@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: Click: Open
 human|/obj/item/stack/material/steel menu: Open
 human|/obj/item/stack/material/steel click: Click: Open
 human|/obj/item/card/id menu: Open
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Open
 keys: drag_buckle, open, use_wrench
 

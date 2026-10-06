@@ -63,6 +63,7 @@ human|/obj/item/card/id menu: Hug
 human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Poke
 human|/obj/item/card/id menu: Punch
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Strangle
 human|/obj/item/card/id click: Click: Item
 human|/obj/item menu: Hug

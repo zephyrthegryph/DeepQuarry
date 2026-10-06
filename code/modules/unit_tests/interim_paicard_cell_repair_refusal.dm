@@ -12,7 +12,7 @@
 	add_trait(part, TRAIT_NODROP, "interim_pai_cell")
 	TEST_ASSERT(user.release_refusal(part, user), "actual inventory refuses the sticky original power part")
 	TEST_ASSERT(!user.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_KNOCKOUT), "actual repair actor starts capable")
-	device.interaction_item(user, part, null)
+	test_op_handler(device, "interaction_item", user, part)
 	TEST_ASSERT(LAZYLEN(user.do_afters), "actual repair entry schedules the real timed task")
 	TEST_ASSERT_EQUAL(device.cell, PP_MISSING, "starting repair grants no early functional hardware")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), part, "pending repair retains exact original hand")

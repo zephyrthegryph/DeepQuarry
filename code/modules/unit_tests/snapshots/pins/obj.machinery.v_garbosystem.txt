@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/card/id menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: nothing
 human|/obj/item/card/emag menu: Emag

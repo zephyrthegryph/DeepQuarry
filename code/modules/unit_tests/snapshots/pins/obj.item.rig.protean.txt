@@ -274,6 +274,7 @@ human|/obj/item/card/id menu: Open Hardsuit Interface (refused: you need to be c
 human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Protean rig hand
 human|/obj/item/card/id menu: Protean rig item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove Assimilated Rig (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove Stored Bag (refused: You can't do that.)
 human|/obj/item/card/id menu: Rig item

@@ -2213,6 +2213,13 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   The uplink multitool opens its uplink through its own in-hand op. The pAI's radio inherits the ordinary item ops it once replaced (it
   lives inside the card, out of reach).
 - **A ghost joining a simple mob** is the observer op `ghost_join` with a yes/no step (re-checked on the answer); `ghostjoin` is `TRACKED`.
+- **More devices**: the vac attachment's settings and sprite choice, the translocator's beacon radial and new-beacon name, the beacon's
+  eat-into-a-belly and first pick-up warning, and the pAI card's part removal, multitool check and ID access are `asks()` steps. The
+  translocator's OOC alert now shows after the beacon is chosen, and the magic tome is the translocator with its words and page type as
+  vars (no copy of the menu). The tape recorder's print cooldown is told when printing (the menu entry is no longer greyed during it).
+  A ghost that may never respawn still only gets the warning before loading into a pAI card, as before. A cyborg is refused its own
+  flash by a separate op on the robot head. `idaccessible` (pAI), `panel_open` and the critical parts (pAI card), `emagged`/`playing`
+  (tape recorder), `ruined` (tape), `buildstep` (TV assembly) and `beacons_left` (translocator) are `TRACKED`.
 
 ## Leftovers: the machinery sweep (rewrite/leftovers)
 

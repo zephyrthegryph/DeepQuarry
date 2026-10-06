@@ -99,6 +99,7 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Open
 human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Put in
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/id click: Click: Put in
 human|/obj/item/kit menu: Change wallet color (refused: You can't do that.)

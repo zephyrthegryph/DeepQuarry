@@ -30,7 +30,7 @@
 	TEST_ASSERT_EQUAL(get_new_area_type(isolated), 0, "an ordinary indoor area does not allow new-area creation")
 	TEST_ASSERT_EQUAL(blueprint.get_area_type(null), 0, "missing areas have no editing classification")
 	TEST_ASSERT_EQUAL(get_new_area_type(null), 0, "missing areas do not allow creation")
-	var/page = blueprint.areaeditor_text(user, null, null)
+	var/page = blueprint.areaeditor_text(user)
 	TEST_ASSERT(length(page), "the actor can generate the actual editing page without an ambient caller")
 	TEST_ASSERT(findtext(page, "create_area=1"), "the actor's editing page offers the actual creation action")
 	TEST_ASSERT(user.put_in_r_hand(blueprint), "the actor holds the real blueprint for its rename request")

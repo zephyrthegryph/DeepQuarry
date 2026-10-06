@@ -21,6 +21,7 @@ human|/obj/item/stack/cable_coil click: Click: Pay
 human|/obj/item/stack/material/steel menu: Pay
 human|/obj/item/stack/material/steel click: Click: Pay
 human|/obj/item/card/id menu: Pay
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Pay
 human|/obj/item menu: Pay
 human|/obj/item click: Click: Pay

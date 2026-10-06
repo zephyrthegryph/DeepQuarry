@@ -42,6 +42,7 @@ human|/obj/item/stack/material/steel menu: Remove sample
 human|/obj/item/stack/material/steel click: Click: Insert sample
 human|/obj/item/card/id menu: Examine sample (refused: the microscope has no sample to examine)
 human|/obj/item/card/id menu: Insert sample
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove sample
 human|/obj/item/card/id click: Click: Insert sample
 human|/obj/item menu: Examine sample (refused: the microscope has no sample to examine)

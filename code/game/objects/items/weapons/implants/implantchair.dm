@@ -24,6 +24,11 @@ CAPABILITIES(/obj/machinery/implantchair)
 	interface("ImplantChair", title = "Implanter Status", state = nameof(GLOB.tgui_default_state))
 	op("implant", ui_act("implant"), then(PROC_REF(ui_act_implant)))
 	op("replenish", ui_act("replenish"), then(PROC_REF(ui_act_replenish)))
+	// a grabbed carbon goes into the chair
+	op("put_in", item(/obj/item/grab), label("Put in chair"), then(PROC_REF(interaction_insert)))
+	// the old verbs
+	op("get_out", menu(), label("Eject occupant"), needs(req_conscious()), then(PROC_REF(interaction_get_out)))
+	op("move_inside", menu(), label("Move Inside"), needs(req_conscious()), then(PROC_REF(interaction_move_inside)))
 
 /obj/machinery/implantchair/Initialize(mapload)
 	. = ..()
@@ -58,33 +63,20 @@ CAPABILITIES(/obj/machinery/implantchair)
 	add_fingerprint(user)
 
 
-/obj/machinery/implantchair/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/implantchair_insert,
-		/datum/interaction/machine_verb/implantchair_get_out,
-		/datum/interaction/machine_verb/implantchair_move_inside,
-	)
-	..()
-
-/// Old attackby: never called ..(), so the whole thing (including the non-grab no-op) stays in the effect.
-/datum/interaction/machine_item/implantchair_insert
-	id = "implantchair_insert"
-	name = "Put in chair"
-	effect = /obj/machinery/implantchair/proc/interaction_insert
-
-/obj/machinery/implantchair/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
-	if(istype(G, /obj/item/grab))
-		var/obj/item/grab/grab = G
-		var/mob/M = grab?.grab_target()
-		if(!ismob(M))
-			return TRUE
-		if(M.has_buckled_mobs())
-			to_chat(user, span_warning("\The [M] has other entities attached to them. Remove them first."))
-			return TRUE
-		if(put_mob(M, user))
-			consume(G, user)
+/// Old attackby: a grabbed mob goes in.
+/obj/machinery/implantchair/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grab/grab = A.held
+	var/mob/M = grab?.grab_target()
+	if(!ismob(M))
+		return OP_OK
+	if(M.has_buckled_mobs())
+		to_chat(user, span_warning("\The [M] has other entities attached to them. Remove them first."))
+		return OP_OK
+	if(put_mob(M, user))
+		consume(grab, user)
 	src.updateUsrDialog(user)
-	return TRUE
+	return OP_OK
 
 
 /obj/machinery/implantchair/proc/go_out(mob/M)
@@ -144,28 +136,18 @@ CAPABILITIES(/obj/machinery/implantchair)
 		rel_add(src, nameof(implant_list), I)
 	return
 
-/datum/interaction/machine_verb/implantchair_get_out
-	id = "implantchair_get_out"
-	name = "Eject occupant"
-	effect = /obj/machinery/implantchair/proc/interaction_get_out
-
-/obj/machinery/implantchair/proc/interaction_get_out(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat != 0)
-		return TRUE
+/obj/machinery/implantchair/proc/interaction_get_out(datum/act/op/A)
+	var/mob/user = A.actor
 	src.go_out(user)
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_verb/implantchair_move_inside
-	id = "implantchair_move_inside"
-	name = "Move Inside"
-	effect = /obj/machinery/implantchair/proc/interaction_move_inside
-
-/obj/machinery/implantchair/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat != 0 || !operable())
-		return TRUE
+/obj/machinery/implantchair/proc/interaction_move_inside(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!operable())
+		return OP_OK
 	put_mob(user, user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/implantchair/proc/replenished()
 	add_implants()

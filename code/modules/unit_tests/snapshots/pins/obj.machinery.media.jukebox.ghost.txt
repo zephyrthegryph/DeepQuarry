@@ -40,6 +40,7 @@ human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
 human|/obj/item/card/emag menu: Climb

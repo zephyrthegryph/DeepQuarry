@@ -34,6 +34,7 @@ human|/obj/item/stack/material/steel menu: Climb (refused: There's a material pr
 human|/obj/item/stack/material/steel menu: Strike
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Climb (refused: There's a material processor in the way.)

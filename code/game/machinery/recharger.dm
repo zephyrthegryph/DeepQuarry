@@ -173,10 +173,10 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 		return /datum/msg/recharger/no_battery_installed
 	if(istype(G, /obj/item/paicard))
 		var/obj/item/paicard/ourcard = G
-		if(ourcard.panel_open) // ALLOW(reads): a card's panel is legacy item state, read when the card is offered
+		if(ourcard.panel_open)
 			return /datum/msg/recharger/pai_panel
-		if(ourcard.pai) // ALLOW(reads): a card's personality is legacy item state, read when the card is offered
-			if(ourcard.pai.stat == CONSCIOUS) // ALLOW(reads): a personality's state is legacy mob state, read when the card is offered
+		if(ourcard.pai)
+			if(ourcard.pai.stat == CONSCIOUS)
 				return /datum/msg/recharger/pai_fine
 		else
 			return /datum/msg/recharger/pai_empty

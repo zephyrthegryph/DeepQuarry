@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil click: Click: Disassemble
 human|/obj/item/stack/material/steel menu: Disassemble
 human|/obj/item/stack/material/steel click: Click: Disassemble
 human|/obj/item/card/id menu: Disassemble
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Disassemble
 keys: disassemble
 

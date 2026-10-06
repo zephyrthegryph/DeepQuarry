@@ -30,7 +30,7 @@ APPEARANCE_NONE(/obj/item/card/id/guest)
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
 
-/obj/item/card/id/guest/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/guest/id_read_effect(mob/user)
 	if(!Adjacent(user))
 		return //Too far to read
 	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))

@@ -34,6 +34,7 @@ human|/obj/item/stack/material/steel menu: Place container
 human|/obj/item/stack/material/steel menu: Remove container
 human|/obj/item/stack/material/steel click: Click: Place container
 human|/obj/item/card/id menu: Place container
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove container
 human|/obj/item/card/id click: Click: Place container
 human|/obj/item menu: Place container

@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Enter
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Enter
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/mop_deploy menu: Enter
 human|/obj/item/mop_deploy menu: Insert a mop

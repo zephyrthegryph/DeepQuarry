@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Insert (refused: you cannot put the steel sheet into the machine)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Insert (refused: you cannot put the identification card into the machine)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Insert (refused: you cannot put the item into the machine)
 human|/obj/item click: nothing

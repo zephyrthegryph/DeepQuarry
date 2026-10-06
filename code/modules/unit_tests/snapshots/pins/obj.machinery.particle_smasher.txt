@@ -33,6 +33,7 @@ human|/obj/item/stack/material/steel menu: Fill target
 human|/obj/item/stack/material/steel menu: Store
 human|/obj/item/stack/material/steel click: Click: Fill target
 human|/obj/item/card/id menu: Eject Particle Focus Contents
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Store
 human|/obj/item/card/id menu: Swipe
 human|/obj/item/card/id click: Click: Swipe

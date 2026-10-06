@@ -194,15 +194,22 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 	examine_canalyzer = new_canalyzer
 
 /// Requirement: a fried circuit is past working on.
-/obj/item/poi/broken_drone_circuit/proc/can_work_on(mob/living/user, atom/target, obj/item/held)
-	if(istype(user) && fried)
-		return "it's covered in black marks, you feel there's nothing more you can do"
-	return TRUE
+TRACKED(/obj/item/poi/broken_drone_circuit, fried)
+
+CAPABILITIES(/obj/item/poi/broken_drone_circuit)
+	// the old attack_self: study the circuit for a while
+	op("analyze", in_hand(), label("Analyze"), then(PROC_REF(interaction_self)))
+	// the old attackby: screwdriver, wirecutters, multitool and analyzer on the blackbox (a fried board is past saving)
+	op("work", item(/obj/item), label("Use"), needs(req_is(nameof(fried), FALSE, because = MSG(drone_circuit/fried))), then(PROC_REF(interaction_item)))
+
+MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's nothing more you can do.")
 
 /// Old attackby.
-/obj/item/poi/broken_drone_circuit/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/poi/broken_drone_circuit/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/turf/message_turf = get_turf(user)	//We use this to ensure everyone can see it!
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
@@ -216,7 +223,7 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 	if(istype(I, /obj/item/paper) && unscrewed)
 		if(!has_paper)
 			if(!consume(I, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, "You feed the debug printer some paper")
 			has_paper = TRUE
 		else
@@ -261,22 +268,18 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 				P.info = "[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]"
 				has_paper = FALSE
 
-	return FALSE
-
-DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/poi/broken_drone_circuit/proc/can_work_on)), \
-)
+	return OP_DECLINE
 
 /// Old attack_self.
-/obj/item/poi/broken_drone_circuit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/poi/broken_drone_circuit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 
 	act_message(user, src, MSG_SELF("You take your time to analyze the circuit..."), MSG_OTHERS("%U% is studiously examining %T%"))
 	var/message = ""
 	if(fried)
 		message += "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
 		to_chat(user, message)
-		return TRUE
+		return OP_OK
 	else
 		message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
 
@@ -295,7 +298,7 @@ DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
 		message += "Looks like there's a printer without any paper in it."
 
 	task_timed(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
-	return TRUE
+	return OP_OK
 
 /obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)
 	to_chat(user, message)

@@ -6,7 +6,7 @@
 	carried.name = "Fixture blanket"
 	carried.unfolded_desc = "Fixture unfolded blanket"
 	TEST_ASSERT(user.put_in_active_hand(carried), "the folded blanket occupies a real hand slot")
-	carried.picnic_blankets_carried_fold_out_effect(user, carried, null)
+	test_op_handler(carried, "picnic_blankets_carried_fold_out_effect", user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(carried), "the actual fold-out consumes the carried blanket")
 	TEST_ASSERT_NULL(user.get_active_hand(), "unfolding vacates the actual source hand")
@@ -20,7 +20,7 @@
 	for(var/obj/structure/picnic_blanket_deployed/edge in edges)
 		TEST_ASSERT(isturf(edge.loc), "each actual edge remains on a floor tile")
 		TEST_ASSERT_EQUAL(edge.name, deployed.name, "edges inherit the configured blanket name")
-	deployed.picnic_blanket_deployed_fold_up_effect(user, null, null)
+	test_op_handler(deployed, "picnic_blanket_deployed_fold_up_effect", user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(deployed), "folding back consumes the actual center structure")
 	for(var/obj/structure/picnic_blanket_deployed/edge in edges)
@@ -41,8 +41,8 @@
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
 	refusal.block_remove = TRUE
-	TEST_ASSERT(carried.can_unfold(user, carried, carried) != TRUE, "the requirement rejects real source release refusal")
-	TEST_ASSERT_EQUAL(carried.picnic_blankets_carried_fold_out_effect(user, carried, null), FALSE, "the actual completion respects release refusal")
+	TEST_ASSERT(!test_op_handler(carried, "can_unfold", user), "the requirement rejects real source release refusal")
+	test_op_handler(carried, "picnic_blankets_carried_fold_out_effect", user)
 	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(carried), "refusal preserves the original folded blanket")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), carried, "refusal retains the original source slot")
@@ -62,7 +62,7 @@
 		allocate(/obj/item/pen, crowded)
 	var/obj/item/picnic_blankets_carried/carried = allocate(/obj/item/picnic_blankets_carried, T)
 	TEST_ASSERT(user.put_in_active_hand(carried), "the actual actor holds the folded blanket")
-	carried.picnic_blankets_carried_fold_out_effect(user, carried, null)
+	test_op_handler(carried, "picnic_blankets_carried_fold_out_effect", user)
 	own_turf_contents(T)
 	var/obj/structure/picnic_blanket_deployed/deployed = locate_within(T, /obj/structure/picnic_blanket_deployed)
 	TEST_ASSERT(deployed, "a crowded neighboring tile does not block creating the center")

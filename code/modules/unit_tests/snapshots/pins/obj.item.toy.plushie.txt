@@ -88,6 +88,7 @@ human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/id click: Click: Item
 human|/obj/item/kit menu: Collect (refused: needs a storage)

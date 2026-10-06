@@ -65,6 +65,7 @@ human|/obj/item/stack/material/steel click: Click: Cloning console interaction i
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Cloning console interaction hand
 human|/obj/item/card/id menu: Cloning console interaction item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Cloning console interaction item

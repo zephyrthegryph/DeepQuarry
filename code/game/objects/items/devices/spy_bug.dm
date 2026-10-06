@@ -22,6 +22,19 @@ CAPABILITIES(/obj/item/camerabug)
 	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
 	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(camerabug_shot))))
+	op("pair", item(/obj/item/bug_monitor), label("Pair"), then(PROC_REF(interaction_pair)))
+	// wrenching it down on the floor (any stance but harm; a harmful swing falls through to the hit)
+	op("secure", tool(TOOL_WRENCH), wait(0), stance(I_HELP, I_DISARM, I_GRAB), label("Secure or unsecure"), needs(req(PROC_REF(lies_on_turf), because = MSG(camerabug/not_on_floor))), then(PROC_REF(interaction_wrench)))
+	// the old attackby: a strong hit breaks the lens (and the hit goes on)
+	op("hit", item(/obj/item), then(PROC_REF(interaction_item)))
+	// the old object verb
+	op("reset", menu(), label("Reset camera bug"), needs(carried()), then(PROC_REF(camerabug_reset)))
+
+MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
+
+/obj/item/camerabug/proc/camerabug_reset(datum/act/op/A)
+	camerabug_reset_effect(A.actor)
+	return OP_OK
 
 
 /obj/item/camerabug/proc/camerabug_crushed(datum/act/op/A)
@@ -31,7 +44,7 @@ CAPABILITIES(/obj/item/camerabug)
 	replace_with(src, brokentype)
 	return OP_OK
 
-/obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camerabug/proc/camerabug_reset_effect(mob/user)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
@@ -92,15 +105,9 @@ CAPABILITIES(/obj/item/camerabug)
 	else
 		look.alpha = 255
 
-DECLARE_INTERACTIONS(/obj/item/camerabug, \
-	INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"), \
-	INTERACT_ITEM_AS(I_HELP, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
-	INTERACT_ITEM_AS(I_DISARM, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
-	INTERACT_ITEM_AS(I_GRAB, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/obj/item/camerabug/proc/interaction_pair(mob/user, obj/item/bug_monitor/SM, datum/interaction/interaction)
+/obj/item/camerabug/proc/interaction_pair(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/bug_monitor/SM = A.held
 	if(!linkedmonitor())
 		to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
 		SM.pair(src)
@@ -111,10 +118,12 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 		rel_clear(src, nameof(linkedmonitor))
 	else
 		to_chat(user, "Error: The device is linked to another monitor.")
-	return TRUE
+	return OP_OK
 
 /// Old attackby: any other item breaks the lens on a strong hit, but always fell through to ..().
-/obj/item/camerabug/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/camerabug/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.force >= 5)
 		visible_message("\The [src] lens shatters!")
 		new brokentype(get_turf(src))
@@ -122,16 +131,23 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 			linkedmonitor().unpair(src)
 		rel_clear(src, nameof(linkedmonitor))
 		consume(src, user)
-	return FALSE
+	return OP_DECLINE
 
 /// Wrenching it down (any stance but harm; a harmful swing falls through to the hit).
-/obj/item/camerabug/proc/interaction_wrench(mob/user, obj/item/tool, datum/interaction/interaction)
+/obj/item/camerabug/proc/interaction_wrench(datum/act/op/A)
 	set_anchored(!anchored)
-	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
-	return TRUE
+	to_chat(A.actor, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
+	update_icon()
+	return OP_OK
 
-/obj/item/camerabug/proc/lies_on_turf(mob/actor, atom/target, obj/item/held)
-	return isturf(loc)
+/// Requirement: it lies on the floor.
+/obj/item/camerabug/proc/lies_on_turf(datum/act/op/A)
+	return lies_on_floor(src)
+
+/// Is `thing` lying loose on a turf (not carried or inside something)?
+/proc/lies_on_floor(atom/movable/thing)
+	READS_FROM() // where it lies is asked when the tool touches it
+	return isturf(thing.loc)
 
 /// A round shatters the bug.
 /obj/item/camerabug/proc/camerabug_shot(datum/act/hit/projectile/A)
@@ -285,7 +301,3 @@ CAPABILITIES(/obj/item/bug_monitor)
 /// Relation view: selected camera (reads null once it is gone).
 /obj/item/bug_monitor/proc/selected_camera() as /obj/machinery/camera/bug
 	return selected_camera
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/camerabug, \
-	INTERACT_VERB("Reset camera bug", PROC_REF(camerabug_reset_effect), REQ_IN_INVENTORY), \
-)

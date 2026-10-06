@@ -232,6 +232,7 @@ human|/obj/item/card/id menu: Engage Module (refused: you need to be carrying it
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Open Hardsuit Interface (refused: you need to be carrying it)
 human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rig item
 human|/obj/item/card/id menu: Rig shock hand
 human|/obj/item/card/id menu: Select Module (refused: you need to be carrying it)

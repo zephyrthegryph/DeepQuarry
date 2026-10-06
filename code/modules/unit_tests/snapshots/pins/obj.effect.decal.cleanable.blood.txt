@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Interaction touch blood
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Interaction touch blood
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/mop_deploy menu: Insert a mop
 human|/obj/item/mop_deploy menu: Interaction touch blood

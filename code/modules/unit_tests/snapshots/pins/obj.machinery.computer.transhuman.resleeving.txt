@@ -52,6 +52,7 @@ human|/obj/item/stack/material/steel menu: Resleeving console interaction item
 human|/obj/item/stack/material/steel menu: Use item
 human|/obj/item/stack/material/steel click: Click: Resleeving console interaction item
 human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Resleeving console interaction hand
 human|/obj/item/card/id menu: Resleeving console interaction item
 human|/obj/item/card/id menu: Use item

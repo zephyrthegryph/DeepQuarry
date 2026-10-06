@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel click: Click: Optable interaction item
 human|/obj/item/card/id menu: Climb On Table
 human|/obj/item/card/id menu: Optable interaction hand
 human|/obj/item/card/id menu: Optable interaction item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Optable interaction item
 human|/obj/item menu: Climb On Table
 human|/obj/item menu: Optable interaction hand

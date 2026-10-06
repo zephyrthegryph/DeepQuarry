@@ -63,35 +63,40 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 		update_icon()
 		return
 
-DECLARE_INTERACTIONS(/obj/item/glass_jar, \
-	INTERACT_USE_AS(I_HELP, "Empty", PROC_REF(interaction_self)), \
-	INTERACT_USE_AS(I_DISARM, "Empty, dumping the water", PROC_REF(interaction_self)), \
-	INTERACT_USE_AS(I_GRAB, "Empty, dumping the water", PROC_REF(interaction_self)), \
-	INTERACT_USE_AS(I_HURT, "Empty, dumping the water", PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/glass_jar)
+	// the old attack_self: empty the jar (help keeps a fish's water in)
+	op("empty", in_hand(), stance(I_HELP), label("Empty"), then(PROC_REF(emptied_gently)))
+	op("dump", in_hand(), stance(I_DISARM, I_GRAB, I_HURT), label("Empty, dumping the water"), then(PROC_REF(interaction_self)))
+	// the old attackby: money goes in, a held micro is stuffed in
+	op("put_in", inputs(item(/obj/item/spacecash), item(/obj/item/holder/micro)), label("Put in"), then(PROC_REF(interaction_item)))
 
-/// Old attack_self.
-/obj/item/glass_jar/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/glass_jar/proc/emptied_gently(datum/act/op/A)
+	return jar_emptied(A.actor, TRUE)
+
+/obj/item/glass_jar/proc/interaction_self(datum/act/op/A)
+	return jar_emptied(A.actor, FALSE)
+
+/// Old attack_self: let out what is inside (or the water); `gently` (help) leaves a fish its water.
+/obj/item/glass_jar/proc/jar_emptied(mob/user, gently = FALSE)
 
 	//For the fish jars
 	if(can_fill && filled)
 		if(contains == JAR_ANIMAL)
-			if(interaction.stance == I_HELP)
+			if(gently)
 				to_chat(user, span_notice("Maybe you shouldn't empty the water..."))
-				return TRUE
+				return OP_OK
 
 			else
 				filled = FALSE
 				act_message(user, src, others = span_warning("%U% dumps out %T%'s water!"))
 				update_icon()
-				return TRUE
+				return OP_OK
 
 		else
 			act_message(user, src, others = span_notice("%U% dumps %T%'s water."))
 			filled = FALSE
 			update_icon()
-			return TRUE
+			return OP_OK
 
 	switch(contains)
 		if(JAR_MONEY)
@@ -100,14 +105,14 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			to_chat(user, span_notice("You take money out of \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()
-			return TRUE
+			return OP_OK
 		if(JAR_ANIMAL)
 			for(var/mob/M in contents_of(src))
 				M.forceMove(user.loc)
 				act_message(user, src, MSG_SELF(span_notice("You release [M] from %T%.")), MSG_OTHERS(span_notice("%U% releases [M] from %T%.")))
 			contains = JAR_NOTHING
 			update_icon()
-			return TRUE
+			return OP_OK
 		if(JAR_SPIDER)
 			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				S.forceMove(user.loc)
@@ -115,22 +120,24 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 				om_task_periodic(S, PERIODIC_SLOW) // They can grow after being let out though
 			contains = JAR_NOTHING
 			update_icon()
-			return TRUE
+			return OP_OK
 	for(var/mob/M in contents_of(src))
 		if(istype(M,/mob/living/voice)) //Don't knock voices out!
 			continue
 		M.forceMove(get_turf(user))
 		to_chat(M, span_warning("[user] shakes you out of \the [src]!"))
 		to_chat(user, span_notice("You shake [M] out of \the [src]!"))
-	return TRUE
+	return OP_OK
 /// Old attackby.
-/obj/item/glass_jar/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/glass_jar/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/spacecash))
 		if(contains != JAR_NOTHING && contains != JAR_MONEY)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/spacecash/S = W
 		if(!own_bring_in(src, nameof(contents), S, null, user, TRUE, null, FALSE))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		contains = JAR_MONEY
 		act_message(user, src, others = span_notice("%U% puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into %T%."))
 		update_icon()
@@ -150,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 DECLARE_APPEARANCE_PROC(/obj/item/glass_jar, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/glass_jar/appearance_overlays() // Also updates name and desc
 	. = list()

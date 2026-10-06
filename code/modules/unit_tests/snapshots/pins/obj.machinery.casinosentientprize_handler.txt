@@ -54,6 +54,7 @@ human|/obj/item/stack/material/steel menu: Use (refused: the SPASM is disabled)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Buy prize (refused: needs a broken casino chip)
 human|/obj/item/card/id menu: Management controls (refused: not possible right now)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Release prize (refused: needs a disabled Sentient Prize Collar)
 human|/obj/item/card/id menu: Use (refused: the SPASM is disabled)
 human|/obj/item/card/id click: nothing

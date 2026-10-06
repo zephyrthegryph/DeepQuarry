@@ -53,6 +53,7 @@ human|/obj/item/stack/material/steel menu: Turf item
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Build
 human|/obj/item/card/id menu: Crawl
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id menu: Turf item
 human|/obj/item/card/id click: nothing

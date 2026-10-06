@@ -54,6 +54,7 @@ human|/obj/item/stack/material/steel menu: Toggle IV Mode
 human|/obj/item/stack/material/steel click: Click: Medical stand interaction item
 human|/obj/item/card/id menu: Medical stand interaction hand
 human|/obj/item/card/id menu: Medical stand interaction item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Set IV transfer amount
 human|/obj/item/card/id menu: Toggle IV Mode
 human|/obj/item/card/id click: Click: Medical stand interaction item

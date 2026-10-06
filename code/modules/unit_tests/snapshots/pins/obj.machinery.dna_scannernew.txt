@@ -55,6 +55,7 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Eject DNA Scanner
 human|/obj/item/card/id menu: Enter DNA Scanner
 human|/obj/item/card/id menu: Put inside
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 human|/obj/item menu: Eject DNA Scanner

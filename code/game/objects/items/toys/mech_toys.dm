@@ -113,39 +113,42 @@
 	return TRUE
 
 //all credit to skasi for toy mech fun ideas
-DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_TK(null, PROC_REF(interaction_tk)), \
-)
+CAPABILITIES(/obj/item/toy/mecha)
+	// the old attack_self (and attack_tk): play with it
+	op("play", in_hand(), label("Play"), then(PROC_REF(interaction_self)))
+	op("play_tk", tk(), label("Play"), then(PROC_REF(interaction_tk)))
+	// a toy mech on a toy mech starts a battle (the hit goes on after)
+	op("battle", item(/obj/item/toy/mecha), label("Battle"), then(PROC_REF(interaction_item)))
+	// picking it up plays with it once it's in hand
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(mecha_toy_pick_up)))
 
 /// Old attack_self.
-/obj/item/toy/mecha/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/mecha/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		play_sfx(user, SFX_MECHA_MECHSTEP)
-	return TRUE
-
-EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(mecha_toy_pick_up)))
+	return OP_OK
 
 /// Picking up a toy mech plays with it once it's in hand.
-/obj/item/toy/mecha/proc/mecha_toy_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_pick_up(user, held, interaction)
+/obj/item/toy/mecha/proc/mecha_toy_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	pick_up_by_hand(user)
 	if(loc == user)
 		attack_self(user)
-	return TRUE
+	return OP_OK
 
 /**
  * If you attack a mech with a mech, initiate combat between them
  */
 /// Old attackby.
-/obj/item/toy/mecha/proc/interaction_item(mob/living/user, obj/item/user_toy, datum/interaction/interaction)
-	if(istype(user_toy, /obj/item/toy/mecha))
-		var/obj/item/toy/mecha/M = user_toy
-		if(check_battle_start(user, M))
-			mecha_brawl(M, user)
-	return FALSE
+/obj/item/toy/mecha/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/toy/mecha/M = A.held
+	if(check_battle_start(user, M))
+		mecha_brawl(M, user)
+	return OP_DECLINE
 
 /**
  * Attack is called from the user's toy, aimed at target(another human), checking for target's toy.
@@ -185,12 +188,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 /**
  * Old attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
  */
-/obj/item/toy/mecha/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/mecha/proc/interaction_tk(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You telekinetically play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		play_sfx(user, SFX_MECHA_MECHSTEP)
-	return TRUE
+	return OP_OK
 
 /**
  * Resets the request for battle.

@@ -3,6 +3,7 @@ human|none click: nothing
 robot|none menu: Fold up
 robot|none click: nothing
 ai|none click: nothing
+ghost|none menu: Fold up
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Fold up
 human|/obj/item/tool/screwdriver click: nothing
@@ -22,6 +23,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Fold up
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Fold up
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_verb_picnic_blanket_deployed_fold_up_effect
+keys: drag_buckle, fold_up
 

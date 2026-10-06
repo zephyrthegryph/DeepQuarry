@@ -1,232 +1,183 @@
 human|none menu: Collect (refused: needs a storage)
 human|none menu: Customise (refused: needs an item)
-human|none menu: Eject Tape (refused: you need to be carrying it)
-human|none menu: Insert tape (refused: needs a tape)
+human|none menu: Eject tape
+human|none menu: Eject Tape (refused: You can't do that.)
 human|none menu: Move To Top
 human|none menu: Pick up
-human|none menu: Playback Tape (refused: you need to be carrying it)
-human|none menu: Print Transcript (refused: you need to be carrying it)
-human|none menu: Start Recording (refused: you need to be carrying it)
-human|none menu: Stop (refused: you need to be carrying it)
+human|none menu: Playback Tape (refused: You can't do that.)
+human|none menu: Print Transcript (refused: You can't do that.)
+human|none menu: Start Recording (refused: You can't do that.)
+human|none menu: Stop (refused: You can't do that.)
 human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none menu: Use
-human|none menu: Use (refused: not in your hand)
-human|none menu: Wipe Tape (refused: you need to be carrying it)
-human|none click: nothing
+human|none menu: Wipe Tape (refused: You can't do that.)
+human|none click: Click: Eject tape
 robot|none menu: Collect (refused: needs a storage)
 robot|none menu: Customise (refused: needs an item)
-robot|none menu: Eject Tape (refused: you need to be carrying it)
+robot|none menu: Eject tape
+robot|none menu: Eject Tape (refused: You can't do that.)
 robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Insert tape (refused: needs a tape)
 robot|none menu: Move To Top
 robot|none menu: Pick up
-robot|none menu: Playback Tape (refused: you need to be carrying it)
-robot|none menu: Print Transcript (refused: you need to be carrying it)
-robot|none menu: Start Recording (refused: you need to be carrying it)
-robot|none menu: Stop (refused: you need to be carrying it)
+robot|none menu: Playback Tape (refused: You can't do that.)
+robot|none menu: Print Transcript (refused: You can't do that.)
+robot|none menu: Start Recording (refused: You can't do that.)
+robot|none menu: Stop (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none menu: Use
-robot|none menu: Use (refused: not in your hand)
-robot|none menu: Wipe Tape (refused: you need to be carrying it)
-robot|none click: nothing
+robot|none menu: Wipe Tape (refused: You can't do that.)
+robot|none click: Click: Eject tape
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: Eject Tape (refused: You can't do that.)
+ghost|none menu: Playback Tape (refused: You can't do that.)
+ghost|none menu: Print Transcript (refused: You can't do that.)
+ghost|none menu: Start Recording (refused: You can't do that.)
+ghost|none menu: Stop (refused: You can't do that.)
+ghost|none menu: Wipe Tape (refused: You can't do that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
-human|/obj/item/tool/screwdriver menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Insert tape (refused: needs a tape)
+human|/obj/item/tool/screwdriver menu: Eject tape
+human|/obj/item/tool/screwdriver menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Pick up
-human|/obj/item/tool/screwdriver menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Stop (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Start Recording (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Stop (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use (refused: not in your hand)
-human|/obj/item/tool/screwdriver menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Eject tape
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
-human|/obj/item/tool/crowbar menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Insert tape (refused: needs a tape)
+human|/obj/item/tool/crowbar menu: Eject tape
+human|/obj/item/tool/crowbar menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Pick up
-human|/obj/item/tool/crowbar menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Stop (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Start Recording (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Stop (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use (refused: not in your hand)
-human|/obj/item/tool/crowbar menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Eject tape
 human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
-human|/obj/item/tool/wrench menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Insert tape (refused: needs a tape)
+human|/obj/item/tool/wrench menu: Eject tape
+human|/obj/item/tool/wrench menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Pick up
-human|/obj/item/tool/wrench menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Stop (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Start Recording (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Stop (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use (refused: not in your hand)
-human|/obj/item/tool/wrench menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Eject tape
 human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
-human|/obj/item/tool/wirecutters menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Insert tape (refused: needs a tape)
+human|/obj/item/tool/wirecutters menu: Eject tape
+human|/obj/item/tool/wirecutters menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Pick up
-human|/obj/item/tool/wirecutters menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Stop (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Start Recording (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Stop (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use (refused: not in your hand)
-human|/obj/item/tool/wirecutters menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Eject tape
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
 human|/obj/item/multitool menu: Customise (refused: needs an item)
-human|/obj/item/multitool menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Insert tape (refused: needs a tape)
+human|/obj/item/multitool menu: Eject tape
+human|/obj/item/multitool menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Pick up
-human|/obj/item/multitool menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Stop (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/multitool menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/multitool menu: Start Recording (refused: You can't do that.)
+human|/obj/item/multitool menu: Stop (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use (refused: not in your hand)
-human|/obj/item/multitool menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Eject tape
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
-human|/obj/item/weldingtool menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Insert tape (refused: needs a tape)
+human|/obj/item/weldingtool menu: Eject tape
+human|/obj/item/weldingtool menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Pick up
-human|/obj/item/weldingtool menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Stop (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Start Recording (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Stop (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use (refused: not in your hand)
-human|/obj/item/weldingtool menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Eject tape
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
-human|/obj/item/stack/cable_coil menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Insert tape (refused: needs a tape)
+human|/obj/item/stack/cable_coil menu: Eject tape
+human|/obj/item/stack/cable_coil menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Pick up
-human|/obj/item/stack/cable_coil menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Stop (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Start Recording (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Stop (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil menu: Use (refused: not in your hand)
-human|/obj/item/stack/cable_coil menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Eject tape
 human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
 human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
-human|/obj/item/stack/material/steel menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Insert tape (refused: needs a tape)
+human|/obj/item/stack/material/steel menu: Eject tape
+human|/obj/item/stack/material/steel menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Pick up
-human|/obj/item/stack/material/steel menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Stop (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Start Recording (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Stop (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel menu: Use (refused: not in your hand)
-human|/obj/item/stack/material/steel menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Eject tape
 human|/obj/item/card/id menu: Collect (refused: needs a storage)
 human|/obj/item/card/id menu: Customise (refused: needs an item)
-human|/obj/item/card/id menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Insert tape (refused: needs a tape)
+human|/obj/item/card/id menu: Eject tape
+human|/obj/item/card/id menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Pick up
-human|/obj/item/card/id menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Stop (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/card/id menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Start Recording (refused: You can't do that.)
+human|/obj/item/card/id menu: Stop (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id menu: Use (refused: not in your hand)
-human|/obj/item/card/id menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/card/id click: nothing
+human|/obj/item/card/id menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Eject tape
 human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/kit menu: Insert tape (refused: needs a tape)
+human|/obj/item/kit menu: Eject tape
+human|/obj/item/kit menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Pick up
-human|/obj/item/kit menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/kit menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/kit menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/kit menu: Stop (refused: you need to be carrying it)
+human|/obj/item/kit menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/kit menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/kit menu: Start Recording (refused: You can't do that.)
+human|/obj/item/kit menu: Stop (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit menu: Use
-human|/obj/item/kit menu: Use (refused: not in your hand)
-human|/obj/item/kit menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/kit click: nothing
-human|/obj/item/rectape menu: Collect (refused: needs a storage)
-human|/obj/item/rectape menu: Customise (refused: needs an item)
-human|/obj/item/rectape menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/rectape menu: Insert tape (refused: there's already a tape inside)
-human|/obj/item/rectape menu: Move To Top
-human|/obj/item/rectape menu: Pick up
-human|/obj/item/rectape menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/rectape menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/rectape menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/rectape menu: Stop (refused: you need to be carrying it)
-human|/obj/item/rectape menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/rectape menu: Use
-human|/obj/item/rectape menu: Use (refused: not in your hand)
-human|/obj/item/rectape menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/rectape click: nothing
+human|/obj/item/kit menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/kit click: Click: Eject tape
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Customise (refused: needs an item)
-human|/obj/item/storage menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/storage menu: Insert tape (refused: needs a tape)
+human|/obj/item/storage menu: Eject tape
+human|/obj/item/storage menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
-human|/obj/item/storage menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/storage menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/storage menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/storage menu: Stop (refused: you need to be carrying it)
+human|/obj/item/storage menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/storage menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/storage menu: Start Recording (refused: You can't do that.)
+human|/obj/item/storage menu: Stop (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage menu: Use
-human|/obj/item/storage menu: Use (refused: not in your hand)
-human|/obj/item/storage menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/storage click: nothing
-human|/obj/item/card/emag menu: Collect (refused: needs a storage)
-human|/obj/item/card/emag menu: Customise (refused: needs an item)
-human|/obj/item/card/emag menu: Eject Tape (refused: you need to be carrying it)
-human|/obj/item/card/emag menu: Insert tape (refused: needs a tape)
-human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Pick up
-human|/obj/item/card/emag menu: Playback Tape (refused: you need to be carrying it)
-human|/obj/item/card/emag menu: Print Transcript (refused: you need to be carrying it)
-human|/obj/item/card/emag menu: Start Recording (refused: you need to be carrying it)
-human|/obj/item/card/emag menu: Stop (refused: you need to be carrying it)
-human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Use (refused: not in your hand)
-human|/obj/item/card/emag menu: Wipe Tape (refused: you need to be carrying it)
-human|/obj/item/card/emag click: Click: Use
-keys: drag_buckle, emag.subvert, emag.use, gen_hand_interaction_hand, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_item, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_move_to_top_effect, gen_verb_playback_memory_effect, gen_verb_print_transcript_effect, gen_verb_taperecorder_eject_effect, gen_verb_taperecorder_record_effect, gen_verb_taperecorder_stop_effect, gen_verb_toggle_digestable_effect, gen_verb_wipe_tape_effect
+human|/obj/item/storage menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/storage click: Click: Eject tape
+keys: drag_buckle, eject, emag.subvert, emag.use, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand_eject, insert_tape, playback, print, record, stop, use, wipe
 
