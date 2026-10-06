@@ -38,6 +38,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 /atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	if(component == button_x)
 		user?.client?.close_popup("camera-[REF(src)]")
+		// ALLOW(lifecycle): the close button ends this picture-in-picture view
 		qdel(src)
 	else if(component == button_expand)
 		set_view_size(width+1, height+1)

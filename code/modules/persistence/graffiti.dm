@@ -84,4 +84,5 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 /obj/effect/decal/writing/proc/clear_done(mob/user, obj/item/weldingtool/welder)
 	playsound(loc, welder.usesound, 50, 1)
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " clears away some graffiti."))
+	// ALLOW(lifecycle): the graffiti is cleared away
 	qdel(src)

@@ -78,6 +78,7 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
 		stack_trace("ai_brain instantiated with no owner")
+		// ALLOW(lifecycle): an AI brain built without an owner is a caller error and is dropped
 		qdel(src)
 		return
 	rel_set(src, nameof(holder), owner)

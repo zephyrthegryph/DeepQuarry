@@ -260,6 +260,7 @@ CAPABILITIES(/datum/ticket)
 	//clean the input msg
 	var/msg = sanitize(copytext(raw_msg,1,MAX_MESSAGE_LEN))
 	if(!msg || !C || !C.mob)
+		// ALLOW(lifecycle): a ticket with no message or no client is never opened
 		qdel(src)
 		return
 

@@ -164,6 +164,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 			M.status_at_least(EFFECT_STUNNED, 8)
 			M.status_at_least(EFFECT_WEAKENED, 5)
 			seed().thrown_at(src,M)
+			// ALLOW(lifecycle): the slippery produce is squashed underfoot
 			qdel(src)
 			return
 

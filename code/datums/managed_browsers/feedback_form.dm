@@ -128,6 +128,7 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 		return TRUE
 
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): a submitted feedback form has done its job and closes for good
 	qdel(src)
 	return TRUE
 

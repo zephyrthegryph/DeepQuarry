@@ -709,6 +709,7 @@
 	var/attack_message = task.attack_message
 	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
+	// ALLOW(lifecycle): the slam spell is spent once the wall is torn down
 	qdel(src)
 
 

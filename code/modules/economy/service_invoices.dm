@@ -324,10 +324,12 @@
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()
 	if(!istype(new_parent) || !_invoice_id || !_customer_account || !_customer_department || !_provider_department || _value <= 0)
+		// ALLOW(lifecycle): an adoption record with missing invoice data is discarded
 		qdel(src)
 		return
 	if(new_parent.economic_adoption)
 		// Unique: the existing adoption record is kept.
+		// ALLOW(lifecycle): the item already has an adoption record, which is kept instead
 		qdel(src)
 		return
 	rel_set(src, nameof(parent), new_parent)

@@ -52,6 +52,7 @@
 
 	rel_set(src, nameof(nif), nif_load)
 	if(!install(nif()))
+		// ALLOW(lifecycle): software that fails to install is discarded
 		qdel(src)
 
 //Destructor cleans up the software and nif reference
@@ -77,6 +78,7 @@
 		. = nif().uninstall(src)
 		rel_clear(src, nameof(nif))
 	if(!QDESTROYING(src))
+		// ALLOW(lifecycle): uninstalled software is discarded
 		qdel(src)
 
 //Called every life() tick on a mob on active implants
@@ -174,6 +176,7 @@
 	for(var/P in software)
 		new P(nif_load)
 
+	// ALLOW(lifecycle): a package only installs its software and then goes
 	qdel(src)
 
 //Clean self up
@@ -233,6 +236,7 @@
 		new stored_synthetic(Ht.nif,extra)
 	else
 		new stored_organic(Ht.nif,extra)
+	// ALLOW(lifecycle): the software disk is used up by the upload
 	qdel(src)
 
 //So disks can pass fancier stuff.

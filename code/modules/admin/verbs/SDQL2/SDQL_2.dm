@@ -424,6 +424,7 @@ CAPABILITIES(/datum/SDQL2_query)
 	var/msg = "[key_name(user)] has stopped + deleted query #[id]"
 	message_admins(msg)
 	log_admin(msg)
+	// ALLOW(lifecycle): an admin stopped and deleted this query
 	qdel(src)
 
 /datum/SDQL2_query/proc/set_option(name, value)
@@ -492,6 +493,7 @@ CAPABILITIES(/datum/SDQL2_query)
 				dq_admin_report_html(showmob, "SDQL Result", text)
 		show_next_to_key = null
 	if(qdel_on_finish)
+		// ALLOW(lifecycle): a query marked delete-on-finish ends when its run finishes
 		qdel(src)
 
 /datum/SDQL2_query/proc/PreSearch()

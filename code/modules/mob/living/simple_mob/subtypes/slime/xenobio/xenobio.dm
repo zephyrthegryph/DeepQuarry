@@ -206,6 +206,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 			var/mob/living/simple_mob/slime/new_slime = pick(babies)
 			new_slime.universal_speak = universal_speak
 			move_player(src, new_slime, "slime split")
+			// ALLOW(lifecycle): the slime has split into its offspring
 			qdel(src)
 		else
 			to_chat(src, span_warning("I am not ready to reproduce yet..."))

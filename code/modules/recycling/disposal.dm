@@ -390,6 +390,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 // called when welded
 /obj/structure/disposalpipe/broken/welded()
+	// ALLOW(lifecycle): welding a broken pipe clears it away
 	qdel(src)
 
 // called when movable is expelled from a disposal pipe or outlet

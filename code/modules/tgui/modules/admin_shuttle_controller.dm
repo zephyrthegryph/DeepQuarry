@@ -7,6 +7,7 @@
 
 /datum/tgui_module/admin_shuttle_controller/tgui_close(mob/user)
 	. = ..()
+	// ALLOW(lifecycle): the shuttle controller lives only while its window is open
 	qdel(src)
 
 CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)

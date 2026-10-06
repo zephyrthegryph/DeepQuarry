@@ -117,6 +117,7 @@
 		rel_set(ourmob, nameof(ourmob.tf_form), src)
 		src.forceMove(ourmob)
 	else
+		// ALLOW(lifecycle): the transformed form is discarded when it reverts with no one to hold
 		qdel(src)
 
 /datum/om/stage/life/tf_holder

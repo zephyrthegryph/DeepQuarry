@@ -302,6 +302,7 @@
 // Called on death.
 /mob/living/simple_mob/animal/space/carp/holographic/proc/derez()
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
+	// ALLOW(lifecycle): the holographic carp fades away
 	qdel(src)
 
 /mob/living/simple_mob/animal/space/carp/holographic/gib()

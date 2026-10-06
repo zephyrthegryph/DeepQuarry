@@ -49,6 +49,7 @@ CAPABILITIES(/obj/effect/phase_shift)
 
 	to_chat(user, span_notice("You step out of the rift."))
 	user.forceMove(get_turf(src))
+	// ALLOW(lifecycle): the rift closes once its occupant steps out
 	qdel(src)
 
 /obj/item/spell/phase_shift/on_use_cast(mob/user)

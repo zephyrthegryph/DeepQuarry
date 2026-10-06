@@ -64,6 +64,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 
 /obj/item/paper/talisman/proc/supply(key, mob/user)
 	if (!src.uses)
+		// ALLOW(lifecycle): a talisman with no uses left crumbles
 		qdel(src)
 		return
 

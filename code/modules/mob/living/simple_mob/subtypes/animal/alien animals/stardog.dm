@@ -639,6 +639,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		dog.adjust_affinity(15)
 
+	// ALLOW(lifecycle): the fur tree is cut down
 	qdel(src)
 
 /obj/structure/flora/tree/fur/wall

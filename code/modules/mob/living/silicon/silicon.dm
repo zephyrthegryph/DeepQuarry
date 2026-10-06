@@ -435,6 +435,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 	SSantag.clear_antag_roles(mind)
 
 	ghostize(0)
+	// ALLOW(lifecycle): the silicon is removed once its player has been ghosted
 	qdel(src)
 
 /mob/living/silicon/has_vision()

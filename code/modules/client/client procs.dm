@@ -321,6 +321,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			message_admins(span_adminnotice("[key_name(src)] has been detected as spoofing their byond version. Connection rejected."))
 			//add_system_note("Spoofed-Byond-Version", "Detected as using a spoofed byond version.")
 			log_suspicious_login("Failed Login: [key] - Spoofed byond version")
+			// ALLOW(lifecycle): a client with a spoofed BYOND version is disconnected
 			qdel(src)
 			return
 
@@ -332,6 +333,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			if(connecting_admin)
 				to_chat_immediate(src, "As an admin, you are being allowed to continue using this version, but please consider changing byond versions")
 			else
+				// ALLOW(lifecycle): a client on a blacklisted BYOND build is disconnected
 				qdel(src)
 				return
 
@@ -790,6 +792,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	to_chat(src, span_userdanger("You have been disconnected from the server."))
 	to_chat(src, span_warning(message))
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
+	// ALLOW(lifecycle): this disconnects the client on purpose
 	qdel(src)
 
 /client/verb/toggle_fullscreen()

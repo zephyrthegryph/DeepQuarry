@@ -13,6 +13,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 	src.target = target
 
 /obj/effect/statclick/proc/cleanup()
+	// ALLOW(lifecycle): the stat panel link is dropped when its panel entry is cleared
 	qdel(src)
 
 /obj/effect/statclick/proc/update(text)

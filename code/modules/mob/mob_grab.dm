@@ -89,6 +89,7 @@
 	confirm()
 	var/mob/living/affecting = src?.grab_target()
 	if(!assailant)
+		// ALLOW(lifecycle): the grab ends without an assailant
 		qdel(src) // Same here, except we're trying to delete ourselves.
 		return PROCESS_KILL
 
@@ -189,6 +190,7 @@ CAPABILITIES(/obj/item/grab)
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
+		// ALLOW(lifecycle): the grab ends without a target
 		qdel(src)
 		return
 	if(affecting?.buckled_to())
@@ -244,6 +246,7 @@ CAPABILITIES(/obj/item/grab)
 	if(!COOLDOWN_FINISHED(src, upgrade_cooldown))
 		return
 	if(!assailant.canmove || assailant.lying)
+		// ALLOW(lifecycle): the grab ends when the assailant cannot hold on
 		qdel(src)
 		return
 
@@ -292,11 +295,13 @@ CAPABILITIES(/obj/item/grab)
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	var/mob/living/affecting = src?.grab_target()
 	if(!assailant || !affecting)
+		// ALLOW(lifecycle): the grab ends without an assailant or a target
 		qdel(src)
 		return 0
 
 	if(affecting)
 		if(!isturf(assailant.loc) || ( !isturf(affecting.loc) || assailant.loc != affecting.loc && get_dist(assailant, affecting) > 1) )
+			// ALLOW(lifecycle): the grab ends when the two are no longer adjacent
 			qdel(src)
 			return 0
 
@@ -400,6 +405,7 @@ CAPABILITIES(/obj/item/grab)
 			return
 		else if(grab_name)
 			act_message(affecting, assailant, others = span_warning("%U% has broken free of %T%'s [grab_name]!"))
+		// ALLOW(lifecycle): the target broke free of the grab
 		qdel(src)
 
 //returns the number of size categories between affecting and assailant, rounded. Positive means A is larger than B

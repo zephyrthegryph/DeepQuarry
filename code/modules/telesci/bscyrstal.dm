@@ -44,6 +44,7 @@ CAPABILITIES(/obj/item/bluespace_crystal)
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
 		dephase_shadekin() // mess with shadekins
+		// ALLOW(lifecycle): the crystal fizzles away on impact
 		qdel(src)
 
 // Artifical bluespace crystal, doesn't give you much research.

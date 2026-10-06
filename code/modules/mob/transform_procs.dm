@@ -215,6 +215,7 @@
 	move_player(src, new_xeno, "alienized")
 
 	to_chat(new_xeno, span_infoplain(span_bold("You are now an alien.")))
+	// ALLOW(lifecycle): the human is replaced by the alien its player moved into
 	qdel(src)
 	return
 
@@ -237,6 +238,7 @@
 	move_player(src, new_corgi, "corgized")
 
 	to_chat(new_corgi, span_infoplain(span_bold("You are now a Corgi. Yap Yap!")))
+	// ALLOW(lifecycle): the human is replaced by the corgi its player moved into
 	qdel(src)
 	return
 
@@ -301,6 +303,7 @@
 	new_mob.set_use_stance(I_HURT)
 	to_chat(new_mob, "You feel more... animalistic")
 
+	// ALLOW(lifecycle): the mob is replaced by the animal its player moved into
 	qdel(src)
 
 /* Certain mob types have problems and should not be allowed to be controlled by players.

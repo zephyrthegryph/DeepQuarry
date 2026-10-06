@@ -68,6 +68,7 @@
 				shake_camera(L, 6, 1)
 				if(!L.has_status(EFFECT_DEAFENED))
 					L << 'sound/effects/explosionfar.ogg'
+	// ALLOW(lifecycle): the falling meteor is spent once it has struck
 	qdel(src)
 
 /obj/structure/meteorite
@@ -101,6 +102,7 @@ CAPABILITIES(/obj/structure/meteorite)
 	act_message(M, src, MSG_SELF(span_warning("You break apart %T%.")), MSG_OTHERS(span_warning("%U% breaks apart %T%.")))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(get_turf(src))
+	// ALLOW(lifecycle): the meteorite is broken apart and its contents spill out
 	qdel(src)
 
 DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(interaction_item)))

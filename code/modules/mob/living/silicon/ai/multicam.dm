@@ -47,6 +47,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_size(width, height, do_refresh = TRUE)
 	if(!aiEye) // Exploit fix
+		// ALLOW(lifecycle): a multicam window without its AI eye is closed
 		qdel(src)
 		return
 	aiEye.static_visibility_range =	(round(max(width, height) / 2) + 1)
@@ -57,6 +58,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_center(atom/target, do_refresh = TRUE)
 	..()
 	if(!aiEye) // Exploit Fix
+		// ALLOW(lifecycle): a multicam window without its AI eye is closed
 		qdel(src)
 		return
 	aiEye.setLoc(get_turf(target))
@@ -64,6 +66,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 /atom/movable/screen/movable/pic_in_pic/ai/refresh_view()
 	..()
 	if(!aiEye) // Exploit Fix
+		// ALLOW(lifecycle): a multicam window without its AI eye is closed
 		qdel(src)
 		return
 	aiEye.setLoc(get_turf(center()))

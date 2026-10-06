@@ -128,6 +128,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 			update_icon()
 		return worth
 	else
+		// ALLOW(lifecycle): a chip stack spent down to nothing is gone
 		qdel(src)
 		return 0
 
@@ -317,6 +318,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 			update_icon()
 		return worth
 	else
+		// ALLOW(lifecycle): a chip stack spent down to nothing is gone
 		qdel(src)
 		return 0
 

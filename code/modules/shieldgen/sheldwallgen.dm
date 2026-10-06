@@ -295,10 +295,12 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 /obj/machinery/shieldwall/machine_step()
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
+			// ALLOW(lifecycle): the shield wall collapses without both generators
 			qdel(src)
 			return
 
 		if(!(gen_primary.active)||!(gen_secondary.active))
+			// ALLOW(lifecycle): the shield wall collapses when a generator turns off
 			qdel(src)
 			return
 

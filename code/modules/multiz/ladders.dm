@@ -73,6 +73,7 @@ CAPABILITIES(/obj/structure/ladder)
 	A = new /obj/structure/ladder_assembly(loc)
 	A.state = LADDER_CONSTRUCTION_WRENCHED
 	A.set_anchored(TRUE)
+	// ALLOW(lifecycle): the ladder is taken back down to an assembly
 	qdel(src)
 
 DECLARE_INTERACTIONS(/obj/structure/ladder, \

@@ -14,6 +14,7 @@
 		H.forceMove(newloc)
 		if(prob(25))
 			H.take_damage(rand(10,30), BRUTE, null, FALSE)
+	// ALLOW(lifecycle): the computer breaks apart into its parts
 	qdel(src)
 
 /// Below integrity_failure the computer ceases to operate.

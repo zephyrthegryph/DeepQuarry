@@ -70,6 +70,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	new /obj/item/stack/material/steel(loc, 4)
 	for(var/obj/item/I in contents)
 		I.forceMove(loc)
+	// ALLOW(lifecycle): the cabinet is taken apart into steel and its files spill out
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

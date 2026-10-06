@@ -28,14 +28,17 @@
 	. = ..()
 	if (!istype(target))
 		stack_trace("Invalid target [target] passed in")
+		// ALLOW(lifecycle): a progress bar built without a target is a caller error and is dropped
 		qdel(src)
 		return
 	if(QDELETED(User) || !istype(User))
 		stack_trace("/datum/progressbar created with [isnull(User) ? "null" : "invalid"] user")
+		// ALLOW(lifecycle): a progress bar built without a live user is a caller error and is dropped
 		qdel(src)
 		return
 	if(!isnum(goal_number))
 		stack_trace("/datum/progressbar created with [isnull(User) ? "null" : "invalid"] goal_number")
+		// ALLOW(lifecycle): a progress bar built without a goal is a caller error and is dropped
 		qdel(src)
 		return
 	goal = goal_number
@@ -96,6 +99,7 @@
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
+	// ALLOW(lifecycle): the progress bar ends with the user it is drawn for
 	qdel(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.

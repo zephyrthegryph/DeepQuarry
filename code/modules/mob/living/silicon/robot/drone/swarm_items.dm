@@ -111,6 +111,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
 
 /obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/act/A)
 	visible_message(span_warning("\The [src] flickers, before dispersing energetically."))
+	// ALLOW(lifecycle): an EMP disperses the disintegrating pulse
 	qdel(src)
 	return TRUE
 
@@ -119,6 +120,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
 	if(istype(T,/turf/simulated/wall))
 		T.take_damage(rand(20, 50))
 	else
+		// ALLOW(lifecycle): the pulse dissipates when it finds no wall to eat
 		qdel(src)
 
 // a pulse ending inside a wall blows it open.

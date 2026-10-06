@@ -90,11 +90,13 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/remove_dead()
 	..()
+	// ALLOW(lifecycle): the invisible soil exists only to hold its plant
 	qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/harvest()
 	..()
 	if(!seed) // Repeat harvests are a thing.
+		// ALLOW(lifecycle): the invisible soil exists only to hold its plant
 		qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/die()

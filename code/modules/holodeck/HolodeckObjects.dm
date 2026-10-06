@@ -462,6 +462,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 
 	currentarea = get_area(src.loc) // a location: a plain var
 	if(!currentarea())
+		// ALLOW(lifecycle): a ready button outside any area has nothing to control
 		qdel(src)
 		return TRUE
 

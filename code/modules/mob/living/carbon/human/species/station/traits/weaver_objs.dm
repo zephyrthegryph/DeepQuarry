@@ -39,6 +39,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 /obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
+	// ALLOW(lifecycle): the silk burns away in the fire
 	qdel(src)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)

@@ -141,6 +141,7 @@ TYPE_TABLE(/obj/structure/closet/crate/secure/lootsafe/devillock, code_alphabet,
 			to_chat(user, span_danger("The crate's anti-tamper system activates!"))
 			var/turf/T = get_turf(src.loc)
 			explosion(T, 0, 0, 1, 2)
+			// ALLOW(lifecycle): the safe's anti-tamper charge destroys it
 			qdel(src)
 	return OP_OK
 
