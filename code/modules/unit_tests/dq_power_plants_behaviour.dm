@@ -15,7 +15,7 @@
 	var/obj/machinery/M = D
 	if(istype(M))
 		return M.machine_step()
-	return D.process()
+	return D.periodic_step()
 
 /// Moles of `gas` in `air`.
 /proc/pp_moles(datum/gas_mixture/air, gas)
@@ -347,3 +347,402 @@
 #undef PP_SM_STEP
 #undef PP_SM_DECAY
 #undef PP_SM_CRITICAL
+
+// ============================================================================================ the singularity and its containment
+
+#define PP_SING_STEP "singularity_frame"
+#define PP_FG_STEP "field_step"
+#define PP_EMITTER_STEP "emitter_step"
+#define PP_GEN_STEP "collapse_check"
+
+/// A straight run of `n` clear floor turfs, at least 10 tiles from every map edge (a field generator looks 9 tiles out each way).
+/datum/unit_test/dq_pp/proc/pp_run(n)
+	dq_atmos_test_restore_walls()
+	for(var/turf/simulated/floor/cand in world)
+		if(!cand.air || cand.blocks_air || cand.x < 11 || cand.y < 11 || cand.x > world.maxx - 10 - n || cand.y > world.maxy - 10 - n)
+			continue
+		for(var/direction in GLOB.cardinal)
+			var/list/run = list(cand)
+			var/turf/cur = cand
+			for(var/i in 2 to n)
+				cur = get_step(cur, direction)
+				if(!istype(cur, /turf/simulated/floor) || cur.density || length(cur.contents))
+					break
+				run += cur
+			if(length(run) == n && !length(cand.contents))
+				return run
+	TEST_FAIL("no clear run of [n] floors")
+
+/// The direction from the first turf of a run to the second.
+/proc/pp_run_dir(list/run)
+	return get_dir(run[1], run[2])
+
+/// A singularity of `energy` at T that does not wander on its own (move_self 0) unless a test moves it.
+/datum/unit_test/dq_pp/proc/pp_singularity(turf/T, energy = 100)
+	var/obj/singularity/S = allocate(/obj/singularity, T, energy)
+	S.move_self = 0
+	return S
+
+/// Size thresholds: 1-199 is stage one, 200 two, 500 three, 1000 four, 2000 five, 50000 the super singularity.
+/datum/unit_test/dq_pp/sing_size_thresholds
+
+/datum/unit_test/dq_pp/sing_size_thresholds/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/singularity/S = pp_singularity(run[1])
+	var/list/expected = list("1" = STAGE_ONE, "199" = STAGE_ONE, "200" = STAGE_TWO, "499" = STAGE_TWO, "500" = STAGE_THREE, "999" = STAGE_THREE,
+		"1000" = STAGE_FOUR, "1999" = STAGE_FOUR, "2000" = STAGE_FIVE, "49999" = STAGE_FIVE, "50000" = STAGE_SUPER)
+	for(var/e in expected)
+		S.energy = text2num(e)
+		S.current_size = STAGE_SUPER // never expand during the sweep
+		S.check_energy()
+		TEST_ASSERT_EQUAL(S.allowed_size, expected[e], "energy [e] allows size [expected[e]]")
+	S.current_size = STAGE_ONE
+	S.energy = 300
+	S.check_energy()
+	TEST_ASSERT_EQUAL(S.current_size, STAGE_TWO, "energy 300 grows a stage-one singularity to stage two")
+	TEST_ASSERT_EQUAL(S.grav_pull, 6, "a stage-two singularity pulls 6 tiles")
+	TEST_ASSERT_EQUAL(S.consume_range, 1, "and eats 1 tile out")
+	TEST_ASSERT_EQUAL(S.dissipate_strength, 5, "and loses 5 energy a dissipation")
+	S.energy = 100
+	S.check_energy()
+	TEST_ASSERT_EQUAL(S.current_size, STAGE_ONE, "energy 100 shrinks it back to stage one")
+
+/// Dissipation: a stage-one singularity loses 1 energy every 11th dissipation (its track counts to 10 first); one that does not dissipate keeps it.
+/datum/unit_test/dq_pp/sing_dissipation
+
+/datum/unit_test/dq_pp/sing_dissipation/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/singularity/S = pp_singularity(run[1], 100)
+	for(var/i in 1 to 10)
+		S.dissipate()
+	TEST_ASSERT_EQUAL(S.energy, 100, "ten dissipations lose nothing yet")
+	S.dissipate()
+	TEST_ASSERT_EQUAL(S.energy, 99, "the eleventh loses 1")
+	S.dissipate = 0
+	for(var/i in 1 to 22)
+		S.dissipate()
+	TEST_ASSERT_EQUAL(S.energy, 99, "a singularity that does not dissipate keeps its energy")
+
+/// A step eats what lies under it (the floor: +2), dissipates and checks its size; with no energy left it collapses.
+/datum/unit_test/dq_pp/sing_step_and_collapse
+
+/datum/unit_test/dq_pp/sing_step_and_collapse/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/singularity/S = pp_singularity(run[1], 100)
+	var/list/energies = list()
+	for(var/i in 1 to 11)
+		pp_step(S, PP_SING_STEP)
+		energies += S.energy
+	log_test("singularity energies over 11 steps: [jointext(energies, ",")]")
+	TEST_ASSERT_EQUAL(S.dissipate_track, 0, "the eleventh step dissipated")
+	TEST_ASSERT_EQUAL(energies[1], 102, "the first step ate the floor under it (+2)")
+	TEST_ASSERT_EQUAL(energies[11], 101, "the eleventh lost 1 to dissipation")
+	S.energy = 0
+	S.check_energy()
+	TEST_ASSERT(QDELETED(S), "a singularity at 0 energy collapses")
+
+/// Containment: a turf holding a containment field or an ACTIVE field generator stops it; an inactive generator does not.
+/datum/unit_test/dq_pp/sing_containment_turfs
+
+/datum/unit_test/dq_pp/sing_containment_turfs/run_pp()
+	var/list/run = pp_run(4)
+	var/obj/singularity/S = pp_singularity(run[1])
+	TEST_ASSERT(S.can_move(run[2]), "an empty floor does not stop it")
+	var/obj/machinery/containment_field/F = allocate(/obj/machinery/containment_field, run[2])
+	TEST_ASSERT(!S.can_move(run[2]), "a containment field stops it")
+	qdel(F)
+	var/obj/machinery/field_generator/G = allocate(/obj/machinery/field_generator, run[3])
+	TEST_ASSERT(S.can_move(run[3]), "an inactive field generator does not")
+	G.set_active(1)
+	TEST_ASSERT(!S.can_move(run[3]), "an active field generator does")
+	G.set_active(0)
+
+/// Escape: a contained singularity's step toward a field is refused (it remembers the direction); one that does not move itself never moves;
+/// at stage five nothing stops it.
+/datum/unit_test/dq_pp/sing_escape_conditions
+
+/datum/unit_test/dq_pp/sing_escape_conditions/run_pp()
+	var/list/run = pp_run(6)
+	var/dir = pp_run_dir(run)
+	var/obj/singularity/S = pp_singularity(run[1], 100)
+	S.move_self = 1
+	allocate(/obj/machinery/containment_field, run[2])
+	TEST_ASSERT(!S.move(dir), "a stage-one singularity does not step into a field")
+	TEST_ASSERT_EQUAL(S.loc, run[1], "it stayed put")
+	TEST_ASSERT_EQUAL(S.last_failed_movement, dir, "and remembers the blocked direction")
+	S.move_self = 0
+	TEST_ASSERT(!S.move(turn(dir, 180)), "a singularity that does not move itself never moves")
+	TEST_ASSERT_EQUAL(S.loc, run[1], "it stayed put")
+	qdel(S)
+	var/obj/singularity/big = pp_singularity(run[3], 100)
+	big.move_self = 1
+	big.current_size = STAGE_FIVE
+	TEST_ASSERT(big.move(turn(dir, 180)), "a stage-five singularity ignores containment: it never checks the turfs it steps to")
+	qdel(big)
+
+/// A loaded, active collector.
+/datum/unit_test/dq_pp/proc/pp_collector(turf/T)
+	var/obj/machinery/power/rad_collector/C = allocate(/obj/machinery/power/rad_collector, T)
+	C.set_anchored(TRUE)
+	var/obj/item/tank/phoron/tank = allocate(/obj/item/tank/phoron, T)
+	TEST_ASSERT(move_into(C, nameof(C.P), tank), "the tank went in")
+	C.toggle_power()
+	TEST_ASSERT(C.active, "the collector is on")
+	return C
+
+/// What it feeds the collectors: every collector within 15 tiles receives a pulse of its energy (power = phoron moles * energy * 20).
+/datum/unit_test/dq_pp/sing_pulse_feeds_collectors
+
+/datum/unit_test/dq_pp/sing_pulse_feeds_collectors/run_pp()
+	var/list/run = pp_run(3)
+	var/obj/singularity/S = pp_singularity(run[1], 300)
+	var/obj/machinery/power/rad_collector/C = pp_collector(run[3])
+	var/moles = C.P.air_contents.get_moles(/datum/gas/plasma)
+	S.pulse()
+	TEST_ASSERT(pp_close(C.last_power_new, moles * 300 * 20, 0.0001), "a 300-energy pulse makes [moles * 300 * 20] W: [C.last_power_new]")
+
+/// A collector makes phoron moles * pulse strength * 20 W per pulse, and nothing switched off.
+/datum/unit_test/dq_pp/collector_output
+
+/datum/unit_test/dq_pp/collector_output/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/power/rad_collector/C = pp_collector(run[1])
+	var/moles = C.P.air_contents.get_moles(/datum/gas/plasma)
+	C.receive_pulse(170)
+	TEST_ASSERT(pp_close(C.last_power_new, moles * 170 * 20, 0.0001), "170 rads make moles * 3400 W: [C.last_power_new]")
+	C.toggle_power()
+	C.last_power_new = 0
+	C.receive_pulse(170)
+	TEST_ASSERT_EQUAL(C.last_power_new, 0, "an inactive collector makes nothing")
+
+/// The singularity generator becomes a singularity once particles have given it 200 energy, and not before.
+/datum/unit_test/dq_pp/sing_generator_threshold
+
+/datum/unit_test/dq_pp/sing_generator_threshold/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/the_singularitygen/G = allocate(/obj/machinery/the_singularitygen, run[1])
+	G.energy = 199
+	pp_step(G, PP_GEN_STEP)
+	TEST_ASSERT(!QDELETED(G), "199 energy is not enough")
+	TEST_ASSERT(!locate_on(run[1], /obj/singularity), "and no singularity formed")
+	G.energy = 200
+	pp_step(G, PP_GEN_STEP)
+	TEST_ASSERT(QDELETED(G), "200 energy collapses the generator")
+	var/obj/singularity/S = locate_on(run[1], /obj/singularity)
+	TEST_ASSERT_NOTNULL(S, "into a singularity")
+	TEST_ASSERT_EQUAL(S.energy, 50, "that starts at 50 energy")
+	qdel(S)
+
+/// Particles: a weak particle gives 5 energy, a normal one 10, a strong one 15, a powerful one 50.
+/datum/unit_test/dq_pp/particle_energies
+
+/datum/unit_test/dq_pp/particle_energies/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/the_singularitygen/G = allocate(/obj/machinery/the_singularitygen, run[1])
+	var/list/expected = list(/obj/effect/accelerated_particle/weak = 5, /obj/effect/accelerated_particle = 10,
+		/obj/effect/accelerated_particle/strong = 15, /obj/effect/accelerated_particle/powerful = 50)
+	for(var/path in expected)
+		var/obj/effect/accelerated_particle/P = new path(null)
+		var/before = G.energy
+		P.Bump(G)
+		TEST_ASSERT_EQUAL(G.energy - before, expected[path], "[path] gives [expected[path]] energy")
+		qdel(P)
+	TEST_ASSERT(!QDELETED(G), "80 energy is not a singularity yet")
+
+/// The accelerator's emitters fire at most once per 5 s.
+/datum/unit_test/dq_pp/pa_emitter_rate
+
+/datum/unit_test/dq_pp/pa_emitter_rate/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/structure/particle_accelerator/particle_emitter/center/E = allocate(/obj/structure/particle_accelerator/particle_emitter/center, run[1])
+	TEST_ASSERT_EQUAL(E.fire_delay, 5 SECONDS, "the emitters' delay is 5 s")
+	TEST_ASSERT(E.emit_particle(2), "a ready emitter fires")
+	TEST_ASSERT(!E.emit_particle(2), "and not again within its delay")
+	TEST_ASSERT_EQUAL(COOLDOWN_TIMELEFT(E, shot_cooldown), 5 SECONDS, "which is 5 s")
+	COOLDOWN_RESET(E, shot_cooldown)
+	TEST_ASSERT(E.emit_particle(0), "after it, it fires again")
+	for(var/obj/effect/accelerated_particle/P in range(2, E))
+		qdel(P)
+
+// ---- field generators ----
+
+/// A welded generator with `power` in store.
+/datum/unit_test/dq_pp/proc/pp_field_gen(turf/T, power = 100000)
+	var/obj/machinery/field_generator/G = allocate(/obj/machinery/field_generator, T)
+	G.set_state(2)
+	G.set_anchored(TRUE)
+	G.power = power
+	return G
+
+/// Power draw: a running generator pays half of 5500 W, plus 5500 per linked generator and 2000 per field, every step; its store is capped at
+/// 250000 first.
+/datum/unit_test/dq_pp/fg_power_draw
+
+/datum/unit_test/dq_pp/fg_power_draw/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/field_generator/G = pp_field_gen(run[1], 100000)
+	G.set_active(2)
+	pp_step(G, PP_FG_STEP)
+	TEST_ASSERT_EQUAL(G.power, 100000 - 2750, "a lone generator pays 2750 a step")
+	TEST_ASSERT_EQUAL(G.active, 2, "and stays up")
+	G.power = 300000
+	pp_step(G, PP_FG_STEP)
+	TEST_ASSERT_EQUAL(G.power, 250000 - 2750, "its store is capped at 250000 before it pays")
+	G.set_active(0)
+
+/// Containment failure by power: a generator that cannot pay shuts down (its fields fall) and empties.
+/datum/unit_test/dq_pp/fg_power_failure
+
+/datum/unit_test/dq_pp/fg_power_failure/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/field_generator/G = pp_field_gen(run[1], 1000)
+	G.set_active(2)
+	pp_step(G, PP_FG_STEP)
+	TEST_ASSERT_EQUAL(G.active, 0, "a generator that cannot pay its 2750 shuts down")
+	TEST_ASSERT_EQUAL(G.power, 0, "and is left empty")
+
+/// Two generators 4 tiles apart raise 3 field tiles between them after the 10 s warm-up, a linked generator with 3 fields pays
+/// (5500 * 2 + 2000 * 3) / 2 a step, and the fields fall when one is switched off.
+/datum/unit_test/dq_pp/fg_fields_and_warmup
+
+/datum/unit_test/dq_pp/fg_fields_and_warmup/run_pp()
+	var/list/run = pp_run(5)
+	var/obj/machinery/field_generator/A = pp_field_gen(run[1])
+	var/obj/machinery/field_generator/B = pp_field_gen(run[5])
+	A.turn_on()
+	B.turn_on()
+	test_time(9 SECONDS)
+	TEST_ASSERT(A.active != 2, "the warm-up takes 10 s (two more stages, 5 s each)")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(A.active, 2, "after 10 s the generator is up")
+	TEST_ASSERT_EQUAL(B.active, 2, "both are")
+	test_time(1 SECOND)
+	for(var/i in 2 to 4)
+		TEST_ASSERT_NOTNULL(locate_on(run[i], /obj/machinery/containment_field), "a field stands on tile [i]")
+	TEST_ASSERT_EQUAL(length(A.fields), 3, "A powers 3 fields")
+	TEST_ASSERT(B in A.connected_gens, "and is linked to B")
+	A.power = 100000
+	pp_step(A, PP_FG_STEP)
+	var/draw = round((5500 * 2 + 2000 * 3) / 2)
+	TEST_ASSERT_EQUAL(A.power, 100000 - draw, "a linked generator with 3 fields pays [draw] a step: [A.power]")
+	A.turn_off()
+	test_time(1 SECOND)
+	for(var/i in 2 to 4)
+		TEST_ASSERT(!locate_on(run[i], /obj/machinery/containment_field), "the field on tile [i] fell")
+	TEST_ASSERT(!length(A.connected_gens), "and the generators are unlinked")
+	B.turn_off()
+	test_time(1 SECOND)
+
+/// An emitter beam charges a field generator: damage * EMITTER_DAMAGE_POWER_TRANSFER.
+/datum/unit_test/dq_pp/fg_beam_charges
+
+/datum/unit_test/dq_pp/fg_beam_charges/run_pp()
+	var/list/run = pp_run(2)
+	var/obj/machinery/field_generator/G = pp_field_gen(run[1], 0)
+	var/obj/item/projectile/beam/emitter/beam = allocate(/obj/item/projectile/beam/emitter, run[2])
+	beam.damage = 100
+	G.bullet_act(beam)
+	TEST_ASSERT_EQUAL(G.power, 100 * EMITTER_DAMAGE_POWER_TRANSFER, "a 100-damage beam gives [100 * EMITTER_DAMAGE_POWER_TRANSFER]")
+
+/// The containment field: a dense non-living thing that crosses it is destroyed, a loose item is not; a field whose generators are gone falls when
+/// it would shock.
+/datum/unit_test/dq_pp/containment_field_effects
+
+/datum/unit_test/dq_pp/containment_field_effects/run_pp()
+	var/list/run = pp_run(3)
+	var/obj/machinery/field_generator/A = pp_field_gen(run[1])
+	var/obj/machinery/field_generator/B = pp_field_gen(run[3])
+	var/obj/machinery/containment_field/F = allocate(/obj/machinery/containment_field, run[2])
+	F.set_master(A, B)
+	var/obj/structure/closet/crate = allocate(/obj/structure/closet, run[2])
+	F.Crossed(crate)
+	TEST_ASSERT(QDELETED(crate), "a dense object crossing the field is destroyed")
+	var/obj/item/stack/rods/rod = allocate(/obj/item/stack/rods, run[2])
+	F.Crossed(rod)
+	TEST_ASSERT(!QDELETED(rod), "a loose item is not")
+	qdel(B)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run[1])
+	F.shock(H)
+	TEST_ASSERT(QDELETED(F), "a field without both generators falls when it would shock")
+
+// ---- emitters ----
+
+/// A clear space lane to fire into.
+/datum/unit_test/dq_pp/proc/pp_lane()
+	for(var/turf/space/candidate in world)
+		if(candidate.x > 2 && candidate.y > 2 && candidate.y < world.maxy - 12 && istype(get_step(candidate, NORTH), /turf/space))
+			return candidate
+	TEST_FAIL("no clear firing lane")
+
+/// A welded emitter on test grid `net`.
+/datum/unit_test/dq_pp/proc/pp_emitter(turf/T, dir, net)
+	var/obj/machinery/power/emitter/E = allocate(/obj/machinery/power/emitter, T)
+	E.set_dir(dir)
+	E.set_anchored(TRUE)
+	E.set_state(2)
+	power_test_join(net, E)
+	return E
+
+/// Emitter firing: one shot is 30 kW over the 6.4 s mean burst, a third of it: 64000 J of beam; a burst is four shots (the burst delay is shorter
+/// than a step, so one a step), then a 2-10 s pause; an emitter that is no longer welded switches off.
+/datum/unit_test/dq_pp/emitter_firing
+
+/datum/unit_test/dq_pp/emitter_firing/run_pp()
+	var/turf/lane = pp_lane()
+	var/net = power_test_grid(10000000)
+	var/obj/machinery/power/emitter/E = pp_emitter(lane, NORTH, net)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_step(lane, SOUTH))
+	E.activate(H)
+	TEST_ASSERT_EQUAL(E.active, 1, "a welded, wired emitter switches on")
+	E.material_last_charge = world.time - 10 SECONDS
+	E.charge_emitter()
+	E.material_stored_energy = 1e7
+	var/shot = 30000 * 6.4 / 3
+	var/before = E.material_beam_joules
+	COOLDOWN_RESET(E, shot_cooldown)
+	pp_step(E, PP_EMITTER_STEP)
+	TEST_ASSERT(pp_close(E.material_beam_joules - before, shot, 0.0001), "one shot is [shot] J: [E.material_beam_joules - before]")
+	TEST_ASSERT_EQUAL(E.shot_number, 1, "the burst counts its shots")
+	TEST_ASSERT_EQUAL(E.fire_delay, E.burst_delay, "the next shot of the burst waits the burst delay")
+	pp_step(E, PP_EMITTER_STEP)
+	TEST_ASSERT(pp_close(E.material_beam_joules - before, shot, 0.0001), "and not at once")
+	for(var/i in 1 to 3)
+		COOLDOWN_RESET(E, shot_cooldown)
+		pp_step(E, PP_EMITTER_STEP)
+	TEST_ASSERT_EQUAL(E.shot_number, 0, "the fourth shot ends the burst")
+	TEST_ASSERT(E.fire_delay >= E.min_burst_delay && E.fire_delay <= E.max_burst_delay, "and the pause is 2-10 s: [E.fire_delay]")
+	TEST_ASSERT(pp_close(E.material_beam_joules - before, shot * 4, 0.0001), "four shots: [E.material_beam_joules - before]")
+	E.set_state(1)
+	pp_step(E, PP_EMITTER_STEP)
+	TEST_ASSERT_EQUAL(E.active, 0, "an emitter that is no longer welded switches off")
+	for(var/obj/item/projectile/P in range(12, lane))
+		qdel(P)
+	power_test_drop_grid(net)
+
+/// The emitter's switch: unwelded it refuses to switch on; locked it does not switch; unlocked it switches on and off.
+/datum/unit_test/dq_pp/emitter_controls
+
+/datum/unit_test/dq_pp/emitter_controls/run_pp()
+	var/list/run = pp_run(1)
+	var/net = power_test_grid(10000000)
+	var/obj/machinery/power/emitter/E = allocate(/obj/machinery/power/emitter, run[1])
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run[1])
+	E.activate(H)
+	TEST_ASSERT_EQUAL(E.active, 0, "an unwelded emitter does not switch on")
+	E.set_anchored(TRUE)
+	E.set_state(2)
+	power_test_join(net, E)
+	E.set_locked(TRUE)
+	E.activate(H)
+	TEST_ASSERT_EQUAL(E.active, 0, "a locked emitter does not switch on")
+	E.set_locked(FALSE)
+	E.activate(H)
+	TEST_ASSERT_EQUAL(E.active, 1, "an unlocked one does")
+	E.activate(H)
+	TEST_ASSERT_EQUAL(E.active, 0, "and off again")
+	power_test_drop_grid(net)
+
+#undef PP_SING_STEP
+#undef PP_FG_STEP
+#undef PP_EMITTER_STEP
+#undef PP_GEN_STEP
