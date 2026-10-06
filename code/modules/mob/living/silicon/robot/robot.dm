@@ -950,7 +950,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		to_chat(user, span_filter_notice("\The [src] has no brain to remove."))
 		return FALSE
 	to_chat(user, span_filter_notice("You jam the crowbar into the robot and begin levering [mmi]."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(extract_mmi_robot_done), done_args = list(user))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(extract_mmi_robot_done), done_args = list(user))
 	return TRUE
 
 /mob/living/silicon/robot/proc/extract_mmi_robot_done(mob/user)
@@ -1085,7 +1085,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		to_chat(user, span_filter_notice("There is no restraining bolt installed."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_filter_notice("You begin removing \the [bolt]."))
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_robot_done), done_args = list(user))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_robot_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
@@ -1113,7 +1113,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		if(!bolt.malfunction)
 			act_message(src, null, MSG_SELF(span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)")), \
 				MSG_OTHERS(span_danger("%U% is trying to break their [bolt]!")))
-			om_task_timed(src, 1.5 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_restraints_robot_done), done_args = list())
+			task_timed(src, 1.5 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_restraints_robot_done), done_args = list())
 
 	return
 
@@ -1444,7 +1444,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 
 	actor_use(/datum/input_adapter/ai, user, src)
 	balloon_alert(user, "dropping hat...")
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
 	return TRUE
 
 /mob/living/silicon/robot/proc/attack_robot_robot_done(mob/user)

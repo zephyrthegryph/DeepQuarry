@@ -72,19 +72,19 @@
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
 
-	om_task_start(/datum/om/task/timed/belly_escape, living_prey, src, duration = escapetime, receiver = src, prey_item = prey_item)
+	task_start(/datum/task/timed/belly_escape, living_prey, src, duration = escapetime, receiver = src, prey_item = prey_item)
 
 /// Prey (the actor) working its way out of a belly, with `prey_item` if it is one.
-/datum/om/task/timed/belly_escape
+/datum/task/timed/belly_escape
 	flags = IGNORE_INCAPACITATED
 	complete_proc = /obj/belly/proc/default_escape_done
 	cancel_proc = /obj/belly/proc/escape_interrupted
 	var/obj/item/prey_item
 
-/obj/belly/proc/escape_interrupted(datum/om/task/timed/belly_escape/task)
+/obj/belly/proc/escape_interrupted(datum/task/timed/belly_escape/task)
 	escape_failed(task.actor)
 
-/obj/belly/proc/default_escape_done(datum/om/task/timed/belly_escape/task)
+/obj/belly/proc/default_escape_done(datum/task/timed/belly_escape/task)
 	var/mob/living/living_prey = task.actor
 	var/obj/item/prey_item = task.prey_item
 	if((owner.stat || escapable)) //Can still escape?
@@ -136,7 +136,7 @@
 	var/escape_attempt_prey_message = span_vwarning(belly_format_string(escape_attempt_messages_prey, living_prey))
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
-	om_task_timed(living_prey, escapetime, src, src, PROC_REF(chance_escape_done), list(living_prey, prey_item))
+	task_timed(living_prey, escapetime, src, src, PROC_REF(chance_escape_done), list(living_prey, prey_item))
 	return TRUE
 
 /obj/belly/proc/chance_escape_done(mob/living/living_prey, obj/item/prey_item)
@@ -300,7 +300,7 @@
 
 	to_chat(living_prey, escape_attempt_absorbed_prey_message)
 	to_chat(owner, escape_attempt_absorbed_owner_message)
-	om_task_timed(living_prey, escapetime, src, src, PROC_REF(absorbed_escape_done), list(living_prey))
+	task_timed(living_prey, escapetime, src, src, PROC_REF(absorbed_escape_done), list(living_prey))
 	return TRUE
 
 /obj/belly/proc/absorbed_escape_done(mob/living/living_prey)

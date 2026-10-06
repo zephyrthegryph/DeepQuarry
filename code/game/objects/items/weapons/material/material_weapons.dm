@@ -151,7 +151,7 @@ CAPABILITIES(/obj/item/material)
 	if(!fragile)
 		if(get_integrity() < max_integrity)
 			act_message(user, src, MSG_SELF("You begin repairing %T%."), MSG_OTHERS("%U% begins repairing %T%."))
-			om_task_timed(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
+			task_timed(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
 		else
 			to_chat(user, span_notice("[src] doesn't need repairs."))
 	else
@@ -171,7 +171,7 @@ CAPABILITIES(/obj/item/material)
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
 		act_message(M, src, MSG_SELF("You begin to replace parts of %T% with [kit]."), MSG_OTHERS("%U% begins to replace parts of %T% with [kit]."))
-		om_task_timed(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
+		task_timed(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
 		return TRUE
 	else
 		to_chat(M, span_warning("You can't sharpen and re-edge [src]."))

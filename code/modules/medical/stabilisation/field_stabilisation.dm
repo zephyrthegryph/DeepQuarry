@@ -41,19 +41,19 @@
 		balloon_alert(user, "\the [src] doesn't go on the [affecting.name]!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts applying \the [src] to [H == user ? "their" : "[H]'s"] [affecting.name].", "applying \the [src] to the [affecting.name].")
-	om_task_start(/datum/om/task/timed/field_field_apply, user, affecting, duration = apply_time, H = H)
+	task_start(/datum/task/timed/field_field_apply, user, affecting, duration = apply_time, H = H)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/medical/field/proc/field_apply_failed(datum/om/task/timed/field_field_apply/task)
+/obj/item/stack/medical/field/proc/field_apply_failed(datum/task/timed/field_field_apply/task)
 	var/mob/living/user = task.actor
 	balloon_alert(user, "stand still to apply \the [src]!")
 
-/datum/om/task/timed/field_field_apply
+/datum/task/timed/field_field_apply
 	complete_proc = /obj/item/stack/medical/field/proc/field_apply_done
 	cancel_proc = /obj/item/stack/medical/field/proc/field_apply_failed
 	var/mob/living/carbon/human/H
 
-/obj/item/stack/medical/field/proc/field_apply_done(datum/om/task/timed/field_field_apply/task)
+/obj/item/stack/medical/field/proc/field_apply_done(datum/task/timed/field_field_apply/task)
 	var/mob/living/user = task.actor
 	var/mob/living/carbon/human/H = task.H
 	var/obj/item/organ/external/affecting = task.target

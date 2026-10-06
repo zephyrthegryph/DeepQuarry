@@ -103,7 +103,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	return ITEM_INTERACT_SUCCESS
 
 /// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
-/datum/om/task/timed/load_sheets
+/datum/task/timed/load_sheets
 	steps = list(/obj/item/gun/magnetic/matfed/proc/sheet_loaded = 1.5 SECONDS)
 	complete_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
 	cancel_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
@@ -113,7 +113,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 /obj/item/gun/magnetic/matfed/proc/can_load_sheet(obj/item/stack/material/M)
 	return mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M?.get_amount()
 
-/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/om/task/timed/load_sheets/task)
+/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/task/timed/load_sheets/task)
 	if(!can_load_sheet(task.sheets))
 		return STEP_DONE
 	mat_storage += SHEET_MATERIAL_AMOUNT
@@ -122,7 +122,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	task.sheets.use(1)
 	return can_load_sheet(task.sheets) ? STEP_REPEAT(1.5 SECONDS) : STEP_DONE
 
-/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/om/task/timed/load_sheets/task)
+/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/task/timed/load_sheets/task)
 	loading = FALSE
 	var/mob/user = task.actor
 	if(task.loaded_any && user)
@@ -159,7 +159,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 			loading = TRUE
-			if(!can_load_sheet(M) || istext(om_task_start(/datum/om/task/timed/load_sheets, user, src, receiver = src, sheets = M)))
+			if(!can_load_sheet(M) || istext(task_start(/datum/task/timed/load_sheets, user, src, receiver = src, sheets = M)))
 				loading = FALSE
 			return
 
@@ -302,7 +302,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
 	if(pulls > 0)
 		play_sfx(src, SFX_ITEMS_SMALL_MOTOR_MOTOR_PULL_ATTEMPT)
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
+		task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
 		return
 	soundloop.start()
 	COOLDOWN_START(src, stop_lockout_cooldown, 3 SECONDS)

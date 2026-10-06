@@ -125,7 +125,7 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 	var/mob/user = A.actor
 	var/obj/item/P = A.held
 	//If you use a fishing rod on an open body of water that var/has_fish enabled
-	if(!om_busy(src))
+	if(!task_busy(src))
 		var/obj/item/material/fishing_rod/R = P
 		if(!R.strung)
 			to_chat(user, span_notice("It is hard to go fishing without any line!"))
@@ -137,21 +137,21 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 		to_chat(user,"You cast \the [P.name] into \the [src].")
 		R.cast = TRUE
 		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
-		om_task_start(/datum/om/task/timed/fishing, user, null, duration = fishing_time, rod = R, busy = src)
+		task_start(/datum/task/timed/fishing, user, null, duration = fishing_time, rod = R, busy = src)
 		return OP_PASS
 	return OP_DECLINE
 
 /// A line in the water until something bites; the water is busy meanwhile.
-/datum/om/task/timed/fishing
+/datum/task/timed/fishing
 	complete_proc = /turf/simulated/floor/water/proc/fishing_done
 	cancel_proc = /turf/simulated/floor/water/proc/fishing_ended
 	var/obj/item/material/fishing_rod/rod
 
-/turf/simulated/floor/water/proc/fishing_ended(datum/om/task/timed/fishing/task)
+/turf/simulated/floor/water/proc/fishing_ended(datum/task/timed/fishing/task)
 	if(task.rod)
 		task.rod.cast = FALSE
 
-/turf/simulated/floor/water/proc/fishing_done(datum/om/task/timed/fishing/task)
+/turf/simulated/floor/water/proc/fishing_done(datum/task/timed/fishing/task)
 	var/mob/user = task.actor
 	var/obj/item/material/fishing_rod/R = task.rod
 	var/obj/item/P = R

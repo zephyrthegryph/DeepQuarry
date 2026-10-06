@@ -89,16 +89,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 		to_chat(user, span_notice("The battery has no charge."))
 	else
 		play_sfx(get_turf(src), SFX_MACHINES_CLICK)
-		om_task_start(/datum/om/task/timed/rms_drain_battery, user, C, receiver = src, charge_needed = charge_needed)
+		task_start(/datum/task/timed/rms_drain_battery, user, C, receiver = src, charge_needed = charge_needed)
 	stored_charge = CLAMP(stored_charge, 0, max_charge)
 	update_icon()
 
-/datum/om/task/timed/rms_drain_battery
+/datum/task/timed/rms_drain_battery
 	duration = 2
 	complete_proc = /obj/item/rms/proc/drain_battery_timed_done
 	var/charge_needed
 
-/obj/item/rms/proc/drain_battery_timed_done(datum/om/task/timed/rms_drain_battery/task)
+/obj/item/rms/proc/drain_battery_timed_done(datum/task/timed/rms_drain_battery/task)
 	var/user = task.actor
 	var/obj/item/cell/C = task.target
 	var/charge_needed = task.charge_needed
@@ -132,14 +132,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
 	play_sfx(src.loc, SFX_MACHINES_CLICK)
-	om_task_start(/datum/om/task/timed/rms_use_rms, user, A, receiver = src, product = product)
+	task_start(/datum/task/timed/rms_use_rms, user, A, receiver = src, product = product)
 
-/datum/om/task/timed/rms_use_rms
+/datum/task/timed/rms_use_rms
 	duration = 5
 	complete_proc = /obj/item/rms/proc/use_rms_timed_done
 	var/obj/product
 
-/obj/item/rms/proc/use_rms_timed_done(datum/om/task/timed/rms_use_rms/task)
+/obj/item/rms/proc/use_rms_timed_done(datum/task/timed/rms_use_rms/task)
 	var/atom/A = task.target
 	var/mob/living/user = task.actor
 	var/obj/product = task.product

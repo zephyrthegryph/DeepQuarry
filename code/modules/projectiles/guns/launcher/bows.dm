@@ -115,7 +115,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	current_user = user
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to draw back the string of %T%.")))
-	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
+	task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
 	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)

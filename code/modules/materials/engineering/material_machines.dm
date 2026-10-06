@@ -182,7 +182,7 @@ EXTEND_INTERACTIONS(/obj/machinery/material_furnace, \
 
 /obj/machinery/material_furnace/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
 	act_message(user, src, MSG_SELF(span_notice("You begin opening %T%.")), MSG_OTHERS(span_notice("%U% begins opening %T%.")))
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
+	task_timed(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
 	return TRUE
 
 /obj/machinery/material_furnace/proc/eject_contents_done(mob/user)

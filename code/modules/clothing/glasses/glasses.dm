@@ -705,7 +705,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 			to_chat(user, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
 			return
 
-		om_task_start(/datum/om/task/timed/glasses_kit/prescribe, user, G, kit = src)
+		task_start(/datum/task/timed/glasses_kit/prescribe, user, G, kit = src)
 
 	//We're getting a prescription
 	else if(ishuman(target))
@@ -716,32 +716,32 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 
 		act_message(T, user, MSG_SELF("%T% begins measuring your eyes. Hold still!"), \
 			MSG_OTHERS("%T% begins making measurements for prescription lenses for [target]."))
-		om_task_start(/datum/om/task/timed/glasses_kit/measure, user, T, kit = src)
+		task_start(/datum/task/timed/glasses_kit/measure, user, T, kit = src)
 
 	else
 		..()
 
 /// Five seconds with the kit on someone's eyes or on their glasses. The done procs are the
 /// task's own: they read the state (kit, actor, target) as their own vars.
-/datum/om/task/timed/glasses_kit
-	abstract_type = /datum/om/task/timed/glasses_kit
+/datum/task/timed/glasses_kit
+	abstract_type = /datum/task/timed/glasses_kit
 	duration = 5 SECONDS
 	var/obj/item/glasses_kit/kit
 
-/datum/om/task/timed/glasses_kit/prescribe
-	complete_proc = /datum/om/task/timed/glasses_kit/prescribe/proc/done
+/datum/task/timed/glasses_kit/prescribe
+	complete_proc = /datum/task/timed/glasses_kit/prescribe/proc/done
 
-/datum/om/task/timed/glasses_kit/prescribe/proc/done()
+/datum/task/timed/glasses_kit/prescribe/proc/done()
 	var/obj/item/clothing/glasses/G = target
 	if(!kit.scrip_loaded)
 		return
 	G.prescribe(actor)
 	kit.scrip_loaded = 0
 
-/datum/om/task/timed/glasses_kit/measure
-	complete_proc = /datum/om/task/timed/glasses_kit/measure/proc/done
+/datum/task/timed/glasses_kit/measure
+	complete_proc = /datum/task/timed/glasses_kit/measure/proc/done
 
-/datum/om/task/timed/glasses_kit/measure/proc/done()
+/datum/task/timed/glasses_kit/measure/proc/done()
 	var/mob/living/carbon/human/T = target
 	T.flash_eyes()
 	kit.scrip_loaded = 1

@@ -525,7 +525,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 
 /// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
 /obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
-	if(om_busy(src)) // a weld in progress claims it
+	if(task_busy(src)) // a weld in progress claims it
 		return 0
 	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result

@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/bedsheet)
 	if(is_sharp(I))
 		act_message(user, src, MSG_SELF(span_notice("You begin cutting up %T% with [I].")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins cutting up %T% with [I].")))
-		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return OP_PASS
 	return OP_DECLINE
 

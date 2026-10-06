@@ -97,16 +97,16 @@
 		return INTERACTION_HANDLED_PASS
 
 	if(!set_content && !sealed)
-		om_task_start(/datum/om/task/timed/blank_attackby, user, user, receiver = src, W = W)
+		task_start(/datum/task/timed/blank_attackby, user, user, receiver = src, W = W)
 	return INTERACTION_HANDLED_PASS
 
-/datum/om/task/timed/blank_attackby
+/datum/task/timed/blank_attackby
 	duration = 1.5 SECONDS
 	complete_proc = /obj/item/mail/blank/proc/attackby_timed_done
 	cancel_proc = /obj/item/mail/blank/proc/attackby_timed_failed
 	var/obj/item/W
 
-/obj/item/mail/blank/proc/attackby_timed_done(datum/om/task/timed/blank_attackby/task)
+/obj/item/mail/blank/proc/attackby_timed_done(datum/task/timed/blank_attackby/task)
 	var/obj/item/W = task.W
 	var/mob/user = task.actor
 	user.drop_item()
@@ -115,7 +115,7 @@
 	set_content = TRUE
 	return
 
-/obj/item/mail/blank/proc/attackby_timed_failed(datum/om/task/timed/blank_attackby/task)
+/obj/item/mail/blank/proc/attackby_timed_failed(datum/task/timed/blank_attackby/task)
 	set_content = FALSE
 
 /obj/item/mail/proc/setRecipient(mob/user)
@@ -170,7 +170,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /// Old attack_self: seal an open envelope, or open a sealed one.
 /obj/item/mail/blank/proc/interaction_seal(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!sealed)
-		om_task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
+		task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
 		return
 	return unwrap(user)
 
@@ -241,11 +241,11 @@ DECLARE_INTERACTIONS(/obj/item/mail, \
 			balloon_alert(user, "you can't open somebody's mail! That's <em>illegal</em>")
 			return FALSE
 
-	if(om_busy(src)) // opening claims the envelope
+	if(task_busy(src)) // opening claims the envelope
 		balloon_alert(user, "already opening that!")
 		return FALSE
 
-	return !istext(om_task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
+	return !istext(task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(unwrap_timed_done), done_args = list(user), busy = src))
 
 /// Opened: out come the contents (special handling keeps them in).
 /obj/item/mail/proc/unwrap_timed_done(mob/user)

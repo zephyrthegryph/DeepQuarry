@@ -371,7 +371,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			to_chat(user, span_notice("You start digging."))
 			play_sfx(user, SFX_EFFECTS_RUSTLE1)
 
-			om_task_timed(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
+			task_timed(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
 
 		else if(istype(W,/obj/item/storage/bag/fossils))
 			var/obj/item/storage/bag/fossils/S = W
@@ -408,7 +408,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [P] towards %T%.")), \
 				item = P)
-			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+			task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
@@ -419,7 +419,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					item = C)
-				om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+				task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return INTERACTION_HANDLED_PASS
 
 		if (istype(W, /obj/item/melee/shock_maul))
@@ -487,7 +487,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					fail_message = ". <b>[pick("There is a crunching noise","[W] collides with some different rock","Part of the rock face crumbles away","Something breaks under [W]")]</b>"
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
-			om_task_timed(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
+			task_timed(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
 			return INTERACTION_HANDLED_PASS
 
 	return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS

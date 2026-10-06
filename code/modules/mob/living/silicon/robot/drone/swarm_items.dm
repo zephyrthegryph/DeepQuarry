@@ -41,7 +41,7 @@
 
 			to_chat(D, span_danger("You begin decompiling [M]."))
 
-			om_task_start(/datum/om/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
+			task_start(/datum/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
 			return
 		else
 			continue

@@ -128,7 +128,7 @@ MSG_DEF_SELF(trash_pile/may_not_respawn, "You may not respawn now.")
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 
-		if(om_busy(src)) // a search claims the pile
+		if(task_busy(src)) // a search claims the pile
 			to_chat(H, span_warning("\The [src] is already being searched."))
 			return TRUE
 
@@ -137,7 +137,7 @@ MSG_DEF_SELF(trash_pile/may_not_respawn, "You may not respawn now.")
 			to_chat(hider(),span_warning("[user] is searching the trash pile you're in!"))
 
 		//Do the searching
-		om_task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
+		task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/trash_pile/proc/attack_hand_timed_done(mob/user)

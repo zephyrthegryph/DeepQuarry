@@ -318,7 +318,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 /// Old attack_self.
 /obj/item/entrepreneur/dumbbell/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/M = user
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
 	return TRUE
 
 /obj/item/entrepreneur/dumbbell/proc/exercise_done(mob/living/M)
@@ -469,7 +469,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 /obj/item/entrepreneur/spirit_board/proc/interaction_item(mob/living/user, obj/item/reagent_containers/food/drinks/W, datum/interaction/interaction)
 	if(!istype(user))
 		return INTERACTION_HANDLED_PASS
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)

@@ -105,11 +105,11 @@ CAPABILITIES(/obj/item/backup_implanter)
 		to_chat(user, span_warning("\The [src] is already full!"))
 	return OP_PASS
 
-/datum/om/task/timed/backup_implanter_backup_implant
+/datum/task/timed/backup_implanter_backup_implant
 	complete_proc = /obj/item/backup_implanter/proc/backup_implant_done
 	var/turf/T1
 
-/obj/item/backup_implanter/proc/backup_implant_done(datum/om/task/timed/backup_implanter_backup_implant/task)
+/obj/item/backup_implanter/proc/backup_implant_done(datum/task/timed/backup_implanter_backup_implant/task)
 	var/mob/living/M = task.target
 	var/mob/living/user = task.actor
 	var/turf/T1 = task.T1
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/backup_implanter)
 
 		var/turf/T1 = get_turf(M)
 		if(T1)
-			om_task_start(/datum/om/task/timed/backup_implanter_backup_implant, user, M, receiver = src, duration = (M == user ? 0 : 5 SECONDS), T1 = T1)
+			task_start(/datum/task/timed/backup_implanter_backup_implant, user, M, receiver = src, duration = (M == user ? 0 : 5 SECONDS), T1 = T1)
 		return ITEM_INTERACT_SUCCESS
 
 //The glass case for the implant
@@ -193,7 +193,7 @@ CAPABILITIES(/obj/structure/backup_implanter_ch)
 
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
-		om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(self_implant_done), list(user))
+		task_timed(user, 2.5 SECONDS, src, src, PROC_REF(self_implant_done), list(user))
 	return TRUE
 
 /obj/structure/backup_implanter_ch/proc/self_implant_done(mob/user)
@@ -221,14 +221,14 @@ CAPABILITIES(/obj/structure/backup_implanter_ch)
 			to_chat(user, span_notice("You start to unwrench the implanter."))
 			playsound(src, O.usesound, 50, 1)
 
-			om_task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
+			task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
 			return OP_PASS
 
 		else
 			to_chat(user, span_notice("You start to wrench the implanter into place."))
 			playsound(src, O.usesound, 50, 1)
 
-			om_task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
+			task_timed(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
 			return OP_PASS
 	return OP_DECLINE
 

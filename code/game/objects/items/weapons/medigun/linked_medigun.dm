@@ -149,10 +149,10 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	if(should_stop(H, user, user.get_active_hand()))
 		return
 
-	om_task_start(/datum/om/task/timed/linked_process_medigun, user, user, receiver = src, H = H, filter = filter, ishealing = ishealing, hidden = TRUE)
+	task_start(/datum/task/timed/linked_process_medigun, user, user, receiver = src, H = H, filter = filter, ishealing = ishealing, hidden = TRUE)
 
 
-/datum/om/task/timed/linked_process_medigun
+/datum/task/timed/linked_process_medigun
 	duration = 1 SECOND
 	flags = IGNORE_USER_LOC_CHANGE
 	complete_proc = /obj/item/bork_medigun/linked/proc/process_medigun_timed_done
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 
 /// One beam cycle, decided by automated triage: every tag mended is one the patient's
 /// treatment demand asks for.
-/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/om/task/timed/linked_process_medigun/task)
+/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/task/timed/linked_process_medigun/task)
 	var/mob/living/carbon/human/H = task.H
 	var/mob/user = task.actor
 	var/filter = task.filter

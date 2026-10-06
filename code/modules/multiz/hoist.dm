@@ -241,7 +241,7 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 	act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] \the [hoistee()]!")), \
 		MSG_OTHERS(span_notice("%U% begins to [movtext] \the [hoistee()]!")), \
 		MSG_BLIND(span_notice("You hear the sound of a crank.")))
-	om_task_timed(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
+	task_timed(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
 	return TRUE
 
 /obj/structure/hoist/proc/collapse_kit()

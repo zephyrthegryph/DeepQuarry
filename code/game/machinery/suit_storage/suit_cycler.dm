@@ -208,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 
 	act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the suit cycler."))
 
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
 
 	return TRUE
 

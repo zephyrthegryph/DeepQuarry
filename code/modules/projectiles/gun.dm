@@ -748,7 +748,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	mouthshoot = 1
 	act_message(user, M, others = span_red("%U% sticks their gun in their mouth, ready to pull the trigger..."))
-	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
+	task_timed(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
 
 /obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
 	M?.visible_message(span_blue("[M] decided life was worth living"))

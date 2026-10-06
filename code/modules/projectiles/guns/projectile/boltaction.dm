@@ -80,7 +80,7 @@
 			playsound(src, fire_sound, 50, 1)
 			act_message(user, src, MSG_SELF(span_danger("The rifle goes off in your face!")), MSG_OTHERS(span_danger("%T% goes off!")))
 			return
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user))
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user))
 	else
 		return ..()
 

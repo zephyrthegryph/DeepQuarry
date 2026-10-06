@@ -75,7 +75,7 @@ CAPABILITIES(/obj/structure/stasis_cage)
 
 		act_message(user, src, MSG_SELF("You begin stuffing %T% into \the [over_object]."), MSG_OTHERS("%U% begins stuffing %T% into \the [over_object]."))
 		Bumped(user)
-		om_task_timed(user, 2 SECONDS, target = over_object, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(over_object, user))
+		task_timed(user, 2 SECONDS, target = over_object, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(over_object, user))
 	else
 		return ..()
 

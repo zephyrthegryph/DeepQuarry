@@ -326,14 +326,14 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 	rel_add(symptom_holder, nameof(symptom_holder.symptoms), chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
-	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)
+	task_start(/datum/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)
 	return TRUE
 
-/datum/om/task/timed/extrapolator_isolate_symptom
+/datum/task/timed/extrapolator_isolate_symptom
 	complete_proc = /obj/item/extrapolator/proc/isolate_symptom_timed_done
 	var/datum/affliction/contagion/engineered/symptom_holder
 
-/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/om/task/timed/extrapolator_isolate_symptom/task)
+/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/task/timed/extrapolator_isolate_symptom/task)
 	var/mob/living/user = task.actor
 	var/atom/target = task.target
 	var/datum/affliction/contagion/engineered/symptom_holder = task.symptom_holder
@@ -344,14 +344,14 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 	. = FALSE
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]...")), \
 		MSG_OTHERS(span_notice("%U% begins to thoroughly scan [target] with %T%...")))
-	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
+	task_start(/datum/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
 	return TRUE
 
-/datum/om/task/timed/extrapolator_isolate_disease
+/datum/task/timed/extrapolator_isolate_disease
 	complete_proc = /obj/item/extrapolator/proc/isolate_disease_timed_done
 	var/datum/affliction/contagion/engineered/target_disease
 
-/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/om/task/timed/extrapolator_isolate_disease/task)
+/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/task/timed/extrapolator_isolate_disease/task)
 	var/mob/living/user = task.actor
 	var/atom/target = task.target
 	var/datum/affliction/contagion/engineered/target_disease = task.target_disease

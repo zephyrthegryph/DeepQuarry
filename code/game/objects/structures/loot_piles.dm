@@ -35,14 +35,14 @@ CAPABILITIES(/obj/structure/loot_pile)
 	if(isliving(user))
 		var/mob/living/L = user
 
-		if(om_busy(src)) // a search claims the pile
+		if(task_busy(src)) // a search claims the pile
 			to_chat(L, span_warning("\The [src] is already being searched."))
 			return TRUE
 
 		act_message(L, user, MSG_SELF(span_notice("You search through \the [src].")), MSG_OTHERS("%T% searches through \the [src]."))
 
 		//Do the searching
-		om_task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)
+		task_timed(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L), claims = TRUE)
 	return TRUE
 
 /obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)

@@ -149,14 +149,14 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 /obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)
 	if(get_integrity() >= max_integrity)
 		return
-	om_task_start(/datum/om/task/timed/component_paste_repair, user, site, receiver = src, NP = NP)
+	task_start(/datum/task/timed/component_paste_repair, user, site, receiver = src, NP = NP)
 
-/datum/om/task/timed/component_paste_repair
+/datum/task/timed/component_paste_repair
 	duration = 1 SECOND
 	complete_proc = /obj/item/mecha_parts/component/proc/paste_repair_done
 	var/obj/item/stack/nanopaste/NP
 
-/obj/item/mecha_parts/component/proc/paste_repair_done(datum/om/task/timed/component_paste_repair/task)
+/obj/item/mecha_parts/component/proc/paste_repair_done(datum/task/timed/component_paste_repair/task)
 	var/mob/user = task.actor
 	var/obj/item/stack/nanopaste/NP = task.NP
 	var/atom/site = task.target

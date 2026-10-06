@@ -92,18 +92,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_ov
 		act_message(user, src, MSG_SELF(span_infoplain("You paint your nails with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " paints their nails with %T%.")))
 	else
-		om_task_start(/datum/om/task/timed/nailpolish_paint, user, target, body_part = body_part, polish = polish, fail_message = span_notice("Both you and [target] must stay still!"))
+		task_start(/datum/task/timed/nailpolish_paint, user, target, body_part = body_part, polish = polish, fail_message = span_notice("Both you and [target] must stay still!"))
 		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(polish)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/task/timed/nailpolish_paint
+/datum/task/timed/nailpolish_paint
 	duration = 2 SECONDS
 	complete_proc = /obj/item/nailpolish/proc/paint_done
 	var/obj/item/organ/external/body_part
 	var/datum/nail_polish/polish
 
-/obj/item/nailpolish/proc/paint_done(datum/om/task/timed/nailpolish_paint/task)
+/obj/item/nailpolish/proc/paint_done(datum/task/timed/nailpolish_paint/task)
 	var/mob/living/user = task.actor
 	var/mob/living/target = task.target
 	var/obj/item/organ/external/body_part = task.body_part
@@ -159,17 +159,17 @@ APPEARANCE_TEMPLATE(/obj/item/nailpolish_remover, "{initial(icon_state)}{open?-o
 		act_message(user, src, MSG_SELF(span_infoplain("You remove your nail polish with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes their nail polish with %T%.")))
 	else
-		om_task_start(/datum/om/task/timed/nailpolish_remover_remove, user, target, body_part = body_part, fail_message = span_notice("Both you and [target] must stay still!"))
+		task_start(/datum/task/timed/nailpolish_remover_remove, user, target, body_part = body_part, fail_message = span_notice("Both you and [target] must stay still!"))
 		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(null)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/task/timed/nailpolish_remover_remove
+/datum/task/timed/nailpolish_remover_remove
 	duration = 2 SECONDS
 	complete_proc = /obj/item/nailpolish_remover/proc/remove_done
 	var/obj/item/organ/external/body_part
 
-/obj/item/nailpolish_remover/proc/remove_done(datum/om/task/timed/nailpolish_remover_remove/task)
+/obj/item/nailpolish_remover/proc/remove_done(datum/task/timed/nailpolish_remover_remove/task)
 	var/mob/living/user = task.actor
 	var/mob/living/target = task.target
 	var/obj/item/organ/external/body_part = task.body_part

@@ -68,15 +68,15 @@ CAPABILITIES(/obj/item/self_repair_system)
 	if(!R.draw_power(ROBOT_CELL_JOULES(power_tick), src, ROBOT_CELL_JOULES(500))) //We don't want to drain ourselves too far down during exploration
 		to_chat(R, span_warning("Not enough power to initialize the repair system."))
 		return
-	om_task_start(/datum/om/task/timed/self_repair_system_self_repair_self_repair_system, R, R, receiver = src, duration = tick_delay, C = C, tick_delay = tick_delay, heal_per_tick = heal_per_tick)
+	task_start(/datum/task/timed/self_repair_system_self_repair_self_repair_system, R, R, receiver = src, duration = tick_delay, C = C, tick_delay = tick_delay, heal_per_tick = heal_per_tick)
 
-/datum/om/task/timed/self_repair_system_self_repair_self_repair_system
+/datum/task/timed/self_repair_system_self_repair_self_repair_system
 	complete_proc = /obj/item/self_repair_system/proc/self_repair_self_repair_system_done
 	var/datum/robot_component/C
 	var/tick_delay
 	var/heal_per_tick
 
-/obj/item/self_repair_system/proc/self_repair_self_repair_system_done(datum/om/task/timed/self_repair_system_self_repair_self_repair_system/task)
+/obj/item/self_repair_system/proc/self_repair_self_repair_system_done(datum/task/timed/self_repair_system_self_repair_self_repair_system/task)
 	var/mob/living/silicon/robot/R = task.actor
 	var/datum/robot_component/C = task.C
 	var/tick_delay = task.tick_delay

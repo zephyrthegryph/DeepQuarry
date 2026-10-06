@@ -1977,7 +1977,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	translocator_unequip(translocator, user)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
-	om_task_timed(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
+	task_timed(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	var/obj/item/perfect_tele/old = own_take(src, nameof(src.translocator)) // handed back below, not disposed of
@@ -2116,12 +2116,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 			add_attack_logs(user, user, "Tried to put on \the [src] and was involuntarily teleported by it (via \the [translocator] within)!")
 			return
 
-/datum/om/task/timed/nikki_hat_warp
+/datum/task/timed/nikki_hat_warp
 	duration = 5 SECONDS
 	complete_proc = /obj/item/clothing/head/fluff/nikki/proc/hat_warp_done
 	var/proximity_flag
 
-/obj/item/clothing/head/fluff/nikki/proc/hat_warp_done(datum/om/task/timed/nikki_hat_warp/task)
+/obj/item/clothing/head/fluff/nikki/proc/hat_warp_done(datum/task/timed/nikki_hat_warp/task)
 	var/mob/living/target = task.target
 	var/mob/user = task.actor
 	var/proximity_flag = task.proximity_flag
@@ -2134,13 +2134,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 		switch(stance)
 			if (I_HELP)
 				act_message(user, target, others = span_notice("%U% guides %T% to the bottomless hole within \the [src]. They begin to climb inside..."))
-				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)
+				task_start(/datum/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)
 			if (I_DISARM)
 				act_message(user, src, others = span_danger("%U% plops %T% onto \the [target]'s head!"))
 				translocator.afterattack(target, user, proximity_flag)
 			if (I_GRAB)
 				act_message(user, target, others = span_danger("%U% begins stuffing %T% into \the [src]!"))
-				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)
+				task_start(/datum/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)
 			if (I_HURT)
 				act_message(user, src, others = span_danger("%U% swipes %T% over \the [target]!"))
 				translocator.afterattack(target, user, proximity_flag)

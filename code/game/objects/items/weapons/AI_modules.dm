@@ -107,15 +107,15 @@ CAPABILITIES(/obj/item/aiModule)
 		act_message(user, R, others = span_danger("%U% slides a law module into %T%."))
 		to_chat(R, span_danger("Local law upload in progress."))
 		to_chat(user, span_notice("Uploading laws from board.  This will take a moment..."))
-		om_task_start(/datum/om/task/timed/aimodule_install, user, src, receiver = src, R = R)
+		task_start(/datum/task/timed/aimodule_install, user, src, receiver = src, R = R)
 
-/datum/om/task/timed/aimodule_install
+/datum/task/timed/aimodule_install
 	duration = 10 SECONDS
 	complete_proc = /obj/item/aiModule/proc/install_timed_done
 	cancel_proc = /obj/item/aiModule/proc/install_timed_failed
 	var/mob/living/silicon/robot/R
 
-/obj/item/aiModule/proc/install_timed_done(datum/om/task/timed/aimodule_install/task)
+/obj/item/aiModule/proc/install_timed_done(datum/task/timed/aimodule_install/task)
 	var/mob/living/user = task.actor
 	var/mob/living/silicon/robot/R = task.R
 	transmitInstructions(R, user)
@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/aiModule)
 	R.show_laws()
 	to_chat(user, span_notice("Law upload complete.  Unit's laws have been modified."))
 
-/obj/item/aiModule/proc/install_timed_failed(datum/om/task/timed/aimodule_install/task)
+/obj/item/aiModule/proc/install_timed_failed(datum/task/timed/aimodule_install/task)
 	var/mob/living/user = task.actor
 	var/mob/living/silicon/robot/R = task.R
 	to_chat(user, span_warning("Law Upload Error: Law board was removed before upload was complete.  Aborting."))

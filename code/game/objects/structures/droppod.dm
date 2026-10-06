@@ -134,7 +134,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
 		return OP_OK
 	to_chat(user, span_notice("You start breaking down \the [src]."))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
+	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
 	return OP_OK
 
 /obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)

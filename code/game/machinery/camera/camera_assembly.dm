@@ -195,7 +195,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_assembly, \
 
 /// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
 /obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user, on_done, list/done_args)
-	if(om_busy(src)) // a weld in progress claims it
+	if(task_busy(src)) // a weld in progress claims it
 		return 0
 	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result

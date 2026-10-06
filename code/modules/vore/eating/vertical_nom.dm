@@ -57,7 +57,7 @@
 	to_chat(target, span_vwarning("You feel yourself being pulled up by something... Or someone?!"))
 	var/starting_loc = target.loc
 
-	om_task_timed(src, 5 SECONDS, target, src, PROC_REF(vertical_nom_done), list(target, starting_loc))
+	task_timed(src, 5 SECONDS, target, src, PROC_REF(vertical_nom_done), list(target, starting_loc))
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/vertical_nom_target

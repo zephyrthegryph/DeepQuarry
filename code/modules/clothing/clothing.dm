@@ -849,7 +849,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 		return
 	if(!istype(macro))
 		to_chat(micro, span_notice("You start to climb out of [src]!"))
-		om_task_timed(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
+		task_timed(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
 		return
 
 	var/escape_message_micro = "You start to climb out of [src]!"
@@ -862,23 +862,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, duration = escape_time)
+	task_start(/datum/task/timed/shoes_micro_escaped_macro, micro, macro, duration = escape_time)
 
 /obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
 	to_chat(micro, span_notice("You climb out of [src]!"))
 	micro.forceMove(loc)
 
-/obj/item/clothing/shoes/proc/micro_pinned(datum/om/task/timed/shoes_micro_escaped_macro/task)
+/obj/item/clothing/shoes/proc/micro_pinned(datum/task/timed/shoes_micro_escaped_macro/task)
 	var/mob/living/micro = task.actor
 	var/mob/living/carbon/human/macro = task.target
 	to_chat(micro, span_danger("You're pinned underfoot!"))
 	to_chat(macro, span_danger("You pin the escapee underfoot!"))
 
-/datum/om/task/timed/shoes_micro_escaped_macro
+/datum/task/timed/shoes_micro_escaped_macro
 	complete_proc = /obj/item/clothing/shoes/proc/micro_escaped_macro
 	cancel_proc = /obj/item/clothing/shoes/proc/micro_pinned
 
-/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/om/task/timed/shoes_micro_escaped_macro/task)
+/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/task/timed/shoes_micro_escaped_macro/task)
 	var/mob/living/micro = task.actor
 	var/mob/living/carbon/human/macro = task.target
 	to_chat(micro, span_notice("You manage to escape [src]!"))
@@ -1485,7 +1485,7 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		return TRUE
 
 	balloon_alert(user, "picking up hat...")
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
 	return TRUE
 
 /obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)

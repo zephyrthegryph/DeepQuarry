@@ -157,15 +157,15 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	om_task_start(/datum/om/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
+	task_start(/datum/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
 
-/datum/om/task/timed/human_bloodsuck_human
+/datum/task/timed/human_bloodsuck_human
 	duration = 30 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/bloodsuck_human_done
 	var/noise
 	var/bleed
 
-/mob/living/carbon/human/proc/bloodsuck_human_done(datum/om/task/timed/human_bloodsuck_human/task)
+/mob/living/carbon/human/proc/bloodsuck_human_done(datum/task/timed/human_bloodsuck_human/task)
 	var/mob/living/carbon/human/B = task.target
 	var/noise = task.noise
 	var/bleed = task.bleed
@@ -196,7 +196,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 
 /// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
 /// the target, then the next stage.
-/datum/om/task/timed/grab_drain
+/datum/task/timed/grab_drain
 	duration = 5 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/grab_drain_held
 	cancel_proc = /mob/living/carbon/human/proc/grab_drain_interrupted
@@ -214,16 +214,16 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	stage = call(src, stage_proc)(T, stage)
 	if(!stage)
 		return
-	om_task_start(/datum/om/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
+	task_start(/datum/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
 
-/mob/living/carbon/human/proc/grab_drain_held(datum/om/task/timed/grab_drain/task)
+/mob/living/carbon/human/proc/grab_drain_held(datum/task/timed/grab_drain/task)
 	var/obj/item/grab/G = task.grab
 	if(QDELETED(G) || (task.needed_grab ? G.state != task.needed_grab : !G.state))
 		grab_drain_interrupted(task)
 		return
 	grab_drain_step(task.target, G, task.stage + 1, task.stage_proc, task.needed_grab, task.what)
 
-/mob/living/carbon/human/proc/grab_drain_interrupted(datum/om/task/timed/grab_drain/task)
+/mob/living/carbon/human/proc/grab_drain_interrupted(datum/task/timed/grab_drain/task)
 	to_chat(src, span_warning("Your [task.what] of [task.target] has been interrupted!"))
 	absorbing_prey = FALSE
 
@@ -698,15 +698,15 @@ CAPABILITIES(/datum/shred_limb_review)
 	COOLDOWN_START(src, last_special, vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
-	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
+	task_start(/datum/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
 
-/datum/om/task/timed/living_shred_limb_living
+/datum/task/timed/living_shred_limb_living
 	complete_proc = /mob/living/proc/shred_limb_living_done
 	var/obj/item/organ/external/T_ext
 	var/obj/item/organ/internal/T_int
 	var/obj/belly/B
 
-/mob/living/proc/shred_limb_living_done(datum/om/task/timed/living_shred_limb_living/task)
+/mob/living/proc/shred_limb_living_done(datum/task/timed/living_shred_limb_living/task)
 	var/mob/living/carbon/human/T = task.target
 	var/obj/item/organ/external/T_ext = task.T_ext
 	var/obj/item/organ/internal/T_int = task.T_int
@@ -852,7 +852,7 @@ CAPABILITIES(/datum/shred_limb_review)
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	om_task_timed(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
+	task_timed(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
 
 /mob/living/carbon/human/proc/enter_cocoon_human_done()
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
@@ -975,7 +975,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
-	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
+	task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
 
 /mob/living/carbon/human/proc/underwater_devour_human_done(mob/living/target, starting_loc)
 	if(target.loc != starting_loc)
@@ -1439,7 +1439,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		return
 
 	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
-	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
+	task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
 
 /mob/living/proc/injection_living_done(mob/living/target, synth)
 	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
@@ -1547,7 +1547,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	var/choice = A.answer.value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
-	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
+	task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
 
 /mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
 	if(choice == REAGENT_APHRODISIAC)
@@ -1636,7 +1636,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 /mob/living/proc/mobegglaying_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.value))
+	task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.value))
 
 /mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
 	if(choice == "Make a Egg" && eggs > 5)
@@ -1778,16 +1778,16 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
 	var/starting_loc = target.loc
-	om_task_start(/datum/om/task/timed/living_absorb_devour_living, src, target, pred = pred, belly = belly, starting_loc = starting_loc)
+	task_start(/datum/task/timed/living_absorb_devour_living, src, target, pred = pred, belly = belly, starting_loc = starting_loc)
 
-/datum/om/task/timed/living_absorb_devour_living
+/datum/task/timed/living_absorb_devour_living
 	duration = 5 SECONDS
 	complete_proc = /mob/living/proc/absorb_devour_living_done
 	var/mob/living/pred
 	var/obj/belly/belly
 	var/starting_loc
 
-/mob/living/proc/absorb_devour_living_done(datum/om/task/timed/living_absorb_devour_living/task)
+/mob/living/proc/absorb_devour_living_done(datum/task/timed/living_absorb_devour_living/task)
 	var/mob/living/pred = task.pred
 	var/obj/belly/belly = task.belly
 	var/mob/living/target = task.target

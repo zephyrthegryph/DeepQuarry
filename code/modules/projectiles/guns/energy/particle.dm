@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/gun/energy/particle)
 	if(A.has_tool_quality(TOOL_SCREWDRIVER))
 		if(safetycatch && attached_safety)
 			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
-			om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
+			task_timed(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
 			return INTERACTION_HANDLED_PASS
 	return ..()
 

@@ -147,7 +147,7 @@ CAPABILITIES(/obj/structure/reflector)
 			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You start to dismantle %T%...")), MSG_OTHERS(span_notice("%U% starts to dismantle %T%.")))
 
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(W.get_welder())
 		var/obj/item/weldingtool/I = W.get_welder()
 		if(!anchored)
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/structure/reflector)
 				MSG_OTHERS(span_notice("%U% starts to weld %T% to the floor.")), \
 				MSG_BLIND(span_hear("You hear welding.")))
 
-			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
+			task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
 			return TRUE
 		else
 			if(!I.remove_fuel(1,user))

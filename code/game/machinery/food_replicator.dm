@@ -120,7 +120,7 @@
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/O = A.held
 	balloon_alert(user, "scanning...")
-	om_task_timed(user, 10, target = src, receiver = src, on_done = PROC_REF(interaction_scan_timed_done), done_args = list(O))
+	task_timed(user, 10, target = src, receiver = src, on_done = PROC_REF(interaction_scan_timed_done), done_args = list(O))
 	return TRUE
 
 /obj/machinery/food_replicator/proc/interaction_scan_timed_done(obj/item/reagent_containers/food/O)

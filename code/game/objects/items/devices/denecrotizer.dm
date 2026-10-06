@@ -168,7 +168,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 			return FALSE
 		if(!target.mind)
 			act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-			om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
+			task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
 			return FALSE
 		else
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
@@ -191,7 +191,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
+	task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
 	return
 
 /obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(mob/living/simple_mob/target, mob/living/user)
@@ -214,13 +214,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	act_message(user, target, others = "%U% presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	om_task_start(/datum/om/task/timed/denecrotizer_basic_rez, user, target, receiver = src, duration = revive_time)
+	task_start(/datum/task/timed/denecrotizer_basic_rez, user, target, receiver = src, duration = revive_time)
 
-/datum/om/task/timed/denecrotizer_basic_rez
+/datum/task/timed/denecrotizer_basic_rez
 	complete_proc = /obj/item/denecrotizer/proc/basic_rez_timed_done
 	cancel_proc = /obj/item/denecrotizer/proc/basic_rez_timed_failed
 
-/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/om/task/timed/denecrotizer_basic_rez/task)
+/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/task/timed/denecrotizer_basic_rez/task)
 	var/mob/living/simple_mob/target = task.target
 	var/mob/living/user = task.actor
 	target.revive()
@@ -233,7 +233,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 		update_icon()
 	return
 
-/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/om/task/timed/denecrotizer_basic_rez/task)
+/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/task/timed/denecrotizer_basic_rez/task)
 	var/mob/living/simple_mob/target = task.target
 	var/mob/living/user = task.actor
 	act_message(user, src, others = "%U% bonks [target] with %T%. Nothing happened.")

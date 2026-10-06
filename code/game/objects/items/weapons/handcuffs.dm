@@ -80,7 +80,7 @@
 
 	act_message(user, victim, others = span_danger("%U% is attempting to put [cuff_type] on %T%!"))
 
-	om_task_timed(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
+	task_timed(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
 	return TRUE
 
 /obj/item/handcuffs/proc/attempt_to_cuff_timed_done(mob/living/carbon/victim, mob/user)
@@ -256,15 +256,15 @@
 
 	act_message(user, null, others = span_danger("%U% is attempting to put [cuff_type] on \the [H]!"))
 
-	om_task_start(/datum/om/task/timed/legcuffs_place_legcuffs, user, src, receiver = src, duration = use_time, target_arg = target, H = H)
+	task_start(/datum/task/timed/legcuffs_place_legcuffs, user, src, receiver = src, duration = use_time, target_arg = target, H = H)
 	return TRUE
 
-/datum/om/task/timed/legcuffs_place_legcuffs
+/datum/task/timed/legcuffs_place_legcuffs
 	complete_proc = /obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done
 	var/mob/living/carbon/target_arg
 	var/mob/living/carbon/human/H
 
-/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/om/task/timed/legcuffs_place_legcuffs/task)
+/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/task/timed/legcuffs_place_legcuffs/task)
 	var/mob/living/carbon/target = task.target_arg
 	var/mob/user = task.actor
 	var/mob/living/carbon/human/H = task.H

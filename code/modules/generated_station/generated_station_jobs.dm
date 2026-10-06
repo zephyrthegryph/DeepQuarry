@@ -2,7 +2,7 @@
 #define GENERATED_STATION_TICK_BUDGET_FAST 80
 
 /// Resumable orchestration state for one station materialization: lane work
-/// (om_task_slices(), object_model_core.md §4.11). The materializer's phases run a
+/// (job_cursor(), code/engine/kernel/jobs.dm). The materializer's phases run a
 /// slice at a time and return a cursor when checkpoint() says the slice's budget
 /// is spent, so nothing sleeps and a partially built z-level is never exposed to
 /// players. The normal budget deliberately leaves most of a 25 ms tick to the live game.
@@ -75,7 +75,7 @@
 /datum/generated_station_materialization_job/proc/execute(datum/generated_station_spec/spec, z_level, origin_x, origin_y)
 	now = TRUE
 	if(start(spec, z_level, origin_x, origin_y))
-		om_task_slices(src, PROC_REF(run_slice), 1, null, TRUE)
+		job_cursor(src, PROC_REF(run_slice), 1, null, TRUE)
 	return end_run()
 
 /// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
@@ -85,7 +85,7 @@
 	if(!start(spec, z_level, origin_x, origin_y))
 		finish_async()
 		return
-	om_task_slices(src, PROC_REF(run_slice), 1, PROC_REF(finish_async))
+	job_cursor(src, PROC_REF(run_slice), 1, PROC_REF(finish_async))
 
 /datum/generated_station_materialization_job/proc/start(datum/generated_station_spec/spec, z_level, origin_x, origin_y)
 	started_at = REALTIMEOFDAY
@@ -100,7 +100,7 @@
 		return FALSE
 	return TRUE
 
-/// One slice: the current phase from its cursor. The next cursor for om_task_slices(), or null
+/// One slice: the current phase from its cursor. The next cursor for job_cursor(), or null
 /// when every phase is done (or one failed).
 /datum/generated_station_materialization_job/proc/run_slice(cursor)
 	if(!now)

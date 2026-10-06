@@ -39,7 +39,7 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 	. = ..()
 	if(get_dist(get_turf(user),get_turf(src)) <= 1)
 		to_chat(user, span_notice("You begin inspecting \the [src]."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(inspect_done), list(user))
+		task_timed(user, 5 SECONDS, src, src, PROC_REF(inspect_done), list(user))
 
 /obj/item/broken_gun/proc/inspect_done(mob/user)
 	to_chat(user, span_notice("\The [src] can possibly be restored with:"))
@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/broken_gun, INTERACT_ITEM(null, PROC_REF(interact
 /// Old attackby.
 /obj/item/broken_gun/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(can_repair_with(W, user))
-		om_task_timed(user, (rand() * 10 SECONDS + 5 SECONDS), src, src, PROC_REF(repair_with), list(W, user))
+		task_timed(user, (rand() * 10 SECONDS + 5 SECONDS), src, src, PROC_REF(repair_with), list(W, user))
 		return INTERACTION_HANDLED_PASS
 
 	return FALSE

@@ -96,7 +96,7 @@ DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
 		return
 	if(cast_delay)
 		var/flags = IGNORE_HELD_ITEM | ((spell_flags & (STATALLOWED|GHOSTCAST)) ? IGNORE_INCAPACITATED : NONE)
-		om_task_timed(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
+		task_timed(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
 		return
 	perform_cast(user, skipcharge)
 

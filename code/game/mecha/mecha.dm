@@ -1324,17 +1324,17 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 	act_message(user, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
 
-	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
+	var/started = task_start(/datum/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
 	return !istext(started)
 
-/datum/om/task/timed/mecha_mmi_install
+/datum/task/timed/mecha_mmi_install
 	duration = 4 SECONDS
 	flags = IGNORE_HELD_ITEM
 	complete_proc = /obj/mecha/proc/mmi_install_done
 	fail_message = "You stop attempting to install the brain."
 	var/obj/item/mmi/mmi_as_oc
 
-/obj/mecha/proc/mmi_install_done(datum/om/task/timed/mecha_mmi_install/task)
+/obj/mecha/proc/mmi_install_done(datum/task/timed/mecha_mmi_install/task)
 	var/obj/item/mmi/mmi_as_oc = task.mmi_as_oc
 	var/mob/user = task.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
@@ -1648,16 +1648,16 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			GrantActions(occupant, 1)
 	else
 		act_message(user, null, others = span_infoplain(span_bold("%U%") + " starts to climb into [src.name]"))
-		om_task_start(/datum/om/task/timed/mecha_climb_in, user, src, receiver = src)
+		task_start(/datum/task/timed/mecha_climb_in, user, src, receiver = src)
 	return
 
-/datum/om/task/timed/mecha_climb_in
+/datum/task/timed/mecha_climb_in
 	duration = 4 SECONDS
 	flags = IGNORE_HELD_ITEM
 	complete_proc = /obj/mecha/proc/climb_in_done
 	fail_message = "You stop entering the exosuit."
 
-/obj/mecha/proc/climb_in_done(datum/om/task/timed/mecha_climb_in/task)
+/obj/mecha/proc/climb_in_done(datum/task/timed/mecha_climb_in/task)
 	var/mob/user = task.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		moved_inside(user)
@@ -2587,7 +2587,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins opening the hatch on %I%...")), \
 		item = P)
-	om_task_timed(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
+	task_timed(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
 	return
 
 

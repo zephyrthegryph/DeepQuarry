@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/machinery/generated_station_upload_terminal, \
 /obj/machinery/generated_station_upload_terminal/proc/interaction_upload(mob/user, obj/item/held, datum/interaction/interaction)
 	act_message(user, null, MSG_SELF(span_notice("You begin uploading the malware payload.")), \
 		MSG_OTHERS(span_notice("%U% begins uploading a control payload.")))
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
+	task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
 	return TRUE
 
 /obj/machinery/generated_station_upload_terminal/proc/upload_done(mob/user)

@@ -334,7 +334,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	return beaconlist
 
 /mob/living/bot/mulebot/proc/load(atom/movable/C)
-	if(om_busy(src) || load || get_dist(C, src) > 1 || !isturf(C.loc))
+	if(task_busy(src) || load || get_dist(C, src) > 1 || !isturf(C.loc))
 		return
 
 	for(var/obj/structure/plasticflaps/P in src.loc)//Takes flaps into account
@@ -351,7 +351,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 		crate.close()
 
 	// Busy while the crate settles onto the bot.
-	if(istext(om_hold_busy(src, 2)))
+	if(istext(task_hold_busy(src, 2)))
 		return
 	C.forceMove(loc)
 	after(src, 0.2 SECONDS, PROC_REF(load_finish), with = list(C))
@@ -367,7 +367,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	add_overlay(C)
 
 /mob/living/bot/mulebot/proc/unload(dirn = 0)
-	if(!load || om_busy(src))
+	if(!load || task_busy(src))
 		return
 
 	cut_overlays()

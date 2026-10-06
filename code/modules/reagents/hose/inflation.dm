@@ -76,10 +76,10 @@
 	// Display action
 	name = "[human_owner()]'s [feedback]"
 	act_message(user, null, others = "%U% starts to connect the hose to \the [human_owner()]'s [feedback]...")
-	var/started = om_task_start(/datum/om/task/timed/inflation_inflation_connected, user, human_owner(), other = other, origin = origin, target_arg = target, distancetonode = distancetonode, tubing = tubing, feedback = feedback)
+	var/started = task_start(/datum/task/timed/inflation_inflation_connected, user, human_owner(), other = other, origin = origin, target_arg = target, distancetonode = distancetonode, tubing = tubing, feedback = feedback)
 	return !istext(started)
 
-/datum/om/task/timed/inflation_inflation_connected
+/datum/task/timed/inflation_inflation_connected
 	duration = 7 SECONDS
 	complete_proc = /datum/hose_connector/inflation/proc/inflation_connected
 	fail_message = span_warning("You couldn't connect the hose!")
@@ -90,7 +90,7 @@
 	var/obj/item/stack/tubing
 	var/feedback
 
-/datum/hose_connector/inflation/proc/inflation_connected(datum/om/task/timed/inflation_inflation_connected/task)
+/datum/hose_connector/inflation/proc/inflation_connected(datum/task/timed/inflation_inflation_connected/task)
 	var/mob/user = task.actor
 	var/datum/hose_connector/other = task.other
 	var/datum/hose_connector/origin = task.origin

@@ -88,7 +88,7 @@ CAPABILITIES(/obj/item/stack/material/log)
 	if(W.sharp && W.edge)
 		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
 		user.setClickCooldown(time)
-		om_task_timed(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
+		task_timed(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
 	else
 		return OP_DECLINE
 	return OP_PASS

@@ -97,7 +97,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 		return
 	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 	to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
-	om_task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
+	task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(process_resist_dominated_brain_done), done_args = list(), on_fail = PROC_REF(process_resist_dominated_brain_failed), fail_args = list())
 
 /mob/living/dominated_brain/proc/process_resist_dominated_brain_done()
 	restore_control()
@@ -350,15 +350,15 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you exert your will over them!"))
-	om_task_start(/datum/om/task/timed/mob_dominate_predator_mob, prey, pred, receiver = src)
+	task_start(/datum/task/timed/mob_dominate_predator_mob, prey, pred, receiver = src)
 	return TRUE
 
-/datum/om/task/timed/mob_dominate_predator_mob
+/datum/task/timed/mob_dominate_predator_mob
 	duration = 10 SECONDS
 	complete_proc = /mob/proc/dominate_predator_mob_done
 	cancel_proc = /mob/proc/dominate_predator_mob_failed
 
-/mob/proc/dominate_predator_mob_done(datum/om/task/timed/mob_dominate_predator_mob/task)
+/mob/proc/dominate_predator_mob_done(datum/task/timed/mob_dominate_predator_mob/task)
 	var/mob/living/pred = task.target
 	var/mob/living/prey = task.actor
 
@@ -366,7 +366,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 	to_chat(pred, span_danger("You feel your body move on its own, as you are pushed to the background, and an alien consciousness displaces yours."))
 	take_over_predator(prey, pred, "prey domination")
 
-/mob/proc/dominate_predator_mob_failed(datum/om/task/timed/mob_dominate_predator_mob/task)
+/mob/proc/dominate_predator_mob_failed(datum/task/timed/mob_dominate_predator_mob/task)
 	var/mob/living/pred = task.target
 	var/mob/living/prey = task.actor
 	to_chat(prey, span_notice("Your attempt to regain control has been interrupted..."))
@@ -404,7 +404,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
 
-		om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(resist_control_dominated_brain_done), done_args = list(), on_fail = PROC_REF(resist_control_dominated_brain_failed), fail_args = list())
+		task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(resist_control_dominated_brain_done), done_args = list(), on_fail = PROC_REF(resist_control_dominated_brain_failed), fail_args = list())
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 
@@ -536,16 +536,16 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 
 	if(istype(G) && M == G?.grab_target())
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% seems to be doing something to %T%, resulting in %T%'s body looking increasingly drowsy with every passing moment!")))
-	om_task_start(/datum/om/task/timed/living_dominate_prey_living, src, M, G = G)
+	task_start(/datum/task/timed/living_dominate_prey_living, src, M, G = G)
 	return TRUE
 
-/datum/om/task/timed/living_dominate_prey_living
+/datum/task/timed/living_dominate_prey_living
 	duration = 10 SECONDS
 	complete_proc = /mob/living/proc/dominate_prey_living_done
 	cancel_proc = /mob/living/proc/dominate_prey_living_failed
 	var/obj/item/grab/G
 
-/mob/living/proc/dominate_prey_living_done(datum/om/task/timed/living_dominate_prey_living/task)
+/mob/living/proc/dominate_prey_living_done(datum/task/timed/living_dominate_prey_living/task)
 	var/obj/item/grab/G = task.G
 	var/mob/living/M = task.target
 	if(!isbelly(M.loc) && !(istype(G) && M == G?.grab_target() && G.state == GRAB_NECK)) // Let dominate prey work on grabbed people
@@ -559,7 +559,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	if(istype(G) && M == G?.grab_target())
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% seems to finish whatever they were doing to %T%.")))
 
-/mob/living/proc/dominate_prey_living_failed(datum/om/task/timed/living_dominate_prey_living/task)
+/mob/living/proc/dominate_prey_living_failed(datum/task/timed/living_dominate_prey_living/task)
 	var/mob/living/M = task.target
 	to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
 	to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
@@ -573,7 +573,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	if(prey_body && prey_body.loc.loc == pred_body)
 		to_chat(src, span_notice("You exert your will and attempt to return to your body!!!"))
 		to_chat(pred_body, span_warning("\The [src] resists your hold and attempts to return to their body!"))
-		om_task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(cease_this_foolishness_dominated_brain_done), done_args = list(), on_fail = PROC_REF(cease_this_foolishness_dominated_brain_failed), fail_args = list())
+		task_timed(src, 10 SECONDS, target = pred_body, receiver = src, on_done = PROC_REF(cease_this_foolishness_dominated_brain_done), done_args = list(), on_fail = PROC_REF(cease_this_foolishness_dominated_brain_failed), fail_args = list())
 	else if(prey_body)
 		to_chat(src, span_warning("You can sense your body... but it is not contained within [pred_body]... You cannot return to it at this time."))
 	else
@@ -682,14 +682,14 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 		return
 	to_chat(pred, span_warning("You diminish your will, reducing it and allowing will of your prey to take over..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you are given control over them!"))
-	om_task_start(/datum/om/task/timed/living_lend_prey_control_living, pred, prey, receiver = src)
+	task_start(/datum/task/timed/living_lend_prey_control_living, pred, prey, receiver = src)
 
-/datum/om/task/timed/living_lend_prey_control_living
+/datum/task/timed/living_lend_prey_control_living
 	duration = 10 SECONDS
 	complete_proc = /mob/living/proc/lend_prey_control_living_done
 	cancel_proc = /mob/living/proc/lend_prey_control_living_failed
 
-/mob/living/proc/lend_prey_control_living_done(datum/om/task/timed/living_lend_prey_control_living/task)
+/mob/living/proc/lend_prey_control_living_done(datum/task/timed/living_lend_prey_control_living/task)
 	var/mob/living/prey = task.target
 	var/mob/living/pred = task.actor
 
@@ -697,7 +697,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	to_chat(pred, span_danger("You feel your body move on its own, as you move to the background, and an alien consciousness displaces yours."))
 	take_over_predator(prey, pred, "pred submission")
 
-/mob/living/proc/lend_prey_control_living_failed(datum/om/task/timed/living_lend_prey_control_living/task)
+/mob/living/proc/lend_prey_control_living_failed(datum/task/timed/living_lend_prey_control_living/task)
 	var/mob/living/prey = task.target
 	var/mob/living/pred = task.actor
 	to_chat(pred, span_notice("Your attempt to share control has been interrupted..."))

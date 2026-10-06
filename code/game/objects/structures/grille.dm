@@ -131,7 +131,7 @@ CAPABILITIES(/obj/structure/grille)
 				to_chat(user, span_notice("There is already a window facing this way there."))
 				return TRUE
 		to_chat(user, span_notice("You start placing the window."))
-		om_task_start(/datum/om/task/timed/grille_attackby, user, src, ST = ST, dir_to_set = dir_to_set)
+		task_start(/datum/task/timed/grille_attackby, user, src, ST = ST, dir_to_set = dir_to_set)
 		return TRUE
 
 //window placing end
@@ -147,13 +147,13 @@ CAPABILITIES(/obj/structure/grille)
 				receive_weapon_hit(W, user, W.force * 0.1)
 	return TRUE
 
-/datum/om/task/timed/grille_attackby
+/datum/task/timed/grille_attackby
 	duration = 2 SECONDS
 	complete_proc = /obj/structure/grille/proc/attackby_timed_done
 	var/obj/item/stack/material/ST
 	var/dir_to_set
 
-/obj/structure/grille/proc/attackby_timed_done(datum/om/task/timed/grille_attackby/task)
+/obj/structure/grille/proc/attackby_timed_done(datum/task/timed/grille_attackby/task)
 	var/mob/user = task.actor
 	var/obj/item/stack/material/ST = task.ST
 	var/dir_to_set = task.dir_to_set

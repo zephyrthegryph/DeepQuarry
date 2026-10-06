@@ -159,7 +159,7 @@ EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
 	play_sfx(src, SFX_ITEMS_RATCHET)
-	om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/machinery/button/doorbell/proc/wrench_act_timed_done(mob/user)

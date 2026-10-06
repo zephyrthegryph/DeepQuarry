@@ -224,7 +224,7 @@
 	J.request = K.arg_count ? args.Copy(3, 3 + K.arg_count) : list()
 	J.on_done = args[3 + K.arg_count]
 	if(length(args) > 3 + K.arg_count)
-		var/list/capture = om_capture_args(args.Copy(4 + K.arg_count))
+		var/list/capture = capture_args(args.Copy(4 + K.arg_count))
 		if(!capture)
 			return 0
 		J.context = capture[1]
@@ -366,7 +366,7 @@
 		return
 	var/datum/E = om_resolve(J.owner_h)
 	var/list/captured = J.context ? J.context.Copy() : null
-	if(!E || (captured && !om_resolve_captured(captured, J.positions)))
+	if(!E || (captured && !resolve_captured(captured, J.positions)))
 		om_io_stat(sched, K, OM_IO_STAT_DROPPED)
 		log_qdel("OM: dropped io [K.name] callback [J.on_done]: its owner or a captured argument was deleted")
 		return

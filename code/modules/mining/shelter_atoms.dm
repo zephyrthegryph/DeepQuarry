@@ -788,7 +788,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, 
 	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
 		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
 		MSG_BLIND("You hear clanking and banging noises."))
-	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
+	task_timed(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gps/computer/proc/disassemble_done()
@@ -865,7 +865,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
 		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
 		MSG_BLIND("You hear clanking and banging noises."))
-	om_task_timed(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
+	task_timed(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/fans/tiny

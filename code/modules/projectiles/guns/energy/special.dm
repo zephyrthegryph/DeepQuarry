@@ -294,7 +294,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 		act_message(user, src, others = span_cult("%U% aims %T% at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
-		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = TRUE, arg3 = target_zone, arg4 = attack_modifier, beam_holder = list(beameffect), click_empty = FALSE)
+		task_start(/datum/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = TRUE, arg3 = target_zone, arg4 = attack_modifier, beam_holder = list(beameffect), click_empty = FALSE)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..(A, user, target_zone, attack_modifier) //If it can't fire, just bash with no delay.
@@ -315,13 +315,13 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 
 	if(!power_cycle)
 		power_cycle = TRUE
-		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = FALSE, arg3 = adjacent, arg4 = params, beam_holder = list(beameffect), click_empty = TRUE)
+		task_start(/datum/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = FALSE, arg3 = adjacent, arg4 = params, beam_holder = list(beameffect), click_empty = TRUE)
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 
 /obj/item/gun/energy/maghowitzer/var/charged_shot = FALSE
 
-/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/om/task/timed/maghowitzer_howitzer_charged/task)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/task/timed/maghowitzer_howitzer_charged/task)
 	var/list/beam_holder = task.beam_holder
 	var/mob/living/user = task.actor
 	var/click_empty = task.click_empty
@@ -332,7 +332,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 		handle_click_empty(user)
 	power_cycle = FALSE
 
-/datum/om/task/timed/maghowitzer_howitzer_charged
+/datum/task/timed/maghowitzer_howitzer_charged
 	duration = 3 SECONDS
 	complete_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_charged
 	cancel_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_aborted
@@ -345,7 +345,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	var/click_empty
 
 /// Charged: attack() or afterattack() again, past the charge-up.
-/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/om/task/timed/maghowitzer_howitzer_charged/task)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/task/timed/maghowitzer_howitzer_charged/task)
 	var/atom/A = task.A
 	var/mob/living/user = task.actor
 	var/turf/target_turf = task.target_turf
@@ -422,14 +422,14 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	spinning_up = TRUE
 	update_icon()
 	act_message(user, src, MSG_SELF(span_notice("You start charging %T%!")), MSG_OTHERS(span_notice("%U% starts charging %T%!")))
-	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
+	task_start(/datum/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE
 
-/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/om/task/timed/bfgtaser_spun_up/task)
+/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/task/timed/bfgtaser_spun_up/task)
 	spinning_up = FALSE
 
-/datum/om/task/timed/bfgtaser_spun_up
+/datum/task/timed/bfgtaser_spun_up
 	duration = 0.8 SECONDS
 	complete_proc = /obj/item/gun/energy/bfgtaser/proc/spun_up
 	cancel_proc = /obj/item/gun/energy/bfgtaser/proc/spin_ended
@@ -440,7 +440,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	var/stance
 
 /// Charged: Fire() again, past the spin-up.
-/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/om/task/timed/bfgtaser_spun_up/task)
+/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/task/timed/bfgtaser_spun_up/task)
 	var/atom/target = task.target_arg
 	var/mob/living/user = task.actor
 	var/clickparams = task.clickparams

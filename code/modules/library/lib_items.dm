@@ -348,7 +348,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 	if(carved)
 		return FALSE
 	to_chat(user, span_notice("You begin to carve out [title]."))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(carve_done), list(user))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(carve_done), list(user))
 	return TRUE
 
 /obj/item/book/proc/carve_done(mob/user)

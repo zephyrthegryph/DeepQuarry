@@ -38,7 +38,7 @@ CAPABILITIES(/obj/structure/generic_structure)
 	if(activatable_hand)
 		if(!on)
 			if(delay_time && !delay_passed)
-				om_task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
+				task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
 				return TRUE
 			on = 1
 			icon_state = icon_state_on
@@ -99,7 +99,7 @@ CAPABILITIES(/obj/structure/generic_structure)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)
 			if(delay_time && !delay_passed)
-				om_task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
+				task_timed(user, delay_time, src, src, PROC_REF(delayed_use), list(user))
 				return TRUE
 			on = 0
 			icon_state = icon_state_off

@@ -55,12 +55,12 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 		to_chat(user, span_red("System locked. Please try again later."))
 		return TRUE
 
-	if(om_busy(src))
+	if(task_busy(src))
 		to_chat(user, span_red("System is busy. Please wait until current operation is finished before changing power settings."))
 		return TRUE
 
 	to_chat(user, span_green("Updating power settings..."))
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
+	task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
 	return TRUE
 
 /obj/machinery/power/breakerbox/proc/unlock_updates()
@@ -102,13 +102,13 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 	return !update_locked
 
 /obj/machinery/power/breakerbox/proc/breakerbox_not_busy(mob/actor, atom/target, obj/item/held)
-	return !om_busy(src)
+	return !task_busy(src)
 
 /obj/machinery/power/breakerbox/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	for(var/mob/O in viewers(user))
 		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
 
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
+	task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
 	return TRUE
 
 /**

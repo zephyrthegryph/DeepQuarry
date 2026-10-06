@@ -347,7 +347,7 @@ CAPABILITIES(/datum/construction_graph)
 		playsound(target, sound, tool_volume, TRUE)
 	return use_tool(actor, held, target, delay = alt_delay(actor, target, held), volume = 0,
 		start_feedback = start_feedback_for(actor, target, held),
-		receiver = src, job_type = /datum/om/task/timed/tool_job/interaction, job_params = list("held" = held))
+		receiver = src, job_type = /datum/task/timed/tool_job/interaction, job_params = list("held" = held))
 
 /// Why `held` won't do for this edge's item, or null.
 /datum/interaction/construction/proc/item_failure(obj/item/held)

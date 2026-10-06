@@ -917,14 +917,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 /*
 /obj/item/gun/projectile/automatic/serdy/kord/var/trigger_reached = FALSE
 
-/datum/om/task/timed/kord_trigger_reached
+/datum/task/timed/kord_trigger_reached
 	duration = 5 SECONDS
 	complete_proc = /obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done
 	var/atom/A
 	var/adjacent
 	var/params
 
-/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/om/task/timed/kord_trigger_reached/task)
+/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/task/timed/kord_trigger_reached/task)
 	var/atom/A = task.A
 	var/mob/living/user = task.actor
 	var/adjacent = task.adjacent
@@ -937,7 +937,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	if(user.size_multiplier <= 0.5) //They're 50% or lower. If they fire this gun, they're gonna get obliterated.
 		to_chat(user,span_warning("You struggle to reach the trigger. Maybe shooting such a big gun isn't such a good idea..."))
 		if(!trigger_reached) //Give them a chance to take it back.
-			om_task_start(/datum/om/task/timed/kord_trigger_reached, user, src, receiver = src, A = A, adjacent = adjacent, params = params)
+			task_start(/datum/task/timed/kord_trigger_reached, user, src, receiver = src, A = A, adjacent = adjacent, params = params)
 			return
 		. = ..() //RIP
 
@@ -1462,7 +1462,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 			Fire_userless(user)
 			burst = burstsetting
 			return
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
 	else
 		return ..()
 

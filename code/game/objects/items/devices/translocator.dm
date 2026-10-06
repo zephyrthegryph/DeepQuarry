@@ -301,14 +301,14 @@ This device records all warnings given and teleport events for admin review in c
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
 					struggle = 3 SECONDS
-	om_task_start(/datum/om/task/timed/translocate, user, target, duration = struggle, receiver = src, ignore_fail_chance = ignore_fail_chance)
+	task_start(/datum/task/timed/translocate, user, target, duration = struggle, receiver = src, ignore_fail_chance = ignore_fail_chance)
 
 /// Sending the target to the chosen beacon: at once, or after a struggle with someone resisting.
-/datum/om/task/timed/translocate
+/datum/task/timed/translocate
 	complete_proc = /obj/item/perfect_tele/proc/teleport_now
 	var/ignore_fail_chance = 0
 
-/obj/item/perfect_tele/proc/teleport_now(datum/om/task/timed/translocate/task)
+/obj/item/perfect_tele/proc/teleport_now(datum/task/timed/translocate/task)
 	var/mob/living/target = task.target
 	var/mob/user = task.actor
 	var/ignore_fail_chance = task.ignore_fail_chance
@@ -482,7 +482,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	var/obj/belly/bellychoice = A.answer.value
 	if(istype(bellychoice) && bellychoice.owner == user)
 		act_message(user, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice.name]!")), MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!")))
-		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
+		task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
 
 /obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
 	user.unEquip(src)
@@ -543,7 +543,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 
 /// One second of pumping the handle per call, until the cell is full or the user stops.
 /obj/item/perfect_tele/frontier/proc/pump_handle(mob/user)
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
+	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
 
 /obj/item/perfect_tele/frontier/proc/pump_stroke(mob/user)
 	play_sfx(src, SFX_ITEMS_CHANGE_DRILL)

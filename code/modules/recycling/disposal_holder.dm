@@ -137,7 +137,7 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 	to_chat(escapee, span_warning("You push against the thin pipe walls..."))
 	play_sfx(loc, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.3, vary = FALSE, extrarange = 3) //yeah I know but at least it sounds like metal being bent.
 
-	om_task_timed(escapee, 20 SECONDS, transport_cylinder, src, PROC_REF(burst_pipe), list(transport_cylinder))
+	task_timed(escapee, 20 SECONDS, transport_cylinder, src, PROC_REF(burst_pipe), list(transport_cylinder))
 
 /obj/structure/disposalholder/proc/burst_pipe(obj/structure/disposalpipe/transport_cylinder)
 	if(loc != transport_cylinder || active)

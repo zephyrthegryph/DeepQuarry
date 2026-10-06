@@ -57,8 +57,8 @@
 	target.death()
 	observe(target, /datum/notice/living_revived, src, then(PROC_REF(set_custom_see_in_dark)))
 
-	// The continuation takes its om task (basic_rez() runs it through om_task_start()).
-	var/datum/om/task/timed/denecrotizer_basic_rez/task = new
+	// The continuation takes its om task (basic_rez() runs it through task_start()).
+	var/datum/task/timed/denecrotizer_basic_rez/task = new
 	rel_set(task, nameof(task.actor), user)
 	rel_set(task, nameof(task.target), target)
 	rel_set(task, nameof(task.receiver), D)

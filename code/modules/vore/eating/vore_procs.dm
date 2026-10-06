@@ -57,17 +57,17 @@
 	if(!user.client && prey.has_status(STAT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
 		prey.status_at_least(STAT_STUNNED, min(prey.status_units(STAT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
 	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
-	var/started = om_task_launch(/datum/om/task/timed/proc_devour, user, prey, list(receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE), null)
+	var/started = task_launch(/datum/task/timed/proc_devour, user, prey, list(receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE), null)
 	return !istext(started)
 
-/datum/om/task/timed/proc_devour
+/datum/task/timed/proc_devour
 	complete_proc = /proc/devour_timed_done
 	var/mob/living/pred
 	var/obj/belly/belly
 	var/message_range
 
 /// A timed devour completed: eat the prey and let go of any grab the user had on it.
-/proc/devour_timed_done(datum/om/task/timed/proc_devour/task)
+/proc/devour_timed_done(datum/task/timed/proc_devour/task)
 	var/mob/living/user = task.actor
 	var/mob/living/prey = task.target
 	var/mob/living/pred = task.pred

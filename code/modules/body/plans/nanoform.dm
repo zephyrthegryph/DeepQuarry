@@ -326,30 +326,30 @@
 			if(!paddles.can_use(user))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
-			om_task_start(/datum/om/task/timed/core_dormancy_paddles_charge, user, site, W = W, step = step)
+			task_start(/datum/task/timed/core_dormancy_paddles_charge, user, site, W = W, step = step)
 			return
-	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 5 SECONDS, W = W, step = step)
+	task_start(/datum/task/timed/core_dormancy_repair_step, user, site, duration = 5 SECONDS, W = W, step = step)
 
-/datum/om/task/timed/core_dormancy_paddles_charge
+/datum/task/timed/core_dormancy_paddles_charge
 	duration = 5 SECONDS
 	complete_proc = /datum/affliction/core_dormancy/proc/paddles_charge
 	var/obj/item/W
 	var/step
 
-/datum/affliction/core_dormancy/proc/paddles_charge(datum/om/task/timed/core_dormancy_paddles_charge/task)
+/datum/affliction/core_dormancy/proc/paddles_charge(datum/task/timed/core_dormancy_paddles_charge/task)
 	var/obj/item/W = task.W
 	var/mob/living/user = task.actor
 	var/atom/site = task.target
 	var/step = task.step
 	play_sfx(site, SFX_MACHINES_DEFIB_CHARGE)
-	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
+	task_start(/datum/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
 
-/datum/om/task/timed/core_dormancy_repair_step
+/datum/task/timed/core_dormancy_repair_step
 	complete_proc = /datum/affliction/core_dormancy/proc/repair_step_done
 	var/obj/item/W
 	var/step
 
-/datum/affliction/core_dormancy/proc/repair_step_done(datum/om/task/timed/core_dormancy_repair_step/task)
+/datum/affliction/core_dormancy/proc/repair_step_done(datum/task/timed/core_dormancy_repair_step/task)
 	var/obj/item/W = task.W
 	var/mob/living/user = task.actor
 	var/atom/site = task.target

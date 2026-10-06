@@ -91,23 +91,6 @@
 
 /// Tasks: om_wants() and delivery read a precomputed interrupt set (with subtypes),
 /// not "any task wants every event".
-/datum/unit_test/om/core_fix_task_interrupt_set
-
-/datum/unit_test/om/core_fix_task_interrupt_set/run_om(list/made)
-	var/datum/om_test_entity/actor = entity(made)
-	var/datum/om_test_entity/target = entity(made)
-	var/datum/om/task/T = om_task_start("test_task", actor, target)
-	TEST_ASSERT(istype(T), "task started: [T]")
-	TEST_ASSERT(!om_wants(actor, /datum/om/event/test/sub), "a running task does not make unrelated events wanted")
-	TEST_ASSERT(om_wants(actor, /datum/om/event/test/other), "its interrupting event is wanted")
-	TEST_ASSERT(om_wants(actor, /datum/om/event/test/other/cf_child), "and that event's subtypes")
-	om_emit(actor, new /datum/om/event/test/sub)
-	TEST_ASSERT_EQUAL(T.state, OM_TASK_RUNNING, "an unrelated event leaves it running")
-	om_emit(actor, new /datum/om/event/test/other/cf_child)
-	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "a subtype of interrupted_by cancels it")
-	TEST_ASSERT_NULL(actor.om_rec.task_interrupts, "the interrupt set empties with the last task")
-	TEST_ASSERT(!om_wants(actor, /datum/om/event/test/other), "nothing is wanted afterwards")
-
 // ---------------------------------------------------------------- timers
 
 /// The soonest-due cache and the id binary search: cancelling the soonest timer moves

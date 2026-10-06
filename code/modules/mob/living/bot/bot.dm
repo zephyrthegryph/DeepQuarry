@@ -76,7 +76,7 @@
 	src.status_set(STAT_STUNNED, 0)
 	src.status_set(STAT_PARALYZED, 0)
 
-	if(src.on && !src.client && !om_busy(src) && !src.paicard && !src.ai_running)
+	if(src.on && !src.client && !task_busy(src) && !src.paicard && !src.ai_running)
 		after(src, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
 
 /mob/living/bot/life_type_post_due()
@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	if(!open || !paicard)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You are attempting to remove the pAI."))
-	om_task_timed(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
+	task_timed(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/bot/proc/crowbar_act_bot_done(mob/user)
@@ -424,7 +424,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 /// the work ends, then `on_done`(done_args...) runs and the icon refreshes (also on failure).
 /// Returns the task, or a reason it didn't start.
 /mob/living/bot/proc/bot_work(delay, atom/A, on_done, list/done_args, timed_action_flags = NONE)
-	. = om_task_timed(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
+	. = task_timed(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
 	update_icons()
 
 /mob/living/bot/proc/bot_work_done(on_done, ...)
@@ -433,7 +433,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 
 /mob/living/bot/proc/turn_off()
 	set_on(0)
-	om_release_busy(src, "turned off") // If ever stuck... reboot!
+	task_release_busy(src, "turned off") // If ever stuck... reboot!
 	set_light(0)
 	update_icons()
 	update_canmove()

@@ -141,7 +141,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 	return TRUE
 
 /mob/living/simple_mob/mechanical/mining_drone/life_special(datum/seq_frame/life/F)
-	if(src.my_storage && ((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(src) && isturf(src.loc) && (COOLDOWN_FINISHED(src, search_cooldown_until)) && (contents_count(src.my_storage) < src.my_storage.max_storage_space))
+	if(src.my_storage && ((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !task_busy(src) && isturf(src.loc) && (COOLDOWN_FINISHED(src, search_cooldown_until)) && (contents_count(src.my_storage) < src.my_storage.max_storage_space))
 		COOLDOWN_START(src, search_cooldown_until, src.search_cooldown)
 
 		for(var/turf/T in view(world.view,src))

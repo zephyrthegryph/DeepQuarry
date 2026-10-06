@@ -62,7 +62,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 
 /obj/machinery/slot_machine/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
-	if(om_busy(src))
+	if(task_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return OP_OK
 	return OP_DECLINE
@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
-	return !om_busy(src)
+	return !task_busy(src)
 
 /obj/machinery/slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(held, /obj/item/spacecasinocash))
@@ -91,7 +91,7 @@ EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
 		return
 	if (isbroken)
 		return
-	if (om_busy(src))
+	if (task_busy(src))
 		to_chat(user,span_notice("The slot machine is currently rolling."))
 		return
 	if(cashmoney.worth < 5)
@@ -105,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
 
-	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "slotmachine_rolling"
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 
@@ -201,7 +201,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 
 /obj/machinery/station_slot_machine/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
-	if(om_busy(src))
+	if(task_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
 		return OP_OK
 	return OP_DECLINE
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/station_slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
-	return !om_busy(src)
+	return !task_busy(src)
 
 /obj/machinery/station_slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(held, /obj/item/spacecash))
@@ -230,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
 		return
 	if (isbroken)
 		return
-	if (om_busy(src))
+	if (task_busy(src))
 		to_chat(user,span_notice("The slot machine is currently rolling."))
 		return
 	if(cashmoney.worth < 5)
@@ -244,7 +244,7 @@ EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
 
-	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	icon_state = "ntslotmachine_rolling"
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE_PULL)
 

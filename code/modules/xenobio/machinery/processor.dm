@@ -64,17 +64,17 @@ EXTEND_INTERACTIONS(/obj/machinery/processor, \
 		return // Already doing it.
 	processing = TRUE
 	play_sfx(src, SFX_MACHINES_JUICER, 2)
-	om_task_start(/datum/om/task/slime_processing, src)
+	task_start(/datum/task/slime_processing, src)
 
 /// The processor at work: one thing a second (a core out of a slime, a body processed, or a
 /// monkey cube pressed from the recycled bodies) until it is empty.
-/datum/om/task/slime_processing
+/datum/task/slime_processing
 	name = "slime processing"
 	steps = list(/obj/machinery/processor/proc/processing_step = 0)
 	complete_proc = /obj/machinery/processor/proc/processing_done
 	cancel_proc = /obj/machinery/processor/proc/processing_done
 
-/obj/machinery/processor/proc/processing_step(datum/om/task/T)
+/obj/machinery/processor/proc/processing_step(datum/task/T)
 	var/atom/movable/AM = LAZYACCESS(to_be_processed, 1)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
@@ -102,7 +102,7 @@ EXTEND_INTERACTIONS(/obj/machinery/processor, \
 		return STEP_REPEAT(1 SECOND)
 	return STEP_DONE
 
-/obj/machinery/processor/proc/processing_done(datum/om/task/T)
+/obj/machinery/processor/proc/processing_done(datum/task/T)
 	processing = FALSE
 	play_sfx(src, SFX_MACHINES_DING)
 

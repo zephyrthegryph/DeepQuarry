@@ -7,10 +7,10 @@
 		return
 
 	act_message(user, null, others = span_notice("%U% starts inspecting [src?.grab_target()]'s [E.name] carefully."))
-	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, target_zone_arg = target_zone, E = E)
+	task_start(/datum/task/timed/grab_inspect_organ_grab, user, H, target_zone_arg = target_zone, E = E)
 	return TRUE
 
-/obj/item/grab/proc/inspect_organ_grab_failed(datum/om/task/timed/grab_inspect_organ_grab/task)
+/obj/item/grab/proc/inspect_organ_grab_failed(datum/task/timed/grab_inspect_organ_grab/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/target_zone = task.target_zone_arg
@@ -18,14 +18,14 @@
 	to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
 	inspect_bones(H, user, target_zone, E)
 
-/datum/om/task/timed/grab_inspect_organ_grab
+/datum/task/timed/grab_inspect_organ_grab
 	duration = 1 SECOND
 	complete_proc = /obj/item/grab/proc/inspect_organ_grab_done
 	cancel_proc = /obj/item/grab/proc/inspect_organ_grab_failed
 	var/target_zone_arg
 	var/obj/item/organ/external/E
 
-/obj/item/grab/proc/inspect_organ_grab_done(datum/om/task/timed/grab_inspect_organ_grab/task)
+/obj/item/grab/proc/inspect_organ_grab_done(datum/task/timed/grab_inspect_organ_grab/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/target_zone = task.target_zone_arg
@@ -38,20 +38,20 @@
 
 /obj/item/grab/proc/inspect_bones(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 	to_chat(user, span_notice("Checking bones now..."))
-	om_task_start(/datum/om/task/timed/grab_inspect_bones, user, H, target_zone_arg = target_zone, E = E)
+	task_start(/datum/task/timed/grab_inspect_bones, user, H, target_zone_arg = target_zone, E = E)
 
-/datum/om/task/timed/grab_inspect_bones
+/datum/task/timed/grab_inspect_bones
 	duration = 2 SECONDS
 	complete_proc = /obj/item/grab/proc/inspect_bones_done
 	cancel_proc = /obj/item/grab/proc/inspect_bones_failed
 	var/target_zone_arg
 	var/obj/item/organ/external/E
 
-/obj/item/grab/proc/inspect_bones_failed(datum/om/task/timed/grab_inspect_bones/task)
+/obj/item/grab/proc/inspect_bones_failed(datum/task/timed/grab_inspect_bones/task)
 	to_chat(task.actor, span_notice("You must stand still to feel [task.E] for fractures."))
 	inspect_bones_done(task)
 
-/obj/item/grab/proc/inspect_bones_done(datum/om/task/timed/grab_inspect_bones/task)
+/obj/item/grab/proc/inspect_bones_done(datum/task/timed/grab_inspect_bones/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/target_zone = task.target_zone_arg
@@ -65,22 +65,22 @@
 		to_chat(user, span_notice("The [E.encased ? E.encased : "bones in the [E.name]"] seem to be fine."))
 
 	to_chat(user, span_notice("Checking skin now..."))
-	om_task_start(/datum/om/task/timed/grab_inspect_skin, user, H, target_zone_arg = target_zone, E = E)
+	task_start(/datum/task/timed/grab_inspect_skin, user, H, target_zone_arg = target_zone, E = E)
 
-/obj/item/grab/proc/inspect_internal_failed(datum/om/task/timed/grab_inspect_internal/task)
+/obj/item/grab/proc/inspect_internal_failed(datum/task/timed/grab_inspect_internal/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/obj/item/organ/external/E = task.E
 	to_chat(user, span_notice("You must stand still to check [H]'s [E.name] for internal injury."))
 
-/datum/om/task/timed/grab_inspect_internal
+/datum/task/timed/grab_inspect_internal
 	duration = 5 SECONDS
 	complete_proc = /obj/item/grab/proc/inspect_internal_done
 	cancel_proc = /obj/item/grab/proc/inspect_internal_failed
 	var/body_part
 	var/obj/item/organ/external/E
 
-/obj/item/grab/proc/inspect_internal_done(datum/om/task/timed/grab_inspect_internal/task)
+/obj/item/grab/proc/inspect_internal_done(datum/task/timed/grab_inspect_internal/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/body_part = task.body_part
@@ -136,7 +136,7 @@
 			to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
 			H.custom_pain("You feel pure agony as [src] pushes down on your [E.name]!", 200)
 
-/obj/item/grab/proc/inspect_skin_failed(datum/om/task/timed/grab_inspect_skin/task)
+/obj/item/grab/proc/inspect_skin_failed(datum/task/timed/grab_inspect_skin/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/target_zone = task.target_zone_arg
@@ -144,14 +144,14 @@
 	to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
 	inspect_internal(H, user, target_zone, E)
 
-/datum/om/task/timed/grab_inspect_skin
+/datum/task/timed/grab_inspect_skin
 	duration = 1 SECOND
 	complete_proc = /obj/item/grab/proc/inspect_skin_done
 	cancel_proc = /obj/item/grab/proc/inspect_skin_failed
 	var/target_zone_arg
 	var/obj/item/organ/external/E
 
-/obj/item/grab/proc/inspect_skin_done(datum/om/task/timed/grab_inspect_skin/task)
+/obj/item/grab/proc/inspect_skin_done(datum/task/timed/grab_inspect_skin/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/target_zone = task.target_zone_arg
@@ -193,7 +193,7 @@
 	var/body_part = parse_zone(target_zone)
 	if(body_part == BP_GROIN || body_part == BP_TORSO || body_part == BP_HEAD)
 		to_chat(user, span_notice("Checking for internal injury now..."))
-		om_task_start(/datum/om/task/timed/grab_inspect_internal, user, H, body_part = body_part, E = E)
+		task_start(/datum/task/timed/grab_inspect_internal, user, H, body_part = body_part, E = E)
 
 
 /obj/item/grab/proc/jointlock(mob/living/carbon/human/target, mob/attacker, target_zone)
@@ -289,7 +289,7 @@
 		return
 
 	act_message(attacker, target, others = span_danger("%U% starts forcing %T% to the ground!"))
-	om_task_timed(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
+	task_timed(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
 
 /obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
 	if(!(target))

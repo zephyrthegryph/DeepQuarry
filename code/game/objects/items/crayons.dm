@@ -130,15 +130,15 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 			to_chat(user, "You start drawing a rune on the [target.name].")
 		if("arrow")
 			to_chat(user, "You start drawing an arrow on the [target.name].")
-	om_task_start(/datum/om/task/timed/crayon_draw, user, src, duration = instant ? 0 : 5 SECONDS, receiver = src, surface = target, drawtype = drawtype, click_parameters = ask.click_parameters)
+	task_start(/datum/task/timed/crayon_draw, user, src, duration = instant ? 0 : 5 SECONDS, receiver = src, surface = target, drawtype = drawtype, click_parameters = ask.click_parameters)
 
-/datum/om/task/timed/crayon_draw
+/datum/task/timed/crayon_draw
 	complete_proc = /obj/item/pen/crayon/proc/draw_done
 	var/atom/surface
 	var/drawtype
 	var/click_parameters
 
-/obj/item/pen/crayon/proc/draw_done(datum/om/task/timed/crayon_draw/task)
+/obj/item/pen/crayon/proc/draw_done(datum/task/timed/crayon_draw/task)
 	var/atom/target = task.surface
 	var/mob/user = task.actor
 	var/drawtype = task.drawtype

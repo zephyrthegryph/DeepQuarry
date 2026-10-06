@@ -564,10 +564,10 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		organ_chance = 75
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
 	act_message(user, src, others = span_danger("%U% begins to twist %I% around inside %T%'s [chest]!"), item = W)
-	om_task_start(/datum/om/task/timed/human_shank_attack_human, user, src, receiver = src, W = W, G = G, organ_chance = organ_chance, damage = damage, chest = chest)
+	task_start(/datum/task/timed/human_shank_attack_human, user, src, receiver = src, W = W, G = G, organ_chance = organ_chance, damage = damage, chest = chest)
 	return TRUE
 
-/datum/om/task/timed/human_shank_attack_human
+/datum/task/timed/human_shank_attack_human
 	duration = 2 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/shank_attack_human_done
 	var/obj/item/W
@@ -576,7 +576,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 	var/damage
 	var/obj/item/organ/external/chest
 
-/mob/living/carbon/human/proc/shank_attack_human_done(datum/om/task/timed/human_shank_attack_human/task)
+/mob/living/carbon/human/proc/shank_attack_human_done(datum/task/timed/human_shank_attack_human/task)
 	var/obj/item/W = task.W
 	var/obj/item/grab/G = task.G
 	var/mob/user = task.actor

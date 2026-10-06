@@ -164,7 +164,7 @@ CAPABILITIES(/obj/structure/marker_beacon)
 	if(perma)
 		return OP_OK
 	to_chat(user, span_notice("You start picking [src] up..."))
-	om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+	task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/marker_beacon/proc/attack_hand_timed_done(mob/living/user)
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/structure/marker_beacon)
 		return OP_OK
 	var/obj/item/stack/marker_beacon/M = A.held
 	to_chat(user, span_notice("You start picking [src] up..."))
-	om_task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
+	task_timed(user, remove_speed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(M))
 	return OP_OK
 
 /obj/structure/marker_beacon/proc/attackby_timed_done(obj/item/stack/marker_beacon/M)

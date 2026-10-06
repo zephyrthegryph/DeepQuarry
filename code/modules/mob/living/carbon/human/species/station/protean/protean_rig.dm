@@ -337,7 +337,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 		var/obj/item/rig_module/mod = W
 		to_chat(user, "You begin installing \the [mod] into \the [src].")
-		om_task_start(/datum/om/task/timed/protean_attackby_protean, user, src, receiver = src, W = W, mod = mod)
+		task_start(/datum/task/timed/protean_attackby_protean, user, src, receiver = src, W = W, mod = mod)
 		return TRUE
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
@@ -350,13 +350,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			AssimilateBag(user,0,W)
 	return OP_PASS
 
-/datum/om/task/timed/protean_attackby_protean
+/datum/task/timed/protean_attackby_protean
 	duration = 4 SECONDS
 	complete_proc = /obj/item/rig/protean/proc/attackby_protean_done
 	var/obj/item/W
 	var/obj/item/rig_module/mod
 
-/obj/item/rig/protean/proc/attackby_protean_done(datum/om/task/timed/protean_attackby_protean/task)
+/obj/item/rig/protean/proc/attackby_protean_done(datum/task/timed/protean_attackby_protean/task)
 	var/obj/item/W = task.W
 	var/mob/living/user = task.actor
 	var/obj/item/rig_module/mod = task.mod

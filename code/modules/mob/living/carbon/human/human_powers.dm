@@ -326,7 +326,7 @@
 		act_message(src, null, others = span_filter_notice(span_bold("%U%") + "'s flesh begins to mend..."))
 
 	var/delay_length = round(active_regen_delay * species.active_regen_mult)
-	om_task_timed(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
+	task_timed(src, delay_length, target = src, receiver = src, on_done = PROC_REF(regenerate_human_done), done_args = list(), on_fail = PROC_REF(regenerate_human_failed), fail_args = list())
 
 /mob/living/carbon/human/proc/regenerate_human_done()
 	adjust_nutrition(-200)
@@ -724,7 +724,7 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 			to_chat(player2, span_warning("[src] is getting ready."))
 		if("Thumb Wars")
 			act_message(src, player2, others = span_notice("%U% challenges %T% to a thumb war!"))
-			om_task_start(/datum/om/task/timed/human_game_thumbwars_human, src, player2, receiver = src)
+			task_start(/datum/task/timed/human_game_thumbwars_human, src, player2, receiver = src)
 
 /mob/living/carbon/human/proc/hand_game_second_choice(mob/living/carbon/human/player2, game, choice1, choice2)
 	if(choice2 == "Cancel")
@@ -741,23 +741,23 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 			var/score1 = size_multiplier * clamp(choice1, 1, 10)
 			var/score2 = player2.size_multiplier * clamp(choice2, 1, 10)
 			var/competition = pick(score1;src, score2;player2)
-			om_task_start(/datum/om/task/timed/human_game_armwrestle_human, src, player2, receiver = src, competition = competition)
+			task_start(/datum/task/timed/human_game_armwrestle_human, src, player2, receiver = src, competition = competition)
 		if("Slap Hands")
 			// This one gives the advantage to smaller players.
 			var/score1 = clamp(2.25 - size_multiplier, 0.1, 3) * clamp(choice1, 1, 10)
 			var/score2 = clamp(2.25 - player2.size_multiplier, 0.1, 3) * clamp(choice2, 1, 10)
 			var/competition = pick(score1;src, score2;player2)
-			om_task_start(/datum/om/task/timed/human_game_slaphands_human, src, player2, receiver = src, competition = competition)
+			task_start(/datum/task/timed/human_game_slaphands_human, src, player2, receiver = src, competition = competition)
 
 /////// Arm wrestling! Each player gets a modifier based on their size and can choose the strength of their character, then a weighted roll is made.
 
-/datum/om/task/timed/human_game_armwrestle_human
+/datum/task/timed/human_game_armwrestle_human
 	duration = 5 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/game_armwrestle_human_done
 	cancel_proc = /mob/living/carbon/human/proc/game_armwrestle_human_failed
 	var/competition
 
-/mob/living/carbon/human/proc/game_armwrestle_human_done(datum/om/task/timed/human_game_armwrestle_human/task)
+/mob/living/carbon/human/proc/game_armwrestle_human_done(datum/task/timed/human_game_armwrestle_human/task)
 	var/mob/living/carbon/human/player1 = task.actor
 	var/mob/living/carbon/human/player2 = task.target
 	var/competition = task.competition
@@ -768,20 +768,20 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 	else
 		act_message(player2, player1, others = span_notice("%U% manages to overpower %T% and pin their arm down!"))
 
-/mob/living/carbon/human/proc/game_armwrestle_human_failed(datum/om/task/timed/human_game_armwrestle_human/task)
+/mob/living/carbon/human/proc/game_armwrestle_human_failed(datum/task/timed/human_game_armwrestle_human/task)
 	var/mob/living/carbon/human/player2 = task.target
 	player2.visible_message(span_notice("The players cancelled their competition!"))
 	return 0
 
 /////// Slap Hands! Each player gets a modifier based on their size and can choose the reaction time of their character, then a weighted roll is made. This one gives the advantage to smaller players.
 
-/datum/om/task/timed/human_game_slaphands_human
+/datum/task/timed/human_game_slaphands_human
 	duration = 1 SECOND
 	complete_proc = /mob/living/carbon/human/proc/game_slaphands_human_done
 	cancel_proc = /mob/living/carbon/human/proc/game_slaphands_human_failed
 	var/competition
 
-/mob/living/carbon/human/proc/game_slaphands_human_done(datum/om/task/timed/human_game_slaphands_human/task)
+/mob/living/carbon/human/proc/game_slaphands_human_done(datum/task/timed/human_game_slaphands_human/task)
 	var/mob/living/carbon/human/player1 = task.actor
 	var/mob/living/carbon/human/player2 = task.target
 	var/competition = task.competition
@@ -793,19 +793,19 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 	else
 		act_message(player2, player1, others = span_notice("%U% manages to slap %T%'s hand before they can react!"))
 
-/mob/living/carbon/human/proc/game_slaphands_human_failed(datum/om/task/timed/human_game_slaphands_human/task)
+/mob/living/carbon/human/proc/game_slaphands_human_failed(datum/task/timed/human_game_slaphands_human/task)
 	var/mob/living/carbon/human/player2 = task.target
 	player2.visible_message(span_notice("The players cancelled their competition!"))
 	return 0
 
 ///// Thumb wars! This one is just pure chance to allow people to do just quick RNG.
 
-/datum/om/task/timed/human_game_thumbwars_human
+/datum/task/timed/human_game_thumbwars_human
 	duration = 5 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/game_thumbwars_human_done
 	cancel_proc = /mob/living/carbon/human/proc/game_thumbwars_human_failed
 
-/mob/living/carbon/human/proc/game_thumbwars_human_done(datum/om/task/timed/human_game_thumbwars_human/task)
+/mob/living/carbon/human/proc/game_thumbwars_human_done(datum/task/timed/human_game_thumbwars_human/task)
 	var/mob/living/carbon/human/player1 = task.actor
 	var/mob/living/carbon/human/player2 = task.target
 	if(!hand_games_check(player1,player2))
@@ -815,7 +815,7 @@ CAPABILITIES(/datum/prompt/number/hand_game_move)
 	else
 		act_message(player2, player1, others = span_notice("After a gruelling battle, %U% eventually manages to subdue the thumb of %T%!"))
 
-/mob/living/carbon/human/proc/game_thumbwars_human_failed(datum/om/task/timed/human_game_thumbwars_human/task)
+/mob/living/carbon/human/proc/game_thumbwars_human_failed(datum/task/timed/human_game_thumbwars_human/task)
 	var/mob/living/carbon/human/player2 = task.target
 	player2.visible_message(span_notice("The players cancelled their thumb war!"))
 	return 0

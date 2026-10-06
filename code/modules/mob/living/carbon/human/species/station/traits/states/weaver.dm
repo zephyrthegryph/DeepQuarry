@@ -199,7 +199,7 @@ CAPABILITIES(/datum/trait_state/weaver)
 		to_chat(owner, span_warning("You can't create another one in the same tile here!"))
 		return
 
-	om_task_timed(owner, ((cost/25) SECONDS), owner, src, PROC_REF(weave_done), list(cost, weaved_object))
+	task_timed(owner, ((cost/25) SECONDS), owner, src, PROC_REF(weave_done), list(cost, weaved_object))
 
 /datum/trait_state/weaver/proc/weave_done(cost, weaved_object)
 	if(cost > silk_reserve)

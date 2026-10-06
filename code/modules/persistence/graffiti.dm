@@ -64,7 +64,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 		return TRUE
 	if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
 		act_message(user, null, others = span_warning("%U% begins carving something into \the [loc]."))
-		om_task_timed(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
+		task_timed(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
 	return INTERACTION_HANDLED_PASS
 
 /obj/effect/decal/writing/proc/carve_done(mob/user, _message)
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.isOn() || !welder.remove_fuel(0, user))
 		return ITEM_INTERACT_BLOCKING
-	om_task_timed(user, 0.5 SECONDS, src, src, PROC_REF(clear_done), list(user, welder))
+	task_timed(user, 0.5 SECONDS, src, src, PROC_REF(clear_done), list(user, welder))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/effect/decal/writing/proc/clear_done(mob/user, obj/item/weldingtool/welder)

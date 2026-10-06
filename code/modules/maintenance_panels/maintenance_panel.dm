@@ -43,7 +43,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
 	playsound(src, tool.usesound, 75, 1)
-	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(weld_toggle_done), list(user))
+	task_timed(user, 2 SECONDS, src, src, PROC_REF(weld_toggle_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/window/maintenance_panel/proc/weld_toggle_done(mob/user)

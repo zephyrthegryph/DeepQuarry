@@ -81,7 +81,7 @@ CAPABILITIES(/obj/effect/overlay/snow)
 /obj/effect/overlay/snow/proc/interaction_shovel_snow(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% begins to shovel away %T%."))
-	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+	task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	return OP_PASS
 
 /obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)

@@ -166,7 +166,7 @@ CAPABILITIES(/obj/item/robot_tongue)
 		return
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(om_busy(src)) // a lick in progress claims the tongue
+	if(task_busy(src)) // a lick in progress claims the tongue
 		to_chat(user, span_warning("You are already licking something else."))
 		return
 	if(user.client && (target in user.client.screen))
@@ -178,33 +178,33 @@ CAPABILITIES(/obj/item/robot_tongue)
 			return
 		act_message(user, null, MSG_SELF(span_notice("You begin to lap up water from [target.name].")), \
 			MSG_OTHERS(span_filter_notice("%U% begins to lap up water from [target.name].")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), busy = src)
+		task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), busy = src)
 	else if(water.energy < 5)
 		to_chat(user, span_notice("Your mouth feels dry. You should drink up some water ."))
 		return
 	else if(istype(target,/obj/effect/decal/cleanable))
 		act_message(user, null, MSG_SELF(span_notice("You begin to lick off \the [target.name]...")), \
 			MSG_OTHERS(span_filter_notice("%U% begins to lick off \the [target.name].")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), busy = src)
+		task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), busy = src)
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
 			act_message(user, null, MSG_SELF(span_notice("You begin to nibble away at \the [target.name]...")), \
 				MSG_OTHERS(span_filter_notice("%U% nibbles away at \the [target.name].")))
-			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), busy = src)
+			task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), busy = src)
 			return
 		if(istype(target,/obj/item/reagent_containers/food))
 			act_message(user, null, MSG_SELF(span_notice("You begin to nibble away at \the [target.name]...")), \
 				MSG_OTHERS("%U% nibbles away at \the [target.name]."))
-			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), busy = src)
+			task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), busy = src)
 			return
 		if(istype(target,/obj/item/cell))
 			act_message(user, null, MSG_SELF(span_notice("You begin cramming \the [target.name] down your throat...")), \
 				MSG_OTHERS(span_filter_notice("%U% begins cramming \the [target.name] down its throat.")))
-			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), busy = src)
+			task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), busy = src)
 			return
 		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
 			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), busy = src)
+		task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), busy = src)
 		return
 	else if(ishuman(target))
 		if(src.emagged)
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/robot_tongue)
 	else
 		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
 			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), busy = src)
+		task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), busy = src)
 		return
 
 /obj/item/robot_tongue/proc/afterattack_robot_tongue_done()

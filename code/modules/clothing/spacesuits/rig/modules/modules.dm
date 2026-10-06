@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 			return INTERACTION_HANDLED_PASS
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
 		return INTERACTION_HANDLED_PASS
 
 	else if(istype(W,/obj/item/stack/cable_coil))
@@ -98,7 +98,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 			return INTERACTION_HANDLED_PASS
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 

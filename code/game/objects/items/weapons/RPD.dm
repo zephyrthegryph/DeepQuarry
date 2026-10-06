@@ -210,7 +210,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	if((mode & DESTROY_MODE) && can_destroy_pipe)
 		to_chat(user, span_notice("You start destroying a pipe..."))
 		play_sfx(src, SFX_MACHINES_CLICK)
-		om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
+		task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
 		return
 
 	if((mode & PAINT_MODE)) //Paint pipes
@@ -229,14 +229,14 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 				play_sfx(src, SFX_MACHINES_CLICK)
 				if(istype(recipe(), /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
-					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
+					task_start(/datum/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
 				else if(istype(recipe(), /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
-					om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
+					task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
 				else if(istype(recipe(), /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe()
 					to_chat(user, span_notice("You start building a pipe..."))
-					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack2, user, A, queued_piping_layer = queued_piping_layer, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
+					task_start(/datum/task/timed/pipe_dispenser_afterattack2, user, A, queued_piping_layer = queued_piping_layer, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
 				var/datum/pipe_recipe/disposal/R = recipe()
@@ -248,7 +248,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
 				play_sfx(src, SFX_MACHINES_CLICK)
-				om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack3, user, A, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
+				task_start(/datum/task/timed/pipe_dispenser_afterattack3, user, A, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
 
 			else
 				return ..()
@@ -256,12 +256,12 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 /obj/item/pipe_dispenser/proc/afterattack_timed_done(atom/A)
 	activate()
 	animate_deletion(A)
-/datum/om/task/timed/pipe_dispenser_afterattack
+/datum/task/timed/pipe_dispenser_afterattack
 	duration = 2
 	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done2
 	var/queued_piping_layer
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done2(datum/om/task/timed/pipe_dispenser_afterattack/task)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done2(datum/task/timed/pipe_dispenser_afterattack/task)
 	var/atom/A = task.target
 	var/mob/user = task.actor
 	var/queued_piping_layer = task.queued_piping_layer
@@ -275,7 +275,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(A))
 	if(mode & WRENCH_MODE)
 		do_wrench(GS, user)
-/datum/om/task/timed/pipe_dispenser_afterattack2
+/datum/task/timed/pipe_dispenser_afterattack2
 	duration = 2
 	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done4
 	var/queued_piping_layer
@@ -283,7 +283,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	var/queued_p_flipped
 	var/datum/pipe_recipe/pipe/R
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done4(datum/om/task/timed/pipe_dispenser_afterattack2/task)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done4(datum/task/timed/pipe_dispenser_afterattack2/task)
 	var/atom/A = task.target
 	var/mob/user = task.actor
 	var/queued_piping_layer = task.queued_piping_layer
@@ -306,14 +306,14 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 		do_wrench(P, user)
 	else
 		build_effect(P)
-/datum/om/task/timed/pipe_dispenser_afterattack3
+/datum/task/timed/pipe_dispenser_afterattack3
 	duration = 4
 	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done5
 	var/queued_p_dir
 	var/queued_p_flipped
 	var/datum/pipe_recipe/disposal/R
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done5(datum/om/task/timed/pipe_dispenser_afterattack3/task)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done5(datum/task/timed/pipe_dispenser_afterattack3/task)
 	var/atom/A = task.target
 	var/mob/user = task.actor
 	var/queued_p_dir = task.queued_p_dir

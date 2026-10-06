@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 	var/obj/item/anomaly_releaser/releaser = W
 	if(releaser.used)
 		return OP_PASS
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
 	return TRUE
 
 /obj/item/assembly/signaler/anomaly/proc/release_done(mob/user, obj/item/anomaly_releaser/releaser)

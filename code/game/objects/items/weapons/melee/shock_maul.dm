@@ -219,7 +219,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 	if(!status && bcell && bcell.charge >= hitcost)
-		om_task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
 		status = 0
 		act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))

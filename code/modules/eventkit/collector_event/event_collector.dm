@@ -206,20 +206,20 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		//put it in
 		act_message(user, src, others = "%U% begins to [pick(step_initiation_verbs)] %I% into %T%", item = O)
 		//wait a second or two
-		om_task_start(/datum/om/task/timed/event_collector_insert, user, src, duration = step_insertion_time, O = O, stored_index = stored_index)
+		task_start(/datum/task/timed/event_collector_insert, user, src, duration = step_insertion_time, O = O, stored_index = stored_index)
 	return INTERACTION_HANDLED_PASS
 
-/obj/structure/event_collector/proc/insert_gave_up(datum/om/task/timed/event_collector_insert/task)
+/obj/structure/event_collector/proc/insert_gave_up(datum/task/timed/event_collector_insert/task)
 	var/mob/user = task.actor
 	act_message(user, null, others = "%U% gives up!") //shitty, change later
 
-/datum/om/task/timed/event_collector_insert
+/datum/task/timed/event_collector_insert
 	complete_proc = /obj/structure/event_collector/proc/insert_done
 	cancel_proc = /obj/structure/event_collector/proc/insert_gave_up
 	var/obj/item/O
 	var/stored_index
 
-/obj/structure/event_collector/proc/insert_done(datum/om/task/timed/event_collector_insert/task)
+/obj/structure/event_collector/proc/insert_done(datum/task/timed/event_collector_insert/task)
 	var/obj/item/O = task.O
 	var/mob/user = task.actor
 	var/stored_index = task.stored_index

@@ -565,7 +565,7 @@ DECLARE_INTERACTIONS(/obj/structure/theonepizza, INTERACT_ITEM(null, PROC_REF(in
 	if(istype(W,/obj/item/material/knife))
 		act_message(user, null, MSG_SELF(span_notice("You start to slowly cut through The One Pizza.")), \
 			MSG_OTHERS(span_bold("%U%") + " starts to slowly cut through The One Pizza."))
-		om_task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
+		task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice

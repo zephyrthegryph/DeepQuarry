@@ -74,22 +74,22 @@
 
 // ---------------------------------------------------------------- named task arguments
 
-/datum/om/task/test_named
+/datum/task/test_named
 	name = "test_named"
 	duration = 10
 	complete_proc = /datum/om_test_entity/proc/named_done
 	var/amount
 	var/datum/om_test_entity/tool
 
-/datum/om/task/test_named/own
+/datum/task/test_named/own
 	name = "test_named_own"
-	complete_proc = /datum/om/task/test_named/own/proc/done
+	complete_proc = /datum/task/test_named/own/proc/done
 
-/datum/om/task/test_named/own/proc/done()
+/datum/task/test_named/own/proc/done()
 	var/datum/om_test_entity/E = actor
 	LAZYADD(E.log, "own:[amount]")
 
-/datum/om_test_entity/proc/named_done(datum/om/task/test_named/task)
+/datum/om_test_entity/proc/named_done(datum/task/test_named/task)
 	LAZYADD(log, "done:[task.amount]")
 
 /datum/unit_test/om/task_named_args
@@ -98,15 +98,15 @@
 	var/datum/om_test_entity/actor = entity(made)
 	var/datum/om_test_entity/target = entity(made)
 	var/datum/om_test_entity/tool = entity(made)
-	var/datum/om/task/test_named/T = om_task_start(/datum/om/task/test_named, actor, target, amount = 3, tool = tool)
+	var/datum/task/test_named/T = task_start(/datum/task/test_named, actor, target, amount = 3, tool = tool)
 	TEST_ASSERT(istype(T), "a task starts with named arguments")
 	TEST_ASSERT_EQUAL(T.amount, 3, "a named argument sets the typed var")
 	TEST_ASSERT_EQUAL(T.tool, tool, "a datum argument is set (and held)")
 	TEST_ASSERT_EQUAL(T.receiver, target, "the receiver defaults to the first of src, target, actor that has the complete_proc")
-	om_task_cancel(T)
+	task_cancel(T)
 
-	var/datum/om/task/test_named/own/O = om_task_start(/datum/om/task/test_named/own, actor, null, amount = 5)
-	om_task_complete(O)
+	var/datum/task/test_named/own/O = task_start(/datum/task/test_named/own, actor, null, amount = 5)
+	task_complete(O)
 	TEST_ASSERT_EQUAL(jointext(actor.log || list(), ","), "own:5", "a complete_proc of the task's own type runs on the task, reading its vars")
 
 // ---------------------------------------------------------------- flows

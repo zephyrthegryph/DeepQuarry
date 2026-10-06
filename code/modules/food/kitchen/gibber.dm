@@ -187,7 +187,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 
 	act_message(user, victim, others = span_danger("%U% starts to put %T% into the gibber!"))
 	src.add_fingerprint(user)
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
 
 /obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
 	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || src?.slot_item(OCCUPANT_SLOT_GIBBER))

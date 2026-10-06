@@ -292,9 +292,6 @@
 		DERIVE_COUNT("test_member_count", /datum/om/relation/test_member, 0),
 		DERIVE("test_enabled_derived", "test_enabled_named", CHANGE_DATUM_C),
 	)
-	tasks = list(
-		"test_task" = list("duration" = 2 SECONDS, "claims" = TRUE, "requires" = list(/datum/om/check/test_enabled), "interrupted_by" = list(/datum/om/event/test/other)),
-	)
 
 /datum/om/decl/test_host
 	of = /datum/om_test_entity/decl_host
@@ -968,32 +965,6 @@
 	TEST_ASSERT(om_can("test_enabled_named", E, null) == FALSE, "named checks from bundles")
 
 // ---------------------------------------------------------------- I: tasks
-
-/datum/unit_test/om/tasks_complete_claim_interrupt
-
-/datum/unit_test/om/tasks_complete_claim_interrupt/run_om(list/made)
-	var/datum/om_test_entity/actor = entity(made)
-	var/datum/om_test_entity/other = entity(made)
-	var/datum/om_test_entity/target = entity(made)
-	var/datum/om/task/T = om_task_start("test_task", actor, target)
-	TEST_ASSERT(istype(T), "task started: [T]")
-	TEST_ASSERT(istext(om_task_start("test_task", other, target)), "claim gives exclusivity with a reason")
-	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(T.state, OM_TASK_RUNNING, "still running")
-	scheduler_advance(1.2)
-	TEST_ASSERT_EQUAL(T.state, OM_TASK_DONE, "completed by its deadline")
-	var/datum/om/task/T2 = om_task_start("test_task", other, target)
-	TEST_ASSERT(istype(T2), "claim released on completion")
-	other.enabled = FALSE
-	changed(other, CHANGE_DATUM_B)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(T2.state, OM_TASK_CANCELLED, "requires failing cancels")
-	var/datum/om/task/T3 = om_task_start("test_task", actor, target)
-	om_emit(actor, new /datum/om/event/test/other)
-	TEST_ASSERT_EQUAL(T3.state, OM_TASK_CANCELLED, "interrupted_by cancels")
-	var/datum/om/task/T4 = om_task_start("test_task", actor, target)
-	qdel(target)
-	TEST_ASSERT_EQUAL(T4.state, OM_TASK_CANCELLED, "deleting the target cancels")
 
 // ---------------------------------------------------------------- J: UI
 

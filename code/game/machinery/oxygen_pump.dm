@@ -52,7 +52,7 @@ OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MA
 		if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
 			return
 		act_message(user, target, others = "%U% begins placing \the [contained] onto %T%.")
-		om_task_timed(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
+		task_timed(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
 
 /obj/machinery/oxygen_pump/proc/place_mask_done(mob/living/user, mob/living/carbon/human/target)
 	if(!can_apply_to_target(target, user))

@@ -119,10 +119,6 @@
 				i = (at ? at : i - 1) + 1
 			else
 				i++
-	if(rec.task_interrupts?[etype])
-		for(var/datum/om/task/T as anything in rec.tasks.Copy())
-			if(T.spec.compiled_interrupts?[etype])
-				om_task_cancel(T, "interrupted")
 	return null
 
 /// TRUE when a started behaviour on E handles `path`, or a task on E is interrupted by it. Senders on
@@ -136,8 +132,6 @@
 	var/datum/om/rec/rec = E?.om_rec
 	if(!rec || rec.torn_down)
 		return FALSE
-	if(rec.task_interrupts?[path])
-		return TRUE
 	var/datum/om/registry/reg = om_registry()
 	var/e = reg.event_idx[path]
 	var/list/flags = e ? reg.event_handlers[e] : null
@@ -148,22 +142,3 @@
 		if(flags[B.id] && (rec.att_state[i] & OM_ATT_STARTED))
 			return TRUE
 	return FALSE
-
-/// Tasks: keeps rec.task_interrupts (event type -> number of running tasks it
-/// interrupts) in step with rec.tasks, so delivery and om_wants() read one assoc.
-/proc/om_task_interrupts_add(datum/om/rec/rec, datum/om/task/spec)
-	for(var/path in spec.compiled_interrupts)
-		LAZYINITLIST(rec.task_interrupts)
-		rec.task_interrupts[path] = (rec.task_interrupts[path] || 0) + 1
-
-/proc/om_task_interrupts_remove(datum/om/rec/rec, datum/om/task/spec)
-	if(!rec.task_interrupts)
-		return
-	for(var/path in spec.compiled_interrupts)
-		var/n = (rec.task_interrupts[path] || 0) - 1
-		if(n > 0)
-			rec.task_interrupts[path] = n
-		else
-			rec.task_interrupts -= path
-	if(!length(rec.task_interrupts))
-		rec.task_interrupts = null

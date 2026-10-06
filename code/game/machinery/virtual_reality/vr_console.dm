@@ -218,7 +218,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	else
 		act_message(user, M, others = "%U% starts putting %T% into \the [src].")
 
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 	return
 
 /obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)

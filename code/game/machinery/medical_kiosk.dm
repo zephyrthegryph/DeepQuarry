@@ -102,16 +102,16 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
 	flick("kiosk_active", src)
-	om_task_start(/datum/om/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
+	task_start(/datum/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
 	return TRUE
 
-/datum/om/task/timed/medical_kiosk_start_using
+/datum/task/timed/medical_kiosk_start_using
 	duration = 5 SECONDS
 	complete_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_done
 	cancel_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_failed
 	var/choice
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/om/task/timed/medical_kiosk_start_using/task)
+/obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/task/timed/medical_kiosk_start_using/task)
 	var/mob/living/user = task.actor
 	var/choice = task.choice
 	if(!operable())
@@ -132,7 +132,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	// Standby
 	suspend()
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_failed(datum/om/task/timed/medical_kiosk_start_using/task)
+/obj/machinery/medical_kiosk/proc/start_using_timed_failed(datum/task/timed/medical_kiosk_start_using/task)
 	suspend()
 	return
 

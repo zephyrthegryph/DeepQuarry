@@ -261,7 +261,7 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", P
 	if(grabbing_team == laser_team)
 		act_message(user, src, others = span_warning("%U% is returning %T%!"))
 		//channel return, rather than instant; if they fail the channel (e.g. because they got tagged!) then drop it
-		om_task_timed(user, flag_return_delay, src, src, PROC_REF(flag_returned), list(user), IGNORE_TARGET_LOC_CHANGE, PROC_REF(flag_return_failed), list(user))
+		task_timed(user, flag_return_delay, src, src, PROC_REF(flag_returned), list(user), IGNORE_TARGET_LOC_CHANGE, PROC_REF(flag_return_failed), list(user))
 		return
 	else
 		act_message(user, src, others = span_warning("%U% has taken %T%!"))

@@ -131,9 +131,9 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner(), stock = stock, role = role, quantity = quantity, material_id = material_id)
+	task_start(/datum/task/timed/material_service_fit_stock, user, owner(), stock = stock, role = role, quantity = quantity, material_id = material_id)
 
-/datum/om/task/timed/material_service_fit_stock
+/datum/task/timed/material_service_fit_stock
 	duration = 2 SECONDS
 	complete_proc = /datum/material_service/proc/fit_stock_done
 	var/obj/item/stack/material/stock
@@ -141,7 +141,7 @@
 	var/quantity
 	var/material_id
 
-/datum/material_service/proc/fit_stock_done(datum/om/task/timed/material_service_fit_stock/task)
+/datum/material_service/proc/fit_stock_done(datum/task/timed/material_service_fit_stock/task)
 	var/obj/item/stack/material/stock = task.stock
 	var/mob/user = task.actor
 	var/role = task.role

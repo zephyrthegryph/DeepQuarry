@@ -179,7 +179,7 @@
 		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
 	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
 
-	om_task_timed(src, entering_timer, target = infest_target, receiver = src, on_done = PROC_REF(infest_done), done_args = list(infest_target), on_fail = PROC_REF(infest_dislodged), fail_args = list(infest_target))
+	task_timed(src, entering_timer, target = infest_target, receiver = src, on_done = PROC_REF(infest_done), done_args = list(infest_target), on_fail = PROC_REF(infest_dislodged), fail_args = list(infest_target))
 
 
 /**

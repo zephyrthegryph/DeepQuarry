@@ -139,19 +139,19 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				return
 			if (breather())
 				src.add_fingerprint(user)
-				om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
+				task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
 				return
 			act_message(user, target, MSG_SELF(span_notice("You begin carefully placing the mask onto %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins carefully placing the mask onto %T%.")))
-			om_task_timed(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
+			task_timed(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
 			return
 		if("Drip needle")
 			if(attached())
-				om_task_timed(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
+				task_timed(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
 			else if(ishuman(target))
 				act_message(user, target, MSG_SELF(span_notice("You begin inserting needle into %T%'s vein.")), \
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins inserting needle into %T%'s vein.")))
-				om_task_start(/datum/om/task/timed/medical_stand_needle_inserted, user, target, receiver = src)
+				task_start(/datum/task/timed/medical_stand_needle_inserted, user, target, receiver = src)
 			update_icon()
 
 /obj/structure/medical_stand/proc/needle_removed()
@@ -161,7 +161,7 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	rel_clear(src, nameof(attached))
 	update_icon()
 
-/obj/structure/medical_stand/proc/needle_slipped(datum/om/task/timed/medical_stand_needle_inserted/task)
+/obj/structure/medical_stand/proc/needle_slipped(datum/task/timed/medical_stand_needle_inserted/task)
 	var/mob/living/carbon/human/target = task.target
 	var/mob/user = task.actor
 	if(!target || !user)
@@ -169,12 +169,12 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	act_message(user, target, MSG_SELF(span_notice("Your hand slips and pricks %T%.")), MSG_OTHERS(span_notice("%U%'s hand slips and pricks %T%.")))
 	target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 
-/datum/om/task/timed/medical_stand_needle_inserted
+/datum/task/timed/medical_stand_needle_inserted
 	duration = 5 SECONDS
 	complete_proc = /obj/structure/medical_stand/proc/needle_inserted
 	cancel_proc = /obj/structure/medical_stand/proc/needle_slipped
 
-/obj/structure/medical_stand/proc/needle_inserted(datum/om/task/timed/medical_stand_needle_inserted/task)
+/obj/structure/medical_stand/proc/needle_inserted(datum/task/timed/medical_stand_needle_inserted/task)
 	var/mob/living/carbon/human/target = task.target
 	var/mob/user = task.actor
 	if(attached())

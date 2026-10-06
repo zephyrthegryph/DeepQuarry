@@ -179,13 +179,13 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	name = "Insert"
 	effect = /obj/machinery/disposal/proc/interaction_disposal_insert
 
-/datum/om/task/timed/disposal_dunk
+/datum/task/timed/disposal_dunk
 	duration = 2 SECONDS
 	complete_proc = /obj/machinery/disposal/proc/dunk_done
 	var/mob/GM
 	var/obj/item/grab/G
 
-/obj/machinery/disposal/proc/dunk_done(datum/om/task/timed/disposal_dunk/task)
+/obj/machinery/disposal/proc/dunk_done(datum/task/timed/disposal_dunk/task)
 	var/mob/user = task.actor
 	var/mob/GM = task.GM
 	var/obj/item/grab/G = task.G
@@ -228,7 +228,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			var/mob/GM = G?.grab_target()
 			for (var/mob/V in viewers(user))
 				act_message(V, user, MSG_SELF(3), MSG_OTHERS("%T% starts putting [GM.name] into the disposal."))
-			om_task_start(/datum/om/task/timed/disposal_dunk, user, src, receiver = src, GM = GM, G = G)
+			task_start(/datum/task/timed/disposal_dunk, user, src, receiver = src, GM = GM, G = G)
 		return TRUE
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
@@ -408,7 +408,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		act_message(target, user, MSG_SELF(span_userdanger("%T% starts stuffing you into [src]!")), \
 			MSG_OTHERS(span_danger("%T% starts stuffing %U% into [src].")))
 
-	om_task_timed(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
+	task_timed(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
 
 /obj/machinery/disposal/proc/stuff_mob_done(mob/living/target, mob/living/user)
 	if(!loc)

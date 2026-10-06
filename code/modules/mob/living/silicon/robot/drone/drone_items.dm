@@ -15,17 +15,17 @@
 /obj/item/matter_decompiler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
-/obj/item/matter_decompiler/proc/decompile_drone_interrupted(datum/om/task/timed/matter_decompiler_decompile_drone/task)
+/obj/item/matter_decompiler/proc/decompile_drone_interrupted(datum/task/timed/matter_decompiler_decompile_drone/task)
 	var/mob/living/silicon/robot/D = task.actor
 	to_chat(D, span_danger("You need to remain still while decompiling such a large object."))
 
-/datum/om/task/timed/matter_decompiler_decompile_drone
+/datum/task/timed/matter_decompiler_decompile_drone
 	duration = 5 SECONDS
 	complete_proc = /obj/item/matter_decompiler/proc/decompile_drone_done
 	cancel_proc = /obj/item/matter_decompiler/proc/decompile_drone_interrupted
 	var/mob/M
 
-/obj/item/matter_decompiler/proc/decompile_drone_done(datum/om/task/timed/matter_decompiler_decompile_drone/task)
+/obj/item/matter_decompiler/proc/decompile_drone_done(datum/task/timed/matter_decompiler_decompile_drone/task)
 	var/mob/living/silicon/robot/D = task.actor
 	var/mob/M = task.M
 	to_chat(D, span_danger("You carefully and thoroughly decompile [M], storing as much of its resources as you can within yourself."))
@@ -73,7 +73,7 @@
 
 			to_chat(D, span_danger("You begin decompiling [M]."))
 
-			om_task_start(/datum/om/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
+			task_start(/datum/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
 			return
 		else
 			continue

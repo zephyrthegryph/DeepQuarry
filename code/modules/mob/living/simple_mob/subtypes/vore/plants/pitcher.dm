@@ -229,7 +229,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 		else
 			act_message(user, src, MSG_SELF(span_infoplain("You use a loop of wire to try snagging someone trapped in %T%...")), MSG_OTHERS(span_infoplain("%U% uses a loop of wire to try fishing someone out of %T%.")))
 			//You can just spam click to stack attempts if you feel like abusing it.
-			om_task_timed(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
+			task_timed(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
 	if(istype(O, /obj/item/newspaper))
 		act_message(user, src, MSG_SELF(span_notice("You whap %T% with a rolled up newspaper.")), MSG_OTHERS(span_notice("%U% baps %T%, but it doesn't seem to do anything.")))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))

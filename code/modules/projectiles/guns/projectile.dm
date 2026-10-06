@@ -183,7 +183,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	if(special_weapon_handling && !callback)
 		return FALSE
 	if(manual_chamber) // Gun Rework
-		om_task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, interaction?.stance)) // Gun Rework
+		task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, interaction?.stance)) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
@@ -521,7 +521,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	if(can_feed_from(H))
-		om_task_start(/datum/om/task/timed/feed_rounds, user, src, handful = H)
+		task_start(/datum/task/timed/feed_rounds, user, src, handful = H)
 		return
 	feed_done(H, user, 0)
 
@@ -533,7 +533,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	return rd.caliber == caliber
 
 /// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
-/datum/om/task/timed/feed_rounds
+/datum/task/timed/feed_rounds
 	steps = list(/obj/item/gun/projectile/proc/feed_round = 0)
 	complete_proc = /obj/item/gun/projectile/proc/feed_ended
 	cancel_proc = /obj/item/gun/projectile/proc/feed_ended
@@ -541,7 +541,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	var/count = 0
 	var/waited = FALSE
 
-/obj/item/gun/projectile/proc/feed_round(datum/om/task/timed/feed_rounds/task)
+/obj/item/gun/projectile/proc/feed_round(datum/task/timed/feed_rounds/task)
 	if(!task.waited)
 		task.waited = TRUE
 		return STEP_REPEAT(reload_time)
@@ -560,7 +560,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	task.count++
 	return can_feed_from(H) ? STEP_REPEAT(reload_time) : STEP_DONE
 
-/obj/item/gun/projectile/proc/feed_ended(datum/om/task/timed/feed_rounds/task)
+/obj/item/gun/projectile/proc/feed_ended(datum/task/timed/feed_rounds/task)
 	feed_done(task.handful, task.actor, task.count)
 
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
@@ -633,10 +633,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(!CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
 					if(!chambered)
 						if(bolt_open)
-							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, duration = 0.5 SECONDS, C = C, message = "[user] slides \the [C] into the [src]'s chamber.")
+							task_start(/datum/task/timed/projectile_chamber_round, user, src, duration = 0.5 SECONDS, C = C, message = "[user] slides \the [C] into the [src]'s chamber.")
 							return
 						else if(!(CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))))
-							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, duration = 1.5 SECONDS, C = C, message = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
+							task_start(/datum/task/timed/projectile_chamber_round, user, src, duration = 1.5 SECONDS, C = C, message = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
 							return
 						else
 							to_chat(user,span_warning("Open the bolt first before chambering a round!"))
@@ -696,13 +696,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	// ALLOW(sys_om_after_rearm): a finite sequence, not a loop over state: each run consumes one round from `rounds` (cut in place, so the list is the counter) and it ends when the list or the magazine runs out
 	after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))
 
-/datum/om/task/timed/projectile_chamber_round
+/datum/task/timed/projectile_chamber_round
 	complete_proc = /obj/item/gun/projectile/proc/chamber_round
 	var/obj/item/ammo_casing/C
 	var/message
 
 /// A round slid into the chamber by hand.
-/obj/item/gun/projectile/proc/chamber_round(datum/om/task/timed/projectile_chamber_round/task)
+/obj/item/gun/projectile/proc/chamber_round(datum/task/timed/projectile_chamber_round/task)
 	var/mob/user = task.actor
 	var/obj/item/ammo_casing/C = task.C
 	var/message = task.message

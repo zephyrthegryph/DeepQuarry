@@ -49,7 +49,7 @@ CAPABILITIES(/obj/structure/ladder)
 	if(WT.remove_fuel(0, user))
 		play_sfx(src, SFX_ITEMS_WELDER2)
 		act_message(user, src, MSG_SELF("You start to deconstruct %T%."), MSG_OTHERS("%U% starts to deconstruct %T%."), MSG_BLIND("You hear welding"))
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
+		task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 		var/mob/living/carbon/human/MS = M
 		climb_modifier = MS.species.climb_mult
 
-	om_task_timed(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
+	task_timed(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
 	return FALSE
 
 /obj/structure/ladder/proc/climb_done(mob/M, obj/target_ladder)

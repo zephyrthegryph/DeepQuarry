@@ -213,10 +213,10 @@
 		return
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
 		play_sfx(src, SFX_EFFECTS_ROLL)
-	om_task_start(/datum/om/task/spin, src, null, left = spintime, speed = speed, facing = dir)
+	task_start(/datum/task/spin, src, null, left = spintime, speed = speed, facing = dir)
 
 /// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.
-/datum/om/task/spin
+/datum/task/spin
 	name = "spin"
 	steps = list(/mob/proc/spin_step = 0)
 	var/left = 0
@@ -224,7 +224,7 @@
 	var/facing = NORTH
 	var/started = FALSE
 
-/mob/proc/spin_step(datum/om/task/spin/T)
+/mob/proc/spin_step(datum/task/spin/T)
 	var/speed = T.speed
 	if(!T.started)
 		T.started = TRUE

@@ -30,7 +30,7 @@
 	if(istype(M) && ((locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode)) || (locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))))
 		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
 		play_sfx(W, SFX_EFFECTS_ATTACKBLOB)
-		om_task_timed(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
+		task_timed(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
 		return TRUE
 	return FALSE
 

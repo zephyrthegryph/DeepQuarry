@@ -150,7 +150,7 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 		return OP_OK
 	to_chat(user, span_notice("You start dismantling \the [src]..."))
 	playsound(src, tool.usesound, 50, TRUE)
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(dismantle_done), list(user))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(dismantle_done), list(user))
 	return OP_OK
 
 /obj/machinery/beehive/proc/dismantle_done(mob/user)
@@ -162,7 +162,7 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 /// One frame every 3 seconds (a timed action each) while there are filled honeycombs.
 /obj/machinery/beehive/proc/harvest_next(mob/user)
 	if(honeycombs >= 100 && length(frames))
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(harvest_frame), list(user))
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(harvest_frame), list(user))
 	else if(honeycombs < 100)
 		to_chat(user, span_notice("You take all filled honeycombs out."))
 
@@ -332,7 +332,7 @@ CAPABILITIES(/obj/item/beehive_assembly)
 /obj/item/beehive_assembly/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start assembling \the [src]..."))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
 	return TRUE
 
 /obj/item/beehive_assembly/proc/assemble_done(mob/user)

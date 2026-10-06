@@ -66,7 +66,7 @@ CAPABILITIES(/obj/structure/alien)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return OP_OK
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
-					om_task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+					task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 					return OP_OK
 			act_message(user, null, others = span_warning("%U% claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)

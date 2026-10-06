@@ -220,11 +220,6 @@
 #define OM_WORLD (GLOB.om_world)
 #define OM_EMIT_WORLD(path, args...) OM_EMIT(GLOB.om_world, path, ##args)
 
-// ---- Tasks (section I). ----
-#define OM_TASK_RUNNING 0
-#define OM_TASK_DONE 1
-#define OM_TASK_CANCELLED 2
-
 // Attachment state bits (rec.att_state).
 #define OM_ATT_STARTED (1<<0)
 #define OM_ATT_REQ_OK (1<<1)
@@ -391,14 +386,7 @@
 // ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
 /// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
 #define OM_CALLEE_SLEPT "__om_callee_slept"
-#define STEP_NEXT 1
-#define STEP_DONE 2
-#define OM_STEP_REPEAT 3
-#define OM_STEP_FAIL 4
-/// Run this step again after `d` deciseconds.
-#define STEP_REPEAT(d) list(OM_STEP_REPEAT, d)
-/// Cancel the task with `reason` (its on_cancel runs).
-#define STEP_FAIL(reason) list(OM_STEP_FAIL, reason)
+// STEP_NEXT, STEP_DONE, STEP_REPEAT() and STEP_FAIL() are code/__defines/engine/tasks.dm's.
 
 // ---- Declared caches (lifecycle.md §4, LC-refs): the invalidation rule each entry of
 // declared_cache_vars() names. The core nulls the var when the rule fires.
@@ -498,9 +486,6 @@
 // DM rejects a named argument a proc doesn't declare, so these are macros: the named arguments
 // become a list keyed by var name, and the caller's src rides along (the receiver default).
 
-/// Starts a task (task.dm): om_task_start(/datum/om/task/timed/x, actor, target, var = value, ...).
-/// The target is optional (om_task_start(/datum/om/task/x, actor)).
-#define om_task_start(task, actor, rest...) om_task_begin(task, actor, list(rest), src)
 /// Asks `answerer` a typed prompt (ask.dm): om_ask(answerer, /datum/om/prompt/confirm/x, PROC_REF(cb), var = value, ...).
 /// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt
 /// (`receiver = X` runs it on X instead; in a global proc, where src is null, pass a /proc/ path).

@@ -40,7 +40,7 @@
 			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
 			MSG_BLIND("You hear the slow creaking of a spring."))
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/beartrap/proc/attack_self_timed_done(mob/user)
@@ -70,14 +70,14 @@ CAPABILITIES(/obj/item/beartrap)
 		var/victim = english_list(src?.buckled_mob_list())
 		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free [victim] from %T%.")), \
 			MSG_OTHERS(span_notice("%U% begins freeing [victim] from %T%.")))
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
 	else if(deployed && can_use(user))
 		act_message(user, src, MSG_SELF(span_notice("You begin disarming %T%!")), \
 			MSG_OTHERS(span_danger("%U% starts to disarm %T%.")), \
 			MSG_BLIND("You hear a latch click followed by the slow creaking of a spring."))
 		play_sfx(src, SFX_MACHINES_CLICK)
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		return OP_DECLINE
 	return TRUE
@@ -225,7 +225,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 			MSG_BLIND("You hear the sound of rustling [material.name]."))
 		play_sfx(src, SFX_MACHINES_CLICK)
 
-		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
+		task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
 		return OP_DECLINE
 
@@ -242,7 +242,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
 			MSG_BLIND("You hear the rustling of [material.name]."))
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
 	return TRUE
 
 /obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)

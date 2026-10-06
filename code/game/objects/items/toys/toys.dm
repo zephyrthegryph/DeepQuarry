@@ -750,8 +750,8 @@ CAPABILITIES(/obj/structure/plushie)
 /// A touch of any kind: take out whatever is hidden inside.
 /obj/structure/plushie/proc/touch_started(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(stored_item && opened && !om_busy(src))
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
+	if(stored_item && opened && !task_busy(src))
+		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
 /obj/structure/plushie/proc/interaction_hug(datum/act/op/A)
 	return plushie_touched(A.actor, I_HELP)
@@ -892,8 +892,8 @@ CAPABILITIES(/obj/structure/plushie)
 /obj/item/toy/plushie/proc/squeezed(mob/user, stance)
 	if(special_handling)
 		return OP_OK
-	if(stored_item && opened && !om_busy(src))
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
+	if(stored_item && opened && !task_busy(src))
+		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
 
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 1 SECOND)
 		return OP_OK
@@ -2294,18 +2294,18 @@ CAPABILITIES(/obj/item/toy/minigibber)
 	var/obj/O = A.held
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
+		task_start(/datum/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
 		return OP_PASS
 	return OP_DECLINE
 
-/datum/om/task/timed/minigibber_attackby
+/datum/task/timed/minigibber_attackby
 	duration = 1 SECOND
 	claims = TRUE
 	complete_proc = /obj/item/toy/minigibber/proc/attackby_timed_done
 	cancel_proc = /obj/item/toy/minigibber/proc/attackby_timed_failed
 	var/obj/O
 
-/obj/item/toy/minigibber/proc/attackby_timed_done(datum/om/task/timed/minigibber_attackby/task)
+/obj/item/toy/minigibber/proc/attackby_timed_done(datum/task/timed/minigibber_attackby/task)
 	var/obj/O = task.O
 	var/mob/user = task.actor
 	if(O.loc != user)
@@ -2314,7 +2314,7 @@ CAPABILITIES(/obj/item/toy/minigibber)
 		act_message(user, src, MSG_SELF(span_notice("You feed \the [O] into %T%!")), MSG_OTHERS(span_notice("%U% feeds \the [O] into %T%!")))
 		move_into(src, nameof(src.stored_minature), O, user)
 
-/obj/item/toy/minigibber/proc/attackby_timed_failed(datum/om/task/timed/minigibber_attackby/task)
+/obj/item/toy/minigibber/proc/attackby_timed_failed(datum/task/timed/minigibber_attackby/task)
 	var/obj/O = task.O
 	var/mob/user = task.actor
 	act_message(user, src, MSG_SELF(span_notice("You stop feeding \the [O] into %T%.")), MSG_OTHERS(span_notice("%U% stops feeding \the [O] into %T%!")))

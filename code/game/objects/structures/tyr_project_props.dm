@@ -13,7 +13,7 @@ CAPABILITIES(/obj/structure/prop/tyr_elevator)
 
 /obj/structure/prop/tyr_elevator/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
-	om_task_timed(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+	task_timed(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/prop/tyr_elevator/proc/attackby_timed_done(mob/user)

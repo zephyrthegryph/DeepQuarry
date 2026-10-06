@@ -306,7 +306,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 		M.take_damage(damage_to_apply)
 		if(prob(3))
 			act_message(src, M, null, MSG_OTHERS(span_critical("%U% begins digging its claws into %T%'s hatch!")))
-			om_task_timed(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
+			task_timed(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
 
 	else
 		generic_hit(A, src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.

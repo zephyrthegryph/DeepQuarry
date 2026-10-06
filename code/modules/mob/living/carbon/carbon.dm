@@ -254,7 +254,7 @@
 			else
 				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames! Hot!")), \
 					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames!")))
-				om_task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
+				task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src

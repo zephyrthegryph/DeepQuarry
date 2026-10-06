@@ -17,22 +17,22 @@
 		to_chat(H, span_warning("You can only do this while standing."))
 		return
 	to_chat(H, span_notice("You rapidly condense into your module."))
-	om_task_start(/datum/om/task/timed/hardsuit_activate_hardsuit, H, H, receiver = src, F = F)
+	task_start(/datum/task/timed/hardsuit_activate_hardsuit, H, H, receiver = src, F = F)
 	return TRUE
 
-/datum/om/task/timed/hardsuit_activate_hardsuit
+/datum/task/timed/hardsuit_activate_hardsuit
 	duration = 2 SECONDS
 	complete_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_done
 	cancel_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_failed
 	var/datum/forms/protean/F
 
-/datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/om/task/timed/hardsuit_activate_hardsuit/task)
+/datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/task/timed/hardsuit_activate_hardsuit/task)
 	var/mob/living/carbon/human/H = task.actor
 	var/datum/forms/protean/F = task.F
 	if(can_use(H, F) && F.form_control_check())
 		F.enter_rig()
 
-/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/om/task/timed/hardsuit_activate_hardsuit/task)
+/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/task/timed/hardsuit_activate_hardsuit/task)
 	var/mob/living/carbon/human/H = task.actor
 	to_chat(H, span_warning("You must remain still to condense!"))
 	return
@@ -74,16 +74,16 @@
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
 	act_message(H, target, MSG_SELF(span_danger("You attempt to latch onto %T%!")), MSG_OTHERS(span_warning("%U% is attempting to latch onto %T%!")))
-	om_task_start(/datum/om/task/timed/latch_host_activate_latch_host, H, target, receiver = src, F = F, G = G)
+	task_start(/datum/task/timed/latch_host_activate_latch_host, H, target, receiver = src, F = F, G = G)
 	return TRUE
 
-/datum/om/task/timed/latch_host_activate_latch_host
+/datum/task/timed/latch_host_activate_latch_host
 	duration = 5 SECONDS
 	complete_proc = /datum/protean_power/latch_host/proc/activate_latch_host_done2
 	var/datum/forms/protean/F
 	var/obj/item/grab/G
 
-/datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/om/task/timed/latch_host_activate_latch_host/task)
+/datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/task/timed/latch_host_activate_latch_host/task)
 	var/mob/living/carbon/human/H = task.actor
 	var/datum/forms/protean/F = task.F
 	var/obj/item/grab/G = task.G

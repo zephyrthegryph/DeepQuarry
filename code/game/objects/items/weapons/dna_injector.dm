@@ -146,13 +146,13 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 /obj/item/dnainjector/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!user.IsAdvancedToolUser())
 		return ITEM_INTERACT_FAILURE
-	if (om_busy(src))
+	if (task_busy(src))
 		return ITEM_INTERACT_FAILURE
 
 	act_message(user, src, others = span_danger("%U% is trying to inject \the [M] with %T%!"))
 
 
-	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
+	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
 	return TRUE
 
 /obj/item/dnainjector/proc/attack_timed_done(mob/living/M, mob/living/user)

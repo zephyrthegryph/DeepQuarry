@@ -26,24 +26,24 @@ CAPABILITIES(/obj/item/stack/animalhide)
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts cutting hair off %T%")), \
 			MSG_BLIND("You hear the sound of a knife rubbing against flesh"))
 		if(amount > 0)
-			om_task_start(/datum/om/task/timed/scrape_hides, user, null, duration = 2.5 SECONDS)
+			task_start(/datum/task/timed/scrape_hides, user, null, duration = 2.5 SECONDS)
 	else
 		return OP_DECLINE
 	return OP_PASS
 
 /// Scraping the stack one hide every 2.5 seconds until it is used up or the user stops.
-/datum/om/task/timed/scrape_hides
+/datum/task/timed/scrape_hides
 	steps = list(/obj/item/stack/animalhide/proc/scrape_one = 2.5 SECONDS)
 	complete_proc = /obj/item/stack/animalhide/proc/scrape_report
 	cancel_proc = /obj/item/stack/animalhide/proc/scrape_report
 	var/scraped = 0
 
-/obj/item/stack/animalhide/proc/scrape_report(datum/om/task/timed/scrape_hides/task)
+/obj/item/stack/animalhide/proc/scrape_report(datum/task/timed/scrape_hides/task)
 	if(task.scraped && task.actor)
 		to_chat(task.actor, span_notice("You scrape the hair off [task.scraped] hide\s."))
 	task.scraped = 0
 
-/obj/item/stack/animalhide/proc/scrape_one(datum/om/task/timed/scrape_hides/task)
+/obj/item/stack/animalhide/proc/scrape_one(datum/task/timed/scrape_hides/task)
 	var/mob/user = task.actor
 	//Try locating an exisitng stack on the tile and add to there if possible
 	var/obj/item/stack/hairlesshide/H = null

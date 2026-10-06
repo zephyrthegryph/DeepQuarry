@@ -17,43 +17,43 @@
 
 /datum/om_test_entity/var/step_calls = 0
 
-/datum/om_test_entity/proc/step_a(datum/om/task/T)
+/datum/om_test_entity/proc/step_a(datum/task/T)
 	LAZYADD(log, "a")
 	return STEP_NEXT
 
-/datum/om_test_entity/proc/step_b(datum/om/task/T)
+/datum/om_test_entity/proc/step_b(datum/task/T)
 	step_calls++
 	LAZYADD(log, "b")
 	return step_calls < 3 ? STEP_REPEAT(5) : STEP_NEXT
 
-/datum/om_test_entity/proc/step_fail(datum/om/task/T)
+/datum/om_test_entity/proc/step_fail(datum/task/T)
 	LAZYADD(log, "f")
 	return STEP_FAIL("nope")
 
-/datum/om_test_entity/proc/step_done(datum/om/task/T)
+/datum/om_test_entity/proc/step_done(datum/task/T)
 	LAZYADD(log, "d")
 	return STEP_DONE
 
-/datum/om_test_entity/proc/task_completed(datum/om/task/T)
+/datum/om_test_entity/proc/task_completed(datum/task/T)
 	LAZYADD(log, "complete")
 
-/datum/om_test_entity/proc/task_cancelled(datum/om/task/T)
+/datum/om_test_entity/proc/task_cancelled(datum/task/T)
 	LAZYADD(log, "cancel:[T.reason]")
 
-/datum/om/task/test_steps
+/datum/task/test_steps
 	name = "test_steps"
 	steps = list(/datum/om_test_entity/proc/step_a = 1 SECONDS, /datum/om_test_entity/proc/step_b = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
 	cancel_proc = /datum/om_test_entity/proc/task_cancelled
 	var/datum/thing
 
-/datum/om/task/test_steps_fail
+/datum/task/test_steps_fail
 	name = "test_steps_fail"
 	steps = list(/datum/om_test_entity/proc/step_a = 1 SECONDS, /datum/om_test_entity/proc/step_fail = 1 SECONDS, /datum/om_test_entity/proc/step_b = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
 	cancel_proc = /datum/om_test_entity/proc/task_cancelled
 
-/datum/om/task/test_steps_done
+/datum/task/test_steps_done
 	name = "test_steps_done"
 	steps = list(/datum/om_test_entity/proc/step_done = 1 SECONDS, /datum/om_test_entity/proc/step_a = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
@@ -223,7 +223,7 @@
 
 /datum/unit_test/om/task_step_results/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps, E)
+	var/datum/task/T = task_start(/datum/task/test_steps, E)
 	TEST_ASSERT(istype(T), "the steps task starts: [T]")
 	scheduler_advance(1.1)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a", "step a runs after its delay")
@@ -233,30 +233,30 @@
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,b", "STEP_REPEAT(5) waits")
 	scheduler_advance(1.2)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,b,b,b,complete", "repeats, then STEP_NEXT past the last step completes")
-	TEST_ASSERT_EQUAL(T.state, OM_TASK_DONE, "the task is done")
+	TEST_ASSERT_EQUAL(T.state, TASK_DONE, "the task is done")
 
 	LAZYCLEARLIST(E.log)
-	var/datum/om/task/F = om_task_start(/datum/om/task/test_steps_fail, E)
+	var/datum/task/F = task_start(/datum/task/test_steps_fail, E)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,f,cancel:nope", "STEP_FAIL cancels with its reason and later steps never run")
 	TEST_ASSERT_EQUAL(F.reason, "nope", "the reason is kept")
 
 	LAZYCLEARLIST(E.log)
-	om_task_start(/datum/om/task/test_steps_done, E)
+	task_start(/datum/task/test_steps_done, E)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "d,complete", "STEP_DONE completes early")
 
 	LAZYCLEARLIST(E.log)
-	var/datum/om/task/C = om_task_start(/datum/om/task/test_steps, E)
+	var/datum/task/C = task_start(/datum/task/test_steps, E)
 	scheduler_advance(0.5)
-	TEST_ASSERT(om_task_cancel(C, "stop"), "cancelling mid-task is safe")
+	TEST_ASSERT(task_cancel(C, "stop"), "cancelling mid-task is safe")
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "cancel:stop", "no step runs after a cancel")
 
 	LAZYCLEARLIST(E.log)
 	var/datum/om_test_entity/thing = entity(made)
-	var/datum/om/task/W = om_task_start(/datum/om/task/test_steps, E, null, thing = thing)
-	var/datum/om/task/test_steps/WS = W
+	var/datum/task/W = task_start(/datum/task/test_steps, E, null, thing = thing)
+	var/datum/task/test_steps/WS = W
 	TEST_ASSERT_EQUAL(WS.thing, thing, "a datum param is task state")
 	qdel(thing)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "cancel:gone", "deleting a datum in the task's state cancels it at once")
@@ -320,11 +320,11 @@
 	sleep(1)
 	LAZYADD(log, "[tag] woke")
 
-/datum/om_test_entity/proc/step_sleepy(datum/om/task/T)
+/datum/om_test_entity/proc/step_sleepy(datum/task/T)
 	sleep(1)
 	return STEP_NEXT
 
-/datum/om/task/test_steps_sleepy
+/datum/task/test_steps_sleepy
 	name = "test_steps_sleepy"
 	steps = list(/datum/om_test_entity/proc/step_sleepy = 1 SECONDS, /datum/om_test_entity/proc/step_a = 1 SECONDS)
 	complete_proc = /datum/om_test_entity/proc/task_completed
@@ -346,9 +346,9 @@
 	TEST_ASSERT("after" in E.log, "a timer due with the sleeping one still runs in the same pass")
 
 	LAZYCLEARLIST(E.log)
-	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps_sleepy, E)
+	var/datum/task/T = task_start(/datum/task/test_steps_sleepy, E)
 	scheduler_advance(1.5)
 	set_global("om_expect_sleep", FALSE)
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 2, "the sleeping step is counted")
-	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "a sleeping step fails its task")
+	TEST_ASSERT_EQUAL(T.state, TASK_CANCELLED, "a sleeping step fails its task")
 	TEST_ASSERT_EQUAL(T.reason, "slept", "with the reason 'slept'")

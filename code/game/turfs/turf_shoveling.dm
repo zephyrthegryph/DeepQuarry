@@ -38,7 +38,7 @@
 	to_chat(user, span_notice("\The [user] begins digging into \the [src] with \the [our_shovel]."))
 	var/delay = (5 SECONDS * our_shovel.toolspeed)
 	user.setClickCooldown(delay)
-	om_task_timed(user, delay, src, src, PROC_REF(grave_dug), list(user))
+	task_timed(user, delay, src, src, PROC_REF(grave_dug), list(user))
 
 /turf/proc/grave_dug(mob/user)
 	if(!(locate_within(src, /obj/structure/closet/grave/dirthole)))

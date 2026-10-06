@@ -148,7 +148,7 @@
 
 		act_message(H, src, others = span_danger("%U% is trying to perform CPR on %T%!"))
 
-		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
+		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
 
 	else if(!(M == src && apply_pressure(M, M.zone_sel.selecting)))
 		help_shake_act(M)
@@ -468,7 +468,7 @@
 		return FALSE
 
 	act_message(user, src, others = span_warning("%U% begins to dislocate %T%'s [organ.joint]!"))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
+	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
 	return TRUE
 
 /mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
@@ -527,17 +527,17 @@
 	//This USED to have a 'target_zone' check that never actually worked so whatever.
 	//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
 	//You're already locking yourself down when you do so.
-	om_task_start(/datum/om/task/timed/apply_pressure, user, organ, receiver = src)
+	task_start(/datum/task/timed/apply_pressure, user, organ, receiver = src)
 	return TRUE
 
 /// Pressure on a bleeding organ (the target), held until the user lets go or moves.
-/datum/om/task/timed/apply_pressure
+/datum/task/timed/apply_pressure
 	duration = INFINITY
 	hidden = TRUE
 	complete_proc = /mob/living/carbon/human/proc/pressure_released
 	cancel_proc = /mob/living/carbon/human/proc/pressure_released
 
-/mob/living/carbon/human/proc/pressure_released(datum/om/task/timed/apply_pressure/task)
+/mob/living/carbon/human/proc/pressure_released(datum/task/timed/apply_pressure/task)
 	var/mob/living/user = task.actor
 	var/obj/item/organ/external/organ = task.target
 	if(!organ)
@@ -644,7 +644,7 @@
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
 	act_message(rescuer, src, others = span_danger("%U% wraps %THEIR% arms around %T% and thrusts hard under the ribs!"))
-	om_task_timed(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
+	task_timed(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
 	return TRUE
 
 /mob/living/carbon/human/proc/perform_heimlich_human_done(datum/affliction/airway_obstruction/choke)

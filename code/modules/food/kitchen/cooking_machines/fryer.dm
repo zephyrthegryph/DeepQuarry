@@ -212,7 +212,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 
 	fry_loop.start(src)
 
-	om_task_timed(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
+	task_timed(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
 
 /obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped()
 	set_cooking(FALSE)

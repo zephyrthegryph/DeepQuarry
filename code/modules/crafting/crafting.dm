@@ -233,23 +233,23 @@
 
 	//If we're a mob it's a timed action; non mobs will instead instantly construct the item
 	if(ismob(a))
-		var/started = om_task_start(/datum/om/task/timed/craft, a, null, duration = R.time, recipe = R, material_choices = material_choices, on_built = on_built, busy = busy)
+		var/started = task_start(/datum/task/timed/craft, a, null, duration = R.time, recipe = R, material_choices = material_choices, on_built = on_built, busy = busy)
 		return istext(started) ? "." : null
 	return construct_item_now(a, R, material_choices, null)
 
 /// A mob crafting `recipe`: on_built, a proc on the crafting component, hears how it went.
-/datum/om/task/timed/craft
+/datum/task/timed/craft
 	complete_proc = /datum/personal_crafting/proc/craft_done
 	cancel_proc = /datum/personal_crafting/proc/craft_interrupted
 	var/datum/crafting_recipe/recipe
 	var/list/material_choices
 	var/on_built
 
-/datum/personal_crafting/proc/craft_interrupted(datum/om/task/timed/craft/task)
+/datum/personal_crafting/proc/craft_interrupted(datum/task/timed/craft/task)
 	if(task.on_built)
 		call(src, task.on_built)(task.actor, task.recipe, ".")
 
-/datum/personal_crafting/proc/craft_done(datum/om/task/timed/craft/task)
+/datum/personal_crafting/proc/craft_done(datum/task/timed/craft/task)
 	var/result = construct_item_checked(task.actor, task.recipe, task.material_choices)
 	if(task.on_built)
 		call(src, task.on_built)(task.actor, task.recipe, result)
@@ -482,7 +482,7 @@
 			cur_subcategory = CAT_NONE
 
 	var/list/data = list()
-	data["busy"] = om_busy(src)
+	data["busy"] = task_busy(src)
 	var/list/material_choices = list()
 	var/list/seen_materials = list()
 	var/list/surroundings = get_surroundings(user)
@@ -579,9 +579,9 @@ CAPABILITIES(/datum/personal_crafting)
 	. = TRUE
 
 /datum/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
-	if(om_busy(src))
+	if(task_busy(src))
 		return
-	// The crafting's timed action claims this component: busy (om_busy()) until it ends.
+	// The crafting's timed action claims this component: busy (task_busy()) until it ends.
 	var/result = construct_item(user, TR, material_choices, PROC_REF(make_finished), src)
 	tgui_interact(user)
 	if(!isnull(result))

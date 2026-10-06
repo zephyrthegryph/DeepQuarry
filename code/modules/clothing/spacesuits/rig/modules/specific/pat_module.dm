@@ -79,7 +79,7 @@
 		return 0
 
 	act_message(H, null, MSG_SELF(span_notice("You begin overriding the airlock!")), MSG_OTHERS(span_warning("%U% begins overriding the airlock!")))
-	om_task_timed(H, 6 SECONDS, A, src, PROC_REF(override_done), list(A))
+	task_timed(H, 6 SECONDS, A, src, PROC_REF(override_done), list(A))
 
 	var/username = FindNameFromID(H) || "Unknown"
 	var/message = "[username] has overridden [A] (airlock) in \the [get_area(A)] at [A.x],[A.y],[A.z] with \the [src]."

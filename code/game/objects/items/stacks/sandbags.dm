@@ -76,15 +76,15 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	om_task_start(/datum/om/task/timed/sandbag_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
+	task_start(/datum/task/timed/sandbag_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
 
-/datum/om/task/timed/sandbag_build
+/datum/task/timed/sandbag_build
 	complete_proc = /obj/item/stack/sandbags/proc/produce_sandbag_done
 	var/datum/stack_recipe/recipe
 	var/required
 	var/produced
 
-/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/om/task/timed/sandbag_build/task)
+/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/task/timed/sandbag_build/task)
 	var/datum/stack_recipe/recipe = task.recipe
 	var/mob/user = task.actor
 	var/required = task.required
@@ -160,7 +160,7 @@ CAPABILITIES(/obj/item/stack/emptysandbag)
 
 /// Fills one sandbag a second while the user stays put on outdoor ground.
 /obj/item/stack/emptysandbag/proc/fill_next_bag(mob/user)
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
+	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
 
 /obj/item/stack/emptysandbag/proc/fill_bag_done(mob/user)
 	if(!can_use(1) || !istype(get_turf(src), /turf/simulated/floor/outdoors))

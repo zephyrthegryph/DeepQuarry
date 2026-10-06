@@ -70,7 +70,6 @@
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).
 	var/list/clocks
-	var/list/tasks
 	/// Step accumulators (seconds), indexed by the behaviour's step_idx. Grown on first use.
 	var/list/steps
 	/// Pipeline state (/datum/om/frame), indexed by the pipeline's pipe_idx. Grown on first use.
@@ -81,8 +80,6 @@
 	var/service_pend = 0
 	/// Stack of before_* event types being delivered on this entity (lazy).
 	var/list/in_veto
-	/// Event type -> count of running tasks it interrupts (lazy; om_task_interrupts_add()).
-	var/list/task_interrupts
 	var/native_bits = 0
 
 /datum/om/rec/New(datum/owner, datum/om/scheduler/sched)
@@ -335,8 +332,6 @@
 		for(var/i in 1 to length(rec.dv) step 5)
 			var/datum/om/derived/D = defs[rec.dv[i]]
 			slow |= D.inputs
-	for(var/datum/om/task/T as anything in rec.tasks)
-		slow |= T.interrupt_on
 	rec.slow_mask = slow
 	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0)
 
@@ -577,8 +572,6 @@
 	if(!rec)
 		return
 	om_teardown_links(E)
-	for(var/datum/om/task/T as anything in rec.tasks?.Copy())
-		om_task_cancel(T, "deleted")
 	om_release_all_from(E)
 	om_clear_target(E)
 	for(var/i in length(rec.att) to 1 step -1)

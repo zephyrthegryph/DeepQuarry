@@ -239,11 +239,11 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	om_task_start(/datum/om/task/transit_pod, src, null, tube_h = om_handle(current_tube)) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+	task_start(/datum/task/transit_pod, src, null, tube_h = om_handle(current_tube)) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
 
 /// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
 /// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.
-/datum/om/task/transit_pod
+/datum/task/transit_pod
 	name = "transit pod travel"
 	steps = list(/obj/structure/transit_tube_pod/proc/travel_step = 0)
 	complete_proc = /obj/structure/transit_tube_pod/proc/travel_ended
@@ -254,11 +254,11 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 	var/last_delay = 0
 	var/next_dir
 
-/obj/structure/transit_tube_pod/proc/travel_ended(datum/om/task/T)
+/obj/structure/transit_tube_pod/proc/travel_ended(datum/task/T)
 	set_density(TRUE)
 	moving = 0
 
-/obj/structure/transit_tube_pod/proc/travel_step(datum/om/task/transit_pod/T)
+/obj/structure/transit_tube_pod/proc/travel_step(datum/task/transit_pod/T)
 	switch(T.phase)
 		if("exit")
 			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
@@ -313,7 +313,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 // If the pod is no longer in a tube, move in a line until stopped or slowed to a halt.
 //  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
 //  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
-/obj/structure/transit_tube_pod/proc/travel_coast(datum/om/task/transit_pod/T)
+/obj/structure/transit_tube_pod/proc/travel_coast(datum/task/transit_pod/T)
 	set_density(TRUE)
 	if(T.last_delay > 10)
 		return STEP_DONE

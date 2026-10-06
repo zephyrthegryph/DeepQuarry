@@ -62,7 +62,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 		return TRUE
 
 	// A script that sleeps runs as a task claiming the compiler: one run at a time.
-	if(om_busy(src))
+	if(task_busy(src))
 		return TRUE
 
 	rel_set(interpreter, nameof(interpreter.container), src)
@@ -200,7 +200,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 	interpreter.Run()
 	if(interpreter.IsSuspended())
 		// The script called sleep(): the rest runs as task steps.
-		if(istype(om_task_start(/datum/om/task/ntsl_script, src, null, receiver = src, signal = signal, relay = relay), /datum/om/task))
+		if(istype(task_start(/datum/task/ntsl_script, src, null, receiver = src, signal = signal, relay = relay), /datum/task))
 			return FALSE
 		script_dropped()
 	apply_signal(signal)
@@ -209,7 +209,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 /// A telecomms script that called sleep(): each step resumes it after its sleep; once it is done
 /// the signal gets the script's changes and, for a server run, is relayed. The task claims the
 /// compiler; deleting the compiler or the signal drops the rest of the script.
-/datum/om/task/ntsl_script
+/datum/task/ntsl_script
 	name = "ntsl script"
 	claims_actor = TRUE
 	steps = list(/datum/TCS_Compiler/proc/script_step = 0)
@@ -218,7 +218,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 	var/relay = FALSE
 	var/waited = FALSE
 
-/datum/TCS_Compiler/proc/script_step(datum/om/task/ntsl_script/T)
+/datum/TCS_Compiler/proc/script_step(datum/task/ntsl_script/T)
 	if(!T.waited)
 		T.waited = TRUE
 		return STEP_REPEAT(interpreter.yield_for)
@@ -232,7 +232,7 @@ CAPABILITIES(/datum/TCS_Compiler)
 		Holder()?.relay_signal(signal)
 	return STEP_DONE
 
-/datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T)
+/datum/TCS_Compiler/proc/script_cancelled(datum/task/T)
 	script_dropped()
 
 /// Forgets a suspended run.

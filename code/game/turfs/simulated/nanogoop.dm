@@ -130,11 +130,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 			act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
-			om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
+			task_timed(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
 		if("Off")
 			if(active)
 				act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
-				om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
+				task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
 	rel_set(src, nameof(moblink), user)

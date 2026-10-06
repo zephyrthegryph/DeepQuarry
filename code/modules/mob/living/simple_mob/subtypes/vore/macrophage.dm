@@ -83,7 +83,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 	// if(!dry_run && !EXTRAPOLATOR_ACT_CHECK(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL) && extrapolator.create_culture(user, base_disease))
 	if(dry_run)
 		return
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(extrapolator_act_macrophage_done), done_args = list(user, extrapolator))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(extrapolator_act_macrophage_done), done_args = list(user, extrapolator))
 	EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(mob/living/user, obj/item/extrapolator/extrapolator)

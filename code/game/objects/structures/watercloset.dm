@@ -206,7 +206,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 			if(open && !swirlie)
 				act_message(user, GM, MSG_SELF(span_notice("You start to give %T% a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give %T% a swirlie!")))
 				rel_set(src, nameof(swirlie_mob), GM)
-				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, receiver = src)
+				task_start(/datum/task/timed/toilet_attackby, user, GM, receiver = src)
 				rel_clear(src, nameof(swirlie_mob))
 			else
 				act_message(user, GM, MSG_SELF(span_notice("You slam %T% into the [src]!")), MSG_OTHERS(span_danger("%U% slams %T% into the [src]!")))
@@ -214,12 +214,12 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 
 	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
 		to_chat(user, span_notice("You begin to insert \the [I] into \the [src]..."))
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
+		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
 		return OP_OK
 
 	if(cistern && istype(I, /obj/item/stock_parts/matter_bin))
 		to_chat(user, span_notice("You begin to replace \the [bin] in \the [src] with \the [I]."))
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
+		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
 		return OP_OK
 
 	if(cistern && !cyborg) //STOP PUTTING YOUR MODULES IN THE TOILET.
@@ -236,11 +236,11 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 		return OP_OK
 	return OP_DECLINE
 
-/datum/om/task/timed/toilet_attackby
+/datum/task/timed/toilet_attackby
 	duration = 3 SECONDS
 	complete_proc = /obj/structure/toilet/proc/attackby_timed_done
 
-/obj/structure/toilet/proc/attackby_timed_done(datum/om/task/timed/toilet_attackby/task)
+/obj/structure/toilet/proc/attackby_timed_done(datum/task/timed/toilet_attackby/task)
 	var/mob/living/user = task.actor
 	var/mob/living/GM = task.target
 	if(!open) //Someone closed it while we were trying to swirlie. Rude.
@@ -553,7 +553,7 @@ CAPABILITIES(/obj/machinery/shower)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
 	play_sfx(src, SFX_EFFECTS_STONEDOOR_OPENCLOSE)
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/toilet/proc/crowbar_act_timed_done(mob/user)
@@ -571,7 +571,7 @@ CAPABILITIES(/obj/machinery/shower)
 		to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
 		return OP_OK
 	to_chat(user, span_notice("You begin to dismantle \the [src]..."))
-	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/toilet/proc/wrench_act_timed_done(mob/user)
@@ -614,7 +614,7 @@ CAPABILITIES(/obj/machinery/shower)
 		return OP_OK
 	var/newtemp = R.value
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
-	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
+	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
 	return OP_OK
 
@@ -1101,7 +1101,7 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 
 /// Requirement: a wash claims the sink.
 /obj/structure/sink/proc/sink_free(datum/act/op/A)
-	return !om_busy(src)
+	return !task_busy(src)
 
 /// Old attack_hand: wash your hands (it takes a while, and the sink is yours meanwhile).
 /obj/structure/sink/proc/interaction_wash(datum/act/op/A)
@@ -1109,7 +1109,7 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 	to_chat(user, span_notice("You start washing your hands."))
 	play_sfx(src, SFX_EFFECTS_SINK_LONG)
 
-	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
+	task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 	return OP_OK
 
 /obj/structure/sink/proc/attack_hand_timed_done(mob/user)
@@ -1189,10 +1189,10 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
-	om_task_start(/datum/om/task/timed/sink_attackby, user, src, O = O, I = I)
+	task_start(/datum/task/timed/sink_attackby, user, src, O = O, I = I)
 	return OP_OK
 
-/datum/om/task/timed/sink_attackby
+/datum/task/timed/sink_attackby
 	duration = 4 SECONDS
 	claims = TRUE
 	complete_proc = /obj/structure/sink/proc/attackby_timed_done4
@@ -1200,7 +1200,7 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 	var/obj/item/O
 	var/obj/item/I
 
-/obj/structure/sink/proc/attackby_timed_done4(datum/om/task/timed/sink_attackby/task)
+/obj/structure/sink/proc/attackby_timed_done4(datum/task/timed/sink_attackby/task)
 	var/obj/item/O = task.O
 	var/mob/user = task.actor
 	var/obj/item/I = task.I
@@ -1209,7 +1209,7 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 	O.water_act(rand(1,10))
 	act_message(user, src, MSG_SELF(span_notice("You wash \a [I] using %T%.")), MSG_OTHERS(span_notice("%U% washes \a [I] using %T%.")))
 
-/obj/structure/sink/proc/attackby_timed_failed4(datum/om/task/timed/sink_attackby/task)
+/obj/structure/sink/proc/attackby_timed_failed4(datum/task/timed/sink_attackby/task)
 	var/mob/user = task.actor
 	var/obj/item/I = task.I
 	to_chat(user, span_notice("You stop washing \the [I]."))

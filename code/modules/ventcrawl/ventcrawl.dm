@@ -129,7 +129,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	add_ventcrawl(vent_found)
 
 /mob/living/proc/handle_ventcrawl(atom/clicked_on)
-	if(!can_ventcrawl() || om_busy(src))
+	if(!can_ventcrawl() || task_busy(src))
 		return
 
 	var/obj/machinery/atmospherics/unary/vent_found
@@ -180,7 +180,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 			// Handle animation delay
 			fade_towards(vent_found, vent_crawl_time)
-			om_task_timed(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), busy = src)
+			task_timed(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), busy = src)
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

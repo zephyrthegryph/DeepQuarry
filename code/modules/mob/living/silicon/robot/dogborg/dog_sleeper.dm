@@ -144,13 +144,13 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 				return
 			act_message(user, target, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
 				MSG_OTHERS(span_warning("[hound.name] is ingesting [target.name] into their [src.name].")))
-			om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
+			task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
 			return
 		if(istype(target, /mob/living/simple_mob/animal/passive/mouse)) //Edible mice, dead or alive whatever. Mostly for carcass picking you cruel bastard :v
 			var/mob/living/simple_mob/trashmouse = target
 			act_message(user, trashmouse, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
 				MSG_OTHERS(span_warning("[hound.name] is ingesting %T% into their [src.name].")))
-			om_task_timed(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
+			task_timed(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
 			return
 		else if(ishuman(target))
 			var/mob/living/carbon/human/trashman = target
@@ -162,7 +162,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 				return
 			act_message(user, trashman, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
 				MSG_OTHERS(span_warning("[hound.name] is ingesting %T% into their [src.name].")))
-			om_task_timed(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
+			task_timed(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
 			return
 		return
 
@@ -176,7 +176,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			return
 		act_message(user, H, MSG_SELF(span_notice("You start ingesting %T% into your [src]...")), \
 			MSG_OTHERS(span_warning("[hound.name] is ingesting [H.name] into their [src.name].")))
-		om_task_timed(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
+		task_timed(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
 
 /obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
 	if(!(contents_count(src) < max_item_count))

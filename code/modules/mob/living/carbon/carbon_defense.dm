@@ -54,16 +54,16 @@
 	act_message(user, src, others = span_danger("%U% begins to slit %T%'s throat with %I%!"), item = W)
 
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
-	om_task_start(/datum/om/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
+	task_start(/datum/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
 	return TRUE
 
-/datum/om/task/timed/carbon_attack_throat_carbon
+/datum/task/timed/carbon_attack_throat_carbon
 	duration = 2 SECONDS
 	complete_proc = /mob/living/carbon/proc/attack_throat_carbon_done
 	var/obj/item/W
 	var/obj/item/grab/G
 
-/mob/living/carbon/proc/attack_throat_carbon_done(datum/om/task/timed/carbon_attack_throat_carbon/task)
+/mob/living/carbon/proc/attack_throat_carbon_done(datum/task/timed/carbon_attack_throat_carbon/task)
 	var/obj/item/W = task.W
 	var/obj/item/grab/G = task.G
 	var/mob/user = task.actor

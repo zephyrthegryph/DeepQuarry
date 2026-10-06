@@ -21,7 +21,7 @@ CAPABILITIES(/obj/item/whetstone)
 		var/obj/item/stack/material/M = I
 		if(M.get_amount() >= 5)
 			to_chat(user, "You begin to refine the [src] with [M]...")
-			om_task_timed(user, 7 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, M))
+			task_timed(user, 7 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, M))
 		else
 			to_chat(user, "You need 5 [src] to refine it into a sharpening kit.")
 	return OP_PASS

@@ -31,6 +31,8 @@
 	/// Pending operation contexts (/datum/op_ctx) this datum is an end of (actor, target, held, a watched
 	/// datum): rx_teardown() cancels them, so a wait never outlives what it is about (operations/op_ctx.dm).
 	var/list/pending_ops
+	/// Tasks (code/engine/kernel/tasks.dm) that name this datum as actor, target, busy worker or state: its deletion ends them.
+	var/list/tasks_on
 	/// on_change(at_most =): reaction sig -> when it was last delivered (the scheduler's clock).
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
@@ -401,6 +403,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	// Operations waiting on this datum (as actor, target, held, provider or watched read) are cancelled first.
 	for(var/datum/op_ctx/ctx as anything in S.pending_ops?.Copy())
 		op_cancel(ctx, /datum/msg/req_cancelled)
+	for(var/datum/task/T as anything in S.tasks_on?.Copy())
+		T.datum_gone(D)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())
 		rx_listener_remove(L)
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())

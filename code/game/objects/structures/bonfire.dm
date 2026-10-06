@@ -115,7 +115,7 @@ TRACKED(/obj/structure/bonfire, grill)
 /obj/structure/bonfire/proc/dismantle(mob/user)
 	if(!burning)
 		act_message(user, src, MSG_SELF("You start dismantling %T%."), MSG_OTHERS("%U% starts dismantling %T%."))
-		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(dismantle_timed_done), done_args = list(user))
+		task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(dismantle_timed_done), done_args = list(user))
 	else
 		to_chat(user, span_warning("\The [src] is still burning. Extinguish it first if you want to dismantle it."))
 

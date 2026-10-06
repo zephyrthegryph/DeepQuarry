@@ -216,7 +216,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 		return FALSE
 	if(interaction.stance == I_HELP)
 		act_message(M, src, null, MSG_OTHERS("%U% pets %T%."), runemessage = "pets %T%")
-		om_task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
+		task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
 	return TRUE
 
 /mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_done(mob/living/carbon/human/M)

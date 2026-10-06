@@ -112,9 +112,9 @@
 	if(!W || (wound_limited_by_amount() && used == amount))
 		wound_treat_finish(H, user, affecting, used)
 		return
-	om_task_start(/datum/om/task/timed/medical_wound_treat, user, affecting, duration = wound_treat_delay(W), H = H, wounds = wounds, index = index, used = used, available = available)
+	task_start(/datum/task/timed/medical_wound_treat, user, affecting, duration = wound_treat_delay(W), H = H, wounds = wounds, index = index, used = used, available = available)
 
-/obj/item/stack/medical/proc/wound_treat_interrupted(datum/om/task/timed/medical_wound_treat/task)
+/obj/item/stack/medical/proc/wound_treat_interrupted(datum/task/timed/medical_wound_treat/task)
 	var/mob/living/carbon/human/H = task.H
 	var/mob/living/user = task.actor
 	var/obj/item/organ/external/affecting = task.target
@@ -122,7 +122,7 @@
 	balloon_alert(user, "stand still to bandage wounds.")
 	wound_treat_finish(H, user, affecting, used)
 
-/datum/om/task/timed/medical_wound_treat
+/datum/task/timed/medical_wound_treat
 	complete_proc = /obj/item/stack/medical/proc/wound_treat_done
 	cancel_proc = /obj/item/stack/medical/proc/wound_treat_interrupted
 	var/mob/living/carbon/human/H
@@ -131,7 +131,7 @@
 	var/used
 	var/available
 
-/obj/item/stack/medical/proc/wound_treat_done(datum/om/task/timed/medical_wound_treat/task)
+/obj/item/stack/medical/proc/wound_treat_done(datum/task/timed/medical_wound_treat/task)
 	var/mob/living/carbon/human/H = task.H
 	var/mob/living/user = task.actor
 	var/obj/item/organ/external/affecting = task.target
@@ -322,16 +322,16 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			om_task_start(/datum/om/task/timed/ointment_attack, user, affecting, M = M)
+			task_start(/datum/task/timed/ointment_attack, user, affecting, M = M)
 			return ITEM_INTERACT_SUCCESS
 
-/datum/om/task/timed/ointment_attack
+/datum/task/timed/ointment_attack
 	duration = 1 SECOND
 	complete_proc = /obj/item/stack/medical/ointment/proc/attack_timed_done
 	cancel_proc = /obj/item/stack/medical/ointment/proc/attack_timed_failed
 	var/mob/living/M
 
-/obj/item/stack/medical/ointment/proc/attack_timed_done(datum/om/task/timed/ointment_attack/task)
+/obj/item/stack/medical/ointment/proc/attack_timed_done(datum/task/timed/ointment_attack/task)
 	var/mob/living/M = task.M
 	var/mob/living/user = task.actor
 	var/obj/item/organ/external/affecting = task.target
@@ -345,7 +345,7 @@
 	playsound(src, apply_sounds, 25)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/medical/ointment/proc/attack_timed_failed(datum/om/task/timed/ointment_attack/task)
+/obj/item/stack/medical/ointment/proc/attack_timed_failed(datum/task/timed/ointment_attack/task)
 	var/mob/living/user = task.actor
 	user.balloon_alert(user, "stand still to salve wounds.")
 	return ITEM_INTERACT_FAILURE
@@ -413,18 +413,18 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			om_task_start(/datum/om/task/timed/ointment_attack2, user, affecting, M = M, H = H)
+			task_start(/datum/task/timed/ointment_attack2, user, affecting, M = M, H = H)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
-/datum/om/task/timed/ointment_attack2
+/datum/task/timed/ointment_attack2
 	duration = 1 SECOND
 	complete_proc = /obj/item/stack/medical/advanced/ointment/proc/attack_timed_done2
 	cancel_proc = /obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2
 	var/mob/living/M
 	var/mob/living/carbon/human/H
 
-/obj/item/stack/medical/advanced/ointment/proc/attack_timed_done2(datum/om/task/timed/ointment_attack2/task)
+/obj/item/stack/medical/advanced/ointment/proc/attack_timed_done2(datum/task/timed/ointment_attack2/task)
 	var/mob/living/M = task.M
 	var/mob/living/user = task.actor
 	var/mob/living/carbon/human/H = task.H
@@ -441,7 +441,7 @@
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2(datum/om/task/timed/ointment_attack2/task)
+/obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2(datum/task/timed/ointment_attack2/task)
 	var/mob/living/user = task.actor
 	user.balloon_alert(user, "stand still to salve wounds.")
 	return ITEM_INTERACT_FAILURE
@@ -482,16 +482,16 @@ TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, 
 				balloon_alert(user, "you can't apply a splint to the arm you're using!")
 				return ITEM_INTERACT_FAILURE
 			user.balloon_alert_visible("[user] starts to apply \the [src] to their [limb].", "applying \the [src] to your [limb].", "You hear something being wrapped.")
-		om_task_start(/datum/om/task/timed/splint_attack, user, affecting, M = M, limb = limb)
+		task_start(/datum/task/timed/splint_attack, user, affecting, M = M, limb = limb)
 		return ITEM_INTERACT_FAILURE
 
-/datum/om/task/timed/splint_attack
+/datum/task/timed/splint_attack
 	duration = 5 SECONDS
 	complete_proc = /obj/item/stack/medical/splint/proc/attack_timed_done3
 	var/mob/living/M
 	var/limb
 
-/obj/item/stack/medical/splint/proc/attack_timed_done3(datum/om/task/timed/splint_attack/task)
+/obj/item/stack/medical/splint/proc/attack_timed_done3(datum/task/timed/splint_attack/task)
 	var/mob/living/M = task.M
 	var/mob/living/user = task.actor
 	var/obj/item/organ/external/affecting = task.target

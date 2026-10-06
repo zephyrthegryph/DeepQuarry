@@ -165,13 +165,13 @@ DECLARE_INTERACTIONS(/obj/item/shreddedp, INTERACT_ITEM(null, PROC_REF(interacti
 	act_message(user, src, MSG_SELF(span_warning("You hold %I% up to %T%, burning it slowly.")), \
 		MSG_OTHERS(span_warning("%U% holds %I% up to %T%. It looks like %THEYRE% trying to burn it!")), \
 		item = P)
-	om_task_start(/datum/om/task/timed/shreddedp_burnpaper, user, src, receiver = src, fail_message = span_warning("You must hold \the [P] steady to burn \the [src]."))
+	task_start(/datum/task/timed/shreddedp_burnpaper, user, src, receiver = src, fail_message = span_warning("You must hold \the [P] steady to burn \the [src]."))
 
-/datum/om/task/timed/shreddedp_burnpaper
+/datum/task/timed/shreddedp_burnpaper
 	duration = 2 SECONDS
 	complete_proc = /obj/item/shreddedp/proc/burnpaper_done
 
-/obj/item/shreddedp/proc/burnpaper_done(datum/om/task/timed/shreddedp_burnpaper/task)
+/obj/item/shreddedp/proc/burnpaper_done(datum/task/timed/shreddedp_burnpaper/task)
 	var/mob/user = task.actor
 	act_message(user, src, MSG_SELF(span_danger("You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.")), \
 		MSG_OTHERS(span_danger("%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.")))

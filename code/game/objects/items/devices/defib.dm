@@ -217,7 +217,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 		icon_state = "defibpaddles[wielded]_cooldown"
 
 /obj/item/shockpaddles/proc/can_use(mob/user, mob/M)
-	if(om_busy(src))
+	if(task_busy(src))
 		return 0
 	if(!check_charge(chargecost))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
@@ -362,7 +362,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 
 	return ..()
 
-// The revive chain: each timed action claims the paddles (om_busy()) while it runs.
+// The revive chain: each timed action claims the paddles (task_busy()) while it runs.
 /obj/item/shockpaddles/proc/do_revive(mob/living/carbon/human/H, mob/user)
 	var/mob/observer/dead/ghost = H.get_ghost()
 	if(ghost)
@@ -370,7 +370,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
 	act_message(user, src, MSG_SELF(span_warning("You begin to place %T% on [H]'s chest...")), MSG_OTHERS(span_warning("%U% begins to place %T% on [H]'s chest.")))
-	om_task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
+	task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
 	return TRUE
 
 /obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
@@ -388,13 +388,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	om_task_start(/datum/om/task/timed/shockpaddles_do_revive_charged, user, H, receiver = src, duration = chargetime / output_envelope, output_envelope = output_envelope, busy = src)
+	task_start(/datum/task/timed/shockpaddles_do_revive_charged, user, H, receiver = src, duration = chargetime / output_envelope, output_envelope = output_envelope, busy = src)
 
-/datum/om/task/timed/shockpaddles_do_revive_charged
+/datum/task/timed/shockpaddles_do_revive_charged
 	complete_proc = /obj/item/shockpaddles/proc/do_revive_charged
 	var/output_envelope
 
-/obj/item/shockpaddles/proc/do_revive_charged(datum/om/task/timed/shockpaddles_do_revive_charged/task)
+/obj/item/shockpaddles/proc/do_revive_charged(datum/task/timed/shockpaddles_do_revive_charged/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/output_envelope = task.output_envelope
@@ -472,15 +472,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	om_task_start(/datum/om/task/timed/shockpaddles_do_electrocute, user, H, receiver = src, duration = chargetime / output_envelope, target_zone_arg = target_zone, output_envelope = output_envelope, busy = src)
+	task_start(/datum/task/timed/shockpaddles_do_electrocute, user, H, receiver = src, duration = chargetime / output_envelope, target_zone_arg = target_zone, output_envelope = output_envelope, busy = src)
 	return TRUE
 
-/datum/om/task/timed/shockpaddles_do_electrocute
+/datum/task/timed/shockpaddles_do_electrocute
 	complete_proc = /obj/item/shockpaddles/proc/do_electrocute_timed_done
 	var/target_zone_arg
 	var/output_envelope
 
-/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/om/task/timed/shockpaddles_do_electrocute/task)
+/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/task/timed/shockpaddles_do_electrocute/task)
 	var/mob/living/carbon/human/H = task.target
 	var/mob/user = task.actor
 	var/target_zone = task.target_zone_arg

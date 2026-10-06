@@ -249,13 +249,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	if(istype(target,/turf/simulated/wall))
 		var/turf/simulated/wall/W = target
 		// 10 seconds for an R-wall, 5 seconds for a normal one.
-		om_task_timed(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+		task_timed(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
 		return
 	if(istype(target,/atom/movable))
 		if(istype(target,/mob))
 			eat_movable(target)
 		else // 5 ticks to eat stuff like tables.
-			om_task_timed(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+			task_timed(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
 		return
 	eat_finished(FALSE)
 
@@ -280,24 +280,24 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 		else
 			EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
 		// No eating shields.
-		om_task_timed(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
+		task_timed(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
 		return
 	eat_consume(objectOrMob)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_door_hit(obj/machinery/door/D, hit, total_hits)
-	om_task_start(/datum/om/task/timed/worm_batter_door, src, D, hits_left = total_hits - hit + 1)
+	task_start(/datum/task/timed/worm_batter_door, src, D, hits_left = total_hits - hit + 1)
 
 /// Battering a door (the target) a hit every half second until it breaks or the hits run out,
 /// then swallowing it.
-/datum/om/task/timed/worm_batter_door
+/datum/task/timed/worm_batter_door
 	steps = list(/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck = 5)
 	cancel_proc = /mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed
 	var/hits_left = 1
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed(datum/om/task/timed/task)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed(datum/task/timed/task)
 	eat_finished(FALSE)
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/om/task/timed/worm_batter_door/task)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/task/timed/worm_batter_door/task)
 	var/obj/machinery/door/D = task.target
 	D.visible_message(span_danger("Something crashes against \the [D]!"))
 	D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)

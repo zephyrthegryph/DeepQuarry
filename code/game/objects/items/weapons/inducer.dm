@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/inducer)
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
 		A.filters += filter
 
-		om_task_start(/datum/om/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
+		task_start(/datum/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
 		return TRUE
 	else //Couldn't find a cell
 		to_chat(user, span_warning("Error unable to interface with device."))
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/item/inducer)
 	recharging = FALSE
 
 /// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
-/datum/om/task/timed/induce
+/datum/task/timed/induce
 	steps = list(/obj/item/inducer/proc/recharge_pulse = 2 SECONDS)
 	complete_proc = /obj/item/inducer/proc/recharge_end
 	cancel_proc = /obj/item/inducer/proc/recharge_end
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/item/inducer)
 	var/datum/beam/beam
 	var/filter
 
-/obj/item/inducer/proc/recharge_pulse(datum/om/task/timed/induce/task)
+/obj/item/inducer/proc/recharge_pulse(datum/task/timed/induce/task)
 	if(!cell?.charge)
 		return STEP_DONE
 	var/obj/item/cell/C = task.charging
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/inducer)
 	task.done_any = TRUE
 	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
 
-/obj/item/inducer/proc/recharge_end(datum/om/task/timed/induce/task)
+/obj/item/inducer/proc/recharge_end(datum/task/timed/induce/task)
 	var/mob/user = task.actor
 	var/atom/A = task.charged
 	spent(task.beam)

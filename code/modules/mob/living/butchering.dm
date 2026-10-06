@@ -13,17 +13,17 @@
 
 // Harvest an animal's delicious byproducts
 /mob/living/proc/harvest(mob/user, obj/item/I)
-	if(meat_type && meat_amount>0 && (stat == DEAD) && !om_in_use(src))
+	if(meat_type && meat_amount>0 && (stat == DEAD) && !task_in_use(src))
 		harvest_step(user, I)
 		return
 
-	if(!meat_amount && !om_in_use(src))
+	if(!meat_amount && !task_in_use(src))
 		handle_butcher(user, I)
 
 /// Carves one cut of meat per timed action until none is left, then butchers.
 /mob/living/proc/harvest_step(mob/user, obj/item/I)
 	if(meat_amount > 0)
-		om_task_timed(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), claims = TRUE)
+		task_timed(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), claims = TRUE)
 		return
 	handle_butcher(user, I)
 
@@ -42,12 +42,12 @@
 	return FALSE
 
 /mob/living/proc/handle_butcher(mob/user, obj/item/I)
-	if(om_in_use(src))
+	if(task_in_use(src))
 		return
 	if(!user)
 		butcher_done(user, I)
 		return
-	om_task_timed(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), claims = TRUE)
+	task_timed(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), claims = TRUE)
 
 /mob/living/proc/butcher_done(mob/user, obj/item/I)
 	if(LAZYLEN(butchery_loot))

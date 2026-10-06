@@ -24,7 +24,7 @@
 	// Make it so it searches in an AOE and grabs thing.
 
 /obj/item/ghost_catcher/proc/appearance_busy()
-	return om_busy(src) ? TRUE : FALSE
+	return task_busy(src) ? TRUE : FALSE
 
 APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_busy?_active:}")
 
@@ -51,7 +51,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 
 	if(isturf(target) && (!target.incorporeal_grab()))
 		var/turf/T = target
-		if(!om_busy(src))
+		if(!task_busy(src))
 			for(var/mob/entity in range(1, T)) //We'll let you grab things ON the tile or AROUND the tile you click on.
 				if(entity.incorporeal_grab())
 					target = entity
@@ -87,7 +87,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 		return
 
 	// Things that invalidate the scan immediately.
-	if(om_busy(src))
+	if(task_busy(src))
 		to_chat(user, span_warning("\The [src] is already grabbing an entity!"))
 		return
 
@@ -117,16 +117,16 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 		to_chat(target, span_danger("You feel yourself weakened from the [src]'s beam!"))
 
 	// The delay, and test for if the scan succeeds or not. The grab claims the catcher
-	// (om_busy()) until it ends; the effects travel in a list (the beam ends itself).
+	// (task_busy()) until it ends; the effects travel in a list (the beam ends itself).
 	var/list/effects = list(scan_beam, filter, box_segments)
-	var/started = om_task_start(/datum/om/task/timed/ghost_grab, user, target, receiver = src, max_distance = grab_range, effects = effects, busy = src)
+	var/started = task_start(/datum/task/timed/ghost_grab, user, target, receiver = src, max_distance = grab_range, effects = effects, busy = src)
 	if(istext(started))
 		grab_ended(target, user, effects)
 		return
 	update_icon()
 
 /// Holding a ghost in the beam, up to a minute; the catcher is busy until it ends.
-/datum/om/task/timed/ghost_grab
+/datum/task/timed/ghost_grab
 	duration = 60 SECONDS
 	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
 	complete_proc = /obj/item/ghost_catcher/proc/grab_timed_out
@@ -134,7 +134,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	/// The beam, the filter and the box: not held (the beam ends itself).
 	var/list/effects
 
-/obj/item/ghost_catcher/proc/grab_broken(datum/om/task/timed/ghost_grab/task)
+/obj/item/ghost_catcher/proc/grab_broken(datum/task/timed/ghost_grab/task)
 	grab_ended(task.target, task.actor, task.effects)
 
 /// The grab is over (broken or done): clean up the effects and start the cooldown.
@@ -150,7 +150,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	rel_clear(src, nameof(grabbed_entity))
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
 
-/obj/item/ghost_catcher/proc/grab_timed_out(datum/om/task/timed/ghost_grab/task)
+/obj/item/ghost_catcher/proc/grab_timed_out(datum/task/timed/ghost_grab/task)
 	var/atom/target = task.target
 	var/mob/user = task.actor
 	var/list/effects = task.effects

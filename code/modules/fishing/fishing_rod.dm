@@ -64,7 +64,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 		if(C.get_amount() < 5)
 			to_chat(user, span_warning("You do not have enough length in \the [C] to string this!"))
 			return INTERACTION_HANDLED_PASS
-		om_task_timed(user, rand(10 SECONDS, 20 SECONDS), src, src, PROC_REF(string_done), list(user, C))
+		task_timed(user, rand(10 SECONDS, 20 SECONDS), src, src, PROC_REF(string_done), list(user, C))
 		return INTERACTION_HANDLED_PASS
 	else if(istype(I, bait_type))
 		if(Bait)

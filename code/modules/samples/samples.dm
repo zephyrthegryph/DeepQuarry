@@ -184,7 +184,7 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 			return TRUE
 
 		else	//short delay, so you can abort/cancel if you misclick
-			om_task_timed(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
+			task_timed(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
 			return TRUE
 
 	if(isrobot(user))

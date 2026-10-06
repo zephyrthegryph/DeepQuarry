@@ -17,7 +17,7 @@
 		var/mob/living/silicon/robot/R = M
 		var/list/demand = R.treatment_demand(/datum/diagnostic_profile/robot_analyzer)
 		if(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])
-			om_task_timed(user, 7 * toolspeed, target = R, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, R))
+			task_timed(user, 7 * toolspeed, target = R, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, R))
 			return ITEM_INTERACT_SUCCESS
 		else
 			balloon_alert(user, "all [R]'s systems are nominal.")
@@ -50,7 +50,7 @@
 				user.setClickCooldown(user.get_attack_speed(src))
 				// Nanites rebuild plating and wiring alike.
 				var/restoration = S.open >= 2 ? restoration_internal : restoration_external
-				om_task_start(/datum/om/task/timed/nanopaste_repair_limb, user, S, receiver = src, duration = 5 * toolspeed, H = H, restoration = restoration)
+				task_start(/datum/task/timed/nanopaste_repair_limb, user, S, receiver = src, duration = 5 * toolspeed, H = H, restoration = restoration)
 				return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/nanopaste/proc/attack_timed_done(mob/living/user, mob/living/silicon/robot/R)
@@ -60,12 +60,12 @@
 	user.balloon_alert_visible("\the [user] applied some [src] on [R]'s damaged areas.",\
 	"you apply some [src] at [R]'s damaged areas.")
 	return ITEM_INTERACT_SUCCESS
-/datum/om/task/timed/nanopaste_repair_limb
+/datum/task/timed/nanopaste_repair_limb
 	complete_proc = /obj/item/stack/nanopaste/proc/repair_limb_done
 	var/mob/living/carbon/human/H
 	var/restoration
 
-/obj/item/stack/nanopaste/proc/repair_limb_done(datum/om/task/timed/nanopaste_repair_limb/task)
+/obj/item/stack/nanopaste/proc/repair_limb_done(datum/task/timed/nanopaste_repair_limb/task)
 	var/mob/living/user = task.actor
 	var/mob/living/carbon/human/H = task.H
 	var/obj/item/organ/external/S = task.target

@@ -131,7 +131,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(!istype(H))
 		return
 
-	if(om_busy(src))
+	if(task_busy(src))
 		return
 
 	var/t = confirmTarget(H)
@@ -193,7 +193,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	cut_overlays()
 	if(skin)
 		add_overlay("medskin_[skin]")
-	if(om_busy(src))
+	if(task_busy(src))
 		icon_state = "medibots"
 	else
 		icon_state = "medibot[on]"
@@ -218,11 +218,11 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 			say(message)
 			playsound(src, messagevoice[message], 70, FALSE)
 
-		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
+		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
 
 	else if(istype(H) && interaction.stance == I_HELP && is_tipped)
 		act_message(H, src, MSG_SELF(span_notice("You begin righting %T%...")), MSG_OTHERS(span_notice("%U% begins righting %T%.")))
-		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
+		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
 	else
 		tgui_interact(H)
 
@@ -342,7 +342,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 		act_message(src, null, others = span_warning("%U% buzzes oddly!"))
 		flick("medibot_spark", src)
 		rel_clear(src, nameof(target))
-		om_release_busy(src, "emagged")
+		task_release_busy(src, "emagged")
 		emagged = 1
 		set_on(1)
 		update_icons()

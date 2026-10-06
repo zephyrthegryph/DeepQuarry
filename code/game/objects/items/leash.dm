@@ -305,7 +305,7 @@ CAPABILITIES(/obj/item/leash)
 	act_message(leash_pet, null, MSG_SELF(span_danger("You attempt to unhook your leash")), MSG_OTHERS(span_danger("%U% is attempting to unhook %THEIR% leash!")))
 	add_attack_logs(leash_master,leash_pet,"Self-unleash (attempt)")
 
-	om_task_timed(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
+	task_timed(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
 	return TRUE
 
 /obj/item/leash/proc/unleash()
@@ -316,7 +316,7 @@ CAPABILITIES(/obj/item/leash)
 	act_message(leash_pet, null, MSG_SELF(span_danger("\The [leash_master] tries to remove leash from you")), MSG_OTHERS(span_danger("\The [leash_master] is attempting to remove the leash on %U%!")))
 	add_attack_logs(leash_master,leash_pet,"Unleashed (attempt)")
 
-	om_task_timed(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
+	task_timed(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
 	return TRUE
 
 /// A timed unhook finished (by the pet or the holder): the pet is free.

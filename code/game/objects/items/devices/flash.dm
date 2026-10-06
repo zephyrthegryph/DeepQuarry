@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/flash)
 	if(!broken)
 		return OP_DECLINE
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
-	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/om/task/timed/tool_job/flash_repair)
+	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/task/timed/tool_job/flash_repair)
 	return OP_OK
 
 /obj/item/flash/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)

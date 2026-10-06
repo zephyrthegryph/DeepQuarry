@@ -132,7 +132,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
 			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")))
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
@@ -150,7 +150,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	if(!ismob(escapee))
 		return
 	visible_message(span_danger("Lights flicker and buzzers beep from \the [src], alerting that a containment breach is imminent!"))
-	om_task_timed(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
+	task_timed(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
 
 /obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
 	remove_trait(escapee, TRAIT_NO_TRANSFORM, src)
@@ -166,13 +166,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	if(has_buckled_mobs() && can_use(user))
 		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free something from %T%.")), \
 			MSG_OTHERS(span_notice("%U% begins freeing something from %T%.")))
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	else if(deployed && can_use(user))
 		act_message(user, src, MSG_SELF(span_notice("You begin deactivate %T%!")), \
 			MSG_OTHERS(span_danger("%U% starts to deactivate %T%.")))
 		play_sfx(src, SFX_MACHINES_CLICK)
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		return OP_DECLINE
 	return TRUE

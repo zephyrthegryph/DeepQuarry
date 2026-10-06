@@ -93,7 +93,7 @@ CAPABILITIES(/obj/item/material/gravemarker)
 		return TRUE
 	else
 		to_chat(user, span_notice("You begin to place 	he [src.name]."))
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
+		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
 	return TRUE
 
 /obj/item/material/gravemarker/proc/place_done(mob/user)

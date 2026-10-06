@@ -52,7 +52,7 @@ CAPABILITIES(/obj/structure/barricade)
 				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
 				return OP_OK
 			act_message(user, src, others = span_notice("%U% begins to repair %T%."))
-			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
+			task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
 			return OP_OK
 		return OP_OK
 

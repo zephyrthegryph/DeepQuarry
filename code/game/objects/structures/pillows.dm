@@ -93,7 +93,7 @@ CAPABILITIES(/obj/structure/bed/pillowpilefront)
 /obj/structure/bed/pillowpile/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
@@ -107,7 +107,7 @@ CAPABILITIES(/obj/structure/bed/pillowpilefront)
 /obj/structure/bed/pillowpilefront/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	return OP_OK
 
 /obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)

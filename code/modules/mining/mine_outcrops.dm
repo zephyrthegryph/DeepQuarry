@@ -103,7 +103,7 @@ DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(intera
 /obj/structure/outcrop/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/pickaxe))
 		to_chat(user, span_notice("[user] begins to hack away at \the [src]."))
-		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(dig_done), list(user))
+		task_timed(user, 4 SECONDS, src, src, PROC_REF(dig_done), list(user))
 		return INTERACTION_HANDLED_PASS
 	if (istype(W, /obj/item/melee/shock_maul))
 		var/obj/item/melee/shock_maul/S = W

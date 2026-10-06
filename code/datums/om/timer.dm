@@ -283,7 +283,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/list/captured = null
 	var/list/positions = null
 	if(call_args)
-		var/list/capture = om_capture_args(call_args, nulls_for_gone)
+		var/list/capture = capture_args(call_args, nulls_for_gone)
 		if(!capture)
 			return 0
 		captured = capture[1]
@@ -524,8 +524,8 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // Every deferred record in the OM (timers and their keyed/real-time forms, I/O
 // callbacks, timed actions) holds its datum arguments as OM handles, never as
 // references: a record can outlive what it names without keeping it alive (a
-// strong ref in a pending timer was a hard delete). om_capture_args() converts
-// at record time, om_resolve_captured() at fire time; a deleted argument drops
+// strong ref in a pending timer was a hard delete). capture_args() converts
+// at record time, resolve_captured() at fire time; a deleted argument drops
 // the call with a log_qdel() line. Synchronous paths never capture.
 //
 // Captured deeply: every datum anywhere in the arguments -- an argument, a list member, an assoc
@@ -540,7 +540,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// Captures `call_args`' datums as handles, deeply. Returns list(captured, positions): positions
 /// are the argument indexes holding a handle or a list with handles in it. Null when an argument
 /// is already deleted or can't be captured (a datum assoc key).
-/proc/om_capture_args(list/call_args, nulls_for_gone = FALSE)
+/proc/capture_args(list/call_args, nulls_for_gone = FALSE)
 	var/list/captured = call_args ? call_args.Copy() : null
 	var/list/positions = null
 	for(var/i in 1 to length(captured))
@@ -599,7 +599,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// Store it in any var; run it with om_run().
 /proc/om_callable(datum/target, proc_ref, ...)
 	var/list/call_args = length(args) > 2 ? args.Copy(3) : null
-	var/list/capture = call_args ? om_capture_args(call_args) : list(null, null)
+	var/list/capture = call_args ? capture_args(call_args) : list(null, null)
 	if(!capture)
 		return null
 	var/callee_handle = null
@@ -621,7 +621,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			return null
 	var/list/stored = spec[3]
 	var/list/call_args = stored ? stored.Copy() : list()
-	if(spec[4] && !om_resolve_captured(call_args, spec[4]))
+	if(spec[4] && !resolve_captured(call_args, spec[4]))
 		return null
 	if(length(args) > 1)
 		call_args += args.Copy(2)
@@ -636,7 +636,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 
 /// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
 /// null for it instead: cleanup that must still run). The record keeps its own copy.
-/proc/om_resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)
+/proc/resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)
 	for(var/i in positions)
 		var/list/result = om_resolve_value(captured[i], nulls_for_gone)
 		if(!result)
@@ -700,7 +700,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		if(!length(T))
 			rec.timers = null
 		GLOB.om_resolve_nulled = 0
-		if(!om_resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE)))
+		if(!resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE)))
 			rec.sched.timers_dropped++
 			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired (after_if_alive)")
 			continue

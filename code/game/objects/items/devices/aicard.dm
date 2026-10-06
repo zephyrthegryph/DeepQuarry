@@ -120,7 +120,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	act_message(user, src, MSG_SELF("You start transferring \the [ai] into %T%..."), MSG_OTHERS("%U% starts transferring \the [ai] into %T%..."))
 	show_message(span_critical("\The [user] is transferring you into \the [src]!"))
 
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
+	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
 	return 1
 
 /obj/item/aicard/proc/grab_ai_timed_done(mob/living/silicon/ai/ai, mob/living/user)

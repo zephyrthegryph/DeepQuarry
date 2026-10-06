@@ -30,7 +30,7 @@
 	if (chassis)
 		act_message(user, chassis, others = span_notice("%U% starts to climb into %T%."))
 
-	om_task_start(/datum/om/task/timed/passenger_boarded, user, src, receiver = src)
+	task_start(/datum/task/timed/passenger_boarded, user, src, receiver = src)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/forced_out(mob/user, mob/passenger_occupant)
 	act_message(user, src, MSG_SELF(span_notice("You open the hatch on %T% and remove [passenger_occupant]!")), \
@@ -38,12 +38,12 @@
 	go_out()
 	mecha_log_message("[passenger_occupant] was removed.")
 
-/datum/om/task/timed/passenger_boarded
+/datum/task/timed/passenger_boarded
 	duration = 4 SECONDS
 	complete_proc = /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded
 	fail_message = span_info("You stop entering the exosuit.")
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/om/task/timed/passenger_boarded/task)
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/task/timed/passenger_boarded/task)
 	var/mob/user = task.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		if(!move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER, user))

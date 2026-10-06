@@ -222,7 +222,7 @@ DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
 		return
 	if(istype(AM, /mob/living/carbon/human/monkey))
 		play_sfx(src, SFX_MACHINES_JUICER)
-		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
+		task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
 		return
 	processing = FALSE
 
@@ -232,7 +232,7 @@ DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
 		processing = FALSE
 		return
 	play_sfx(src, SFX_MACHINES_JUICER)
-	om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
+	task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
 
 /obj/item/slime_grinder/proc/grind_core_done(mob/living/simple_mob/slime/S, mob/living/user)
 	new S.coretype(get_turf(S))

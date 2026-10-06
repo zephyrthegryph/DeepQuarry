@@ -61,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 
 /// Requirement: TRUE, or why the wheel can't be spun.
 /obj/structure/casino_table/roulette_table/proc/can_spin(mob/user, atom/target, obj/item/held)
-	if(om_busy(src))
+	if(task_busy(src))
 		return "you cannot spin now, the roulette is already spinning"
 	if(!ball)
 		return "this roulette wheel has no ball"
@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 		return TRUE
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || isobserver(user))
 		return TRUE
-	if(om_busy(src))
+	if(task_busy(src))
 		return "you cannot remove \the [ball] while [src] is spinning"
 	return TRUE
 
@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 /obj/structure/casino_table/roulette_table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	act_message(user, null, others = span_notice("%U% spins the roulette and throws [ball.get_ball_desc()] into it."))
 	play_sfx(src.loc, SFX_MACHINES_ROULETTE)
-	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	ball.on_spin()
 	icon_state = spin_state
 	var/result = rand(0,36)
@@ -410,7 +410,7 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 
 /// Requirement: the wheel isn't mid-spin.
 /obj/machinery/wheel_of_fortune/proc/not_spinning(mob/user, atom/target, obj/item/held)
-	return !om_busy(src)
+	return !task_busy(src)
 
 /obj/machinery/wheel_of_fortune/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	return wheel_use_stage(user, held, interaction, list())
@@ -445,7 +445,7 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 	return TRUE
 
 /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(mob/actor, atom/target, obj/item/held)
-	if (om_busy(src))
+	if (task_busy(src))
 		return "the wheel of fortune is already spinning!"
 	if(actor.incapacitated())
 		return FALSE
@@ -518,7 +518,7 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 /obj/machinery/wheel_of_fortune/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
 	if(!user.client)
 		return
-	if (om_busy(src))
+	if (task_busy(src))
 		to_chat(user,span_notice("The Wheel of Fortune is busy, wait for it to be done to buy a lottery ticket."))
 		return
 	if(cashmoney.worth < lottery_price)
@@ -540,7 +540,7 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 	var/result = 0
 
 	if(mode == "not_lottery")
-		om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+		task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 		icon_state = "wheel_of_fortune_spinning"
 		result = rand(1,interval)
 
@@ -551,7 +551,7 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 			visible_message(span_notice("There are no tickets in the system!"))
 			return
 
-		om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+		task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 		icon_state = "wheel_of_fortune_spinning"
 		result = pick(lottery_tickets)
 

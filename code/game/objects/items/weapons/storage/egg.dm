@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/storage/vore_egg)
 /obj/item/storage/vore_egg/proc/hatch(mob/living/user as mob)
 	visible_message(span_danger("\The [src] begins to shake as something pushes out from within!"))
 	animate_shake()
-	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(hatch_timed_done), done_args = list(user))
+	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(hatch_timed_done), done_args = list(user))
 
 /obj/item/storage/vore_egg/proc/hatch_timed_done(mob/living/user)
 	if(use_sound)

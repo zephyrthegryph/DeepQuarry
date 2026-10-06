@@ -387,6 +387,10 @@ GLOBAL_LIST_EMPTY(op_watchers)
 			var/datum/pending_op/pending = ctx // a wait of the part engine (code/engine/parts/run.dm)
 			pending.reads_changed()
 			continue
+		if(istype(ctx, /datum/task))
+			var/datum/task/task = ctx // a running task (code/engine/kernel/tasks.dm)
+			task.reads_changed()
+			continue
 		var/datum/op_ctx/legacy = ctx
 		if(legacy.released)
 			continue

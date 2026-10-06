@@ -124,15 +124,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, TYPE_PROC_REF(/atom, appearan
 		return ..()
 	act_message(user, src, MSG_SELF(span_notice("You start recalibrating [H]'s [E.name].")), \
 		MSG_OTHERS(span_notice("%U% plugs %T% into a diagnostic port on [H]'s [E.name] and starts recalibrating.")))
-	om_task_start(/datum/om/task/timed/multitool_attack, user, H, receiver = src, E = E)
+	task_start(/datum/task/timed/multitool_attack, user, H, receiver = src, E = E)
 	return TRUE
 
-/datum/om/task/timed/multitool_attack
+/datum/task/timed/multitool_attack
 	duration = 4 SECONDS
 	complete_proc = /obj/item/multitool/proc/attack_timed_done
 	var/obj/item/organ/external/E
 
-/obj/item/multitool/proc/attack_timed_done(datum/om/task/timed/multitool_attack/task)
+/obj/item/multitool/proc/attack_timed_done(datum/task/timed/multitool_attack/task)
 	var/mob/living/user = task.actor
 	var/mob/living/carbon/human/H = task.target
 	var/obj/item/organ/external/E = task.E

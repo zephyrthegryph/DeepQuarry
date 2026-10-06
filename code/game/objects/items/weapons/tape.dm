@@ -64,7 +64,7 @@
 					return ITEM_INTERACT_FAILURE
 				act_message(user, null, others = span_danger("%U% begins taping over \the [H]'s eyes!"))
 
-				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_eyes_done), done_args = list(H, user))
+				task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_eyes_done), done_args = list(H, user))
 
 			else if(user.zone_sel.selecting == O_MOUTH || user.zone_sel.selecting == BP_HEAD)
 				if(!H.organs_by_name[BP_HEAD])
@@ -81,7 +81,7 @@
 					return ITEM_INTERACT_FAILURE
 				act_message(user, null, others = span_danger("%U% begins taping up \the [H]'s mouth!"))
 
-				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_mouth_done), done_args = list(H, user))
+				task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_mouth_done), done_args = list(H, user))
 
 			else if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
 				if(!can_place(H, user))

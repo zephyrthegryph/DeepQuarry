@@ -322,14 +322,14 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		act_message(M, null, MSG_SELF(span_notice("With a quiet hum, the suit begins running checks and adjusting components.")), \
 			MSG_OTHERS(span_notice("%U%'s suit emits a quiet hum as it begins to adjust its seals.")))
 		if(seal_delay)
-			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R)
+			task_start(/datum/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R)
 			return 1
 	seal_piece(M, seal_target, instant, booting_L, booting_R, 1)
 	return 1
 
 /// One timed stage of sealing the suit: the overall check (no piece), or one piece. Each
 /// continues in seal_piece() with the next piece.
-/datum/om/task/timed/rig_seal
+/datum/task/timed/rig_seal
 	flags = IGNORE_TARGET_LOC_CHANGE
 	complete_proc = /obj/item/rig/proc/seal_stage_done
 	cancel_proc = /obj/item/rig/proc/seal_interrupted
@@ -341,14 +341,14 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	var/msg_type
 	var/index = 0
 
-/obj/item/rig/proc/seal_interrupted(datum/om/task/timed/rig_seal/task)
+/obj/item/rig/proc/seal_interrupted(datum/task/timed/rig_seal/task)
 	var/mob/living/carbon/human/M = task.actor
 	if(M)
 		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
 		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
 	seal_finish(M, task.seal_target, task.booting_L, task.booting_R, TRUE)
 
-/obj/item/rig/proc/seal_stage_done(datum/om/task/timed/rig_seal/task)
+/obj/item/rig/proc/seal_stage_done(datum/task/timed/rig_seal/task)
 	if(task.piece)
 		seal_one_piece(task.actor, task.piece, task.msg_type, task.seal_target)
 	seal_piece(task.actor, task.seal_target, FALSE, task.booting_L, task.booting_R, task.index + 1)
@@ -380,7 +380,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 			return
 
 		if(seal_delay && !instant)
-			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R, piece = piece, msg_type = msg_type, index = i)
+			task_start(/datum/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R, piece = piece, msg_type = msg_type, index = i)
 			return
 		seal_one_piece(M, piece, msg_type, seal_target)
 
@@ -673,7 +673,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 
 	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_notice("You start putting on %T%...")), MSG_OTHERS(span_notice("%U% starts putting on %T%...")))
-		om_task_timed(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
+		task_timed(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
 		return
 	put_on_done(M)
 

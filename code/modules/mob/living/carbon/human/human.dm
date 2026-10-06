@@ -1406,21 +1406,21 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		return
 
 	to_chat(usr, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
-	om_task_start(/datum/om/task/timed/human_check_pulse_human, usr, src, receiver = src, self = self)
+	task_start(/datum/task/timed/human_check_pulse_human, usr, src, receiver = src, self = self)
 
-/datum/om/task/timed/human_check_pulse_human
+/datum/task/timed/human_check_pulse_human
 	duration = 6 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/check_pulse_human_done
 	cancel_proc = /mob/living/carbon/human/proc/check_pulse_human_failed
 	var/self
 
-/mob/living/carbon/human/proc/check_pulse_human_done(datum/om/task/timed/human_check_pulse_human/task)
+/mob/living/carbon/human/proc/check_pulse_human_done(datum/task/timed/human_check_pulse_human/task)
 	var/self = task.self
 	var/mob/usr_mob = task.actor
 	var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
 	to_chat(usr_mob,message)
 
-/mob/living/carbon/human/proc/check_pulse_human_failed(datum/om/task/timed/human_check_pulse_human/task)
+/mob/living/carbon/human/proc/check_pulse_human_failed(datum/task/timed/human_check_pulse_human/task)
 	var/mob/usr_mob = task.actor
 	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
@@ -1833,17 +1833,17 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	om_task_start(/datum/om/task/timed/human_relocate_human, U, src, receiver = src, S = S, self = self, current_limb = current_limb)
+	task_start(/datum/task/timed/human_relocate_human, U, src, receiver = src, S = S, self = self, current_limb = current_limb)
 	return TRUE
 
-/datum/om/task/timed/human_relocate_human
+/datum/task/timed/human_relocate_human
 	duration = 3 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/relocate_human_done
 	var/mob/S
 	var/self
 	var/obj/item/organ/external/current_limb
 
-/mob/living/carbon/human/proc/relocate_human_done(datum/om/task/timed/human_relocate_human/task)
+/mob/living/carbon/human/proc/relocate_human_done(datum/task/timed/human_relocate_human/task)
 	var/mob/S = task.S
 	var/mob/U = task.actor
 	var/self = task.self

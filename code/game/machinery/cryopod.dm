@@ -606,7 +606,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 	act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
 
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
 
 	return TRUE
 
@@ -722,7 +722,7 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 		else
 			act_message(user, M, others = "%U% starts putting %T% into \the [src].")
 
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 
 /obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
 	icon_state = occupied_icon_state

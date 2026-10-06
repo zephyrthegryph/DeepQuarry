@@ -67,7 +67,7 @@
 	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/user = A.request.answerer
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 
 /obj/item/pda/on_trash_eaten(mob/living/user)
 	if(!..())
@@ -85,7 +85,7 @@
 			if(id)
 				open_request(src, /datum/prompt/yes_no, PROC_REF(eat_risk_confirmed), answerer = user, title = "Confirmation", question = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", yes_text = "Definitely", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 				return FALSE
-			om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+			task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 			return FALSE
 	return TRUE
 
@@ -109,7 +109,7 @@
 			return FALSE
 		else
 			act_message(user, src, others = span_warning("%U% is threatening to make %T% disappear!"))
-			om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+			task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
 			return FALSE
 	return TRUE
 

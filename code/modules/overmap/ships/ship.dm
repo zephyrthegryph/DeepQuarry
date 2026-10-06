@@ -312,7 +312,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 		if(bellychoice)
 			act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
 				MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
-			om_task_timed(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
+			task_timed(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
 	forceMove(bellychoice)

@@ -39,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to add cables to the frame."))
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
+				task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 				return INTERACTION_HANDLED_PASS
 		if(3)
 			if(istype(P, /obj/item/stack/material) && P.get_material_name() == MAT_RGLASS)
@@ -49,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to put in the glass panel."))
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
+				task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
 
 			if(istype(P, /obj/item/aiModule/asimov))
 				laws.add_inherent_law("You may not injure a human being or, through inaction, allow a human being to come to harm.")

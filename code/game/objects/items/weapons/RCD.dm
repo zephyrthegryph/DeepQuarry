@@ -61,7 +61,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 
 // Used to call rcd_act() on the atom hit.
 /obj/item/rcd/proc/use_rcd(atom/A, mob/living/user)
-	if(!allow_concurrent_building && om_busy(src)) // an operation in progress claims the RCD
+	if(!allow_concurrent_building && task_busy(src)) // an operation in progress claims the RCD
 		to_chat(user, span_warning("\The [src] is busy finishing its current operation, be patient."))
 		return FALSE
 
@@ -91,13 +91,13 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 
 	perform_effect(A, true_delay)
-	var/started = om_task_start(/datum/om/task/timed/rcd_build, user, A, duration = true_delay, receiver = src, rcd_results = rcd_results, output_envelope = output_envelope, beam = rcd_beam, busy = (allow_concurrent_building ? null : src))
+	var/started = task_start(/datum/task/timed/rcd_build, user, A, duration = true_delay, receiver = src, rcd_results = rcd_results, output_envelope = output_envelope, beam = rcd_beam, busy = (allow_concurrent_building ? null : src))
 	if(istext(started))
 		use_rcd_interrupted(A, rcd_beam)
 	return FALSE
 
 /// An RCD operation on the target: its beam shows while it runs.
-/datum/om/task/timed/rcd_build
+/datum/task/timed/rcd_build
 	complete_proc = /obj/item/rcd/proc/use_rcd_timed_done
 	cancel_proc = /obj/item/rcd/proc/use_rcd_cancelled
 	unheld = list("beam")
@@ -106,7 +106,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	/// Ends itself.
 	var/datum/beam/beam
 
-/obj/item/rcd/proc/use_rcd_cancelled(datum/om/task/timed/rcd_build/task)
+/obj/item/rcd/proc/use_rcd_cancelled(datum/task/timed/rcd_build/task)
 	use_rcd_interrupted(task.target, task.beam)
 
 /// The operation stopped (they moved, or it never started): kill the beam and the effect.
@@ -116,7 +116,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	if(A)
 		cleanup_effect(A)
 
-/obj/item/rcd/proc/use_rcd_timed_done(datum/om/task/timed/rcd_build/task)
+/obj/item/rcd/proc/use_rcd_timed_done(datum/task/timed/rcd_build/task)
 	var/atom/A = task.target
 	var/mob/living/user = task.actor
 	var/list/rcd_results = task.rcd_results

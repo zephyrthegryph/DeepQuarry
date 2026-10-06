@@ -201,16 +201,16 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	var/energy_cost = ask.energy_cost
 	var/obj/item/transmute_product = ask.choices[A.answer.value]
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
-	om_task_start(/datum/om/task/timed/human_lleill_transmute_human, src, I, energy_cost = energy_cost, transmute_product = transmute_product)
+	task_start(/datum/task/timed/human_lleill_transmute_human, src, I, energy_cost = energy_cost, transmute_product = transmute_product)
 
-/datum/om/task/timed/human_lleill_transmute_human
+/datum/task/timed/human_lleill_transmute_human
 	duration = 10 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/lleill_transmute_human_done
 	cancel_proc = /mob/living/carbon/human/proc/lleill_transmute_human_failed
 	var/energy_cost
 	var/obj/item/transmute_product
 
-/mob/living/carbon/human/proc/lleill_transmute_human_done(datum/om/task/timed/human_lleill_transmute_human/task)
+/mob/living/carbon/human/proc/lleill_transmute_human_done(datum/task/timed/human_lleill_transmute_human/task)
 	var/energy_cost = task.energy_cost
 	var/obj/item/I = task.target
 	var/obj/item/transmute_product = task.transmute_product
@@ -223,7 +223,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	species.lleill_energy -= energy_cost
 	species.update_lleill_hud(src)
 
-/mob/living/carbon/human/proc/lleill_transmute_human_failed(datum/om/task/timed/human_lleill_transmute_human/task)
+/mob/living/carbon/human/proc/lleill_transmute_human_failed(datum/task/timed/human_lleill_transmute_human/task)
 	var/obj/item/I = task.target
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = I)
 	return 0
@@ -309,7 +309,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 		if(species.lleill_energy < energy_cost_spawn)
 			to_chat(src, span_warning("You do not have enough energy to do that!"))
 			return
-		om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_ring_placed), done_args = list(energy_cost_spawn), on_fail = PROC_REF(lleill_ring_interrupted))
+		task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_ring_placed), done_args = list(energy_cost_spawn), on_fail = PROC_REF(lleill_ring_interrupted))
 		return
 	if(findtext(r_action,"Teleport to Ring"))
 		if(species.lleill_energy < energy_cost_tele)
@@ -559,7 +559,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 		act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " boops %T% on the nose."))
 	if(contact_type == "Custom")
 		src.visible_message(span_infoplain("[custom_text]"))
-	om_task_timed(src, 10 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(lleill_contact_done), done_args = list(chosen_target), on_fail = PROC_REF(lleill_contact_broken), fail_args = list(chosen_target))
+	task_timed(src, 10 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(lleill_contact_done), done_args = list(chosen_target), on_fail = PROC_REF(lleill_contact_broken), fail_args = list(chosen_target))
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_contact_broken(mob/living/carbon/human/chosen_target)
@@ -615,21 +615,21 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 	else
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to change the form of %I%."), item = I)
-		om_task_start(/datum/om/task/timed/human_lleill_alchemy, src, I, transmute_product = transmute_product, energy_cost = energy_cost)
+		task_start(/datum/task/timed/human_lleill_alchemy, src, I, transmute_product = transmute_product, energy_cost = energy_cost)
 	species.update_lleill_hud(src)
 
-/mob/living/carbon/human/proc/lleill_alchemy_stopped(datum/om/task/timed/human_lleill_alchemy/task)
+/mob/living/carbon/human/proc/lleill_alchemy_stopped(datum/task/timed/human_lleill_alchemy/task)
 	var/obj/item/potion_material/I = task.target
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " leaves %I% in its original form."), item = I)
 
-/datum/om/task/timed/human_lleill_alchemy
+/datum/task/timed/human_lleill_alchemy
 	duration = 10 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/lleill_alchemy_done
 	cancel_proc = /mob/living/carbon/human/proc/lleill_alchemy_stopped
 	var/transmute_product
 	var/energy_cost
 
-/mob/living/carbon/human/proc/lleill_alchemy_done(datum/om/task/timed/human_lleill_alchemy/task)
+/mob/living/carbon/human/proc/lleill_alchemy_done(datum/task/timed/human_lleill_alchemy/task)
 	var/obj/item/potion_material/I = task.target
 	var/transmute_product = task.transmute_product
 	var/energy_cost = task.energy_cost
@@ -731,10 +731,10 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	om_task_start(/datum/om/task/timed/human_lleill_beast_form_human, src, src, energy_cost = energy_cost, beast_options = beast_options, chosen_beast = chosen_beast)
+	task_start(/datum/task/timed/human_lleill_beast_form_human, src, src, energy_cost = energy_cost, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
-/datum/om/task/timed/human_lleill_beast_form_human
+/datum/task/timed/human_lleill_beast_form_human
 	duration = 10 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/lleill_beast_form_human_done
 	cancel_proc = /mob/living/carbon/human/proc/lleill_beast_form_human_failed
@@ -742,7 +742,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/list/beast_options
 	var/chosen_beast
 
-/mob/living/carbon/human/proc/lleill_beast_form_human_done(datum/om/task/timed/human_lleill_beast_form_human/task)
+/mob/living/carbon/human/proc/lleill_beast_form_human_done(datum/task/timed/human_lleill_beast_form_human/task)
 	var/energy_cost = task.energy_cost
 	var/list/beast_options = task.beast_options
 	var/chosen_beast = task.chosen_beast
@@ -753,7 +753,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	after(src, 1 SECOND, PROC_REF(finish_beast_shift), with = list(coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost))
 	species.update_lleill_hud(src)
 
-/mob/living/carbon/human/proc/lleill_beast_form_human_failed(datum/om/task/timed/human_lleill_beast_form_human/task)
+/mob/living/carbon/human/proc/lleill_beast_form_human_failed(datum/task/timed/human_lleill_beast_form_human/task)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0
 
@@ -774,7 +774,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	om_task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
+	task_timed(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
 	return TRUE
 
 /mob/living/proc/revert_beast_form_living_done()
@@ -900,10 +900,10 @@ CAPABILITIES(/datum/lleill_contact_review)
 		return
 
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins significantly shifting their form."))
-	om_task_start(/datum/om/task/timed/human_hanner_beast_form_human, src, src, energy_cost = energy_cost, beast_options = beast_options, chosen_beast = chosen_beast)
+	task_start(/datum/task/timed/human_hanner_beast_form_human, src, src, energy_cost = energy_cost, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
-/datum/om/task/timed/human_hanner_beast_form_human
+/datum/task/timed/human_hanner_beast_form_human
 	duration = 10 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/hanner_beast_form_human_done
 	cancel_proc = /mob/living/carbon/human/proc/hanner_beast_form_human_failed
@@ -911,7 +911,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/list/beast_options
 	var/chosen_beast
 
-/mob/living/carbon/human/proc/hanner_beast_form_human_done(datum/om/task/timed/human_hanner_beast_form_human/task)
+/mob/living/carbon/human/proc/hanner_beast_form_human_done(datum/task/timed/human_hanner_beast_form_human/task)
 	var/energy_cost = task.energy_cost
 	var/list/beast_options = task.beast_options
 	var/chosen_beast = task.chosen_beast
@@ -935,6 +935,6 @@ CAPABILITIES(/datum/lleill_contact_review)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
 
-/mob/living/carbon/human/proc/hanner_beast_form_human_failed(datum/om/task/timed/human_hanner_beast_form_human/task)
+/mob/living/carbon/human/proc/hanner_beast_form_human_failed(datum/task/timed/human_hanner_beast_form_human/task)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " ceases shifting their form."))
 	return 0

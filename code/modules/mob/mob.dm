@@ -858,13 +858,13 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 /mob/proc/embedded_needs_process()
 	return (LAZYLEN(embedded) > 0)
 
-/datum/om/task/timed/mob_yank_out
+/datum/task/timed/mob_yank_out
 	duration = 3 SECONDS
 	complete_proc = /mob/proc/yank_out_done
 	var/obj/item/selection
 	var/self
 
-/mob/proc/yank_out_done(datum/om/task/timed/mob_yank_out/task)
+/mob/proc/yank_out_done(datum/task/timed/mob_yank_out/task)
 	var/mob/U = task.actor
 	var/obj/item/selection = task.selection
 	var/self = task.self
@@ -990,7 +990,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	else
 		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
 
-	om_task_start(/datum/om/task/timed/mob_yank_out, U, src, receiver = src, selection = selection, self = self)
+	task_start(/datum/task/timed/mob_yank_out, U, src, receiver = src, selection = selection, self = self)
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()

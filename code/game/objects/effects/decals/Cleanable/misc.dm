@@ -247,7 +247,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/confetti)
 /obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
-	om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
+	task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
 	return TRUE
 
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()

@@ -121,7 +121,7 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 		if(A.anchored)
 			return
 		to_chat(user, span_notice("You start attaching the pack to [A]..."))
-		om_task_timed(user, 5 SECONDS, A, src, PROC_REF(attach_done), list(user, A))
+		task_timed(user, 5 SECONDS, A, src, PROC_REF(attach_done), list(user, A))
 
 /// The pack is on: the balloon lifts `A` off (a sequence of steps on the holder, fulton_*()).
 /obj/item/extraction_pack/proc/attach_done(mob/living/carbon/human/user, atom/movable/A)
@@ -214,7 +214,7 @@ DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interact
 
 /// Old attack_self.
 /obj/item/fulton_core/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_task_timed(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
+	task_timed(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
 	return TRUE
 
 /obj/item/fulton_core/proc/deploy_done(mob/user)

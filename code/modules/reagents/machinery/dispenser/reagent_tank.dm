@@ -203,7 +203,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	var/mob/user = A.actor
 	if (rig)
 		act_message(user, src, MSG_SELF("You begin to detach [rig] from %T%"), MSG_OTHERS("%U% begins to detach [rig] from %T%."))
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
+		task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
 	return TRUE
 
 /obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
@@ -224,7 +224,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 			to_chat(user, span_warning("There is another device in the way."))
 			return OP_DECLINE
 		act_message(user, src, MSG_SELF("You begin rigging [W] to %T%"), MSG_OTHERS("%U% begins rigging [W] to %T%."))
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
+		task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
 
 	return OP_DECLINE
 
@@ -389,7 +389,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 			if(anchored)
 				var/obj/item/reagent_containers/glass/cooler_bottle/G = I
 				to_chat(user, span_notice("You start to screw the bottle onto the water-cooler."))
-				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
+				task_timed(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
@@ -403,7 +403,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 				src.add_fingerprint(user)
 				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
+				task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
@@ -445,7 +445,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	add_fingerprint(user)
 	if(bottle)
 		playsound(src, tool.usesound, 50, TRUE)
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
+		task_timed(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
 		return ITEM_INTERACT_SUCCESS
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS

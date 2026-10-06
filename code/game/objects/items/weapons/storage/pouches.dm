@@ -50,7 +50,7 @@ CAPABILITIES(/obj/item/storage/pouch)
 		return TRUE // Skip delay
 
 	if(remove_delay && !stall_passed)
-		om_task_start(/datum/om/task/timed/pouch_stalled_remove, user, src, receiver = src, duration = remove_delay, W = W, new_location = new_location)
+		task_start(/datum/task/timed/pouch_stalled_remove, user, src, receiver = src, duration = remove_delay, W = W, new_location = new_location)
 		return FALSE // the delay runs first; stalled_remove() retries the move
 
 	if(W in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -58,12 +58,12 @@ CAPABILITIES(/obj/item/storage/pouch)
 
 	return FALSE //Item was somehow already removed
 
-/datum/om/task/timed/pouch_stalled_remove
+/datum/task/timed/pouch_stalled_remove
 	complete_proc = /obj/item/storage/pouch/proc/stalled_remove
 	var/obj/item/W
 	var/atom/new_location
 
-/obj/item/storage/pouch/proc/stalled_remove(datum/om/task/timed/pouch_stalled_remove/task)
+/obj/item/storage/pouch/proc/stalled_remove(datum/task/timed/pouch_stalled_remove/task)
 	var/obj/item/W = task.W
 	var/mob/user = task.actor
 	var/atom/new_location = task.new_location

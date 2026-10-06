@@ -528,24 +528,24 @@
 	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
 
 	T.add_overlay(target_image)
-	om_task_start(/datum/om/task/timed/construct_shot, user, src, duration = pre_shot_delay, aimed_at = hit_atom, marked = T, marker = target_image)
+	task_start(/datum/task/timed/construct_shot, user, src, duration = pre_shot_delay, aimed_at = hit_atom, marked = T, marker = target_image)
 	return FALSE
 
 /obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
 /// A construct's charged shot: the target turf is marked while it charges, then it fires.
-/datum/om/task/timed/construct_shot
+/datum/task/timed/construct_shot
 	complete_proc = /obj/item/spell/construct/projectile/proc/shot_charged
 	cancel_proc = /obj/item/spell/construct/projectile/proc/shot_unmark
 	var/atom/aimed_at
 	var/turf/marked
 	var/image/marker
 
-/obj/item/spell/construct/projectile/proc/shot_unmark(datum/om/task/timed/construct_shot/task)
+/obj/item/spell/construct/projectile/proc/shot_unmark(datum/task/timed/construct_shot/task)
 	task.marked?.cut_overlay(task.marker)
 	spent(task.marker)
 
-/obj/item/spell/construct/projectile/proc/shot_charged(datum/om/task/timed/construct_shot/task)
+/obj/item/spell/construct/projectile/proc/shot_charged(datum/task/timed/construct_shot/task)
 	shot_unmark(task)
 	if(!task.aimed_at)
 		return
@@ -690,21 +690,21 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		om_task_start(/datum/om/task/timed/slam_slam_wall, user, src, duration = windup, W = W, attack_message = attack_message)
+		task_start(/datum/task/timed/slam_slam_wall, user, src, duration = windup, W = W, attack_message = attack_message)
 		return
 	consume(src, user)
 
-/obj/item/spell/construct/slam/proc/slam_lowered(datum/om/task/timed/slam_slam_wall/task)
+/obj/item/spell/construct/slam/proc/slam_lowered(datum/task/timed/slam_slam_wall/task)
 	var/mob/living/user = task.actor
 	act_message(user, null, others = span_bold("%U%") + " lowers its fist.")
 
-/datum/om/task/timed/slam_slam_wall
+/datum/task/timed/slam_slam_wall
 	complete_proc = /obj/item/spell/construct/slam/proc/slam_wall
 	cancel_proc = /obj/item/spell/construct/slam/proc/slam_lowered
 	var/turf/simulated/wall/W
 	var/attack_message
 
-/obj/item/spell/construct/slam/proc/slam_wall(datum/om/task/timed/slam_slam_wall/task)
+/obj/item/spell/construct/slam/proc/slam_wall(datum/task/timed/slam_slam_wall/task)
 	var/mob/living/user = task.actor
 	var/turf/simulated/wall/W = task.W
 	var/attack_message = task.attack_message

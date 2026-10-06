@@ -90,14 +90,14 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 /obj/structure/candybowl/proc/can_search(mob/user, atom/target, obj/item/held)
 	if(!has_candy)
 		return "there is no candy, someone took too many"
-	if(om_busy(src))
+	if(task_busy(src))
 		return "someone is already looking through \the [src]"
 	return TRUE
 
 /// Old attack_hand.
 /obj/structure/candybowl/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
+	task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/candybowl/proc/search_done(mob/user)
@@ -228,7 +228,7 @@ DECLARE_INTERACTIONS(/obj/structure/boxpile, INTERACT_HAND_UNGATED(null, PROC_RE
 
 /// Old attack_hand.
 /obj/structure/boxpile/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
+	task_timed(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/boxpile/proc/rummage_done(mob/living/user)

@@ -21,7 +21,7 @@
 //
 // A step goes on with one of:
 //   wait(duration, next, ...)   a timed action (actor on target, progress bar, cancelled on
-//                               move etc. like any /datum/om/task/timed), then `next(task)`
+//                               move etc. like any /datum/task/timed), then `next(task)`
 //   om_ask(answerer, prompt, next, ...)   a typed prompt (ask.dm); `next(prompt)` gets the
 //                               answer. The prompt's asker defaults to the actor and its
 //                               subject to the target.
@@ -167,7 +167,7 @@
 		work_on = null
 	if(!park())
 		return "gone"
-	var/result = om_task_launch(/datum/om/task/timed/flow_wait, doer, work_on, list(
+	var/result = task_launch(/datum/task/timed/flow_wait, doer, work_on, list(
 		"duration" = duration,
 		"flow" = src,
 		"next_step" = next,
@@ -182,18 +182,18 @@
 	return null
 
 /// A flow's timed step. The flow is held by this var (unheld: it's not a thing to watch).
-/datum/om/task/timed/flow_wait
+/datum/task/timed/flow_wait
 	name = "flow_wait"
 	unheld = list("flow")
 	var/datum/om/flow/flow
 	var/next_step
 
-/datum/om/task/timed/flow_wait/timed_done()
+/datum/task/timed/flow_wait/timed_done()
 	var/datum/om/flow/F = flow
 	flow = null
 	F?.resume(next_step, src)
 
-/datum/om/task/timed/flow_wait/timed_failed()
+/datum/task/timed/flow_wait/timed_failed()
 	..()
 	var/datum/om/flow/F = flow
 	flow = null

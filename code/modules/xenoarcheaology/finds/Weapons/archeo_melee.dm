@@ -367,7 +367,7 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
 	conjure_animation(A, toolspeed)
-	om_task_timed(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
+	task_timed(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
 	return TRUE
 
 /obj/item/melee/artifact_blade/proc/convert_turf_done(atom/A, mob/living/user)

@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/stack)
 	var/required = quantity*recipe.req_amount
 	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
 
-	if(om_busy(src))
+	if(task_busy(src))
 		return
 
 	if (!can_use(required))
@@ -182,10 +182,10 @@ CAPABILITIES(/obj/item/stack)
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	om_task_start(/datum/om/task/timed/stack_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
+	task_start(/datum/task/timed/stack_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
 
 /// Building a stack recipe (at once when it takes no time): the stack is claimed meanwhile.
-/datum/om/task/timed/stack_build
+/datum/task/timed/stack_build
 	claims = TRUE
 	complete_proc = /obj/item/stack/proc/produce_recipe_done
 	var/datum/stack_recipe/recipe
@@ -193,7 +193,7 @@ CAPABILITIES(/obj/item/stack)
 	var/produced
 
 /// The build time is over: spend the stack and make the thing.
-/obj/item/stack/proc/produce_recipe_done(datum/om/task/timed/stack_build/task)
+/obj/item/stack/proc/produce_recipe_done(datum/task/timed/stack_build/task)
 	var/datum/stack_recipe/recipe = task.recipe
 	var/mob/user = task.actor
 	var/required = task.required

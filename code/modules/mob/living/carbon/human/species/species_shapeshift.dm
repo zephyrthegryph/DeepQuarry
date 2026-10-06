@@ -761,15 +761,15 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_regenerate_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	om_task_start(/datum/om/task/timed/human_shapeshifter_regenerate_human, src, src, receiver = src, flavour = flavour, oocnotes = oocnotes)
+	task_start(/datum/task/timed/human_shapeshifter_regenerate_human, src, src, receiver = src, flavour = flavour, oocnotes = oocnotes)
 
-/datum/om/task/timed/human_shapeshifter_regenerate_human
+/datum/task/timed/human_shapeshifter_regenerate_human
 	duration = 4 SECONDS
 	complete_proc = /mob/living/carbon/human/proc/shapeshifter_regenerate_human_done
 	var/flavour
 	var/oocnotes
 
-/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(datum/om/task/timed/human_shapeshifter_regenerate_human/task)
+/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(datum/task/timed/human_shapeshifter_regenerate_human/task)
 	var/mob/living/character = task.actor
 	var/flavour = task.flavour
 	var/oocnotes = task.oocnotes
@@ -918,7 +918,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 
 	to_chat(src, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	act_message(src, victim, MSG_SELF(span_danger("You begin to reassemble into %T%.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	om_task_timed(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
+	task_timed(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
 
 /mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
 	if (!copy_body_gripping(victim))
@@ -944,7 +944,7 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 /mob/living/carbon/human/proc/shapeshifter_reassemble_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	om_task_timed(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
+	task_timed(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(flavour, oocnotes)
 	if (client?.prefs)

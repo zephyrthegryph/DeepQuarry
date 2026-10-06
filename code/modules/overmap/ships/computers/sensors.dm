@@ -209,7 +209,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 		return OP_OK
 	to_chat(user, span_notice("You start repairing the damage to [src]."))
 	play_sfx(src, SFX_ITEMS_WELDER)
-	om_task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
+	task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
 	return OP_OK
 
 /obj/machinery/shipsensors/proc/weld_repair_done(mob/user, obj/item/weldingtool/welder)

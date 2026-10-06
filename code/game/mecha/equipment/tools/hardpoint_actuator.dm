@@ -22,7 +22,7 @@
 		var/obj/item/mecha_parts/mecha_equipment/ME = target
 		if(ME.can_attach(chassis))
 			occupant_message("[ME] can be integrated. Stand by.")
-			om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 3 SECONDS, target, src, PROC_REF(integrate_done), list(ME), IGNORE_HELD_ITEM)
+			task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 3 SECONDS, target, src, PROC_REF(integrate_done), list(ME), IGNORE_HELD_ITEM)
 		else
 			occupant_message("[ME] cannot be integrated due to lack of free hardpoints.")
 

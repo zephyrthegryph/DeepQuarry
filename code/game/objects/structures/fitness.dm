@@ -66,7 +66,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 		return "You need more energy to lift weights, go eat something."
 	if(user.weight < 70) // Add weight loss to old fitness equipment
 		return "You're too skinny to risk losing any more weight."
-	if(om_busy(machine))
+	if(task_busy(machine))
 		return "The weight machine is already in use by somebody else."
 	return null
 
@@ -76,7 +76,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 	play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
 	user.set_dir(SOUTH)
 	flick("[icon_state]_[weight]", src)
-	om_task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
+	task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 	return OP_OK
 
 /obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)

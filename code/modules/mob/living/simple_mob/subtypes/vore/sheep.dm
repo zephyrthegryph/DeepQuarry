@@ -90,7 +90,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 		return FALSE
 	if(!harvestable_wool)
 		return FALSE
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
 	return TRUE
 
 /mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)

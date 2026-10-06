@@ -201,7 +201,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 	act_message(user, src, MSG_SELF(span_notice("You start to clean %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts to clean %T%.")))
 
-	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
+	task_timed(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
 	return TRUE
 
 /obj/machinery/microwave/proc/clean_done(mob/user)
@@ -285,14 +285,14 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		return OP_DECLINE
 	act_message(user, src, MSG_SELF(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%.")))
-	om_task_start(/datum/om/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
+	task_start(/datum/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
 	return OP_OK
 
-/datum/om/task/timed/microwave_secure
+/datum/task/timed/microwave_secure
 	complete_proc = /obj/machinery/microwave/proc/secure_done
 	fail_message = span_notice("You decide not to do that.")
 
-/obj/machinery/microwave/proc/secure_done(datum/om/task/timed/microwave_secure/task)
+/obj/machinery/microwave/proc/secure_done(datum/task/timed/microwave_secure/task)
 	var/mob/user = task.actor
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "unsecure" : "secure"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "unsecures" : "secures"] %T%.")))
@@ -608,7 +608,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	act_message(user, src, MSG_SELF(span_notice("You try to open %T% and remove its contents.")), \
 		MSG_OTHERS(span_notice("%U% tries to open %T% and remove its contents.")))
 
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
+	task_timed(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
 	return TRUE
 
 /obj/machinery/microwave/proc/eject_done(mob/user)

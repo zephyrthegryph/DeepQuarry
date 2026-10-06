@@ -202,7 +202,7 @@
 	return ..()
 
 /mob/living/bot/cleanbot/update_icons()
-	if(om_busy(src))
+	if(task_busy(src))
 		icon_state = "cleanbot-c"
 	else
 		icon_state = "cleanbot[on]"

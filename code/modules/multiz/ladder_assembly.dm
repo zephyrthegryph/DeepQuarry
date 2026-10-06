@@ -61,7 +61,7 @@ CAPABILITIES(/obj/structure/ladder_assembly)
 			act_message(user, src, MSG_SELF("You start to weld %T% to the floor."), \
 				MSG_OTHERS("%U% starts to weld %T% to the floor."), \
 				MSG_BLIND("You hear welding"))
-			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WRENCHED)
+			task_start(/datum/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WRENCHED)
 		if(LADDER_CONSTRUCTION_WELDED)
 			if(!WT.remove_fuel(0, user))
 				to_chat(user, span_warning("You need more welding fuel to complete this task."))
@@ -70,16 +70,16 @@ CAPABILITIES(/obj/structure/ladder_assembly)
 			act_message(user, src, MSG_SELF("You start to cut %T% free from the floor."), \
 				MSG_OTHERS("%U% starts to cut %T% free from the floor."), \
 				MSG_BLIND("You hear welding"))
-			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WELDED)
+			task_start(/datum/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WELDED)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/om/task/timed/ladder_assembly_weld
+/datum/task/timed/ladder_assembly_weld
 	duration = 2 SECONDS
 	complete_proc = /obj/structure/ladder_assembly/proc/weld_done
 	var/obj/item/weldingtool/WT
 	var/from_state
 
-/obj/structure/ladder_assembly/proc/weld_done(datum/om/task/timed/ladder_assembly_weld/task)
+/obj/structure/ladder_assembly/proc/weld_done(datum/task/timed/ladder_assembly_weld/task)
 	var/mob/user = task.actor
 	var/obj/item/weldingtool/WT = task.WT
 	var/from_state = task.from_state

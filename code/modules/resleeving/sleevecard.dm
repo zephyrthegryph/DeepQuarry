@@ -12,13 +12,13 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	INTERACT_ITEM(null, PROC_REF(sleevecard_interaction_item)), \
 )
 
-/datum/om/task/timed/sleevecard_upload_mind
+/datum/task/timed/sleevecard_upload_mind
 	duration = 8 SECONDS
 	complete_proc = /obj/item/paicard/sleevecard/proc/upload_mind_done
 	var/obj/item/sleevemate/S
 	var/mind_name
 
-/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/om/task/timed/sleevecard_upload_mind/task)
+/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/task/timed/sleevecard_upload_mind/task)
 	var/mob/user = task.actor
 	var/obj/item/sleevemate/S = task.S
 	var/mind_name = task.mind_name
@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 			var/datum/transcore_db/db = SStranscore.db_by_mind_name(M.name)
 			if(db)
 				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
-				om_task_start(/datum/om/task/timed/sleevecard_upload_mind, user, src, receiver = src, S = S, mind_name = M.name)
+				task_start(/datum/task/timed/sleevecard_upload_mind, user, src, receiver = src, S = S, mind_name = M.name)
 			else
 				to_chat(user, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
 	else if(istype(I, /obj/item/card/emag))

@@ -27,19 +27,19 @@
 		// Handle things that are part of this interface but not removing/replacing a given item.
 		if("pockets")
 			act_message(user, src, others = span_danger("%U% is trying to empty %T%'s pockets!"))
-			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
+			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done), done_args = list(user))
 			return
 		if("splints")
 			act_message(user, src, others = span_danger("%U% is trying to remove %T%'s splints!"))
-			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
+			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done2), done_args = list(user))
 			return
 		if("sensors")
 			act_message(user, src, others = span_danger("%U% is trying to set %T%'s sensors!"))
-			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
+			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done3), done_args = list(user))
 			return
 		if("internals")
 			act_message(user, src, others = span_danger("%U% is trying to set %T%'s internals!"))
-			om_task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
+			task_timed(user, HUMAN_STRIP_DELAY, target = src, receiver = src, on_done = PROC_REF(handle_strip_human_done4), done_args = list(user))
 			return
 		if("tie")
 			var/obj/item/clothing/under/suit = get_equipped_item(SLOT_ID_UNIFORM)
@@ -50,7 +50,7 @@
 				return
 			act_message(user, src, others = span_danger("%U% is trying to remove %T%'s [A.name]!"))
 
-			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, suit = suit, A = A)
+			task_start(/datum/task/timed/human_handle_strip_human, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, suit = suit, A = A)
 			return
 		if("underwear")
 			open_request(src, /datum/prompt/choice, PROC_REF(strip_underwear_chosen), answerer = user, title = "Show/hide underwear", question = "Choose underwear. (Do not do this without OOC permission from the other player)", choices = GLOB.global_underwear.categories, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
@@ -95,7 +95,7 @@
 		else
 			act_message(user, src, others = span_danger("%U% is trying to put \a [wrapped] on %T%!"))
 
-	om_task_start(/datum/om/task/timed/human_handle_strip_human2, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, slot_to_strip = slot_to_strip, target_slot = target_slot, stripping = stripping, held_arg = held, max_interact_count = 15)
+	task_start(/datum/task/timed/human_handle_strip_human2, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, slot_to_strip = slot_to_strip, target_slot = target_slot, stripping = stripping, held_arg = held, max_interact_count = 15)
 	return TRUE
 
 /mob/living/carbon/human/proc/handle_strip_human_done(mob/living/user)
@@ -106,12 +106,12 @@
 	toggle_sensors(user)
 /mob/living/carbon/human/proc/handle_strip_human_done4(mob/living/user)
 	toggle_internals(user)
-/datum/om/task/timed/human_handle_strip_human
+/datum/task/timed/human_handle_strip_human
 	complete_proc = /mob/living/carbon/human/proc/handle_strip_human_done5
 	var/obj/item/clothing/under/suit
 	var/obj/item/clothing/accessory/A
 
-/mob/living/carbon/human/proc/handle_strip_human_done5(datum/om/task/timed/human_handle_strip_human/task)
+/mob/living/carbon/human/proc/handle_strip_human_done5(datum/task/timed/human_handle_strip_human/task)
 	var/mob/living/user = task.actor
 	var/obj/item/clothing/under/suit = task.suit
 	var/obj/item/clothing/accessory/A = task.A
@@ -126,14 +126,14 @@
 	own_take_member(suit, nameof(suit.accessories), A)
 	update_inv_w_uniform()
 	return
-/datum/om/task/timed/human_handle_strip_human2
+/datum/task/timed/human_handle_strip_human2
 	complete_proc = /mob/living/carbon/human/proc/handle_strip_human_done6
 	var/slot_to_strip
 	var/obj/item/target_slot
 	var/stripping
 	var/obj/item/held_arg
 
-/mob/living/carbon/human/proc/handle_strip_human_done6(datum/om/task/timed/human_handle_strip_human2/task)
+/mob/living/carbon/human/proc/handle_strip_human_done6(datum/task/timed/human_handle_strip_human2/task)
 	var/slot_to_strip = task.slot_to_strip
 	var/mob/living/user = task.actor
 	var/obj/item/target_slot = task.target_slot

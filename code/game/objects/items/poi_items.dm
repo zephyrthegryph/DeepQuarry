@@ -294,7 +294,7 @@ DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
 	if(unscrewed && !has_paper)
 		message += "Looks like there's a printer without any paper in it."
 
-	om_task_timed(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
+	task_timed(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
 	return TRUE
 
 /obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)

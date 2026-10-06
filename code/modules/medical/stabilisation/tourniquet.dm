@@ -60,19 +60,19 @@
 		balloon_alert(user, "\the [E.name] already has a tourniquet!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts cinching \a [src] around [H == user ? "their" : "[H]'s"] [E.name].", "cinching \the [src] around the [E.name].")
-	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, duration = TOURNIQUET_APPLY_TIME, E = E)
+	task_start(/datum/task/timed/tourniquet_cinch, user, H, duration = TOURNIQUET_APPLY_TIME, E = E)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/tourniquet/proc/cinch_failed(datum/om/task/timed/tourniquet_cinch/task)
+/obj/item/tourniquet/proc/cinch_failed(datum/task/timed/tourniquet_cinch/task)
 	var/mob/living/user = task.actor
 	balloon_alert(user, "hold still to cinch the tourniquet!")
 
-/datum/om/task/timed/tourniquet_cinch
+/datum/task/timed/tourniquet_cinch
 	complete_proc = /obj/item/tourniquet/proc/cinch_done
 	cancel_proc = /obj/item/tourniquet/proc/cinch_failed
 	var/obj/item/organ/external/E
 
-/obj/item/tourniquet/proc/cinch_done(datum/om/task/timed/tourniquet_cinch/task)
+/obj/item/tourniquet/proc/cinch_done(datum/task/timed/tourniquet_cinch/task)
 	var/mob/living/user = task.actor
 	var/mob/living/carbon/human/H = task.target
 	var/obj/item/organ/external/E = task.E
@@ -236,7 +236,7 @@
 	var/obj/item/organ/external/E = cinched[choice]
 	act_message(user, src, MSG_SELF(span_notice("You start loosening the tourniquet on the [E.name].")), \
 		MSG_OTHERS(span_notice("%U% starts loosening the tourniquet on [src == user ? "their" : "%T%'s"] [E.name].")))
-	om_task_timed(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
+	task_timed(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
 
 /mob/living/carbon/human/proc/loosen_tourniquet_done(mob/living/user, obj/item/organ/external/E)
 	// Re-validate after the delay.

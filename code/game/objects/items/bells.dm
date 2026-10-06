@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/deskbell)
 	var/mob/user = A.actor
 	if(!isturf(loc))
 		return OP_OK
-	om_task_timed(user, 0.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	task_timed(user, 0.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/item/deskbell/proc/wrench_act_timed_done(mob/user)

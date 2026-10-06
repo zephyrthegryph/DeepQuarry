@@ -12,7 +12,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 		return OP_DECLINE
 	if(icon_state in GLOB.has_rocks)
 		act_message(user, src, MSG_SELF("You loosen rocks from %T%..."), MSG_OTHERS("%U% loosens rocks from %T%..."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
+		task_timed(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
 		return TRUE
 	if(locate_on(src, /obj))
 		to_chat(user, span_notice("The [name] isn't clear."))
@@ -36,7 +36,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 		return
 	var/mob/user = A.request.answerer
 	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(pile_done))
+	task_timed(user, 5 SECONDS, src, src, PROC_REF(pile_done))
 
 /turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done()
 	if(!(icon_state in GLOB.has_rocks))
@@ -91,7 +91,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	var/mob/user = A.actor
 	if(sticks)
 		act_message(user, src, MSG_SELF("You search %T% for loose sticks..."), MSG_OTHERS("%U% searches %T% for loose sticks..."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
+		task_timed(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
 	else
 		to_chat(user, span_notice("You don't see any loose sticks..."))
 	return OP_OK

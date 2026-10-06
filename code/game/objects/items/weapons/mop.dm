@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/mop)
 
 		act_message(user, null, others = span_warning("%U% begins to clean \the [get_turf(A)]."))
 
-		om_task_timed(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
+		task_timed(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
 
 /obj/item/mop/proc/afterattack_timed_done(atom/A, mob/user)
 	var/turf/T = get_turf(A)

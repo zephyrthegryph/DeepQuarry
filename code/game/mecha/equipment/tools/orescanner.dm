@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/orescanner)
 	chassis.Beam(target, "g_beam", 'icons/effects/beam.dmi', 2 SECONDS, 10, /obj/effect/ebeam, 2)
 
 	// The beam ends itself after 2 seconds.
-	om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 2 SECONDS, target, src, PROC_REF(scan_done), list(target), IGNORE_HELD_ITEM)
+	task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 2 SECONDS, target, src, PROC_REF(scan_done), list(target), IGNORE_HELD_ITEM)
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/advanced
 	name = "advanced ore scanner"

@@ -26,7 +26,7 @@
  * Returns FALSE when a check refused the job, TRUE when it was done at once (no wait;
  * on_done has run), or USE_TOOL_PENDING when the timed action started. `claims`: the target is
  * exclusive while the job runs (another claiming job on it is refused); `busy`: a datum the job
- * also claims (om_busy() holds while it runs; see om_task_timed()).
+ * also claims (task_busy() holds while it runs; see task_timed()).
  */
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
@@ -95,11 +95,11 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	for(var/key in job_params)
 		job_vars[key] = job_params[key]
 	if(!job_type)
-		job_type = claims ? /datum/om/task/timed/tool_job/claiming : /datum/om/task/timed/tool_job
-	var/datum/om/task/timed/tool_job/job = om_task_launch(job_type, actor, target, job_vars, null)
+		job_type = claims ? /datum/task/timed/tool_job/claiming : /datum/task/timed/tool_job
+	var/datum/task/timed/tool_job/job = task_launch(job_type, actor, target, job_vars, null)
 	if(istext(job))
 		return FALSE
-	if(job.state == OM_TASK_DONE)
+	if(job.state == TASK_DONE)
 		return job.succeeded
 	return USE_TOOL_PENDING
 
@@ -107,7 +107,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 /// `done_proc` runs on whoever asked (`on_behalf_of`) with `done_args`; `fail_proc` if it was
 /// interrupted or the tool gave out. The caller's procs take at most two arguments: anything
 /// more is state, and belongs on its own task type.
-/datum/om/task/timed/tool_job
+/datum/task/timed/tool_job
 	complete_proc = /proc/use_tool_finish
 	cancel_proc = /proc/use_tool_interrupted
 	var/obj/item/tool
@@ -124,10 +124,10 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	/// Set when the job completed and the tool did it.
 	var/succeeded = FALSE
 
-/datum/om/task/timed/tool_job/claiming
+/datum/task/timed/tool_job/claiming
 	claims = TRUE
 
-/datum/om/task/timed/tool_job/timed_check()
+/datum/task/timed/tool_job/timed_check()
 	return !extra_checks || extra_checks.Invoke()
 
 /**
@@ -135,7 +135,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
  * have turned the welder off or emptied it), then the resources are used and `done_proc`
  * runs with `done_args` (a /proc/ path is called globally). Sets the task's `succeeded`.
  */
-/proc/use_tool_finish(datum/om/task/timed/tool_job/job)
+/proc/use_tool_finish(datum/task/timed/tool_job/job)
 	var/obj/item/tool = job.tool
 	if(QDELETED(job.target) || (job.quality && tool_quality_failure(tool, job.quality, job.tier)))
 		use_tool_interrupted(job)
@@ -147,42 +147,42 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	job.succeeded = TRUE
 	job.tool_done()
 
-/proc/use_tool_interrupted(datum/om/task/timed/tool_job/job)
+/proc/use_tool_interrupted(datum/task/timed/tool_job/job)
 	job.tool_failed()
 
 /// The tool did the job. Subtypes with state call their receiver with it.
-/datum/om/task/timed/tool_job/proc/tool_done()
-	om_call_ref(on_behalf_of, done_proc, done_args)
+/datum/task/timed/tool_job/proc/tool_done()
+	call_ref(on_behalf_of, done_proc, done_args)
 
 /// The job was interrupted or the tool gave out.
-/datum/om/task/timed/tool_job/proc/tool_failed()
-	om_call_ref(on_behalf_of, fail_proc, fail_args)
+/datum/task/timed/tool_job/proc/tool_failed()
+	call_ref(on_behalf_of, fail_proc, fail_args)
 
 // ---- tool jobs with state (use_tool(job_type = ...)): the state is on the task.
 
 /// An interaction's time cost paid by a tool: cost_paid() runs with the held item.
-/datum/om/task/timed/tool_job/interaction
+/datum/task/timed/tool_job/interaction
 	var/obj/item/held
 
-/datum/om/task/timed/tool_job/interaction/tool_done()
+/datum/task/timed/tool_job/interaction/tool_done()
 	var/datum/interaction/I = on_behalf_of
 	I?.cost_paid(actor, target, held)
 
 /// Repairing a flash's bulb with a screwdriver.
-/datum/om/task/timed/tool_job/flash_repair/tool_done()
+/datum/task/timed/tool_job/flash_repair/tool_done()
 	var/obj/item/flash/F = target
 	F.screwdriver_act_tool_done(actor, tool)
 
-/datum/om/task/timed/tool_job/flash_repair/tool_failed()
+/datum/task/timed/tool_job/flash_repair/tool_failed()
 	var/obj/item/flash/F = target
 	F.screwdriver_act_tool_failed(actor, tool)
 
 /// Welding a disposal pipe segment in place: what kind of segment it was.
-/datum/om/task/timed/tool_job/disposal_weld
+/datum/task/timed/tool_job/disposal_weld
 	var/nicetype
 	var/ispipe = FALSE
 
-/datum/om/task/timed/tool_job/disposal_weld/tool_done()
+/datum/task/timed/tool_job/disposal_weld/tool_done()
 	var/obj/structure/disposalconstruct/C = target
 	C.welder_act_tool_done(actor, nicetype, ispipe)
 

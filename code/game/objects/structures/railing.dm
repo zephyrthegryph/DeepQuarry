@@ -224,7 +224,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 	if(anchored)
 		return OP_OK
 	playsound(src, W.usesound, 50, 1)
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/railing/proc/wrench_act_timed_done(mob/user)
@@ -239,7 +239,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 	var/obj/item/weldingtool/F = W.get_welder()
 	if(F.welding)
 		playsound(src, F.usesound, 50, 1)
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
+		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/railing/proc/welder_act_timed_done(mob/user)
@@ -252,7 +252,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 	var/obj/item/W = A.held
 	act_message(user, src, others = span_info(span_bold("%U%") + " begins [anchored ? "unscrewing" : "fastening"] %T%."))
 	playsound(src, W.usesound, 75, 1)
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
+	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/railing/proc/screwdriver_act_timed_done(mob/user)

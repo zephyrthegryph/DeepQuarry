@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/material/snow/snowball)
 /obj/item/material/snow/snowball/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start compacting the snowball."))
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return OP_OK
 
 /// Old attack_self's harm branch: smashing it back into snow.

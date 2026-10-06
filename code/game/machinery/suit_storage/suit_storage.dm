@@ -398,7 +398,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	if(user.stat != CONSCIOUS)
 		return TRUE
 	act_message(user, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(interaction_move_inside_timed_done), done_args = list(user))
+	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(interaction_move_inside_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/machinery/suit_storage_unit/proc/interaction_move_inside_timed_done(mob/user)
@@ -432,7 +432,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 			to_chat(user, span_warning("The unit's storage area is too cluttered."))
 			return TRUE
 		act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the Suit Storage Unit."))
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user, G))
+		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_use_item_timed_done), done_args = list(user, G))
 		return TRUE
 	if(istype(I,/obj/item/clothing/suit/space))
 		if(!isopen)

@@ -161,7 +161,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/shotgun/pump, TYPE_PROC_REF(/at
 			user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD Port
 			burst = burstsetting
 			return
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user)) // SHIT IS STEALTHY EYYYYY
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user)) // SHIT IS STEALTHY EYYYYY
 	else
 		return ..()
 

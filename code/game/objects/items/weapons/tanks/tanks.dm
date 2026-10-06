@@ -175,18 +175,18 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	if(istype(W, /obj/item/assembly_holder))
 		if(wired)
 			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
-			om_task_start(/datum/om/task/timed/tank_attackby, user, src, receiver = src, W = W)
+			task_start(/datum/task/timed/tank_attackby, user, src, receiver = src, W = W)
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
 	return OP_PASS
 
-/datum/om/task/timed/tank_attackby
+/datum/task/timed/tank_attackby
 	duration = 5 SECONDS
 	complete_proc = /obj/item/tank/proc/attackby_timed_done
 	cancel_proc = /obj/item/tank/proc/attackby_timed_failed
 	var/obj/item/W
 
-/obj/item/tank/proc/attackby_timed_done(datum/om/task/timed/tank_attackby/task)
+/obj/item/tank/proc/attackby_timed_done(datum/task/timed/tank_attackby/task)
 	var/obj/item/W = task.W
 	var/mob/user = task.actor
 	to_chat(user, span_notice("You finish attaching the assembly to \the [src]."))
@@ -194,7 +194,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	message_admins("[key_name_admin(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]")
 	assemble_bomb(W,user)
 
-/obj/item/tank/proc/attackby_timed_failed(datum/om/task/timed/tank_attackby/task)
+/obj/item/tank/proc/attackby_timed_failed(datum/task/timed/tank_attackby/task)
 	var/mob/user = task.actor
 	to_chat(user, span_notice("You stop attaching the assembly."))
 
@@ -203,10 +203,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	if(wired && src.proxyassembly.assembly)
 
 		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
-		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
+		task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
 
 	else if(wired)
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
+		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
 
 	else
 		to_chat(user, span_notice("There are no wires to cut!"))
@@ -249,27 +249,27 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	if(WT?.remove_fuel(1,user))
 		if(!valve_welded)
 			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-			om_task_start(/datum/om/task/timed/tank_welder_act, user, src, receiver = src, tool = tool, WT = WT)
+			task_start(/datum/task/timed/tank_welder_act, user, src, receiver = src, tool = tool, WT = WT)
 			WT.eyecheck(user)
 		else
 			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
 	add_fingerprint(user)
 	return OP_OK
 
-/datum/om/task/timed/tank_welder_act
+/datum/task/timed/tank_welder_act
 	duration = 4 SECONDS
 	complete_proc = /obj/item/tank/proc/welder_act_timed_done
 	cancel_proc = /obj/item/tank/proc/welder_act_timed_failed
 	var/obj/item/tool
 	var/obj/item/weldingtool/WT
 
-/obj/item/tank/proc/welder_act_timed_done(datum/om/task/timed/tank_welder_act/task)
+/obj/item/tank/proc/welder_act_timed_done(datum/task/timed/tank_welder_act/task)
 	var/mob/user = task.actor
 	to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
 	src.valve_welded = 1
 	set_leaking(FALSE)
 
-/obj/item/tank/proc/welder_act_timed_failed(datum/om/task/timed/tank_welder_act/task)
+/obj/item/tank/proc/welder_act_timed_failed(datum/task/timed/tank_welder_act/task)
 	var/mob/user = task.actor
 	var/obj/item/tool = task.tool
 	var/obj/item/weldingtool/WT = task.WT

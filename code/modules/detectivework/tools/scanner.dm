@@ -56,17 +56,17 @@ CAPABILITIES(/obj/item/detective_scanner)
 
 	add_fingerprint(user)
 
-	om_task_start(/datum/om/task/timed/detective_scanner_scan, user, src, A = A)
+	task_start(/datum/task/timed/detective_scanner_scan, user, src, A = A)
 	return 0
 
-/datum/om/task/timed/detective_scanner_scan
+/datum/task/timed/detective_scanner_scan
 	duration = 1 SECOND
 	complete_proc = /obj/item/detective_scanner/proc/scan_done
 	fail_message = span_warning("You must remain still for the device to complete its work.")
 	var/atom/A
 
 /// The scan: prints now, then fibres and blood (each a further timed action when analysed).
-/obj/item/detective_scanner/proc/scan_done(datum/om/task/timed/detective_scanner_scan/task)
+/obj/item/detective_scanner/proc/scan_done(datum/task/timed/detective_scanner_scan/task)
 	var/atom/A = task.A
 	var/mob/user = task.actor
 	// Contract evidence is authenticated by its ordinary paper/shipment
@@ -121,20 +121,20 @@ CAPABILITIES(/obj/item/detective_scanner)
 		to_chat(user,span_notice("Fibers/Materials detected.[reveal_fibers ? " Analysing..." : " Acquisition of fibers for H.R.F.S. analysis advised."]"))
 		flick("[icon_state]1",src)
 		if(reveal_fibers)
-			om_task_start(/datum/om/task/timed/forensic_scan, user, src, scanned = A, stage = "fibers")
+			task_start(/datum/task/timed/forensic_scan, user, src, scanned = A, stage = "fibers")
 			return
 	scan_blood(A, user)
 
 /// One five-second stage of a forensic scan (fibers, then blood). Interrupted, the scan skips
 /// to the next stage.
-/datum/om/task/timed/forensic_scan
+/datum/task/timed/forensic_scan
 	duration = 5 SECONDS
 	complete_proc = /obj/item/detective_scanner/proc/scan_stage_done
 	cancel_proc = /obj/item/detective_scanner/proc/scan_stage_skipped
 	var/atom/scanned
 	var/stage
 
-/obj/item/detective_scanner/proc/scan_stage_done(datum/om/task/timed/forensic_scan/task)
+/obj/item/detective_scanner/proc/scan_stage_done(datum/task/timed/forensic_scan/task)
 	var/atom/A = task.scanned
 	var/mob/user = task.actor
 	if(task.stage == "fibers")
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 		to_chat(user, "Blood type: " + span_warning("[blood_data[blood]]") + " DNA: " + span_warning("[blood]"))
 	scan_finish(A, user)
 
-/obj/item/detective_scanner/proc/scan_stage_skipped(datum/om/task/timed/forensic_scan/task)
+/obj/item/detective_scanner/proc/scan_stage_skipped(datum/task/timed/forensic_scan/task)
 	if(task.stage == "fibers")
 		scan_blood(task.scanned, task.actor)
 	else
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 	if (A.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood detected.[reveal_blood ? " Analysing..." : " Acquisition of swab for H.R.F.S. analysis advised."]"))
 		if(reveal_blood)
-			om_task_start(/datum/om/task/timed/forensic_scan, user, src, scanned = A, stage = "blood")
+			task_start(/datum/task/timed/forensic_scan, user, src, scanned = A, stage = "blood")
 			return
 	scan_finish(A, user)
 
@@ -192,13 +192,13 @@ CAPABILITIES(/obj/item/detective_scanner)
 /// Shows the stored records one per second (a timed action each, so moving stops the spam).
 /obj/item/detective_scanner/proc/display_data(mob/user)
 	if(user && stored && stored.len)
-		om_task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, 1))
+		task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, 1))
 
 /obj/item/detective_scanner/proc/display_record(mob/user, index)
 	if(index > length(stored))
 		return
 	if(index < length(stored))
-		om_task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, index + 1))
+		task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, index + 1))
 	var/datum/data/record/forensic/F = stored[stored[index]]
 	var/list/fprints = F.fields["fprints"]
 	var/list/fibers = F.fields["fibers"]

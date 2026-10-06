@@ -51,7 +51,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/snow)
 	if(!Adjacent(user))
 		return TRUE
 	act_message(user, null, others = "%U% starts scooping up some snow.", blind = "You start scooping up some snow.")
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
+	task_timed(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
 	return TRUE
 
 /turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)

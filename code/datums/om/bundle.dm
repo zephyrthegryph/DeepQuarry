@@ -37,8 +37,6 @@
 	/// Pipeline stages this entity type runs besides its pipelines' own (each stage names its
 	/// pipeline; a family root listed here resolves to the entity's variant).
 	var/list/stages
-	/// name -> task row (see task.dm).
-	var/list/tasks
 	/// UI binding rows: list(list(target = /type/proc/x, watch = mask)).
 	var/list/ui
 	/// effect id -> value (number or FROM_VAR) the entity holds on itself while started.
@@ -70,8 +68,6 @@
 	var/list/behaviours = list()
 	/// Stage types from `stages` rows (pipeline.dm).
 	var/list/stages = list()
-	/// name -> /datum/om/task
-	var/list/tasks = list()
 	/// UI rows.
 	var/list/ui = list()
 	/// Stride 2: effect id, value spec.

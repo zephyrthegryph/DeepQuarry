@@ -81,7 +81,7 @@
 	endurance = 130
 
 /mob/living/bot/secbot/update_icons()
-	if(on && om_busy(src))
+	if(on && task_busy(src))
 		icon_state = "[default_icon_state]-c"
 	else
 		icon_state = "[default_icon_state][on]"
@@ -349,7 +349,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
 			play_sfx(src, SFX_WEAPONS_EGLOVES)
 			do_attack_animation(H)
-			om_hold_busy(src, 2, PROC_REF(update_icons))
+			task_hold_busy(src, 2, PROC_REF(update_icons))
 			update_icons()
 			act_message(H, src, others = span_warning("%U% was prodded by %T% with a stun baton!"))
 			insult(H)
@@ -362,7 +362,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
 		play_sfx(src, SFX_SWING_HIT, 2)
-		om_hold_busy(src, 2, PROC_REF(update_icons))
+		task_hold_busy(src, 2, PROC_REF(update_icons))
 		update_icons()
 		act_message(M, src, others = span_warning("%U% was beaten by %T% with a stun baton!"))
 		insult(L)

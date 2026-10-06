@@ -26,20 +26,20 @@ EXTEND_INTERACTIONS(/obj/machinery/mineral/mint, \
 	if(M.amount <= 0)
 		return
 	icon_state = "coinpress1"
-	om_task_start(/datum/om/task/timed/mint_press_sheet, user, src, M = M)
+	task_start(/datum/task/timed/mint_press_sheet, user, src, M = M)
 
-/obj/machinery/mineral/mint/proc/press_interrupted(datum/om/task/timed/mint_press_sheet/task)
+/obj/machinery/mineral/mint/proc/press_interrupted(datum/task/timed/mint_press_sheet/task)
 	var/mob/user = task.actor
 	to_chat(user,span_warning("\The [src] is hand-operated and requires your full attention!"))
 	icon_state = "coinpress0"
 
-/datum/om/task/timed/mint_press_sheet
+/datum/task/timed/mint_press_sheet
 	duration = 2 SECONDS
 	complete_proc = /obj/machinery/mineral/mint/proc/press_sheet
 	cancel_proc = /obj/machinery/mineral/mint/proc/press_interrupted
 	var/obj/item/stack/material/M
 
-/obj/machinery/mineral/mint/proc/press_sheet(datum/om/task/timed/mint_press_sheet/task)
+/obj/machinery/mineral/mint/proc/press_sheet(datum/task/timed/mint_press_sheet/task)
 	var/mob/user = task.actor
 	var/obj/item/stack/material/M = task.M
 	M.set_amount(M.amount - 1, TRUE)

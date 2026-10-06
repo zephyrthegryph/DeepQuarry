@@ -32,7 +32,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 /obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
 	if(next_shell(box, floor))
 		to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
-		om_task_start(/datum/om/task/timed/collect_shells, user, box, duration = 0.5 SECONDS, receiver = src, floor = floor)
+		task_start(/datum/task/timed/collect_shells, user, box, duration = 0.5 SECONDS, receiver = src, floor = floor)
 		return
 	collect_done(user, box, 0)
 
@@ -46,14 +46,14 @@ CAPABILITIES(/obj/item/ammo_casing)
 	return null
 
 /// Collecting shells from the floor into the box (the target), one every half second.
-/datum/om/task/timed/collect_shells
+/datum/task/timed/collect_shells
 	steps = list(/obj/item/ammo_casing/proc/shell_collected = 0.5 SECONDS)
 	complete_proc = /obj/item/ammo_casing/proc/collect_ended
 	cancel_proc = /obj/item/ammo_casing/proc/collect_ended
 	var/turf/floor
 	var/collected = 0
 
-/obj/item/ammo_casing/proc/shell_collected(datum/om/task/timed/collect_shells/task)
+/obj/item/ammo_casing/proc/shell_collected(datum/task/timed/collect_shells/task)
 	var/obj/item/ammo_magazine/box = task.target
 	var/obj/item/ammo_casing/bullet = next_shell(box, task.floor)
 	if(!bullet)
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
 
-/obj/item/ammo_casing/proc/collect_ended(datum/om/task/timed/collect_shells/task)
+/obj/item/ammo_casing/proc/collect_ended(datum/task/timed/collect_shells/task)
 	collect_done(task.actor, task.target, task.collected)
 
 /obj/item/ammo_casing/proc/collect_done(mob/user, obj/item/ammo_magazine/box, boolets)

@@ -52,11 +52,11 @@ CAPABILITIES(/obj/item/implanter)
 	return
 
 /// Implanting the target: at once into yourself, else five seconds while it holds still.
-/datum/om/task/timed/implant
+/datum/task/timed/implant
 	complete_proc = /obj/item/implanter/proc/implant_done
 	var/turf/start_turf
 
-/obj/item/implanter/proc/implant_done(datum/om/task/timed/implant/task)
+/obj/item/implanter/proc/implant_done(datum/task/timed/implant/task)
 	var/mob/living/M = task.target
 	var/mob/living/user = task.actor
 	var/turf/T1 = task.start_turf
@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/implanter)
 
 			var/turf/T1 = get_turf(M)
 			if(T1)
-				om_task_start(/datum/om/task/timed/implant, user, M, duration = (M == user ? 0 : 5 SECONDS), receiver = src, start_turf = T1)
+				task_start(/datum/task/timed/implant, user, M, duration = (M == user ? 0 : 5 SECONDS), receiver = src, start_turf = T1)
 				return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You need to activate \the [src.name] first."))

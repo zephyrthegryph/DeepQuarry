@@ -140,7 +140,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 			return TRUE
 	if(istype(I, /obj/item/anomaly_scanner) && stats)
 		var/obj/item/anomaly_scanner/scanner = I
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
+		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
 		return TRUE
 	return OP_DECLINE
 

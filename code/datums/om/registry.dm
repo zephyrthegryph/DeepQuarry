@@ -49,9 +49,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/derived_by_name = list()
 	var/list/checks_cache = list()
 	var/list/named_checks = list()
-	var/list/tasks = list()
-	var/list/task_by_name = list()
-	var/list/task_by_type = list()
 	var/list/services = list()
 	/// Every stage type -> its def (categories included), and the pipelines in id order.
 	var/list/stage_by_type = list()
@@ -67,7 +64,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/list/type_tables = list()
 	/// Internal behaviours (expiry, tasks, ui, edge refresh).
 	var/datum/om/behaviour/expiry_behaviour
-	var/datum/om/behaviour/task_behaviour
 	var/datum/om/behaviour/timer_behaviour
 	var/datum/om/behaviour/ui_behaviour
 	var/datum/om/behaviour/edge_behaviour
@@ -95,7 +91,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	build_behaviours()
 	build_derived()
 	build_event_tables()
-	build_tasks()
 	build_services()
 	check_field_reads()
 	for(var/problem in om_check_derived_inputs())
@@ -469,7 +464,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		pending += B
 		behaviour_by_type[path] = B
 	expiry_behaviour = behaviour_by_type[/datum/om/behaviour/internal/expiry]
-	task_behaviour = behaviour_by_type[/datum/om/behaviour/internal/tasks]
 	timer_behaviour = behaviour_by_type[/datum/om/behaviour/internal/timers]
 	ui_behaviour = behaviour_by_type[/datum/om/behaviour/internal/ui_push]
 	edge_behaviour = behaviour_by_type[/datum/om/behaviour/internal/edge_refresh]
@@ -1180,56 +1174,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 					break
 		event_handlers[e] = flags
 
-// ---------------------------------------------------------------- tasks and services
-
-/datum/om/registry/proc/build_tasks()
-	for(var/path in subtypesof(/datum/om/task))
-		var/datum/om/task/T = new path
-		if(om_is_abstract(T) || (T.registry_skip && !include_skipped))
-			continue
-		add_task(T, "[path]")
-		task_by_type[path] = T
-	for(var/datum/om/bundle/B as anything in bundles)
-		for(var/name in B.tasks)
-			var/datum/om/task/T = parse_task_row(name, B.tasks[name], B)
-			if(T)
-				add_task(T, "[B.type]")
-	for(var/datum/om/task/T as anything in tasks)
-		T.compile(src)
-
-/datum/om/registry/proc/add_task(datum/om/task/T, where)
-	if(!T.name)
-		T.name = "[T.type]"
-	if(task_by_name[T.name])
-		error("task [T.name] defined twice (second in [where])")
-		return
-	tasks += T
-	task_by_name[T.name] = T
-
-/// A bundle's task row: a task declared as data (its prototype is a plain /datum/om/task).
-/datum/om/registry/proc/parse_task_row(name, row, datum/om/bundle/B)
-	if(!islist(row))
-		error("[B.type] tasks: [name] row must be a list")
-		return null
-	var/static/list/allowed = list("duration", "claims", "requires", "interrupted_by", "interrupt_on", "on_complete", "on_cancel")
-	var/list/L = row
-	for(var/key in L)
-		if(!(key in allowed))
-			error("[B.type] tasks: [name] unknown key [key]")
-			return null
-	if(isnull(L["duration"]))
-		error("[B.type] tasks: [name] needs a duration")
-		return null
-	var/datum/om/task/T = new /datum/om/task
-	T.name = name
-	T.duration = L["duration"]
-	T.claims = L["claims"]
-	T.requires = L["requires"]
-	T.interrupted_by = L["interrupted_by"]
-	T.interrupt_on = L["interrupt_on"] || 0
-	T.complete_proc = L["on_complete"]
-	T.cancel_proc = L["on_cancel"]
-	return T
+// ---------------------------------------------------------------- services
 
 /datum/om/registry/proc/build_services()
 	for(var/path in subtypesof(/datum/om/service))
@@ -1273,8 +1218,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				var/datum/om/behaviour/full = behaviour_by_type[bpath]
 				if(full)
 					behaviour_set |= full
-			for(var/name in B.tasks)
-				T.tasks[name] = task_by_name[name]
 			for(var/stage_path in B.stages)
 				T.stages |= stage_path
 			for(var/row in B.ui)

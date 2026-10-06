@@ -114,7 +114,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	var/mob/living/user = A.request.answerer
 	var/mob/living/that_one = A.answer.value
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
 
 /mob/living/simple_mob/vore/overmap/stardog/life_type_post_due()
@@ -276,10 +276,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	om_task_start(/datum/om/task/timed/stardog_eat_space_weather_stardog, src, E, nut = nut, aff = aff, mob = mob, ore = ore, tre = tre, msg = msg, heal = heal, delet = delet)
+	task_start(/datum/task/timed/stardog_eat_space_weather_stardog, src, E, nut = nut, aff = aff, mob = mob, ore = ore, tre = tre, msg = msg, heal = heal, delet = delet)
 	return TRUE
 
-/datum/om/task/timed/stardog_eat_space_weather_stardog
+/datum/task/timed/stardog_eat_space_weather_stardog
 	duration = 20 SECONDS
 	complete_proc = /mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done
 	var/nut
@@ -291,7 +291,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	var/heal
 	var/delet
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/om/task/timed/stardog_eat_space_weather_stardog/task)
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/task/timed/stardog_eat_space_weather_stardog/task)
 	var/obj/effect/overmap/event/E = task.target
 	var/nut = task.nut
 	var/aff = task.aff
@@ -369,7 +369,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
-		om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
+		task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
 		return
 
 /// Where to land. A cancel (or the timeout) decides not to.
@@ -389,7 +389,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	if(QDELETED(our_dest))
 		return
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-	om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
+	task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
 
@@ -879,7 +879,7 @@ CAPABILITIES(/obj/structure/control_pod)
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
 	act_message(user, src, MSG_SELF(span_notice("You reach out to touch %T%...")), MSG_OTHERS(span_notice("%U% reaches out to touch %T%...")))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
+	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
 	return TRUE
 
 /obj/structure/control_pod/proc/control_control_pod_done(mob/living/user)

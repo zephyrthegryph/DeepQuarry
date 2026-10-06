@@ -423,14 +423,14 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	if(!cloak_begin())
 		return
 	animate(src, alpha = 0, time = 1 SECOND)
-	if(istext(om_task_start(/datum/om/task/mob_work/cloak, src, src)))
+	if(istext(task_start(/datum/task/mob_work/cloak, src, src)))
 		cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/om/task/task)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/task/task)
 	alpha = initial(alpha)
 	cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/om/task/task)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/task/task)
 	alpha = initial(alpha)
 	uncloak()
 

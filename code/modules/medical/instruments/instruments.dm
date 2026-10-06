@@ -26,7 +26,7 @@
 		return ITEM_INTERACT_SUCCESS
 	var/mob/living/carbon/human/H = M
 	act_message(user, H, MSG_SELF(span_notice("You take %T%'s temperature.")), MSG_OTHERS(span_notice("%U% takes %T%'s temperature.")))
-	om_task_timed(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
+	task_timed(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/thermometer_medical/proc/read_temperature(mob/living/user, mob/living/carbon/human/H)
@@ -51,7 +51,7 @@
 	var/mob/living/carbon/human/H = M
 	act_message(user, src, MSG_SELF(span_notice("You wrap %T% around [H]'s arm and begin pumping.")), \
 		MSG_OTHERS(span_notice("%U% starts wrapping %T% around [H]'s arm.")))
-	om_task_timed(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
+	task_timed(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/bp_cuff/proc/read_pressure(mob/living/user, mob/living/carbon/human/H)
@@ -78,7 +78,7 @@
 	var/mob/living/carbon/human/H = M
 	act_message(user, src, MSG_SELF(span_notice("You clip %T% to [H]'s fingertip and wait for the reading.")), \
 		MSG_OTHERS(span_notice("%U% clips %T% to [H]'s fingertip.")))
-	om_task_timed(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
+	task_timed(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pulse_oximeter/proc/read_oximetry(mob/living/user, mob/living/carbon/human/H)

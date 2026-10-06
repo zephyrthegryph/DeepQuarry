@@ -301,24 +301,24 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 
 	if(m_action == "Yes")
 		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))
-		om_task_timed(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
+		task_timed(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
 		return
 
 	if(m_action == "Restore Energy")
 		if(!COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
-		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, lleill_mob = L)
+		task_start(/datum/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, lleill_mob = L)
 		return
 
-/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring
+/datum/task/timed/glamour_ring_attack_hand_glamour_ring
 	duration = 10 SECONDS
 	complete_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done
 	cancel_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed
 	/// The lleill drawing energy (their species is made private before it is changed).
 	var/mob/living/carbon/human/lleill_mob
 
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
+/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/task/timed/glamour_ring_attack_hand_glamour_ring/task)
 	if(!task.lleill_mob)
 		return
 	var/datum/species/lleill/LL = proto_private(task.lleill_mob, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
@@ -327,7 +327,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)
 	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
 
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
+/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(datum/task/timed/glamour_ring_attack_hand_glamour_ring/task)
 	var/mob/living/M = task.actor
 	to_chat(M, span_warning("You stop drawing energy."))
 	return

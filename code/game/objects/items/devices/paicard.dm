@@ -435,7 +435,7 @@ CAPABILITIES(/obj/item/paicard)
 			act_message(user, src, others = span_notice("%U% secured %T%'s maintenance panel."))
 			play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		else if(pai)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	if(istype(I,/obj/item/robotanalyzer))
 		if(!panel_open)
 			to_chat(user, span_warning("The panel isn't open. You will need to unscrew it to open it."))
@@ -512,37 +512,37 @@ CAPABILITIES(/obj/item/paicard)
 			open_request(src, /datum/prompt/choice, PROC_REF(check_part), answerer = user, title = "Check part", question = "Which part would you like to check?", choices = parts, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	if(istype(I,/obj/item/paiparts/cell))
 		if(cell == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/processor))
 		if(processor == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/board))
 		if(board == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/capacitor))
 		if(capacitor == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done5), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done5), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/projector))
 		if(projector == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done6), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done6), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/emitter))
 		if(emitter == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done7), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done7), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/speech_synthesizer))
 		if(speech_synthesizer == PP_MISSING)
-			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done8), done_args = list(I, user))
+			task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done8), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 
@@ -706,7 +706,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		return
 	var/mob/user = A.request.answerer
 	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.value))
+	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.value))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
 /datum/prompt/choice/pai_id_access

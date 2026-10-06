@@ -341,17 +341,17 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 		return
 
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> begins significantly shifting their form."))
-	om_task_start(/datum/om/task/timed/living_polymorph_living, src, src, beast_options = beast_options, chosen_beast = chosen_beast)
+	task_start(/datum/task/timed/living_polymorph_living, src, src, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
-/datum/om/task/timed/living_polymorph_living
+/datum/task/timed/living_polymorph_living
 	duration = 10 SECONDS
 	complete_proc = /mob/living/proc/polymorph_living_done
 	cancel_proc = /mob/living/proc/polymorph_living_failed
 	var/list/beast_options
 	var/chosen_beast
 
-/mob/living/proc/polymorph_living_done(datum/om/task/timed/living_polymorph_living/task)
+/mob/living/proc/polymorph_living_done(datum/task/timed/living_polymorph_living/task)
 	var/list/beast_options = task.beast_options
 	var/chosen_beast = task.chosen_beast
 
@@ -360,7 +360,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	src.overlays += coolanimation
 	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(coolanimation, chosen_beast, beast_options[chosen_beast]))
 
-/mob/living/proc/polymorph_living_failed(datum/om/task/timed/living_polymorph_living/task)
+/mob/living/proc/polymorph_living_failed(datum/task/timed/living_polymorph_living/task)
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
 	return 0
 

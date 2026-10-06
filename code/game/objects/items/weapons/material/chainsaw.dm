@@ -27,9 +27,9 @@ TRACKED(/obj/item/chainsaw, on)
 	act_message(user, src, MSG_SELF("You start pulling the string on %T%."), MSG_OTHERS("%U% starts pulling the string on %T%."))
 
 	if(max_fuel <= 0)
-		om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
+		task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
 	else
-		om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done2), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed2), fail_args = list(user))
+		task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done2), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed2), fail_args = list(user))
 
 /obj/item/chainsaw/proc/turnOn_timed_done(mob/user)
 	to_chat(user, "\The [src] won't start!")
@@ -98,22 +98,22 @@ CAPABILITIES(/obj/item/chainsaw)
 				Hyd.die()
 	if (istype(A, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,A) <= 1)
 		to_chat(user, span_notice("You begin filling the tank on the chainsaw."))
-		om_task_start(/datum/om/task/timed/chainsaw_afterattack, user, src, receiver = src, A = A)
+		task_start(/datum/task/timed/chainsaw_afterattack, user, src, receiver = src, A = A)
 
-/datum/om/task/timed/chainsaw_afterattack
+/datum/task/timed/chainsaw_afterattack
 	duration = 15
 	complete_proc = /obj/item/chainsaw/proc/afterattack_timed_done
 	cancel_proc = /obj/item/chainsaw/proc/afterattack_timed_failed
 	var/atom/A
 
-/obj/item/chainsaw/proc/afterattack_timed_done(datum/om/task/timed/chainsaw_afterattack/task)
+/obj/item/chainsaw/proc/afterattack_timed_done(datum/task/timed/chainsaw_afterattack/task)
 	var/atom/A = task.A
 	var/mob/user = task.actor
 	A.reagents.trans_to_obj(src, max_fuel)
 	play_sfx(src, SFX_EFFECTS_REFILL)
 	to_chat(user, span_notice("Chainsaw succesfully refueled."))
 
-/obj/item/chainsaw/proc/afterattack_timed_failed(datum/om/task/timed/chainsaw_afterattack/task)
+/obj/item/chainsaw/proc/afterattack_timed_failed(datum/task/timed/chainsaw_afterattack/task)
 	var/mob/user = task.actor
 	to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
 

@@ -87,7 +87,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 	var/mob/user = A.actor
 	var/obj/item/stack/tile/floor/ST = A.held
 	to_chat(user, span_notice("Placing tile..."))
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
+	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
 	return OP_OK
 
 /obj/structure/catwalk/proc/plate_done(mob/user, obj/item/stack/tile/floor/ST)

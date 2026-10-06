@@ -78,7 +78,7 @@ CAPABILITIES(/obj/structure/flora)
 
 	if(removal_tool && istype(W, removal_tool))
 		to_chat(user, span_warning("You start uprooting \the [src]..."))
-		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return OP_OK
 
 	return OP_OK
@@ -311,23 +311,23 @@ MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be som
 /obj/structure/flora/pottedplant/proc/interaction_hide_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, I = I)
+	task_start(/datum/task/timed/pottedplant_attackby, user, src, I = I)
 	return OP_OK
 
-/datum/om/task/timed/pottedplant_attackby
+/datum/task/timed/pottedplant_attackby
 	duration = 1 SECOND
 	complete_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_done2
 	cancel_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_failed2
 	var/obj/item/I
 
-/obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/om/task/timed/pottedplant_attackby/task)
+/obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/task/timed/pottedplant_attackby/task)
 	var/obj/item/I = task.I
 	var/mob/user = task.actor
 	if(!move_into(src, nameof(src.stored_item), I, user))
 		return
 	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 
-/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)
+/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/task/timed/pottedplant_attackby/task)
 	var/mob/user = task.actor
 	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
 
@@ -337,7 +337,7 @@ MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be som
 	if(!stored_item)
 		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
 	else
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	return OP_OK
 
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)

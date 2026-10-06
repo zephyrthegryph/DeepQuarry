@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 	to_chat(user, "You begin repairing damage to \the [src]...")
 	if(!welder.remove_fuel(round(missing / 75)))
 		return ITEM_INTERACT_BLOCKING
-	om_task_timed(user, missing / 10, src, src, PROC_REF(weld_repair_done), list(user))
+	task_timed(user, missing / 10, src, src, PROC_REF(weld_repair_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/modular_computer/proc/weld_repair_done(mob/user)

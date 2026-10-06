@@ -92,13 +92,13 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector_blocker, \
 	return FALSE
 
 
-/datum/om/task/timed/event_collector_blocker_repair_step
+/datum/task/timed/event_collector_blocker_repair_step
 	duration = 2 SECONDS
 	complete_proc = /obj/structure/event_collector_blocker/proc/repair_step_done
 	var/obj/item/O
 	var/step_count
 
-/obj/structure/event_collector_blocker/proc/repair_step_done(datum/om/task/timed/event_collector_blocker_repair_step/task)
+/obj/structure/event_collector_blocker/proc/repair_step_done(datum/task/timed/event_collector_blocker_repair_step/task)
 	var/obj/item/O = task.O
 	var/mob/user = task.actor
 	var/step_count = task.step_count
@@ -116,7 +116,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector_blocker, \
 		if(active_repair_steps.len >= 1)
 			if(O.has_tool_quality(active_repair_steps[active_repair_steps.len]))
 				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return INTERACTION_HANDLED_PASS
-				om_task_start(/datum/om/task/timed/event_collector_blocker_repair_step, user, src, O = O, step_count = active_repair_steps.len)
+				task_start(/datum/task/timed/event_collector_blocker_repair_step, user, src, O = O, step_count = active_repair_steps.len)
 			else
 				to_chat(user,span_notice("this doesn't look like the right tool for the job..."))
 	return INTERACTION_HANDLED_PASS

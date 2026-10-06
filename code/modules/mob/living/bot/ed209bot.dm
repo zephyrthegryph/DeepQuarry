@@ -20,7 +20,7 @@
 	COOLDOWN_DECLARE(shot_cooldown)
 
 /mob/living/bot/secbot/ed209/update_icons()
-	if(on && om_busy(src))
+	if(on && task_busy(src))
 		icon_state = "ed209-c"
 	else
 		icon_state = "ed209[on]"

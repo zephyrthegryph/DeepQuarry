@@ -40,7 +40,7 @@
 
 	obj/proc/receive_signal(datum/signal/signal, var/receive_method as num, var/receive_param)
 		Handler from received signals. By default does nothing. Define your own for your object.
-		Avoid sending signals directly from this proc: defer them with after(). Never block here; take time with om_task_timed() or after().
+		Avoid sending signals directly from this proc: defer them with after(). Never block here; take time with task_timed() or after().
 		parameters:
 			signal - see description below. Extract all needed data from the signal before deferring work or returning!
 			receive_method - may be TRANSMISSION_WIRE or TRANSMISSION_RADIO.

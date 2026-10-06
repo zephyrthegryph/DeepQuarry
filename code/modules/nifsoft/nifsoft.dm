@@ -219,7 +219,7 @@
 	icon_state = "[initial(icon_state)]-animate"	//makes it play the item animation upon using on a valid target
 	update_icon()
 
-	om_task_timed(Hu, A == user ? 1 SECONDS : 10 SECONDS, Ht, src, PROC_REF(upload_done), list(Ht, extra), on_fail = PROC_REF(upload_failed))
+	task_timed(Hu, A == user ? 1 SECONDS : 10 SECONDS, Ht, src, PROC_REF(upload_done), list(Ht, extra), on_fail = PROC_REF(upload_failed))
 
 /obj/item/disk/nifsoft/proc/upload_failed()
 	icon_state = "[initial(icon_state)]"	//If it fails to apply to a valid target and doesn't get deleted, reset its icon state

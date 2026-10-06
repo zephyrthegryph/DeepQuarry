@@ -110,7 +110,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	var/mob/living/target = ask.subject
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind yourself into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
 	log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.", user)
-	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
+	task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/self_bind_item_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.value != "Continue")
@@ -120,7 +120,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	var/obj/item/item = ask.subject
 	log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.", user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind yourself into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
-	om_task_timed(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
+	task_timed(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
 
 /obj/item/mindbinder/proc/store_mob_confirmed(datum/act/request/A)
 	if(!A.answer || A.answer.value != "Continue")
@@ -133,7 +133,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	else
 		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder.", user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to download [target]'s mind!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]'s head. The device beginning to let out a series of beeps!")))
-	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
+	task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/bind_mob(mob/living/target, mob/user)
 	if(length(possessed_voice) == 0 && !self_bind)
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 	var/doTime = 30 SECONDS
 	if(ishuman(target) || issilicon(target) || isanimal(target))
 		doTime = 5 SECONDS
-	om_task_timed(user, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, user))
+	task_timed(user, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, user))
 
 	update_icon()
 
@@ -198,7 +198,7 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.", user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to bind someone's mind into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
-	om_task_timed(user, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, user))
+	task_timed(user, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, user))
 
 	update_icon()
 
@@ -246,16 +246,16 @@ CAPABILITIES(/datum/prompt/choice/mindbinder/store_mob)
 
 	log_and_message_admins("attempted to take [key_name(target)]'s mind out of \an [item] with a Mind Binder.", user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to download someone's mind from [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
-	om_task_start(/datum/om/task/timed/mindbinder_store_item, user, item, receiver = src, target_arg = target)
+	task_start(/datum/task/timed/mindbinder_store_item, user, item, receiver = src, target_arg = target)
 
 	update_icon()
 
-/datum/om/task/timed/mindbinder_store_item
+/datum/task/timed/mindbinder_store_item
 	duration = 5 SECONDS
 	complete_proc = /obj/item/mindbinder/proc/store_item_timed_done
 	var/mob/living/voice/target_arg
 
-/obj/item/mindbinder/proc/store_item_timed_done(datum/om/task/timed/mindbinder_store_item/task)
+/obj/item/mindbinder/proc/store_item_timed_done(datum/task/timed/mindbinder_store_item/task)
 	var/obj/item/item = task.target
 	var/mob/living/voice/target = task.target_arg
 	var/mob/usr_mob = task.actor

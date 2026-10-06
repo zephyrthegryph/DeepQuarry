@@ -52,7 +52,7 @@ EXTEND_INTERACTIONS(/obj/structure/sink, INTERACT_ITEM("Wash", PROC_REF(sink_was
 	if(istype(I) && I.gurgled)
 		to_chat(user, span_notice("You start washing [I]."))
 
-		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(wash_gurgled_done), list(user, I), claims = TRUE) // the wash claims the sink
+		task_timed(user, 4 SECONDS, src, src, PROC_REF(wash_gurgled_done), list(user, I), claims = TRUE) // the wash claims the sink
 		return TRUE
 	return FALSE
 

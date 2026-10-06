@@ -93,16 +93,16 @@ CAPABILITIES(/obj/structure/bed/bath)
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return OP_PASS
 		act_message(user, src, others = span_notice("%U% attempts to buckle [affecting] into %T%!"))
-		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
+		task_start(/datum/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
 	return OP_PASS
 
-/datum/om/task/timed/bath_bath_buckle
+/datum/task/timed/bath_bath_buckle
 	duration = 2 SECONDS
 	complete_proc = /obj/structure/bed/bath/proc/bath_buckle_done
 	var/obj/item/I
 	var/mob/living/affecting
 
-/obj/structure/bed/bath/proc/bath_buckle_done(datum/om/task/timed/bath_bath_buckle/task)
+/obj/structure/bed/bath/proc/bath_buckle_done(datum/task/timed/bath_bath_buckle/task)
 	var/obj/item/I = task.I
 	var/mob/user = task.actor
 	var/mob/living/affecting = task.affecting
@@ -192,7 +192,7 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 				if(open && !swirlie)
 					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
 					rel_set(src, nameof(swirlie_mob), GM)
-					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
+					task_start(/datum/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
 					rel_clear(src, nameof(swirlie_mob))
 				else
 					act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
@@ -214,11 +214,11 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 		return OP_PASS
 	return OP_PASS
 
-/datum/om/task/timed/wooden_wooden_swirlie
+/datum/task/timed/wooden_wooden_swirlie
 	duration = 3 SECONDS
 	complete_proc = /obj/structure/toilet/wooden/proc/wooden_swirlie_done
 
-/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/om/task/timed/wooden_wooden_swirlie/task)
+/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/task/timed/wooden_wooden_swirlie/task)
 	var/mob/living/user = task.actor
 	var/mob/living/GM = task.target
 	act_message(user, null, MSG_SELF(span_notice("You give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% gives [GM.name] a swirlie!")), MSG_BLIND("You hear a toilet flushing."))

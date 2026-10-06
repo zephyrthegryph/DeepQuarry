@@ -156,7 +156,7 @@
 	var/mob/living/carbon/human/chosen_target = A.answer.value
 
 	act_message(src, null, others = span_warning("%U% begins chargin' their lazor!"))
-	om_task_timed(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))
+	task_timed(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))
 	return TRUE
 
 /mob/living/proc/healing_rainbows_living_done(mob/living/carbon/human/chosen_target)

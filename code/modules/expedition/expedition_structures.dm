@@ -59,7 +59,7 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 		return FALSE
 	act_message(user, src, MSG_SELF(span_notice("You begin logging %T%'s readings with [W]...")), MSG_OTHERS(span_notice("%U% sweeps [W] across %T%.")))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/expedition_survey_beacon/proc/log_readings_done(obj/item/W, mob/user)

@@ -247,7 +247,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		persist_nif_data(H)
 
 	act_message(user, null, MSG_SELF(span_notice("You begin scanning [target]'s mind.")), MSG_OTHERS("%U% begins scanning [target]'s mind."))
-	om_task_start(/datum/om/task/timed/sleevemate_topic, user, target, receiver = src, nif = nif)
+	task_start(/datum/task/timed/sleevemate_topic, user, target, receiver = src, nif = nif)
 
 /obj/item/sleevemate/proc/topic_bodyscan(mob/user, list/args)
 	var/mob/living/target = topic_target(user, args)
@@ -260,7 +260,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	var/mob/living/carbon/human/H = target
 
 	act_message(user, target, MSG_SELF(span_notice("You begin scanning %T%'s body.")), MSG_OTHERS("%U% begins scanning %T%'s body."))
-	om_task_start(/datum/om/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
+	task_start(/datum/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
 
 /obj/item/sleevemate/proc/topic_mindsteal(mob/user, list/args)
 	var/mob/living/target = topic_target(user, args)
@@ -331,7 +331,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 
 	act_message(user, target, MSG_SELF(span_notice("You begin uploading a mind into %T%!")), \
 		MSG_OTHERS(span_warning("%U% begins uploading someone's mind into %T%!")))
-	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, user))
+	task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, user))
 
 /obj/item/sleevemate/proc/topic_mindrelease(mob/user, list/args)
 	var/mob/living/target = topic_target(user, args)
@@ -354,36 +354,36 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 			return
 	to_chat(user,span_notice("Unable to find that mind in Soulcatcher!"))
 
-/datum/om/task/timed/sleevemate_topic
+/datum/task/timed/sleevemate_topic
 	duration = 8 SECONDS
 	complete_proc = /obj/item/sleevemate/proc/Topic_timed_done
 	cancel_proc = /obj/item/sleevemate/proc/Topic_timed_failed
 	var/nif
 
-/obj/item/sleevemate/proc/Topic_timed_done(datum/om/task/timed/sleevemate_topic/task)
+/obj/item/sleevemate/proc/Topic_timed_done(datum/task/timed/sleevemate_topic/task)
 	var/mob/living/target = task.target
 	var/nif = task.nif
 	var/mob/usr_mob = task.actor
 	our_db().m_backup(target.mind,nif,one_time = TRUE)
 	to_chat(usr_mob,span_notice("Mind backed up!"))
 
-/obj/item/sleevemate/proc/Topic_timed_failed(datum/om/task/timed/sleevemate_topic/task)
+/obj/item/sleevemate/proc/Topic_timed_failed(datum/task/timed/sleevemate_topic/task)
 	var/mob/usr_mob = task.actor
 	to_chat(usr_mob,span_warning("You must remain close to your target!"))
-/datum/om/task/timed/sleevemate_topic2
+/datum/task/timed/sleevemate_topic2
 	duration = 8 SECONDS
 	complete_proc = /obj/item/sleevemate/proc/Topic_timed_done2
 	cancel_proc = /obj/item/sleevemate/proc/Topic_timed_failed2
 	var/mob/living/carbon/human/H
 
-/obj/item/sleevemate/proc/Topic_timed_done2(datum/om/task/timed/sleevemate_topic2/task)
+/obj/item/sleevemate/proc/Topic_timed_done2(datum/task/timed/sleevemate_topic2/task)
 	var/mob/living/carbon/human/H = task.H
 	var/mob/usr_mob = task.actor
 	var/datum/transhuman/body_record/BR = new()
 	BR.init_from_mob(H, TRUE, TRUE, database_key = db_key)
 	to_chat(usr_mob,span_notice("Body scanned!"))
 
-/obj/item/sleevemate/proc/Topic_timed_failed2(datum/om/task/timed/sleevemate_topic2/task)
+/obj/item/sleevemate/proc/Topic_timed_failed2(datum/task/timed/sleevemate_topic2/task)
 	var/mob/usr_mob = task.actor
 	to_chat(usr_mob,span_warning("You must remain close to your target!"))
 /obj/item/sleevemate/proc/Topic_timed_done3(mob/living/target, mob/usr_mob)
@@ -438,7 +438,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
 	var/mob/living/user = ask.answerer
 	var/mob/living/target = ask.victim
 	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
-	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
+	task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
 CAPABILITIES(/obj/item/sleevemate)
 	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)

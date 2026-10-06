@@ -143,7 +143,7 @@
 	var/obj/item/organ/external/E = get_active_hand()
 	if(!check_can_attach_modular_limb(E))
 		return FALSE
-	om_task_timed(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attach_limb_verb_human_done), done_args = list(E))
+	task_timed(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attach_limb_verb_human_done), done_args = list(E))
 	return TRUE
 
 /mob/living/carbon/human/proc/attach_limb_verb_human_done(obj/item/organ/external/E)
@@ -227,7 +227,7 @@
 				to_chat(src, span_warning("Your [parent.name] is too damaged to detach anything from it."))
 		return
 	var/obj/item/organ/external/E = A.answer.value
-	om_task_timed(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
+	task_timed(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
 
 #undef DETACH_LIMB_STATE
 #undef DETACH_LIMB_DAMAGE

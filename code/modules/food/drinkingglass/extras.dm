@@ -113,14 +113,14 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 
 	act_message(user, victim, MSG_SELF(span_info("You start sipping on %T% with [src].")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts sipping on %T% with [src]!")))
-	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
+	task_start(/datum/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
 
-/datum/om/task/timed/straw_sipp
+/datum/task/timed/straw_sipp
 	duration = 3 SECONDS
 	complete_proc = /obj/item/glass_extra/straw/proc/sipp_done
 	var/reagent_type
 
-/obj/item/glass_extra/straw/proc/sipp_done(datum/om/task/timed/straw_sipp/task)
+/obj/item/glass_extra/straw/proc/sipp_done(datum/task/timed/straw_sipp/task)
 	var/mob/living/victim = task.target
 	var/mob/user = task.actor
 	var/reagent_type = task.reagent_type

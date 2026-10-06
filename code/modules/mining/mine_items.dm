@@ -348,7 +348,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 /// Old attack_self: plant a trail light.
 /obj/item/stack/lightpole/proc/lightpole_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
-	om_task_timed(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
+	task_timed(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
 	return TRUE
 
 /obj/item/stack/lightpole/proc/plant_done(mob/user, turf/T)
@@ -394,7 +394,7 @@ DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PRO
 
 /// Old attack_hand.
 /obj/structure/trailblazer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istext(om_task_timed(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
+	if(!istext(task_timed(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
 		return TRUE
 	return TRUE
 

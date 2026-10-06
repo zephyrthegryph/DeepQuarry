@@ -20,22 +20,22 @@
 			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEY% [user.p_are()] trying to burn it!</span>"), \
 			item = P)
 
-		om_task_start(/datum/om/task/timed/cursed_burn, user, src, flame = P, class = class)
+		task_start(/datum/task/timed/cursed_burn, user, src, flame = P, class = class)
 
 /// Holding a flame to the cursed form: letting go sears you.
-/datum/om/task/timed/cursed_burn
+/datum/task/timed/cursed_burn
 	duration = 2 SECONDS
 	complete_proc = /obj/item/paper/carbon/cursedform/proc/cursed_burn_done
 	cancel_proc = /obj/item/paper/carbon/cursedform/proc/cursed_burn_failed
 	var/obj/item/flame/flame
 	var/class
 
-/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(datum/om/task/timed/cursed_burn/task)
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(datum/task/timed/cursed_burn/task)
 	var/mob/user = task.actor
 	to_chat(user, span_red("You must hold \the [task.flame] steady to burn \the [src]."))
 	cursed_sear(user)
 
-/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(datum/om/task/timed/cursed_burn/task)
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(datum/task/timed/cursed_burn/task)
 	var/mob/user = task.actor
 	var/class = task.class
 	if(!task.flame?.lit)

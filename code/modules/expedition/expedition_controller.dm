@@ -33,14 +33,14 @@ CAPABILITIES(/datum/expedition_teardown_job)
 	z_level = new_site?.z_level
 	reason = new_reason
 
-/// Clears the z as lane work (om_task_slices(), object_model_core.md §4.11): a turf at a time,
+/// Clears the z as lane work (job_cursor(), code/engine/kernel/jobs.dm): a turf at a time,
 /// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
 	if(!controller() || !site() || QDELETED(site()))
 		spent(src)
 		return
 	turfs = block(locate(1, 1, z_level), locate(world.maxx, world.maxy, z_level))
-	om_task_slices(src, PROC_REF(wipe_slice), 1, PROC_REF(finish))
+	job_cursor(src, PROC_REF(wipe_slice), 1, PROC_REF(finish))
 
 /// A slice of the wipe: turfs from `cursor` while the slice's budget lasts.
 /datum/expedition_teardown_job/proc/wipe_slice(cursor)
@@ -388,7 +388,7 @@ CAPABILITIES(/datum/system/expedition)
 	evacuate_mobs_from_z(z)
 	// The z is about to be reused: views naming its turfs are cleared first.
 	om_drop_z(z)
-	om_task_slices(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
+	job_cursor(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
 /datum/system/expedition/proc/wipe_z_slice(list/cursor)
 	var/list/turfs = cursor[1]

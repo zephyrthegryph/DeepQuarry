@@ -235,7 +235,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			open = 3
 			update_icon()
 			return INTERACTION_HANDLED_PASS
-		om_task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
+		task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -274,17 +274,17 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 
 /obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
 	if(open == 0)
-		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
+		task_timed(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
 		return ITEM_INTERACT_SUCCESS
 	if(open == 3)
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
+		task_timed(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
 /obj/item/nif/multitool_act(mob/user, obj/item/tool)
 	if(open != 2)
 		return ITEM_INTERACT_BLOCKING
-	om_task_timed(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
+	task_timed(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 //Icon updating
@@ -740,17 +740,17 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 		act_message(U, src, MSG_SELF(span_notice("You begin installing %T% into [T]'s chest by just stuffing it in.")), \
 			MSG_OTHERS(span_notice("%U% begins installing %T% into [T]'s chest by just stuffing it in.")), \
 			MSG_BLIND("There's a wet SQUISH noise."))
-		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
+		task_start(/datum/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
 		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()
 
-/datum/om/task/timed/nif_stuff_in
+/datum/task/timed/nif_stuff_in
 	duration = 20 SECONDS
 	complete_proc = /obj/item/nif/proc/stuff_in_done
 	var/obj/item/organ/external/eo
 
-/obj/item/nif/proc/stuff_in_done(datum/om/task/timed/nif_stuff_in/task)
+/obj/item/nif/proc/stuff_in_done(datum/task/timed/nif_stuff_in/task)
 	var/mob/living/user = task.actor
 	var/mob/living/carbon/human/T = task.target
 	var/obj/item/organ/external/eo = task.eo

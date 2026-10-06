@@ -274,24 +274,24 @@ CAPABILITIES(/datum/own_test_child)
 
 /datum/unit_test/ownership_deep_capture/Run()
 	var/datum/own_test_child/A = new
-	var/list/capture = om_capture_args(list(list("nested" = list(A)), 3))
+	var/list/capture = capture_args(list(list("nested" = list(A)), 3))
 	TEST_ASSERT(capture, "a nested datum is captured")
 	var/list/captured = capture[1]
 	TEST_ASSERT(!findtext(json_encode(captured), "\[0x"), "no reference survives in the capture")
 	var/list/copy = captured.Copy()
-	TEST_ASSERT(om_resolve_captured(copy, capture[2]), "it resolves while the datum lives")
+	TEST_ASSERT(resolve_captured(copy, capture[2]), "it resolves while the datum lives")
 	var/list/outer = copy[1]
 	var/list/inner = outer["nested"]
 	TEST_ASSERT_EQUAL(inner[1], A, "back to the datum")
 	qdel(A)
 	copy = captured.Copy()
-	TEST_ASSERT(!om_resolve_captured(copy, capture[2]), "and refuses once it is gone")
+	TEST_ASSERT(!resolve_captured(copy, capture[2]), "and refuses once it is gone")
 	var/list/reports = list()
 	set_global("dq_lifecycle_report_capture", reports)
 	var/datum/own_test_child/K = new
 	var/list/keyed = list()
 	keyed[K] = 1
-	TEST_ASSERT(isnull(om_capture_args(list(keyed))), "a datum used as an assoc key is refused")
+	TEST_ASSERT(isnull(capture_args(list(keyed))), "a datum used as an assoc key is refused")
 	set_global("dq_lifecycle_report_capture", null)
 	qdel(K)
 	var/datum/own_test_child/B = new

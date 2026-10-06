@@ -39,6 +39,40 @@
 	SSkernel_jobs.start(J)
 	return J
 
+/// A cursor job (what the OM's lane slices were): `slice`, a PROC_REF on the owner called as slice(cursor), does one bounded slice and
+/// returns the next cursor (lists pass as they are), or null when the work is done; then `on_done` (a PROC_REF on the owner, or a stored
+/// call) runs. Slices run back to back while the job's budget lasts. Before the kernel runs (world init), or with `now`, every slice runs
+/// at once. Deleting the owner drops the rest.
+/datum/kernel_job/cursor
+	var/cursor
+	var/slice
+	var/on_done
+
+/proc/job_cursor(datum/owner, slice, cursor, on_done = null, now = FALSE)
+	if(!owner || QDELETED(owner))
+		return null
+	if(now || !Kernel?.processing)
+		while(!isnull(cursor) && !QDELETED(owner))
+			cursor = call(owner, slice)(cursor)
+		if(!QDELETED(owner))
+			job_cursor_done(owner, on_done)
+		return null
+	var/datum/kernel_job/cursor/J = new
+	J.owner = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
+	J.slice = slice
+	J.cursor = cursor
+	J.on_done = on_done
+	J.last_step = world.time // ALLOW(sys_world_time_write): the job's own step stamp, read for dt, not an entity expiry
+	SSkernel_jobs.start(J)
+	return J
+
+/// A cursor job's work is done: `on_done` is a proc on the owner, or a stored call (callable()).
+/proc/job_cursor_done(datum/owner, on_done)
+	if(islist(on_done))
+		om_run(on_done)
+	else if(on_done)
+		call(owner, on_done)()
+
 SYSTEM_DEF(kernel_jobs)
 	name = "Jobs"
 	phase = KERNEL_PHASE_P
@@ -96,7 +130,11 @@ SYSTEM_DEF(kernel_jobs)
 		A.dt = world.time - J.last_step
 		J.last_step = world.time // ALLOW(sys_world_time_write): the job's own step stamp, read for dt, not an entity expiry
 		var/step_start = TICK_USAGE
-		if(istext(J.step))
+		if(istype(J, /datum/kernel_job/cursor))
+			var/datum/kernel_job/cursor/C = J
+			C.cursor = call(owner, C.slice)(C.cursor)
+			result = isnull(C.cursor) ? JOB_DONE : JOB_MORE
+		else if(istext(J.step))
 			result = call(owner, J.step)(A)
 		else
 			result = call(J.step)(owner, A)
@@ -116,6 +154,11 @@ SYSTEM_DEF(kernel_jobs)
 	if(result == JOB_DONE)
 		jobs -= J
 		finished++
+		if(istype(J, /datum/kernel_job/cursor))
+			var/datum/kernel_job/cursor/C = J
+			if(!QDELETED(owner))
+				job_cursor_done(owner, C.on_done)
+			return
 		if(J.then && !QDELETED(owner))
 			var/datum/act/timer/D = take(/datum/act/timer)
 			D.holder = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release

@@ -18,7 +18,7 @@ CAPABILITIES(/obj/item/supply_beacon)
 /obj/item/supply_beacon/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " begins setting up %T%."))
-	om_task_timed(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	task_timed(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/supply_beacon/proc/attack_self_timed_done(mob/user)

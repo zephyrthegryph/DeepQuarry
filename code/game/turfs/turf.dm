@@ -267,7 +267,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return FALSE
 	if(isanimal(user) && O != user)
 		return FALSE
-	om_task_timed(user, 25 + (5 * user.status_units(STAT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
+	task_timed(user, 25 + (5 * user.status_units(STAT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
 	return TRUE
 
 /turf/proc/crawl_drag_done(atom/movable/O, mob/user)
@@ -455,15 +455,15 @@ DECLARE_INTERACTIONS(/turf, \
 	var/mob/vandal = ask.answerer
 	var/message = ask.value
 	act_message(vandal, src, others = span_warning("%U% begins carving something into %T%."))
-	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
+	task_start(/datum/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
 	return TRUE
 
-/datum/om/task/timed/turf_graffiti
+/datum/task/timed/turf_graffiti
 	complete_proc = /turf/proc/graffiti_done
 	var/message
 	var/click_parameters
 
-/turf/proc/graffiti_done(datum/om/task/timed/turf_graffiti/task)
+/turf/proc/graffiti_done(datum/task/timed/turf_graffiti/task)
 	var/mob/vandal = task.actor
 	var/message = task.message
 	var/click_parameters = task.click_parameters

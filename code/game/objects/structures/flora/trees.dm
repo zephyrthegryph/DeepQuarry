@@ -55,7 +55,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 
 	if(is_stump)
 		if(istype(W,/obj/item/shovel))
-			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
+			task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
 		return OP_OK
 
 	act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)

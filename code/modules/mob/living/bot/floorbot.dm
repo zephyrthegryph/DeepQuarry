@@ -23,7 +23,7 @@
 	var/floor_build_type = /datum/decl/flooring/tiling // Basic steel floor.
 
 /mob/living/bot/floorbot/update_icons()
-	if(om_busy(src))
+	if(task_busy(src))
 		icon_state = "floorbot-c"
 	else if(amount > 0)
 		icon_state = "floorbot[on]"
@@ -199,7 +199,7 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	if(!..())
 		return
 
-	if(om_busy(src))
+	if(task_busy(src))
 		return
 
 	if(get_turf(A) != loc)

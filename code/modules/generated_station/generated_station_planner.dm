@@ -110,7 +110,7 @@ DECLARE_REPEAT(/datum/generated_station_planner, "poll_delay", plan_poll, "poll_
 		return
 	set_poll_state(null)
 	if(plan_ready(state, status))
-		om_task_slices(src, PROC_REF(plan_fetch_slice), state)
+		job_cursor(src, PROC_REF(plan_fetch_slice), state)
 	return REPEAT_STOP
 
 /// The job finished: TRUE with the header read and the pages ready to fetch; FALSE when it failed

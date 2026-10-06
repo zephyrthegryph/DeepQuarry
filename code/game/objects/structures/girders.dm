@@ -167,7 +167,7 @@ CAPABILITIES(/obj/structure/girder)
 	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
-		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+		task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
@@ -219,17 +219,17 @@ CAPABILITIES(/obj/structure/girder)
 
 	to_chat(user, span_notice("You begin adding the plating..."))
 
-	om_task_start(/datum/om/task/timed/girder_construct_wall, user, src, duration = time_to_reinforce, S = S, amount_to_use = amount_to_use, M = M, wall_fake = wall_fake)
+	task_start(/datum/task/timed/girder_construct_wall, user, src, duration = time_to_reinforce, S = S, amount_to_use = amount_to_use, M = M, wall_fake = wall_fake)
 	return TRUE
 
-/datum/om/task/timed/girder_construct_wall
+/datum/task/timed/girder_construct_wall
 	complete_proc = /obj/structure/girder/proc/construct_wall_timed_done
 	var/obj/item/stack/material/S
 	var/amount_to_use
 	var/datum/material/M
 	var/wall_fake
 
-/obj/structure/girder/proc/construct_wall_timed_done(datum/om/task/timed/girder_construct_wall/task)
+/obj/structure/girder/proc/construct_wall_timed_done(datum/task/timed/girder_construct_wall/task)
 	var/obj/item/stack/material/S = task.S
 	var/mob/user = task.actor
 	var/amount_to_use = task.amount_to_use
@@ -269,16 +269,16 @@ CAPABILITIES(/obj/structure/girder)
 		return 0
 
 	to_chat(user, span_notice("Now reinforcing..."))
-	om_task_start(/datum/om/task/timed/girder_reinforce_with_material, user, src, S = S, M = M)
+	task_start(/datum/task/timed/girder_reinforce_with_material, user, src, S = S, M = M)
 	return TRUE
 
-/datum/om/task/timed/girder_reinforce_with_material
+/datum/task/timed/girder_reinforce_with_material
 	duration = 4 SECONDS
 	complete_proc = /obj/structure/girder/proc/reinforce_with_material_timed_done
 	var/obj/item/stack/material/S
 	var/datum/material/M
 
-/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/om/task/timed/girder_reinforce_with_material/task)
+/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/task/timed/girder_reinforce_with_material/task)
 	var/obj/item/stack/material/S = task.S
 	var/mob/user = task.actor
 	var/datum/material/M = task.M
@@ -343,7 +343,7 @@ CAPABILITIES(/obj/structure/girder)
 	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
-		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
+		task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))

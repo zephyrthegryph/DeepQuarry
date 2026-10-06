@@ -65,20 +65,20 @@
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample()]."))
 
-	om_task_start(/datum/om/task/timed/microscope_examine, user, sample())
+	task_start(/datum/task/timed/microscope_examine, user, sample())
 	return TRUE
 
-/obj/machinery/microscope/proc/examine_stopped(datum/om/task/timed/microscope_examine/task)
+/obj/machinery/microscope/proc/examine_stopped(datum/task/timed/microscope_examine/task)
 	var/mob/user = task.actor
 	var/obj/item/examined = task.target
 	to_chat(user, span_notice("You stop examining \the [examined]."))
 
-/datum/om/task/timed/microscope_examine
+/datum/task/timed/microscope_examine
 	duration = 2 SECONDS
 	complete_proc = /obj/machinery/microscope/proc/examine_done
 	cancel_proc = /obj/machinery/microscope/proc/examine_stopped
 
-/obj/machinery/microscope/proc/examine_done(datum/om/task/timed/microscope_examine/task)
+/obj/machinery/microscope/proc/examine_done(datum/task/timed/microscope_examine/task)
 	var/mob/user = task.actor
 	var/obj/item/examined = task.target
 	if(sample() != examined)

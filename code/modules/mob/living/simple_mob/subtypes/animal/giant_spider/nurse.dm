@@ -67,7 +67,7 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/attack_target(atom/A)
 	if(isturf(A))
 		if(fed && can_lay_eggs)
-			if(!om_busy(src))
+			if(!task_busy(src))
 				return lay_eggs(A)
 		return web_tile(A)
 
@@ -100,7 +100,7 @@
 	act_message(src, AM, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance around %T%.")))
 
 	// The work claims the spider: its AI stays still.
-	om_task_timed(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
+	task_timed(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(atom/movable/AM)
@@ -150,7 +150,7 @@
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/life_special(datum/seq_frame/life/F)
-	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(src) && isturf(src.loc))
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !task_busy(src) && isturf(src.loc))
 		if(src.fed && src.can_lay_eggs)
 			src.lay_eggs(src.loc)
 		else
@@ -161,31 +161,31 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_tile(turf/T)
 	if(!istype(T) || (locate_within(T, /obj/effect/spider/stickyweb)))
 		return FALSE
-	if(istext(om_task_start(/datum/om/task/mob_work/spider_web, src, T)))
+	if(istext(task_start(/datum/task/mob_work/spider_web, src, T)))
 		return FALSE
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
 	return TRUE
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/om/task/task)
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/task/task)
 	var/turf/T = task.target
 	if(!(locate_within(T, /obj/effect/spider/stickyweb)))
 		new web_type(T)
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/om/task/task)
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/task/task)
 	to_chat(src, span_warning("You need to stay still to finish that on \the [task.target]."))
 
 /// Starts laying a cluster of eggs on `T` (a 5 s task, as web_tile()). TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/lay_eggs(turf/T)
-	if(!istype(T) || !fed || !can_lay_eggs || om_busy(src))
+	if(!istype(T) || !fed || !can_lay_eggs || task_busy(src))
 		return FALSE
 	if(locate_on(T, /obj/effect/spider/eggcluster))
 		return FALSE // Already got eggs here.
-	if(istext(om_task_start(/datum/om/task/mob_work/spider_eggs, src, T)))
+	if(istext(task_start(/datum/task/mob_work/spider_eggs, src, T)))
 		return FALSE
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay a cluster of eggs."))) // the task claims the spider: no egg spam
 	return TRUE
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/om/task/task)
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/task/task)
 	var/turf/T = task.target
 	if(locate_within(T, /obj/effect/spider/eggcluster))
 		return // Spamclick protection.

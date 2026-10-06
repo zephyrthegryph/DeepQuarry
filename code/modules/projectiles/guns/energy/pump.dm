@@ -117,7 +117,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 	update_icon()
 	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
 		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+	task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
 /// One pump every second (a timed action each) until full.
 /obj/item/gun/energy/locked/frontier/proc/pump_cycle(mob/user)
@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 	if(power_supply.give(phase_power) < phase_power)
 		pump_end(user)
 		return
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+	task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
 
 /obj/item/gun/energy/locked/frontier/proc/pump_end(mob/user)
 	recharging = 0

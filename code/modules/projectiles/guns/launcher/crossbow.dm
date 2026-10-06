@@ -130,7 +130,7 @@
 /obj/item/gun/launcher/crossbow/proc/draw_step(mob/user)
 	if(!(bolt && tension && loc == current_user))
 		return
-	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
+	task_timed(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
 
 /obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
 	act_message(user, src, others = "%U% stops drawing and relaxes the string of %T%.", \

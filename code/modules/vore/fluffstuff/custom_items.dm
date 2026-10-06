@@ -1545,8 +1545,8 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 /// Old attack_self: search it, or hug, punch, strangle or poke it.
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(stored_item && opened && !om_busy(src))
-		om_task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
+	if(stored_item && opened && !task_busy(src))
+		task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 		return
 
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
