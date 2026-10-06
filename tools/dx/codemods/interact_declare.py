@@ -506,9 +506,25 @@ def main():
         if not specs:
             residue[t] = "interaction_forms"
             continue
-        if len({s["proc"] for s in specs}) != len(specs):
+        # specs that share one handler and differ only in their input (a hand and an item doing the same thing) are one op with inputs(...)
+        merged_specs = []
+        for sp in specs:
+            twin = None if sp["proc"] == "interaction_pass" else next((m for m in merged_specs if m["proc"] == sp["proc"]), None)
+            if twin is None:
+                sp["extra_kinds"] = []
+                merged_specs.append(sp)
+                continue
+            same = all(twin.get(k) == sp.get(k) for k in ("name", "stance", "default", "carried", "req_parts"))
+            if same and twin["name"] is None and "INSERT" in (sp["kind"], twin["kind"]):
+                same = False  # an unnamed insert's label is its item's ("Insert a mop"): two of them are two labels
+            if not same or sp["kind"] in ("VERB", "DRAG", "ALT", "SILICON", "ROBOT", "USE", "SELF") or twin["kind"] in ("VERB", "DRAG", "ALT", "SILICON", "ROBOT", "USE", "SELF"):
+                merged_specs = None
+                break
+            twin["extra_kinds"].append(sp)
+        if merged_specs is None:
             residue[t] = "handler_shared"
             continue
+        specs = merged_specs
         tre = re.escape(t)
         handlers = []
         for s in specs:
@@ -607,6 +623,10 @@ def main():
             key = re.sub(r"^interaction_", "", proc) or proc
             if h.get("pass"):
                 key = "pass_%s" % h["spec"]["kind"].lower()
+                n = 2
+                while key in used:
+                    key = "pass_%s_%d" % (h["spec"]["kind"].lower(), n)
+                    n += 1
             if key in used or key_taken(key, t):
                 key = proc
             if key in used or key_taken(key, t):
@@ -720,7 +740,8 @@ def main():
             entries = []
             for h in plan["handlers"]:
                 s = h["spec"]
-                parts = ['op("%s"' % h["key"], h["binding"]]
+                extra_b = [binding_of(x, h)[0] for x in s.get("extra_kinds", [])]
+                parts = ['op("%s"' % h["key"], ("inputs(%s)" % ", ".join([h["binding"]] + extra_b)) if extra_b else h["binding"]]
                 if s["kind"] in ("HAND_UNGATED", "ALT"):
                     parts.append("ungated()")
                 if s["kind"] == "ROBOT":
