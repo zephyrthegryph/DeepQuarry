@@ -109,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 
 /// Hooked on our own disposal_receive event.
 /obj/structure/disposaloutlet/proc/on_disposal_receive(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/disposal_receive/event = A
 	packet_expel(source, event.items, event.gas)

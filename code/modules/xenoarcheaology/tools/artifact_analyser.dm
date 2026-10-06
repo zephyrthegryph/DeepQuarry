@@ -126,7 +126,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 			atom_say("Scanning begun.")
 	return TRUE
 
-/// A scan finishes on its timer (om_after() at the completion time), not by polling.
+/// A scan finishes on its timer (after() at the completion time), not by polling.
 /obj/machinery/artifact_analyser/proc/scan_timer_fired()
 	if(scan_in_progress)
 		finish_scan()

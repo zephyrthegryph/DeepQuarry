@@ -50,7 +50,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		fired["[S.type]"] = S.times_fired
 	// A mark a second, on timers (nothing sleeps).
-	om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), list(fired), 1, seconds)
+	after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), with = list(list(fired), 1, seconds))
 
 /proc/benchmark_mark_second(list/fired_box, i, seconds)
 	var/list/fired = fired_box[1]
@@ -63,7 +63,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		fired[key] = S.times_fired
 	benchmark_rust_mark("t+[i]s: [jointext(names, ", ")]")
 	if(i < seconds)
-		om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), fired_box, i + 1, seconds)
+		after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), with = list(fired_box, i + 1, seconds))
 
 /proc/benchmark_rust_mark(name)
 	var/list/heap = vg_verdigris_allocator_diagnostics()

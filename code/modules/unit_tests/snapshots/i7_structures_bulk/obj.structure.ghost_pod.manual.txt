@@ -2,3 +2,4 @@
 /obj/structure/ghost_pod/manual|robot|none => ghost_pod_open|
 /obj/structure/ghost_pod/manual|ai|none => |
 /obj/structure/ghost_pod/manual|ghost|none => gen_observer_ghost_pod_manual_observer_use|
+

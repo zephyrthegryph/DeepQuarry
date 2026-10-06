@@ -7,6 +7,6 @@
 	set_dir(new_dir)
 
 /datum/proc/qdel_self(datum/act/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	spent(src)
 

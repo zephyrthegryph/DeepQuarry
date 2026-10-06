@@ -5,7 +5,7 @@
 // `mob.breathes()` is the yes/no question. Emotes, vitals, smoke, the physiology and the
 // breathing life stage all ask these instead of reading does_not_breathe / O_LUNGS themselves.
 //
-// The profile also owns HOW a breath is taken: lungs (the breathing stage's lung_breath()) or
+// The profile also owns HOW a breath is taken: lungs (the breathing step's life_breathing_lung_breath()) or
 // the skin (alraunes: CO2 in, oxygen out, no masks), which used to be a 200-line copy of the
 // breath code in the species' environment_effects().
 
@@ -23,9 +23,9 @@
 	/// Breathes through lungs. FALSE: through the skin (no lung organ; masks don't filter).
 	var/uses_lungs = TRUE
 
-/// Take one breath for `self`, driven by the breathing life stage `stage`.
-/datum/breath_profile/proc/take_breath(mob/living/carbon/self, datum/om/stage/life/breathing/carbon/stage)
-	stage.lung_breath(self)
+/// Take one breath for `self`, driven by its breathing Life step.
+/datum/breath_profile/proc/take_breath(mob/living/carbon/self)
+	self.life_breathing_lung_breath()
 
 // --- Asking --------------------------------------------------------------------------------
 
@@ -133,16 +133,16 @@
 	/// The gas the skin takes in.
 	var/intake_gas = GAS_CO2
 
-/datum/breath_profile/skin/take_breath(mob/living/carbon/self, datum/om/stage/life/breathing/carbon/stage)
+/datum/breath_profile/skin/take_breath(mob/living/carbon/self)
 	var/mob/living/carbon/human/H = self
 	if(!istype(H) || !H.species)
 		return
-	var/datum/gas_mixture/breath = skin_breath_source(H, stage)
+	var/datum/gas_mixture/breath = skin_breath_source(H)
 	skin_exchange(H, breath)
-	stage.exhale(H, breath)
+	H.life_breathing_exhale(breath)
 
 /// Where the skin's air comes from: internals under a sealed suit or in thin air, else the room.
-/datum/breath_profile/skin/proc/skin_breath_source(mob/living/carbon/human/H, datum/om/stage/life/breathing/carbon/stage)
+/datum/breath_profile/skin/proc/skin_breath_source(mob/living/carbon/human/H)
 	var/datum/gas_mixture/breath
 	if(H.is_fully_sealed())
 		breath = H.get_breath_from_internal()
@@ -156,7 +156,7 @@
 		var/datum/gas_mixture/room = H.loc.return_air_for_internal_lifeform(H)
 		if(room)
 			breath = room.remove_volume(BREATH_VOLUME)
-			stage.inhale_smoke(H, room)
+			H.life_breathing_inhale_smoke(room)
 	return breath
 
 /// Gas exchange through the skin. Reports breath quality to the physiology and the CO2 share

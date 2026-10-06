@@ -1,4 +1,5 @@
-/obj/structure/ghost_pod/automatic/xenomorph_egg|human|none => xenomorph_egg_item|
-/obj/structure/ghost_pod/automatic/xenomorph_egg|robot|none => xenomorph_egg_item|
+/obj/structure/ghost_pod/automatic/xenomorph_egg|human|none => |
+/obj/structure/ghost_pod/automatic/xenomorph_egg|robot|none => |
 /obj/structure/ghost_pod/automatic/xenomorph_egg|ai|none => |
 /obj/structure/ghost_pod/automatic/xenomorph_egg|ghost|none => |
+

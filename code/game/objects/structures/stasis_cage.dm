@@ -15,17 +15,17 @@
 	if(A)
 		contain(A)
 
-EXTEND_INTERACTIONS(/obj/structure/stasis_cage, \
-	INTERACT_HAND("Release", PROC_REF(interaction_release)), \
-	INTERACT_ROBOT("Release", PROC_REF(stasis_cage_robot_release)), \
-)
+CAPABILITIES(/obj/structure/stasis_cage)
+	op("release", hand(), label("Release"), then(PROC_REF(interaction_release)))
+	op("stasis_cage_robot_release", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Release"), then(PROC_REF(stasis_cage_robot_release)))
 
-/obj/structure/stasis_cage/proc/interaction_release(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/stasis_cage/proc/interaction_release(datum/act/op/A)
 	release()
 	return TRUE
 
 /// Old attack_robot: a cyborg next to it releases the animal.
-/obj/structure/stasis_cage/proc/stasis_cage_robot_release(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/stasis_cage/proc/stasis_cage_robot_release(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		release()
 	return TRUE

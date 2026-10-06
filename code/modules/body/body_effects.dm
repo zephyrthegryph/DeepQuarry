@@ -11,12 +11,12 @@
 //     Definitions are shared: they never hold per-mob state.
 //   - An APPLICATION is one contribution to EFFECT_BODY_EFFECTS on the mob, keyed by the
 //     definition's type, held by the mob itself; its value is the number of stacks.
-//   - A timed application expires through om_after() on the mob's timer clock. For a living
+//   - A timed application expires through after() on the mob's timer clock. For a living
 //     mob that is CLOCK_BIO, so stasis slows or stops the countdown and suspension pauses it
 //     (an entangled patient in a stasis bag is still entangled when they come out). A
 //     definition with `world_clock` counts real time instead (the global OM owner).
 //   - Per-tick work is an OM behaviour on the mob: a definition with `tick_interval` gets
-//     on_tick(L) on an om_after() cadence (same clock as its expiry) while it is on.
+//     on_tick(L) on an after() cadence (same clock as its expiry) while it is on.
 //   - Per-application state (the origin, a synced item, a counter) lives on the mob, keyed by
 //     the definition's type: body_effect_origin(), body_effect_state()/set_body_effect_state().
 //     It is dropped when the last stack ends.

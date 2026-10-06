@@ -58,7 +58,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 
 /obj/machinery/conveyor/proc/on_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())

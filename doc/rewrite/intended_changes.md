@@ -1725,7 +1725,7 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
 - Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
 
-## Ending causes audited (rewrite/lifecycle-forms-2)
+## Lifecycle forms, second pass (rewrite/lifecycle-forms-2)
 
 - The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
   list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
@@ -1738,6 +1738,19 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
   `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
   they are `spent` (a discarded temporary) or `replaced_by`.
+- Rolled at creation (`rolls()`, seeded; the distributions are unchanged): the hallucination decoy's report, tabloids, target paper, cig
+  butts, the advanced gift's chaos roll, random umbrellas and towels (`R.hex_colour()`), tilted duffle bags, first-aid kit looks, prybars,
+  junk mail, bar signs, the animal crates' contents, trash piles, hawaiian shirts, extraction points, kittens, eclectus parrots, kururak
+  instinct, the rare frog (a new `rare` var), gelatinous cubes (`R.saturated_colour()`), autocloners, crystals and greytide gear.
+- A generic arcade cabinet rolls its board before init and becomes that machine right after its init (`after_init()` + `replace_with()`),
+  instead of deleting itself from inside Initialize(); an adventure box that rolls `discarded` is spent right after its init.
+- Native input with an actor: the HUD's screen objects, alerts, radial slices, ability and spell buttons, the rig/mech air toggles, the
+  click catcher, the SDQL2 stat buttons, the changeling ID card, movable screen objects and action buttons (`drag_onto()`, new
+  `drag_over()`), IV drips, feeders, roller beds, hoist hooks, observer ghosts, overmap ships, mob holders (`drag_onto()`) and the palette
+  and environmental message tooltips (`tooltip()`) read their actor from the input. A drop handler that went on to the native parent now
+  runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
+  when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
+- A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
 
 ## Atmospherics looks (rewrite/pipenet-full)
 
@@ -1776,16 +1789,26 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
 * `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
-- Rolled at creation (`rolls()`, seeded; the distributions are unchanged): the hallucination decoy's report, tabloids, target paper, cig
-  butts, the advanced gift's chaos roll, random umbrellas and towels (`R.hex_colour()`), tilted duffle bags, first-aid kit looks, prybars,
-  junk mail, bar signs, the animal crates' contents, trash piles, hawaiian shirts, extraction points, kittens, eclectus parrots, kururak
-  instinct, the rare frog (a new `rare` var), gelatinous cubes (`R.saturated_colour()`), autocloners, crystals and greytide gear.
-- A generic arcade cabinet rolls its board before init and becomes that machine right after its init (`after_init()` + `replace_with()`),
-  instead of deleting itself from inside Initialize(); an adventure box that rolls `discarded` is spent right after its init.
-- Native input with an actor: the HUD's screen objects, alerts, radial slices, ability and spell buttons, the rig/mech air toggles, the
-  click catcher, the SDQL2 stat buttons, the changeling ID card, movable screen objects and action buttons (`drag_onto()`, new
-  `drag_over()`), IV drips, feeders, roller beds, hoist hooks, observer ghosts, overmap ships, mob holders (`drag_onto()`) and the palette
-  and environmental message tooltips (`tooltip()`) read their actor from the input. A drop handler that went on to the native parent now
-  runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
-  when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
-- A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- **Silicon uses are `remote()` ops** (`INTERACT_SILICON`; `INTERACT_ROBOT` adds `when(req(/mob/living/silicon/robot, of = ON_ACTOR))`).
+  The curtain, the simple doors and the mirror: a cyborg beside it uses it (`needs(req_adjacent())`); the AI is not offered what it could
+  not do. The fire axe cabinet asks the actor's kind in its ops' `when()`, not in its handlers. The resin door replaces the base door's
+  hand and item with `without()`; its tear (combat mode) and its pull have disjoint stances.
+- The i7 interaction snapshots of the converted types are re-blessed (their legacy ids are ops now).
+
+## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
+
+Pinned by `code/modules/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
+form, robot and vore tests that run Life frames.
+
+* **A wake wakes the steps that read it, not the whole mob.** The pipeline's unpark woke every stage of a parked mob; the sequence clears the sleep
+  bits of the steps whose reads the change names (CHANGE_MOB_STAT, CHANGE_MOB_CLIENT and CHANGE_EXPLICIT still wake every step, LIFE_WAKE_ALL).
+  The rest stay asleep until their own reads or rewakes. Fewer steps run after a wake; none that has work is missed (the audit still runs).
+* **A woken step asks should_run() before it runs** (a rewake does not). The pipeline ran a woken stage once and then asked idle(). Steps whose
+  rule was "nothing to do until woken" (voice, fall, visible name, pulse, simple mob vitals, AFK, ambience, germs) are declared `once = TRUE`: a
+  wake by one of their reads runs them once, as before.
+* **Trait steps attached before the mob materialized now run.** `om_stage_add()` returned early for a mob whose Life pipeline was not attached yet,
+  so a trait state attached during Initialize never ticked; the mob's `on_materialize()` now adds every attached state's steps.
+* **The step profile is per step, not per mob type.** The mob service's two-minute report logs `MOB_STEP_PROFILE` lines (sampled cost per Life
+  step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
+* Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
+  Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.

@@ -107,7 +107,7 @@ Rules that hold under both old and new forms:
 ### 3b. Legacy forms (still what you write until replaced)
 
 Everything built on the OM and the sys layer is legacy and will be removed: `om_after`,
-`om_hook`, `om_ask`, `om_grant`, `OM_EMIT`, `EVENT_HANDLER`, `OM_FIELD` and its relatives,
+`om_hook`, `om_ask`, `om_grant`, `OM_EMIT`, `OM_FIELD` and its relatives,
 `DECLARE_UI` / `UI_ACT` / `UI_DATA`, `TOPIC_ACTION`, `DECLARE_PERIODIC_WHILE`,
 `DECLARE_REPEAT`, `DECLARE_VERB`, `DECLARE_EMAG`, `DAMAGE_REACTION`, `REQ_*`, the `OWN`/`REL`
 macros, `capabilities()`/`reactions()`/`relations()` table procs, `PERIODIC_*` lanes,

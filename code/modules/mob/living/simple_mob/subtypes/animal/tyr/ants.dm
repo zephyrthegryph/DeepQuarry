@@ -294,12 +294,12 @@
 	nutrition = 150
 	var/build_type = /obj/random/ant_building
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/builder
-	of = /mob/living/simple_mob/animal/tyr/mineral_ants/builder
+/mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/builder/perform(mob/living/simple_mob/animal/tyr/mineral_ants/builder/self, datum/om/frame/life/ctx)
-	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(self) && isturf(self.loc))
-		self.build_tile(self.loc)
+/mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special(datum/seq_frame/life/F)
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(src) && isturf(src.loc))
+		src.build_tile(src.loc)
 
 /// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
@@ -364,12 +364,12 @@
 	var/build_type = /obj/effect/spider/spiderling/antling
 
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/queen
-	of = /mob/living/simple_mob/animal/tyr/mineral_ants/queen
+/mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/queen/perform(mob/living/simple_mob/animal/tyr/mineral_ants/queen/self, datum/om/frame/life/ctx)
-	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(self) && isturf(self.loc))
-		self.build_tile(self.loc)
+/mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special(datum/seq_frame/life/F)
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(src) && isturf(src.loc))
+		src.build_tile(src.loc)
 
 /// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)

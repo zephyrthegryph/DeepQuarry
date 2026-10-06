@@ -230,3 +230,22 @@ it is out of the sweep); it is left as a known gap. What was done to get here: t
 (`/datum/work_item/sequence/sweep()`, a new `work_item.sweep()` hook in `run_item()`), the execution token lives on
 the member's state, `admit()` is asked only with `admit_guard`, the frame end is inline, and the sweep's frame is
 reset once per pass.
+
+## 9. S3 as built (rewrite/om-life, L1 of om_retirement.md)
+
+- Every Life stage is a proc on its mob type; `life_steps.dm` declares them (`tools/dx/codemods/life_stage_steps.py`
+  wrote it, with derived `after =` edges checked against every plan the pipeline could build). Trait stages are
+  contributed steps (`life_steps()` on the trait state, `seq_extra_add()`). The pipeline, its frame and the edge
+  generator are deleted; `kernel_sequence_life_order` went with them (the tables are the order now).
+- **Stasis**: the sequence runs on `CLOCK_WORLD`; `begin()` advances the body's stasis counter and biology steps skip a
+  paused frame (`when = "!in_stasis"`), as the pipeline did.
+- **Pre-check**: event-driven steps (run once per wake, no state says there is work) are `seq_step(..., once = TRUE)`.
+- **Suspension**: `admit()` skips a suspended mob (`admit_guard`).
+- **Rewakes**: one timer per member (`seq:<idx>:rewake`) for its soonest step due time (`state.rewake_at`), on its own
+  clock. Per-step keyed world-clock timers all landed on the global owner's single list and dominated a 512-human bench.
+- **Dispatch**: `typed_dispatch` sequences call steps through `run_step()`/`ask_step()`; Life's are a generated switch
+  (`life_dispatch.dm`, `tools/dx/life_dispatch_gen.py`). A by-name `call()` on a human costs ~15-20 us (its proc table);
+  the switch ~1.4 us.
+- **Bench gate**: `life_sequence` now pins the pipeline's cost against a reference runner (section 8's gate without the
+  pipeline). `life_sweep` (real mobs, same machine, back to back): h512 kernel 327 ms/s for 2563 frames against the
+  pipeline's 373-392 ms/s for 2286-2517; mix 104 against 142-171 ms/s.

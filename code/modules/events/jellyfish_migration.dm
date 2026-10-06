@@ -86,7 +86,7 @@ CAPABILITIES(/datum/event/jellyfish_migration)
 
 // If jellyfish is bomphed, remove it from the list.
 /datum/event/jellyfish_migration/proc/on_jellyfish_destruction(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/mob/M = source
 	own_take_member(src, nameof(spawned_jellyfish), M)

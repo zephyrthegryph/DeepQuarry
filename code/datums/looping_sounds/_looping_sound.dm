@@ -24,7 +24,7 @@
 #define LOOPING_SOUND_DORMANT_RECHECK (10 SECONDS)
 
 /**
- * A looping sound runs on object-model wakes (Q5): each loop is an om_after() timer, and a
+ * A looping sound runs on object-model wakes (Q5): each loop is an after() timer, and a
  * loop nobody can hear parks on the player chunk keys (/datum/mob_chunk, CHANGE_CHUNK_PLAYER) around it until a player
  * moves into range (with a slow recheck timer).
  */

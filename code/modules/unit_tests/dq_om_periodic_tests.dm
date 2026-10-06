@@ -165,7 +165,7 @@
 	om_task_periodic_stop(M)
 
 /// Change channels and timers for sleepers: a watcher wakes on a watched channel and not on
-/// another; unwatching stops it; an om_after() timer fires once.
+/// another; unwatching stops it; an after() timer fires once.
 /datum/unit_test/dq_om_keys_and_timers
 
 /datum/proc/dq_om_test_timer_hit()
@@ -188,7 +188,7 @@
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(S), before, "an unwatched datum woke")
 
-	var/id = om_after(S, 1, /datum/proc/dq_om_test_timer_hit)
+	var/id = after(S, 1, /datum/proc/dq_om_test_timer_hit)
 	TEST_ASSERT(om_timer_pending(S, id), "the timer is not pending")
 	TEST_ASSERT(om_wait_for_wake(S, before), "the timer did not fire")
 	om_test_ticks(8)

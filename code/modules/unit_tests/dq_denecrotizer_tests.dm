@@ -38,7 +38,7 @@
 	unobserve(target, /datum/notice/living_revived, src)
 
 /datum/unit_test/dq_denecrotizer_does_not_reclobber_sight_after_revive/proc/set_custom_see_in_dark(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/source = N.target
 	source.see_in_dark = custom_see_in_dark
 
@@ -69,6 +69,6 @@
 	unobserve(target, /datum/notice/living_revived, src)
 
 /datum/unit_test/dq_denecrotizer_basic_rez_does_not_reclobber_sight/proc/set_custom_see_in_dark(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/source = N.target
 	source.see_in_dark = custom_see_in_dark

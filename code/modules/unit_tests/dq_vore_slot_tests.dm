@@ -195,7 +195,7 @@
 		if(B.digested_prey_count)
 			break
 		if(!QDELETED(prey) && prey.loc == B)
-			om_run_frame_now(prey, /datum/om/pipeline/life)
+			seq_run_frame_now(prey, /datum/sequence/life)
 		B.belly_cycle(BELLY_BASELINE_TICK / (1 SECONDS))
 	TEST_ASSERT_EQUAL(B.digested_prey_count, 1, "a digest belly should finish its prey (stat [prey?.stat])")
 

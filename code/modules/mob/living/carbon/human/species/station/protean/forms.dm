@@ -71,14 +71,14 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 /datum/forms/proc/attach()
 	var/mob/living/carbon/human/H = owner
 	prior_holder_type = H.holder_type
-	om_stage_add(H, /datum/om/stage/life/trait/forms)
+	seq_extra_add(H, /datum/sequence/life, src)
 	current.on_enter(src, H)
 	H.invalidate_factors()
 
 /// Leaves the owner (was UnregisterFromParent).
 /datum/forms/proc/detach()
 	var/mob/living/carbon/human/H = owner
-	om_stage_remove(H, /datum/om/stage/life/trait/forms)
+	seq_extra_remove(H, /datum/sequence/life, src)
 	if(current)
 		current.on_exit(src, H)
 	H.invalidate_factors()
@@ -267,27 +267,17 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		if(istype(I, /obj/item/holder))
 			root.remove_from_mob(I)
 
-/// Trait system: form upkeep.
-/datum/om/stage/life/trait/forms
-	name = "forms"
-	wake_on = CHANGE_MOB_STAT | CHANGE_EXPLICIT
-	woken_by = "set_form(); set_stat()"
+/// Life: form upkeep, a step the forms datum contributes while attached. set_form() and stat changes wake it.
+/datum/forms/proc/life_steps()
+	return list(seq_step(PROC_REF(life_trait_forms), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_forms", 		reads = CHANGE_MOB_STAT | CHANGE_EXPLICIT, should_run = PROC_REF(life_trait_forms_due), woken_by = "set_form(); set_stat()"))
 
-/datum/om/stage/life/trait/forms/perform(mob/living/self, datum/om/frame/life/ctx)
-	var/mob/living/carbon/human/H = self
-	if(!istype(H))
-		return
+/datum/forms/proc/life_trait_forms(mob/living/carbon/human/H, datum/seq_frame/life/F)
 	H.character_forms?.on_life(H)
 
-/// Sleeps unless the current form has per-tick upkeep (`ticks`) or draws itself (it follows
-/// resting). set_form() and stat changes wake it.
-/datum/om/stage/life/trait/forms/idle(mob/living/self)
-	var/mob/living/carbon/human/H = self
-	if(!istype(H))
-		return TRUE
-	var/datum/forms/F = H.character_forms
-	if(!F?.current)
-		return TRUE
-	if(!F.current.draws_body)
+/// Has work while the current form has per-tick upkeep (`ticks`) or draws itself (it follows resting).
+/datum/forms/proc/life_trait_forms_due(mob/living/carbon/human/H)
+	if(!current)
 		return FALSE
-	return !F.current.ticks || H.stat == DEAD
+	if(!current.draws_body)
+		return TRUE
+	return current.ticks && H.stat != DEAD

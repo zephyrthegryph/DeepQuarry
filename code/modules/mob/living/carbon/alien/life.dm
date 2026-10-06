@@ -1,33 +1,27 @@
 // Alien larva are quite simple.
-/datum/om/stage/life/type_pre/carbon/alien
-	of = /mob/living/carbon/alien
+/mob/living/carbon/alien/life_type_pre_due()
+	return TRUE
 
-/datum/om/stage/life/type_pre/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
-	if (self.transforming)	return ctx.abort()
-	if(!self.loc)			return ctx.abort()
+/mob/living/carbon/alien/life_type_pre(datum/seq_frame/life/F)
+	if (src.transforming)	return F.abort()
+	if(!src.loc)			return F.abort()
 	return ..()
 
 /// Growth, blindness reset and icons after the living core (the old alien Life() tail).
-/datum/om/stage/life/alien_growth
-	order = LIFE_PHASE_TAIL + 100
-	name = "alien growth"
-	wake_on = CHANGE_MOB_HEALTH
-	of = /mob/living/carbon/alien
-
-/datum/om/stage/life/alien_growth/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
-	if (self.stat != DEAD) //still breathing
+/mob/living/carbon/alien/proc/life_alien_growth(datum/seq_frame/life/F)
+	if (src.stat != DEAD) //still breathing
 		// GROW!
-		self.update_progression()
+		src.update_progression()
 
-	self.set_blinded(null)
+	src.set_blinded(null)
 
 	//Status updates, death etc.
-	self.update_icons()
+	src.update_icons()
 
-/datum/om/stage/life/radiation/carbon/alien
-	of = /mob/living/carbon/alien
+/mob/living/carbon/alien/life_radiation_due()
+	return TRUE
 
-/datum/om/stage/life/radiation/carbon/alien/perform(mob/living/carbon/alien/self, datum/om/frame/life/ctx)
+/mob/living/carbon/alien/life_radiation(datum/seq_frame/life/F)
 	. = ..()
 	if(.)
 		return
@@ -35,57 +29,57 @@
 	// Currently both Dionaea and larvae like to eat radiation, so I'm defining the
 	// rad absorbtion here. This will need to be changed if other baby aliens are added.
 
-	if(!self.radiation)
+	if(!src.radiation)
 		return
 
-	var/rads = self.radiation/25
-	self.decay_radiation(rads)
+	var/rads = src.radiation/25
+	src.decay_radiation(rads)
 	//adjust_nutrition(rads) //Commented out to prevent alien obesity.
-	self.mend(TREAT_TISSUE_REPAIR, rads)
-	self.mend(TREAT_BURN_CARE, rads)
-	self.mend(TREAT_OXYGENATION, rads)
-	self.mend(TREAT_ANTITOXIN, rads)
+	src.mend(TREAT_TISSUE_REPAIR, rads)
+	src.mend(TREAT_BURN_CARE, rads)
+	src.mend(TREAT_OXYGENATION, rads)
+	src.mend(TREAT_ANTITOXIN, rads)
 	return
 
-/datum/om/stage/life/status/carbon/alien
-	of = /mob/living/carbon/alien
+/mob/living/carbon/alien/life_status_due()
+	return TRUE
 
-/datum/om/stage/life/status/carbon/alien/update_status(mob/living/carbon/alien/self)
+/mob/living/carbon/alien/life_status_update_status()
 
-	if(om_has(self, EFFECT_GODMODE)) //I don't want to go in and do HUD stuff imediately, so... no.
+	if(om_has(src, EFFECT_GODMODE)) //I don't want to go in and do HUD stuff imediately, so... no.
 		return 0	// Cancelled by a component
 
 	// Death from injury is decided by the (simple) body.
-	if(self.stat != DEAD)
-		self.body?.life_tick()
+	if(src.stat != DEAD)
+		src.body?.life_tick()
 
-	if(self.stat == DEAD)
-		self.set_blinded(1)
-		self.status_set(EFFECT_MUTED, 0)
-		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
+	if(src.stat == DEAD)
+		src.set_blinded(1)
+		src.status_set(EFFECT_MUTED, 0)
+		src.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(self.has_status(EFFECT_PARALYZED))
-			self.set_blinded(1)
-			self.set_stat(UNCONSCIOUS)
+		if(src.has_status(EFFECT_PARALYZED))
+			src.set_blinded(1)
+			src.set_stat(UNCONSCIOUS)
 
-		if(self.has_status(EFFECT_SLEEPING))
+		if(src.has_status(EFFECT_SLEEPING))
 			// Sleep wears off only while a player is home; an empty body stays asleep.
-			if(!self.mind?.active || !self.client)
-				self.status_at_least(EFFECT_SLEEPING, 1)
-			self.set_blinded(1)
-			self.set_stat(UNCONSCIOUS)
-		else if(!self.resting)
-			self.set_stat(CONSCIOUS)
+			if(!src.mind?.active || !src.client)
+				src.status_at_least(EFFECT_SLEEPING, 1)
+			src.set_blinded(1)
+			src.set_stat(UNCONSCIOUS)
+		else if(!src.resting)
+			src.set_stat(CONSCIOUS)
 
 		// Eyes and blindness. Temporary blindness and blur wear off on their own.
-		if(!self.has_eyes())
-			self.status_set(EFFECT_BLINDED, 1)
-			self.set_blinded(1)
-			self.status_set(EFFECT_BLURRY, 1)
-		else if(self.has_status(EFFECT_BLINDED))
-			self.set_blinded(1)
+		if(!src.has_eyes())
+			src.status_set(EFFECT_BLINDED, 1)
+			src.set_blinded(1)
+			src.status_set(EFFECT_BLURRY, 1)
+		else if(src.has_status(EFFECT_BLINDED))
+			src.set_blinded(1)
 
-		self.update_icons()
+		src.update_icons()
 
 	return 1
 
@@ -135,22 +129,22 @@
 
 	src.healths.icon_state = vitality_health_band(src)
 
-/datum/om/stage/life/environment/carbon/alien
-	of = /mob/living/carbon/alien
+/mob/living/carbon/alien/life_environment_due()
+	return TRUE
 
-/datum/om/stage/life/environment/carbon/alien/exchange(mob/living/carbon/alien/self, datum/gas_mixture/environment)
+/mob/living/carbon/alien/life_environment_exchange(datum/gas_mixture/environment)
 	// Both alien subtypes survive in vaccum and suffer in high temperatures,
 	// so I'll just define this once, for both (see radiation comment above)
 	if(!environment) return
 
 	var/environment_temp = environment.return_temperature()
 	if(environment_temp > (T0C+66))
-		self.injure(INJURY_BURN, (environment_temp - (T0C+66)) / 5, null, null, 0, null, INJURE_SILENT | INJURE_CONTINUOUS) // Might be too high, check in testing.
-		self.throw_alert("alien_fire", /atom/movable/screen/alert/alien_fire)
+		src.injure(INJURY_BURN, (environment_temp - (T0C+66)) / 5, null, null, 0, null, INJURE_SILENT | INJURE_CONTINUOUS) // Might be too high, check in testing.
+		src.throw_alert("alien_fire", /atom/movable/screen/alert/alien_fire)
 		if(prob(20))
-			to_chat(self, span_red("You feel a searing heat!"))
+			to_chat(src, span_red("You feel a searing heat!"))
 	else
-		self.clear_alert("alien_fire")
+		src.clear_alert("alien_fire")
 
 /mob/living/carbon/alien/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
 	adjust_bodytemperature(BODYTEMP_HEATING_MAX)

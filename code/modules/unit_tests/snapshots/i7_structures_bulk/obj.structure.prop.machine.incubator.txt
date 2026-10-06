@@ -1,4 +1,5 @@
-/obj/structure/prop/machine/incubator|human|none => incubator_toggle|prop_hand:not possible right now
-/obj/structure/prop/machine/incubator|robot|none => incubator_toggle|prop_hand:not possible right now
+/obj/structure/prop/machine/incubator|human|none => |prop_hand:not possible right now
+/obj/structure/prop/machine/incubator|robot|none => |prop_hand:not possible right now
 /obj/structure/prop/machine/incubator|ai|none => |
 /obj/structure/prop/machine/incubator|ghost|none => |
+

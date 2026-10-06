@@ -2,3 +2,4 @@
 /obj/structure/undies_wardrobe|robot|none => |undies_wardrobe_open_ui:sadly there's nothing in here for you to wear
 /obj/structure/undies_wardrobe|ai|none => |
 /obj/structure/undies_wardrobe|ghost|none => |
+

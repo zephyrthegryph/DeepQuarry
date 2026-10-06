@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/anobattery)
 	var/duration = 0
 	var/interval = 0
 	EXPIRY_DECLARE(time_end)
-	/// om_after() timer that ends the emission at time_end, or 0.
+	/// after() timer that ends the emission at time_end, or 0.
 	EXPIRY_DECLARE(last_activation)
 	EXPIRY_DECLARE(last_process)
 	var/tmp/obj/item/anobattery/inserted_battery

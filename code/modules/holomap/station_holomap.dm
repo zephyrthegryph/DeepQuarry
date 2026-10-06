@@ -162,7 +162,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 		stopWatching()
 
 /obj/machinery/station_map/proc/on_watcher_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	// watching_mob() already reads null for a watcher mid-delete: hand it over.
 	if((watching_mob == source))

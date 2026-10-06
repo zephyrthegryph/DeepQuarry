@@ -797,7 +797,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	return
 
 /atom/movable/proc/emblocker_gc(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = N.target
 	unobserve(source, /datum/notice/qdeleting, src)
 	cut_overlay(source)

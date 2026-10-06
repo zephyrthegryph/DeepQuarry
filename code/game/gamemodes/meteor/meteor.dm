@@ -21,7 +21,7 @@ DECLARE_REPEAT(/datum/game_mode/meteor, "meteor_wave_delay", meteor_wave, "meteo
 	. = ..()
 	after(src, max(METEOR_DELAY - world.time, 0), PROC_REF(start_meteor_waves))
 
-/// om_after() callback: the first wave, then the declared repeat carries on.
+/// after() callback: the first wave, then the declared repeat carries on.
 /datum/game_mode/meteor/proc/start_meteor_waves()
 	spawn_meteors(6, GLOB.meteors_normal)
 	set_meteor_waves(TRUE)

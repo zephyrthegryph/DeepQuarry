@@ -5,7 +5,6 @@
 #define SHRINK_MULTIPLIER 0.3
 
 /datum/trait_state/nutrition_size_change
-	life_stage = /datum/om/stage/life/trait/nutrition_size_change
 	var/grow_mode = 0 // Don't use base state
 
 /datum/trait_state/nutrition_size_change/growing
@@ -41,8 +40,6 @@
 #undef SHRINK_MULTIPLIER
 
 /// Trait system: size change from nutrition.
-/datum/om/stage/life/trait/nutrition_size_change
-	name = "nutrition size change"
-	state_type = /datum/trait_state/nutrition_size_change
-	// P2-S6: paused stasis frames and dead bodies skip it.
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/nutrition_size_change/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_nutrition_size_change", when = list("!in_stasis", "alive")))

@@ -8,7 +8,7 @@
 // Stasis is the biology clock (doc/rewrite/life_on_om.md §8). While applied, each stasis
 // source holds EFFECT_CLOCK_BIO_INHIBIT = its depth on the mob (the deepest wins), so the
 // mob's CLOCK_BIO rate is 1 - stasis. The body reads that rate in ONE place,
-// advance_stasis(), which the Life frame calls once at its start (/datum/om/frame/life/begin()).
+// advance_stasis(), which the Life frame calls once at its start (/datum/seq_frame/life/begin()).
 // It runs a fractional counter: each frame adds the rate, and the frame runs biology only when
 // the counter fills. Every other frame is "paused". A paused frame skips:
 //   - affliction ticks (progression, treatment, symptoms)     body.life_tick()

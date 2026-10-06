@@ -550,7 +550,7 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 			animate(door_obj, transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag, flags = ANIMATION_END_NOW)
 		else
 			animate(transform = M, icon_state = door_state, layer = door_layer, time = world.tick_lag)
-	om_after_replace(src, closet_appearance.door_anim_time, PROC_REF(end_door_animation), closing)
+	after(src, closet_appearance.door_anim_time, PROC_REF(end_door_animation), key = "door_animation", with = list(closing))
 
 /obj/structure/closet/proc/end_door_animation(closing = FALSE)
 	is_animating_door = FALSE

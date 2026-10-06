@@ -128,22 +128,19 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	GLOB.jellyfish_count --
 	..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish
-	of = /mob/living/simple_mob/vore/alienanimals/space_jellyfish
-
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/perform(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.client)
+	if(src.client)
 		return
-	self.reproduce()
+	src.reproduce()
 
 /// Idle with a client (Login and Logout wake it) and through the reproduction cooldown, which ends
 /// by rewake instead of being counted down every frame.
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/idle(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self)
-	return self.client || !COOLDOWN_FINISHED(self, reproduce_after)
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post_due()
+	return !src.client && COOLDOWN_FINISHED(src, reproduce_after)
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/rewake_delay(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self)
-	return max(self.reproduce_after - world.time, 0)
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post_rewake()
+	return max(src.reproduce_after - world.time, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/reproduce()
 	if(!COOLDOWN_FINISHED(src, reproduce_after))

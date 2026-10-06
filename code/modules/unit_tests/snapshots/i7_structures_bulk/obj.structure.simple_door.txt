@@ -1,4 +1,5 @@
-/obj/structure/simple_door|human|none => simple_door_hand,simple_door_item|
-/obj/structure/simple_door|robot|none => simple_door_hand,simple_door_item,gen_silicon_simple_door_silicon_use|
-/obj/structure/simple_door|ai|none => gen_silicon_simple_door_silicon_use|
+/obj/structure/simple_door|human|none => |
+/obj/structure/simple_door|robot|none => |
+/obj/structure/simple_door|ai|none => |
 /obj/structure/simple_door|ghost|none => |
+

@@ -187,33 +187,33 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 		"The chaos of being digested fades as you're snuffed out by a harsh clench! You're steadily broken down into a thick paste, processed and absorbed by the predator!"
 		)
 
-/datum/om/stage/life/type_post/simple_mob/shadekin
-	of = /mob/living/simple_mob/shadekin
+/mob/living/simple_mob/shadekin/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/shadekin/perform(mob/living/simple_mob/shadekin/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/shadekin/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.shadekin.in_phase)
-		self.set_density(FALSE)
+	if(src.shadekin.in_phase)
+		src.set_density(FALSE)
 
 	//Convert spare nutrition into energy at a certain ratio
-	if(. && self.nutrition > initial(self.nutrition) && self.shadekin.dark_energy < 100)
-		self.set_nutrition(max(0, self.nutrition-5))
-		self.shadekin.dark_energy = min(100,self.shadekin.dark_energy+1)
-	if(!self.client && self.check_for_observer && self.check_timer++ > 5)
-		self.check_timer = 0
+	if(. && src.nutrition > initial(src.nutrition) && src.shadekin.dark_energy < 100)
+		src.set_nutrition(max(0, src.nutrition-5))
+		src.shadekin.dark_energy = min(100,src.shadekin.dark_energy+1)
+	if(!src.client && src.check_for_observer && src.check_timer++ > 5)
+		src.check_timer = 0
 		var/non_kin_count = 0
-		for(var/mob/living/M in view(6,self))
+		for(var/mob/living/M in view(6,src))
 			if(!issimplekin(M))
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
-		if(!non_kin_count && (self.shadekin.in_phase))
-			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
-		else if (non_kin_count && !(self.shadekin.in_phase))
-			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
+		if(!non_kin_count && (src.shadekin.in_phase))
+			dq_use_self_ability(src, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
+		else if (non_kin_count && !(src.shadekin.in_phase))
+			dq_use_self_ability(src, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
-	if(ctx.fact("alive"))
-		self.shadekin.handle_comp()
+	if(F.alive())
+		src.shadekin.handle_comp()
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/shadekin/appearance_overlays()

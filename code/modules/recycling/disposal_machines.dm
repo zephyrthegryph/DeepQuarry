@@ -726,7 +726,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 
 /// Hooked on our own disposal_receive event.
 /obj/machinery/disposal/proc/on_disposal_receive(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/disposal_receive/event = A
 	packet_expel(source, event.items, event.gas)

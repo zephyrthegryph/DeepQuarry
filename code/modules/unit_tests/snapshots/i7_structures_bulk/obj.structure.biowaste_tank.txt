@@ -2,3 +2,4 @@
 /obj/structure/biowaste_tank|robot|none => biowaste_tank_hand|
 /obj/structure/biowaste_tank|ai|none => |
 /obj/structure/biowaste_tank|ghost|none => |
+

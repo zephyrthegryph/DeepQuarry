@@ -3,3 +3,4 @@
 /obj/structure/foodcart|ai|none => |
 /obj/structure/foodcart|ghost|none => |
 /obj/structure/foodcart|human|/obj/item/reagent_containers/food => foodcart_item,foodcart_hand|
+

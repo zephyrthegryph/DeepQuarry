@@ -118,7 +118,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	return generated > 0 ? cell.give(min(generated, cell.amount_missing())) : 0
 
 /datum/material_response/proc/on_examine(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = N
 	var/list/examine_text = event.texts
 	settle_cell_energy()
@@ -134,7 +134,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		examine_text += span_notice("Thermal buffer: [round(stored_phase_energy)]/[round(material.phase_change_capacity)] J.")
 
 /datum/material_response/proc/on_take_damage(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/material/material = material()
 	if(!material)
 		return
@@ -143,13 +143,13 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		after(item, 1 SECOND, TYPE_PROC_REF(/atom, repair_damage), with = list(max(1, round(material.shape_recovery_rate))))
 
 /datum/material_response/proc/on_pre_emp(datum/act/emp/pulse)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/material/material = material()
 	if(electrical_form && material?.critical_temperature > 0 && ambient_temperature() < material.critical_temperature)
 		pulse.protection |= EMP_PROTECT_SELF
 
 /datum/material_response/proc/on_fire(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/material/material = material()
 	if(!material || !armor_form || material.phase_change_capacity <= 0)
 		return
@@ -165,11 +165,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		stored_phase_energy += absorbed
 
 /datum/material_response/proc/on_propagated_radiation(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	apply_radiation_energy(25)
 
 /datum/material_response/proc/on_radiation(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	apply_radiation_energy(pulse_information?.strength || 1)
@@ -200,7 +200,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		item.set_light(0)
 
 /datum/material_response/proc/on_attackby(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/attacked_by/event = N
 	var/obj/item/weapon = event.item
 	var/mob/living/user = event.user
@@ -238,7 +238,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		item.reagents.trans_to(cause, min(2, item.reagents.total_volume))
 
 /datum/material_response/proc/on_surgery(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/material_surgery/event = A
 	var/mob/living/carbon/human/target = event.patient
 	var/target_zone = event.zone

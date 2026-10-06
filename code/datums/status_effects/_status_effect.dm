@@ -192,7 +192,7 @@
 
 /// /datum/om/event/living_aheal handler: removes us on a full heal
 /datum/status_effect/proc/remove_effect_on_heal(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(!remove_on_fullheal)
 		return

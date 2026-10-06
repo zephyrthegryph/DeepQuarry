@@ -84,7 +84,7 @@
 
 /// When the user is deleted, remove the cog
 /datum/cogbar/proc/on_user_delete(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	ended_with(src)
 

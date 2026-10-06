@@ -67,12 +67,12 @@
 	return block_remove
 
 /datum/dq_containment_listener/proc/on_inserted(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/slot_inserted/event = N
 	LAZYADD(events, "in:[event.slot_id]")
 
 /datum/dq_containment_listener/proc/on_removed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/slot_removed/event = N
 	LAZYADD(events, "out:[event.slot_id]")
 
