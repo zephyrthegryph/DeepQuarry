@@ -121,6 +121,48 @@ pub fn parts() -> Vec<Part> {
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/attack_generic\("),
         ),
+        // Items, structures, effects and turfs (code/game/objects, code/game/turfs): the legacy forms of the items/structures
+        // wave, shrink-only until each reaches zero and becomes a hard ban (tools/codemods/run_items_wave.sh, exclusions.txt).
+        Part::new(
+            "objects_ratchet_on_legacy_interactions",
+            "objects: ratchet on legacy interactions",
+            "DECLARE_INTERACTIONS/EXTEND_INTERACTIONS/declare_interactions() in code/game/objects or code/game/turfs over the ratchet. Declare ops in the type's CAPABILITIES (python tools/dx/codemods/interact_declare.py).",
+            Files::Code,
+            line(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(|^/[A-Za-z0-9_/]*/declare_interactions\("),
+        )
+        .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
+        Part::new(
+            "objects_ratchet_on_tool_act_overrides",
+            "objects: ratchet on tool *_act() overrides",
+            "screwdriver/crowbar/wrench/wirecutter/multitool/welder _act() overrides in code/game/objects or code/game/turfs over the ratchet. Declare op(\"use_x\", tool(TOOL_X), ...) (python tools/codemods/tool_act.py).",
+            Files::Code,
+            line(r"^/[A-Za-z0-9_/]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act\("),
+        )
+        .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
+        Part::new(
+            "objects_ratchet_on_damage_reactions",
+            "objects: ratchet on DAMAGE_REACTION",
+            "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",
+            Files::Code,
+            line(r"^DAMAGE_REACTION(_AFTER)?\("),
+        )
+        .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
+        Part::new(
+            "objects_ratchet_on_declare_emag",
+            "objects: ratchet on DECLARE_EMAG",
+            "DECLARE_EMAG in code/game/objects or code/game/turfs over the ratchet. emag(then(PROC_REF(x)), repeatable =) in the type's CAPABILITIES (code/library/access/emag.dm).",
+            Files::Code,
+            line(r"^DECLARE_EMAG(_REPEATABLE)?\("),
+        )
+        .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
+        Part::new(
+            "objects_ratchet_on_periodic",
+            "objects: ratchet on DECLARE_PERIODIC and machine_step",
+            "DECLARE_PERIODIC*/machine_step in code/game/objects or code/game/turfs over the ratchet. every(interval, then(PROC_REF(x)), when =) in the type's CAPABILITIES.",
+            Files::Code,
+            line(r"^DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?\(|^/[A-Za-z0-9_/]*/machine_step\("),
+        )
+        .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",
