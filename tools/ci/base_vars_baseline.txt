@@ -75,13 +75,13 @@ base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/has_slot_hooks 
 base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/move_hooks = 0
 base_var	code/datums/containment/lifecycle.dm	/atom/movable/var/tmp/atom/movable/lifecycle_successor
 base_var	code/datums/containment/pin.dm	/atom/movable/var/tmp/list/latent_pins
-base_var	code/datums/entity_state/animations/dizzy.dm	var/dizzy_was_resting
-base_var	code/datums/entity_state/animations/jittery.dm	var/jittery_was_resting
+base_var	code/modules/mob/living/life/dizzy_shake.dm	var/dizzy_was_resting
+base_var	code/modules/mob/living/life/jittery_shake.dm	var/jittery_was_resting
 base_var	code/datums/entity_state/antags/changeling/changeling.dm	/mob/living/var/datum/changeling/changeling_state
 base_var	code/datums/entity_state/crafting/crafting.dm	/mob/living/carbon/human/var/datum/personal_crafting/crafting
-base_var	code/datums/entity_state/disabilities/gibbing.dm	var/disability_gut_pressure = 0
-base_var	code/datums/entity_state/disabilities/gibbing.dm	var/disability_death_time = FALSE
-base_var	code/datums/entity_state/disabilities/tourettes.dm	var/list/disability_motor_tics
+base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/gibbing.dm	var/disability_gut_pressure = 0
+base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/gibbing.dm	var/disability_death_time = FALSE
+base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/tourettes.dm	var/list/disability_motor_tics
 base_var	code/datums/entity_state/machinery/disposal_connection.dm	/obj/var/tmp/datum/disposal_system_connection/disposal_connection
 base_var	code/datums/entity_state/materials/machine_shim.dm	/mob/var/datum/using_machine_shim/machine_shim
 base_var	code/datums/entity_state/mind_host.dm	/obj/item/var/datum/mind_host/mind_host
