@@ -190,6 +190,7 @@
 #include "dq_init_forms_behaviour_tests.dm"
 #include "dq_init_children_tests.dm"
 #include "dq_init_codemod_tests.dm"
+#include "dq_leftovers_behaviour.dm"
 #include "dq_lifecycle_forms_tests.dm"
 #include "dq_lifeform_adjacency_tests.dm"
 #include "dq_lifeform_contents_tests.dm"
