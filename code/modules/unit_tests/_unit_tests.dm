@@ -1121,6 +1121,9 @@
 
 #include "round2_item_bank_retrieval_null_submit.dm"
 
+#include "interim_permit_reregistration.dm"
+#include "round2_temperature_projectile_bounded_delta.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
