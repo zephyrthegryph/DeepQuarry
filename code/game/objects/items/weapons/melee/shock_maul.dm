@@ -76,9 +76,10 @@
 /obj/item/melee/shock_maul/get_cell()
 	return bcell
 
-/obj/item/melee/shock_maul/MouseDrop(obj/over_object as obj)
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native weapon drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/melee/shock_maul/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/melee/shock_maul/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
@@ -192,6 +193,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shock_maul_emp)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// Old attack_hand.
 /obj/item/melee/shock_maul/proc/interaction_hand(datum/act/op/A)

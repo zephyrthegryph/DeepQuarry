@@ -41,6 +41,20 @@ REL_SET = re.compile(r"^rel_set\(\s*src\s*,\s*nameof\((\w+)\)\s*,\s*(\w+)\s*\)$"
 SKIP_VARS = {"loc", "contents", "vars", "type", "parent_type", "tag", "verbs", "x", "y", "z", "density", "opacity"}
 
 
+def cond_split(code):
+    """("if" | "else if", condition, tail) of an if statement, the condition's brackets balanced; None otherwise."""
+    m = re.match(r"^(if|else if)\s*\(", code)
+    if not m:
+        return None
+    depth, k = 1, m.end()
+    while k < len(code) and depth:
+        depth += {"(": 1, ")": -1}.get(code[k], 0)
+        k += 1
+    if depth:
+        return None
+    return m.group(1), code[m.end():k - 1], code[k:].strip()
+
+
 def calls_in(expr):
     return re.findall(r"(?<![\w.])([A-Za-z_]\w*)\s*\(", expr)
 
@@ -164,9 +178,9 @@ def plan_override(proc):
             plan.entries.append("rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))")
             i += 1
             continue
-        m = COND.match(code)
-        if m and s.indent == 1 and m.group(1) == "if":
-            cond, tail = m.group(2), m.group(3)
+        m = cond_split(code)
+        if m and s.indent == 1 and m[0] == "if":
+            cond, tail = m[1], m[2]
             # if(!isnull(a)) v = a / if(a) v = a / if(a) set_dir(a)
             pm2 = re.fullmatch(r"!?\s*(?:isnull\()?\s*(\w+)\s*\)?", cond.replace("!isnull(", "isnull(").strip())
             body = tail.strip()
@@ -181,6 +195,20 @@ def plan_override(proc):
                     stored_params[a] = tgt
                     i += 2 if body_stmt else 1
                     continue
+            # if(!v) v = <random>: rolled only while the var holds nothing (a subtype or map that gives one keeps it)
+            nm2 = re.fullmatch(r"!\s*(\w+)|isnull\(\s*(\w+)\s*\)", cond.strip())
+            am0 = ASSIGN.match(body) if body else None
+            if nm2 and am0 and am0.group(1) == (nm2.group(1) or nm2.group(2)) and RANDOM.search(am0.group(2)) and safe_expr(am0.group(2))                     and am0.group(1) not in SKIP_VARS and (not body_stmt or i + 2 >= len(rest) or rest[i + 2].indent == 1):
+                var, expr = am0.group(1), am0.group(2)
+                gen = generator(expr)
+                if not gen:
+                    pname = "roll_%s" % var
+                    plan.procs.append((pname, ["	return %s" % to_roller(expr)]))
+                    gen = "PROC_REF(%s)" % pname
+                plan.entries.append("rolls(nameof(%s), %s, when = cond_not(nameof(%s)))" % (var, gen, var))
+                rolled.append(var)
+                i += 2 if body_stmt else 1
+                continue
             # if(prob(N)) v = X [else v = Y]
             if RANDOM.search(cond) and safe_expr(cond):
                 am = ASSIGN.match(body)
@@ -229,6 +257,15 @@ def plan_override(proc):
                 break
         if hit:
             stored_params[hit[0]] = hit[1]
+            i += 1
+            continue
+        om = re.match(r"^(?:src\.)?([a-z_]\w*)\s*(\+|-)=\s*(.+)$", code)
+        if om and om.group(1) not in SKIP_VARS and RANDOM.search(om.group(3)) and safe_expr(om.group(3)):
+            var = om.group(1)
+            pname = "roll_%s" % var
+            plan.procs.append((pname, ["	return %s %s (%s)" % (var, om.group(2), to_roller(om.group(3)))]))
+            plan.entries.append("rolls(nameof(%s), PROC_REF(%s))" % (var, pname))
+            rolled.append(var)
             i += 1
             continue
         am = ASSIGN.match(code)

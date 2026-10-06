@@ -10,9 +10,10 @@
 	var/tmp/obj/item/stored_item
 
 
-/obj/item/evidencebag/MouseDrop(obj/item/I)
-	if(!bag_with_actor(usr, I)) // ALLOW(sys_usr_outside_verb): Native evidence bag drag supplies its actor before unchanged conditional parent input routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/evidencebag/proc/mousedrop_input(datum/act/input/A)
+	if(!bag_with_actor(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/evidencebag/proc/bag_with_actor(mob/actor, obj/item/I)
 	if (!ishuman(actor))
@@ -79,6 +80,7 @@
 
 CAPABILITIES(/obj/item/evidencebag)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// Old attack_self.
 /obj/item/evidencebag/proc/interaction_self(datum/act/op/A)

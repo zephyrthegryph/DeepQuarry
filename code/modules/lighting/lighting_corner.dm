@@ -92,8 +92,7 @@
 
 /datum/lighting_corner/proc/self_destruct_if_idle()
 	if (!LAZYLEN(affecting) && !sunlight)
-		// ALLOW(lifecycle): an idle lighting corner is freed at once
-		qdel(src, force = TRUE)
+		spent(src, force = TRUE)
 
 /datum/lighting_corner/proc/vis_update()
 	for (var/datum/light_source/light_source as anything in affecting)
