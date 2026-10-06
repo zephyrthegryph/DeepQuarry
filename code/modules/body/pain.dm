@@ -1,15 +1,21 @@
 /mob/proc/flash_pain()
 	flick("pain",pain)
 
-/mob/var/last_pain_message = ""
-/mob/var/next_pain_time = 0
-/mob/var/multilimb_pain_time = 0 // Global pain cooldown exists to prevent spam for multi-limb damage
+/datum/body
+	/// The last pain message the person was shown (a repeat waits for its cooldown).
+	var/last_pain_message = ""
+	/// COOLDOWN: the next pain message.
+	var/next_pain_time = 0
+	/// COOLDOWN: the next message about a hurt limb, so several hurt limbs don't spam.
+	var/multilimb_pain_time = 0
 
 
 // message is the custom message to be displayed
 // power decides how much painkillers will stop the message
 // force means it ignores anti-spam timer
 /mob/living/carbon/proc/custom_pain(message, power, force)
+	if(!body)
+		return 0
 	if((!message || stat || !can_feel_pain() || factor(BF_ANALGESIA) > power) && !synth_cosmetic_pain)
 		return 0
 	message = span_danger("[message]")
@@ -24,52 +30,61 @@
 				force = 0
 			if(6 to 20)
 				force = prob(1)
-		if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
+		if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
 			switch(power)
 				if(0 to 5)
-					COOLDOWN_START(src, next_pain_time, 300 SECONDS)
-					COOLDOWN_START(src, multilimb_pain_time, 1 MINUTE)
+					COOLDOWN_START(body, next_pain_time, 300 SECONDS)
+					COOLDOWN_START(body, multilimb_pain_time, 1 MINUTE)
 				if(6 to 20)
-					COOLDOWN_START(src, next_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
-					COOLDOWN_START(src, multilimb_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
+					COOLDOWN_START(body, next_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
+					COOLDOWN_START(body, multilimb_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
 				if(21 to INFINITY)
-					COOLDOWN_START(src, next_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
-					COOLDOWN_START(src, multilimb_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
-			last_pain_message = message
+					COOLDOWN_START(body, next_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
+					COOLDOWN_START(body, multilimb_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
+			body.last_pain_message = message
 			to_chat(src,message)
 			// Emote in pain for custom pain, too
 			if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 				emote("pain")
 
-	else if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
-		last_pain_message = message
+	else if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
+		body.last_pain_message = message
 		to_chat(src,message)
-		COOLDOWN_START(src, next_pain_time, (10 SECONDS - power))
-		COOLDOWN_START(src, multilimb_pain_time, (10 SECONDS - power))
+		COOLDOWN_START(body, next_pain_time, (10 SECONDS - power))
+		COOLDOWN_START(body, multilimb_pain_time, (10 SECONDS - power))
 		// Emote in pain for custom pain, too
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
 
-/datum/om/stage/life/pain
-	order = LIFE_PHASE_TAIL + 190
-	name = "pain"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
-	of = /mob/living/carbon/human
+// Pain messages (doc/rewrite/body_migration.md, slice 4). How much a body hurts is derived in its vitals; what the
+// person is told about it is periodic, so it is an every(LIFE_CYCLE) per human gated by STAT_PAIN_FELT, which the body
+// holds while it carries afflictions and is alive.
 
-/// Pain messages need a hurt limb, which is an affliction; add_affliction() invalidates the body.
-/datum/om/stage/life/pain/idle(mob/living/carbon/human/self)
-	return self.stat || !LAZYLEN(self.body?.afflictions)
+/// TRUE while the body has afflictions to hurt from: the body holds it.
+STAT(/mob/living/carbon/human, pain_felt, ANY)
+
+/// The pain messages' entries, for the human's CAPABILITIES block: `active` is STAT_PAIN_FELT.
+/proc/pain_clock(active)
+	return every(LIFE_CYCLE, then(TYPE_PROC_REF(/mob/living/carbon/human, pain_tick)), when = active)
+
+/mob/living/carbon/human/proc/pain_tick(datum/act/timer/A)
+	pain_step()
+
+/mob/living/carbon/human/proc/pain_refresh()
+	if(QDELETED(src))
+		return
+	body_hold_flag(STAT_PAIN_FELT, is_alive() && LAZYLEN(body?.afflictions))
 
 /// Pain messages from limbs and organs.
-/datum/om/stage/life/pain/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
+/mob/living/carbon/human/proc/pain_step()
+	var/mob/living/carbon/human/self = src
 	if(self.stat)
 		return
 
 	if(!self.can_feel_pain() && !self.synth_cosmetic_pain)
 		return
 
-	if(!COOLDOWN_FINISHED(self, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
+	if(!COOLDOWN_FINISHED(self.body, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
 		return
 	var/maxdam = 0
 	var/obj/item/organ/external/damaged_organ = null

@@ -16,10 +16,9 @@
 	var/close_on_leaks = TRUE	// If false it will be always open
 	level = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/shutoff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/valve/shutoff/appearance_overlays()
-	. = list()
-	icon_state = "vclamp[open]"
+/obj/machinery/atmospherics/valve/shutoff/draw(datum/look/look)
+	..()
+	look.state("vclamp[open]")
 
 /obj/machinery/atmospherics/valve/shutoff/examine(mob/user)
 	. = ..()

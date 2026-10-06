@@ -32,7 +32,7 @@
 		dead_icon = "[initial(dead_icon)]_assisted"
 
 // Brain is defined in brain.dm
-/obj/item/organ/internal/handle_germ_effects()
+/obj/item/organ/internal/handle_germ_effects(cycles)
 	. = ..() //Should be an interger value for infection level
 	if(!.) return
 

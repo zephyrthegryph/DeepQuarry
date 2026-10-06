@@ -7,7 +7,7 @@
 
 	var/standard_pulse_level = PULSE_NORM	// We run on a normal clock. This is NOT CONNECTED to species heart-rate modifier.
 
-/obj/item/organ/internal/heart/handle_germ_effects()
+/obj/item/organ/internal/heart/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

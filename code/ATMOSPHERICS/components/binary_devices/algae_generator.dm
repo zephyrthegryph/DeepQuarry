@@ -147,12 +147,16 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	ui_error = null // Success!
 	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-{appearance_mode}")
-
-/obj/machinery/atmospherics/binary/algae_farm/proc/appearance_mode()
+/obj/machinery/atmospherics/binary/algae_farm/draw(datum/look/look)
+	..()
 	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)
-		return "off"
-	return recent_moles_transferred > 0 ? "full" : "on"
+		look.state("algae-off")
+	else
+		look.state(recent_moles_transferred > 0 ? "algae-full" : "algae-on") // ALLOW(derived_reads): every write of the readout is followed by update_icon()
+
+/obj/machinery/atmospherics/binary/algae_farm/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(anchored))
 
 /obj/machinery/atmospherics/binary/algae_farm/proc/materials_loaded(datum/act/op/A)
 	try_load_materials(A.actor, A.held)

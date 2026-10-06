@@ -11,7 +11,7 @@
 	return force_contagion(new /datum/affliction/contagion/appendicitis)
 
 /*
-/obj/item/organ/internal/appendix/periodic_step()
+/obj/item/organ/internal/appendix/organ_tick(cycles)
 	..()
 
 	if(!inflamed || !owner)
@@ -42,7 +42,6 @@
 			owner.injure(INJURY_TOXIN, 25, flags = INJURE_SILENT)
 			groin.add_wound(new /datum/affliction/wound/internal_bleeding(groin, 20))
 			groin.update_damages()
-			owner.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			inflamed = 1
 */
 /obj/item/organ/internal/appendix/removed()

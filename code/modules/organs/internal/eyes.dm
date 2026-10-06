@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	if(is_broken() && !oldbroken && owner && !owner.stat)
 		to_chat(owner, span_danger("You go blind!"))
 
-/obj/item/organ/internal/eyes/periodic_step() //Eye damage replaces the old eye_stat var.
+/obj/item/organ/internal/eyes/organ_tick(cycles) //Eye damage replaces the old eye_stat var.
 	..()
 	if(!owner) return
 
@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	if(is_broken())
 		owner.status_at_least(EFFECT_BLINDED, 20)
 
-/obj/item/organ/internal/eyes/handle_germ_effects()
+/obj/item/organ/internal/eyes/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

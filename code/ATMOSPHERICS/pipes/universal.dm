@@ -10,12 +10,16 @@
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/simple/visible/universal/appearance_overlays()
-	. = list()
-	alpha = 255
+/obj/machinery/atmospherics/pipe/simple/visible/universal/draw_pipe(datum/look/look)
+	look.overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal"))
 
-	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal")
+/obj/machinery/atmospherics/pipe/simple/visible/universal/atmos_init()
+	..()
+	if(!QDELETED(src))
+		update_underlays()
+
+/// The pipe stubs toward its neighbours (a look has no underlays).
+/obj/machinery/atmospherics/pipe/simple/visible/universal/update_underlays()
 	underlays.Cut()
 
 	if (node1)
@@ -31,9 +35,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universa
 		universal_underlays(,dir)
 		universal_underlays(,turn(dir, -180))
 
-/obj/machinery/atmospherics/pipe/simple/visible/universal/update_underlays()
+/obj/machinery/atmospherics/pipe/simple/visible/universal/hide(i)
 	..()
-	update_icon()
+	update_underlays()
 
 
 
@@ -46,12 +50,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universa
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/hidden/universal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/simple/hidden/universal/appearance_overlays()	// Doesn't leak. It's a special pipe.
-	. = list()
-	alpha = 255
+/obj/machinery/atmospherics/pipe/simple/hidden/universal/draw_pipe(datum/look/look)
+	look.overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal"))
 
-	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal")
+/obj/machinery/atmospherics/pipe/simple/hidden/universal/atmos_init()
+	..()
+	if(!QDELETED(src))
+		update_underlays()
+
+/// The pipe stubs toward its neighbours (a look has no underlays).
+/obj/machinery/atmospherics/pipe/simple/hidden/universal/update_underlays()
 	underlays.Cut()
 
 	if (node1)
@@ -69,9 +77,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/hidden/universal
 		universal_underlays(,dir)
 		universal_underlays(,turn(dir, -180))
 
-/obj/machinery/atmospherics/pipe/simple/hidden/universal/update_underlays()
+/obj/machinery/atmospherics/pipe/simple/hidden/universal/hide(i)
 	..()
-	update_icon()
+	update_underlays()
 
 /obj/machinery/atmospherics/proc/universal_underlays(obj/machinery/atmospherics/node, direction)
 	var/turf/T = loc

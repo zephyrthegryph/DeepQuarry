@@ -96,7 +96,7 @@
 	desc = "A mesh of jiggling rubber strings that dig at nearby flesh."
 	can_reject = FALSE
 
-/obj/item/organ/internal/immunehub/handle_organ_proc_special()
+/obj/item/organ/internal/immunehub/handle_organ_proc_special(cycles)
 	if(!owner)
 		return
 
@@ -158,7 +158,7 @@
 	var/berserk_duration = 20 SECONDS
 	supply_conversion_value = 10 // Selling engineered organs
 
-/obj/item/organ/internal/heart/replicant/rage/handle_organ_proc_special()
+/obj/item/organ/internal/heart/replicant/rage/handle_organ_proc_special(cycles)
 	if(!owner)
 		return
 
@@ -192,7 +192,7 @@
 /// Organs these lungs keep repaired (constant).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/lungs/replicant/mending, repair_list, list(O_HEART, O_KIDNEYS, O_VOICE, O_GBLADDER, O_PLASMA))
 
-/obj/item/organ/internal/lungs/replicant/mending/handle_organ_proc_special()
+/obj/item/organ/internal/lungs/replicant/mending/handle_organ_proc_special(cycles)
 	if(!owner)
 		return
 

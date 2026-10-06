@@ -154,7 +154,7 @@
 	if(prob(50) && !skip_nymph && spawn_diona_nymph(get_turf(src)))
 		spent(src, user)
 
-/obj/item/organ/internal/diona/periodic_step()
+/obj/item/organ/internal/diona/organ_tick(cycles)
 	return
 
 /obj/item/organ/internal/diona/strata

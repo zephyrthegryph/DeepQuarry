@@ -166,7 +166,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/fruitgland, poison_options, list( \
 DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 
 
-/obj/item/organ/internal/fruitgland/periodic_step()
+/obj/item/organ/internal/fruitgland/organ_tick(cycles)
 	if(!owner) return
 	var/obj/item/organ/external/parent = owner.get_organ(parent_organ)
 	var/before_gen

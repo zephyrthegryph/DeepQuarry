@@ -21,7 +21,7 @@
 	..()
 	owner?.adjust_nutrition(-rand(10 / packet.severity, 50 / packet.severity))
 
-/obj/item/organ/internal/cell/machine/handle_organ_proc_special()
+/obj/item/organ/internal/cell/machine/handle_organ_proc_special(cycles)
 	..()
 	// D25: the power cell is the one source of chassis waste heat.
 	apply_robobody_heat()

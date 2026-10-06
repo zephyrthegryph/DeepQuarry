@@ -367,7 +367,7 @@
 
 			Int.rejuvenate(TRUE)
 
-	process_organs() // Update everything
+	body?.invalidate(BODY_DIRTY_ORGANS) // Update everything
 
 	update_icons_body()
 	active_regen = FALSE

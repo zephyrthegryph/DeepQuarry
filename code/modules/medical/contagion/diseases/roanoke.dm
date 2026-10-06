@@ -86,7 +86,6 @@
 				var/obj/item/organ/external/E = istype(O, /obj/item/organ/external) ? O : M.get_organ(O?.parent_organ)
 				if(istype(E))
 					E.add_wound(new /datum/affliction/wound/internal_bleeding(E, 5))
-				M.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 
 			if(M.stat == DEAD || M.allow_spontaneous_tf)
 				M.add_xenochimera()
