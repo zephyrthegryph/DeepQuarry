@@ -30,7 +30,7 @@
 	if(has_stat(BROKEN))
 		look.state((beaker ? "pandemic1_b" : "pandemic0_b"))
 		return
-	look.state("pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]")
+	look.state("pandemic[(beaker)?"1":"0"][!(has_stat(NOPOWER)) ? "" : "_nopower"]")
 
 
 /obj/machinery/computer/pandemic/proc/ui_act_create_culture_bottle(datum/act/op/A, index)

@@ -38,7 +38,7 @@
 			if(nozzle().check_blockage())
 				return
 		nozzle().set_use_power(USE_POWER_IDLE)
-		if(nozzle().stat & NOPOWER)//try again
+		if(nozzle().has_stat(NOPOWER))//try again
 			nozzle().power_change()
 		if(nozzle().is_on())//if everything is in working order, start booting!
 			COOLDOWN_START(nozzle(), next_on, nozzle().boot_time)

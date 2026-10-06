@@ -309,7 +309,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 
 /obj/machinery/gravity_generator/main/power_change()
 	. = ..()
-	investigate_log("has [stat & NOPOWER ? "lost" : "regained"] power.", "gravity")
+	investigate_log("has [has_stat(NOPOWER) ? "lost" : "regained"] power.", "gravity")
 	set_power()
 
 /obj/machinery/gravity_generator/main/get_status()

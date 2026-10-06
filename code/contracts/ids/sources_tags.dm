@@ -11,6 +11,10 @@ SOURCE_DEF(held_item)
 SOURCE_DEF(all)
 /// A round event that holds a machine's state for good (an AI locked out of a door by a runtime): released by no one but an admin.
 SOURCE_DEF(round_event)
+/// The power grid's reading of a machine's area channel (set_powered()).
+SOURCE_DEF(grid)
+/// The machine's damage (atom_break() holds it, atom_fix() releases it).
+SOURCE_DEF(damage)
 
 /// Tags and capability ids share the numbers a bare id can be, so tags start at TAG_BASE and extend() tells the two apart.
 #define TAG_BASE 1000

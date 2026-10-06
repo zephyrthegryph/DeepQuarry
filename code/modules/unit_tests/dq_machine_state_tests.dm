@@ -148,5 +148,7 @@
 	M.stat_remove(BROKEN)
 	M.stat_add(EMPED)
 	TEST_ASSERT(!dq_test_operable_stat(M), "a pulse stops it")
+	for(var/obj/effect/effect/sparks/spark in range(2, M))
+		qdel(spark)
 
 #endif
