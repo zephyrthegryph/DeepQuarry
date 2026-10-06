@@ -1488,3 +1488,14 @@ Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
 - Its RPED is `part_replacement()`, loading materials an op. The "you cannot insert this item" catch-all is gone: an op answering any held item
   would take the screwdriver and the crowbar from the machine core's panel and deconstruction (ops answer before the legacy interactions), so
   another item is now what the machine core does with it.
+
+## Thermoelectric generator and circulators (rewrite/pipenet-full)
+
+- **The TEG works on `every(when = generating)`.** `generating` (tracked) is reconsidered when its bolts, its circulators, its power or its loops
+  change; asleep, it holds native gas watches on its circulators' four mixtures (pressure) and wakes when either loop has a head worth turning.
+  The periodic declaration, the OM watch, MACHINE_WAKE and `SSmachines.hibernate_generator()` are gone; it left the machine pipeline roster.
+- Its window is `interface()` with a requirement (bolted down and working), so a hand on a loose or dead TEG is refused with a reason instead of
+  doing nothing; it no longer reconnects its circulators when the window opens (the wrenches and the map load do). Its look is `draw(look)` from
+  a tracked `lastgenlev`; the circulators' hot/cold overlays are set when the level changes, not from inside the TEG's appearance proc.
+- The circulator's and the TEG's wrenches are ops; the circulator's "running" display times out on a keyed `after()` (was `om_after_replace`),
+  and its look is `draw(look)` from a tracked `run_state` and `temperature_overlay`. The TEG joins `REGISTRY_TURBINES` with `membership()`.

@@ -97,7 +97,6 @@
 		/obj/machinery/power/debug_items/infinite_generator,
 		/obj/machinery/power/emitter,
 		/obj/machinery/power/fusion_core,
-		/obj/machinery/power/generator,
 		/obj/machinery/power/hydromagnetic_trap,
 		/obj/machinery/power/port_gen,
 		/obj/machinery/power/rtg,
