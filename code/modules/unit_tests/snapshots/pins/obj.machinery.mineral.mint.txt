@@ -26,5 +26,5 @@ human|/obj/item/card/id menu: Press coins (refused: needs an item)
 human|/obj/item/card/id click: nothing
 human|/obj/item/stack/material menu: Press coins
 human|/obj/item/stack/material click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_press, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, gen_insert_interaction_press, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

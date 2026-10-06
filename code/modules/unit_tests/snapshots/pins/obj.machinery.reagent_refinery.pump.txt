@@ -88,5 +88,5 @@ human|/obj/item/reagent_containers/glass menu: Open or close the lid
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: nothing
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_reagent_pump_use, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_refinery_drain, reagent_refinery_set_transfer_amount
+keys: climb.climb, climb.climb_menu, drag_buckle, gen_hand_ungated_interaction_reagent_pump_use, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_refinery_drain, reagent_refinery_set_transfer_amount
 

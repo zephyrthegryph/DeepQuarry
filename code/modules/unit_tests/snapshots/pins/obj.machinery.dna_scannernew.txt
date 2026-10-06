@@ -77,5 +77,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Put inside
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-keys: dna_scannernew_eject_effect, dna_scannernew_move_inside_effect, dna_scanner_interaction_drag, dna_scanner_interaction_item, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: dna_scanner_interaction_drag, dna_scanner_interaction_item, dna_scannernew_eject_effect, dna_scannernew_move_inside_effect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

@@ -131,5 +131,5 @@ human|/obj/item/photo menu: Replace parts (refused: needs a rapid part exchange 
 human|/obj/item/photo menu: Shred
 human|/obj/item/photo menu: Unsecure (refused: needs a wrench)
 human|/obj/item/photo click: nothing
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_insert_interaction_empty_into, gen_insert_interaction_part_replacement, gen_insert_interaction_shred, gen_robot_interaction_swallow, gen_verb_interaction_empty, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: climb.climb, climb.climb_menu, drag_buckle, gen_insert_interaction_empty_into, gen_insert_interaction_part_replacement, gen_insert_interaction_shred, gen_robot_interaction_swallow, gen_verb_interaction_empty, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

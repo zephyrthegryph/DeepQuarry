@@ -48,5 +48,5 @@ human|/obj/item/card/id menu: Swipe ID
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use (refused: you don't have the dexterity)
 human|/obj/item/card/id click: Click: Ui open
-keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_open_ui, gen_item_interaction_toggle_lock, gen_robot_interaction_swallow, lock, loc_edit, machine_anchor, machine_deconstruct, machine_panel, machine_repair, trans_add_code, trans_del, trans_edit_code, trans_edit_key, ui_open, use_screwdriver
+keys: drag_buckle, gen_hand_ungated_interaction_open_ui, gen_item_interaction_toggle_lock, gen_robot_interaction_swallow, loc_edit, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, trans_add_code, trans_del, trans_edit_code, trans_edit_key, ui_open, use_screwdriver
 

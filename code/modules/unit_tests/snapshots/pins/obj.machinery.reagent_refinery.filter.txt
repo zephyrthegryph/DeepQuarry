@@ -114,5 +114,5 @@ human|/obj/item/reagent_containers/glass menu: Set Filter Chemical
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: Click: Use
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_filter_flip, reagent_filter_set_filter, reagent_filter_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount
+keys: climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_filter_flip, reagent_filter_set_filter, reagent_filter_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount
 

@@ -99,5 +99,5 @@ human|/obj/item/clothing menu: Ui open
 human|/obj/item/clothing menu: Unsecure (refused: needs a wrench)
 human|/obj/item/clothing menu: Use
 human|/obj/item/clothing click: Click: Ui open
-keys: choose_color, clear, drop, gear_painter_alt_drop, gear_painter_insert, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, paint, set_hue, set_matrix_color, set_matrix_string, set_sat, set_val, switch_modes, ui_open
+keys: choose_color, clear, drag_buckle, drop, gear_painter_alt_drop, gear_painter_insert, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, paint, set_hue, set_matrix_color, set_matrix_string, set_sat, set_val, switch_modes, ui_open
 

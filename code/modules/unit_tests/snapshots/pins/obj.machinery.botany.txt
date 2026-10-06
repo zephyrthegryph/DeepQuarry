@@ -105,5 +105,5 @@ human|/obj/item/disk/botany menu: Open maintenance panel (refused: needs a screw
 human|/obj/item/disk/botany menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/disk/botany menu: Use
 human|/obj/item/disk/botany click: nothing
-keys: eject_disk, eject_packet, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_open_ui_impl, gen_insert_interaction_load_disk, gen_insert_interaction_load_seed, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench
+keys: drag_buckle, eject_disk, eject_packet, gen_hand_ungated_interaction_open_ui_impl, gen_insert_interaction_load_disk, gen_insert_interaction_load_seed, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench
 

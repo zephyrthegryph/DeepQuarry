@@ -51,5 +51,5 @@ human|/obj/item menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Replace parts
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_multitool
+keys: drag_buckle, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_multitool
 
