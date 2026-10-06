@@ -114,7 +114,7 @@
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/datum/body/humanoid/B = H.body
-	LAZYSET(B.surgery_records, surgeon, list(BP_L_ARM, 100, arm, 0))
+	LAZYSET(B.surgery_records, REF(surgeon), list(BP_L_ARM, 100, REF(arm), 0))
 	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
 	qdel(arm) // the work target is gone by the time the interruption lands
 	var/list/current = H.get_afflictions()

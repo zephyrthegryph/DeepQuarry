@@ -1773,3 +1773,9 @@ steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` 
 * **Self-surgery's three seconds of focus are part of the step's wait** (was a separate focus task before choosing).
 * Scanners and stethoscopes keep their patient use through `use_on_patient()` (was an override of `do_surgery()`).
 * Boot fix found on the way: atoms created during global init (a GLOBAL_DATUM_INIT statclick) no longer index the lifecycle tables before they exist.
+
+## Body migration, slice 6: loose organs (rewrite/body-full)
+
+Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
+from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
+`DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).

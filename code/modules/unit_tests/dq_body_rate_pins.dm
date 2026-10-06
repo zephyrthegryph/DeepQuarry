@@ -342,4 +342,4 @@
 	return O.organ_ticks_loose()
 
 /proc/body_pin_loose_tick(obj/item/organ/O)
-	O.periodic_step()
+	O.loose_tick()
