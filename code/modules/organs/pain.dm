@@ -50,31 +50,24 @@
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
 
-/datum/om/stage/life/pain
-	order = LIFE_PHASE_TAIL + 190
-	name = "pain"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
-	of = /mob/living/carbon/human
-
 /// Pain messages need a hurt limb, which is an affliction; add_affliction() invalidates the body.
-/datum/om/stage/life/pain/idle(mob/living/carbon/human/self)
-	return self.stat || !LAZYLEN(self.body?.afflictions)
+/mob/living/carbon/human/proc/life_pain_due()
+	return !src.stat && LAZYLEN(src.body?.afflictions)
 
 /// Pain messages from limbs and organs.
-/datum/om/stage/life/pain/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(self.stat)
+/mob/living/carbon/human/proc/life_pain(datum/seq_frame/life/F)
+	if(src.stat)
 		return
 
-	if(!self.can_feel_pain() && !self.synth_cosmetic_pain)
+	if(!src.can_feel_pain() && !src.synth_cosmetic_pain)
 		return
 
-	if(!COOLDOWN_FINISHED(self, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
+	if(!COOLDOWN_FINISHED(src, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
 		return
 	var/maxdam = 0
 	var/obj/item/organ/external/damaged_organ = null
-	for(var/obj/item/organ/external/E in self.organs)
-		if(!E.organ_can_feel_pain() && !self.synth_cosmetic_pain) continue
+	for(var/obj/item/organ/external/E in src.organs)
+		if(!E.organ_can_feel_pain() && !src.synth_cosmetic_pain) continue
 		var/dam = E.get_damage()
 		// make the choice of the organ depend on damage,
 		// but also sometimes use one of the less damaged ones
@@ -83,41 +76,41 @@
 			maxdam = dam
 	// D22: the species scaling applies once, after the pick (inside the loop it compared scaled
 	// against unscaled damage), and the level is rounded so fractions still hit a message band.
-	maxdam = round(maxdam * (self.species ? self.species.trauma_mod : 1))
-	if(damaged_organ && self.factor(BF_ANALGESIA) < maxdam)
-		if(maxdam > 10 && self.has_status(EFFECT_PARALYZED))
-			self.status_adjust(EFFECT_PARALYZED, -round(maxdam/10))
+	maxdam = round(maxdam * (src.species ? src.species.trauma_mod : 1))
+	if(damaged_organ && src.factor(BF_ANALGESIA) < maxdam)
+		if(maxdam > 10 && src.has_status(EFFECT_PARALYZED))
+			src.status_adjust(EFFECT_PARALYZED, -round(maxdam/10))
 		if(maxdam > 50 && prob(maxdam / 5))
-			self.drop_item()
+			src.drop_item()
 		var/burning = damaged_organ.get_burn() > damaged_organ.get_trauma()
 		var/msg
 		switch(maxdam)
 			if(1 to 10)
 				msg =  "Your [damaged_organ.name] [burning ? "burns" : "hurts"]."
 			if(11 to 90)
-				self.flash_weak_pain()
+				src.flash_weak_pain()
 				msg = span_normal("Your [damaged_organ.name] [burning ? "burns" : "hurts"] badly!")
 			if(91 to 10000)
-				self.flash_pain()
+				src.flash_pain()
 				msg = span_large("OH GOD! Your [damaged_organ.name] is [burning ? "on fire" : "hurting terribly"]!")
-		self.custom_pain(msg, maxdam, prob(10))
+		src.custom_pain(msg, maxdam, prob(10))
 
 	// Damage to internal organs hurts a lot.
-	for(var/obj/item/organ/I in self.internal_organ_list())
+	for(var/obj/item/organ/I in src.internal_organ_list())
 		if((I.status & ORGAN_DEAD) || I.is_robotic()) continue
 		if(I.damage > 2) if(prob(2))
-			var/obj/item/organ/external/parent = self.get_organ(I.parent_organ)
+			var/obj/item/organ/external/parent = src.get_organ(I.parent_organ)
 			if(parent) // D22: the parent limb can be gone
-				self.custom_pain("You feel a sharp pain in your [parent.name]", 50)
+				src.custom_pain("You feel a sharp pain in your [parent.name]", 50)
 
 	if(prob(2))
-		var/toxic = self.injury_load(INJURY_CATEGORY_TOXIC)
+		var/toxic = src.injury_load(INJURY_CATEGORY_TOXIC)
 		switch(toxic)
 			if(1 to 10)
-				self.custom_pain("Your body stings slightly.", toxic)
+				src.custom_pain("Your body stings slightly.", toxic)
 			if(11 to 30)
-				self.custom_pain("Your body hurts a little.", toxic)
+				src.custom_pain("Your body hurts a little.", toxic)
 			if(31 to 60)
-				self.custom_pain("Your whole body hurts badly.", toxic)
+				src.custom_pain("Your whole body hurts badly.", toxic)
 			if(61 to INFINITY)
-				self.custom_pain("Your body aches all over, it's driving you mad.", toxic)
+				src.custom_pain("Your body aches all over, it's driving you mad.", toxic)

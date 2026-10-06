@@ -6,7 +6,6 @@
  * Can be extended for other situations in the future.
  *  */
 /datum/trait_state/crowd_detection
-	life_stage = /datum/om/stage/life/trait/crowd_detection
 	VAR_PROTECTED/mob/living/carbon/human/human_parent
 	VAR_PROTECTED/discomfort = 0
 	VAR_PROTECTED/hallucination_cap = 25
@@ -292,6 +291,6 @@
 #undef MIN_DISCOMFORT_MESSAGE
 
 /// Trait system: crowd and loneliness effects.
-/datum/om/stage/life/trait/crowd_detection
-	name = "crowd detection"
-	state_type = /datum/trait_state/crowd_detection
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/crowd_detection/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_crowd_detection"))

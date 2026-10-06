@@ -192,7 +192,7 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	shadekin.ai_brain?.set_hostile(FALSE)
 	if(shadekin.ai_brain)
 		shadekin.ai_brain.mauling = TRUE
-	om_run_frame_now(shadekin, /datum/om/pipeline/life)
+	seq_run_frame_now(shadekin, /datum/sequence/life)
 	//Remove when done
 	after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 

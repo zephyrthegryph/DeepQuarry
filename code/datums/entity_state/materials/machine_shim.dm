@@ -19,7 +19,7 @@
 	rel_set(src, nameof(owner), new_owner)
 	rel_set(owner, nameof(owner.machine_shim), src)
 	// Mob
-	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
+	seq_extra_add(host_mob(), /datum/sequence/life, src)
 	observe(host_mob(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_mob_moved)))
 	observe(host_mob(), /datum/notice/mob_logout, src, then(PROC_REF(on_mob_logout)))
 
@@ -39,7 +39,7 @@
 	if(machine)
 		machine.in_use = FALSE
 	if(owner)
-		om_stage_remove(owner, /datum/om/stage/life/trait/using_machine_shim)
+		seq_extra_remove(owner, /datum/sequence/life, src)
 		owner.reset_perspective()
 
 /datum/using_machine_shim/proc/on_mob_moved(datum/act/notice/A)
@@ -138,12 +138,12 @@
 /obj/machinery/CouldNotUseTopic(mob/user)
 	user.unset_machine()
 
-/// Trait system: release the machine when the user leaves it.
-/datum/om/stage/life/trait/using_machine_shim
-	name = "using machine shim"
+/// Life: release the machine when the user leaves it (a step this shim contributes while it exists).
+/datum/using_machine_shim/proc/life_steps()
+	return list(seq_step(PROC_REF(life_trait_using_machine_shim), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_using_machine_shim"))
 
-/datum/om/stage/life/trait/using_machine_shim/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.machine_shim?.on_mob_life()
+/datum/using_machine_shim/proc/life_trait_using_machine_shim(mob/living/user, datum/seq_frame/life/F)
+	on_mob_life()
 
 /// The mob using the machine (our owner).
 /datum/using_machine_shim/proc/host_mob() as /mob

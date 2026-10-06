@@ -31,12 +31,12 @@
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/rainbowfly, blob_projectile_chems, list(REAGENT_ID_CRYPTOBIOLIN))
 
-/datum/om/stage/life/special/animal/tyr/rainbow_fly
-	of = /mob/living/simple_mob/animal/tyr/rainbow_fly
+/mob/living/simple_mob/animal/tyr/rainbow_fly/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/tyr/rainbow_fly/perform(mob/living/simple_mob/animal/tyr/rainbow_fly/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.painbow_aura()
+/mob/living/simple_mob/animal/tyr/rainbow_fly/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.painbow_aura()
 	..()
 
 /mob/living/simple_mob/animal/tyr/rainbow_fly/proc/painbow_aura()

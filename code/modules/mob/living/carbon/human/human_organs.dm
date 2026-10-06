@@ -16,75 +16,67 @@
 		. = TRUE
 	last_dam = damage_this_tick
 
-/datum/om/stage/life/organs
-	order = LIFE_PHASE_TAIL + 150
-	name = "organs"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
-	of = /mob/living/carbon/human
-	woken_by = "injure/mend and body invalidate (limb damage, lesions); its rewake for raw germ writes"
-
 /// MED-6: no limb needs processing, the stance is sound and every internal organ is idle
 /// (life_step_idle()).
-/datum/om/stage/life/organs/idle(mob/living/carbon/human/self)
-	if(length(self.bad_external_organs) || self.stance_damage)
-		return FALSE
-	for(var/obj/item/organ/external/E as anything in self.organs)
+/mob/living/carbon/human/proc/life_organs_due()
+	if(length(src.bad_external_organs) || src.stance_damage)
+		return TRUE
+	for(var/obj/item/organ/external/E as anything in src.organs)
 		if(E.germ_level || E.need_process())
-			return FALSE
-	for(var/obj/item/organ/I as anything in self.internal_organ_list())
+			return TRUE
+	for(var/obj/item/organ/I as anything in src.internal_organ_list())
 		if(!I.life_step_idle())
-			return FALSE
-	return TRUE
+			return TRUE
+	return FALSE
 
 /// Germs and organ reagents are written raw.
-/datum/om/stage/life/organs/rewake_delay(mob/living/carbon/human/self)
+/mob/living/carbon/human/proc/life_organs_rewake()
 	return 10 SECONDS
 
-/datum/om/stage/life/organs/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	process_organs(self)
+/mob/living/carbon/human/proc/life_organs(datum/seq_frame/life/F)
+	life_organs_process_organs()
 
 /// Takes care of organ related updates, such as broken and missing limbs. `force` rebuilds the
 /// list of external organs that need processing.
-/datum/om/stage/life/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)
+/mob/living/carbon/human/proc/life_organs_process_organs(force = FALSE)
 
-	var/force_process = self.recheck_bad_external_organs()
+	var/force_process = src.recheck_bad_external_organs()
 
 	if(force_process || force)
 		// Populate directly from organs that need processing instead of adding all
 		// then pruning the ones that don't (the old "Silly and slow" approach).
-		rel_clear(self, nameof(self.bad_external_organs))
-		for(var/obj/item/organ/external/Ex in self.organs)
+		rel_clear(src, nameof(src.bad_external_organs))
+		for(var/obj/item/organ/external/Ex in src.organs)
 			if(Ex.need_process())
-				rel_add(self, nameof(self.bad_external_organs), Ex)
+				rel_add(src, nameof(src.bad_external_organs), Ex)
 
 	//processing internal organs is pretty cheap, do that first.
-	for(var/obj/item/organ/I in self.internal_organ_list())
+	for(var/obj/item/organ/I in src.internal_organ_list())
 		I.periodic_step()
 
-	self.handle_stance()
-	self.handle_grasp()
+	src.handle_stance()
+	src.handle_grasp()
 
-	if(!force_process && !length(self.bad_external_organs))
+	if(!force_process && !length(src.bad_external_organs))
 		return
 
-	for(var/obj/item/organ/external/E in self.bad_external_organs)
+	for(var/obj/item/organ/external/E in src.bad_external_organs)
 		if(!E)
 			continue
 		if(!E.need_process())
-			rel_remove(self, nameof(self.bad_external_organs), E)
+			rel_remove(src, nameof(src.bad_external_organs), E)
 			continue
 		else
 			E.periodic_step()
 			var/list/limb_wounds = E.get_wounds() // one walk per limb per cycle (audit D24)
 
-			if (!self.lying && !self?.buckled_to() && ELAPSED_SINCE(src, self.l_move_time, CLOCK_WORLD) < 15)
+			if (!src.lying && !src?.buckled_to() && ELAPSED_SINCE(src, src.l_move_time, CLOCK_WORLD) < 15)
 			//Moving around with fractured ribs won't do you any good
-				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && length(E.held_organs()))
-					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
-					self.emote("scream")
-					self.drop_item(self.loc)
-					self.status_at_least(EFFECT_STUNNED, 2)
+				if (prob(10) && !src.stat && src.can_feel_pain() && src.factor(BF_ANALGESIA) < 50 && E.is_broken() && length(E.held_organs()))
+					src.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
+					src.emote("scream")
+					src.drop_item(src.loc)
+					src.status_at_least(EFFECT_STUNNED, 2)
 
 				//Moving makes open wounds get infected much faster
 				for(var/datum/affliction/wound/W as anything in limb_wounds)
@@ -255,5 +247,4 @@
 
 /// Runs the organs system now. `force` rebuilds the list of external organs needing processing.
 /mob/living/carbon/human/proc/process_organs(force = FALSE)
-	var/datum/om/stage/life/organs/S = om_stage_for(src, /datum/om/stage/life/organs)
-	S?.process_organs(src, force)
+	life_organs_process_organs(force)

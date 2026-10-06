@@ -117,13 +117,13 @@
 			if(S.melee_damage_upper > 1.5 * melee_damage_upper)
 				return TRUE
 
-/datum/om/stage/life/special/animal/sif/kururak
-	of = /mob/living/simple_mob/animal/sif/kururak
+/mob/living/simple_mob/animal/sif/kururak/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/sif/kururak/perform(mob/living/simple_mob/animal/sif/kururak/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/sif/kururak/life_special(datum/seq_frame/life/F)
 	..()
-	if(self.client)
-		self.pack_gauge()
+	if(src.client)
+		src.pack_gauge()
 
 /mob/living/simple_mob/animal/sif/kururak/apply_melee_effects(atom/A)	// Only gains instinct.
 	instinct += rand(1, 2)

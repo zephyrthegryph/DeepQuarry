@@ -837,8 +837,10 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		if(!positions)
 			continue
 		var/woke = FALSE
+		var/list/steps = state.table.steps
 		for(var/pos in positions)
-			if(seq_wake_pos(state, pos))
+			var/datum/seq_step/S = steps[pos]
+			if(seq_wake_pos(state, pos, !S.once))
 				woke = TRUE
 		if(woke)
 			seq_woke(E, state, "[key]")
@@ -866,7 +868,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 				if(!(word & (1 << b)))
 					continue
 				var/datum/seq_step/S = steps[base + b + 1]
-				if((S.chan_mask & bits) && seq_wake_pos(state, base + b + 1))
+				if((S.chan_mask & bits) && seq_wake_pos(state, base + b + 1, !S.once))
 					woke = TRUE
 		if(woke)
 			seq_woke(E, state, "channels [bits]")

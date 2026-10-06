@@ -144,13 +144,13 @@
 		to_chat(src, span_danger("You shock \the [L]."))
 		to_chat(L, span_danger("You've been shocked by \the [src]!"))
 
-/datum/om/stage/life/special/slime/xenobio/yellow
-	of = /mob/living/simple_mob/slime/xenobio/yellow
+/mob/living/simple_mob/slime/xenobio/yellow/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/yellow/perform(mob/living/simple_mob/slime/xenobio/yellow/self, datum/om/frame/life/ctx)
-	if(self.stat == CONSCIOUS)
+/mob/living/simple_mob/slime/xenobio/yellow/life_special(datum/seq_frame/life/F)
+	if(src.stat == CONSCIOUS)
 		if(prob(25))
-			self.power_charge = between(0, self.power_charge + 1, 10)
+			src.power_charge = between(0, src.power_charge + 1, 10)
 	..()
 
 /obj/item/projectile/beam/lightning/slime
@@ -242,12 +242,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	minbodytemp = 0
 	cold_damage_per_tick = 0
 
-/datum/om/stage/life/special/slime/xenobio/dark_blue
-	of = /mob/living/simple_mob/slime/xenobio/dark_blue
+/mob/living/simple_mob/slime/xenobio/dark_blue/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/dark_blue/perform(mob/living/simple_mob/slime/xenobio/dark_blue/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.cold_aura()
+/mob/living/simple_mob/slime/xenobio/dark_blue/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.cold_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/proc/cold_aura()
@@ -429,12 +429,12 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 		/mob/living/simple_mob/slime/xenobio/amber
 	)
 
-/datum/om/stage/life/special/slime/xenobio/amber
-	of = /mob/living/simple_mob/slime/xenobio/amber
+/mob/living/simple_mob/slime/xenobio/amber/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/amber/perform(mob/living/simple_mob/slime/xenobio/amber/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.feed_aura()
+/mob/living/simple_mob/slime/xenobio/amber/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.feed_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/amber/proc/feed_aura()
@@ -518,12 +518,12 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 			/mob/living/simple_mob/slime/xenobio/emerald
 		)
 
-/datum/om/stage/life/special/slime/xenobio/green
-	of = /mob/living/simple_mob/slime/xenobio/green
+/mob/living/simple_mob/slime/xenobio/green/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/green/perform(mob/living/simple_mob/slime/xenobio/green/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.irradiate()
+/mob/living/simple_mob/slime/xenobio/green/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/green/proc/irradiate()
@@ -555,12 +555,12 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 			/mob/living/simple_mob/slime/xenobio/pink
 		)
 
-/datum/om/stage/life/special/slime/xenobio/pink
-	of = /mob/living/simple_mob/slime/xenobio/pink
+/mob/living/simple_mob/slime/xenobio/pink/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/pink/perform(mob/living/simple_mob/slime/xenobio/pink/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.heal_aura()
+/mob/living/simple_mob/slime/xenobio/pink/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.heal_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/pink/proc/heal_aura()
@@ -747,12 +747,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null
 		/mob/living/simple_mob/slime/xenobio/emerald
 	)
 
-/datum/om/stage/life/special/slime/xenobio/emerald
-	of = /mob/living/simple_mob/slime/xenobio/emerald
+/mob/living/simple_mob/slime/xenobio/emerald/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/emerald/perform(mob/living/simple_mob/slime/xenobio/emerald/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.zoom_aura()
+/mob/living/simple_mob/slime/xenobio/emerald/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.zoom_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/emerald/proc/zoom_aura()

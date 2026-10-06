@@ -456,7 +456,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	var/initial_o2 = breath.get_moles(/datum/gas/oxygen)
 	var/initial_co2 = breath.get_moles(/datum/gas/carbon_dioxide)
 
-	life_test_breath(H, breath)
+	H.life_breathing_exchange(breath)
 
 	var/final_o2 = breath.get_moles(/datum/gas/oxygen)
 	var/final_co2 = breath.get_moles(/datum/gas/carbon_dioxide)
@@ -511,7 +511,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
 	// Drive the production breath path.
-	life_test_breathe(H)
+	H.life_breathing_breathe()
 
 	var/final_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 	TEST_ASSERT(final_toxin > initial_toxin, \
@@ -553,7 +553,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 
-	life_test_breath(H, breath)
+	H.life_breathing_exchange(breath)
 
 	var/final_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
 	TEST_ASSERT(final_toxin > initial_toxin, \
@@ -3485,7 +3485,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	heat_set(breath, T20C, HEAT_SOURCE_OTHER)
 	var/initial_hypoxia = H.oxygen_debt()
 
-	life_test_breath(H, breath)
+	H.life_breathing_exchange(breath)
 	H.body.physiology_tick(2)
 
 	var/final_hypoxia = H.oxygen_debt()
@@ -3521,7 +3521,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/initial_plasma = breath.get_moles(/datum/gas/plasma)
 
-	life_test_breath(H, breath)
+	H.life_breathing_exchange(breath)
 
 	var/final_plasma = breath.get_moles(/datum/gas/plasma)
 
@@ -3818,7 +3818,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/initial_brute = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	for(var/i in 1 to 5)
-		life_test_environment(H, turf_air)
+		H.life_environment_exchange(turf_air)
 	var/final_brute = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 
 	TEST_ASSERT(final_brute > initial_brute, \
@@ -5153,7 +5153,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			breath.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 			breath.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 			heat_set(breath, T20C, HEAT_SOURCE_OTHER)
-			life_test_breath(H, breath)
+			H.life_breathing_exchange(breath)
 		qdel(H)
 	var/list/curated = curated_types()
 	if(curated)

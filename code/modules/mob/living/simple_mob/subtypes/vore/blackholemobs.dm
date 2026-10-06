@@ -654,16 +654,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	explosion_delay_lower	= 5 SECOND	// Lower bound for explosion delay.
 	explosion_delay_upper	= 8 SECONDS	// Upper bound.
 
-/datum/om/stage/life/type_post/simple_mob/vore/blackhole_obelisk
-	of = /mob/living/simple_mob/vore/blackhole_obelisk
+/mob/living/simple_mob/vore/blackhole_obelisk/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/blackhole_obelisk/perform(mob/living/simple_mob/vore/blackhole_obelisk/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/blackhole_obelisk/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive"))
+	if(!F.alive())
 		return
-	if(COOLDOWN_FINISHED(self, lifechecks_cooldown))
-		COOLDOWN_START(self, lifechecks_cooldown, 15 SECONDS)
-		self.handle_hungry()
+	if(COOLDOWN_FINISHED(src, lifechecks_cooldown))
+		COOLDOWN_START(src, lifechecks_cooldown, 15 SECONDS)
+		src.handle_hungry()
 
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'
 

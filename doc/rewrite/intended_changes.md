@@ -1450,3 +1450,21 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
+
+## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
+
+Pinned by `code/modules/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
+form, robot and vore tests that run Life frames.
+
+* **A wake wakes the steps that read it, not the whole mob.** The pipeline's unpark woke every stage of a parked mob; the sequence clears the sleep
+  bits of the steps whose reads the change names (CHANGE_MOB_STAT, CHANGE_MOB_CLIENT and CHANGE_EXPLICIT still wake every step, LIFE_WAKE_ALL).
+  The rest stay asleep until their own reads or rewakes. Fewer steps run after a wake; none that has work is missed (the audit still runs).
+* **A woken step asks should_run() before it runs** (a rewake does not). The pipeline ran a woken stage once and then asked idle(). Steps whose
+  rule was "nothing to do until woken" (voice, fall, visible name, pulse, simple mob vitals, AFK, ambience, germs) are declared `once = TRUE`: a
+  wake by one of their reads runs them once, as before.
+* **Trait steps attached before the mob materialized now run.** `om_stage_add()` returned early for a mob whose Life pipeline was not attached yet,
+  so a trait state attached during Initialize never ticked; the mob's `on_materialize()` now adds every attached state's steps.
+* **The step profile is per step, not per mob type.** The mob service's two-minute report logs `MOB_STEP_PROFILE` lines (sampled cost per Life
+  step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
+* Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
+  Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.

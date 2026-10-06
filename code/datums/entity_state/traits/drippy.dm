@@ -1,5 +1,4 @@
 /datum/trait_state/drippy
-	life_stage = /datum/om/stage/life/trait/drippy
 	var/drip_chance = 5
 	var/blood_color = "#A10808"
 
@@ -59,8 +58,6 @@
 		blood_color = rgb(temp_human.r_skin,temp_human.g_skin,temp_human.b_skin)
 
 /// Trait system: dripping.
-/datum/om/stage/life/trait/drippy
-	name = "drippy"
-	state_type = /datum/trait_state/drippy
-	// P2-S6: paused stasis frames and dead bodies skip it.
-	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/drippy/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_drippy", when = list("placed", "!in_stasis", "alive")))

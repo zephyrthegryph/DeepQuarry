@@ -3,7 +3,6 @@
  * Allows for glowing, healing, contamination, and immunity.
  */
 /datum/trait_state/radiation_effects
-	life_stage = /datum/om/stage/life/trait/radiation_glow
 	unique_type = /datum/trait_state/radiation_effects
 
 	///If we show the user the radiation panel.
@@ -393,6 +392,6 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 	radiation_immunity = TRUE
 
 /// Trait system: radiation glow.
-/datum/om/stage/life/trait/radiation_glow
-	name = "radiation glow"
-	state_type = /datum/trait_state/radiation_effects
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/radiation_effects/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_radiation_glow"))

@@ -181,15 +181,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appea
 	// The other stuff was already checked in parent proc, and the . variable will implicitly return the correct value.
 
 // Slimes regenerate passively.
-/datum/om/stage/life/special/slime
-	of = /mob/living/simple_mob/slime
+/mob/living/simple_mob/slime/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/perform(mob/living/simple_mob/slime/self, datum/om/frame/life/ctx)
-	self.mend(TREAT_OXYGENATION, 1)
-	self.mend(TREAT_ANTITOXIN, 1)
-	self.mend(TREAT_BURN_CARE, 1)
-	self.mend(TREAT_GENETIC_REPAIR, 1)
-	self.mend(TREAT_TISSUE_REPAIR, 1)
+/mob/living/simple_mob/slime/life_special(datum/seq_frame/life/F)
+	src.mend(TREAT_OXYGENATION, 1)
+	src.mend(TREAT_ANTITOXIN, 1)
+	src.mend(TREAT_BURN_CARE, 1)
+	src.mend(TREAT_GENETIC_REPAIR, 1)
+	src.mend(TREAT_TISSUE_REPAIR, 1)
 
 // Clicked on by empty hand.
 EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \

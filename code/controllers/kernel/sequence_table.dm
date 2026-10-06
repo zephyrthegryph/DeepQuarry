@@ -43,6 +43,9 @@
 	var/rewake
 	/// What raises its reads (the audit's message).
 	var/woken_by
+	/// Runs once per wake: a wake by one of its reads runs it without asking should_run(), and it sleeps after every run
+	/// (an event-driven step: its reads say there is work, nothing else does). Its should_run is seq_never().
+	var/once = FALSE
 	/// A named no-op: it only orders others.
 	var/anchor = FALSE
 
@@ -71,8 +74,13 @@
 
 /// A step of a sequence's table (see the top of this file). `when`, `after` and `reads` take one value or a list.
 /// Named seq_step() because step() is BYOND's movement proc.
-/proc/seq_step(handler, after = null, when = null, reads = null, should_run = null, rewake = null, key = null, woken_by = null)
+/proc/seq_step(handler, after = null, when = null, reads = null, should_run = null, rewake = null, key = null, woken_by = null, once = FALSE)
 	var/datum/seq_step/S = new
+	if(once)
+		if(should_run)
+			CRASH("seq_step([handler]): a once step has no should_run (it runs once per wake)")
+		S.once = TRUE
+		should_run = TYPE_PROC_REF(/datum, seq_never)
 	S.handler = handler
 	S.key = isnull(key) ? null : "[key]"
 	S.after = seq_as_list(after)
@@ -82,6 +90,10 @@
 	S.rewake = rewake
 	S.woken_by = woken_by
 	return S
+
+/// The should_run of a once step: it has work only when a read woke it, which the wake itself says.
+/datum/proc/seq_never()
+	return FALSE
 
 /// A named no-op step that orders others (a band: `after = LIFE_BODY`). A barrier: passed only when no step is ready.
 /proc/seq_anchor(key, after = null)
@@ -315,6 +327,7 @@
 	S.should_run = D.should_run
 	S.rewake = D.rewake
 	S.woken_by = D.woken_by
+	S.once = D.once
 	S.anchor = D.anchor
 	S.key = D.key
 	if(!S.anchor)

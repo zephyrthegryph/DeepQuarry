@@ -38,23 +38,23 @@
 	var/preparing_arrest_sounds = SFX_VOICE_BGOD_MIX // an SFX mix key (a string); subtypes may point it at another mix
 	var/static/fighting_sounds = SFX_VOICE_BIAMTHELAW_MIX
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
-/datum/om/stage/life/type_post/bot/secbot
-	of = /mob/living/bot/secbot
+/mob/living/bot/secbot/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/bot/secbot/perform(mob/living/bot/secbot/self, datum/om/frame/life/ctx)
+/mob/living/bot/secbot/life_type_post(datum/seq_frame/life/F)
 	..()
-	var/mob/puller = self?.pulled_by_mob()
-	if(self.stat != DEAD && self.on && puller)
+	var/mob/puller = src?.pulled_by_mob()
+	if(src.stat != DEAD && src.on && puller)
 		if(isliving(puller))
 			var/pull_allowed = FALSE
-			for(var/A in self.req_one_access)
+			for(var/A in src.req_one_access)
 				if(A in puller.GetAccess())
 					pull_allowed = TRUE
 			if(!pull_allowed)
 				var/mob/living/L = puller
-				after(self, 0, TYPE_PROC_REF(/mob, UnarmedAttack), with = list(L))
-				after(self, 0, TYPE_PROC_REF(/mob/living, say), with = list("Do not interfere with active law enforcement routines!"))
-				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")
+				after(src, 0, TYPE_PROC_REF(/mob, UnarmedAttack), with = list(L))
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("Do not interfere with active law enforcement routines!"))
+				GLOB.global_announcer.autosay("[src] was interfered with in <b>[get_area(src)]</b>, activating defense routines.", "[src]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"
 	desc = "It's Officer Beep O'sky! Powered by a potato and a shot of whiskey."

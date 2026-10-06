@@ -56,77 +56,71 @@ BLOOD_VOLUME_SURVIVE = 40
 			B.name = B.data["blood_name"]
 
 // Takes care blood loss and regeneration
-/datum/om/stage/life/blood/carbon/human
-	of = /mob/living/carbon/human
-	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
-	wake_on = CHANGE_MOB_HEALTH
-	woken_by = "injure/mend (wounds, bleeding); its rewake for raw vessel writes (draws, transfusions)"
-
 /// MED-6: a full vessel with nothing bleeding and no pallor to clear has nothing to do.
-/datum/om/stage/life/blood/carbon/human/idle(mob/living/carbon/human/self)
-	if(!self.should_have_organ(O_HEART) || !self.vessel)
+/mob/living/carbon/human/life_blood_due()
+	if(!src.should_have_organ(O_HEART) || !src.vessel)
+		return FALSE
+	if(src.pale)
 		return TRUE
-	if(self.pale)
-		return FALSE
-	if(self.vessel.get_reagent_amount(REAGENT_ID_BLOOD) < self.species.blood_volume)
-		return FALSE
-	return !self.caculate_bloodloss_and_bleed(FALSE)
+	if(src.vessel.get_reagent_amount(REAGENT_ID_BLOOD) < src.species.blood_volume)
+		return TRUE
+	return src.caculate_bloodloss_and_bleed(FALSE)
 
-/datum/om/stage/life/blood/carbon/human/rewake_delay(mob/living/carbon/human/self)
+/mob/living/carbon/human/life_blood_rewake()
 	return 10 SECONDS
 
-/datum/om/stage/life/blood/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(!self.should_have_organ(O_HEART))
+/mob/living/carbon/human/life_blood(datum/seq_frame/life/F)
+	if(!src.should_have_organ(O_HEART))
 		return
 
-	if(self.is_alive() && self.body_temperature() >= 170)	//Dead or cryosleep people do not pump the blood.
+	if(src.is_alive() && src.body_temperature() >= 170)	//Dead or cryosleep people do not pump the blood.
 
-		var/blood_volume_raw = self.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
+		var/blood_volume_raw = src.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 		// Perfusion is the physiology's: it reads the volume (and the heart's
 		// pumping) and decides whether the tissues starve.
-		self.body?.note_blood_fraction(self.species.blood_volume ? blood_volume_raw / self.species.blood_volume : 1)
+		src.body?.note_blood_fraction(src.species.blood_volume ? blood_volume_raw / src.species.blood_volume : 1)
 
 		//Blood regeneration if there is some space
-		if(blood_volume_raw < self.species.blood_volume)
-			var/datum/reagent/blood/B = locate_in_list(self.vessel.reagent_list, /datum/reagent/blood) //Grab some blood
+		if(blood_volume_raw < src.species.blood_volume)
+			var/datum/reagent/blood/B = locate_in_list(src.vessel.reagent_list, /datum/reagent/blood) //Grab some blood
 			if(B) // Make sure there's some blood at all
-				if(B.data["donor"] != self) //If it's not theirs, then we look for theirs
-					for(var/datum/reagent/blood/D in self.vessel.reagent_list)
-						if(D.data["donor"] == self)
+				if(B.data["donor"] != src) //If it's not theirs, then we look for theirs
+					for(var/datum/reagent/blood/D in src.vessel.reagent_list)
+						if(D.data["donor"] == src)
 							B = D
 							break
 
-				B.volume += 0.1 + self.factor(BF_BLOOD_REGEN) // regenerate blood VERY slowly, faster with iron and friends
+				B.volume += 0.1 + src.factor(BF_BLOOD_REGEN) // regenerate blood VERY slowly, faster with iron and friends
 
 		// DQ medical owns blood-loss presentation (internal_hemorrhage /
 		// hypovolemic_shock symptoms) and the physiology owns its consequence
 		// (low perfusion -> oxygen debt). Here: the pale sprite cue, and the
 		// fatal collapse below the survivable volume.
-		if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_safe)
-			if(self.pale)
-				self.pale = 0
-				self.update_icons_body()
-		else if(blood_volume_raw >= self.species.blood_volume*self.species.blood_level_fatal)
-			if(!self.pale)
-				self.pale = 1
-				self.update_icons_body()
+		if(blood_volume_raw >= src.species.blood_volume*src.species.blood_level_safe)
+			if(src.pale)
+				src.pale = 0
+				src.update_icons_body()
+		else if(blood_volume_raw >= src.species.blood_volume*src.species.blood_level_fatal)
+			if(!src.pale)
+				src.pale = 1
+				src.update_icons_body()
 		else //Not enough blood to survive (usually)
-			if(!self.pale)
-				self.pale = 1
-				self.update_icons_body()
-			self.status_at_least(EFFECT_PARALYZED, 3)
-			self.status_at_least(EFFECT_SLEEPING, 3)
-			self.injure(INJURY_TOXIN, (self.factor(BF_STABILIZATION) ? 1.5 : 3), flags = INJURE_SILENT)
+			if(!src.pale)
+				src.pale = 1
+				src.update_icons_body()
+			src.status_at_least(EFFECT_PARALYZED, 3)
+			src.status_at_least(EFFECT_SLEEPING, 3)
+			src.injure(INJURY_TOXIN, (src.factor(BF_STABILIZATION) ? 1.5 : 3), flags = INJURE_SILENT)
 
 		// Without enough blood you slowly go hungry.
-		if(blood_volume_raw < self.species.blood_volume*self.species.blood_level_safe)
-			if(self.nutrition >= 300)
-				self.adjust_nutrition(-10)
-			else if(self.nutrition >= 200)
-				self.adjust_nutrition(-3)
+		if(blood_volume_raw < src.species.blood_volume*src.species.blood_level_safe)
+			if(src.nutrition >= 300)
+				src.adjust_nutrition(-10)
+			else if(src.nutrition >= 200)
+				src.adjust_nutrition(-3)
 
 		//Bleeding out
-		self.caculate_bloodloss_and_bleed(bleed = TRUE)
+		src.caculate_bloodloss_and_bleed(bleed = TRUE)
 
 ///Calculates our bloodloss divisor and returns what it is.
 /mob/living/carbon/human/proc/calculate_bloodloss_divisor()

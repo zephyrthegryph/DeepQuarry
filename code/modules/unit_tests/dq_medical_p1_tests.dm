@@ -430,9 +430,7 @@
 /datum/unit_test/dq_p1_d22_pain_messages/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_BLUNT, 10.5, BP_L_ARM)
-	var/datum/om/stage/life/pain/stage = new
-	stage.perform(H, null) // must not runtime
-	qdel(stage)
+	H.life_pain() // must not runtime
 
 /// A5: replacing a borg's cell deletes the old one instead of orphaning it.
 /datum/unit_test/dq_p1_a5_borg_cell_replacement
@@ -482,5 +480,4 @@
 	// P2-D8: skin breathing is the alraune breath profile, taken by the breathing stage.
 	var/datum/breath_profile/skin/P = H.breath_profile()
 	TEST_ASSERT(istype(P), "an alraune breathes through its skin")
-	var/datum/om/stage/life/breathing/carbon/breathing = om_stage_for(H, /datum/om/stage/life/breathing)
-	P.take_breath(H, breathing) // must not runtime on a null loc
+	P.take_breath(H) // must not runtime on a null loc
