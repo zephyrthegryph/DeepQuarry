@@ -111,6 +111,12 @@ loading the `.rsc` and the compiled-in test map) is outside our control.
 
 ### Isolation: restoring shared state
 
+**The state guard.** After every test the harness compares the scalar `GLOB` vars with their values before it
+(`unit_test_globals_guard()`). A flag a test left changed is logged as `STATE LEAK: <test> left GLOB.x = ...`
+in `tests.log` (text and paths as `STATE LEAK?`), and a run that fails prints them. A test that fails in a long
+focused run but passes alone is almost always one of these: find the leak before it and make that test use
+`set_global()`. The guard only flags; it never restores (a lazy-init flag put back would rebuild what it guards).
+
 Every test shares one world, and a failing `TEST_ASSERT` returns from `Run()`
 at once, so a restore line after it never runs. Anything a test changes outside
 its own block goes through a harness helper, which undoes it in teardown even

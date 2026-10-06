@@ -27,8 +27,23 @@
 	buckle_require_restraints = 1
 	buckle_lying = -1
 
+	/// The watches a stable leak sleeps on (its pipe's gas and the room's): either changing wakes the leak.
+	var/list/datum/native_watch/gas/leak_watches
+
+MSG_DEF_SELF(pipe/plating, "You must remove the plating first.")
+MSG_DEF_SELF(pipe/exerted, "You cannot unwrench it, it is too exerted due to internal pressure.")
+MSG_DEF(pipe/unfastened, "You have unfastened %T%.", "%U% unfastens %T%.")
+MSG_DEF_SELF(pipe/gush, "As you begin unwrenching it a gush of air blows in your face... maybe you should reconsider?")
+MSG_DEF(pipe/sealed, "You seal the fatigue crack in %T%.", "%U% seals the fatigue crack in %T%.")
+MSG_DEF_SELF(pipe/not_cracked, "It has no crack to seal.")
+
 CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
+	owns_many(nameof(leak_watches), /datum/native_watch/gas)
+	op("unwrench", tool(TOOL_WRENCH), wait(1 SECOND), when(PROC_REF(wrenchable)),
+		needs(req(PROC_REF(floor_clear), because = MSG(pipe/plating)), req(PROC_REF(unwrench_safe), because = MSG(pipe/exerted))),
+		begins(PROC_REF(unwrench_warning)), says(MSG(pipe/unfastened)), then(PROC_REF(pipe_unwrenched)))
+	op("seal", tool(TOOL_WELDER), wait(4 SECONDS), needs(req(PROC_REF(cracked), because = MSG(pipe/not_cracked))), says(MSG(pipe/sealed)), then(PROC_REF(crack_sealed)))
 
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1
@@ -153,10 +168,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		loc.assume_air(air_temporary)
 		own_clear(src, nameof(air_temporary), OWN_DELETE)
 
-/// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over both
-/// mixtures either side of the leak: it wakes only once they no longer match, which is when the
-/// network's leak transaction has something to move. A leaking pipe whose network is intact
-/// batches its wake into that network's own dirty transaction (wake_from_leak()).
+/// A stable leak sleeps: it watches both mixtures either side of it (Rust reports their changes) and wakes only once they no longer match,
+/// which is when the network's leak transaction has something to move.
 /obj/machinery/atmospherics/pipe/proc/hibernate_stable_leak()
 	clear_leak_gas_dependencies()
 	var/datum/gas_mixture/environment = loc?.return_air()
@@ -166,13 +179,21 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(leak_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_leak)))
+	for(var/id in mixture_ids)
+		var/datum/native_watch/gas/W = gas_dependency_watch(src, id, GAS_DEPENDENCY_ALL, PROC_REF(leak_heard))
+		if(W)
+			rel_add(src, nameof(leak_watches), W)
+
+/// Rust reported a change of one side of a sleeping leak.
+/obj/machinery/atmospherics/pipe/proc/leak_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+	if(leak_wake_condition())
+		wake_from_leak()
 
 /obj/machinery/atmospherics/pipe/proc/leak_wake_condition()
 	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())
 
 /obj/machinery/atmospherics/pipe/proc/clear_leak_gas_dependencies()
-	om_watch_disarm(src, "leak")
+	own_clear(src, nameof(leak_watches), OWN_DELETE)
 
 /obj/machinery/atmospherics/pipe/proc/wake_from_leak()
 	clear_leak_gas_dependencies()
@@ -230,72 +251,42 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	material_sorbed_moles = 0
 	material_sorbed_thermal_energy = 0
 
-/obj/machinery/atmospherics/pipe/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/pipe_painter_passthrough,
-	)
-	..()
+// ---- the wrench and the welder ----
 
-/// Old attackby: for non-tank pipes, a pipe painter did nothing here (didn't call ..()),
-/// letting the painter's own afterattack recolor the pipe without the default hit message.
-/datum/interaction/machine_item/pipe_painter_passthrough
-	id = "pipe_painter_passthrough"
-	name = "Paint"
-	held_type = /obj/item/pipe_painter
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/pipe/proc/not_a_tank, null))
-	consumes_input = FALSE
-	effect = /atom/proc/interaction_swallow
+/// A tank is not taken off with a wrench.
+/obj/machinery/atmospherics/pipe/proc/wrenchable(datum/act/op/A)
+	return !istype(src, /obj/machinery/atmospherics/pipe/tank)
 
-/obj/machinery/atmospherics/pipe/proc/not_a_tank(mob/actor, atom/target, obj/item/held)
-	return !istype(target, /obj/machinery/atmospherics/pipe/tank)
+/// Its floor does not cover it.
+/obj/machinery/atmospherics/pipe/proc/floor_clear(datum/act/A)
+	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe stays where it was built
+	return !(level == 1 && isturf(T) && !T.is_plating()) // ALLOW(reads): a pipe's level is fixed by where it was built; asked when the wrench is used
 
-/obj/machinery/atmospherics/pipe/welder_act(mob/user, obj/item/W)
-	if(!damaged_leak)
-		return NONE
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 1, volume = 50, start_self = "You begin welding the fatigue crack in \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// What it holds above the room, kPa.
+/obj/machinery/atmospherics/pipe/proc/overpressure()
+	var/datum/gas_mixture/int_air = parent?.air
+	var/datum/gas_mixture/env_air = loc?.return_air()
+	return (int_air ? int_air.return_pressure() : 0) - (env_air ? env_air.return_pressure() : 0)
 
-/obj/machinery/atmospherics/pipe/proc/welder_act_tool_done(mob/user)
-	if(!(damaged_leak))
-		return
+/// The warning as the wrench starts: a pipe far above the room blows gas in the worker's face.
+/obj/machinery/atmospherics/pipe/proc/unwrench_warning(datum/act/A)
+	return overpressure() > 2 * ONE_ATMOSPHERE ? /datum/msg/pipe/gush : null
+
+/// The wrench took it off: a pipe still far above the room throws its worker; it becomes its fitting.
+/obj/machinery/atmospherics/pipe/proc/pipe_unwrenched(datum/act/op/A)
+	var/pressure = overpressure()
+	if(pressure > 2 * ONE_ATMOSPHERE)
+		unsafe_pressure_release(A.actor, pressure)
+	atom_deconstruct()
+	return OP_OK
+
+/obj/machinery/atmospherics/pipe/proc/cracked(datum/act/A)
+	return damaged_leak // ALLOW(reads): asked when the welder is used, never from a cached menu
+
+/obj/machinery/atmospherics/pipe/proc/crack_sealed(datum/act/op/A)
 	damaged_leak = FALSE
 	handle_leaking()
-	to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
-
-/obj/machinery/atmospherics/pipe/wrench_act(mob/user, obj/item/W)
-	if(istype(src, /obj/machinery/atmospherics/pipe/tank))
-		return NONE
-	var/turf/T = src.loc
-	if (level==1 && isturf(T) && !T.is_plating())
-		to_chat(user, span_warning("You must remove the plating first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-
-	//potential yeet
-	var/datum/gas_mixture/int_air = return_air()
-	var/datum/gas_mixture/env_air = loc.return_air()
-	var/unsafe_wrenching = FALSE
-	var/internal_pressure = int_air.return_pressure()-env_air.return_pressure()
-
-	if (internal_pressure > 2*ONE_ATMOSPHERE)
-		to_chat(user, span_warning("As you begin unwrenching \the [src] a gush of air blows in your face... maybe you should reconsider?"))
-		unsafe_wrenching = TRUE //here we go
-	else
-		to_chat(user, span_notice("You begin to unfasten \the [src]..."))
-
-	use_tool(user, W, src, delay = 10, volume = 50, receiver = src, job_type = /datum/om/task/timed/tool_job/pipe_unwrench, job_params = list("unsafe" = unsafe_wrenching, "pressure" = internal_pressure))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/pipe/proc/wrench_act_tool_done(mob/user, unsafe_wrenching, internal_pressure)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND(span_hear("You hear a ratchet.")))
-	if(unsafe_wrenching)
-		unsafe_pressure_release(user, internal_pressure)
-	atom_deconstruct()
+	return OP_OK
 
 /obj/machinery/atmospherics/pipe/proc/change_color(new_color)
 	//only pass valid pipe colors please ~otherwise your pipe will turn invisible

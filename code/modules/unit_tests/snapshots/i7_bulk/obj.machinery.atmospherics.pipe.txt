@@ -1,6 +1,5 @@
-/obj/machinery/atmospherics/pipe|human|none => gen_drag_interaction_drag_buckle|pipe_painter_passthrough:needs a pipe painter,atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
-/obj/machinery/atmospherics/pipe|robot|none => gen_drag_interaction_drag_buckle|gen_robot_interaction_swallow:not possible right now,pipe_painter_passthrough:needs a pipe painter,atmospherics_fit_material:needs an item,atmospherics_pipe_painter:needs a pipe painter
+/obj/machinery/atmospherics/pipe|human|none => gen_drag_interaction_drag_buckle|
+/obj/machinery/atmospherics/pipe|robot|none => gen_drag_interaction_drag_buckle|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/atmospherics/pipe|ai|none => |
 /obj/machinery/atmospherics/pipe|ghost|none => |
-/obj/machinery/atmospherics/pipe|human|/obj/item/pipe_painter => pipe_painter_passthrough,atmospherics_pipe_painter,gen_drag_interaction_drag_buckle|atmospherics_fit_material:needs an item
-/obj/machinery/atmospherics/pipe|human|/obj/item/stack/material => atmospherics_fit_material,gen_drag_interaction_drag_buckle|pipe_painter_passthrough:needs a pipe painter,atmospherics_pipe_painter:needs a pipe painter
+

@@ -1,0 +1,3 @@
+# Known gaps of `dm-compile check` (tools/build/build.ts DmbCheckTarget): diagnostics on code DreamMaker compiles.
+# One substring of the diagnostic line per line. Remove a line when the parser handles the case.
+code\\modules\\metrics\\metrics_api.dm", line: 69, kind: Macro, message: "unterminated macro invocation"

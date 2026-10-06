@@ -708,14 +708,14 @@
 	var/obj/machinery/meter/N = mach(/obj/machinery/meter, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
 	H.put_in_active_hand(M)
-	N.open = TRUE
-	N.multitool_act(H, M)
+	N.set_open(TRUE)
+	test_click(H, N, M)
 	TEST_ASSERT(asked(H), "an open meter asks for an id")
 	hci_answer(H, "exhaust_pipe")
 	settle()
 	TEST_ASSERT_EQUAL(N.id, "exhaust_pipe", "the answer becomes the id")
-	N.multitool_act(H, M)
-	N.open = FALSE
+	test_click(H, N, M)
+	N.set_open(FALSE)
 	var/before = N.id
 	hci_answer(H, "other_tag")
 	settle()

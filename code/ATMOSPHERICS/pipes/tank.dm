@@ -22,6 +22,8 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 	climb()
+	// anything used on a tank does nothing (no blow, no tool)
+	op("swallow", item(/obj/item), wait(0), then(PROC_REF(swallowed)))
 
 /obj/machinery/atmospherics/pipe/tank/init_dir()
 	initialize_directions = dir
@@ -60,18 +62,9 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 	return null
 
-/obj/machinery/atmospherics/pipe/tank/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/tank_swallow_attackby,
-	)
-	..()
 
-/// Old attackby: any item used on the tank did nothing and the base attackby was never reached.
-/datum/interaction/machine_item/tank_swallow_attackby
-	id = "tank_swallow_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
+/obj/machinery/atmospherics/pipe/tank/proc/swallowed(datum/act/op/A)
+	return OP_OK
 
 /obj/machinery/atmospherics/pipe/tank/air
 	name = "Pressure Tank (Air)"

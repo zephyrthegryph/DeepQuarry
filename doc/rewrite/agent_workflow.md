@@ -101,3 +101,16 @@ conversions touch different files and a snapshot-only change needs no recompile.
 Before converting a type, `bash tools/dq_pin.sh /type/path` records a generated pin of its menu, refusals,
 clicks and wires; after, `bash tools/dq_focused_test.sh dq_conversion_pin` shows what changed.
 
+## 7. Order-dependent failures
+
+A test that fails in a long focused run but passes alone leaks or inherits shared state. Every run now logs
+`STATE LEAK` lines in `tests.log` (and prints them when the run fails) for each global flag a test left changed;
+the culprit is the leak before the failing test. Fix it with `set_global()`/`set_var()` in the leaking test.
+
+## 8. Faster loop
+
+`doc/rewrite/build_timings.md` has the numbers. What you notice: `build.sh dm` runs DreamChecker beside
+DreamMaker, the verdigris bindings check is skipped when its inputs did not change, a focused run starts with
+2 test blocks instead of 8, and `tools/build/build.sh dmb-check` (or `DQ_DMB_PRECHECK=1`) is an optional 14 s
+syntax pre-check from the Codex compiler.
+
