@@ -1626,3 +1626,11 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   examine line while the panel is open; installing the super I/O coil is a 30 s op.
 - Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
   the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
+
+## Power plants: the tesla coils and grounding rods (rewrite/power-plants)
+
+- Pinned by `dq_pp/tesla_coil_curves` (loss, multipliers, relay 0.9, amplifier 1.075, prism split, ranges, cooldown); unchanged.
+- The energy ball steps on the singularity's `every(2 s)` (`singularity_frame()`), and bumps into it dust through the bumped notice.
+- The coil's multitool conversion and the coil board's reconfiguration are ops with `asks()`; part replacement is `part_replacement()`;
+  the looks are `draw()`. An empty hand on a coil or rod buckles whoever the actor is pulling (the legacy interaction asked for the grab
+  stance, which no longer exists as a mob state). Any held item no longer "touches" a coil for a fingerprint (that swallowed every tool click).
