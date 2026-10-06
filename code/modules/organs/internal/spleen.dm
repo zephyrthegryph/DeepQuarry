@@ -8,11 +8,12 @@
 	var/spleen_tick = 20 // The number of ticks between Spleen cycles.
 	var/spleen_efficiency = 1 // A multiplier for how efficient this spleen is.
 
-/obj/item/organ/internal/spleen/periodic_step()
+/obj/item/organ/internal/spleen/organ_tick(cycles)
 	..()
 	if(!owner) return
 
-	if(owner.life_tick % spleen_tick == 0)
+	// The spleen works in bursts: once every spleen_tick cycles on average.
+	if(prob(100 * cycles / spleen_tick))
 
 		//High toxins levels are dangerous
 		if(owner.injury_load(INJURY_CATEGORY_TOXIC) >= 30 && !owner.reagents.has_reagent(REAGENT_ID_ANTITOXIN))
@@ -38,8 +39,8 @@
 
 		// General organ damage from withdraw
 		if(prob(20) && owner.factor(BF_WITHDRAWAL))
-			apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * PROCESS_ACCURACY, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
-			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.2 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * ORGAN_LEGACY_BURST, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.2 * ORGAN_LEGACY_BURST, flags = INJURE_SILENT)
 
 /obj/item/organ/internal/spleen/handle_germ_effects()
 	. = ..() //Up should return an infection level as an integer
@@ -67,7 +68,6 @@
 		if(target)
 			target.add_wound(new /datum/affliction/wound/internal_bleeding(target, round(20 * spleen_efficiency)))
 			target.update_damages()
-		owner.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 
 /obj/item/organ/internal/spleen/minor
 	name = "vestigial spleen"

@@ -5,7 +5,7 @@
 	organ_tag = O_LUNGS
 	parent_organ = BP_TORSO
 
-/obj/item/organ/internal/lungs/periodic_step()
+/obj/item/organ/internal/lungs/organ_tick(cycles)
 	..()
 
 	if(!owner)

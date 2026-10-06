@@ -5,7 +5,7 @@
 	organ_tag = O_KIDNEYS
 	parent_organ = BP_GROIN
 
-/obj/item/organ/internal/kidneys/periodic_step()
+/obj/item/organ/internal/kidneys/organ_tick(cycles)
 	..()
 
 	if(!owner) return
@@ -16,21 +16,28 @@
 	var/datum/reagent/coffee = locate_in_list(owner.reagents.reagent_list, /datum/reagent/drink/coffee)
 	if(coffee)
 		if(is_bruised())
-			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, 0.1 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 		else if(is_broken())
-			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 
 	// General organ damage from withdraw, kidneys do a lot of the work
 	if(prob(70) && owner.factor(BF_WITHDRAWAL))
-		apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * PROCESS_ACCURACY, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
-		owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+		apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * ORGAN_LEGACY_BURST * cycles, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+		owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 
-/obj/item/organ/internal/kidneys/handle_organ_proc_special()
+/obj/item/organ/internal/kidneys/handle_organ_proc_special(cycles)
 	. = ..()
 
-	if(owner && owner.injury_load(INJURY_CATEGORY_TOXIC) <= owner.get_endurance() * 0.1) // If you have less than 10 tox damage (for a human), your kidneys can help purge it.
-		if(prob(owner.injury_load(INJURY_CATEGORY_TOXIC)))
-			owner.mend(TREAT_ANTITOXIN, rand(1,3))
+	if(owner)
+		owner.mend(TREAT_ANTITOXIN, kidney_clearance() * cycles)
+
+/// Toxin the kidneys clear per Life cycle: under a light load (a tenth of endurance) they purge it at load x 2% a cycle
+/// (the mean of the old prob(load) roll of 1-3); a heavier load overwhelms them.
+/obj/item/organ/internal/kidneys/proc/kidney_clearance()
+	var/load = owner.injury_load(INJURY_CATEGORY_TOXIC)
+	if(!load || load > owner.get_endurance() * 0.1)
+		return 0
+	return load * 0.02
 
 /obj/item/organ/internal/kidneys/handle_germ_effects()
 	. = ..() //Up should return an infection level as an integer

@@ -98,7 +98,7 @@
 	var/feedmodmin = 1
 	var/feedmodmax = 2
 
-/obj/item/organ/internal/malignant/parasite/periodic_step()
+/obj/item/organ/internal/malignant/parasite/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -170,7 +170,7 @@
 	cooldownmin = 15
 	cooldownmax = 25
 
-/obj/item/organ/internal/malignant/tumor/cancer/periodic_step()
+/obj/item/organ/internal/malignant/tumor/cancer/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -228,7 +228,7 @@
 	cooldownmax = 35
 	supply_conversion_value = 10
 
-/obj/item/organ/internal/malignant/tumor/potato/periodic_step()
+/obj/item/organ/internal/malignant/tumor/potato/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -278,7 +278,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 	name = "pinata gland"
 	icon_state = "pinata"
 
-/obj/item/organ/internal/malignant/tumor/pinata/periodic_step()
+/obj/item/organ/internal/malignant/tumor/pinata/organ_tick(cycles)
 	. = ..()
 
 	if(stage_progress == 0)
@@ -363,7 +363,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	cooldownmax = 65
 	supply_conversion_value = 50
 
-/obj/item/organ/internal/malignant/tumor/bluespace/periodic_step()
+/obj/item/organ/internal/malignant/tumor/bluespace/organ_tick(cycles)
 	. = ..()
 
 	if(cooldown > 0)
@@ -408,7 +408,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	cooldownmax = 95
 	supply_conversion_value = 50
 
-/obj/item/organ/internal/malignant/tumor/beerbelly/periodic_step()
+/obj/item/organ/internal/malignant/tumor/beerbelly/organ_tick(cycles)
 	. = ..()
 
 	if(!owner)
@@ -440,7 +440,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 	var/thalers = 0
 	supply_conversion_value = 25
 
-/obj/item/organ/internal/malignant/tumor/moneyorgan/periodic_step()
+/obj/item/organ/internal/malignant/tumor/moneyorgan/organ_tick(cycles)
 	. = ..()
 
 	if(!owner)
@@ -621,7 +621,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 	growth_trigger = rand(150,200)
 	return ..(mapload, internal, force_location, forcetag)
 
-/obj/item/organ/internal/malignant/engineered/lattice/periodic_step()
+/obj/item/organ/internal/malignant/engineered/lattice/organ_tick(cycles)
 	. = ..()
 	if(cooldown > 0)
 		cooldown--
@@ -724,7 +724,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 	var/deg_intensity = 1
 	var/side_effect_multiplier = 1
 
-/obj/item/organ/internal/malignant/engineered/chemorgan/periodic_step()
+/obj/item/organ/internal/malignant/engineered/chemorgan/organ_tick(cycles)
 	. = ..()
 	if(cooldown > 0)
 		cooldown--

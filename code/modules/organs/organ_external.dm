@@ -818,7 +818,7 @@ This function completely restores a damaged organ to perfect condition.
 	// A splint in place holds the bone: a splinted fracture is not broken for grip and stance.
 	return ((status & ORGAN_CUT_AWAY) || (is_fractured() && !(splinted && splinted.loc == src)))
 
-/obj/item/organ/external/periodic_step()
+/obj/item/organ/external/organ_tick(cycles)
 	if(owner)
 
 		//Chem traces slowly vanish

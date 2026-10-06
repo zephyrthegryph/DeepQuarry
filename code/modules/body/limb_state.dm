@@ -18,10 +18,14 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 /// The humanoid body's organs changed: the limbs' derived state follows.
 /datum/body/humanoid/invalidate(domains)
 	..()
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H))
+		return
 	if(domains & BODY_DIRTY_ORGANS)
-		var/mob/living/carbon/human/H = owner
-		if(istype(H))
-			H.limb_refresh()
+		H.limb_refresh()
+	// Deferred: asking the organs (factors, loads) here would consume the dirt this call just set.
+	if(domains & (BODY_DIRTY_ORGANS | BODY_DIRTY_FACTORS | BODY_DIRTY_CHEMS))
+		after(H, 0, TYPE_PROC_REF(/mob/living/carbon/human, organs_refresh), key = "organs_refresh")
 
 /// Recomputes the stance and raises or drops the limb checks.
 /mob/living/carbon/human/proc/limb_refresh()

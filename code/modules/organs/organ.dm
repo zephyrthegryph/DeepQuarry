@@ -162,8 +162,17 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 
 /obj/item/organ/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
+	if(ishuman(owner))
+		var/mob/living/carbon/human/H = owner
+		after(H, 0, TYPE_PROC_REF(/mob/living/carbon/human, organs_refresh), key = "organs_refresh")
 
+/// A loose organ's own tick (decay, loose afflictions): one cycle per periodic step.
 /obj/item/organ/periodic_step()
+	organ_tick(1)
+
+/// The organ's work over `cycles` Life cycles of body time: the body's organ clock calls it for organs in a body
+/// (body_clock.dm), the loose-organ periodic for the rest. Effects scale by `cycles`; nothing counts ticks.
+/obj/item/organ/proc/organ_tick(cycles)
 
 	//dead already, no need for more processing
 	if(status & ORGAN_DEAD)
@@ -178,7 +187,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	if(damage >= max_damage)
 		die()
 
-	handle_organ_proc_special()
+	handle_organ_proc_special(cycles)
 
 	if(!owner)
 		tick_detached_afflictions()
@@ -698,7 +707,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 		return TRUE
 	return !germ_level && !rejecting && damage < max_damage
 
-/obj/item/organ/proc/handle_organ_proc_special()	// Called when processed.
+/obj/item/organ/proc/handle_organ_proc_special(cycles)	// Called when processed.
 	return
 
 /// Kelvin of waste heat per robotic core part (torso, groin, head) per organ tick.

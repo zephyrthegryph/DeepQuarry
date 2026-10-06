@@ -156,7 +156,7 @@
 		// ALLOW(lifecycle): the removed organ becomes a nymph
 		qdel(src)
 
-/obj/item/organ/internal/diona/periodic_step()
+/obj/item/organ/internal/diona/organ_tick(cycles)
 	return
 
 /obj/item/organ/internal/diona/strata

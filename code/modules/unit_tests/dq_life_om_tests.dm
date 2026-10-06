@@ -298,7 +298,6 @@
 		/datum/om/stage/life/stasis_sleep,
 		/datum/om/stage/life/fall,
 		/datum/om/stage/life/changeling,
-		/datum/om/stage/life/organs,
 		/datum/om/stage/life/thermoregulation,
 		/datum/om/stage/life/weight,
 		/datum/om/stage/life/shock,

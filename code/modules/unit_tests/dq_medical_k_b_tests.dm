@@ -94,7 +94,7 @@
 	rel_set(S, nameof(S.owner), H)
 	H.robobody_count = 3
 	var/before = H.body_temperature()
-	S.handle_organ_proc_special()
+	S.handle_organ_proc_special(1)
 	TEST_ASSERT_EQUAL(H.body_temperature(), before, "the machine stomach writes no chassis heat")
 	rel_clear(S, nameof(S.owner))
 

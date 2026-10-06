@@ -30,23 +30,23 @@
 	icon_state = "unathi_liver"
 
 //Unathi liver acts as kidneys, too.
-/obj/item/organ/internal/liver/unathi/periodic_step()
+/obj/item/organ/internal/liver/unathi/organ_tick(cycles)
 	..()
 	if(!owner) return
 
 	var/datum/reagent/coffee = locate_in_list(owner.reagents.reagent_list, /datum/reagent/drink/coffee)
 	if(coffee)
 		if(is_bruised())
-			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, 0.1 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 		else if(is_broken())
-			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 
 	var/datum/reagent/sugar = locate_in_list(owner.reagents.reagent_list, /datum/reagent/sugar)
 	if(sugar)
 		if(is_bruised())
-			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, 0.1 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 		else if(is_broken())
-			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
+			owner.injure(INJURY_TOXIN, 0.3 * ORGAN_LEGACY_BURST * cycles, flags = INJURE_SILENT)
 
 /obj/item/organ/internal/brain/unathi
 	color = "#b3cbc3"

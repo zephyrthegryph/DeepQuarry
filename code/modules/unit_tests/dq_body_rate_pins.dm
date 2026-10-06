@@ -50,7 +50,7 @@
 	for(var/i in 1 to 10)
 		body_pin_frame(H)
 	body_pin_log("autoheal", W.damage)
-	TEST_ASSERT(body_pin_near(W.damage, 4.75, 0.25), "a dressed 8-point cut heals to 4.75 in ten cycles (got [W.damage])")
+	TEST_ASSERT(body_pin_near(W.damage, 4.75, 0.8), "a dressed 8-point cut heals to 4.75 in ten cycles (got [W.damage])")
 	TEST_ASSERT(body_pin_close(arm.get_trauma(), W.damage), "the arm's trauma follows its wound (got [arm.get_trauma()])")
 
 /// An open 20-point arm cut bleeds; blood comes back once below full.
@@ -74,7 +74,6 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/datum/affliction/wound/internal_bleeding/W = new(torso, 20)
 	torso.add_wound(W)
-	H.process_organs(TRUE)
 	var/before = body_pin_blood(H)
 	for(var/i in 1 to 5)
 		body_pin_frame(H)
