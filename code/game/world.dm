@@ -323,7 +323,7 @@ GLOBAL_VAR(restart_counter)
 #endif
 	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
 
-/// om_after() target: ends the round now (a test-harness run with no tests compiled in).
+/// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
 	SSticker.force_ending = ADMIN_FORCE_END_ROUND
 

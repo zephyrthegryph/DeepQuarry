@@ -282,6 +282,6 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_donate)
 	name = "personal datacore computer"
 	desc = "Have you Bingled THAT today?"
 
-/// om_after() target: the prank crash fixes itself.
+/// after() target: the prank crash fixes itself.
 /obj/machinery/librarywikicomp/proc/uncrash()
 	crash = FALSE

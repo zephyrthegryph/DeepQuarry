@@ -20,7 +20,7 @@
 			ToRban_update()
 	return
 
-/// om_after() target from world/New: the ToR list refresh, if enabled.
+/// after() target from world/New: the ToR list refresh, if enabled.
 /proc/ToRban_autoupdate_if_enabled()
 	if(CONFIG_GET(flag/ToRban))
 		ToRban_autoupdate()

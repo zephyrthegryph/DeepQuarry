@@ -320,7 +320,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	begin_flush(bowl_contents[1], bowl_contents)
 	return
 
-/// om_after() target: the tank has refilled (and a dry flush also calms the panic lever).
+/// after() target: the tank has refilled (and a dry flush also calms the panic lever).
 /obj/structure/toilet/proc/refill_done(reset_panic)
 	refilling = FALSE
 	if(reset_panic)

@@ -721,7 +721,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	germ_level = 0
 	dq_set_fluorescent(src, 0)
 
-/// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
+/// Its icon state (after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)
 	icon_state = new_state
 

@@ -296,9 +296,9 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	var/turf/medical = department_turf("medical-1") || agent.home()
 	agent.defender().ai_brain?.give_destination(medical)
 	agent.defender().ai_brain?.go_wake()
-	om_after_replace(src, 5 SECONDS, PROC_REF(heal_and_redeploy), agent)
+	after(src, 5 SECONDS, PROC_REF(heal_and_redeploy), key = "redeploy:[REF(agent)]", with = list(agent))
 
-/// om_after() holds `agent` as a handle: the call is dropped if the agent is gone.
+/// after() holds `agent` as a handle: the call is dropped if the agent is gone.
 /datum/generated_station_defense_runtime/proc/heal_and_redeploy(datum/generated_station_defender_agent/agent)
 	if(!agent?.is_active())
 		return
@@ -366,7 +366,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	after(src, 5 SECONDS, PROC_REF(complete_logistics_delivery), with = list(crate, destination, squad_id))
 	return TRUE
 
-/// om_after() drops the call when the crate is gone (the squad then sleeps on its own order timer).
+/// after() drops the call when the crate is gone (the squad then sleeps on its own order timer).
 /datum/generated_station_defense_runtime/proc/complete_logistics_delivery(obj/structure/closet/crate/crate, turf/destination, squad_id)
 	if(crate && destination && !QDELETED(crate) && !is_blocked_turf(destination))
 		crate.forceMove(destination)

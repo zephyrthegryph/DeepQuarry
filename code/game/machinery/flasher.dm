@@ -176,7 +176,8 @@ CAPABILITIES(/obj/machinery/flasher)
 	for(var/obj/machinery/flasher/M as anything in controlled_flashers)
 		M.flash()
 
-	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))
+	if(!after_pending(src, "finish_trigger"))
+		after(src, 5 SECONDS, PROC_REF(finish_trigger), key = "finish_trigger")
 	return TRUE
 
 /obj/machinery/button/flasher/proc/finish_trigger()

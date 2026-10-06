@@ -106,7 +106,7 @@ CAPABILITIES(/datum/guard_test_holder)
 				shared_set(H, nameof(H.shared_species), registered)
 				done = H.shared_species == registered
 			if("om_after")
-				done = !!om_after(H, 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
+				done = !!after(H, 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
 			if("after_slot")
 				after_slot(H, "guard_slot", 1 MINUTES, TYPE_PROC_REF(/datum/guard_test_holder, on_tick))
 				done = om_timer_slot_pending(H, "guard_slot")

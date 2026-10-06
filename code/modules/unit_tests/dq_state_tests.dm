@@ -270,7 +270,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	qdel(listener)
 
 	var/obj/item/paper/timed = new(test_floor())
-	om_after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, update_icon))
+	after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, update_icon))
 	blockers = timed.state_collapse_blockers(1)
 	var/found_timer = FALSE
 	for(var/reason in blockers)

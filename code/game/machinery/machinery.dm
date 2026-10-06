@@ -206,7 +206,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 	return PROCESS_KILL
 
 /// Once, when a machine on the machine pipeline materializes and the world is up (a zero-delay
-/// om_after() from joining): arm the watches that will wake it (arm_wakes()), then wake it if its
+/// after() from joining): arm the watches that will wake it (arm_wakes()), then wake it if its
 /// declared start condition holds. Nothing else runs a machine at spawn.
 /obj/machinery/proc/materialize_wakes()
 	// Running now: it leaves the boot bulk queue (a timer-slot run has already left its slot).
