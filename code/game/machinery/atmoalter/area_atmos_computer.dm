@@ -35,12 +35,6 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 	. = ..()
 	scanscrubbers()
 
-/obj/machinery/computer/area_atmos/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
 /obj/machinery/computer/area_atmos/ui_data(datum/act/eval/A)
 	var/list/working = list()
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as anything in connectedscrubbers)
@@ -60,30 +54,24 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 	return list("scrubbers" = working)
 
 /obj/machinery/computer/area_atmos/proc/ui_act_toggle(datum/act/op/A, id)
-	var/mob/user = A.actor
 	var/scrub_id = id
 	var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = scrubber_by_id(scrub_id)
 	if(!validscrubber(S))
 		rel_remove(src, nameof(/obj/machinery/computer/area_atmos::connectedscrubbers), S)
-		return TRUE
+		return OP_OK
 	S.set_on(!S.on)
-	MACHINE_WAKE(S)
-	. = TRUE
-	add_fingerprint(user)
+	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/ui_act_allon(datum/act/op/A)
 	toggle_all(TRUE)
-	add_fingerprint(A.actor)
 	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/ui_act_alloff(datum/act/op/A)
 	toggle_all(FALSE)
-	add_fingerprint(A.actor)
 	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/ui_act_scan(datum/act/op/A)
 	scanscrubbers_user(A.actor)
-	add_fingerprint(A.actor)
 	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)
@@ -92,8 +80,6 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 			rel_remove(src, nameof(connectedscrubbers), S)
 			continue
 		S.set_on(on)
-		MACHINE_WAKE(S)
-		CHECK_TICK
 
 /obj/machinery/computer/area_atmos/proc/validscrubber(obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as obj)
 	if(!isobj(scrubber) || get_dist(scrubber.loc, src.loc) > src.range || scrubber.loc.z != src.loc.z)

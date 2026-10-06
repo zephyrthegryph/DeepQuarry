@@ -1432,6 +1432,14 @@ focused tests of the touched windows (the tests that called a handler with its o
   module's, through `ui_redirect()`) and is gone.
 * **Messages.** The ice cream vat's flavour and cone messages are `act_message()` (the actor reads "You ...").
 * **The holodeck's AI override** is asked by how the press came (`A.authority & AUTH_REMOTE_ACCESS`), not `issilicon()`.
+* **Ship consoles (helm, engines, sensors, disperser).** Their questions (navigation entry, coordinates, autopilot and thrust limits,
+  sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
+  stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
+  view over its link from anywhere it works the console (the distance check is a hand's).
+* **Copier, fax, ore console, exosuit console, paper.** Their window questions are `asks()` steps: the AI's photo pick, the fax title,
+  department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
+  admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
+  1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
@@ -1464,3 +1472,17 @@ Pinned by the generated pins `snapshots/pins/obj.item.pipe*.txt`, `obj.machinery
   dispenser's drag-in are ops.
 - The pipe layer's hand switch (empty hand only), its metal eject (asks yes/no with `asks()`), pipe recycling, steel loading, pipe-type choice
   (wrench), auto-dismantle and dismantle (crowbar) are ops; its RPED is `part_replacement()` and its status is an `examine_line()`.
+
+## Portable pumps and scrubbers, the area air console, the stasis clamp (rewrite/pipenet-full)
+
+Generated pins: `snapshots/pins/obj.machinery.portable_atmospherics.powered.*`, `obj.machinery.computer.area_atmos.txt`, `obj.machinery.clamp.txt`.
+
+- **Portable pump and scrubber** work on `every(MACHINE_SERVICE_INTERVAL, when = on)` (the machine pipeline's portable stages are deleted);
+  their looks are `draw(look)`; the window is `interface()` alone (the legacy ungated open-UI interaction is gone, and with it the ghost's
+  "View" menu entry, as on the canister). EMPs and the power button no longer raise the machine channel by hand.
+- **Huge pumps and scrubbers** (`huge_portable_controls()`): an empty hand says to use the console (it used to open the portable's window
+  through the inherited `interface()`, a master bug); cells and tanks are swallowed; the wrench bolts it while off (the stationary one refuses:
+  its bolts are too tight); the inherited window, cell, tank-bay and port ops are dropped. Their step is `every(when = on)`.
+- **Area air console**: no MACHINE_WAKE when it switches the scrubbers (their `every()` follows `on`).
+- **Stasis clamp**: its hand toggle (only while on a pipe), its drag-onto-yourself removal (3 s, refused while active) and the clamp item's
+  attach (3 s, refused where a clamp already is) are ops; the OM timed tasks are gone. `open` is tracked.

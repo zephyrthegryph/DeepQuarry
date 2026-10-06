@@ -198,9 +198,36 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	GLOB.last_fax_role_request = EXPIRY_AT(src, CLOCK_WORLD, 0)
 	to_chat(L, span_notice("Your request was transmitted."))
 
-DECLARE_UI(/obj/machinery/photocopier/faxmachine, "Fax")
+// The fax's window: the copier's buttons and its own. The paper title and the department are asked in their ops (asks()); sending a
+// default-titled fax to an admin department asks whether to rename it first.
+CAPABILITIES(/obj/machinery/photocopier/faxmachine)
+	interface("Fax")
+	without("ui_open")
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
+	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
+	op("send_automated_staff_request", ui_act("send_automated_staff_request"), then(PROC_REF(ui_act_send_automated_staff_request)))
+	op("rename", ui_act("rename"), asks(/datum/prompt/text/fax_paper_title, fields = list("default" = computed(PROC_REF(paper_title_default))), step = "title", when = PROC_REF(can_title)),
+		then(PROC_REF(ui_act_rename)))
+	op("send", ui_act("send"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(default_title_question)), "title" = "Default name detected", "choices" = list("Change Title", "Continue", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "default_title", when = PROC_REF(default_title_to_admins)),
+		asks(/datum/prompt/text, fields = list("question" = "Enter new fax title", "title" = "This will show up in the preview for staff chat on discord when sending to central.", "default" = computed(PROC_REF(paper_title_default)), "max_len" = MAX_NAME_LEN, "timeout" = 0), step = "new_title", when = PROC_REF(changing_title)),
+		then(PROC_REF(ui_act_send)))
+	op("dept", ui_act("dept"), asks(/datum/prompt/choice/fax_department, fields = list("choices" = computed(PROC_REF(department_choices))), step = "department", when = PROC_REF(fax_logged_in)),
+		then(PROC_REF(ui_act_dept)))
 
-UI_DATA(/obj/machinery/photocopier/faxmachine, "authenticated", "rank", "copyItem=copyitem", "cooldown=sendcooldown:num", "destination", "merge:ui_data_obj_machinery_photocopier_faxmachine{scan:text,isAI:num,isRobot:num,adminDepartments:unknown,bossName:text}")
+/// The window data.
+/obj/machinery/photocopier/faxmachine/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["authenticated"] = authenticated
+	data["rank"] = rank
+	data["copyItem"] = copyitem
+	data["cooldown"] = sendcooldown
+	data["destination"] = destination
+	var/list/computed = ui_data_obj_machinery_photocopier_faxmachine(A.actor, null, null)
+	for(var/key in computed)
+		data[key] = computed[key]
+	return data
 
 /obj/machinery/photocopier/faxmachine/proc/fax_role_request_answered(datum/act/request/A)
 	if(!A.answer)
@@ -227,7 +254,7 @@ UI_DATA(/obj/machinery/photocopier/faxmachine, "authenticated", "rank", "copyIte
 		return "gone"
 	return null
 
-/// The computed part of /obj/machinery/photocopier/faxmachine's window data (declared on its UI_DATA row).
+/// The computed part of the window data (ui_data()).
 /obj/machinery/photocopier/faxmachine/proc/ui_data_obj_machinery_photocopier_faxmachine(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
@@ -239,74 +266,80 @@ UI_DATA(/obj/machinery/photocopier/faxmachine, "authenticated", "rank", "copyIte
 
 	return data
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_scan)
+/obj/machinery/photocopier/faxmachine/proc/ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		if(ishuman(user) && !user.get_active_hand())
+			user.put_in_hands(scan)
+		own_take(src, nameof(scan))
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			move_into(src, nameof(src.scan), I, ui.user)
+			move_into(src, nameof(src.scan), I, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "login", ui_act_login, UI_ARG_NUM("login_type"))
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_login)
-	var/login_type = params["login_type"]
+/obj/machinery/photocopier/faxmachine/proc/ui_act_login(datum/act/op/A, login_type)
+	var/mob/user = A.actor
+	log_in_as(user, login_type)
+	return TRUE
+
+/// Logs the fax in under the card in it, or under a silicon's own identity (the login names who the operator is).
+/obj/machinery/photocopier/faxmachine/proc/log_in_as(mob/user, login_type)
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			authenticated = scan.registered_name
 			rank = scan.assignment
-	else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
-		authenticated = ui.user.name
+	else if(login_type == LOGIN_TYPE_AI && isAI(user))
+		authenticated = user.name
 		rank = JOB_AI
-	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
-		authenticated = ui.user.name
-		var/mob/living/silicon/robot/R = ui.user
+	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(user))
+		authenticated = user.name
+		var/mob/living/silicon/robot/R = user
 		rank = "[R.modtype] [R.braintype]"
-	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_logout)
+/obj/machinery/photocopier/faxmachine/proc/ui_act_logout(datum/act/op/A)
+	var/mob/user = A.actor
 	if(scan)
 		scan.forceMove(loc)
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		if(ishuman(user) && !user.get_active_hand())
+			user.put_in_hands(scan)
+		own_take(src, nameof(scan))
 	authenticated = null
 	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "remove", ui_act_remove)
-UI_ACT_OVERRIDE(/obj/machinery/photocopier/faxmachine, ui_act_remove)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/photocopier/faxmachine/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
 	if(copyitem)
-		if(get_dist(ui.user, src) >= 2)
-			to_chat(ui.user, "\The [copyitem] is too far away for you to remove it.")
+		if(get_dist(user, src) >= 2)
+			to_chat(user, "\The [copyitem] is too far away for you to remove it.")
 			return
 		copyitem.forceMove(loc)
-		ui.user.put_in_hands(copyitem)
-		to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, nameof(/obj/machinery/photocopier::copyitem))
+		user.put_in_hands(copyitem)
+		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
+		own_take(src, nameof(copyitem))
 	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "send_automated_staff_request", ui_act_send_automated_staff_request)
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_send_automated_staff_request)
-	request_roles(ui.user)
+/obj/machinery/photocopier/faxmachine/proc/ui_act_send_automated_staff_request(datum/act/op/A)
+	request_roles(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "rename", ui_act_rename)
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_rename)
-	if(!authenticated)
+/obj/machinery/photocopier/faxmachine/proc/fax_logged_in(datum/act/op/A)
+	return !!authenticated // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+
+/obj/machinery/photocopier/faxmachine/proc/can_title(datum/act/op/A)
+	return authenticated && copyitem // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+
+/obj/machinery/photocopier/faxmachine/proc/paper_title_default(datum/act/op/A)
+	return copyitem?.name
+
+/obj/machinery/photocopier/faxmachine/proc/department_choices(datum/act/op/A)
+	return GLOB.alldepartments + GLOB.admin_departments
+
+/obj/machinery/photocopier/faxmachine/proc/ui_act_rename(datum/act/op/A)
+	if(!can_title(A))
 		return
-	if(copyitem)
-		if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-			return
-		open_request(ui, /datum/prompt/text/fax_paper_title, TYPE_PROC_REF(/datum/tgui, fax_paper_title_answered), answerer = ui.user, default = copyitem.name)
-		return
+	apply_paper_title(A.step_value("title"))
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/proc/apply_paper_title(new_name)
@@ -320,29 +353,34 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_rename)
 		copyitem.name = new_name
 	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "send", ui_act_send)
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_send)
+/obj/machinery/photocopier/faxmachine/proc/ui_act_send(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!authenticated)
 		return
 	if(copyitem)
 		if (destination in GLOB.admin_departments)
-			if(check_if_default_title_and_rename(ui.user, action, params, ui))
-				return
-			send_admin_fax(ui.user, destination)
+			if(default_title_to_admins(A))
+				var/choice = A.step_value("default_title")
+				if(!choice || choice == "Cancel")
+					return TRUE
+				if(choice == "Change Title")
+					var/new_name = A.step_value("new_title")
+					if(!new_name)
+						return TRUE
+					copyitem.name = new_name
+			send_admin_fax(user, destination)
 		else
-			sendfax(destination, ui.user)
+			sendfax(destination, user)
 
 		if (sendcooldown)
 			after(src, sendcooldown, PROC_REF(cooldown_over))
 	return TRUE
 
-UI_ACT(/obj/machinery/photocopier/faxmachine, "dept", ui_act_dept)
-UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
+/obj/machinery/photocopier/faxmachine/proc/ui_act_dept(datum/act/op/A)
 	if(!authenticated)
 		return
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/fax_department, TYPE_PROC_REF(/datum/tgui, fax_department_answered), answerer = ui.user, choices = (GLOB.alldepartments + GLOB.admin_departments))
+	apply_department_answer(A.step_value("department"))
+	return TRUE
 
 /obj/machinery/photocopier/faxmachine/proc/apply_department_answer(selected_department)
 	if(!authenticated)
@@ -357,31 +395,29 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 /// Returns TRUE on "Cancel", an invalid newname or while the questions wait (their answers re-run the
 /// send action with the same params), else returns null/false.
 /// Extracted to its own procedure for easier logic handling with paper bundles.
-/obj/machinery/photocopier/faxmachine/proc/check_if_default_title_and_rename(mob/user, action, list/params, datum/tgui/ui)
-	var/question_text = "Your fax is set to its default name. It's advisable to rename it to something self-explanatory to"
-
-	if(istype(copyitem, /obj/item/paper_bundle))
-		var/obj/item/paper_bundle/B = copyitem
-		if(B.name != initial(B.name))
-			var/atom/page1 = B.pages[1]	//atom is enough for us to ensure it has name var. would've used ?. opertor, but linter doesnt like.
-			var/atom/page2 = B.pages[2]
-			if((istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) )
-				question_text = "Your fax is set to use the title of its first or second page. It's advisable to rename it to something \
-				summarizing the entire bundle succintly to"
-			else
-				return FALSE
-	else if(copyitem.name != initial(copyitem.name))
+/// Sending this fax to an admin department, under its default title (or a bundle under its first page's): the send asks to rename it.
+/obj/machinery/photocopier/faxmachine/proc/default_title_to_admins(datum/act/op/A)
+	if(!authenticated || !copyitem || !(destination in GLOB.admin_departments)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 		return FALSE
-
-	var/choice = act_ask(user, action, params, ui, "default_title", /datum/om/prompt/choice/alert, message = "[question_text] improve response time from staff when sending to discord. Renaming it changes its preview in staff chat.", title = "Default name detected", choices = list("Change Title","Continue", "Cancel"))
-	if(!choice || choice == "Cancel")
+	if(istype(copyitem, /obj/item/paper_bundle)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+		var/obj/item/paper_bundle/B = copyitem // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+		if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+			var/atom/page1 = B.pages[1] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+			var/atom/page2 = B.pages[2]
+			return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name)
 		return TRUE
-	else if(choice == "Change Title")
-		var/new_name = act_ask(user, action, params, ui, "new_title", /datum/om/prompt/text, message = "Enter new fax title", title = "This will show up in the preview for staff chat on discord when sending to central.", default = copyitem.name, max_length = MAX_NAME_LEN)
-		if(!new_name)
-			return TRUE
-		copyitem.name = new_name
+	return copyitem.name == initial(copyitem.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 
+/obj/machinery/photocopier/faxmachine/proc/default_title_question(datum/act/op/A)
+	var/question_text = "Your fax is set to its default name. It's advisable to rename it to something self-explanatory to"
+	if(istype(copyitem, /obj/item/paper_bundle) && copyitem.name != initial(copyitem.name))
+		question_text = "Your fax is set to use the title of its first or second page. It's advisable to rename it to something \
+			summarizing the entire bundle succintly to"
+	return "[question_text] improve response time from staff when sending to discord. Renaming it changes its preview in staff chat."
+
+/// The send asks for the new title after "Change Title".
+/obj/machinery/photocopier/faxmachine/proc/changing_title(datum/act/op/A)
+	return A.step_value("default_title") == "Change Title"
 
 /datum/interaction/machine_item/faxmachine_insert_id
 	id = "faxmachine_insert_id"
@@ -731,62 +767,20 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	. = ..()
 	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
-/datum/tgui/proc/fax_paper_title_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/photocopier/faxmachine/fax = src_object()
-	if(fax.apply_paper_title(context.answer.value))
-		SStgui.update_uis(fax)
-
 /datum/prompt/text/fax_paper_title
 	question = "Enter new paper title"
 	title = "This will show up in the preview for staff chat on discord when sending to central."
 	max_len = MAX_NAME_LEN
 	name_text = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/text/fax_paper_title/normalize(given)
 	return istext(given) ? strip_name_tokens(given) : null
-
-/datum/prompt/text/fax_paper_title/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/photocopier/faxmachine/fax = original_ui.src_object()
-	if(!istype(fax) || QDELETED(fax))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!fax.ui_act_allowed(original_ui.user, "rename", original_ui, original_ui.state()))
-		return "the paper title action is unavailable"
-	return null
-
-/datum/tgui/proc/fax_department_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/photocopier/faxmachine/fax = src_object()
-	if(fax.apply_department_answer(context.answer.value))
-		SStgui.update_uis(fax)
 
 /datum/prompt/choice/fax_department
 	question = "Which department?"
 	title = "Choose a department"
 	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/fax_department/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/obj/machinery/photocopier/faxmachine/fax = original_ui.src_object()
-	if(!istype(fax) || QDELETED(fax))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!fax.ui_act_allowed(original_ui.user, "dept", original_ui, original_ui.state()))
-		return "the department action is unavailable"
-	return null
 
 /datum/prompt/text/fax_department_id
 	question = "What Department ID would you like to give this fax machine?"

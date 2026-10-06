@@ -213,3 +213,22 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
 	return OP_OK
 
 // air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
+
+// ---- a huge portable's controls (huge_portable_controls(), code/game/machinery/atmoalter/pump.dm) ----
+
+/obj/machinery/portable_atmospherics/powered/proc/swallowed(datum/act/op/A)
+	return OP_OK
+
+/obj/machinery/portable_atmospherics/powered/proc/is_off(datum/act/A)
+	return !on
+
+/// A requirement that never holds (a stationary one's bolts).
+/obj/machinery/portable_atmospherics/powered/proc/never(datum/act/A)
+	return FALSE
+
+/obj/machinery/portable_atmospherics/powered/proc/anchor_toggled(datum/act/op/A)
+	set_anchored(!anchored)
+	return OP_OK
+
+/obj/machinery/portable_atmospherics/powered/proc/anchor_message(datum/act/A)
+	return anchored ? /datum/msg/huge_portable/anchored : /datum/msg/huge_portable/unanchored
