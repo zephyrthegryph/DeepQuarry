@@ -128,3 +128,28 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | `OM_EMIT` / `om_hook` | Phase C codemod track | needs `ACTION()` declarations for `publish_<x>()` |
 | E entity_state | landed | every file moved to its module (`git mv` only, DME lines in place); `code/datums/entity_state` is gone. Left in the moved content: one `om_task_timed` (weaver, B4), the changeling/crafting/hose/material OM forms (their tracks) |
 | I internals, D | open | relations and slots, timed actions, scheduler, clocks, contribution store, prompts and flows, io |
+
+## 7. What still blocks D (deleting `code/datums/om`)
+
+Mob Life is off the framework: its steps are a kernel sequence, statuses, relevance, suspension and the bio clock are
+stats, its repeats are `every()`, its events are actions, its trait disabilities are capabilities, and
+`code/datums/entity_state` is gone. What keeps `code/datums/om` (13,141 lines) alive is owned by other tracks. Counted
+on October 6 2026, game code only (no framework, tests or generated files):
+
+| Form | Lines / files | Track |
+|---|---|---|
+| `om_task_timed`, `om_task_start`, `om_busy` | 645 / 307 | B4: ops with `wait()` (codemod track) |
+| `om_ask*`, `/datum/om/prompt`, `/datum/om/flow` | 352 / 111 | native requests (`open_request()`, `asks()`): the prompts track |
+| `/datum/om/relation`, `om_link` (slots and edges) | 292 / 69 | containment: body and items tracks |
+| `OM_FIELD*`, `OM_DERIVE_FIELD` | 203 / 127 | F1: with the machine pipeline (channels) and the periodic gates |
+| `/datum/om/behaviour`, `om_attach` | 202 / 44 | object behaviours (items), AI brains (combat AI), looping sounds |
+| `OM_EMIT`, `om_emit`, `om_hook` | 199 / 110 | Phase C: `PUBLISH`/`ACT_TRY` per `om_event_map.json` |
+| machine pipeline, `machine_step`, `MACHINE_WAKE` | 140 / 25 | `rewrite/machines-full`, `rewrite/pipenet-full` |
+| `DECLARE_PERIODIC*`, `DECLARE_REPEAT` | 126 / 107 | `periodic_while.py` residue: items and structures |
+| `om_io`, `io_request` | 82 / 24 | native requests (`/datum/io/*`) |
+| `om_grant*`, `om_revoke*` | 73 / 29 | verbs: `granted_verb()` (`verb_decl.py`) |
+| `om_watch`, gas watches | 67 / 22 | pipenet |
+
+The framework's own internals follow their last caller: the timer store and scheduler (`after()` is built on them), the
+OM record's own clock (CLOCK_OWN), the contribution store (now only `EFFECT_BUCKLED`, `EFFECT_BODY_EFFECTS` and the
+`GRANT_*` kinds), relevance and suspension glue (`relevance_changed()`, `suspended_changed()`, `bio_clock_rate_changed()`).
