@@ -241,8 +241,13 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 /atom/movable/stat_rig_module/proc/CanUse()
 	return 0
 
-/atom/movable/stat_rig_module/Click()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): native stat-panel Click supplies the initiating rig-module actor
+CAPABILITIES(/atom/movable/stat_rig_module)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm): the stat-panel button runs
+/// its module's mode for the clicking mob.
+/atom/movable/stat_rig_module/proc/click_input(datum/act/input/A)
+	var/mob/user = A.actor
 	if(CanUse())
 		switch(module_mode)
 			if("select")
@@ -262,6 +267,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 				var/charge_index = module.charges.Find(module.charge_selected)
 				charge_index = charge_index == module.charges.len ? 1 : charge_index + 1
 				module.charge_selected = module.charges[charge_index]
+	return TRUE
 
 /atom/movable/stat_rig_module/DblClick()
 	return Click()

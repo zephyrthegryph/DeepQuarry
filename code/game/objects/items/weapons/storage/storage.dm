@@ -794,12 +794,13 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	/// Relation view: the stored item this catcher stands for.
 	var/obj/item/held_item
 
-// ALLOW(init/CTOR_ARGS): held_item is a constructor argument from whoever builds it
-/atom/movable/storage_slot/Initialize(mapload, obj/item/held_item)
-	. = ..()
-	ASSERT(held_item)
-	name += held_item.name
-	rel_set(src, nameof(held_item), held_item)
+CAPABILITIES(/atom/movable/storage_slot)
+	param(nameof(held_item), pos = 1, apply = PROC_REF(name_for))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The slot is named for the item it holds.
+/atom/movable/storage_slot/proc/name_for(obj/item/item)
+	ASSERT(item)
+	name += item.name
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)

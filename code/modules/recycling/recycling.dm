@@ -250,6 +250,9 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	icon_state = "debris"
 	w_class = ITEMSIZE_NORMAL
 
+CAPABILITIES(/obj/item/debris_pack)
+	param(nameof(matter_at_make), pos = 1, apply = PROC_REF(hold_matter), keep = FALSE)
+
 /// The matter a debris pack holds (its constructor param, dropped once set).
 /obj/item/debris_pack/var/tmp/list/matter_at_make
 
@@ -264,6 +267,9 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	icon_state = "matdust"
 	w_class = ITEMSIZE_SMALL
 	var/material_name
+
+CAPABILITIES(/obj/item/material_dust)
+	param(nameof(material_name), pos = 1, apply = PROC_REF(dust_of))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The dust is named and coloured for its material.
 /obj/item/material_dust/proc/dust_of(mat)

@@ -9,8 +9,16 @@
 	var/cooldownmin = 0
 	var/cooldownmax = 0
 
-// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
-/obj/item/organ/internal/malignant/Initialize(mapload, internal, force_location = null, forcetag = null)
+CAPABILITIES(/obj/item/organ/internal/malignant)
+	param(nameof(force_location), pos = 2)
+	param(nameof(forcetag), pos = 3)
+
+/// Where the growth is forced to grow and its forced tag (its constructor params).
+/obj/item/organ/internal/malignant/var/force_location
+/obj/item/organ/internal/malignant/var/forcetag
+
+// ALLOW(init/INSTANCE_STATE): a growth is tagged and picks an organic limb to grow in (or the one it is forced to) before its parents' init
+/obj/item/organ/internal/malignant/Initialize(mapload, internal)
 	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
 	if(forcetag)
 		organ_tag = forcetag
@@ -816,7 +824,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 	deg_intensity = 3
 	side_effect_multiplier = 2
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/malignant/life_step_idle()
 	return FALSE
 

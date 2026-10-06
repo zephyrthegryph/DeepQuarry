@@ -20,8 +20,13 @@ CAPABILITIES(/obj/effect/statclick)
 /obj/effect/statclick/debug
 	var/class
 
-/obj/effect/statclick/debug/Click()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): BYOND Click supplies the initiating diagnostic viewer.
+CAPABILITIES(/obj/effect/statclick/debug)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). An admin opens the target's variables.
+/obj/effect/statclick/debug/proc/click_input(datum/act/input/A)
+	. = TRUE
+	var/mob/user = A.actor
 	if(!check_rights_for(user.client, R_HOLDER) || !target)
 		return
 	if(!class)

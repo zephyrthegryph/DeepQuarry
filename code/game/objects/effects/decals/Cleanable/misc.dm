@@ -73,14 +73,20 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	mouse_opacity = 0
 	var/delete_me = FALSE
 
-// ALLOW(init/CTOR_ARGS): _age and dirt are constructor arguments from whoever builds it
-/obj/effect/decal/cleanable/dirt/Initialize(mapload, _age, dirt)
+CAPABILITIES(/obj/effect/decal/cleanable/dirt)
+	param(nameof(dirt_level), pos = 2)
+
+/// How dirty the tile becomes (its constructor param).
+/obj/effect/decal/cleanable/dirt/var/dirt_level
+
+// ALLOW(init/INSTANCE_STATE): dirt sets its tile's dirt level and merges with the dirt already there
+/obj/effect/decal/cleanable/dirt/Initialize(mapload)
 	.=..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	var/turf/simulated/our_turf = src.loc
 	if(our_turf && istype(our_turf) && our_turf.can_dirty)
-		our_turf.dirt = clamp(max(age ? (dirt ? dirt : 101) : our_turf.dirt, our_turf.dirt), 0, 101)
+		our_turf.dirt = clamp(max(age ? (dirt_level ? dirt_level : 101) : our_turf.dirt, our_turf.dirt), 0, 101)
 		if(mapload && !our_turf.dirt)
 			our_turf.dirt = rand(51, 100)
 		var/calcalpha = our_turf.dirt > 50 ? min((our_turf.dirt - 50) * 5, 255) : 0

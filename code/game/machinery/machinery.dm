@@ -144,6 +144,7 @@ Class Procs:
 CAPABILITIES(/obj/machinery)
 	owns_one(nameof(circuit), /obj/item/circuitboard)
 	owns_many(nameof(component_parts))
+	param(nameof(dir_at_make), pos = 1, keep = FALSE)
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
@@ -163,11 +164,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
 	return gen
 
-// ALLOW(init/CTOR_ARGS): d is a constructor argument from whoever builds it
-/obj/machinery/Initialize(mapload, d=0)
+/// The facing a machine is built with (its constructor param).
+/obj/machinery/var/dir_at_make // ALLOW(base_vars): param() carries the constructor's facing into init through a var of the type it declares
+
+// ALLOW(init/INSTANCE_STATE): a machine faces the way it is built and, made after the map, checks its power
+/obj/machinery/Initialize(mapload)
 	. = ..()
-	if(isnum(d))
-		set_dir(d)
+	if(isnum(dir_at_make))
+		set_dir(dir_at_make)
 	// The board stays a type path (roadmap C6): it is only ever materialized
 	// into a real /obj/item/circuitboard when something needs the physical
 	// item (deconstruction, admin var edit, a frame move). See

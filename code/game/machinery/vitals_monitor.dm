@@ -80,9 +80,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 	if(beep && victim() && victim().pulse)
 		play_sfx(src, SFX_MACHINES_QUIET_BEEP, volume = 0)
 
-/obj/machinery/vitals_monitor/MouseDrop(over_object, src_location, over_location)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native patient dragging supplies the initiating actor through BYOND usr.
-	drop_patient_with_actor(user, over_object)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/machinery/vitals_monitor/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return TRUE
 
 /obj/machinery/vitals_monitor/proc/drop_patient_with_actor(mob/user, atom/over_object)
 	if(!CanMouseDrop(over_object, user))
@@ -152,6 +153,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 
 CAPABILITIES(/obj/machinery/vitals_monitor)
 	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
+	drag_onto(PROC_REF(drop_input))
 
 /// Old verb "Toggle Monitor Beeping".
 /obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(datum/act/op/A)

@@ -99,6 +99,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 
 /// The static change index of E's type: key -> hooks. FALSE when the type declares no on_change.
 /proc/change_index_of(datum/E)
+	if(!GLOB.change_index_by_type)
+		return FALSE // the globals are still being built
 	var/known = GLOB.change_index_by_type[E.type]
 	if(!isnull(known))
 		return known

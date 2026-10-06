@@ -21,15 +21,21 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 
 CAPABILITIES(/obj/effect/decal/cleanable)
 	owns_many(nameof(viruses), /datum/affliction/contagion)
+	param(nameof(age), pos = 1, apply = PROC_REF(age_or_contagions))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(random_icon_states))
 
-// ALLOW(init/CTOR_ARGS): _age is a constructor argument from whoever builds it
-/obj/effect/decal/cleanable/Initialize(mapload, _age)
-	if(islist(_age)) // new /obj/effect/decal/cleanable/vomit(loc, contagion_copies(...))
-		add_contagions(_age, copy = FALSE)
-	else if(!isnull(_age))
-		age = _age
-	if(random_icon_states && length(src.random_icon_states) > 0)
-		src.icon_state = DEFAULTPICK(src.random_icon_states, null)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A vomit made with contagions carries them (new /obj/effect/decal/cleanable/vomit(loc, contagion_copies(...))).
+/obj/effect/decal/cleanable/proc/age_or_contagions(given)
+	if(islist(given))
+		add_contagions(given, copy = FALSE)
+		age = initial(age)
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): one of the filth's looks.
+/obj/effect/decal/cleanable/proc/roll_icon_state(datum/roller/R)
+	return length(random_icon_states) ? R.choose(random_icon_states) : icon_state
+
+// ALLOW(init/INSTANCE_STATE): filth not loaded with the map is tracked for persistence
+/obj/effect/decal/cleanable/Initialize(mapload)
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth)
 	. = ..()

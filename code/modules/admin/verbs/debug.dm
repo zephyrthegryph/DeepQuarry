@@ -827,7 +827,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	set name = "Quick Auth NIF"
 	set desc = "Spawns an authentic NIF into someone in quick-implant mode."
 
-	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
+	if(!admin_require(owner(), R_ADMIN|R_EVENT|R_DEBUG, "quick_authentic_nif", TRUE)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
 	open_request(src, /datum/prompt/choice, PROC_REF(quick_authentic_nif_chosen), answerer = usr, title = "Quick Authentic NIF", question = "Pick a mob with a player", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), rights = R_ADMIN|R_EVENT|R_DEBUG, timeout = 0)

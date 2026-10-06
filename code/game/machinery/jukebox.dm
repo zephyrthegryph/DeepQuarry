@@ -403,7 +403,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	if(!istype(M))
 		return TRUE
 
-	if(check_rights(R_FUN|R_ADMIN, show_msg=0))
+	if(admin_require(M.client, R_FUN|R_ADMIN, "ghost_jukebox_observer_use", 0))
 		interact(M)
 	else if(current_track())
 		to_chat(M, "\The [src] is playing [current_track().display()].")

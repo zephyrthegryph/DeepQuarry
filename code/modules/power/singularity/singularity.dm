@@ -29,12 +29,11 @@
 
 	var/chained = 0//Adminbus chain-grab
 
-// ALLOW(init/CTOR_ARGS): starting_energy is a constructor argument from whoever builds it
-/obj/singularity/Initialize(mapload, starting_energy = 50)
+// ALLOW(init/INSTANCE_STATE): a singularity tells the admins it exists and finds an active beacon to pull toward
+/obj/singularity/Initialize(mapload)
 	//CARN: admin-alert for chuckle-fuckery.
 	admin_investigate_setup()
 	. = ..()
-	energy = starting_energy
 	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon
@@ -50,6 +49,7 @@ CAPABILITIES(/obj/singularity)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
+	param(nameof(energy), pos = 1, default = 50)
 
 /// Touching it is fatal.
 /obj/singularity/proc/touched(datum/act/op/A)

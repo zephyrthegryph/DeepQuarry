@@ -19,6 +19,8 @@
 TRACKED(/obj/item/fuel_assembly, radioactivity)
 CAPABILITIES(/obj/item/fuel_assembly)
 	every(2 SECONDS, then(PROC_REF(fuel_assembly_step)), when = nameof(radioactivity))
+	param(nameof(fuel_type), pos = 1)
+	param(nameof(fuel_colour), pos = 2)
 
 /obj/item/fuel_assembly/proc/fuel_assembly_step(datum/act/timer/A)
 	radiate()
@@ -39,11 +41,9 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
-// ALLOW(init/CTOR_ARGS): _material and _colour are constructor arguments from whoever builds it
-/obj/item/fuel_assembly/Initialize(mapload, _material, _colour)
+// ALLOW(init/INSTANCE_STATE): a fuel rod is named, coloured and made radioactive or luminous by its material
+/obj/item/fuel_assembly/Initialize(mapload)
 	. = ..()
-	fuel_type = _material
-	fuel_colour = _colour
 	var/datum/material/material = get_material_by_name(fuel_type)
 	if(istype(material))
 		name = "[material.use_name] fuel rod assembly"

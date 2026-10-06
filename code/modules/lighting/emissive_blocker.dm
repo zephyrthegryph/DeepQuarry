@@ -18,6 +18,9 @@
 	//Since only render_target handles transform we don't get any applied transform "stacking"
 	appearance_flags = RESET_TRANSFORM
 
+CAPABILITIES(/atom/movable/emissive_blocker)
+	param(nameof(render_source), pos = 1, apply = PROC_REF(block_colour))
+
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The blocker draws its source in the blocking colour.
 /atom/movable/emissive_blocker/proc/block_colour(source)
 	color = GLOB.em_block_color

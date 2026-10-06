@@ -497,7 +497,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 
 /obj/machinery/librarycomp/proc/ui_act_delid(datum/act/op/A, id)
 	var/mob/user = A.actor
-	if(!check_rights(R_ADMIN))
+	if(!admin_require(A.actor?.client, R_ADMIN, "ui_act_delid", TRUE))
 		return TRUE
 	var/numeric_id = id
 	// Validate that the id is a positive integer before deleting.
@@ -564,7 +564,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 // set; non-admin ghosts fall through to default handling.
 /// Old attack_ghost: admins get the admin view; other ghosts the default.
 /obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!check_rights(R_ADMIN, show_msg = FALSE))
+	if(!admin_require(user.client, R_ADMIN, "librarycomp_ghost_admin_view", FALSE))
 		return FALSE
 	user.set_machine(src)
 	is_admin_view = TRUE

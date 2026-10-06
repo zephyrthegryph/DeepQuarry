@@ -18,9 +18,14 @@ CAPABILITIES(/obj/structure/mirror)
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
 
-// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-/obj/structure/mirror/Initialize(mapload, dir, building = 0)
+/// A mirror built on a wall (its constructor param).
+/obj/structure/mirror/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a mirror makes its appearance changer, and a built one is an empty frame on its wall
+/obj/structure/mirror/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 	if(building)

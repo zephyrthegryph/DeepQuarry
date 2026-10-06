@@ -49,16 +49,16 @@
 CAPABILITIES(/obj/effect/fusion_em_field)
 	owns_many(nameof(particle_catchers))
 	ref_one(nameof(owned_core), /obj/machinery/power/fusion_core)
+	param(nameof(owned_core), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): new_owned_core is a constructor argument from whoever builds it
-/obj/effect/fusion_em_field/Initialize(mapload, obj/machinery/power/fusion_core/new_owned_core)
+// ALLOW(init/INSTANCE_STATE): a field lights up and lays out its particle catchers around its core
+/obj/effect/fusion_em_field/Initialize(mapload)
 	. = ..()
 
 	set_light(light_min_range,light_min_power)
 	last_range = light_min_range
 	last_power = light_min_power
 
-	rel_set(src, nameof(owned_core), new_owned_core)
 	if(!owned_core)
 		return INITIALIZE_HINT_QDEL
 	id_tag = owned_core.id_tag

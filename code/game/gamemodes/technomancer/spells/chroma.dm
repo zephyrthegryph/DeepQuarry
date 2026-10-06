@@ -24,10 +24,15 @@
 	invisibility = INVISIBILITY_ABSTRACT
 	time_to_die = 2 MINUTES //Despawn after this time, if set.
 
-// ALLOW(init/CTOR_ARGS): new_color is a constructor argument from whoever builds it
-/obj/effect/temporary_effect/chroma/Initialize(mapload, new_color = "#FFFFFF")
-	. = ..()
-	set_light(6, 5, l_color = new_color)
+CAPABILITIES(/obj/effect/temporary_effect/chroma)
+	param(nameof(chroma_color), pos = 1, apply = PROC_REF(glow))
+
+/// The glow's colour (its constructor param).
+/obj/effect/temporary_effect/chroma/var/chroma_color = "#FFFFFF"
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/temporary_effect/chroma/proc/glow(colour)
+	set_light(6, 5, l_color = colour)
 
 /obj/item/spell/chroma/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)

@@ -175,7 +175,7 @@
 /obj/item/organ/external/head/unbreakable/slime
 	transparent = 1
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/heart/grey/colormatch/slime/life_step_idle()
 	return FALSE
 

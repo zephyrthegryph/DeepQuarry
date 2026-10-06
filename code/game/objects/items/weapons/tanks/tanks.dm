@@ -629,27 +629,35 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 
 TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, null)
 
-// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
-/obj/item/tank/phoron/onetankbomb/Initialize(mapload, amount = 1)
+CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
+	param(nameof(bomb_fill), pos = 1)
+
+/// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
+/obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
+
+// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/obj/item/tank/phoron/onetankbomb/Initialize(mapload)
 	var/forced_fill = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
 	if(!isnull(forced_fill))
-		amount = forced_fill
-		. = ..(mapload, amount)
-	else
-		. = ..()
-	onetankbomb(amount)
+		bomb_fill = forced_fill
+	. = ..()
+	onetankbomb(bomb_fill)
 
 TYPE_TABLE_DECLARE(/obj/item/tank/oxygen/onetankbomb, oxygen_bomb_forced_fill, null)
 
-// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
-/obj/item/tank/oxygen/onetankbomb/Initialize(mapload, amount = 1)
+CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
+	param(nameof(bomb_fill), pos = 1)
+
+/// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
+/obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
+
+// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
 	var/forced_fill = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
 	if(!isnull(forced_fill))
-		amount = forced_fill
-		. = ..(mapload, amount)
-	else
-		. = ..()
-	onetankbomb(amount)
+		bomb_fill = forced_fill
+	. = ..()
+	onetankbomb(bomb_fill)
 
 TYPE_TABLE(/obj/item/tank/phoron/onetankbomb/full, phoron_bomb_forced_fill, 2)
 

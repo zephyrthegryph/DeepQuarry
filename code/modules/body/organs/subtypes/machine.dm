@@ -40,16 +40,20 @@
 CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	after_init(0, then(PROC_REF(mmi_after_init)))
 	owns_one(nameof(stored_mmi), /obj/item/mmi)
+	param(nameof(installed_mmi), pos = 2, keep = FALSE)
 
 
-// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
-/obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
+/// The MMI the holder is installed with (its constructor param, dropped after init).
+/obj/item/organ/internal/mmi_holder/var/tmp/obj/item/mmi/installed_mmi
+
+// ALLOW(init/INSTANCE_STATE): a body's MMI holder holds the MMI it is installed with, or a new brain
+/obj/item/organ/internal/mmi_holder/Initialize(mapload, internal)
 	. = ..(mapload, internal)
 	if(!ishuman(owner) || ismannequin(owner))
 		return
-	if(installed)
-		rel_set(src, nameof(stored_mmi), installed)
-		installed.forceMove(src)
+	if(installed_mmi)
+		rel_set(src, nameof(stored_mmi), installed_mmi)
+		installed_mmi.forceMove(src)
 	else
 		rel_set(src, nameof(stored_mmi), new brain_type(src))
 
@@ -127,7 +131,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	icon_state = stored_mmi.icon_state
 
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/cell/machine/life_step_idle()
 	return FALSE
 

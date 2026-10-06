@@ -125,7 +125,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 /client/proc/mod_list(list/L, atom/O, original_name, objectvar, index, autodetect_class = FALSE, key = "list")
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(mod_list), args)
-	if(!check_rights(R_VAREDIT))
+	if(!admin_require(src, R_VAREDIT, "mod_list", TRUE))
 		return
 	if(!istype(L, /list))
 		to_chat(src, "Not a List.", confidential = TRUE)
@@ -307,7 +307,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 /client/proc/modify_variables(atom/O, param_var_name = null, autodetect_class = 0)
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(modify_variables), args)
-	if(!check_rights(R_VAREDIT))
+	if(!admin_require(src, R_VAREDIT, "modify_variables", TRUE))
 		return
 
 	var/class

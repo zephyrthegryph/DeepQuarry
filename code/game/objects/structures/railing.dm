@@ -26,8 +26,11 @@
 	icon_modifier = "grey_"
 	icon_state = "grey_railing0"
 
-// ALLOW(init/CTOR_ARGS): constructed is a constructor argument from whoever builds it
-/obj/structure/railing/Initialize(mapload, constructed = 0)
+/// A railing a player built (its constructor param).
+/obj/structure/railing/var/constructed = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a railing turns, a player-built one starts loose, and an anchored one joins its neighbours
+/obj/structure/railing/Initialize(mapload)
 	. = ..()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
@@ -41,6 +44,7 @@ CAPABILITIES(/obj/structure/railing)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	param(nameof(constructed), pos = 1)
 
 /// A railing that is not anchored breaks under whoever climbed it.
 /obj/structure/railing/proc/climbed_over(mob/living/climber)

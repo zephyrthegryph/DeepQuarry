@@ -208,7 +208,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/lungs/replicant/mending, repair_list
 /obj/item/organ/internal/lungs/replicant/mending/crew
 	repair_rate = 0.01 //Very very slow regen, but still cool flavour
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/xenos/plasmavessel/replicant/crew/life_step_idle()
 	return FALSE
 

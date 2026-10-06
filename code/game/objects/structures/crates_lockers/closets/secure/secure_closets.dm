@@ -133,16 +133,16 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_loc
 CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	extend(CAP_LOCK, needs(req(PROC_REF(owner_present), because = MSG(lock/denied))))
 	extend("lock_with_item", needs(req(PROC_REF(owner_present), because = MSG(lock/denied))))
+	param(nameof(owner), pos = 1)
+	param(nameof(self_del), pos = 2)
 
 /obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
 	return allowed(A.actor)
 
-// ALLOW(init/CTOR_ARGS): mind_target and del_self are constructor arguments from whoever builds it
-/obj/structure/closet/secure_closet/mind/Initialize(mapload, datum/mind/mind_target, del_self = 1)
+// ALLOW(init/INSTANCE_STATE): an owned closet is named for its owner and shows their picture
+/obj/structure/closet/secure_closet/mind/Initialize(mapload)
 	. = ..()
-	self_del = del_self
-	if(mind_target)
-		rel_set(src, nameof(owner), mind_target)
+	if(owner_ref())
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)

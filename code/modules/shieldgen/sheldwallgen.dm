@@ -265,6 +265,10 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
+CAPABILITIES(/obj/machinery/shieldwall)
+	param(nameof(gen_primary), pos = 1)
+	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
+
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A wall stands between two active generators, which pay for it.
 /obj/machinery/shieldwall/proc/span_generators(obj/machinery/shieldwallgen/B)
 	update_nearby_tiles()

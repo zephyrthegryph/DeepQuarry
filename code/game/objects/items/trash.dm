@@ -11,11 +11,12 @@
 	MATERIAL_BULK(MAT_STEEL, 30)
 	var/age = 0
 
-// ALLOW(init/CTOR_ARGS): _age is a constructor argument from whoever builds it
-/obj/item/trash/Initialize(mapload, _age)
+CAPABILITIES(/obj/item/trash)
+	param(nameof(age), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): trash not loaded with the map is tracked for persistence
+/obj/item/trash/Initialize(mapload)
 	. = ..()
-	if(!isnull(_age))
-		age = _age
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 

@@ -61,11 +61,12 @@ MSG_DEF_SELF(stage/lightswitch/finished, "It is finished.")
 	var/x_offset = 26
 	var/y_offset = 26
 
-// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
-/obj/structure/construction/Initialize(mapload, ndir, building = FALSE)
+CAPABILITIES(/obj/structure/construction)
+	param(nameof(dir), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): a wall frame sits on its wall, offset by its facing
+/obj/structure/construction/Initialize(mapload)
 	. = ..()
-	if(ndir)
-		set_dir(ndir)
 	if(x_offset)
 		pixel_x = (dir & 3) ? 0 : (dir == EAST ? -x_offset : x_offset)
 	if(y_offset)

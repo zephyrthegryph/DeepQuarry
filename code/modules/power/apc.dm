@@ -227,6 +227,8 @@ CAPABILITIES(/obj/machinery/power/apc)
 	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
 	section(cover_rules, "The latch on the APC's cover")
 	latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason))
+	param(nameof(build_dir), pos = 1)
+	param(nameof(building), pos = 2)
 
 /// The angled APC's sprite sits closer to the wall.
 CAPABILITIES(/obj/machinery/power/apc/angled)
@@ -465,14 +467,18 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
-/obj/machinery/power/apc/Initialize(mapload, ndir, building)
+/// The facing and whether it is built by hand (its constructor params).
+/obj/machinery/power/apc/var/build_dir
+/obj/machinery/power/apc/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a hand-built APC starts as a bare frame on its builder's wall; a mapped one starts up
+/obj/machinery/power/apc/Initialize(mapload)
 	if(building)
 		cell_type = null // a frame built by hand starts without the cell its relation would make (starts =)
 	. = ..()
 	// The wall mount offsets it into the wall; a built APC faces its builder's way and starts at the bare frame.
 	if(building)
-		set_dir(ndir)
+		set_dir(build_dir)
 		rel_set(src, nameof(area), get_area(src)) // paired: the area's apc is this APC
 		key_set(src, COVER_OPEN, TRUE)
 		graph_place(src, STAGE_APC_FRAME)

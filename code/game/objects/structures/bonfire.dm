@@ -22,23 +22,23 @@
 TRACKED(/obj/structure/bonfire, burning)
 CAPABILITIES(/obj/structure/bonfire)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
+	param(nameof(fuel_material), pos = 1, apply = PROC_REF(build_of))
 
 TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/bonfire/Initialize(mapload, material_name)
+/// The fuel's material (its constructor param, or the type's forced one).
+/obj/structure/bonfire/var/fuel_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/bonfire/proc/build_of(material_name)
 	var/forced_material = TYPE_TABLE_GET(src, forced_bonfire_material)
 	if(forced_material)
 		material_name = forced_material
-		. = ..(mapload, material_name)
-	else
-		. = ..()
-	if(!material_name)
-		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
+	material = get_material_by_name("[material_name || MAT_WOOD]")
 	if(!material)
 		stack_trace("Material of type: [material_name] does not exist.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	color = material.icon_colour
 
 // Blue wood.

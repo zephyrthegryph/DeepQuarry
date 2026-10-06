@@ -164,7 +164,10 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 /// The ended notice was already announced by ending_begin(); lifeform_destroy() calls this for the forms' own teardown only.
 /proc/ending_announce(datum/holder, datum/lifeform_plan/P)
 	GLOB.roll_rollers -= holder
-	GLOB.param_given -= holder
+	if(param_given)
+		param_given -= holder
+	if(param_drop_pending)
+		param_drop_pending -= holder
 
 // ---- scopes ----
 

@@ -90,8 +90,15 @@ DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(
 	use_power = USE_POWER_OFF
 	flags = WALL_ITEM
 
-// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-/obj/machinery/button/doorbell/Initialize(mapload, dir, building = FALSE)
+CAPABILITIES(/obj/machinery/button/doorbell)
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+
+/// A doorbell built on a wall (its constructor param).
+/obj/machinery/button/doorbell/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a built doorbell sits on its wall, and every doorbell takes an id
+/obj/machinery/button/doorbell/Initialize(mapload)
 	. = ..()
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -32 : 32)

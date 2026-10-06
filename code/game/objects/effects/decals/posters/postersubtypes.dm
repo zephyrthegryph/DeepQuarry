@@ -5,11 +5,10 @@
 	icon_state = "rolled_poster_nt"
 	poster_type = /obj/structure/sign/poster/nanotrasen
 
-// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
-/obj/item/poster/nanotrasen/Initialize(mapload, datum/decl/poster/P = null)
-	if(!ispath(poster_decl) && !ispath(P) && !istype(P))
+/obj/item/poster/nanotrasen/choose_design(P)
+	if(!ispath(poster_decl) && !ispath(P) && !istype(P, /datum/decl/poster))
 		poster_decl = get_poster_decl(/datum/decl/poster/nanotrasen, FALSE, null)
-	return ..()
+	..()
 
 /obj/structure/sign/poster/nanotrasen // placed wall object
 	roll_type = /obj/item/poster/nanotrasen

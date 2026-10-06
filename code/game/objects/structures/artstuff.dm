@@ -427,13 +427,14 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 	desc_with_canvas = "A painting hung where only the determined can reach it."
 	persistence_id = "away_area"
 
-// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-/obj/structure/sign/painting/Initialize(mapload, dir, building)
+/// A frame built on a wall (its constructor param).
+/obj/structure/sign/painting/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a persistent painting frame joins the persistence system's frames, and a built one sits on its wall
+/obj/structure/sign/painting/Initialize(mapload)
 	. = ..()
 	if(persistence_id)
 		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
-	if(dir)
-		set_dir(dir)
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -30 : 30)
 		pixel_y = (dir & 3)? (dir ==1 ? -30 : 30) : 0
@@ -446,6 +447,8 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 CAPABILITIES(/obj/structure/sign/painting)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
 
 /obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

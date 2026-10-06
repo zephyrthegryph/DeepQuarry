@@ -104,7 +104,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 	dq_admin_report_html(owner(), "Job Bans", dat, src)
 
 /datum/admins/proc/Game()
-	if(!check_rights(0))	return
+	if(!admin_require(owner(), 0, "Game", TRUE))	return
 	open_game_panel(owner()?.mob)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////admins2.dm merge
@@ -829,7 +829,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 		return //Extra sanity check to make sure only observers are shoved into things
 
 	//Same as assume-direct-control perm requirements.
-	if (!check_rights(R_VAREDIT,0) || !check_rights(R_ADMIN|R_DEBUG|R_EVENT,0))
+	if (!admin_require(user.client, R_VAREDIT, "cmd_ghost_drag", 0) || !admin_require(user.client, R_ADMIN|R_DEBUG|R_EVENT, "cmd_ghost_drag", 0))
 		return 0
 	if (!frommob.ckey)
 		return 0

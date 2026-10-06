@@ -1751,6 +1751,10 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
   when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
 - A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- More native input reads its actor from the input: the vitals monitor, the backpack-style packs (defib, shield generator, bluespace
+  radio, proton pack, medigun), the cup on a cooler, a mob dragged onto its dragger (`drag_onto()`), the mob nametag tooltip (`hover()`),
+  the debug and ticket stat buttons and the rig stat buttons (`click_on()`). Admin rights checks with an actor in scope read its client
+  (`admin_require(client, rights, entry)`) instead of the deprecated usr-reading `check_rights()` (28 sites).
 - Constructor arguments are params (`param(pos =)`); the work an argument drove runs through the param's setter (`apply =`) at the root of
   init, where the old override ran it after `..()`: before its parents' code after `..()` rather than after it. A value only built from is
   `keep = FALSE` (a mob a holder takes in, the victim of a grab, the construct a bin is built from, a mob's predecessor). A construction the
@@ -1784,6 +1788,8 @@ organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURA
   every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
   horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
   (`ORGAN_LEGACY_BURST`).
+* **Liver strain under heavy toxin load is 0.2 a cycle** (was 2.0 every tenth cycle): the pin's twenty cycles cost about 4 (old run 5.65, the
+  bursts landing with other random liver harm).
 * **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
   falls to below 8 within thirty cycles (old run 8 -> 6.6).
 * "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
@@ -1906,6 +1912,30 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
 - EFTPOS: settings answers resume again. Since the EFTPOS window moved to ops, `eftpos_settings_resume()` looked for a legacy row that no longer existed and dropped every answer.
 - Email administration: its buttons need the network access again (`needs(req(PROC_REF(network_admin_access), silent = TRUE))`). The old `ui_act_allowed()` guard had stopped running when the window moved to ops.
 - Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
+- tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.
+
+## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+
+Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
+code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
+the step's state checks are its `when()`, steadiness its `needs()`, the organ choice and the drastic-step confirmation `asks()`, `claims()`, `wait()`, and
+the roll in `then()`. `do_surgery()`, the focus and step om tasks, `choose_surgical_step_for()`, `surgery_ask()`, `surgery_zones_in_progress` and the
+steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` and `confirm_text()`).
+
+* **One click runs the best step.** With a tool several steps take, the click performs the highest-priority step (then declaration order); the others
+  are the patient's menu entries. The old click asked which step every time.
+* **One surgery per surgeon, one claim per patient.** The per-zone lock is the op's claim: while a step waits on a patient, a second claiming op on them
+  is refused (two surgeons could work two zones at once before).
+* **The surgeon must stay conscious and adjacent with the tool in hand** (the op's keeps): an interruption abandons the step, as before.
+* **Self-surgery's three seconds of focus are part of the step's wait** (was a separate focus task before choosing).
+* Scanners and stethoscopes keep their patient use through `use_on_patient()` (was an override of `do_surgery()`).
+* Boot fix found on the way: atoms created during global init (a GLOBAL_DATUM_INIT statclick) no longer index the lifecycle tables before they exist.
+
+## Body migration, slice 6: loose organs (rewrite/body-full)
+
+Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
+from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
+`DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).
 - **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
   to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
   runs it through a thin `<verb>_op(A)` effect.

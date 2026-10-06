@@ -9,14 +9,18 @@
 	max_integrity = 100
 	var/datum/material/material
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/barricade/Initialize(mapload, material_name)
-	. = ..()
-	if(!material_name)
-		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
+CAPABILITIES(/obj/structure/barricade)
+	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
+
+/// The barricade's material (its constructor param; a subtype's default).
+/obj/structure/barricade/var/barricade_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/barricade/proc/build_of(material_name)
+	material = get_material_by_name("[material_name || MAT_WOOD]")
 	if(!material)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
 	color = material.icon_colour
@@ -111,11 +115,13 @@ EXTEND_INTERACTIONS(/obj/structure/barricade, \
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "blank"
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/barricade/sandbag/Initialize(mapload, material_name)
-	if(!material_name)
-		material_name = MAT_CLOTH
-	. = ..(mapload, material_name)
+/obj/structure/barricade/sandbag
+	barricade_material = MAT_CLOTH
+
+/obj/structure/barricade/sandbag/build_of(material_name)
+	..()
+	if(QDELETED(src))
+		return
 	name = "[material.display_name] [initial(name)]"
 	color = null
 	max_integrity = material.integrity * 2	// These things are, commonly, used to stop bullets where possible.

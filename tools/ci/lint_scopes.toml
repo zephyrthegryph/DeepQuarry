@@ -296,7 +296,7 @@ bodytemp_allow = ["code/modules/heat/heat_mobs.dm"]
 # the heat and gas domains own every temperature and energy write
 heat_writes_allow = ["code/domains/", "code/__defines/verdigris/_bindings.dm"]
 weapon_damage_type_allow = ["code/modules/medical/conditions/wounds.dm"]
-organ_damage_allow = ["code/modules/body/", "code/modules/organs/"]
+organ_damage_allow = ["code/modules/body/"]
 rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
@@ -306,7 +306,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 49
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 22
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 107
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 objects_ratchet_on_legacy_interactions = 140
@@ -375,4 +375,6 @@ banned = [
   "ui_nested_done = the op's handler runs it after the sub-action",
   "act_ask = asks(/datum/prompt/kind, fields = list(...), step = \"k\") on the op; the handler reads A.step_value(\"k\")",
   "om_act_ask = asks() on the op; the handler reads A.step_value()",
+  "ui_modal_opened = an op bound to \"modal:<id>\" that asks() its question",
+  "ui_modal_answered = an op bound to \"modal:<id>\"; its handler reads A.step_value()",
 ]

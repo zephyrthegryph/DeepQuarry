@@ -315,6 +315,9 @@ GLOBAL_LIST(construction_frame_floor)
 CAPABILITIES(/obj/structure/frame)
 	owns_many(nameof(components))
 	climb()
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+	param(nameof(type_at_make), pos = 3)
 
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer
@@ -354,15 +357,16 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 		var/obj/ct = ct_path
 		req_component_names[ct_path] = initial(ct.name)
 
-// ALLOW(init/CTOR_ARGS): dir, building, type and user are constructor arguments from whoever builds it
-/obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
+/// Whether the frame is being placed, and its frame type (its constructor params).
+/obj/structure/frame/var/building = FALSE
+/obj/structure/frame/var/datum/frame/frame_types/type_at_make
+
+// ALLOW(init/INSTANCE_STATE): a placed frame takes its frame type's offsets and circuit, and a machine or computer frame is dense
+/obj/structure/frame/Initialize(mapload)
 	. = ..()
 	if(building)
-		rel_set(src, nameof(frame_type), frame_type_copy(type))
+		rel_set(src, nameof(frame_type), frame_type_copy(type_at_make))
 		state = FRAME_PLACED
-
-		if(dir)
-			set_dir(dir)
 
 		if(frame_type.x_offset)
 			pixel_x = (dir & 3)? 0 : (dir == EAST ? -frame_type.x_offset : frame_type.x_offset)

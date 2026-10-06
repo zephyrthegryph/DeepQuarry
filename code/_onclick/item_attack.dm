@@ -247,12 +247,13 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 /mob/living/proc/unarmed_touch(mob/living/user, stance = I_HELP)
 	return
 
-/// Hit with an item in `stance`: surgery, vore, then the attack (a phased swing when hostile).
+/// Hit with an item in `stance`: a patient-use, vore, then the attack (a phased swing when hostile).
 /mob/living/proc/hit_with_item(obj/item/I, mob/user, attack_modifier = 1, stance = I_HURT)
 	if(!ismob(user))
 		return FALSE
 
-	if(can_operate(src, user, stance) && I.do_surgery(src, user, stance))
+	// Surgery is the patient's ops (surgery_ops.dm); scanners and stethoscopes take a use on a patient here.
+	if(can_operate(src, user, stance) && I.use_on_patient(src, user, stance))
 		return TRUE
 
 	if(vore_attackby(I, user, stance)) // The vore, of course.

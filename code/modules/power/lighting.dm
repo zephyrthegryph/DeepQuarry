@@ -127,6 +127,7 @@ CAPABILITIES(/obj/machinery/light)
 	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed)))
 	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering))
 	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching))
+	param(nameof(construct_at_make), pos = 1, keep = FALSE)
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)
@@ -1020,6 +1021,7 @@ CAPABILITIES(/obj/item/light)
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
 	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))
 	on_change(nameof(status), ANY, then(PROC_REF(status_changed)))
+	param(nameof(fixture_at_make), pos = 1, keep = FALSE)
 
 /// The picture of a light shows its state.
 /obj/item/light/draw(datum/look/look)
@@ -1042,9 +1044,13 @@ CAPABILITIES(/obj/item/light)
 		if(LIGHT_BROKEN)
 			desc = "A broken [name]."
 
-// ALLOW(init/CTOR_ARGS): fixture is a constructor argument from whoever builds it
-/obj/item/light/Initialize(mapload, obj/machinery/light/fixture = null)
+/// The fixture the bulb was taken from (its constructor param, dropped after init).
+/obj/item/light/var/tmp/obj/machinery/light/fixture_at_make
+
+// ALLOW(init/INSTANCE_STATE): a bulb taken out of a fixture keeps its state, rigging and brightness
+/obj/item/light/Initialize(mapload)
 	. = ..()
+	var/obj/machinery/light/fixture = fixture_at_make
 	if(fixture)
 		set_status(fixture.status)
 		rigged = fixture.rigged
@@ -1221,24 +1227,28 @@ CAPABILITIES(/obj/item/light)
 	layer = BELOW_MOB_LAYER
 
 // ition, to override the New() proc further below, since this is a lamp.
-// ALLOW(init/CTOR_ARGS): construct is a constructor argument from whoever builds it
-/obj/machinery/light/flamp/Initialize(mapload, obj/machinery/light_construct/construct = null)
+// ALLOW(init/INSTANCE_STATE): a floor lamp built from a frame starts without a cell or shade; a mapped one may get an emergency cell
+/obj/machinery/light/flamp/Initialize(mapload)
 	layer = initial(layer)
 	. = ..()
-	if(construct)
+	if(construct_at_make)
 		start_with_cell = FALSE
 		set_lamp_shade(0)
 	else
 		if(start_with_cell && !no_emergency)
 			declare_emergency_cell()
 
+/// The frame the light is built from (its constructor param, dropped after init).
+/obj/machinery/light/var/tmp/obj/machinery/light_construct/construct_at_make
+
 // create a new lighting fixture
-// ALLOW(init/CTOR_ARGS): construct is a constructor argument from whoever builds it
-/obj/machinery/light/Initialize(mapload, obj/machinery/light_construct/construct = null)
+// ALLOW(init/INSTANCE_STATE): a light built from a frame starts empty and faces the frame's way; a mapped one carries its bulb as data, and every light powers up
+/obj/machinery/light/Initialize(mapload)
 	. = ..()
 
 	if(start_with_cell && !no_emergency)
 		declare_emergency_cell()
+	var/obj/machinery/light_construct/construct = construct_at_make
 	if(construct)
 		start_with_cell = FALSE
 		set_bulb_status(LIGHT_EMPTY)

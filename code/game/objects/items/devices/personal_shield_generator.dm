@@ -42,6 +42,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
+	drag_onto(PROC_REF(drop_input))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -148,9 +149,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 	weapon_toggle_effect(user)
 	return TRUE
 
-/obj/item/personal_shield_generator/MouseDrop()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
-	drag_backpack_with_actor(user)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/personal_shield_generator/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
 
 /obj/item/personal_shield_generator/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
@@ -407,10 +409,9 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 	var/wielded = 0
 	var/cooldown = 0
 
-// ALLOW(init/CTOR_ARGS): shield_gen is a constructor argument from whoever builds it
-/obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
+// ALLOW(init/INSTANCE_STATE): the generator's gun draws from its generator's cell, in place of the one its parents made
+/obj/item/gun/energy/gun/generator/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(linked_generator), shield_gen)
 	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
@@ -615,6 +616,7 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_se
 // The generator gun runs off the generator's cell: a view, not an owned cell.
 CAPABILITIES(/obj/item/gun/energy/gun/generator)
 	ref_one(nameof(power_supply))
+	param(nameof(linked_generator), pos = 1)
 
 /// Old object verbs.
 

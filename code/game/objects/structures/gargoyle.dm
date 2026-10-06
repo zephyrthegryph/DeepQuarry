@@ -29,9 +29,27 @@
 OM_FIELD_VIEW(/obj/structure/gargoyle, mob/living/carbon/human, WR_gargoyle, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 
-// ALLOW(init/CTOR_ARGS): H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert and discard_clothes are constructor arguments from whoever builds it
-/obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
+CAPABILITIES(/obj/structure/gargoyle)
+	param(nameof(petrified), pos = 1, keep = FALSE)
+	param(nameof(ident_ovr), pos = 2)
+	param(nameof(mat_ovr), pos = 3)
+	param(nameof(adj_ovr), pos = 4)
+	param(nameof(tint_ovr), pos = 5)
+	param(nameof(can_revert), pos = 6)
+	param(nameof(discard_clothes), pos = 7)
+
+/// The human petrified, and what the statue overrides of their look (its constructor params).
+/obj/structure/gargoyle/var/tmp/mob/living/carbon/human/petrified
+/obj/structure/gargoyle/var/tmp/ident_ovr
+/obj/structure/gargoyle/var/tmp/mat_ovr
+/obj/structure/gargoyle/var/tmp/adj_ovr
+/obj/structure/gargoyle/var/tmp/tint_ovr
+/obj/structure/gargoyle/var/tmp/discard_clothes = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a gargoyle statue takes in the human it petrifies, with their look, tint and state
+/obj/structure/gargoyle/Initialize(mapload)
 	. = ..()
+	var/mob/living/carbon/human/H = petrified
 	if(isspace(loc) || isopenspace(loc))
 		set_anchored(FALSE)
 	if(!istype(H) || !isturf(H.loc))
@@ -131,8 +149,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	H.status_set(EFFECT_BLINDED, 0)
 	H.status_set(EFFECT_SLEEPING, 0)
 	H.canmove = 0
-
-	can_revert = revert
 
 // the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/on_destroy(force)

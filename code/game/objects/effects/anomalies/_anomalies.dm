@@ -28,9 +28,14 @@ CAPABILITIES(/obj/effect/anomaly)
 	owns_one(nameof(stats), /datum/anomaly_stats)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
 	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
+	param(nameof(lifespan), pos = 1)
+	param(nameof(drops_core), pos = 2)
 
-// ALLOW(init/CTOR_ARGS): new_lifespan and drops_core are constructor arguments from whoever builds it
-/obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
+/// Whether the anomaly leaves its core (its constructor param).
+/obj/effect/anomaly/var/drops_core = TRUE
+
+// ALLOW(init/INSTANCE_STATE): an anomaly needs an area, makes its core with a random frequency and code, and counts down its lifespan
+/obj/effect/anomaly/Initialize(mapload)
 	. = ..()
 
 	impact_area = get_area(src)
@@ -47,8 +52,6 @@ CAPABILITIES(/obj/effect/anomaly)
 		anomaly_core.code = rand(1, 100)
 		anomaly_core.anomaly_type = type
 
-	if(new_lifespan)
-		lifespan = new_lifespan
 	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
 
 	if(countdown_colour)

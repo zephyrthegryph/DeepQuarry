@@ -8,15 +8,18 @@
 
 	pixel_x = -16
 
-// ALLOW(init/CTOR_ARGS): ttd and newcolor are constructor arguments from whoever builds it
-/obj/effect/temporary_effect/eruption/Initialize(mapload, ttd = 10 SECONDS, newcolor)
-	if(ttd)
-		time_to_die += ttd
+CAPABILITIES(/obj/effect/temporary_effect/eruption)
+	param(nameof(extra_time), pos = 1, default = 10 SECONDS)
+	param(nameof(color), pos = 2)
+
+/// How much longer than its type the eruption lasts (its constructor param).
+/obj/effect/temporary_effect/eruption/var/extra_time
+
+// ALLOW(init/INSTANCE_STATE): an eruption erupts on its turf just before it ends
+/obj/effect/temporary_effect/eruption/Initialize(mapload)
+	if(extra_time)
+		time_to_die += extra_time
 	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
-
-	if(newcolor)
-		color = newcolor
-
 	. = ..()
 	flick("[icon_state]_create",src)
 

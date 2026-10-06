@@ -27,21 +27,23 @@
 	/// Cooldown for when the extrapolator can be used next.
 	COOLDOWN_DECLARE(usage_cooldown)
 
-// ALLOW(init/CTOR_ARGS): starting_scanner is a constructor argument from whoever builds it
-/obj/item/extrapolator/Initialize(mapload, obj/item/stock_parts/scanning_module/starting_scanner)
-	. = ..()
+/// The scanning module the extrapolator is made with (its constructor param): a part or its type.
+/obj/item/extrapolator/var/tmp/scanner_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/extrapolator/proc/fit_scanner(starting_scanner)
 	starting_scanner = starting_scanner || default_scanning_module
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
-		rel_set(src, nameof(scanner), new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
-	else if(istype(starting_scanner))
+		rel_set(src, nameof(scanner), new starting_scanner(src))
+	else if(istype(starting_scanner, /obj/item/stock_parts/scanning_module))
 		move_into(src, nameof(src.scanner), starting_scanner)
-
 	refresh_parts()
 
 CAPABILITIES(/obj/item/extrapolator)
 	op("mode", in_hand(), label("Toggle extrapolator mode"), then(PROC_REF(extrapolator_mode_selected)))
 	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	param(nameof(scanner_at_make), pos = 1, apply = PROC_REF(fit_scanner), keep = FALSE)
 
 /obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

@@ -121,7 +121,6 @@ init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 15 SECONDS, PR
 init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 init_scheduling	code/game/objects/effects/decals/Cleanable/vore.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
-init_scheduling	code/game/objects/effects/spiders.dm	after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
 init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	after(src, 40, PROC_REF(set_frequency), with = list(frequency))
@@ -140,8 +139,6 @@ init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
-init_visuals	code/game/objects/effects/decals/cleanable.dm	src.icon_state = DEFAULTPICK(src.random_icon_states, null)
-init_visuals	code/game/objects/effects/decals/posters/posters.dm	icon_state = poster_decl.icon_state
 init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"
@@ -202,7 +199,7 @@ init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_sta
 init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
 init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-init_visuals	code/modules/organs/subtypes/nano.dm	icon_state = "posi"
+init_visuals	code/modules/body/organs/subtypes/nano.dm	icon_state = "posi"
 init_visuals	code/modules/overmap/events/overmap_event.dm	icon_state = pick(event_icon_states)
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
@@ -350,9 +347,9 @@ init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	rel_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
 init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/modules/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
-init_new_child	code/modules/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
-init_new_child	code/modules/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
+init_new_child	code/modules/body/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
+init_new_child	code/modules/body/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
+init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 init_new_child	code/modules/power/generator.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))

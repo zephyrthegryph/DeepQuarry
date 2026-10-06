@@ -31,20 +31,18 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 
 TYPE_TABLE_DECLARE(/obj/item/laser_pointer, pointer_forced_diode, null)
 
-// ALLOW(init/CTOR_ARGS): laser_path is a constructor argument from whoever builds it
-/obj/item/laser_pointer/Initialize(mapload, laser_path)
+/// The diode type a pointer is made with (its constructor param), or the type's forced one.
+/obj/item/laser_pointer/var/diode_path
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/laser_pointer/proc/fit_diode(laser_path)
 	var/forced_diode = TYPE_TABLE_GET(src, pointer_forced_diode)
 	if(forced_diode)
-		. = ..(mapload, forced_diode)
 		laser_path = forced_diode
-	else
-		. = ..()
 	if(ispath(laser_path))
-		rel_set(src, nameof(diode), new laser_path(src)) // ALLOW(decl): diode from an Initialize argument
+		rel_set(src, nameof(diode), new laser_path(src))
 	else
-		rel_set(src, nameof(diode), new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
-	if(!pointer_icon_state)
-		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
+		rel_set(src, nameof(diode), new /obj/item/stock_parts/micro_laser(src))
 
 TYPE_TABLE(/obj/item/laser_pointer/upgraded, pointer_forced_diode, /obj/item/stock_parts/micro_laser)
 
@@ -59,6 +57,8 @@ CAPABILITIES(/obj/item/laser_pointer)
 	// The battery trickles back while recharging.
 	every(2 SECONDS, then(PROC_REF(laser_pointer_step)), when = nameof(recharging))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	param(nameof(diode_path), pos = 1, apply = PROC_REF(fit_diode))
+	rolls(nameof(pointer_icon_state), pick_one(list("red_laser", "green_laser", "blue_laser", "purple_laser")), when = cond_not(nameof(pointer_icon_state)))
 
 /obj/item/laser_pointer/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

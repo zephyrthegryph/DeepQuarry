@@ -200,11 +200,20 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "sparks"
 
-// ALLOW(init/CTOR_ARGS): lifetime, range, power and color are constructor arguments from whoever builds it
-/obj/effect/effect/smoke/illumination/Initialize(mapload, lifetime=10, range=null, power=null, color=null)
-	time_to_live=lifetime
-	. = ..()
-	set_light(range, power, color)
+CAPABILITIES(/obj/effect/effect/smoke/illumination)
+	param(nameof(time_to_live), pos = 1, default = 10)
+	param(nameof(glow_range), pos = 2)
+	param(nameof(glow_power), pos = 3)
+	param(nameof(glow_color), pos = 4, apply = PROC_REF(glow))
+
+/// The light the smoke gives (its constructor params).
+/obj/effect/effect/smoke/illumination/var/glow_range
+/obj/effect/effect/smoke/illumination/var/glow_power
+/obj/effect/effect/smoke/illumination/var/glow_color
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/effect/smoke/illumination/proc/glow(colour)
+	set_light(glow_range, glow_power, glow_color)
 
 /////////////////////////////////////////////
 // Bad smoke
