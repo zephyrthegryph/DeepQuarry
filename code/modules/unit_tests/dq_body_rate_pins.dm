@@ -278,3 +278,36 @@
 /// Runs the pain messaging once.
 /proc/body_pin_pain_step(mob/living/carbon/human/H)
 	H.pain_step()
+
+// --- Slice 5: surgery --------------------------------------------------------------------------------------------
+
+/// A surgeon with a scalpel clicks the chest of a patient lying on an operating table: within the step's time the chest is incised
+/// (or, on a slip, cut).
+/datum/unit_test/dq_body_pin_surgery_incision
+
+/datum/unit_test/dq_body_pin_surgery_incision/Run()
+	test_driver_begin()
+	test_rng(1)
+	var/list/pair = dq_combat_pair(/mob/living/carbon/human)
+	var/mob/living/carbon/human/surgeon = pair[1]
+	var/mob/living/carbon/human/patient = pair[2]
+	var/obj/machinery/optable/table = new(patient.loc)
+	patient.status_set(EFFECT_WEAKENED, 30)
+	patient.update_canmove()
+	TEST_ASSERT(patient.lying, "setup: the patient is lying down")
+	var/obj/item/surgical/scalpel/S = new(surgeon.loc)
+	surgeon.put_in_active_hand(S)
+	var/obj/item/organ/external/chest = patient.get_organ(BP_TORSO)
+	var/wounds_before = length(chest.get_wounds())
+	test_click(surgeon, patient, S)
+	test_time(12 SECONDS)
+	var/incised = chest.surgical_depth() >= INCISION_MADE
+	var/slipped = length(chest.get_wounds()) > wounds_before
+	body_pin_log("surgery_incision", "depth [chest.surgical_depth()] slipped [slipped]")
+	TEST_ASSERT(incised || slipped, "the incision step ran to an outcome (depth [chest.surgical_depth()])")
+	chest.get_incision()?.close_site()
+	test_driver_end()
+	qdel(S)
+	qdel(table)
+	for(var/obj/effect/decal/cleanable/B in range(1, patient))
+		qdel(B)
