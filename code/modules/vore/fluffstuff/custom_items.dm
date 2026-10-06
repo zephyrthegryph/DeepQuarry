@@ -983,22 +983,16 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
 
-/obj/item/melee/baton/fluff/stunstaff/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/melee/baton/fluff/stunstaff/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		wielded = 1
 		force = 15
 		name = "[base_name] (wielded)"
-		update_icon()
 	else
 		wielded = 0
 		force = 8
 		name = "[base_name]"
-	update_icon()
 	..()
 
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -1008,15 +1002,14 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/baton/fluff/stunstaff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/baton/fluff/stunstaff/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded][status]"
-	item_state = icon_state
+/obj/item/melee/baton/fluff/stunstaff/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded][status]")
+	look.held_state(drawn_state)
 	if(status==1)
-		set_light(2, 2, lightcolor)
+		look.light(2, 2, lightcolor)
 	else
-		set_light(0)
+		look.light_off()
 
 /obj/item/melee/baton/fluff/stunstaff/dropped(mob/user, equipping, slot)
 	..()

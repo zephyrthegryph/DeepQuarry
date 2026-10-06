@@ -92,14 +92,13 @@
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spacecasinocash/appearance_overlays()
-	. = list()
-	name = "[worth] casino credit\s"
+/obj/item/spacecasinocash/draw(datum/look/look)
+	..()
+	look.identity(name = "[worth] casino credit\s")
 	if(worth in list(1000,500,200,100,50,20,10,1))
-		icon_state = "spacecasinocash[worth]"
-		desc = "It's a stack of casino chips with a combined value of [worth] casino credits."
-		return .
+		look.state("spacecasinocash[worth]")
+		look.identity(desc = "It's a stack of casino chips with a combined value of [worth] casino credits.")
+		return
 	var/sum = src.worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,1))
@@ -111,21 +110,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 			M.Translate(rand(-6, 6), rand(-4, 8))
 			M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 			banknote.transform = M
-			. += banknote
+			look.overlay(banknote)
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
 		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
 		var/matrix/M = matrix()
 		M.Translate(rand(-6, 6), rand(-4, 8))
 		M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 		banknote.transform = M
-		. += banknote
-	src.desc = "They are worth [worth] casino credits."
+		look.overlay(banknote)
+	look.identity(desc = "They are worth [worth] casino credits.")
 
 /obj/item/spacecasinocash/proc/adjust_worth(adjust_worth = 0, update = 1)
 	worth += adjust_worth
 	if(worth > 0)
 		if(update)
-			update_icon()
+			changed(src)
 		return worth
 	else
 		spent(src)
@@ -134,7 +133,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 /obj/item/spacecasinocash/proc/set_worth(new_worth = 0, update = 1)
 	worth = max(0, new_worth)
 	if(update)
-		update_icon()
+		changed(src)
 	return worth
 
 DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
@@ -283,14 +282,13 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spacecasinocash_fake/appearance_overlays()
-	. = list()
-	name = "[worth] replica casino chip\s"
+/obj/item/spacecasinocash_fake/draw(datum/look/look)
+	..()
+	look.identity(name = "[worth] replica casino chip\s")
 	if(worth in list(1000,500,200,100,50,20,10,1))
-		icon_state = "spacecasinocash[worth]"
-		desc = "It's a stack of replica casino chips with a combined value of [worth] imaginary points."
-		return .
+		look.state("spacecasinocash[worth]")
+		look.identity(desc = "It's a stack of replica casino chips with a combined value of [worth] imaginary points.")
+		return
 	var/sum = src.worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,1))
@@ -301,20 +299,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 			var/matrix/M = matrix()
 			M.Translate(rand(-6, 6), rand(-4, 8))
 			banknote.transform = M
-			. += banknote
+			look.overlay(banknote)
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
 		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
 		var/matrix/M = matrix()
 		M.Translate(rand(-6, 6), rand(-4, 8))
 		banknote.transform = M
-		. += banknote
-	src.desc = "They are worth [worth] replica casino credits."
+		look.overlay(banknote)
+	look.identity(desc = "They are worth [worth] replica casino credits.")
 
 /obj/item/spacecasinocash_fake/proc/adjust_worth(adjust_worth = 0, update = 1)
 	worth += adjust_worth
 	if(worth > 0)
 		if(update)
-			update_icon()
+			changed(src)
 		return worth
 	else
 		spent(src)
@@ -323,7 +321,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 /obj/item/spacecasinocash_fake/proc/set_worth(new_worth = 0, update = 1)
 	worth = max(0, new_worth)
 	if(update)
-		update_icon()
+		changed(src)
 	return worth
 
 DECLARE_INTERACTIONS(/obj/item/spacecasinocash_fake, \

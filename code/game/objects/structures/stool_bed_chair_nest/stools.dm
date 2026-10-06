@@ -32,24 +32,23 @@
 	if(padding)
 		padding_material = get_material_by_name(padding)
 	force = round(material.blunt_damage()*0.4)
-	update_icon()
+	changed(src)
 
 /obj/item/stool/padded
 	material_key = MAT_STEEL
 	padding_key = MAT_CARPET
 
-DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stool/appearance_overlays()
-	. = list()
+/obj/item/stool/draw(datum/look/look)
+	..()
 	// Prep icon.
-	icon_state = ""
+	look.state("")
 	// Base icon.
 	var/cache_key = "[base_icon]-[material.name]"
 	if(isnull(GLOB.stool_cache[cache_key]))
 		var/image/I = image(icon, base_icon)
 		I.color = material.icon_colour
 		GLOB.stool_cache[cache_key] = I
-	. += GLOB.stool_cache[cache_key]
+	look.overlay(GLOB.stool_cache[cache_key])
 	// Padding overlay.
 	if(padding_material)
 		var/padding_cache_key = "[base_icon]-padding-[padding_material.name]"
@@ -57,24 +56,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlay
 			var/image/I =  image(icon, "[base_icon]_padding")
 			I.color = padding_material.icon_colour
 			GLOB.stool_cache[padding_cache_key] = I
-		. += GLOB.stool_cache[padding_cache_key]
+		look.overlay(GLOB.stool_cache[padding_cache_key])
 	// Strings.
 	if(padding_material)
-		name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.
-		desc = "A padded stool. Apply butt. It's made of [material.use_name] and covered with [padding_material.use_name]."
+		look.identity(name = "[padding_material.display_name] [initial(name)]") //this is not perfect but it will do for now.
+		look.identity(desc = "A padded stool. Apply butt. It's made of [material.use_name] and covered with [padding_material.use_name].")
 	else
-		name = "[material.display_name] [initial(name)]"
-		desc = "A stool. Apply butt with care. It's made of [material.use_name]."
+		look.identity(name = "[material.display_name] [initial(name)]")
+		look.identity(desc = "A stool. Apply butt with care. It's made of [material.use_name].")
 
 /obj/item/stool/proc/add_padding(padding_type)
 	padding_material = get_material_by_name(padding_type)
-	update_icon()
+	changed(src)
 
 /obj/item/stool/proc/remove_padding()
 	if(padding_material)
 		padding_material.place_sheet(get_turf(src), 1)
 		padding_material = null
-	update_icon()
+	changed(src)
 
 /obj/item/stool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (prob(5) && isliving(M))

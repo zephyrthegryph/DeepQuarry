@@ -3850,6 +3850,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
+TRACKED(/obj/item/pizzabox, ismessy)
 
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
@@ -3870,40 +3871,39 @@ MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
 MSG_DEF_SELF(pizzabox/too_high, "The stack is too high!")
 MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn't work!")
 
-DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/pizzabox/appearance_overlays()
-	. = list()
+/obj/item/pizzabox/draw(datum/look/look)
+	..()
 
 
 	// Set appropriate description
 	if( open && pizza )
-		desc = "A box suited for pizzas. It appears to have a [pizza.name] inside."
+		look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
 	else if( boxes.len > 0 )
-		desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile."
+		look.identity(desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile.")
 
 		var/obj/item/pizzabox/topbox = boxes[boxes.len]
 		var/toptag = topbox.boxtag
 		if( toptag != "" )
-			desc = "[desc] The box on top has a tag, it reads: '[toptag]'."
+			look.identity(desc = "[desc] The box on top has a tag, it reads: '[toptag]'.")
 	else
-		desc = "A box suited for pizzas."
+		look.identity(desc = "A box suited for pizzas.")
 
 		if( boxtag != "" )
-			desc = "[desc] The box has a tag, it reads: '[boxtag]'."
+			look.identity(desc = "[desc] The box has a tag, it reads: '[boxtag]'.")
 
 	// Icon states and overlays
 	if( open )
 		if( ismessy )
-			icon_state = "pizzabox_messy"
+			look.state("pizzabox_messy")
 		else
-			icon_state = "pizzabox_open"
+			look.state("pizzabox_open")
 
 		if( pizza )
 			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state) // Icons for bad pizza
 			pizzaimg.pixel_y = -3
-			. += pizzaimg
+			look.overlay(pizzaimg)
 
-		return .
+		return
 	else
 		// Stupid code because byondcode sucks
 		var/doimgtag = 0
@@ -3918,9 +3918,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 		if( doimgtag )
 			var/image/tagimg = image('icons/obj/food.dmi', icon_state = "pizzabox_tag")
 			tagimg.pixel_y = boxes.len * 3
-			. += tagimg
+			look.overlay(tagimg)
 
-	icon_state = "pizzabox[boxes.len+1]"
+	look.state("pizzabox[boxes.len+1]")
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
@@ -3929,8 +3929,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/pizzabox/proc/toggled(datum/act/op/A)
 	open = !open
 	if( open && pizza )
-		ismessy = 1
-	update_icon()
+		set_ismessy(1)
 	return OP_OK
 
 /obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
@@ -3947,7 +3946,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	user.put_in_hands( pizza )
 	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
 	own_take(src, nameof(pizza))
-	update_icon()
 	return OP_OK
 
 /// A stack of boxes, with the one it is in held in the other hand.
@@ -3961,8 +3959,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	boxes -= box
 	user.put_in_hands( box )
 	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-	box.update_icon()
-	update_icon()
+	changed(box)
 	return OP_OK
 
 /// The held box is another one, not this one used in hand.
@@ -3990,8 +3987,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	box.forceMove(src)
 	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
 	src.boxes.Add( boxestoadd )
-	box.update_icon()
-	update_icon()
+	changed(box)
 	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
 	return OP_OK
 
@@ -4000,7 +3996,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	var/obj/item/I = A.held
 	if(!move_into(src, nameof(src.pizza), I, user))
 		return OP_REFUSED
-	update_icon()
 	to_chat(user, span_warning("You put \the [I] in \the [src]!"))
 	return OP_OK
 
@@ -4010,8 +4005,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	if( boxes.len > 0 )
 		boxtotagto = boxes[boxes.len]
 	boxtotagto.boxtag = copytext("[boxtotagto.boxtag][R?.value]", 1, 30)
-	boxtotagto.update_icon()
-	update_icon()
+	changed(boxtotagto)
 	return OP_OK
 
 /obj/item/pizzabox/margherita

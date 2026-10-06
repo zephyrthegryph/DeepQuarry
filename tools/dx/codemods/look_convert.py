@@ -409,8 +409,6 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
         raise Residue("name_clash")
     if re.search(r"(?<![\w.])(overlays|underlays)(?!\w)", text):
         raise Residue("reads_layers")
-    if re.search(r"(?<![\w.])update_held_icon\(", text):
-        raise Residue("held_icon")
     locals_ = set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)", text))
     # the state local: the body reads its own icon_state (anything but a plain write)
     state_reads = False
@@ -538,6 +536,10 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
             return "look.state(%s)" % fix_expr(rhs, False)
         if lhs in LOOK_SETTERS and op == "=":
             return "look.%s(%s)" % (LOOK_SETTERS[lhs], fix_expr(rhs, state_reads))
+        if lhs == "item_state" and op == "=":
+            return "look.held_state(%s)" % fix_expr(rhs, state_reads)
+        if lhs in ("name", "desc") and op == "=":
+            return "look.identity(%s = %s)" % (lhs, fix_expr(rhs, state_reads))
         if root in locals_:
             return fix_expr(stmt, state_reads)
         raise Residue("writes_state:" + lhs)
@@ -567,6 +569,8 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
             if len(args) == 1:
                 args.append("light_power")
             return "look.light(%s)" % ", ".join(fix_expr(a, state_reads) for a in args[:3])
+        if name == "update_held_icon" and not args_raw.strip():
+            return "// the hands that hold it redraw when the look changes its sprite (look.apply_to())"
         if name == "flick":
             args = [a.strip() for a in split_args(args_raw)]
             if len(args) == 2 and args[1] == "src":
@@ -682,9 +686,18 @@ def plan_component(ix, comp):
         if ix.providers.get(t) and "DECLARE_APPEARANCE_PROC" not in kinds and not any("DECLARE_APPEARANCE_PROC" in [d[0] for d in ix.decls.get(a, [])] for a in ix.chain(t)):
             # an appearance_overlays() nobody declared runs only through an ancestor's update_icon(): out of scope
             raise Residue("undeclared_provider")
+    # parts mode: a provider that does not call ..() under another provider replaces it, so the providers stay one virtual
+    # proc (look_parts(look)) that the topmost provider type's draw calls; draw()'s own chain always runs its parent.
+    def has_super(t):
+        rel, s, e = ix.providers[t][0]
+        return any(strip_code(x).strip() in ("..()", ". = ..()", ". += ..()") for x in ix.files[rel].lines[s + 1 : e])
+    parts_mode = any(ix.providers.get(t) and not has_super(t) and any(ix.providers.get(a) for a in ix.chain(t)[1:] if a in members) for t in comp)
     for t in comp:
         lines = []
         anc = [a for a in ix.chain(t)[1:] if a in members]
+        if parts_mode and ix.decls.get(t) and any(ix.providers.get(a) for a in anc):
+            if any(d[0] in ("APPEARANCE_TEMPLATE", "DECLARE_APPEARANCE", "APPEARANCE_NONE") for d in ix.decls[t]):
+                raise Residue("order")
         for kind, rel, first, last, raw in ix.decls.get(t, []):
             if kind == "APPEARANCE_NONE":
                 lines += none_lines(t, [plans[a]["lines"] for a in anc if a in plans])
@@ -712,6 +725,14 @@ def plan_component(ix, comp):
                     keyed_state.setdefault(t, "layer")
                 lines += ll
         prov = ix.providers.get(t)
+        if prov and parts_mode:
+            rel, s, e = prov[0]
+            body = provider_lines(ix, t, rel, s, e, False)
+            root = not any(ix.providers.get(a) for a in anc)
+            if root:
+                lines.append("\tlook_parts(look)")
+            plans[t] = {"lines": lines, "parts": body, "parts_root": root, "parts_super": has_super(t)}
+            continue
         if prov:
             rel, s, e = prov[0]
             has_parent_provider = any(ix.providers.get(a) for a in anc)
@@ -765,7 +786,8 @@ def verdict(ix, comp, plans):
         return ix.tracked_on(t, v) or v not in written
 
     for t in comp:
-        reads, calls, hops = body_reads(ix, t, plans[t]["lines"])
+        reads, calls, hops = body_reads(ix, t, plans[t]["lines"] + plans[t].get("parts", []))
+        calls.discard("look_parts")
         for h in hops:
             if not ix.tracked_on(t, h) or True:
                 untracked.add(h + ".*")
@@ -819,6 +841,23 @@ def apply_component(ix, comp, plans, covered, untracked, edits):
         decls = ix.decls.get(t, [])
         prov = ix.providers.get(t)
         own = ix.draws.get(t)
+        if "parts" in plans[t]:
+            if own:
+                raise Residue("own_draw_parts")
+            rel, s, e = prov[0]
+            body = plans[t]["parts"] or []
+            if plans[t]["parts_root"]:
+                text = ["%s/draw(datum/look/look)" % t, "\t..()"] + lines + [""]
+                text += ["/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..())."]
+                text += ["%s/proc/look_parts(datum/look/look)" % t]
+            else:
+                text = ["%s/look_parts(datum/look/look)" % t] + (["\t..()"] if plans[t]["parts_super"] else [])
+            if not [x for x in body if strip_code(x).strip()] and not plans[t]["parts_super"]:
+                body = ["\treturn"]
+            edits[rel].append((s, e - 1, text + body))
+            for kind, drel, first, last, raw in decls:
+                edits[drel].append((first, last, None))
+            continue
         drawn = [x for x in lines if x.strip()]
         placed = False
         if own:

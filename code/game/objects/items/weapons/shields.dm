@@ -181,7 +181,6 @@ CAPABILITIES(/obj/item/shield/energy)
 	set_active(!active)
 	if (active)
 		force = 10
-		update_icon()
 		w_class = ITEMSIZE_LARGE
 		slot_flags = null
 		play_sfx(src, SFX_WEAPONS_SABERON)
@@ -189,7 +188,6 @@ CAPABILITIES(/obj/item/shield/energy)
 
 	else
 		force = 3
-		update_icon()
 		w_class = ITEMSIZE_TINY
 		slot_flags = SLOT_EARS
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
@@ -203,21 +201,21 @@ CAPABILITIES(/obj/item/shield/energy)
 	add_fingerprint(user)
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/shield/energy/appearance_overlays()
-	. = list()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
+/obj/item/shield/energy/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[drawn_state]_blade")
 	if(lcolor)
 		blade_overlay.color = lcolor
-		color = lcolor
+		look.set_color(lcolor)
 	if(active)
-		. += blade_overlay
-		item_state = "[icon_state]_blade"
-		set_light(lrange, lpower, lcolor)
+		look.overlay(blade_overlay)
+		look.held_state("[drawn_state]_blade")
+		look.light(lrange, lpower, lcolor)
 	else
-		color = "FFFFFF"
-		set_light(0)
-		item_state = "[icon_state]"
+		look.set_color("FFFFFF")
+		look.light_off()
+		look.held_state("[drawn_state]")
 
 	var/mob/living/carbon/human/holder = loc
 	if(istype(holder))
@@ -229,7 +227,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 	if(!istype(choice) || !choice.value)
 		return OP_REFUSED
 	set_lcolor(sanitize_hexcolor(choice.value))
-	update_icon()
 	return OP_OK
 
 /obj/item/shield/energy/examine(mob/user)

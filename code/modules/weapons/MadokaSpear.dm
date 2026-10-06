@@ -27,17 +27,13 @@
 	wielded = 0
 	force = initial(force)
 	name = "[initial(name)]"
-	update_icon()
+	changed(src)
 
 /obj/item/oldtwohanded/proc/wield()
 	wielded = 1
 	force = force_wielded
 	name = "[initial(name)] (Wielded)"
-	update_icon()
-
-/obj/item/oldtwohanded/Initialize(mapload)
-	. = ..()
-	update_icon()
+	changed(src)
 
 TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
 
@@ -53,11 +49,11 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 			O.unwield()
 	return	unwield()
 
-DECLARE_APPEARANCE_PROC(/obj/item/oldtwohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/oldtwohanded/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded]"
-	item_state = icon_state
+/obj/item/oldtwohanded/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded]")
+	look.held_state(drawn_state)
 
 /obj/item/oldtwohanded/pickup(mob/user)
 	unwield()
@@ -112,7 +108,11 @@ CAPABILITIES(/obj/item/oldtwohanded)
 /obj/item/oldtwohanded/offhand/wield()
 	spent(src)
 
-APPEARANCE_NONE(/obj/item/oldtwohanded/offhand)
+/// The look (the draw sweep: from APPEARANCE_NONE).
+/obj/item/oldtwohanded/offhand/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 //spears, bay edition
 /obj/item/oldtwohanded/spear

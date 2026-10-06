@@ -1,0 +1,23 @@
+/obj/item/stool icon: icons/obj/furniture.dmi
+/obj/item/stool state: 
+/obj/item/stool dir: 2
+/obj/item/stool overlay: icons/obj/furniture.dmi::8:#000000 x2
+/obj/item/stool overlay: icons/obj/furniture.dmi:stool_base:-32767:#666666
+/obj/item/stool/padded icon: icons/obj/furniture.dmi
+/obj/item/stool/padded state: 
+/obj/item/stool/padded dir: 2
+/obj/item/stool/padded overlay: icons/obj/furniture.dmi::8:#000000 x2
+/obj/item/stool/padded overlay: icons/obj/furniture.dmi:stool_base:-32767:#666666
+/obj/item/stool/padded overlay: icons/obj/furniture.dmi:stool_base_padding:-32767:#da020a
+/obj/item/stool/baystool icon: icons/obj/furniture.dmi
+/obj/item/stool/baystool state: 
+/obj/item/stool/baystool dir: 2
+/obj/item/stool/baystool overlay: icons/obj/furniture.dmi::8:#000000 x2
+/obj/item/stool/baystool overlay: icons/obj/furniture.dmi:bar_stool_base:-32767:#666666
+/obj/item/stool/baystool/padded icon: icons/obj/furniture.dmi
+/obj/item/stool/baystool/padded state: 
+/obj/item/stool/baystool/padded dir: 2
+/obj/item/stool/baystool/padded overlay: icons/obj/furniture.dmi::8:#000000 x2
+/obj/item/stool/baystool/padded overlay: icons/obj/furniture.dmi:bar_stool_base:-32767:#666666
+/obj/item/stool/baystool/padded overlay: icons/obj/furniture.dmi:bar_stool_base_padding:-32767:#da020a
+

@@ -1,0 +1,180 @@
+/obj/machinery/smartfridge icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge state: smartfridge
+/obj/machinery/smartfridge dir: 2
+/obj/machinery/smartfridge overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/tcrystal icon: icons/obj/survival_pod_vend.dmi
+/obj/machinery/smartfridge/tcrystal state: donkvendor
+/obj/machinery/smartfridge/tcrystal dir: 2
+/obj/machinery/smartfridge/tcrystal overlay: icons/obj/survival_pod_vend.dmi:donkvendor-0:-32767
+/obj/machinery/smartfridge/tcrystal overlay: icons/obj/survival_pod_vend.dmi:donkvendor:8:#000000 x2
+/obj/machinery/smartfridge/drying_rack icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/drying_rack state: drying_rack
+/obj/machinery/smartfridge/drying_rack dir: 2
+/obj/machinery/smartfridge/drying_rack overlay: icons/obj/vending_smartfridge.dmi:drying_rack:8:#000000
+/obj/machinery/smartfridge/sheets icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/sheets state: industrial
+/obj/machinery/smartfridge/sheets dir: 2
+/obj/machinery/smartfridge/sheets overlay: icons/obj/vending_smartfridge.dmi:industrial-0:-32767
+/obj/machinery/smartfridge/sheets overlay: icons/obj/vending_smartfridge.dmi:industrial:8:#000000 x2
+/obj/machinery/smartfridge/sheets/persistent icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/sheets/persistent state: industrial
+/obj/machinery/smartfridge/sheets/persistent dir: 2
+/obj/machinery/smartfridge/sheets/persistent overlay: icons/obj/vending_smartfridge.dmi:industrial-0:-32767
+/obj/machinery/smartfridge/sheets/persistent overlay: icons/obj/vending_smartfridge.dmi:industrial:8:#000000 x2
+/obj/machinery/smartfridge/sheets/persistent_lossy icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/sheets/persistent_lossy state: industrial
+/obj/machinery/smartfridge/sheets/persistent_lossy dir: 2
+/obj/machinery/smartfridge/sheets/persistent_lossy overlay: icons/obj/vending_smartfridge.dmi:industrial-0:-32767
+/obj/machinery/smartfridge/sheets/persistent_lossy overlay: icons/obj/vending_smartfridge.dmi:industrial:8:#000000 x2
+/obj/machinery/smartfridge/sheets/mining icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/sheets/mining state: mining
+/obj/machinery/smartfridge/sheets/mining dir: 2
+/obj/machinery/smartfridge/sheets/mining overlay: icons/obj/vending_smartfridge.dmi:mining-0:-32767
+/obj/machinery/smartfridge/sheets/mining overlay: icons/obj/vending_smartfridge.dmi:mining:8:#000000 x2
+/obj/machinery/smartfridge/sheets/mining/persistent icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/sheets/mining/persistent state: mining
+/obj/machinery/smartfridge/sheets/mining/persistent dir: 2
+/obj/machinery/smartfridge/sheets/mining/persistent overlay: icons/obj/vending_smartfridge.dmi:mining-0:-32767
+/obj/machinery/smartfridge/sheets/mining/persistent overlay: icons/obj/vending_smartfridge.dmi:mining:8:#000000 x2
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy state: mining
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy dir: 2
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy overlay: icons/obj/vending_smartfridge.dmi:mining-0:-32767
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy overlay: icons/obj/vending_smartfridge.dmi:mining:8:#000000 x2
+/obj/machinery/smartfridge/medbay icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/medbay state: smartfridge
+/obj/machinery/smartfridge/medbay dir: 2
+/obj/machinery/smartfridge/medbay overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/medbay overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/secure icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/secure state: smartfridge
+/obj/machinery/smartfridge/secure dir: 2
+/obj/machinery/smartfridge/secure overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/secure overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/secure/medbay icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/secure/medbay state: smartfridge
+/obj/machinery/smartfridge/secure/medbay dir: 2
+/obj/machinery/smartfridge/secure/medbay overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/secure/medbay overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/secure/virology icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/secure/virology state: smartfridge
+/obj/machinery/smartfridge/secure/virology dir: 2
+/obj/machinery/smartfridge/secure/virology overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/secure/virology overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/secure/chemistry icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/secure/chemistry state: smartfridge
+/obj/machinery/smartfridge/secure/chemistry dir: 2
+/obj/machinery/smartfridge/secure/chemistry overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/secure/chemistry overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/secure/extract icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/secure/extract state: smartfridge
+/obj/machinery/smartfridge/secure/extract dir: 2
+/obj/machinery/smartfridge/secure/extract overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/secure/extract overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/secure/wbt_probe icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/secure/wbt_probe state: smartfridge
+/obj/machinery/smartfridge/secure/wbt_probe dir: 2
+/obj/machinery/smartfridge/secure/wbt_probe overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/secure/wbt_probe overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/virology icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/virology state: smartfridge
+/obj/machinery/smartfridge/virology dir: 2
+/obj/machinery/smartfridge/virology overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/virology overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/chemistry icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/chemistry state: smartfridge
+/obj/machinery/smartfridge/chemistry dir: 2
+/obj/machinery/smartfridge/chemistry overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/chemistry overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/chemistry/chemvator icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/chemistry/chemvator state: smartfridge
+/obj/machinery/smartfridge/chemistry/chemvator dir: 2
+/obj/machinery/smartfridge/chemistry/chemvator overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/chemistry/chemvator overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/chemistry/chemvator/down icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/chemistry/chemvator/down state: smartfridge
+/obj/machinery/smartfridge/chemistry/chemvator/down dir: 2
+/obj/machinery/smartfridge/chemistry/chemvator/down overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/chemistry/chemvator/down overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/chef icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/chef state: smartfridge
+/obj/machinery/smartfridge/chef dir: 2
+/obj/machinery/smartfridge/chef overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/chef overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/drinks icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/drinks state: smartfridge
+/obj/machinery/smartfridge/drinks dir: 2
+/obj/machinery/smartfridge/drinks overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/drinks overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/drinks/showcase icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/drinks/showcase state: showcase
+/obj/machinery/smartfridge/drinks/showcase dir: 2
+/obj/machinery/smartfridge/drinks/showcase overlay: icons/obj/vending_smartfridge.dmi:showcase:-32767
+/obj/machinery/smartfridge/drinks/showcase overlay: icons/obj/vending_smartfridge.dmi:showcase:8:#000000 x2
+/obj/machinery/smartfridge/produce icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/produce state: smartfridge
+/obj/machinery/smartfridge/produce dir: 2
+/obj/machinery/smartfridge/produce overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/produce overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/produce/persistent icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/produce/persistent state: smartfridge
+/obj/machinery/smartfridge/produce/persistent dir: 2
+/obj/machinery/smartfridge/produce/persistent overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/produce/persistent overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/produce/persistent_lossy icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/produce/persistent_lossy state: smartfridge
+/obj/machinery/smartfridge/produce/persistent_lossy dir: 2
+/obj/machinery/smartfridge/produce/persistent_lossy overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/produce/persistent_lossy overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/seeds icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/seeds state: smartfridge
+/obj/machinery/smartfridge/seeds dir: 2
+/obj/machinery/smartfridge/seeds overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/seeds overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/wbt_probe icon: icons/obj/vending_smartfridge.dmi
+/obj/machinery/smartfridge/wbt_probe state: smartfridge
+/obj/machinery/smartfridge/wbt_probe dir: 2
+/obj/machinery/smartfridge/wbt_probe overlay: icons/obj/vending_smartfridge.dmi:smartfridge-0:-32767
+/obj/machinery/smartfridge/wbt_probe overlay: icons/obj/vending_smartfridge.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod icon: icons/obj/survival_pod_vend.dmi
+/obj/machinery/smartfridge/survival_pod state: donkvendor
+/obj/machinery/smartfridge/survival_pod dir: 2
+/obj/machinery/smartfridge/survival_pod overlay: icons/obj/survival_pod_vend.dmi:donkvendor-3:-32767
+/obj/machinery/smartfridge/survival_pod overlay: icons/obj/survival_pod_vend.dmi:donkvendor:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/casino icon: icons/obj/vending.dmi
+/obj/machinery/smartfridge/survival_pod/casino state: smartfridge
+/obj/machinery/smartfridge/survival_pod/casino dir: 2
+/obj/machinery/smartfridge/survival_pod/casino overlay: icons/obj/vending.dmi:smartfridge-boxes3:-32767
+/obj/machinery/smartfridge/survival_pod/casino overlay: icons/obj/vending.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/scifridge icon: icons/obj/vending.dmi
+/obj/machinery/smartfridge/survival_pod/scifridge state: fridge_sci
+/obj/machinery/smartfridge/survival_pod/scifridge dir: 2
+/obj/machinery/smartfridge/survival_pod/scifridge overlay: icons/obj/vending.dmi:fridge_sci-chem3:-32767
+/obj/machinery/smartfridge/survival_pod/scifridge overlay: icons/obj/vending.dmi:fridge_sci:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/abductor icon: icons/obj/abductor.dmi
+/obj/machinery/smartfridge/survival_pod/abductor state: dispenser_2way
+/obj/machinery/smartfridge/survival_pod/abductor dir: 4
+/obj/machinery/smartfridge/survival_pod/abductor overlay: icons/obj/abductor.dmi:dispenser_2way-3:-32767
+/obj/machinery/smartfridge/survival_pod/abductor overlay: icons/obj/abductor.dmi:dispenser_2way:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/boxes icon: icons/obj/vending.dmi
+/obj/machinery/smartfridge/survival_pod/boxes state: smartfridge
+/obj/machinery/smartfridge/survival_pod/boxes dir: 2
+/obj/machinery/smartfridge/survival_pod/boxes overlay: icons/obj/vending.dmi:smartfridge-boxes3:-32767
+/obj/machinery/smartfridge/survival_pod/boxes overlay: icons/obj/vending.dmi:smartfridge:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/dispenser1 icon: icons/obj/abductor.dmi
+/obj/machinery/smartfridge/survival_pod/dispenser1 state: donkvendor
+/obj/machinery/smartfridge/survival_pod/dispenser1 dir: 2
+/obj/machinery/smartfridge/survival_pod/dispenser1 overlay: icons/obj/abductor.dmi:donkvendor-3:-32767
+/obj/machinery/smartfridge/survival_pod/dispenser1 overlay: icons/obj/abductor.dmi:donkvendor:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier icon: icons/obj/abductor.dmi
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier state: donkvendor
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier dir: 2
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier overlay: icons/obj/abductor.dmi:donkvendor-3:-32767
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier overlay: icons/obj/abductor.dmi:donkvendor:8:#000000 x2
+/obj/machinery/smartfridge/survival_pod/empty icon: icons/obj/survival_pod_vend.dmi
+/obj/machinery/smartfridge/survival_pod/empty state: donkvendor
+/obj/machinery/smartfridge/survival_pod/empty dir: 2
+/obj/machinery/smartfridge/survival_pod/empty overlay: icons/obj/survival_pod_vend.dmi:donkvendor-3:-32767
+/obj/machinery/smartfridge/survival_pod/empty overlay: icons/obj/survival_pod_vend.dmi:donkvendor:8:#000000 x2
+

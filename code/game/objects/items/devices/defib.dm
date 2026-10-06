@@ -188,7 +188,7 @@ CAPABILITIES(/obj/item/defib_kit)
 
 /obj/item/shockpaddles/proc/set_cooldown(delay)
 	cooldown = 1
-	update_icon()
+	changed(src)
 
 	after(src, delay, PROC_REF(recharged))
 
@@ -200,16 +200,19 @@ CAPABILITIES(/obj/item/defib_kit)
 	else
 		wielded = 0
 		name = initial(name)
-	update_icon()
+	changed(src)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/shockpaddles/appearance_overlays()
-	. = list()
-	icon_state = "defibpaddles[wielded]"
-	item_state = "defibpaddles[wielded]"
+/obj/item/shockpaddles/draw(datum/look/look)
+	..()
+	// the type's own paddles (defib or jumper cables), without the wielded digit a robot's mapped state carries
+	var/stem = initial(icon_state)
+	if(copytext(stem, -1) == "0" || copytext(stem, -1) == "1")
+		stem = copytext(stem, 1, -1)
+	look.state("[stem][wielded]")
+	look.held_state("[stem][wielded]")
 	if(cooldown)
-		icon_state = "defibpaddles[wielded]_cooldown"
+		look.state("[stem][wielded]_cooldown")
 
 /obj/item/shockpaddles/proc/can_use(mob/user, mob/M)
 	if(om_busy(src))
@@ -541,12 +544,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 	if(safety)
 		safety = 0
 		to_chat(user, span_warning("You silently disable \the [src]'s safety protocols with the cryptographic sequencer."))
-		update_icon()
 		return OP_OK
 	else
 		safety = 1
 		to_chat(user, span_notice("You silently enable \the [src]'s safety protocols with the cryptographic sequencer."))
-		update_icon()
 		return OP_OK
 
 CAPABILITIES(/obj/item/shockpaddles)
@@ -564,7 +565,6 @@ CAPABILITIES(/obj/item/shockpaddles)
 		else
 			make_announcement("beeps, \"Safety protocols disabled!\"", "warning")
 			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYOFF)
-		update_icon()
 
 /obj/item/shockpaddles/robot
 	name = "defibrillator paddles"
@@ -712,7 +712,7 @@ CAPABILITIES(/obj/item/shockpaddles/standalone)
 /obj/item/shockpaddles/proc/recharged()
 	if(cooldown)
 		cooldown = 0
-		update_icon()
+		changed(src)
 
 		make_announcement("beeps, \"Unit is re-energized.\"", "notice")
 		play_sfx(src, SFX_MACHINES_DEFIB_READY)

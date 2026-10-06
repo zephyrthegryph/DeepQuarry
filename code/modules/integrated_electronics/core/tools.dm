@@ -189,23 +189,26 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	var/tmp/datum/integrated_io/selected_io
 	var/mode = 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/appearance_overlays()
-	. = list()
+/obj/item/multitool/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/multitool/proc/look_parts(datum/look/look)
 	if(selected_io())
 		if(buffer() || connecting() || connectable())
-			icon_state = "multitool_tracking"
+			look.state("multitool_tracking")
 		else
-			icon_state = "multitool_red"
+			look.state("multitool_red")
 	else
 		if(buffer() || connecting() || connectable())
-			icon_state = "multitool_tracking_fail"
+			look.state("multitool_tracking_fail")
 		else if(accepting_refs)
-			icon_state = "multitool_ref_scan"
+			look.state("multitool_ref_scan")
 		else if(ref_wiring)
-			icon_state = "multitool_no_camera"
+			look.state("multitool_no_camera")
 		else
-			icon_state = "multitool"
+			look.state(initial(icon_state)) // idle: the type's own sprite (a hacktool keeps its disguise)
 
 /obj/item/multitool/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -235,7 +238,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You link \the multitool to \the [selected_io().holder()]'s [selected_io().name] data channel."))
 
-	update_icon()
 
 
 /obj/item/multitool/proc/unwire(datum/integrated_io/io1, datum/integrated_io/io2, mob/user)
@@ -252,7 +254,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 		to_chat(user, span_notice("You clip the data connection between the [io1.holder().displayed_name]'s \
 		[io1.name] and the [io2.holder().displayed_name]'s [io2.name]."))
 		io1.holder().interact(user) // This is to update the UI.
-		update_icon()
 
 /obj/item/multitool/afterattack(atom/target, mob/living/user, proximity)
 	if(proximity && engineering_reading && istype(target, /obj/machinery/photocopier))

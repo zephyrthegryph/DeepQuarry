@@ -2182,6 +2182,12 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   creation; the provider that tints them ran only on their first redraw.
 * **A subtype's declared look wins over the parent's init.** The mouse hole (`/obj/structure/mob_spawner/mouse_nest/mousehole`) declared
   `tunnel_hole`, but the nest's init wrote its state after the declaration had drawn, so it showed a trash pile; it shows its hole now.
+* **Three providers named one subtype's sprite for the whole chain**, which a redraw showed (now at creation): shock paddles drew
+  `defibpaddles` for jumper cables too, the multitool's idle state was `multitool` for every disguised hacktool, and a casing mapped spent
+  became `-spent-spent`. Each draws from its own type's `initial(icon_state)` now.
+* **`look.held_state()` and `look.identity()`** (code/datums/capabilities/look.dm): a draw sets the inhand state, the name and the description
+  through the look, and the hands holding an item redraw when its sprite or inhand state changes (providers called `update_held_icon()` by hand).
+  A draw that does not set them leaves them as they are, so a rename or a reskin stays.
 * **The used autoinjector keeps its spent sprite** through a draw of its own; its init wrote the state by hand, which a draw would redraw over.
 * **A generic emissive blocker follows the sprite a look draws** (`look_resync_emissive_blocker()`, `code/datums/capabilities/look.dm`). The blocker
   is a copy of the sprite taken in `/atom/movable/Initialize()`; a legacy declaration had drawn by then, a draw had not, so the copy kept the type's

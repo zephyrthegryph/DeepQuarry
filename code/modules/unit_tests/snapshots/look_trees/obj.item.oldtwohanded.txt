@@ -1,0 +1,13 @@
+/obj/item/oldtwohanded icon: icons/obj/weapons.dmi
+/obj/item/oldtwohanded state: 0
+/obj/item/oldtwohanded dir: 2
+/obj/item/oldtwohanded overlay: icons/obj/weapons.dmi::8:#000000
+/obj/item/oldtwohanded/offhand icon: icons/obj/weapons.dmi
+/obj/item/oldtwohanded/offhand state: offhand
+/obj/item/oldtwohanded/offhand dir: 2
+/obj/item/oldtwohanded/offhand overlay: icons/obj/weapons.dmi:offhand:8:#000000
+/obj/item/oldtwohanded/spear icon: icons/obj/weapons.dmi
+/obj/item/oldtwohanded/spear state: spearglass0
+/obj/item/oldtwohanded/spear dir: 2
+/obj/item/oldtwohanded/spear overlay: icons/obj/weapons.dmi:spearglass0:8:#000000
+

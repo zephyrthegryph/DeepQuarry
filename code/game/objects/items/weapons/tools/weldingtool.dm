@@ -59,7 +59,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	update_icon()
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -203,40 +202,41 @@ CAPABILITIES(/obj/item/weldingtool)
 		reagents.remove_reagent(REAGENT_ID_FUEL, amount)
 		if(M)
 			eyecheck(M)
-		update_icon()
 		return 1
 	else
 		if(M)
 			to_chat(M, span_notice("You need more welding fuel to complete this task."))
-		update_icon()
 		return 0
 
 //Returns whether or not the welding tool is currently on.
 /obj/item/weldingtool/proc/isOn()
 	return welding
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/weldingtool/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/weldingtool/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/weldingtool/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
 	// Welding overlay.
 	if(welding)
-		. += "[icon_state]-on"
-		item_state = "[initial(item_state)]1"
+		look.overlay("[drawn_state]-on")
+		look.held_state("[initial(item_state)]1")
 	else
-		item_state = initial(item_state)
+		look.held_state(initial(item_state))
 
 	// Fuel counter overlay.
 	if(change_icons && get_max_fuel())
 		var/ratio = get_fuel() / get_max_fuel()
 		ratio = CEILING(ratio * 4, 1) * 25
-		. += "[icon_state][ratio]"
+		look.overlay("[drawn_state][ratio]")
 
 	// Lights
 	if(welding && flame_intensity)
-		set_light(flame_intensity, flame_intensity, flame_color)
+		look.light(flame_intensity, flame_intensity, flame_color)
 	else
-		set_light(0)
+		look.light_off()
 
 //	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
 	var/mob/M = loc
@@ -299,7 +299,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 			src.w_class = ITEMSIZE_LARGE
 			src.hitsound = 'sound/items/Welder.ogg'
 			set_welding(1)
-			update_icon()
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -317,7 +316,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 		src.w_class = initial(src.w_class)
 		set_welding(0)
 		src.hitsound = initial(src.hitsound)
-		update_icon()
 
 //Decides whether or not to damage a player's eyes based on what they're wearing as protection
 //Note: This should probably be moved to mob
@@ -554,10 +552,6 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 /obj/item/weldingtool/electric/unloaded
 	cell_type = null
 
-/obj/item/weldingtool/electric/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/weldingtool/electric/get_cell()
 	return power_supply
 
@@ -599,12 +593,10 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 				power_supply.give(charge_cost)	//Give it back to the cell.
 		if(M)
 			eyecheck(M)
-		update_icon()
 		return 1
 	else
 		if(M)
 			to_chat(M, span_notice("You need more energy to complete this task."))
-		update_icon()
 		return 0
 
 EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
@@ -621,7 +613,6 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 			own_take(src, nameof(power_supply))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
-			update_icon()
 			return TRUE
 		return FALSE
 	else
@@ -635,7 +626,6 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 				if(!move_into(src, nameof(src.power_supply), W, user))
 					return FALSE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else

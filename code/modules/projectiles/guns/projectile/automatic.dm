@@ -278,7 +278,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 /obj/item/gun/projectile/automatic/l6_saw/proc/toggle_cover(mob/user)
 	cover_open = !cover_open
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
-	update_icon()
+	changed(src)
 	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -298,16 +298,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 		return TRUE
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/l6_saw/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/automatic/l6_saw/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
-		icon_state = "l6[cover_open ? "open" : "closed"]mag"
-		item_state = icon_state
+		drawn_state = look.state("l6[cover_open ? "open" : "closed"]mag")
+		look.held_state(drawn_state)
 	else
-		icon_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? round(length(ammo_magazine.stored_ammo), 25) : "-empty"]"
-		item_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]"
-	update_held_icon()
+		drawn_state = look.state("l6[cover_open ? "open" : "closed"][ammo_magazine ? round(length(ammo_magazine.stored_ammo), 25) : "-empty"]")
+		look.held_state("l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /obj/item/gun/projectile/automatic/l6_saw/load_ammo(obj/item/A, mob/user)
 	if(!cover_open)
@@ -433,16 +433,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/tommygun/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/automatic/tommygun/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommy))
-		icon_state = "tommygun-mag"
+		look.state("tommygun-mag")
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommydrum))
-		icon_state = "tommygun-drum"
+		look.state("tommygun-drum")
 	else
-		icon_state = "tommygun-empty"
-	update_held_icon()
+		look.state("tommygun-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /*
  * Bullpup Rifle
@@ -470,17 +469,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_R
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/bullpup/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/gun/projectile/automatic/bullpup/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
-		icon_state = "bullpup-small"
+		look.state("bullpup-small")
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m762/ext))
-		icon_state = "bullpup"
+		look.state("bullpup")
 	else
-		item_state = "bullpup-empty"
-	update_held_icon()
+		look.held_state("bullpup-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /*
  * Combat SMG (PP3 Ten)
@@ -674,13 +671,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_RE
 	allowed_magazines = list(/obj/item/ammo_magazine/mtg)
 	load_method = MAGAZINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/stg/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = (ammo_magazine)? "stg60" : "stg60-empty"
-	item_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	update_held_icon()
+/obj/item/gun/projectile/automatic/stg/draw(datum/look/look)
+	..()
+	look.state((ammo_magazine)? "stg60" : "stg60-empty")
+	look.held_state((ammo_magazine)? "arifle" : "arifle-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 //////////////////// Eris Ported Guns ////////////////////
 // No idea what this is for.
@@ -820,7 +815,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 /obj/item/gun/projectile/automatic/mg42/proc/toggle_cover(mob/user)
 	cover_open = !cover_open
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
-	update_icon()
+	changed(src)
 	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -837,12 +832,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 		return TRUE
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/mg42/appearance_overlays()
-	. = list()
-	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && length(ammo_magazine.stored_ammo) == 0 ? "0" : ""]"
-	item_state = "mg42"
-	update_held_icon()
+/obj/item/gun/projectile/automatic/mg42/draw(datum/look/look)
+	..()
+	look.state("mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && length(ammo_magazine.stored_ammo) == 0 ? "0" : ""]")
+	look.held_state("mg42")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /obj/item/gun/projectile/automatic/mg42/load_ammo(obj/item/A, mob/user)
 	if(!cover_open)

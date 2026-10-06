@@ -41,10 +41,8 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	if(selected_io())
 		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
-		update_icon()
 		return
 
-	update_icon()
 	open_request(src, /datum/prompt/choice, PROC_REF(menu_chosen), answerer = user, title = "Multitool Menu", question = "What do you want to do with \the [src]?", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /obj/item/multitool/proc/menu_chosen(datum/act/request/A)
@@ -67,7 +65,6 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 			to_chat(user,span_notice("You lower \the [src]."))
 			return
 
-	update_icon()
 
 /obj/item/multitool/proc/mode_switch(mob/living/user)
 	if(mode_index + 1 > modes.len) mode_index = 1
@@ -103,13 +100,11 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	toolspeed = 0.1
 
 // Alien multitool only has those icon states
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/alien/appearance_overlays()
-	. = list()
+/obj/item/multitool/alien/look_parts(datum/look/look)
 	if(accepting_refs)
-		icon_state = "multitool_ref_scan"
-		return .
-	icon_state = "multitool"
+		look.state("multitool_ref_scan")
+		return
+	look.state("multitool")
 
 /// Recalibrating a synthetic body part: actuator misalignment responds to
 /// TREAT_CALIBRATION, and a pass over the head also runs a system restore

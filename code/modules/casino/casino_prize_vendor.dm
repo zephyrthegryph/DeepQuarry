@@ -289,7 +289,7 @@
 		if(cashmoney.worth <= 0)
 			consume(cashmoney, user)
 		else
-			cashmoney.update_icon()
+			changed(cashmoney)
 	return 1
 
 /obj/machinery/casino_prize_dispenser/ui_assets(mob/user)

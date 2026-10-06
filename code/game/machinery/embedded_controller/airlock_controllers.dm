@@ -89,11 +89,9 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	set_frequency(sanitize_frequency(freq, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/airlock/appearance_overlays()
-	. = list()
+/obj/machinery/embedded_controller/radio/airlock/look_parts(datum/look/look)
 	if(panel_open)
-		. += "airlock_control_open"
+		look.overlay("airlock_control_open")
 
 //Advanced airlock controller for when you want a more versatile airlock controller - useful for turning simple access control rooms into airlocks
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller
@@ -122,14 +120,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_P
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock/access_controller, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/airlock/access_controller/appearance_overlays()
-	. = list()
+/obj/machinery/embedded_controller/radio/airlock/access_controller/look_parts(datum/look/look)
 	if(on && program)
 		if(program.memory["processing"])
-			icon_state = "access_control_process"
+			look.state("access_control_process")
 		else
-			icon_state = "access_control_standby"
+			look.state("access_control_standby")
 	else
-		icon_state = "access_control_off"
+		look.state("access_control_off")
 

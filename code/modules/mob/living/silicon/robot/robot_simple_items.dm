@@ -174,10 +174,8 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	welding = FALSE
 	no_passive_burn = TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/weldingtool/electric/mounted/cyborg/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/weldingtool/electric/mounted/cyborg/look_parts(datum/look/look)
+	..()
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc
 		our_belt.cut_overlays()

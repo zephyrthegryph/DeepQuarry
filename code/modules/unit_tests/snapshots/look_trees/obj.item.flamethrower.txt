@@ -1,0 +1,10 @@
+/obj/item/flamethrower icon: icons/obj/flamethrower.dmi
+/obj/item/flamethrower state: flamethrowerbase
+/obj/item/flamethrower dir: 2
+/obj/item/flamethrower overlay: icons/obj/flamethrower.dmi:flamethrowerbase:8:#000000
+/obj/item/flamethrower/full icon: icons/obj/flamethrower.dmi
+/obj/item/flamethrower/full state: flamethrowerbase
+/obj/item/flamethrower/full dir: 2
+/obj/item/flamethrower/full overlay: icons/obj/flamethrower.dmi:+igniter1:-32767
+/obj/item/flamethrower/full overlay: icons/obj/flamethrower.dmi:flamethrowerbase:8:#000000 x2
+

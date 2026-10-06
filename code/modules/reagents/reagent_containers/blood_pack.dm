@@ -34,24 +34,22 @@
 		update_iv_label()
 		// B17: stock packs are human blood; without "species" they matched every species.
 		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
-		update_icon()
 
 /obj/item/reagent_containers/blood/on_reagent_change()
-	update_icon()
+	changed(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/blood/appearance_overlays()
-	. = list()
+/obj/item/reagent_containers/blood/draw(datum/look/look)
+	..()
 	var/percent = round((reagents.total_volume / volume) * 100)
 	if(percent >= 0 && percent <= 9)
-		icon_state = "empty"
-		item_state = "bloodpack_empty"
+		look.state("empty")
+		look.held_state("bloodpack_empty")
 	else if(percent >= 10 && percent <= 50)
-		icon_state = "half"
-		item_state = "bloodpack_half"
+		look.state("half")
+		look.held_state("bloodpack_half")
 	else if(percent >= 51 && percent < INFINITY)
-		icon_state = "full"
-		item_state = "bloodpack_full"
+		look.state("full")
+		look.held_state("bloodpack_full")
 
 // A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
 // characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
@@ -145,7 +143,6 @@ CAPABILITIES(/obj/item/reagent_containers/blood/random_bloodsucker)
 				act_message(user, src, others = span_red("%U% sinks their fangs into %T% and drains it!"))
 				user.adjust_nutrition(remove_volume*5)
 				reagents.remove_reagent(reagent_to_remove, remove_volume)
-				update_icon()
 			else
 				user.show_message(span_warning("You take a look at \the [src] and notice that it is not filled with blood!"))
 	else

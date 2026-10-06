@@ -366,7 +366,6 @@ CAPABILITIES(/obj/structure/fireplace)
 		var/atom/movable/AM = pop(contents)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
-		update_icon()
 
 /obj/structure/fireplace/proc/add_fuel(atom/movable/new_fuel, mob/user)
 	if(get_fuel_amount() >= 10)
@@ -378,7 +377,6 @@ CAPABILITIES(/obj/structure/fireplace)
 		if(S)
 			S.forceMove(src)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
-			update_icon()
 			return TRUE
 		return FALSE
 	else
@@ -393,13 +391,11 @@ CAPABILITIES(/obj/structure/fireplace)
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
 		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
 		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
 		return TRUE
 	return FALSE
 
@@ -413,13 +409,11 @@ CAPABILITIES(/obj/structure/fireplace)
 	. = ..()
 	if(burning)
 		set_burning(FALSE)
-		update_icon()
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/fireplace/proc/ignite()
 	if(!burning && get_fuel_amount())
 		set_burning(TRUE)
-		update_icon()
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/fireplace/proc/burn_bonfire()
@@ -432,31 +426,35 @@ CAPABILITIES(/obj/structure/fireplace)
 			var/obj/O = A
 			O.fire_act(1000, 500)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/fireplace/appearance_overlays()
-	. = list()
+/obj/structure/fireplace/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/structure/fireplace/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
 	if(burning)
 		var/state
 		switch(get_fuel_amount())
 			if(0 to 1)
-				state = "[icon_state]_fire0"
+				state = "[drawn_state]_fire0"
 			if(2 to 4)
-				state = "[icon_state]_fire1"
+				state = "[drawn_state]_fire1"
 			if(4 to 6)
-				state = "[icon_state]_fire2"
+				state = "[drawn_state]_fire2"
 			if(6 to 8)
-				state = "[icon_state]_fire3"
+				state = "[drawn_state]_fire3"
 			if(8 to 10)
-				state = "[icon_state]_fire4"
-		. += mutable_appearance(icon, state)
-		. += emissive_appearance(icon, state)
-		. += mutable_appearance(icon, "[icon_state]_glow")
-		. += emissive_appearance(icon, "[icon_state]_glow")
+				state = "[drawn_state]_fire4"
+		look.overlay(mutable_appearance(icon, state))
+		look.overlay(emissive_appearance(icon, state))
+		look.overlay(mutable_appearance(icon, "[drawn_state]_glow"))
+		look.overlay(emissive_appearance(icon, "[drawn_state]_glow"))
 
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.light(light_strength, light_strength, "#FF9933")
 	else
-		set_light(0)
+		look.light_off()
 
 /obj/structure/fireplace/proc/fireplace_step(datum/act/timer/A)
 	if(!check_oxygen())
@@ -500,13 +498,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearanc
 	density = TRUE
 	anchored = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fireplace/barrel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/fireplace/barrel/appearance_overlays()
-	. = list()
+/obj/structure/fireplace/barrel/look_parts(datum/look/look)
 	if(burning)
-		icon_state = "[initial(icon_state)]1"
+		look.state("[initial(icon_state)]1")
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.light(light_strength, light_strength, "#FF9933")
 	else
-		icon_state = initial(icon_state)
-		set_light(0)
+		look.state(initial(icon_state))
+		look.light_off()

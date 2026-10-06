@@ -25,6 +25,11 @@
 	var/flick_state
 	/// list(range, power, color) from look.light(), or null for no light from the look.
 	var/list/light_spec
+	/// look.held_state(): the item_state hands draw this item with, or null (unchanged).
+	var/held_state
+	/// look.identity(): the name and description shown, or null (unchanged).
+	var/identity_name
+	var/identity_desc
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -46,6 +51,9 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	filters = null
 	vis = null
 	flick_state = null
+	held_state = null
+	identity_name = null
+	identity_desc = null
 	touched = FALSE
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
@@ -293,13 +301,26 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	light_spec = list(0, 0, null)
 
 /// A one-shot animation state, played when this look is applied.
+/// The state hands draw this item with (its item_state). The holder's hands are redrawn when it changes. A draw that does
+/// not call it leaves the item_state as it is (a reskin or a script may have set it).
+/datum/look/proc/held_state(state)
+	held_state = state
+	touched = TRUE
+
+/// What the thing is called and how it is described. Null leaves either as it is; a draw that does not call it changes
+/// neither (a player's rename stays).
+/datum/look/proc/identity(name = null, desc = null)
+	identity_name = name
+	identity_desc = desc
+	touched = TRUE
+
 /datum/look/proc/play_flick(name)
 	flick_state = name
 	touched = TRUE
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state, light_spec ? jointext(light_spec, ",") : null)
+	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
@@ -375,6 +396,9 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		A.icon_state = initial(A.icon_state)
 	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
 		look_resync_emissive_blocker(A, old_icon, old_state)
+		if(isitem(A))
+			var/obj/item/I = A
+			I.update_held_icon() // a hand that holds it draws the new sprite
 	if(!isnull(color))
 		A.color = color
 		now |= LOOK_SET_COLOR
@@ -416,6 +440,15 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_LIGHT)
 		A.set_light(0)
 	A.look_set_bits = now
+	if(!isnull(identity_name))
+		A.name = identity_name
+	if(!isnull(identity_desc))
+		A.desc = identity_desc
+	if(!isnull(held_state) && isitem(A))
+		var/obj/item/held_item = A
+		if(held_item.item_state != held_state)
+			held_item.item_state = held_state
+			held_item.update_held_icon()
 	if(A.look_overlays)
 		A.cut_overlay(A.look_overlays)
 		A.look_overlays = null
