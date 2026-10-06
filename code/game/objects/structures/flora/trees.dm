@@ -129,7 +129,7 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 		return
 
 	if(product && product_amount) // Make wooden logs.
-		var/obj/item/stack/material/M = new product(get_turf(src), product_amount)
+		new product(get_turf(src), product_amount)
 	visible_message(span_danger("\The [src] is felled!"))
 	stump()
 

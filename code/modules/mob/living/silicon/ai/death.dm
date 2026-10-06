@@ -18,9 +18,6 @@
 	for(var/obj/machinery/ai_status_display/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		O.set_mode(2)
 
-	if (istype(loc, /obj/item/aicard))
-		var/obj/item/aicard/card = loc
-
 	set_density(TRUE)
 
 /mob/living/silicon/ai/on_revived(reason, datum/source)
