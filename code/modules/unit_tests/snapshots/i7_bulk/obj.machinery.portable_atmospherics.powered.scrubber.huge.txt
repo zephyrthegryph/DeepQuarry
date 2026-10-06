@@ -3,3 +3,4 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/huge|ai|none => |
 /obj/machinery/portable_atmospherics/powered/scrubber/huge|ghost|none => gen_observer_interaction_as_touch|
 /obj/machinery/portable_atmospherics/powered/scrubber/huge|human|/obj/item/cell => scrubber_huge_no_hand,scrubber_huge_reject_cell_tank,machine_open_ui_ungated|
+

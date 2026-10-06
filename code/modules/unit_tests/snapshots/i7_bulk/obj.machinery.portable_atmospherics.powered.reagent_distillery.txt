@@ -3,3 +3,4 @@
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|ai|none => |
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|ghost|none => |
 /obj/machinery/portable_atmospherics/powered/reagent_distillery|human|/obj/item/reagent_containers/glass => distillery_toggle_power,distillery_toggle_mixing,distillery_install_beaker,distillery_radial|
+

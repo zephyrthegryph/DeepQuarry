@@ -3,3 +3,4 @@
 /obj/machinery/portable_atmospherics/hydroponics|ai|none => |
 /obj/machinery/portable_atmospherics/hydroponics|ghost|none => gen_observer_hydroponics_ghost_harvest|
 /obj/machinery/portable_atmospherics/hydroponics|human|/obj/item => hydroponics_attackby,hydroponics_interact,hydroponics_close_lid,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|
+
