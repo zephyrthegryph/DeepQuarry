@@ -18,7 +18,7 @@
 	. += EXPERIMENT_PROG_BOOL("Teleport an object to the telescience telepad.", is_complete())
 
 /datum/experiment/physical/teleporting/proc/teleported_items(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/telesci_teleport/event = A
 	var/list/atom/movable/teleported_things = event.teleported_things
 	var/sending = event.sending

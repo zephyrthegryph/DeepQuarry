@@ -288,23 +288,47 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 // ---- Per-type reactions ----
 
-/// TRUE from left_body() until joined_body(): a part that came out of a body.
-OM_FIELD_TYPED(/obj/item/organ, tmp, left_body_loose, FALSE, CHANGE_EXPLICIT)
-/// A part out of a body that hasn't died: it ticks on its own (decay, loose afflictions) while
-/// this holds (DECLARE_PERIODIC_WHILE). Attached parts are ticked by the body's organs stage.
-OM_DERIVE_FIELD(/obj/item/organ, organ_ticks_loose, list("left_body_loose", "status", "robotic", "damage", "max_damage"))
-DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
+/// A part out of a body that hasn't died ticks on its own (decay, loose afflictions) every LOOSE_ORGAN_STEP while it holds
+/// this; attached parts are ticked by the body's organ clock. The organ holds it itself (loose_refresh()) when it leaves a body,
+/// and drops it when it joins one, dies or is ruined.
+STAT(/obj/item/organ, ticks_loose, ANY)
 
+/// How often a loose organ ticks (one cycle's work per tick, as the old slow cadence ran it).
+#define LOOSE_ORGAN_STEP (2 SECONDS)
+
+/// The loose-organ tick's entries, for the organ's CAPABILITIES block.
+/proc/loose_organ_clock()
+	return every(LOOSE_ORGAN_STEP, then(TYPE_PROC_REF(/obj/item/organ, loose_tick)), when = STAT_TICKS_LOOSE)
+
+/obj/item/organ/proc/loose_tick(datum/act/timer/A)
+	organ_tick(1)
+	loose_refresh()
+
+/// Ticking loose: it came out of a body, has not joined another, and is not dead (a dead prosthetic has no ORGAN_DEAD flag: it is
+/// dead at max damage). An organ that never was in a body (a spare in storage) does not tick.
 /obj/item/organ/proc/organ_ticks_loose()
-	if(!left_body_loose || (status & ORGAN_DEAD))
+	return ticks_loose && loose_alive()
+
+/obj/item/organ/proc/loose_alive()
+	if(owner || (status & ORGAN_DEAD))
 		return FALSE
-	// A dead prosthetic has no ORGAN_DEAD flag: it is dead at max damage.
 	return !(is_robotic() && damage >= max_damage)
+
+/// It is coming out of a body (its owner is still set): tick while it lasts.
+/obj/item/organ/proc/loose_start()
+	if(QDELETED(src) || (status & ORGAN_DEAD) || (is_robotic() && damage >= max_damage))
+		return
+	hold(src, STAT_TICKS_LOOSE, null, src)
+
+/// Stop ticking once it joined a body, died or was ruined.
+/obj/item/organ/proc/loose_refresh()
+	if(!QDELETED(src) && ticks_loose && !loose_alive())
+		release(src, STAT_TICKS_LOOSE, src)
 
 /// This part just joined `M`'s body. Runs inside the move: must not sleep,
 /// move or delete anything.
 /obj/item/organ/proc/joined_body(mob/living/M)
-	set_left_body_loose(FALSE)
+	loose_refresh()
 	handle_organ_mod_special()
 
 /obj/item/organ/external/joined_body(mob/living/M)
@@ -320,7 +344,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
 /// being destroyed.
 /obj/item/organ/proc/left_body(mob/living/M)
 	handle_organ_mod_special(TRUE)
-	set_left_body_loose(TRUE)
+	loose_start()
 	rejecting = null
 	// Keep a blood sample, for transplant matching and forensics.
 	var/mob/living/carbon/human/C = M

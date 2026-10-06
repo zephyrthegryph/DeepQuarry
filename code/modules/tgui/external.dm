@@ -31,7 +31,7 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ui_declared_data(src, user, ui, state) // UI_DATA fields
+	. = list()
 	if(isatom(src))
 		var/atom/A = src
 		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
@@ -115,8 +115,14 @@
 	var/list/named = ui_named_dispatch(src, action, params, ui)
 	if(named)
 		return named[2]
-	// The declared UI model: the UI_ACT row for `action` parses and validates params, then runs.
-	return ui_dispatch(src, action, params, ui, state)
+	// The one action every window has: the layout toggle (tgui LayoutToggle) writes the viewer's layout preference
+	// (write_preference() validates the value).
+	if(action == "change_ui_state")
+		var/new_state = params?["new_state"]
+		if(istext(new_state) && length(new_state) <= 64)
+			ui.user?.client?.prefs.write_preference(GLOB.preference_entries[/datum/preference/choiced/tgui_layout], new_state)
+		return FALSE
+	return FALSE // no op, capability or named proc answers `action`
 
 /**
  * public
@@ -156,13 +162,9 @@
  * This is a proc over a var for memory reasons
  */
 /datum/proc/tgui_state(mob/user)
-	// DECLARE_UI_STATE / UI_STATE (declared UI model), else ui_rights (an admin panel); an instance-dependent state
-	// overrides this.
-	var/datum/tgui_state/declared = ui_decl_of(src)?.state
-	if(declared)
-		return declared
-	// interface(state =, rights =): the state the window's declaration carries
-	declared = interface_state(src)
+	// interface(state =, rights =): the state the window's declaration carries, else ui_rights (an admin panel); an instance-dependent
+	// state overrides this.
+	var/datum/tgui_state/declared = interface_state(src)
 	if(declared)
 		return declared
 	if(ui_rights)

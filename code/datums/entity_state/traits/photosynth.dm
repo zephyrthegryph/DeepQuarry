@@ -12,7 +12,6 @@
 //     starve_below_nutrition the tissue withers (starve_injury blunt, starve_shock).
 // "boost" is the mob's photosynthesis_boost (0..1), the CO2 share of its last skin breath.
 /datum/trait_state/photosynth
-	life_stage = /datum/om/stage/life/trait/photosynth
 	var/nutrition_per_light = 0.1
 	var/nutrition_max = 1000
 	var/boosted_nutrition_mult = 0
@@ -125,7 +124,6 @@
 			. *= sealed_mult
 
 /// Trait system: photosynthesis. Paused stasis frames and dead bodies skip it (P2-S6).
-/datum/om/stage/life/trait/photosynth
-	name = "photosynth"
-	state_type = /datum/trait_state/photosynth
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/photosynth/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_photosynth", when = list("!in_stasis", "alive")))

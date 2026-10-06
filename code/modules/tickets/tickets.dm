@@ -32,9 +32,11 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/list/closed_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 	var/list/resolved_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 
-	var/obj/effect/statclick/ticket_list/astatclick = new(null, null, AHELP_ACTIVE)
-	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
-	var/obj/effect/statclick/ticket_list/rstatclick = new(null, null, AHELP_RESOLVED)
+	// The stat-panel buttons, made on the first stat_entry(): a statclick takes its state as a param(), which the lifecycle forms cannot apply
+	// while the globals (this singleton among them) are still being made.
+	var/obj/effect/statclick/ticket_list/astatclick
+	var/obj/effect/statclick/ticket_list/cstatclick
+	var/obj/effect/statclick/ticket_list/rstatclick
 
 //private
 /// Adopts `new_ticket` (unowned, or owned by another of our lists) into the list for its
@@ -95,6 +97,10 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 /datum/tickets/proc/stat_entry(client/target)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(!astatclick)
+		astatclick = new(null, null, AHELP_ACTIVE) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
+		cstatclick = new(null, null, AHELP_CLOSED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
+		rstatclick = new(null, null, AHELP_RESOLVED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
 	var/list/L = list()
 	var/num_adm_tickets_disconnected = 0
 	var/num_men_tickets_disconnected = 0
@@ -210,9 +216,12 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 CAPABILITIES(/obj/effect/statclick/ticket_list)
 	param(nameof(current_state), pos = 2)
+	click_on(PROC_REF(click_input))
 
-/obj/effect/statclick/ticket_list/Click()
-	GLOB.tickets.BrowseTickets(current_state, usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/ticket_list/proc/click_input(datum/act/input/A)
+	GLOB.tickets.BrowseTickets(current_state, A.actor)
+	return TRUE
 
 //
 //TICKET DATUM
@@ -664,12 +673,15 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 CAPABILITIES(/obj/effect/statclick/ticket)
 	param(nameof(ticket_datum), pos = 1)
+	click_on(PROC_REF(click_input))
 
 /obj/effect/statclick/ticket/update()
 	return ..(ticket_datum().name)
 
-/obj/effect/statclick/ticket/Click()
-	ticket_datum().TicketPanel(usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/ticket/proc/click_input(datum/act/input/A)
+	ticket_datum().TicketPanel(A.actor)
+	return TRUE
 
 //
 // LOGGING

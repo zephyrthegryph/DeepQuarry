@@ -36,7 +36,7 @@ CAPABILITIES(/obj/effect/countdown)
 		forceMove(loc_turf)
 
 /obj/effect/countdown/proc/retry_attach(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	var/turf/loc_turf = get_turf(attached_to)
 	if(!loc_turf)

@@ -37,7 +37,7 @@ CAPABILITIES(/datum/interaction_menu)
 	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
 	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
 
-/// The computed part of /datum/interaction_menu's window data (declared on its UI_DATA row).
+/// /datum/interaction_menu's window data.
 /datum/interaction_menu/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/atom/target = target()

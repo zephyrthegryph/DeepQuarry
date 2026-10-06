@@ -1,6 +1,6 @@
 // Expiry runtime (code/__defines/sys_expiry.dm, doc/rewrite/systems.md section 17).
 
-/// D's OM timer clock in deciseconds (the clock om_after() timers on D run on). Falls back to
+/// D's OM timer clock in deciseconds (the clock after() timers on D run on). Falls back to
 /// world.time for a null or deleted datum so a read on a dead holder never runtimes.
 /proc/expiry_clock_now(datum/D)
 	READS_FROM() // a clock, asked when a choice is made, never cached

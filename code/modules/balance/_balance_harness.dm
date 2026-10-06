@@ -99,7 +99,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 /// One Life frame (one LIFE_CYCLE of the life pipeline), run now.
 /datum/balance_scenario/proc/live(mob/living/L)
 	if(!QDELETED(L))
-		om_run_frame_now(L, /datum/om/pipeline/life)
+		seq_run_frame_now(L, /datum/sequence/life)
 
 /// A human's blood as a fraction of its species' normal volume, or null.
 /datum/balance_scenario/proc/blood_fraction(mob/living/carbon/human/H)

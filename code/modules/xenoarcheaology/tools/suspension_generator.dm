@@ -15,20 +15,19 @@
 OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, CHANGE_MACHINE_SETTINGS)
 
 CAPABILITIES(/obj/machinery/suspension_gen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))
 	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
 	interface("XenoarchSuspension")
 	without("ui_open")
 	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 /// Holds its field (draining its cell) while it has one.
-DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspension_field")
-
 /obj/machinery/suspension_gen/Initialize(mapload)
 	. = ..()
 	make_rotatable()
 
 /// Holds its field (draining its cell); runs while it has one (declared).
-/obj/machinery/suspension_gen/machine_step()
+/obj/machinery/suspension_gen/proc/work_step(datum/act/timer/A)
 	if(suspension_field)
 		cell.charge -= power_use
 
@@ -84,7 +83,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspens
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/suspension_gen's window data (declared on its UI_DATA row).
+/// /obj/machinery/suspension_gen's window data.
 /obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

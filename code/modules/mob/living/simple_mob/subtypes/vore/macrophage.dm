@@ -113,7 +113,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 	. = TRUE
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	om_after(src, 20, PROC_REF(charge), A)
+	after(src, 20, PROC_REF(charge), with = list(A))
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))

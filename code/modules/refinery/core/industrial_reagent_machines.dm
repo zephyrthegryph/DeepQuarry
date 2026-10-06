@@ -43,7 +43,7 @@
 
 /// Wakes this machine and the refinery machines next to it (a change here can unblock them).
 /obj/machinery/reagent_refinery/proc/wake_refinery_line()
-	MACHINE_WAKE(src)
+	work_start(src)
 	for(var/direction in GLOB.cardinal)
 		var/obj/machinery/reagent_refinery/other = locate_within(get_step(get_turf(src), direction), /obj/machinery/reagent_refinery)
 		if(other)
@@ -53,9 +53,11 @@
 	wake_refinery_line()
 
 /// Unanchored refinery machines are disconnected and do nothing.
-DECLARE_PERIODIC_WHILE(/obj/machinery/reagent_refinery, MACHINE_PIPELINE, "anchored")
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/reagent_refinery)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), nameof(stat)))
 
-/obj/machinery/reagent_refinery/machine_step()
+/obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
 	var/before = reagents ? reagents.total_volume : 0
 	refinery_step()
 	if(QDELETED(src))

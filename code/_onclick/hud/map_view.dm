@@ -60,7 +60,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg)
 		display_to_client(show_to.client)
 
 /atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/tgui_window/window = A.target
 	var/datum/notice/tgui_window_visible/event = A
 	display_to_client(event.client)

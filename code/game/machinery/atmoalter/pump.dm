@@ -29,9 +29,13 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	op("direction", ui_act("direction"), then(PROC_REF(ui_act_direction)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
+	param(nameof(skip_cell), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
-/obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload, skip_cell)
+/// Made without its cell (its constructor param).
+/obj/machinery/portable_atmospherics/powered/pump/var/skip_cell = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a portable machine comes with its cell unless made without one, and a pump fills with air
+/obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload)
 	. = ..()
 
 	if(!skip_cell)

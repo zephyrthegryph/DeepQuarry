@@ -21,7 +21,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 
 /datum/whitelist_editor
 
-/// The computed part of /datum/whitelist_editor's window data (declared on its UI_DATA row).
+/// /datum/whitelist_editor's window data.
 /datum/whitelist_editor/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"alienwhitelist" = GLOB.alien_whitelist,

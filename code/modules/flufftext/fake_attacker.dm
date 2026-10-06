@@ -15,7 +15,7 @@
 	for(var/client/C in clients)
 		live_clients++
 	if(!live_clients)
-		spent(src)
+		ended_with(src)
 
 /obj/effect/fake_attacker/set_dir(newdir)
 	if(!(newdir in GLOB.cardinal))
@@ -151,15 +151,22 @@
 
 DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 
-// ALLOW(init/CTOR_ARGS): targeting_mob and clone_appearance_from are constructor arguments from whoever builds it
-/obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
-	. = ..()
-	set_target(targeting_mob)
-	create_images_from(clone_appearance_from)
-	append_client(targeting_mob.client)
-	name = clone_appearance_from.name
+CAPABILITIES(/obj/effect/fake_attacker/human)
+	param(nameof(haunting), pos = 1, keep = FALSE)
+	param(nameof(clone_appearance_from), pos = 2, apply = PROC_REF(haunt), keep = FALSE)
+
+/// Who the fake attacker haunts and whose look it takes (its constructor params, dropped once set up).
+/obj/effect/fake_attacker/human/var/tmp/mob/haunting
+/obj/effect/fake_attacker/human/var/tmp/atom/clone_appearance_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/fake_attacker/human/proc/haunt(atom/clone_from)
+	set_target(haunting)
+	create_images_from(clone_from)
+	append_client(haunting.client)
+	name = clone_from.name
 	// Usually we want to face our target for maximum spooky effect
-	set_dir(get_dir(src,targeting_mob))
+	set_dir(get_dir(src, haunting))
 
 /obj/effect/fake_attacker/human/periodic_step()
 	// check if valid

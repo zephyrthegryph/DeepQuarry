@@ -33,7 +33,7 @@ CAPABILITIES(/datum/dq_state_probe)
 
 
 /datum/dq_state_holder/proc/on_signal(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return
 
 /// Returns the canonical text of a full serialization, or null with the errors in `errors`.
@@ -270,7 +270,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	qdel(listener)
 
 	var/obj/item/paper/timed = new(test_floor())
-	om_after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, update_icon))
+	after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, update_icon))
 	blockers = timed.state_collapse_blockers(1)
 	var/found_timer = FALSE
 	for(var/reason in blockers)

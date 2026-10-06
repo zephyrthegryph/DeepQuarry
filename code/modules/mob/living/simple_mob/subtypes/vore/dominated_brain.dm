@@ -19,28 +19,27 @@
 
 CAPABILITIES(/mob/living/dominated_brain)
 	verb_entry(/mob/living/dominated_brain/proc/resist_control)
+	param(nameof(pred_body), pos = 1)
+	param(nameof(prey_name), pos = 2)
+	param(nameof(prey_body), pos = 3, apply = PROC_REF(take_seat))
 
-// ALLOW(init/CTOR_ARGS): pred, preyname and prey are constructor arguments from whoever builds it
-/mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
-	prey_name = preyname
-	if(prey)
-		rel_set(src, nameof(prey_body), prey)
-	rel_set(src, nameof(pred_body), pred)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A dominated brain exists only inside a living body.
+/mob/living/dominated_brain/proc/take_seat(prey)
 	if(!isliving(loc))
-		return INITIALIZE_HINT_QDEL
-	. = ..()
+		spent(src)
+		return
 	lets_register_our_signals()
 
-/datum/om/stage/life/type_post/dominated_brain
-	of = /mob/living/dominated_brain
+/mob/living/dominated_brain/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/dominated_brain/perform(mob/living/dominated_brain/self, datum/om/frame/life/ctx)
+/mob/living/dominated_brain/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!isliving(self.loc))
-		spent(self)
+	if(!isliving(src.loc))
+		spent(src)
 		return
-	if(!self.mind && !self.was_mob)
-		spent(self)
+	if(!src.mind && !src.was_mob)
+		spent(src)
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
 	if(pred_body.say_understands(other, speaking))

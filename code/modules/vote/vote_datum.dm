@@ -131,7 +131,7 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	if(remaining() == 0)
 		var/result = calculate_result()
 		handle_result(result)
-		spent(src)
+		lapsed(src)
 
 // SSvote forgets it.
 /datum/vote/lifecycle_dematerialize()
@@ -161,7 +161,7 @@ CAPABILITIES(/datum/vote)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/vote's window data (declared on its UI_DATA row).
+/// /datum/vote's window data.
 /datum/vote/proc/ui_data_datum_vote(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["remaining"] = remaining()

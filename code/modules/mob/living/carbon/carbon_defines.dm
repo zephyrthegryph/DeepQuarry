@@ -7,7 +7,6 @@
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 
 	/// Zones a surgical step is currently being performed on (lazy).
-	var/list/surgery_zones_in_progress
 	//Active emote/pose
 	var/pose = null
 	var/pose_move = FALSE

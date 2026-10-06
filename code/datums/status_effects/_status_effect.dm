@@ -49,7 +49,7 @@
 	if(new_owner)
 		rel_set(src, nameof(owner), new_owner)
 	if(QDELETED(owner) || !on_apply())
-		consumed(src)
+		spent(src)
 		return
 	if(owner)
 		rel_add(owner, nameof(owner.status_effects), src)
@@ -109,7 +109,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(QDELETED(owner))
-		spent(src)
+		ended_with(src, owner)
 		return
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
@@ -125,7 +125,7 @@
 
 	if(duration != STATUS_EFFECT_PERMANENT)
 		if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
-			spent(src)
+			lapsed(src)
 			return
 		update_shown_duration()
 
@@ -167,7 +167,7 @@
 	owner.clear_alert(id)
 	own_take_member(owner, nameof(owner.status_effects), src)
 	rel_clear(src, nameof(owner))
-	spent(src)
+	replaced_by(src)
 
 /// Called before being fully removed (before on_remove)
 /// Returning FALSE will cancel removal
@@ -192,7 +192,7 @@
 
 /// /datum/om/event/living_aheal handler: removes us on a full heal
 /datum/status_effect/proc/remove_effect_on_heal(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(!remove_on_fullheal)
 		return
@@ -206,7 +206,7 @@
 
 	duration -= seconds
 	if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
-		spent(src)
+		lapsed(src)
 		return TRUE
 
 	update_shown_duration()

@@ -7,8 +7,11 @@
 	var/health = 10
 	var/obj/structure/prop/dark_node/linked_node = null
 
-// ALLOW(init/CTOR_ARGS): check_glow is a constructor argument from whoever builds it
-/obj/effect/dark/Initialize(mapload, check_glow)
+/// Whether this growth may glow (its constructor param).
+/obj/effect/dark/var/check_glow = FALSE
+
+// ALLOW(init/INSTANCE_STATE): dark growth that may glow does so one time in twenty
+/obj/effect/dark/Initialize(mapload)
 	. = ..()
 	if(check_glow && prob(5))
 		add_glow()
@@ -86,14 +89,15 @@
 	if(!linked_node)
 		consume(src)
 
-// ALLOW(init/CTOR_ARGS): check_glow and node are constructor arguments from whoever builds it
-/obj/effect/dark/floor/Initialize(mapload, check_glow, node)
-	. = ..(mapload, !isspace(loc))
+CAPABILITIES(/obj/effect/dark/floor)
+	param(nameof(linked_node), pos = 2)
 
+// ALLOW(init/INSTANCE_STATE): floor growth glows only off space, and does not grow in space
+/obj/effect/dark/floor/Initialize(mapload)
+	check_glow = !isspace(loc)
+	. = ..()
 	if(isspace(loc))
 		return INITIALIZE_HINT_QDEL
-
-	rel_set(src, nameof(linked_node), node)
 
 /obj/structure/prop/dark_node
 	name = "crystal cluster"
@@ -123,6 +127,7 @@ CAPABILITIES(/obj/structure/prop/dark_node)
 
 CAPABILITIES(/obj/effect/dark)
 	links(/obj/effect/dark::linked_node, /obj/structure/prop/dark_node::children_effects, b_many = TRUE)
+	param(nameof(check_glow), pos = 1)
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1

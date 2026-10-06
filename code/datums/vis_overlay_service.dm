@@ -30,7 +30,7 @@ CAPABILITIES(/datum/system/vis_overlays)
 			EXPIRY_STAMP(overlay, unused, CLOCK_WORLD)
 		else if(overlay.unused && ELAPSED(overlay, unused, CLOCK_WORLD) > overlay.cache_expiration)
 			own_take_member(src, nameof(vis_overlay_cache), key)
-			spent(overlay)
+			lapsed(overlay)
 		if(KERNEL_OVER_BUDGET)
 			resuming = TRUE
 			return STEP_YIELD

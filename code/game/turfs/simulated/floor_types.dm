@@ -317,7 +317,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 	observe(src, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(radiate)))
 
 /turf/simulated/floor/tiled/material/uranium/proc/radiate(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

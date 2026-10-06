@@ -75,34 +75,34 @@
 		handle_restless()
 
 	for(var/obj/effect/decal/cleanable/C in contents_of(loc))
-		spent(C)
+		consumed(C, src)
 	for(var/obj/item/organ/O in contents_of(loc))
-		spent(O)
+		consumed(O, src)
 	var/detected = FALSE
 	for(var/obj/effect/overmap/event/E in contents_of(loc))
 		detected = TRUE
 		if(istype(E, /obj/effect/overmap/event/carp))
-			spent(E)
+			consumed(E, src)
 			continue
 		else if(!held_hazard && prob(hazard_pickup_chance))
 			held_hazard = E.type
-			spent(E)
+			consumed(E, src)
 			return
 	if(held_hazard && !detected && prob(hazard_drop_chance))
 		if(!(locate_within(loc, /obj/effect/overmap/visitable/sector)))
 			new held_hazard(loc)
 			held_hazard = null
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/spacewhale
-	of = /mob/living/simple_mob/vore/overmap/spacewhale
+/mob/living/simple_mob/vore/overmap/spacewhale/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/spacewhale/perform(mob/living/simple_mob/vore/overmap/spacewhale/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/overmap/spacewhale/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.post_restless_tired)
-		self.post_restless_tired--
+	if(src.post_restless_tired)
+		src.post_restless_tired--
 		return
 	if(prob(0.5))
-		self.handle_restless()
+		src.handle_restless()
 
 /mob/living/simple_mob/vore/overmap/spacewhale/proc/handle_restless()
 	if(restless)

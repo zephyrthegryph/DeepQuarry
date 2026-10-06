@@ -64,7 +64,7 @@
 		sound_extra_range = extrarange
 
 /datum/squeak/proc/on_squeak_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	play_squeak()
 
 /datum/squeak/proc/play_squeak(volume_mod = 1)
@@ -108,7 +108,7 @@
 		play_squeak()
 
 /datum/squeak/proc/on_attack_self(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	use_squeak()
 
 /datum/squeak/proc/use_squeak()
@@ -117,13 +117,13 @@
 		play_squeak()
 
 /datum/squeak/proc/on_equip(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/item_equipped/event = A
 	// The relation view clears once the holder is deleted, so no deletion hook is needed.
 	rel_set(src, nameof(holder), event.equipper)
 
 /datum/squeak/proc/on_drop(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	rel_clear(src, nameof(holder))
 
 

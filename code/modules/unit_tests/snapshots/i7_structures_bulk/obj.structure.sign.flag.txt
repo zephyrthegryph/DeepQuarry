@@ -2,3 +2,4 @@
 /obj/structure/sign/flag|robot|none => sign_flag_rip,sign_flag_item|
 /obj/structure/sign/flag|ai|none => |
 /obj/structure/sign/flag|ghost|none => |
+

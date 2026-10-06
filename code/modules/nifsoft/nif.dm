@@ -67,9 +67,13 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	var/list/planes_visible
 
+/// The wear and the saved data a NIF is made with (its constructor params).
+/obj/item/nif/var/tmp/wear_at_make
+/obj/item/nif/var/tmp/list/load_data_at_make
+
 //Constructor comes with a free AR HUD
-// ALLOW(init/CTOR_ARGS): wear and load_data are constructor arguments from whoever builds it
-/obj/item/nif/Initialize(mapload,wear,list/load_data)
+// ALLOW(init/INSTANCE_STATE): a NIF loads its saved data, implants into the human it is made in and takes its starting wear
+/obj/item/nif/Initialize(mapload)
 	. = ..()
 
 	//First one to spawn in the game, make a big icon
@@ -77,7 +81,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		big_icon = new(icon,icon_state = "nif_full")
 
 	//Put loaded data here if we loaded any
-	save_data = islist(load_data) ? load_data.Copy() : list()
+	save_data = islist(load_data_at_make) ? load_data_at_make.Copy() : list()
 	var/saved_examine_msg = save_data["examine_msg"]
 
 	//If it's an empty string, they want it blank. If null, it's never been saved, give default.
@@ -93,8 +97,8 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return INITIALIZE_HINT_QDEL
 
 	//If given wear (like when spawned) then done
-	if(wear)
-		durability = wear
+	if(wear_at_make)
+		durability = wear_at_make
 		wear(0) //Just make it update.
 
 	//Draw me yo.
@@ -112,7 +116,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
 /obj/item/nif/proc/on_human_death(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = A.target
 	after(src, 0, PROC_REF(persist_on_death), with = list(source))
 

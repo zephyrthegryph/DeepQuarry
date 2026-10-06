@@ -138,7 +138,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 
 ///Takes an input from either proc/play_web_sound or the request manager and runs it through youtube-dl and prompts the user before playing it to the server.
 /proc/web_sound(mob/user, input, credit)
-	if(!check_rights(R_SOUNDS))
+	if(!admin_require(user.client, R_SOUNDS, "web_sound", TRUE))
 		return
 	var/ytdl = CONFIG_GET(string/invoke_youtubedl)
 	if(!ytdl)

@@ -173,11 +173,11 @@
 		machine.latent_materialize_all() // a walk needs real things (C5)
 		for (var/obj/O in ((machine.contents-result_obj - (machine.component_parts || list())) - machine.circuit)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			O.reagents.trans_to_obj(result_obj, O.reagents.total_volume)
-			spent(O)
+			consumed(O, result_obj)
 	else
 		for (var/obj/O in (container.contents-result_obj))
 			O.reagents.trans_to_obj(result_obj, O.reagents.total_volume)
-			spent(O)
+			consumed(O, result_obj)
 	container.reagents.clear_reagents()
 	return result_obj
 
@@ -216,9 +216,9 @@
 				var/obj/item/holder/hol = I
 				if(hol.held_mob?.client)
 					hol.held_mob.ghostize()
-				spent(hol.held_mob)
+				consumed(hol.held_mob)
 				rel_clear(hol, nameof(hol.held_mob))
-			spent(I)
+			consumed(I)
 
 	//Find fruits
 	if (fruit && fruit.len)
@@ -234,7 +234,7 @@
 				checklist[G.seed().kitchen_tag]--
 				if (G && G.reagents)
 					G.reagents.trans_to_holder(buffer,G.reagents.total_volume)
-				spent(G)
+				consumed(G)
 
 	//And lastly deduct necessary quantities of reagents
 	if (reagents && reagents.len)
@@ -265,7 +265,7 @@
 			result_obj.reagents = new /datum/reagents(buffer.total_volume*1.5, result_obj)
 
 		if (result_quantity == 1)
-			spent(holder)
+			consumed(holder)
 			holder = result_obj.reagents
 		else
 			result_obj.reagents.trans_to(holder, result_obj.reagents.total_volume)

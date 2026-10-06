@@ -7,13 +7,11 @@
  * up with `L.get_trait_state(/datum/trait_state/x)` (matches subtypes) and remove it with
  * `L.remove_trait_state(/datum/trait_state/x)` or `qdel()`.
  *
- * A state that needs to tick each Life() cycle sets `life_stage` to a
- * `/datum/om/stage/life/trait` subtype whose `state_type` points back at the state; the stage is
- * added to the mob's life plan while the state is attached and calls `life_tick()`.
+ * A state that needs to tick each Life() cycle declares its step in `life_steps()` (usually
+ * `seq_step(PROC_REF(life_tick), key = "life_trait_<name>", after = ...)`): it joins the mob's Life table
+ * while the state is attached (seq_extra_add()) and runs as a contributed step, life_tick(mob, frame).
  */
 /datum/trait_state
-	/// Life trait stage (a /datum/om/stage/life/trait subtype) added while attached, if any.
-	var/life_stage
 	/// When set, a mob holds at most one state of this type (or any subtype of it): adding another
 	/// returns the existing one. Defaults to the state's own exact type.
 	var/unique_type
@@ -33,17 +31,21 @@
 /// Called when the state joins its mob (was RegisterWithParent). Hook events here.
 /datum/trait_state/proc/attach()
 	SHOULD_CALL_PARENT(TRUE)
-	if(life_stage)
-		om_stage_add(owner, life_stage)
+	if(length(life_steps()))
+		seq_extra_add(owner, /datum/sequence/life, src)
 
 /// Called when the state leaves its mob (was UnregisterFromParent). Undo attach().
 /datum/trait_state/proc/detach()
 	SHOULD_CALL_PARENT(TRUE)
 	unobserve_all(src)
-	if(life_stage && owner)
-		om_stage_remove(owner, life_stage)
+	if(owner)
+		seq_extra_remove(owner, /datum/sequence/life, src)
 
-/// One Life() cycle, called by the state's life trait stage.
+/// The Life steps this state contributes while attached (seq_step()s); none by default.
+/datum/trait_state/proc/life_steps()
+	return null
+
+/// One Life() cycle, when the state's life_steps() declares it as its step.
 /datum/trait_state/proc/life_tick()
 	return
 

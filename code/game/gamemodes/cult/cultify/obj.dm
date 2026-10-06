@@ -114,7 +114,7 @@
 /obj/singularity/cultify()
 	var/dist = max((current_size - 2), 1)
 	explosion(get_turf(src), dist, dist * 2, dist * 4)
-	spent(src)
+	destroyed(src, null, "explosion")
 
 /obj/structure/shuttle/engine/heater/cultify()
 	new /obj/structure/cult/pylon(loc)

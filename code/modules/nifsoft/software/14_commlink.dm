@@ -42,11 +42,12 @@ TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
 	var/obj/item/nif/nif
 	var/tmp/datum/nifsoft/commlink/nifsoft
 
-// ALLOW(init/CTOR_ARGS): soft is a constructor argument from whoever builds it
-/obj/item/communicator/commlink/Initialize(mapload, soft)
-	. = ..()
+CAPABILITIES(/obj/item/communicator/commlink)
+	param(nameof(nifsoft), pos = 1, apply = PROC_REF(join_nif))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The commlink belongs to the NIF it is made in.
+/obj/item/communicator/commlink/proc/join_nif(soft)
 	rel_set(src, nameof(nif), loc)
-	rel_set(src, nameof(nifsoft), soft)
 
 // The NIF creates and owns its commlink (in its contents, deleted with it); the commlink's `nif`
 // is a plain back relation.

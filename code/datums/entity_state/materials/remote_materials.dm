@@ -174,7 +174,7 @@ CAPABILITIES(/datum/remote_materials)
 		return TRUE
 
 /datum/remote_materials/proc/on_item_insert(datum/act/attackby/use)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/item/target = use.item
 	var/mob/living/user = use.user
 	var/obj/item/multitool/multitool = target.get_multitool()

@@ -66,10 +66,6 @@
 
 // Entered and Exited won't fire while you're dragging something, because you're still "holding" it
 // Very much byond logic, but I want nice behavior, so we fake it with drag
-/atom/movable/screen/movable/action_button/MouseDrag(atom/over_object, src_location, over_location, src_control, over_control, params)
-	. = ..()
-	drag_with_actor(usr, over_object, over_location, over_control, params) // ALLOW(sys_usr_outside_verb): Native action button drag supplies its viewer after unchanged parent drag routing.
-
 /atom/movable/screen/movable/action_button/proc/drag_with_actor(mob/user, atom/over_object, over_location, over_control, params)
 	if(!can_use(user))
 		return
@@ -96,19 +92,29 @@
 CAPABILITIES(/atom/movable/screen/movable/action_button)
 	tooltip(PROC_REF(input_tooltip), theme = nameof(actiontooltipstyle))
 	click_on(PROC_REF(click_input))
+	drag_onto(PROC_REF(action_drop_input))
+	drag_over(PROC_REF(action_drag_input))
 
 /// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
 /atom/movable/screen/movable/action_button/proc/input_tooltip(mob/user)
 	return list(name, desc)
 
-/atom/movable/screen/movable/action_button/MouseDrop(over_object)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native action button drop supplies its viewer before unchanged conditional parent routing.
+/// The native drop's actor (drag_onto(), code/engine/lifeforms/input.dm): onto another button or the palette it is handled there; anywhere
+/// else the button moves to the drop and its hud records the new position.
+/atom/movable/screen/movable/action_button/proc/action_drop_input(datum/act/input/A)
+	var/mob/user = A.actor
 	var/datum/hud/our_hud = user?.hud_used
-	if(drop_with_actor(user, over_object))
-		return
-	. = ..()
-	our_hud.position_action(src, screen_loc)
+	if(drop_with_actor(user, A.over))
+		return TRUE
+	move_to_drop(A.params, user)
+	our_hud?.position_action(src, screen_loc)
 	save_position()
+	return TRUE
+
+/// The native drag's actor while the button is dragged (drag_over()): the hover feedback over what it would be dropped on.
+/atom/movable/screen/movable/action_button/proc/action_drag_input(datum/act/input/A)
+	drag_with_actor(A.actor, A.over, A.native?["over_location"], A.native?["over_control"], A.params)
+	return INPUT_FALLTHROUGH
 
 /atom/movable/screen/movable/action_button/proc/drop_with_actor(mob/user, atom/over_object)
 	rel_clear(src, nameof(last_hovored))
@@ -244,7 +250,7 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 /// Hook for /datum/om/event/mob_granted_action - If we're viewing another mob's action buttons,
 /// we need to update with any newly added buttons granted to the mob.
 /mob/proc/on_observing_action_granted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/mob_granted_action/event = A
 	var/datum/action/action = event.action
 
@@ -255,7 +261,7 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 /// Hook for /datum/om/event/mob_removed_action - If we're viewing another mob's action buttons,
 /// we need to update with any removed buttons from the mob.
 /mob/proc/on_observing_action_removed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/mob_removed_action/event = A
 	var/datum/action/action = event.action
 
@@ -295,18 +301,9 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 		viewer.client.screen |= src
 
 
-/atom/movable/screen/button_palette/MouseEntered(location, control, params)
-	. = ..()
-	if(QDELETED(src))
-		return
-	show_tooltip(usr, params) // ALLOW(sys_usr_outside_verb): BYOND palette MouseEntered supplies the actual hovering viewer to its tooltip helper.
-
-/atom/movable/screen/button_palette/MouseExited()
-	closeToolTip(usr, src)
-	return ..()
-
-/atom/movable/screen/button_palette/proc/show_tooltip(mob/user, params)
-	openToolTip(user, src, params, title = name, content = desc)
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm): opened on enter, closed on exit.
+/atom/movable/screen/button_palette/proc/palette_tooltip(mob/user)
+	return list(name, desc)
 
 GLOBAL_LIST_INIT(palette_added_matrix, list(0.4,0.5,0.2,0, 0,1.4,0,0, 0,0.4,0.6,0, 0,0,0,1, 0,0,0,0))
 GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,0, 0,0,0,1, 0,0,0,0))
@@ -335,6 +332,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 
 CAPABILITIES(/atom/movable/screen/button_palette)
 	click_on(PROC_REF(click_input))
+	tooltip(PROC_REF(palette_tooltip))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
 /atom/movable/screen/button_palette/proc/click_input(datum/act/input/A)
@@ -355,7 +353,7 @@ CAPABILITIES(/atom/movable/screen/button_palette)
 	set_expanded(!expanded)
 
 /atom/movable/screen/button_palette/proc/clicked_while_open(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/client_click/event = A
 	var/atom/target = event.target_

@@ -1,4 +1,4 @@
-/// The computed part of /obj/item/medigun_backpack's window data (declared on its UI_DATA row).
+/// /obj/item/medigun_backpack's window data.
 /obj/item/medigun_backpack/ui_data(datum/act/eval/A)
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(!medigun)

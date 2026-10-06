@@ -2,3 +2,4 @@
 /obj/structure/morgue/crematorium|robot|none => crematorium_hand,crematorium_item|
 /obj/structure/morgue/crematorium|ai|none => |
 /obj/structure/morgue/crematorium|ghost|none => |
+

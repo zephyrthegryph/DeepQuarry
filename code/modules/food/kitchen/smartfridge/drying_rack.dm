@@ -8,8 +8,6 @@
 	// dry() works on each real item in turn.
 	collapse_stock = FALSE
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/smartfridge/drying_rack, MACHINE_PIPELINE, "operable")
-
 CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
 	climb()
 
@@ -24,7 +22,7 @@ CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
 
 	return 0
 
-/obj/machinery/smartfridge/drying_rack/machine_step()
+/obj/machinery/smartfridge/drying_rack/work_step(datum/act/timer/A)
 	..()
 	if(stored_count())
 		dry()
@@ -68,7 +66,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 			else
 				var/D = S.dried_type
 				new D(get_turf(src))
-				spent(S)
+				replaced_by(S)
 			return
 
 		for(var/obj/item/stack/wetleather/WL in I.instances)
@@ -82,3 +80,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 			WL.set_wetness(max(0, WL.wetness - rand(1, 3)))
 
 	return
+
+/obj/machinery/smartfridge/drying_rack/step_gate(datum/act/A)
+	return operable()
+
+/obj/machinery/smartfridge/drying_rack/step_start_condition()
+	return TRUE

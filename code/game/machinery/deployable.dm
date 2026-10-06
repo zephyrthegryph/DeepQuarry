@@ -125,7 +125,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 
 	explosion(src.loc,-1,-1,0)
 	if(delete_after && !QDELETED(src))
-		spent(src)
+		destroyed(src, null, "explosion")
 
 /// A sequencer breaks the access lock, a second one the anchoring.
 /obj/machinery/deployable/barrier/proc/on_emag(datum/act/op/A)

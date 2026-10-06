@@ -106,6 +106,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("XenoarchSpectrometer")
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
@@ -127,7 +128,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/radiocarbon_spectrometer's window data (declared on its UI_DATA row).
+/// /obj/machinery/radiocarbon_spectrometer's window data.
 /obj/machinery/radiocarbon_spectrometer/proc/ui_data_obj_machinery_radiocarbon_spectrometer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -191,9 +192,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 OM_FIELD(/obj/machinery/radiocarbon_spectrometer, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 /// Runs the scan while scanning (start_scanning() .. stop_scanning()).
-DECLARE_PERIODIC_WHILE(/obj/machinery/radiocarbon_spectrometer, MACHINE_PIPELINE, "scanning")
-
-/obj/machinery/radiocarbon_spectrometer/machine_step()
+/obj/machinery/radiocarbon_spectrometer/proc/work_step(datum/act/timer/A)
 	if(!scanned_item() || scanned_item().loc != src)
 		rel_clear(src, nameof(scanned_item))
 		stop_scanning()

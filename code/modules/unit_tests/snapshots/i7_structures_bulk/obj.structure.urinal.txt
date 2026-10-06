@@ -1,4 +1,5 @@
-/obj/structure/urinal|human|none => |urinal_item:needs a grab
-/obj/structure/urinal|robot|none => |urinal_item:needs a grab
+/obj/structure/urinal|human|none => |
+/obj/structure/urinal|robot|none => |
 /obj/structure/urinal|ai|none => |
 /obj/structure/urinal|ghost|none => |
+

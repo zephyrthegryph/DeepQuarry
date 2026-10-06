@@ -333,7 +333,7 @@ codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py
 | `open()` / `toggle()` in a mapped variant's `Initialize()` | `starts_as("door.open")` (an op key) or `starts_as(COVER_OPEN)` (a state key) |
 | a var recomputed in every setter of what it reads | `derives(nameof(v), PROC_REF(compute), from = list(nameof(a), nameof(b)))`; the inputs must be `TRACKED` |
 | a window, request or condition deleted by its host's `on_destroy()` | `lives_while(nameof(host))`, `lives_while(PROC_REF(still_wanted), watches = list(nameof(answered)))`, `on_ending(PROC_REF(x))` |
-| `qdel(src)` after the last charge, bite, dissolve or break | `spent(src, user)`, `consumed(src, eater)`, `dissolved(src)`, `destroyed(src, user, BRUTE)`; timed: `expire(delay)`; transform: `replace_with(/T)` |
+| `qdel(src)` after the last charge, bite, dissolve or break | `spent(src, user)`, `consumed(src, eater)`, `dissolved(src)`, `destroyed(src, user, BRUTE)`; timed: `expire(delay)`, now: `lapsed(x)`; transform: `replace_with(/T)`, or `replaced_by(x, successor)` when the successor exists; an owner's teardown: `ended_with(x, src)` |
 | `Click()` / `MouseDrop()` overrides reading `usr` | `click_on(PROC_REF(x))` / `drag_onto(PROC_REF(x), onto = /T)`; `x(datum/act/input/A)` reads `A.actor`; an op key binds the op |
 | `MouseEntered()` / `MouseExited()` with `openToolTip(usr, ...)` | `tooltip(PROC_REF(x))`, `x(mob/user)` answers `list(title, content)`; `hover(PROC_REF(x))` for anything else |
 | admin or callback code that sets `usr` to call a proc as someone | `with_actor(admin_mob, target, PROC_REF(x), args...)` (or a `CALLBACK` where the core allows one) |

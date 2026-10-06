@@ -257,6 +257,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
 
 CAPABILITIES(/obj/item/card/id/syndicate/changeling)
 	op("changeling_syndicate_shred_verb", menu(), label("Shred ID Card"), needs(carried()), then(PROC_REF(changeling_syndicate_shred_verb)))
+	click_on(PROC_REF(click_input))
 
 /// Old verb "Shred ID Card".
 /obj/item/card/id/syndicate/changeling/proc/changeling_syndicate_shred_verb(datum/act/op/A)
@@ -267,9 +268,11 @@ CAPABILITIES(/obj/item/card/id/syndicate/changeling)
 		span_notice("We remove [src]."))
 		spent(src)
 
-/obj/item/card/id/syndicate/changeling/Click() //Since we can't hold it in our hands, and attack_hand() doesn't work if it in inventory...
-	register_and_show_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native card clicks supply the initiating mob before the unchanged parent routing.
-	..()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). Since we can't hold it in our hands, and
+/// attack_hand() doesn't work while it is in the inventory, a click registers or shows it, then goes on to the native parent.
+/obj/item/card/id/syndicate/changeling/proc/click_input(datum/act/input/A)
+	register_and_show_with_actor(A.actor)
+	return INPUT_FALLTHROUGH
 
 /obj/item/card/id/syndicate/changeling/proc/register_and_show_with_actor(mob/user)
 	if(!registered_user())

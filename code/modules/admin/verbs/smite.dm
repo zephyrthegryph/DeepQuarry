@@ -10,7 +10,7 @@
 			var/list/previous = resumed.captured["answers"]
 			smite_answers = previous.Copy()
 			smite_answers[resumed.step_name] = resumed.value
-	if(!check_rights(R_FUN))
+	if(!admin_require(src, R_FUN, "smite", TRUE))
 		return
 
 	if(!istype(target))
@@ -86,7 +86,7 @@
 			shadekin.ai_brain?.set_hostile(FALSE)
 			if(shadekin.ai_brain)
 				shadekin.ai_brain.mauling = TRUE
-			om_run_frame_now(shadekin, /datum/om/pipeline/life)
+			seq_run_frame_now(shadekin, /datum/sequence/life)
 			//Remove when done
 			after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 

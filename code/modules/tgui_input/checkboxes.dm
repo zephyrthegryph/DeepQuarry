@@ -50,7 +50,7 @@ CAPABILITIES(/datum/tgui_checkbox_input)
 /datum/tgui_checkbox_input/tgui_state(mob/user)
 	return state()
 
-/// The computed part of /datum/tgui_checkbox_input's window data (declared on its UI_DATA row).
+/// /datum/tgui_checkbox_input's window data.
 /datum/tgui_checkbox_input/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

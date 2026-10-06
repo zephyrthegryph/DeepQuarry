@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/newspaper)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/newspaper's window data (declared on its UI_DATA row).
+/// /obj/item/newspaper's window data.
 /obj/item/newspaper/proc/ui_data_obj_item_newspaper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["company_name"] = using_map.company_name

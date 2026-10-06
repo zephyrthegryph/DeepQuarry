@@ -8,8 +8,6 @@
 OM_FIELD_VIEW(/obj/machinery/feeder, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
 OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE_MACHINE_OCCUPANT)
 /// Feeds while a patient and a container are attached.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/feeder, MACHINE_PIPELINE, list("attached", "beaker"))
-
 DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/feeder/appearance_overlays()
 	. = list()
@@ -38,9 +36,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 			filling.icon += reagents.get_color()
 			. += filling
 
-/obj/machinery/feeder/MouseDrop(over_object, src_location, over_location)
-	..()
-	return drop_patient_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native patient attachment drag supplies the actor after unchanged parent input routing.
+CAPABILITIES(/obj/machinery/feeder)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
+	drag_onto(PROC_REF(drop_input))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
+/// then the native drop goes on.
+/obj/machinery/feeder/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
 
 /obj/machinery/feeder/proc/drop_patient_with_actor(mob/user, atom/over_object)
 	if(!isliving(user))
@@ -106,10 +110,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 	if(beaker)
 		beaker.forceMove(get_turf(src))
 		own_take(src, nameof(beaker))
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
-/obj/machinery/feeder/machine_step()
+/obj/machinery/feeder/proc/work_step(datum/act/timer/A)
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")

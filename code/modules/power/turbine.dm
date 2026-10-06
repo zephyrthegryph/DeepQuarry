@@ -42,8 +42,24 @@
 	var/comp_id = 0
 	var/efficiency
 
+	/// The compressor overlay's stage (0 none, 1..4 by rpm).
+	var/rpm_stage = 0
+
+TRACKED(/obj/machinery/compressor, starter)
+TRACKED(/obj/machinery/compressor, rpm_stage)
+
+// The gas turbine (doc/rewrite/final_api.html section 16): a compressor draws a tenth of the gas in front of it every machine service interval
+// while it is started (compressor_step(); a starter motor brings it to 1000 rpm), and its turbine turns the compressor's rpm into power
+// (turbine_step(): ((rpm / TURBGENQ) ^ TURBGENG) * TURBGENQ * productivity W for the next power step) and vents the gas behind it.
 CAPABILITIES(/obj/machinery/compressor)
 	owns_one(nameof(gas_contained), /datum/gas_mixture)
+	ref_one(nameof(turbine), /obj/machinery/power/turbine)
+	ref_one(nameof(inturf), /turf/simulated)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(compressor_step)), when = PROC_REF(running))
+	part_replacement()
+	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
+		asks(/datum/prompt/text, fields = list("title" = "Compressor", "question" = "Enter a new ident tag.", "default" = nameof(comp_id), "max_len" = MAX_NAME_LEN)),
+		then(PROC_REF(ident_entered)))
 
 /obj/machinery/power/turbine
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -59,19 +75,11 @@ CAPABILITIES(/obj/machinery/compressor)
 	var/tmp/turf/simulated/outturf
 	var/lastgen
 	var/productivity = 1
+	/// It makes power (its "running" overlay shows).
+	var/generating_shown = FALSE
 
-/// Started by its control computer: set_starter() is the setter.
-OM_FIELD_SETTER(/obj/machinery/compressor, starter, CHANGE_MACHINE_SETTINGS)
-/// Not BROKEN (BROKEN also marks "no partner connected"; see locate_machinery()).
-OM_DERIVE_FIELD(/obj/machinery/compressor, unbroken, list("stat"))
-/obj/machinery/compressor/proc/unbroken()
-	return !has_stat(BROKEN)
-OM_DERIVE_FIELD(/obj/machinery/power/turbine, unbroken, list("stat"))
-/obj/machinery/power/turbine/proc/unbroken()
-	return !has_stat(BROKEN)
+TRACKED(/obj/machinery/power/turbine, generating_shown)
 
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/compressor, MACHINE_PIPELINE, list("starter", "unbroken"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken")
 
 /obj/machinery/computer/turbine_computer
 	name = "gas turbine control computer"
@@ -131,37 +139,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	var/E = get_part_rating(/obj/item/stock_parts/manipulator)
 	efficiency = E / 6
 
-/obj/machinery/compressor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/compressor_fingerprint,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/compressor_set_ident,
-	)
-	..()
+/obj/machinery/compressor/proc/ident_entered(datum/act/op/A)
+	var/datum/prompt/text/answer = A.answer
+	if(answer?.value && A.actor?.Adjacent(src))
+		comp_id = answer.value
+	return OP_OK
 
-/// Old attackby: added a fingerprint for any item before trying the part replacer.
-/datum/interaction/machine_item/compressor_fingerprint
-	id = "compressor_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
-
-/// Old attackby: a multitool sets the comp ident tag.
-/datum/interaction/machine_item/compressor_set_ident
-	id = "compressor_set_ident"
-	name = "Set ident tag"
-	category = INTERACTION_CAT_CONFIGURE
-	tool = TOOL_MULTITOOL
-	tool_volume = 0
-	effect = /obj/machinery/compressor/proc/interaction_set_ident
-
-/obj/machinery/compressor/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = rerun_ask(user, "k146", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = name, default = comp_id, max_length = MAX_NAME_LEN)
-	if(isnull(new_ident))
-		return
-	if(new_ident && user.Adjacent(src))
-		comp_id = new_ident
-	return TRUE
+/// Started and whole (BROKEN also marks "no partner connected"; see locate_machinery()).
+/obj/machinery/compressor/proc/running(datum/act/A)
+	return starter && !has_stat(BROKEN)
 
 /obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
@@ -176,24 +162,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 				to_chat(user, span_warning("Turbine not connected."))
 				atom_break()
 
-/// Starts or stops the compressor; the compressor and its turbine run only while it is started.
-/// The compressor's own work is declared on `starter`; its turbine reads it, so it is woken here.
-/obj/machinery/compressor/proc/set_starter(value)
-	if(starter == value)
-		return FALSE
-	starter = value
-	changed(src, CHANGE_MACHINE_SETTINGS)
-	if(starter && turbine())
-		MACHINE_WAKE(turbine())
-	return TRUE
-
-/obj/machinery/compressor/machine_step()
+/// One step while started: it spins toward its target and draws in gas.
+/obj/machinery/compressor/proc/compressor_step(datum/act/timer/A)
 	if(!turbine())
 		atom_break()
 		return
 	if(panel_open)
 		return
-	cut_overlays()
 
 	rpm = 0.9* rpm + 0.1 * rpmtarget
 	var/datum/gas_mixture/environment = inturf().return_air()
@@ -215,14 +190,20 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 			rpmtarget = 0
 
 	if(rpm>50000)
-		add_overlay(image('icons/obj/pipes.dmi', "comp-o4", FLY_LAYER))
+		set_rpm_stage(4)
 	else if(rpm>10000)
-		add_overlay(image('icons/obj/pipes.dmi', "comp-o3", FLY_LAYER))
+		set_rpm_stage(3)
 	else if(rpm>2000)
-		add_overlay(image('icons/obj/pipes.dmi', "comp-o2", FLY_LAYER))
+		set_rpm_stage(2)
 	else if(rpm>500)
-		add_overlay(image('icons/obj/pipes.dmi', "comp-o1", FLY_LAYER))
-	//TODO: DEFERRED
+		set_rpm_stage(1)
+	else
+		set_rpm_stage(0)
+
+/obj/machinery/compressor/draw(datum/look/look)
+	..()
+	if(rpm_stage)
+		look.overlay(image('icons/obj/pipes.dmi', "comp-o[rpm_stage]", FLY_LAYER))
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,13 +237,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	if(compressor())
 		compressor().locate_machinery()
 
-/// Old attackby: added a fingerprint for any item before trying the part replacer.
-/datum/interaction/machine_item/turbine_fingerprint
-	id = "turbine_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
-
 /obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
 		rel_clear(src, nameof(compressor))
@@ -276,15 +250,17 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 				to_chat(user, span_warning("Compressor not connected."))
 				atom_break()
 
-/obj/machinery/power/turbine/machine_step()
+/// Its compressor is started and it is whole.
+/obj/machinery/power/turbine/proc/running(datum/act/A)
+	return compressor?.starter && !has_stat(BROKEN)
+
+/// One step while its compressor runs: power from the rpm, the rpm from the gas, and the gas vented behind it.
+/obj/machinery/power/turbine/proc/turbine_step(datum/act/timer/A)
 	if(!compressor())
 		atom_break()
 		return
-	if(!compressor().starter)
-		return PROCESS_KILL
 	if(panel_open)
 		return
-	cut_overlays()
 
 	// This is the power generation function. If anything is needed it's good to plot it in EXCEL before modifying
 	// the TURBGENQ and TURBGENG values
@@ -307,29 +283,23 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 		spent(removed)
 
 	// If it works, put an overlay that it works!
-	if(lastgen > 100)
-		add_overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
+	set_generating_shown(lastgen > 100)
 
-/obj/machinery/power/turbine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/turbine_fingerprint,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/open_ui,
-	)
+/obj/machinery/power/turbine/draw(datum/look/look)
 	..()
+	if(generating_shown)
+		look.overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
 
 CAPABILITIES(/obj/machinery/power/turbine)
+	ref_one(nameof(compressor), /obj/machinery/compressor)
+	ref_one(nameof(outturf), /turf/simulated)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(turbine_step)), when = PROC_REF(running))
+	part_replacement()
 	interface("Turbine")
+	extend("ui_open", when(req_empty_hand()), needs(req_operable()))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
 
-/obj/machinery/power/turbine/ui_prepare(mob/user, datum/tgui/ui)
-	if(!Adjacent(user) && !issilicon(user))
-		return FALSE
-	if(!operable())
-		return FALSE
-	return TRUE
-
-/// The computed part of /obj/machinery/power/turbine's window data (declared on its UI_DATA row).
+/// /obj/machinery/power/turbine's window data.
 /obj/machinery/power/turbine/ui_data(datum/act/eval/A)
 	return list(
 		"display_power" = lastgen,
@@ -362,52 +332,36 @@ CAPABILITIES(/obj/machinery/power/turbine)
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
 			rel_add(src, nameof(doors), P)
 
-/obj/machinery/computer/turbine_computer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/turbine_computer_set_ident,
-		/datum/interaction/machine_item/turbine_computer_swallow_item,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+/obj/machinery/computer/turbine_computer/proc/ident_entered(datum/act/op/A)
+	var/datum/prompt/text/answer = A.answer
+	if(answer?.value && A.actor?.Adjacent(src))
+		id = answer.value
+	return OP_OK
 
-/// Old attackby: a multitool sets the ident tag.
-/datum/interaction/machine_item/turbine_computer_set_ident
-	id = "turbine_computer_set_ident"
-	name = "Set ident tag"
-	category = INTERACTION_CAT_CONFIGURE
-	tool = TOOL_MULTITOOL
-	tool_volume = 0
-	effect = /obj/machinery/computer/turbine_computer/proc/interaction_set_ident
-
-/obj/machinery/computer/turbine_computer/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = rerun_ask(user, "k382", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = name, default = id, max_length = MAX_NAME_LEN)
-	if(isnull(new_ident))
-		return
-	if(new_ident && user.Adjacent(src))
-		id = new_ident
-	return TRUE
-
-/// Old attackby: never called ..(), so any other item did nothing (no signal, no base attack).
-/datum/interaction/machine_item/turbine_computer_swallow_item
-	id = "turbine_computer_swallow_item"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
+/// Anything else held to it does nothing.
+/obj/machinery/computer/turbine_computer/proc/swallowed(datum/act/op/A)
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/computer/turbine_computer)
 	after_init(0, then(PROC_REF(find_machinery)))
+	ref_one(nameof(compressor), /obj/machinery/compressor)
+	ref_many(nameof(doors), /obj/machinery/door/blast)
+	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
+		asks(/datum/prompt/text, fields = list("title" = "Turbine control", "question" = "Enter a new ident tag.", "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
+		then(PROC_REF(ident_entered)))
+	op("swallow", item(/obj/item), label("Use"), wait(0), then(PROC_REF(swallowed)))
 	interface("TurbineControl")
 	op("power-on", ui_act("power-on"), then(PROC_REF(ui_act_power_on)))
 	op("power-off", ui_act("power-off"), then(PROC_REF(ui_act_power_off)))
 	op("reconnect", ui_act("reconnect"), then(PROC_REF(ui_act_reconnect)))
 	op("doors", ui_act("doors"), then(PROC_REF(ui_act_doors)))
 
-/// The computed part of /obj/machinery/computer/turbine_computer's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/turbine_computer's window data.
 /obj/machinery/computer/turbine_computer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE
-	data["compressor_broke"] = (!compressor() || (compressor().stat & BROKEN)) ? TRUE : FALSE
-	data["turbine_broke"] = (!compressor() || !compressor().turbine() || (compressor().turbine().stat & BROKEN)) ? TRUE : FALSE
+	data["compressor_broke"] = (!compressor() || compressor().has_stat(BROKEN)) ? TRUE : FALSE
+	data["turbine_broke"] = (!compressor() || !compressor().turbine() || compressor().turbine().has_stat(BROKEN)) ? TRUE : FALSE
 	data["broken"] = (data["compressor_broke"] || data["turbine_broke"])
 	data["door_status"] = door_status ? TRUE : FALSE
 
@@ -474,6 +428,3 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 /obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
 	return turbine
 
-/obj/machinery/computer/turbine_computer/relations()
-	. = ..()
-	. += rel_many(nameof(doors))

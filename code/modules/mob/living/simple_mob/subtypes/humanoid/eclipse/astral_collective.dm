@@ -487,12 +487,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 	mend(TREAT_TISSUE_REPAIR, 200)
 	mend(TREAT_BURN_CARE, 200)
 
-/datum/om/stage/life/special/humanoid/astral_collective/soul/shield_projector
-	of = /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector
+/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/humanoid/astral_collective/soul/shield_projector/perform(mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.protection_aura()
+/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.protection_aura()
 	..()
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/proc/protection_aura()

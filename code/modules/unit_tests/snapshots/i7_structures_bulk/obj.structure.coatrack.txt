@@ -2,3 +2,4 @@
 /obj/structure/coatrack|robot|none => coatrack_item|coatrack_hand:not possible right now
 /obj/structure/coatrack|ai|none => |
 /obj/structure/coatrack|ghost|none => |
+

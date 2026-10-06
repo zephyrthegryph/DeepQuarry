@@ -1,4 +1,5 @@
-/obj/structure/flora|human|none => flora_item|
-/obj/structure/flora|robot|none => flora_item|
+/obj/structure/flora|human|none => gen_item_interaction_item|
+/obj/structure/flora|robot|none => gen_item_interaction_item|
 /obj/structure/flora|ai|none => |
 /obj/structure/flora|ghost|none => |
+

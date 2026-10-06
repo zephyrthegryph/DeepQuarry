@@ -31,12 +31,12 @@
 		for(var/var_name in owned_vars)
 			var/datum/owned = client.vars[var_name]
 			if(owned)
-				destroyed(owned)
+				ended_with(owned, src)
 			client.vars[var_name] = null // ALLOW(api): clears a fixed static list of client-owned panel vars on session teardown
 		for(var/window_id in client.tgui_windows)
 			var/datum/tgui_window/window = client.tgui_windows[window_id]
 			if(window)
-				destroyed(window)
+				ended_with(window, src)
 		client.tgui_windows = list()
 	asset_waiters = null
 	completed_asset_jobs = null

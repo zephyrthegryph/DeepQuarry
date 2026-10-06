@@ -88,11 +88,9 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	/// Relation view: the landable ship that made (and owns) this landmark.
 	var/tmp/obj/effect/overmap/visitable/ship/landable/ship
 
-// ALLOW(init/CTOR_ARGS): shuttle_name is a constructor argument from whoever builds it
-/obj/effect/shuttle_landmark/ship/Initialize(mapload, shuttle_name)
-	landmark_tag += "_[shuttle_name]"
-	src.shuttle_name = shuttle_name
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The landmark is tagged for its ship's shuttle.
+/obj/effect/shuttle_landmark/ship/proc/tag_for_shuttle(for_shuttle)
+	landmark_tag += "_[for_shuttle]"
 	base_turf = world.turf
 
 /obj/effect/shuttle_landmark/ship/is_valid(datum/shuttle/shuttle)
@@ -115,13 +113,14 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	flags = SLANDMARK_FLAG_AUTOSET | SLANDMARK_FLAG_ZERO_G
 	var/obj/effect/shuttle_landmark/ship/core_landmark
 
-// ALLOW(init/CTOR_ARGS): master and _name are constructor arguments from whoever builds it
-/obj/effect/shuttle_landmark/visiting_shuttle/Initialize(mapload, obj/effect/shuttle_landmark/ship/master, _name)
-	rel_set(src, nameof(core_landmark), master)
-	name = _name
-	landmark_tag = master.shuttle_name + _name
-	observe(master, /datum/notice/qdeleting, src, then(TYPE_PROC_REF(/datum, qdel_self)))
-	. = ..()
+CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
+	param(nameof(core_landmark), pos = 1)
+	param(nameof(name), pos = 2, apply = PROC_REF(tag_for_master))
+	lives_while(nameof(core_landmark))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The landmark is tagged for its master's shuttle.
+/obj/effect/shuttle_landmark/visiting_shuttle/proc/tag_for_master(_name)
+	landmark_tag = core_landmark.shuttle_name + name
 
 // core_landmark is a one-sided view; visitors lists only the landmarks with a shuttle stationed
 // (not a pair: a visitor landmark exists long before anything docks there).
@@ -141,7 +140,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	observe(shuttle, /datum/notice/observer_shuttle_moved, src, then(PROC_REF(shuttle_left)))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/shuttle/shuttle = A.target
 	var/datum/notice/observer_shuttle_moved/event = A
 	if(event.old_location == src)
@@ -154,7 +153,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 //
 
 /obj/effect/overmap/visitable/ship/landable/proc/pre_shuttle_jump(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/shuttle/given_shuttle = A.target
 	var/datum/notice/observer_shuttle_pre_move/event = A
 	var/obj/effect/shuttle_landmark/into = event.destination
@@ -165,7 +164,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 		unobserve(SSshuttles.shuttles[shuttle], /datum/notice/observer_shuttle_pre_move, src)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/shuttle/given_shuttle = A.target
 	var/datum/notice/observer_shuttle_moved/event = A
 	var/obj/effect/shuttle_landmark/from = event.old_location
@@ -241,3 +240,4 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 
 CAPABILITIES(/obj/effect/shuttle_landmark/ship)
 	ref_many(nameof(visitors))
+	param(nameof(shuttle_name), pos = 1, apply = PROC_REF(tag_for_shuttle))

@@ -285,7 +285,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
 	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
 
-/// The computed part of /obj/machinery/department_storefront's window data (declared on its UI_DATA row).
+/// /obj/machinery/department_storefront's window data.
 /obj/machinery/department_storefront/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/stock = list()

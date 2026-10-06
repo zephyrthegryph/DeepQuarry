@@ -14,9 +14,13 @@
 	var/recent_fault = 0
 	var/power_output = 1
 
+// The portable generators (doc/rewrite/final_api.html section 16): switched on and fuelled, bolted down and wired, every machine service
+// interval a generator burns its fuel and supplies power_gen * power_output W to its cable network (a persistent supply: set_power_supply());
+// off, it cools down on the same step until it is cold. A pulse knocks it out for 10 minutes and may break it or blow it up.
 CAPABILITIES(/obj/machinery/power/port_gen)
 	emp_disable(10 MINUTES)
-DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp_fault))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(port_gen_emp_fault))))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(gen_step)), when = PROC_REF(has_work))
 
 /obj/machinery/power/port_gen/proc/IsBroken()
 	return has_stat(BROKEN) || emp_disabled(src)
@@ -30,46 +34,41 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 /obj/machinery/power/port_gen/proc/DropFuel()
 	return
 
+/// Off and cooling: TRUE while it still has cooling to do.
 /obj/machinery/power/port_gen/proc/handleInactive()
 	return FALSE
+
+/// Off and cold, it has nothing to do (cooling_needed(): a hot generator cools on its step).
+/obj/machinery/power/port_gen/proc/cooling_needed()
+	return FALSE
+
+/// Its step runs while it is on, or still has heat to lose.
+/obj/machinery/power/port_gen/proc/has_work(datum/act/A)
+	return active || cooling_needed()
 
 /obj/machinery/power/port_gen/proc/TogglePower()
 	if(active)
 		set_active(FALSE)
 	else if(HasFuel())
 		set_active(TRUE)
-	MACHINE_WAKE(src)
 
-/obj/machinery/power/port_gen/machine_step()
+/// One step: running, it supplies and burns fuel; otherwise it stops supplying and cools.
+/obj/machinery/power/port_gen/proc/gen_step(datum/act/timer/A)
 	if(active && HasFuel() && !IsBroken() && anchored && power_region)
 		set_power_supply(power_gen * power_output)
 		UseFuel()
-	else
-		set_active(FALSE)
-		set_power_supply(0)
-		update_icon()
-		if(!handleInactive())
-			return PROCESS_KILL
+		return
+	set_active(FALSE)
+	set_power_supply(0)
+	update_icon()
+	handleInactive()
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active?on:}")
+/obj/machinery/power/port_gen/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][active ? "on" : ""]")
 
 /obj/machinery/power/powered()
 	return 1 //doesn't require an external power source
-
-/obj/machinery/power/port_gen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/port_gen_touch,
-	)
-	..()
-
-/// Old attack_hand: no-op placeholder (the anchored check did nothing observable either way).
-/datum/interaction/machine_hand/port_gen_touch
-	id = "port_gen_touch"
-	name = "Use"
-	effect = /obj/machinery/power/port_gen/proc/interaction_touch
-
-/obj/machinery/power/port_gen/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
 
 /obj/machinery/power/port_gen/examine(mob/user)
 	. = ..()
@@ -79,19 +78,21 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 		else
 			. += span_notice("The generator is off.")
 
-/// A pulse can break the generator outright, or blow it up (the outage itself is emp_disable()).
-/obj/machinery/power/port_gen/proc/port_gen_emp_fault(datum/damage_packet/packet)
+/// A pulse can break the generator outright, or blow it up (the outage itself is emp_disable()). The pulse goes on unless it blew up.
+/obj/machinery/power/port_gen/proc/port_gen_emp_fault(datum/act/hit/emp/A)
+	. = HOOK_DECLINE
+	var/datum/damage_packet/packet = A.packet
 	switch(packet.severity)
 		if(EMP_HEAVY)
 			atom_break()
 			if(prob(75))
 				explode()
-				return DAMAGE_REACTION_BLOCK
+				return TRUE
 		if(EMP_MEDIUM)
 			if(prob(50)) atom_break()
 			if(prob(10))
 				explode()
-				return DAMAGE_REACTION_BLOCK
+				return TRUE
 		if(EMP_LIGHT)
 			if(prob(25)) atom_break()
 		if(EMP_HARMLESS)
@@ -132,6 +133,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 	var/temperature = 0		//The current temperature
 	var/overheating = 0		//if this gets high enough the generator explodes
 
+TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
+TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
+
 /obj/machinery/power/port_gen/pacman/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -149,7 +153,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 /obj/machinery/power/port_gen/pacman/RefreshParts()
 	var/bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 	if(bin_rating)
-		max_sheets = bin_rating * bin_rating * 50
+		set_max_sheets(bin_rating * bin_rating * 50)
 	var/temp_rating = get_part_rating(/obj/item/stock_parts/micro_laser) + get_part_rating(/obj/item/stock_parts/capacitor)
 
 	power_gen = round(initial(power_gen) * (max(2, temp_rating) / 2))
@@ -173,7 +177,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 /obj/machinery/power/port_gen/pacman/DropFuel()
 	if(sheets)
 		var/obj/item/stack/material/S = new sheet_path(loc, sheets)
-		sheets -= S.get_amount()
+		set_sheets(sheets - S.get_amount())
 
 /obj/machinery/power/port_gen/pacman/UseFuel()
 
@@ -183,7 +187,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 	//HasFuel() should guarantee us that there is enough fuel left, so no need to check that
 	//the only thing we need to worry about is if we are going to rollover to the next sheet
 	if (needed_sheets > sheet_left)
-		sheets--
+		set_sheets(sheets - 1)
 		sheet_left = (1 + sheet_left) - needed_sheets
 	else
 		sheet_left -= needed_sheets
@@ -227,6 +231,19 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 		overheating--
 		update_icon() //Port RS PR #484
 
+/// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
+/obj/machinery/power/port_gen/pacman/proc/cooling_temperature()
+	var/cooling_temperature = 20
+	var/datum/gas_mixture/environment = loc?.return_air()
+	if(environment)
+		var/ratio = min(environment.return_pressure()/ONE_ATMOSPHERE, 1)
+		var/ambient = environment.return_temperature() - T20C
+		cooling_temperature += ambient*ratio
+	return cooling_temperature
+
+/obj/machinery/power/port_gen/pacman/cooling_needed()
+	return overheating > 0 || temperature > cooling_temperature() + 0.1
+
 /obj/machinery/power/port_gen/pacman/handleInactive()
 	var/cooling_temperature = 20
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -263,67 +280,29 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 	if (environment)
 		environment.adjust_gas_temp(GAS_PHORON, phoron/10, temperature + T0C)
 
-	sheets = 0
+	set_sheets(0)
 	sheet_left = 0
 	..()
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/power/port_gen/pacman, PROC_REF(on_emag), null)
-/obj/machinery/power/port_gen/pacman/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (active && prob(25))
+/// A card lets the output go to 2.5 times its maximum; on a running generator it may set it off.
+/obj/machinery/power/port_gen/pacman/proc/on_emag(datum/act/op/A)
+	if(active && prob(25))
 		explode() //if they're foolish enough to emag while it's running
+	return OP_OK
 
-	if (!emagged)
-		set_emagged(1)
-		return 1
+/obj/machinery/power/port_gen/pacman/proc/sheet_match(datum/act/op/A)
+	return istype(A.held, sheet_path)
 
-/obj/machinery/power/port_gen/pacman/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/pacman_add_sheets,
-		/datum/interaction/machine_item/pacman_part_replacement,
-		/datum/interaction/machine_hand/pacman_open_ui,
-	)
-	..()
+/obj/machinery/power/port_gen/pacman/proc/has_room(datum/act/op/A)
+	return sheets < max_sheets
 
-/// Old attackby: add fuel sheets. `sheet_path` varies by subtype, so it's checked at runtime.
-/datum/interaction/machine_item/pacman_add_sheets
-	id = "pacman_add_sheets"
-	name = "Add fuel"
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/power/port_gen/pacman/proc/pacman_sheet_match, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_has_room, "it's full"))
-	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_add_sheets
-
-/obj/machinery/power/port_gen/pacman/proc/pacman_sheet_match(mob/actor, atom/target, obj/item/held)
-	return istype(held, sheet_path)
-
-/obj/machinery/power/port_gen/pacman/proc/pacman_has_room(mob/actor, atom/target, obj/item/held)
-	if(!held)
-		return TRUE
-	var/obj/item/stack/addstack = held
-	return min((max_sheets - sheets), addstack.get_amount()) >= 1
-
-/obj/machinery/power/port_gen/pacman/proc/interaction_add_sheets(mob/user, obj/item/O, datum/interaction/interaction)
-	var/obj/item/stack/addstack = O
+/obj/machinery/power/port_gen/pacman/proc/sheets_added(datum/act/op/A)
+	var/obj/item/stack/addstack = A.held
 	var/amount = min((max_sheets - sheets), addstack.get_amount())
-	to_chat(user, span_notice("You add [amount] sheet\s to the [src.name]."))
-	sheets += amount
+	to_chat(A.actor, span_notice("You add [amount] sheet\s to the [src.name]."))
+	set_sheets(sheets + amount)
 	addstack.use(amount)
-	return TRUE
-
-/// Old attackby: `else if(!active) if(default_part_replacement(user, O)) return`.
-/datum/interaction/machine_item/pacman_part_replacement
-	id = "pacman_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_not_active, null))
-	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement_impl
-
-/obj/machinery/power/port_gen/pacman/proc/pacman_not_active(mob/actor, atom/target, obj/item/held)
-	return !active
-
-/obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
+	return OP_OK
 
 /obj/machinery/power/port_gen/pacman/screwdriver_act(mob/user, obj/item/O)
 	if(active)
@@ -335,44 +314,34 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/power/port_gen/pacman, PROC_REF(on_emag),
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
-/obj/machinery/power/port_gen/pacman/wrench_act(mob/user, obj/item/O)
-	if(active)
-		return ITEM_INTERACT_BLOCKING
-	if(!anchored)
+/// Bolted down it joins its cable network; loose it leaves it.
+/obj/machinery/power/port_gen/pacman/proc/anchoring_changed(datum/act/A)
+	if(anchored)
 		connect_to_network()
-		to_chat(user, span_notice("You secure the generator to the floor."))
 	else
 		disconnect_from_network()
-		to_chat(user, span_notice("You unsecure the generator from the floor."))
-	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	set_anchored(!anchored)
-	return ITEM_INTERACT_SUCCESS
 
-/// Old attack_hand: base was always called first, then opened the interface if anchored.
-/datum/interaction/machine_hand/pacman_open_ui
-	id = "pacman_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/pacman/proc/pacman_anchored, null))
-	effect = /obj/machinery/power/port_gen/pacman/proc/interaction_open_ui_impl
+/obj/machinery/power/port_gen/pacman/proc/not_broken(datum/act/A)
+	return !IsBroken()
 
-/obj/machinery/power/port_gen/pacman/proc/pacman_anchored(mob/actor, atom/target, obj/item/held)
-	return !!anchored
+MSG_DEF_SELF(pacman/full, "It's full.")
+MSG_DEF_SELF(pacman/running, "Turn it off first.")
+MSG_DEF_SELF(pacman/broken, "It seems to have broken down.")
 
-/obj/machinery/power/port_gen/pacman/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
-
-/obj/machinery/power/port_gen/pacman
-	silicon_use = SILICON_USE_UI
-
-/obj/machinery/power/port_gen/tgui_status(mob/user, datum/tgui_state/state)
-	if(IsBroken())
-		return STATUS_CLOSE
-	return ..()
-
+// The PACMAN: sheets of its fuel in the hopper, a window for its switch and output, a wrench to bolt it (not while it runs), a part replacer
+// (not while it runs), and an emag that lifts its output limit.
 CAPABILITIES(/obj/machinery/power/port_gen/pacman)
+	anchor()
+	extend("anchor.toggle", needs(req_is(nameof(active), FALSE, because = MSG(pacman/running))))
+	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))
+	part_replacement()
+	extend("part_replacement.replace", needs(req_is(nameof(active), FALSE, because = MSG(pacman/running))))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req(PROC_REF(sheet_match))),
+		needs(req(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
 	interface("PortableGenerator")
-	without("ui_open")
+	extend("ui_open", when(nameof(anchored)))
+	extend(TAG_UI, needs(req(PROC_REF(not_broken), because = MSG(pacman/broken))))
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("lower_power", ui_act("lower_power"), then(PROC_REF(ui_act_lower_power)))
@@ -384,24 +353,9 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	data["temperature_current"] = temperature
 	data["temperature_max"] = max_temperature
 	data["temperature_overheat"] = overheating
-	var/list/merged_1 = ui_data_obj_machinery_power_port_gen_pacman(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// The computed part of /obj/machinery/power/port_gen/pacman's window data (declared on its UI_DATA row).
-/obj/machinery/power/port_gen/pacman/proc/ui_data_obj_machinery_power_port_gen_pacman(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
 	data["active"] = active
 
-	if(isAI(user))
-		data["is_ai"] = TRUE
-	else if(isrobot(user) && !Adjacent(user))
-		data["is_ai"] = TRUE
-	else
-		data["is_ai"] = FALSE
+	data["is_ai"] = !A.actor?.Adjacent(src) // worked from afar (a silicon's link): no hands on the hopper
 
 	data["sheet_name"] = capitalize(sheet_name)
 	data["fuel_stored"] = round((sheets * 1000) + (sheet_left * 1000))
@@ -437,7 +391,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 
 /obj/machinery/power/port_gen/pacman/proc/ui_act_higher_power(datum/act/op/A)
 	add_fingerprint(A.actor)
-	if(power_output < max_power_output || (emagged && power_output < round(max_power_output * 2.5)))
+	if(power_output < max_power_output || (is_emagged(src) && power_output < round(max_power_output * 2.5)))
 		power_output++
 		. = TRUE
 
@@ -512,27 +466,19 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 
 //Port Start, RS PR #484
 
-APPEARANCE_NONE(/obj/machinery/power/port_gen/pacman/super/potato)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/port_gen/pacman/super/potato/appearance_overlays()
-	. = list()
-	set_light(0)
-	//if there was an unexploded broken state, this is where it would go. + return
+/obj/machinery/power/port_gen/pacman/super/potato/draw(datum/look/look)
+	..()
 	if(active && !overheating)
-		icon_state = "potatoon"
-		var/mutable_appearance/reactorglow = mutable_appearance(icon, "eggrad", alpha = 90) //v.faint glow for reasons. the reasons being it's producing radiation as per code
-		. += reactorglow
-		set_light(l_range = 2, l_power = 2, l_color = "#A8B0F8")
-		return .
+		look.state("potatoon")
+		look.overlay(mutable_appearance(icon, "eggrad", alpha = 90)) //v.faint glow for reasons. the reasons being it's producing radiation as per code
+		look.light(2, 2, "#A8B0F8")
 	else if(overheating)	//The warp core is overloading, Captain!
-		icon_state = "potatodanger"	//show that it's angry, even when it's off. something something subroutine. Visual feedback!
+		look.state("potatodanger")	//show that it's angry, even when it's off. something something subroutine. Visual feedback!
 		if(active)	//but only glow if it's also still on, since the reaction is ongoing.
-			var/mutable_appearance/reactorglow = mutable_appearance(icon, "eggrad", alpha = 190) //more intense glow, lightings
-			. += reactorglow
-			set_light(l_range = 5, l_power = 4, l_color = "#A8B0F8")
-		return .
+			look.overlay(mutable_appearance(icon, "eggrad", alpha = 190)) //more intense glow, lightings
+			look.light(5, 4, "#A8B0F8")
 	else	//off and it isn't angry, so we just vibe as 'off'
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 //Port Emd, RS PR #484
 
 // Circuits for the RTGs below
@@ -597,8 +543,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_
 	. = ..()
 	default_apply_parts()
 
+// The RTG (doc/rewrite/final_api.html section 16): bolted down, it supplies power_gen W to its cable network every machine service interval
+// (rtg_step()), and irradiates its surroundings while its panel is open.
 CAPABILITIES(/obj/machinery/power/rtg)
 	after_init(0, then(PROC_REF(mapped_upgrades_after_init)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(rtg_step)), when = nameof(anchored))
+	part_replacement()
 
 /// A mapped RTG takes the parts laid on its tile.
 /obj/machinery/power/rtg/proc/mapped_upgrades_after_init(datum/act/timer/A)
@@ -625,14 +575,14 @@ CAPABILITIES(/obj/machinery/power/rtg)
 			var/obj/item/stock_parts/capacitor/C = locate_in_list(component_parts, /obj/item/stock_parts/capacitor)
 			if(isnull(C))
 				break
-			own_take_member(src, nameof(component_parts), C)
+			rel_take(src, nameof(component_parts), C)
 			consumed(C, src)
 	if(locate_in_list(parts_found, /obj/item/stock_parts/micro_laser))
 		while(TRUE)
 			var/obj/item/stock_parts/micro_laser/M = locate_in_list(component_parts, /obj/item/stock_parts/micro_laser)
 			if(isnull(M))
 				break
-			own_take_member(src, nameof(component_parts), M)
+			rel_take(src, nameof(component_parts), M)
 			consumed(M, src)
 
 	// Rebuild from mapper's parts
@@ -642,8 +592,8 @@ CAPABILITIES(/obj/machinery/power/rtg)
 		move_into(src, CONTAINER_SLOT_INTERNALS, W)
 	RefreshParts()
 
-/obj/machinery/power/rtg/machine_step()
-	..()
+/// One step: its supply for the next power step, and its radiation while open.
+/obj/machinery/power/rtg/proc/rtg_step(datum/act/timer/A)
 	add_avail(power_gen)
 	if(panel_open && irradiate)
 		radiation_pulse(
@@ -665,13 +615,9 @@ CAPABILITIES(/obj/machinery/power/rtg)
 	if(Adjacent(user, src) || isobserver(user))
 		. += span_notice("The status display reads: Power generation now at <b>[power_gen*0.001]</b>kW.")
 
-/obj/machinery/power/rtg/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-	)
+/obj/machinery/power/rtg/draw(datum/look/look)
 	..()
-
-APPEARANCE_TEMPLATE(/obj/machinery/power/rtg, "{initial(icon_state)}{panel_open?-open:}")
+	look.state("[initial(icon_state)][panel_open ? "-open" : ""]")
 
 /obj/machinery/power/rtg/advanced
 	desc = "An advanced RTG capable of moderating isotope decay, increasing power output but reducing lifetime. It uses plasma-fueled radiation collectors to increase output even further."
@@ -688,10 +634,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/rtg, "{initial(icon_state)}{panel_open?
 
 /obj/machinery/power/rtg/fake_gen/RefreshParts()
 	return
-/// Old attackby: blocked entirely (never called ..()), so fake_gen never offers the base rtg's part replacement.
-/obj/machinery/power/rtg/fake_gen/declare_interactions(list/into)
-	return
-APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
+/// No parts to replace.
+CAPABILITIES(/obj/machinery/power/rtg/fake_gen)
+	without("part_replacement.replace")
 
 /obj/machinery/power/rtg/fake_gen/grid
 	desc = "An array of conventional power storage units, for when the added charge longivity and cost of a SMES unit is unneded or impractical."
@@ -716,6 +661,8 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 
 	var/icon_base = "core"
 	var/state_change = TRUE
+	/// The cell a core placed built starts with.
+	var/starting_cell
 
 /obj/machinery/power/rtg/abductor/RefreshParts()
 	..()
@@ -738,70 +685,32 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an Abductor Core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
-/obj/machinery/power/rtg/abductor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/abductor_eject_cell,
-		/datum/interaction/machine_item/abductor_insert_cell,
-		/datum/interaction/machine_item/abductor_insert_cell_real,
-	)
-	..()
+CAPABILITIES(/obj/machinery/power/rtg/abductor)
+	owns_one(nameof(cell), /obj/item/cell/void, starts = nameof(starting_cell))
+	op("take_cell", hand(), label("Take out"), wait(0), when(req_empty_hand()), when(nameof(cell)), needs(req_operable()), then(PROC_REF(cell_taken)))
+	op("insert_cell", item(/obj/item/cell/void), label("Insert void cell"), wait(0), when(cond_not(nameof(cell))), put_in(nameof(cell)), then(PROC_REF(cell_inserted)))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(void_core_hit_asplod))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(void_core_blast))))
 
-/// Old attack_hand: eject the void cell. `!istype(user)` (never true for a mob/living param) is kept as a requirement for fidelity.
-/datum/interaction/machine_hand/abductor_eject_cell
-	id = "abductor_eject_cell"
-	name = "Take out"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/power/rtg/abductor/proc/abductor_actor_is_living, null), REQ_ON(PRED_TARGET, /obj/machinery/power/rtg/abductor/proc/abductor_has_cell, null))
-	effect = /obj/machinery/power/rtg/abductor/proc/interaction_eject_cell
-
-/obj/machinery/power/rtg/abductor/proc/abductor_actor_is_living(mob/actor, atom/target, obj/item/held)
-	return isliving(actor)
-
-/obj/machinery/power/rtg/abductor/proc/abductor_has_cell(mob/actor, atom/target, obj/item/held)
-	return !!cell
-
-/obj/machinery/power/rtg/abductor/proc/interaction_eject_cell(mob/user, obj/item/held, datum/interaction/interaction)
-	cell.forceMove(get_turf(src))
-	user.put_in_active_hand(cell)
-	own_take(src, nameof(cell))
+/obj/machinery/power/rtg/abductor/proc/cell_taken(datum/act/op/A)
+	var/obj/item/cell/void/taken = rel_take(src, nameof(cell))
+	taken.forceMove(get_turf(src))
+	A.actor.put_in_active_hand(taken)
 	state_change = TRUE
 	RefreshParts()
 	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
-	return TRUE
+	return OP_OK
 
-/// Old attackby: `state_change = TRUE` ran unconditionally first, then a void cell was inserted if there wasn't one already.
-/datum/interaction/machine_item/abductor_insert_cell
-	id = "abductor_insert_cell"
-	name = "Use"
-	held_type = /obj/item
-	consumes_input = FALSE
-	effect = /obj/machinery/power/rtg/abductor/proc/interaction_state_change_marker
-
-/obj/machinery/power/rtg/abductor/proc/interaction_state_change_marker(mob/user, obj/item/held, datum/interaction/interaction)
-	state_change = TRUE //Can't tell if parent did something
-	return FALSE
-
-/datum/interaction/machine_item/abductor_insert_cell_real
-	id = "abductor_insert_cell_real"
-	name = "Insert void cell"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/cell/void
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/rtg/abductor/proc/abductor_no_cell, null))
-	effect = /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell
-
-/obj/machinery/power/rtg/abductor/proc/abductor_no_cell(mob/actor, atom/target, obj/item/held)
-	return !cell
-
-/obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!move_into(src, nameof(src.cell), I, user))
-		return TRUE
+/obj/machinery/power/rtg/abductor/proc/cell_inserted(datum/act/op/A)
 	RefreshParts()
 	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
-	return TRUE
+	return OP_OK
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/rtg/abductor, "{icon_base}{appearance_core_suffix}")
+/obj/machinery/power/rtg/abductor/draw(datum/look/look)
+	..()
+	look.state("[icon_base][appearance_core_suffix()]")
 
 /// Sprite suffix: no cell, open panel, or closed.
 /obj/machinery/power/rtg/abductor/proc/appearance_core_suffix()
@@ -809,16 +718,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/rtg/abductor, "{icon_base}{appearance_c
 		return "-nocell"
 	return panel_open ? "-open" : ""
 
-DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_BLOB, PROC_REF(void_core_hit_asplod))
-DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(void_core_blast))
-
 /// A blob arms the core instead of damaging it.
-/obj/machinery/power/rtg/abductor/proc/void_core_hit_asplod(datum/damage_packet/packet)
+/obj/machinery/power/rtg/abductor/proc/void_core_hit_asplod(datum/act/hit/blob/A)
 	asplod()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// A blast arms the core, or finishes one already armed.
-/obj/machinery/power/rtg/abductor/proc/void_core_blast(datum/damage_packet/packet)
+/obj/machinery/power/rtg/abductor/proc/void_core_blast(datum/act/hit/explosion/A)
 	// Exception: asplod() is this volatile core's already-armed detonation lifecycle.
 	// qdel here only completes that lifecycle; ordinary shell damage enters through
 	// the inherited obj_integrity projectile path before arming the core.
@@ -826,7 +732,7 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 		spent(src)
 	else
 		asplod()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// Heat behaviour rule: fire sets off a void core.
 /obj/machinery/power/rtg/abductor/proc/rule_asplod(datum/rule/rule)
@@ -836,9 +742,8 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 /obj/machinery/power/rtg/abductor/built
 	icon_state = "core"
 
-/obj/machinery/power/rtg/abductor/built/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/void)
+/obj/machinery/power/rtg/abductor/built
+	starting_cell = /obj/item/cell/void
 
 /obj/machinery/power/rtg/abductor/built/Initialize(mapload)
 	. = ..()
@@ -853,9 +758,8 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 /obj/machinery/power/rtg/abductor/hybrid/built
 	icon_state = "coreb"
 
-/obj/machinery/power/rtg/abductor/hybrid/built/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/void/hybrid)
+/obj/machinery/power/rtg/abductor/hybrid/built
+	starting_cell = /obj/item/cell/void/hybrid
 
 /obj/machinery/power/rtg/abductor/hybrid/built/Initialize(mapload)
 	. = ..()
@@ -882,13 +786,14 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 	spent(src)
 	new /obj/singularity(T)
 
-DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_BLOB, PROC_REF(kugelblitz_hit_asplod))
-DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_EXPLOSION, PROC_REF(kugelblitz_hit_asplod))
+CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(kugelblitz_hit_asplod))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(kugelblitz_hit_asplod))))
 
 /// A blob or a blast collapses the containment.
-/obj/machinery/power/rtg/kugelblitz/proc/kugelblitz_hit_asplod(datum/damage_packet/packet)
+/obj/machinery/power/rtg/kugelblitz/proc/kugelblitz_hit_asplod(datum/act/A)
 	asplod()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// Heat behaviour rule: fire sets off a kugelblitz.
 /obj/machinery/power/rtg/kugelblitz/proc/rule_asplod(datum/rule/rule)
@@ -934,37 +839,16 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_EXPLOSION, PROC_REF(
 /obj/machinery/power/rtg/reg/RefreshParts()
 	part_mult = total_component_rating_of_type(/obj/item/stock_parts)
 
-/obj/machinery/power/rtg/reg/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/reg_pixel_fix,
-	)
+/obj/machinery/power/rtg/reg/draw(datum/look/look)
 	..()
-
-/// Old attackby: `pixel_x = -32` ran unconditionally first, then the base rtg's part replacement.
-/datum/interaction/machine_item/reg_pixel_fix
-	id = "reg_pixel_fix"
-	name = "Use"
-	held_type = /obj/item
-	consumes_input = FALSE
-	effect = /obj/machinery/power/rtg/reg/proc/interaction_pixel_fix
-
-/obj/machinery/power/rtg/reg/proc/interaction_pixel_fix(mob/user, obj/item/held, datum/interaction/interaction)
-	pixel_x = -32
-	return FALSE
-
-APPEARANCE_NONE(/obj/machinery/power/rtg/reg)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/rtg/reg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/rtg/reg/appearance_overlays()
-	. = list()
-	pixel_x = -32
 	if(panel_open)
-		icon_state = "reg-o"
+		look.state("reg-o")
 	else if(length(src?.buckled_mob_list()) > 0)
-		icon_state = "reg-a"
+		look.state("reg-a")
 	else
-		icon_state = "reg"
+		look.state("reg")
 
-/obj/machinery/power/rtg/reg/machine_step()
+/obj/machinery/power/rtg/reg/rtg_step(datum/act/timer/A)
 	..()
 	if(length(src?.buckled_mob_list()) > 0)
 		for(var/mob/living/L in src?.buckled_mob_list())
@@ -1068,76 +952,48 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/rtg/reg, TYPE_PROC_REF(/atom, appea
 /obj/machinery/power/port_gen/large_altevian/DropFuel()
 	if(sheets)
 		var/obj/item/stack/material/S = new sheet_path(loc, sheets)
-		sheets -= S.get_amount()
+		set_sheets(sheets - S.get_amount())
 
 /obj/machinery/power/port_gen/large_altevian/UseFuel()
 	var/needed_sheets = power_output / time_per_sheet
 	if (needed_sheets > sheet_left)
-		sheets--
+		set_sheets(sheets - 1)
 		sheet_left = (1 + sheet_left) - needed_sheets
 	else
 		sheet_left -= needed_sheets
 
-/obj/machinery/power/port_gen/large_altevian/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Toggle power", PROC_REF(large_altevian_silicon_toggle)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/large_altevian_add_sheets,
-		/datum/interaction/machine_hand/large_altevian_toggle,
-	)
-	..()
+TRACKED(/obj/machinery/power/port_gen/large_altevian, sheets)
+TRACKED(/obj/machinery/power/port_gen/large_altevian, max_sheets)
 
-/// Old attackby: add fuel sheets.
-/datum/interaction/machine_item/large_altevian_add_sheets
-	id = "large_altevian_add_sheets"
-	name = "Add fuel"
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/power/port_gen/large_altevian/proc/large_altevian_sheet_match, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/large_altevian/proc/large_altevian_has_room, "it's full"))
-	effect = /obj/machinery/power/port_gen/large_altevian/proc/interaction_add_sheets
+// The altevian reactor: its sheets, a hand (or a silicon's touch) that switches it, and its fuel gauge.
+CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
+	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req(PROC_REF(sheet_match))),
+		needs(req(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
+	op("toggle", hand(), label("Toggle"), wait(0), when(req_empty_hand()), when(nameof(anchored)), then(PROC_REF(toggled)))
+	extend("toggle", binds(remote()))
 
-/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_sheet_match(mob/actor, atom/target, obj/item/held)
-	return istype(held, sheet_path)
+/obj/machinery/power/port_gen/large_altevian/proc/sheet_match(datum/act/op/A)
+	return istype(A.held, sheet_path)
 
-/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_has_room(mob/actor, atom/target, obj/item/held)
-	if(!held)
-		return TRUE
-	var/obj/item/stack/addstack = held
-	return min((max_sheets - sheets), addstack.get_amount()) >= 1
+/obj/machinery/power/port_gen/large_altevian/proc/has_room(datum/act/op/A)
+	return sheets < max_sheets
 
-/obj/machinery/power/port_gen/large_altevian/proc/interaction_add_sheets(mob/user, obj/item/O, datum/interaction/interaction)
-	var/obj/item/stack/addstack = O
+/obj/machinery/power/port_gen/large_altevian/proc/sheets_added(datum/act/op/A)
+	var/obj/item/stack/addstack = A.held
 	var/amount = min((max_sheets - sheets), addstack.get_amount())
-	to_chat(user, span_notice("You add [amount] sheet\s to the [src.name]."))
-	sheets += amount
+	to_chat(A.actor, span_notice("You add [amount] sheet\s to the [src.name]."))
+	set_sheets(sheets + amount)
 	addstack.use(amount)
-	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand: the base port_gen behaviour always ran, then toggled power if anchored.
-/datum/interaction/machine_hand/large_altevian_toggle
-	id = "large_altevian_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/power/port_gen/large_altevian/proc/large_altevian_anchored, null))
-	effect = /obj/machinery/power/port_gen/large_altevian/proc/interaction_toggle_power
-
-/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_anchored(mob/actor, atom/target, obj/item/held)
-	return !!anchored
-
-/obj/machinery/power/port_gen/large_altevian/proc/interaction_toggle_power(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/port_gen/large_altevian/proc/toggled(datum/act/op/A)
 	TogglePower()
-	return TRUE
+	return OP_OK
 
-/// Old attack_ai: toggle the generator.
-/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	TogglePower()
-	return TRUE
-
-DECLARE_APPEARANCE(/obj/machinery/power/port_gen/large_altevian, "appearance_fuel_level", list("100" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-100")), "66" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-66")), "33" = list(APPEARANCE_OVERLAYS = list("alteviangen-fuel-33"))))
+/obj/machinery/power/port_gen/large_altevian/draw(datum/look/look)
+	..()
+	var/level = appearance_fuel_level()
+	look.overlay("alteviangen-fuel-[level]", when = level)
 
 /// Fuel gauge step for the hopper overlay ("" when empty).
 /obj/machinery/power/port_gen/large_altevian/proc/appearance_fuel_level()
@@ -1182,13 +1038,18 @@ DECLARE_APPEARANCE(/obj/machinery/power/port_gen/large_altevian, "appearance_fue
 		explosion(T, 7, 12, 18, 20)
 		new /obj/effect/bhole(T)
 
-DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_block))
-DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_EXPLOSION, PROC_REF(antimatter_core_blast))
+CAPABILITIES(/obj/machinery/power/rtg/antimatter_core)
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_shrugged))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(antimatter_core_blast))))
+
+/// A blob does nothing to it.
+/obj/machinery/power/rtg/antimatter_core/proc/blob_shrugged(datum/act/A)
+	return TRUE
 
 /// A blast ruptures the reactor.
-/obj/machinery/power/rtg/antimatter_core/proc/antimatter_core_blast(datum/damage_packet/packet)
+/obj/machinery/power/rtg/antimatter_core/proc/antimatter_core_blast(datum/act/A)
 	asplod()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/machinery/power/rtg/antimatter_core/bullet_act(obj/item/projectile/Proj)
 	. = ..()
@@ -1196,15 +1057,3 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_EXPLOSION, PROC
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/rtg/step_start_condition()
-	return anchored
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/port_gen/step_start_condition()
-	return active
-
-/obj/machinery/power/rtg/abductor/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)

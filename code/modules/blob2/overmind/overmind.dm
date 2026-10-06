@@ -29,6 +29,9 @@
 
 CAPABILITIES(/mob/observer/blob)
 	owns_one(nameof(blob_type), /datum/blob_type)
+	param(nameof(placed), pos = 1)
+	param(nameof(blob_points), pos = 2, default = 60)
+	param(nameof(desired_blob_type), pos = 3)
 
 /mob/observer/blob/get_default_language()
 	return default_language()
@@ -36,12 +39,11 @@ CAPABILITIES(/mob/observer/blob)
 /// The languages the overmind knows.
 TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 
-// ALLOW(init/CTOR_ARGS): pre_placed, starting_points and desired_blob_type are constructor arguments from whoever builds it
-/mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
-	blob_points = starting_points
-	if(pre_placed) //we already have a core!
-		placed = 1
+/// The blob type an overmind is made as (its constructor param), or null for a random one.
+/mob/observer/blob/var/desired_blob_type
 
+// ALLOW(init/INSTANCE_STATE): an overmind is numbered, makes its blob type and learns its languages before its parents' init
+/mob/observer/blob/Initialize(mapload)
 	var/new_name = "[initial(name)] ([rand(1, 999)])"
 	name = new_name
 	real_name = new_name

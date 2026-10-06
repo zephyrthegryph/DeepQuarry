@@ -87,12 +87,12 @@
 	observe(owner, /datum/notice/obj_deconstruct, src, then(PROC_REF(drop_sheets)))
 
 /datum/material_container/proc/drop_sheets(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	retrieve_all()
 
 /datum/material_container/proc/on_examine(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = N
 	var/list/examine_texts = event.texts
 
@@ -453,7 +453,7 @@
 			consumed(deleting, src)
 
 /datum/material_container/proc/on_attackby(datum/act/attackby/use)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/item/I = use.item
 	var/mob/living/user = use.user
 	if(istype(I, /obj/item/storage/bag/sheetsnatcher))

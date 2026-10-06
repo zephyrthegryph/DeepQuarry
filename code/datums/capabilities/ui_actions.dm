@@ -47,10 +47,6 @@ TYPE_TABLE_DECLARE(/datum, ui_logged_actions, list())
 				break
 		if(!owner_cap)
 			return null
-	// A legacy UI_ACT row for this action still wins until its host is migrated.
-	var/datum/ui_decl/decl = ui_decl_of(host)
-	if(decl?.acts[action])
-		return null
 	var/mob/user = ui?.user
 	// ui_rights (code/datums/sys/ui.dm): an admin panel refuses, and audits, anyone without one of its rights.
 	if(host.ui_rights && !admin_require(user?.client, host.ui_rights, "[host.type]:[key]"))

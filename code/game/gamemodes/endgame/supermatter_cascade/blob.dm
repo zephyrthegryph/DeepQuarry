@@ -88,6 +88,6 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 	if(istype(user,/mob/observer))
 		return
 
-	consumed(user)
+	consumed(user, src)
 
 

@@ -31,7 +31,7 @@
 
 /datum/mini_hud/rig/periodic_step()
 	if(!owner_rig())
-		spent(src)
+		ended_with(src)
 		return
 
 	var/obj/item/cell/rigcell = owner_rig().cell
@@ -75,7 +75,7 @@
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())
-		spent(src)
+		ended_with(src)
 		return
 
 	var/obj/item/cell/mechcell = owner_mech().cell
@@ -135,10 +135,13 @@
 	icon_state = "airoff"
 	screen_loc = ui_rig_airtoggle
 
-/atom/movable/screen/rig/airtoggle/Click()
-	// ALLOW(sys_usr_outside_verb): Native screen clicks supply the actor through BYOND usr.
-	var/mob/living/carbon/human/user = usr
-	toggle_air_with_actor(user)
+CAPABILITIES(/atom/movable/screen/rig/airtoggle)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/rig/airtoggle/proc/click_input(datum/act/input/A)
+	toggle_air_with_actor(A.actor)
+	return TRUE
 
 /atom/movable/screen/rig/airtoggle/proc/toggle_air_with_actor(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat || user.incapacitated())
@@ -191,10 +194,13 @@
 	icon_state = "airoff"
 	screen_loc = ui_mech_airtoggle
 
-/atom/movable/screen/mech/airtoggle/Click()
-	// ALLOW(sys_usr_outside_verb): Native screen clicks supply the actor through BYOND usr.
-	var/mob/living/carbon/human/user = usr
-	toggle_air_with_actor(user)
+CAPABILITIES(/atom/movable/screen/mech/airtoggle)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/mech/airtoggle/proc/click_input(datum/act/input/A)
+	toggle_air_with_actor(A.actor)
+	return TRUE
 
 /atom/movable/screen/mech/airtoggle/proc/toggle_air_with_actor(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat || user.incapacitated())

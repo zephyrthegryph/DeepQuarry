@@ -109,7 +109,7 @@
 	var/cycle = H.breath_cycle
 	var/nutrition = H.nutrition
 	for(var/i in 1 to 6)
-		om_run_frame_now(H, /datum/om/pipeline/life)
+		seq_run_frame_now(H, /datum/sequence/life)
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle, "total stasis takes no breath")
 	TEST_ASSERT_EQUAL(H.nutrition, nutrition, "total stasis metabolises nothing")
 	H.set_stasis(null, src)
@@ -140,23 +140,19 @@
 
 /datum/unit_test/dq_k_a_radiation_dose_tier/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/stage/life/radiation/carbon/human/stage = om_stage_for(H, /datum/om/stage/life/radiation)
-	TEST_ASSERT(istype(stage), "the human radiation stage resolves")
 	var/list/levels = GLOB.radiation_levels[H.species.rad_levels]
 	H.decay_radiation(H.radiation)
-	TEST_ASSERT_EQUAL(stage.dose_tier(H), 0, "no dose is tier 0")
+	TEST_ASSERT_EQUAL(H.life_radiation_dose_tier(), 0, "no dose is tier 0")
 	H.add_radiation(levels["danger_2"] + 1)
-	TEST_ASSERT_EQUAL(stage.dose_tier(H), 3, "past danger_2 is tier 3")
+	TEST_ASSERT_EQUAL(H.life_radiation_dose_tier(), 3, "past danger_2 is tier 3")
 	H.decay_radiation(H.radiation)
 
-/// A24: the human status stage idles for a settled conscious body and wakes for fear.
+/// A24: the human status step sleeps for a settled conscious body and wakes for fear.
 /datum/unit_test/dq_k_a_status_idle_rule
 
 /datum/unit_test/dq_k_a_status_idle_rule/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/stage/life/status/carbon/human/stage = om_stage_for(H, /datum/om/stage/life/status)
-	TEST_ASSERT(istype(stage), "the human status stage resolves")
 	H.set_fear(50)
-	TEST_ASSERT(!stage.idle(H), "fear counting down keeps the status stage awake")
+	TEST_ASSERT(H.life_status_due(), "fear counting down keeps the status step awake")
 	H.set_fear(0)
-	TEST_ASSERT(stage.rewake_delay(H) > 0, "a living human's status stage has a rewake for raw writes")
+	TEST_ASSERT(H.life_status_rewake() > 0, "a living human's status step has a rewake for raw writes")

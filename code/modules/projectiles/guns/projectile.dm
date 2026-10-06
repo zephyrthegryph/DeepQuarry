@@ -42,11 +42,15 @@ CAPABILITIES(/obj/item/gun/projectile)
 	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
 	ref_one(nameof(chambered))
 	owns_many(nameof(loaded))
+	param(nameof(starts_loaded), pos = 1)
 
 TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
 
-// ALLOW(init/CTOR_ARGS): starts_loaded is a constructor argument from whoever builds it
-/obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
+/// Whether the gun starts loaded (its constructor param).
+/obj/item/gun/projectile/var/starts_loaded = TRUE
+
+// ALLOW(init/INSTANCE_STATE): a projectile gun loads its starting rounds or magazine (some randomly short) and takes its transform
+/obj/item/gun/projectile/Initialize(mapload)
 	. = ..()
 	if(starts_loaded)
 		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))

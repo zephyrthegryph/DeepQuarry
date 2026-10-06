@@ -1,0 +1,50 @@
+human|none menu: Hit (refused: combat mode is off)
+human|none menu: Smash (refused: combat mode is off)
+human|none menu: Use (refused: it must be screwed down first)
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Hit (refused: combat mode is off)
+robot|none menu: Smash (refused: combat mode is off)
+robot|none menu: Use (refused: it must be screwed down first)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Smash (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Use (refused: it must be screwed down first)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Smash (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Use (refused: it must be screwed down first)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Smash (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Use (refused: it must be screwed down first)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Smash (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Use (refused: it must be screwed down first)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Hit (refused: combat mode is off)
+human|/obj/item/multitool menu: Smash (refused: combat mode is off)
+human|/obj/item/multitool menu: Use (refused: it must be screwed down first)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Hit (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Smash (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Use (refused: it must be screwed down first)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Hit (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Smash (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Use (refused: it must be screwed down first)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Hit (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Smash (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Use (refused: it must be screwed down first)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Hit (refused: combat mode is off)
+human|/obj/item/card/id menu: Smash (refused: combat mode is off)
+human|/obj/item/card/id menu: Use (refused: it must be screwed down first)
+human|/obj/item/card/id click: nothing
+keys: floor_light_harm, floor_light_smash, floor_light_use, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

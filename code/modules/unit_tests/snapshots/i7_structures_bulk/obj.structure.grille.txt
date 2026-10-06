@@ -1,4 +1,5 @@
-/obj/structure/grille|human|none => grille_hand,grille_item|
-/obj/structure/grille|robot|none => grille_hand,grille_item|
+/obj/structure/grille|human|none => |
+/obj/structure/grille|robot|none => |
 /obj/structure/grille|ai|none => |
 /obj/structure/grille|ghost|none => |
+

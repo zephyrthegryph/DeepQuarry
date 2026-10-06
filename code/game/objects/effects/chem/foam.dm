@@ -17,11 +17,12 @@
 	var/dries = 1
 	var/slips = 0
 
-// ALLOW(init/CTOR_ARGS): ismetal is a constructor argument from whoever builds it
-/obj/effect/effect/foam/Initialize(mapload, ismetal = 0)
+CAPABILITIES(/obj/effect/effect/foam)
+	param(nameof(metal), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): foam bubbles, spreads and, when it dries, hardens on timers from its creation
+/obj/effect/effect/foam/Initialize(mapload)
 	. = ..()
-	// icon_state = "[ismetal? "m" : ""]foam" // Removal
-	metal = ismetal
 	play_sfx(src, SFX_EFFECTS_BUBBLES2)
 	if(dries)
 		after(src, 3 + metal * 3, PROC_REF(post_spread))

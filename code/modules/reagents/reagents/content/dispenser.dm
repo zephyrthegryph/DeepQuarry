@@ -604,7 +604,7 @@
 		I.desc = "Looks like this was \an [O] some time ago."
 		for(var/mob/M in viewers(5, O))
 			to_chat(M, span_warning("\The [O] melts."))
-		spent(O)
+		dissolved(O)
 		remove_self(meltdose) // 10 units of acid will not melt EVERYTHING on the tile
 
 /datum/reagent/acid/touch_mob(mob/living/L)

@@ -122,7 +122,7 @@ CAPABILITIES(/datum/tgui_list_input)
 	data["title"] = title
 	return data
 
-/// The computed part of /datum/tgui_list_input's window data (declared on its UI_DATA row).
+/// /datum/tgui_list_input's window data.
 /datum/tgui_list_input/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)

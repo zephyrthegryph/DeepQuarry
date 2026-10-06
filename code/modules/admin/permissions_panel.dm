@@ -309,7 +309,7 @@ CAPABILITIES(/datum/permissions_panel)
 	data["unused_ranks"] = unused_rank_rows
 	return data
 
-/// The computed part of /datum/permissions_panel's window data (declared on its UI_DATA row).
+/// /datum/permissions_panel's window data.
 /datum/permissions_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder())

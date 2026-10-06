@@ -50,7 +50,7 @@ CAPABILITIES(/datum/tgui_ban_panel)
 	return data
 
 
-/// The computed part of /datum/tgui_ban_panel's window data (declared on its UI_DATA row).
+/// /datum/tgui_ban_panel's window data.
 /datum/tgui_ban_panel/ui_data(datum/act/eval/A)
 	var/list/data = list(
 							"min_search" = min_search,

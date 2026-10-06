@@ -671,23 +671,23 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 ///		AI handling stuff
 ///
 
-/datum/om/stage/life/special/vore/bigdragon
-	of = /mob/living/simple_mob/vore/bigdragon
+/mob/living/simple_mob/vore/bigdragon/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/vore/bigdragon/perform(mob/living/simple_mob/vore/bigdragon/self, datum/om/frame/life/ctx)
-	if(!self.noenrage)
-		if(!self.enraged)
-			if(self.vitality() <= 0.5)
-				self.enraged = 1
-				after(self, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."))
-		if(self.enraged)
-			if(self.vitality() >= 0.5)
-				self.enraged = 0
-	if(self.resting)	//Give them a way to slowly heal over time while player controlled
-		self.mend(TREAT_TISSUE_REPAIR, 2.5)
-		self.mend(TREAT_BURN_CARE, 2.5)
-		self.mend(TREAT_ANTITOXIN, 5)
-		self.mend(TREAT_OXYGENATION, 5)
+/mob/living/simple_mob/vore/bigdragon/life_special(datum/seq_frame/life/F)
+	if(!src.noenrage)
+		if(!src.enraged)
+			if(src.vitality() <= 0.5)
+				src.enraged = 1
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."))
+		if(src.enraged)
+			if(src.vitality() >= 0.5)
+				src.enraged = 0
+	if(src.resting)	//Give them a way to slowly heal over time while player controlled
+		src.mend(TREAT_TISSUE_REPAIR, 2.5)
+		src.mend(TREAT_BURN_CARE, 2.5)
+		src.mend(TREAT_ANTITOXIN, 5)
+		src.mend(TREAT_OXYGENATION, 5)
 
 /mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A, stance)
 	. = TRUE

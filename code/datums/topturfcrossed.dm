@@ -17,7 +17,7 @@
 	update_turf_hooks(get_turf(owner))
 
 /datum/topturfcrossed/proc/handle_location_change(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/movable_attempted_move/event = A
 	if(!owner)
 		return
@@ -43,7 +43,7 @@
 
 /// Forwards the Cross() call from the turf to the object hooked
 /datum/topturfcrossed/proc/handle_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/observer_turf_entered/event = A
 	var/atom/movable/crosser = event.arrived
 	if(QDELETED(crosser) || QDELETED(owner))

@@ -878,7 +878,7 @@
 	var/obj/item/organ/internal/breathy = H.organ_in(O_LUNGS)
 	if(!breathy)
 		return
-	consumed(breathy, src) // deleting it detaches it
+	replaced_by(breathy, H) // deleting it detaches it
 
 /datum/trait/positive/light_breather
 	name ="Light Breather"

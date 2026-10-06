@@ -304,10 +304,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	B.selective_preference = DM_DIGEST
 	B.escape_stun = 3
 
-// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
-/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/Initialize(mapload)
-	. = ..()
-	color = random_color(TRUE)
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): random_color(TRUE)'s saturated colour.
+/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/proc/roll_color(datum/roller/R)
+	return R.saturated_colour()
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube
 	delete_on_death = TRUE

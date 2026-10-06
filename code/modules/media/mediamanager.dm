@@ -161,7 +161,7 @@ CAPABILITIES(/datum/media_manager)
 		window.close()
 	return ..()
 
-/// The computed part of /datum/media_manager's window data (declared on its UI_DATA row).
+/// /datum/media_manager's window data.
 /datum/media_manager/ui_data(datum/act/eval/A)
 	var/should_play = TRUE
 	if(owner()?.prefs)

@@ -4,7 +4,7 @@
 	var/insert_count = 0
 
 /datum/interim_resleever_actor_probe/proc/on_insert(datum/act/check_insert/check)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	last_actor_ref = check.actor ? REF(check.actor) : null
 	insert_count++
 	return HOOK_DECLINE

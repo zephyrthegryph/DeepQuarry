@@ -65,3 +65,47 @@ CAPABILITIES(/obj/item/dq_input_probe/op_bound)
 	var/obj/item/dq_input_probe/op_bound/B = allocate(/obj/item/dq_input_probe/op_bound, T)
 	with_actor(user, B, "Click", T, null, "")
 	TEST_ASSERT_EQUAL(B.pokes, 1, "a click bound to an op key performs the op")
+
+/// A click entry its subtype replaces, and a drag watched while it happens (drag_over()).
+/obj/item/dq_input_layer
+	name = "input layer"
+	var/base_clicks = 0
+	var/sub_clicks = 0
+	var/atom/dragged_over = null
+
+CAPABILITIES(/obj/item/dq_input_layer)
+	click_on(PROC_REF(base_click))
+	drag_over(PROC_REF(drag_watched))
+
+/obj/item/dq_input_layer/proc/base_click(datum/act/input/A)
+	base_clicks++
+
+/obj/item/dq_input_layer/proc/drag_watched(datum/act/input/A)
+	dragged_over = A.over
+	return INPUT_FALLTHROUGH
+
+/obj/item/dq_input_layer/sub
+
+CAPABILITIES(/obj/item/dq_input_layer/sub)
+	click_on(PROC_REF(sub_click))
+
+/obj/item/dq_input_layer/sub/proc/sub_click(datum/act/input/A)
+	sub_clicks++
+	return INPUT_FALLTHROUGH
+
+/datum/unit_test/dq_lifeform_input_layers
+
+/datum/unit_test/dq_lifeform_input_layers/Run()
+	var/turf/T = dq_containment_floor()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/dq_input_layer/sub/S = allocate(/obj/item/dq_input_layer/sub, T)
+	var/obj/structure/dq_input_target/target = allocate(/obj/structure/dq_input_target, T)
+
+	with_actor(user, S, "Click", T, null, "")
+	TEST_ASSERT_EQUAL(S.sub_clicks, 1, "the subtype's click_on() runs once, though its parent's generated Click is reached by the fall-through")
+	TEST_ASSERT_EQUAL(S.base_clicks, 0, "the parent's replaced entry does not run")
+	with_actor(user, S, "Click", T, null, "")
+	TEST_ASSERT_EQUAL(S.sub_clicks, 2, "the fall-through mark is cleared when the native chain returns: the next click runs it again")
+
+	with_actor(user, S, "MouseDrag", target, T, T, null, null, "")
+	TEST_ASSERT_EQUAL(S.dragged_over, target, "drag_over() hands the handler what the holder is dragged over")

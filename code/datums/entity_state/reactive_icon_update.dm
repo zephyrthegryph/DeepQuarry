@@ -67,11 +67,11 @@
 	watched_turfs = new_turfs
 
 /datum/reactive_icon_update/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	update_watch()
 
 /datum/reactive_icon_update/proc/on_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/turf/source = A.target
 	var/datum/notice/atom_entered/event = A
 	update_proximity_icon(source, event.arrived, event.old_loc)

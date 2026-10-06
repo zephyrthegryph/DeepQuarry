@@ -3,3 +3,4 @@
 /obj/machinery/button/windowtint|ai|none => |
 /obj/machinery/button/windowtint|ghost|none => |
 /obj/machinery/button/windowtint|human|/obj/item => windowtint_toggle,button_press,button_press_item|machine_panel:needs a screwdriver
+

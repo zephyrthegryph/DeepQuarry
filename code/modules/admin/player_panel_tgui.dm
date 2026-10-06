@@ -79,7 +79,7 @@ CAPABILITIES(/datum/player_panel)
 		))
 	shown_players = players
 
-/// The computed part of /datum/player_panel's window data (declared on its UI_DATA row).
+/// /datum/player_panel's window data.
 /datum/player_panel/ui_data(datum/act/eval/A)
 	return list("players" = shown_players || list())
 

@@ -27,7 +27,7 @@ CAPABILITIES(/datum/tickets)
 
 	return ticket_state
 
-/// The computed part of /datum/tickets's window data (declared on its UI_DATA row).
+/// /datum/tickets's window data.
 /datum/tickets/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()
@@ -276,7 +276,7 @@ CAPABILITIES(/datum/tickets)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/ticket's window data (declared on its UI_DATA row).
+/// /datum/ticket's window data.
 /datum/ticket/proc/ui_data_datum_ticket(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 

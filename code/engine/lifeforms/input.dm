@@ -1,5 +1,5 @@
-// Input with an actor (doc/rewrite/final_api.html section 6 "Lifecycle forms", form 9): click_on(), drag_onto(), hover(), tooltip() and
-// with_actor().
+// Input with an actor (doc/rewrite/final_api.html section 6 "Lifecycle forms", form 9): click_on(), drag_onto(), drag_over(), hover(),
+// tooltip() and with_actor().
 //
 //	CAPABILITIES(/atom/movable/screen/alert)
 //		tooltip(PROC_REF(alert_tooltip))                        // MouseEntered/MouseExited open and close it for the hovering mob
@@ -11,7 +11,7 @@
 //
 //	with_actor(user, CALLBACK(target, TYPE_PROC_REF(/datum, vv_edit_var), name, value))   // admin and callback code: runs it as `user`
 //
-// The client's native hooks (Click(), MouseDrop(), MouseEntered(), MouseExited()) are the only places BYOND hands DM the acting mob, as `usr`.
+// The client's native hooks (Click(), MouseDrop(), MouseDrag(), MouseEntered(), MouseExited()) are the only places BYOND hands DM the acting mob, as `usr`.
 // For a type that declares one of these entries, analyze gen declare writes the native override into code/engine/_generated/declare.dm: it
 // reads usr there, once, and calls the engine with the actor as an argument. Content never reads usr: the handler gets the actor in its
 // context (A.actor), and an op key runs through perform_op() with it, so requirements, reach and logging apply as for any input.
@@ -27,6 +27,11 @@
 
 /proc/drag_onto(handler, onto = null)
 	return entry_make(ENTRY_INPUT, "input:[INPUT_DRAG_ONTO]", list("input" = INPUT_DRAG_ONTO, "handler" = handler, "onto" = onto))
+
+/// drag_over(PROC_REF(x)): x(A) on each native MouseDrag while the holder is being dragged (A.over is what it is over now), before the native
+/// drag goes on. For hover feedback during a drag; the drop itself is drag_onto().
+/proc/drag_over(handler)
+	return entry_make(ENTRY_INPUT, "input:[INPUT_DRAG_OVER]", list("input" = INPUT_DRAG_OVER, "handler" = handler))
 
 /proc/hover(handler)
 	return entry_make(ENTRY_INPUT, "input:[INPUT_HOVER]", list("input" = INPUT_HOVER, "handler" = handler))
@@ -48,11 +53,17 @@
 	/// The native hook's own arguments by name (location, control, src_location, over_location, src_control, over_control, params).
 	var/list/native
 
+/// The input that fell through to the native parent right now (INPUT_FALLTHROUGH): list(holder, input). A parent type's generated override
+/// that the fall reaches must not run the same (inherited or replaced) entry a second time; input_fell() clears it when the native chain returns.
+GLOBAL_REAL_VAR(list/input_falling)
+
 /// Runs the holder's handler for one input with `actor`: a holder proc gets the context; an op key runs through perform_op(). Returns TRUE
 /// when a handler took the input.
 /proc/input_dispatch(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE, list/native = null)
 	if(!holder || QDELETED(holder))
 		return FALSE
+	if(input_falling && input_falling[1] == holder && input_falling[2] == input)
+		return FALSE // a subtype's generated override already ran this holder's entry and fell through to its parent
 	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
 	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return FALSE
@@ -78,11 +89,19 @@
 			A.origin = ORIGIN_CLICK
 			var/reply = call(holder, handler)(A)
 			A.release()
-			return reply != INPUT_FALLTHROUGH // INPUT_FALLTHROUGH: the native override goes on to ..()
+			if(reply == INPUT_FALLTHROUGH) // the native override goes on to ..(): a parent's generated override must not run it again
+				input_falling = list(holder, input)
+				return FALSE
+			return TRUE
 		if(istext(handler))
 			perform_op(actor, holder, handler, null, ORIGIN_CLICK)
 			return TRUE
 	return .
+
+/// The native chain of a generated override returned: the fall-through mark of `holder` is over.
+/proc/input_fell(atom/holder)
+	if(input_falling && input_falling[1] == holder)
+		input_falling = null
 
 /// The tooltip of `holder` for `user`: opened on enter, closed on exit.
 /proc/input_tooltip(atom/holder, mob/user, entered, params)

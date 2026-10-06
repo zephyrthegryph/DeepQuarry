@@ -45,13 +45,13 @@
 	var/last_acted_quality
 
 /datum/unit_test/modern_tool_interaction_dispatch/proc/on_tool_acted(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/item_tool_acted/event = N
 	tool_acted_calls++
 	last_acted_quality = event.tool_quality
 
 /datum/unit_test/modern_tool_interaction_dispatch/proc/on_quality_acted(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/tool_atom_acted/event = N
 	if(event.tool_quality == TOOL_WRENCH && !event.secondary)
 		quality_acted_calls++

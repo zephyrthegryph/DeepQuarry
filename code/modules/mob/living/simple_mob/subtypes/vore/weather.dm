@@ -43,12 +43,12 @@
 /mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
 
-/datum/om/stage/life/special/vore/fossiltank
-	of = /mob/living/simple_mob/vore/fossiltank
+/mob/living/simple_mob/vore/fossiltank/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/vore/fossiltank/perform(mob/living/simple_mob/vore/fossiltank/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.regenration()
+/mob/living/simple_mob/vore/fossiltank/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.regenration()
 	..()
 
 /mob/living/simple_mob/vore/fossiltank/proc/regenration()

@@ -146,8 +146,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 		to_chat(user, span_warning("\The [src] cannot hold more [S.name]."))
 	return 1
 
-/obj/machinery/partslathe/machine_step()
-	..()
+/obj/machinery/partslathe/proc/work_step(datum/act/timer/A)
 	if(has_stat(MACHINE_STAT_ANY))
 		update_icon()
 		return
@@ -238,6 +237,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 	)
 
 CAPABILITIES(/obj/machinery/partslathe)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("PartsLathe")
 	op("queue", ui_act("queue", arg("queue")), then(PROC_REF(ui_act_queue)))
 	op("queueBoard", ui_act("queueBoard"), then(PROC_REF(ui_act_queueboard)))
@@ -396,7 +396,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 	return new path(loc)
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 

@@ -116,9 +116,9 @@
 
 /datum/unit_test/om/core_fix_timer_soonest_cache/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	var/late = om_after(E, 5 SECONDS, /datum/om_test_entity/proc/timer_hit, "late")
-	var/soon = om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "soon")
-	var/mid = om_after(E, 3 SECONDS, /datum/om_test_entity/proc/timer_hit, "mid")
+	var/late = after(E, 5 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("late"))
+	var/soon = after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("soon"))
+	var/mid = after(E, 3 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("mid"))
 	var/datum/om/rec/rec = E.om_rec
 	TEST_ASSERT_EQUAL(om_timer_index(rec, mid), 2 * OM_TIMER_STRIDE + 1, "binary search finds the third timer")
 	TEST_ASSERT_EQUAL(om_timer_index(rec, 999), 0, "and nothing for an unknown id")
@@ -135,13 +135,13 @@
 	TEST_ASSERT(("late" in E.log), "then it fires")
 	TEST_ASSERT_NULL(rec.timer_soonest, "no timers, no soonest")
 
-/// om_after() decides once whether a proc is global; firing does not re-derive it.
+/// after() decides once whether a proc is global; firing does not re-derive it.
 /datum/unit_test/om/core_fix_timer_global_flag
 
 /datum/unit_test/om/core_fix_timer_global_flag/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	om_after(E, 1 SECONDS, /proc/om_cf_global_hit, E)
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "typed")
+	after(E, 1 SECONDS, /proc/om_cf_global_hit, with = list(E))
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("typed"))
 	var/list/T = E.om_rec.timers
 	TEST_ASSERT(T[6] & OM_TIMER_GLOBAL, "a /proc/ timer is flagged global")
 	TEST_ASSERT(!(T[OM_TIMER_STRIDE + 6] & OM_TIMER_GLOBAL), "a type-proc timer is not")

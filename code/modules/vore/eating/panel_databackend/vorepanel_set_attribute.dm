@@ -2,8 +2,7 @@
 #define VORE_SIZE_MULT_ITEM "item"
 #define VORE_SIZE_MULT_OVERALL "overall"
 
-UI_SUBACT(/datum/vore_look, "attr", "b_name", attr_b_name, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_name)
+/datum/vore_look/proc/attr_b_name(mob/user, list/params, extra)
 	var/new_name = html_encode(params["val"])
 
 	var/failure_msg
@@ -24,8 +23,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_name)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_display_name", attr_b_display_name, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_display_name)
+/datum/vore_look/proc/attr_b_display_name(mob/user, list/params, extra)
 	var/new_name = html_encode(params["val"])
 	if(length(new_name) > BELLIES_NAME_MAX)
 		return FALSE
@@ -34,29 +32,25 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_display_name)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_message_mode", attr_b_message_mode)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_message_mode)
+/datum/vore_look/proc/attr_b_message_mode(mob/user, list/params, extra)
 	host().vore_selected.message_mode = !host().vore_selected.message_mode
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_wetness", attr_b_wetness)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_wetness)
+/datum/vore_look/proc/attr_b_wetness(mob/user, list/params, extra)
 	host().vore_selected.is_wet = !host().vore_selected.is_wet
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_wetloop", attr_b_wetloop)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_wetloop)
+/datum/vore_look/proc/attr_b_wetloop(mob/user, list/params, extra)
 	host().vore_selected.wet_loop = !host().vore_selected.wet_loop
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_mode", attr_b_mode, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_mode)
+/datum/vore_look/proc/attr_b_mode(mob/user, list/params, extra)
 	var/new_mode = params["val"]
 	if(!(new_mode in host().vore_selected.digest_modes))
 		return FALSE
@@ -67,8 +61,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_mode)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_addons", attr_b_addons, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_addons)
+/datum/vore_look/proc/attr_b_addons(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(toggle_addon in host().vore_selected.mode_flag_list))
 		return FALSE
@@ -88,8 +81,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_addons)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_item_mode", attr_b_item_mode, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_item_mode)
+/datum/vore_look/proc/attr_b_item_mode(mob/user, list/params, extra)
 	var/new_mode = params["val"]
 	if(!(new_mode in host().vore_selected.item_digest_modes))
 		return FALSE
@@ -100,15 +92,13 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_item_mode)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_contaminates", attr_b_contaminates)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_contaminates)
+/datum/vore_look/proc/attr_b_contaminates(mob/user, list/params, extra)
 	host().vore_selected.contaminates = !host().vore_selected.contaminates
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_contamination_flavor", attr_b_contamination_flavor, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_flavor)
+/datum/vore_look/proc/attr_b_contamination_flavor(mob/user, list/params, extra)
 	var/new_flavor = params["val"]
 	if(!(new_flavor in GLOB.contamination_flavors))
 		return FALSE
@@ -117,8 +107,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_flavor)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_contamination_color", attr_b_contamination_color, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_color)
+/datum/vore_look/proc/attr_b_contamination_color(mob/user, list/params, extra)
 	var/new_color = params["val"]
 	if(!(new_color in GLOB.contamination_colors))
 		return FALSE
@@ -128,8 +117,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_egg_type", attr_b_egg_type, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_type)
+/datum/vore_look/proc/attr_b_egg_type(mob/user, list/params, extra)
 	var/new_egg_type = params["val"]
 	if(!(new_egg_type in GLOB.global_vore_egg_types))
 		return FALSE
@@ -138,8 +126,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_type)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_egg_name", attr_b_egg_name, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_name)
+/datum/vore_look/proc/attr_b_egg_name(mob/user, list/params, extra)
 	var/new_egg_name = sanitize(params["val"], BELLIES_NAME_MAX, FALSE, TRUE, FALSE)
 	if(!new_egg_name)
 		host().vore_selected.egg_name = null
@@ -149,8 +136,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_name)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_egg_size", attr_b_egg_size, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_size)
+/datum/vore_look/proc/attr_b_egg_size(mob/user, list/params, extra)
 	var/new_egg_size = params["val"]
 	if(!isnum(new_egg_size))
 		return FALSE
@@ -164,22 +150,19 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_size)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_recycling", attr_b_recycling)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_recycling)
+/datum/vore_look/proc/attr_b_recycling(mob/user, list/params, extra)
 	host().vore_selected.recycling = !host().vore_selected.recycling
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_storing_nutrition", attr_b_storing_nutrition)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_storing_nutrition)
+/datum/vore_look/proc/attr_b_storing_nutrition(mob/user, list/params, extra)
 	host().vore_selected.storing_nutrition = !host().vore_selected.storing_nutrition
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", BELLY_DESCRIPTION_MESSAGE, attr_belly_description_message, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_belly_description_message)
+/datum/vore_look/proc/attr_belly_description_message(mob/user, list/params, extra)
 	var/new_desc = html_encode(params["val"])
 
 	if(new_desc)
@@ -192,8 +175,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_belly_description_message)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", BELLY_DESCRIPTION_MESSAGE_ABSROED, attr_belly_description_message_absroed, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_belly_description_message_absroed)
+/datum/vore_look/proc/attr_belly_description_message_absroed(mob/user, list/params, extra)
 	var/new_desc = html_encode(params["val"])
 
 	if(new_desc)
@@ -206,8 +188,8 @@ UI_SUBACT_PROC(/datum/vore_look, attr_belly_description_message_absroed)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_msgs", attr_b_msgs, UI_ARG_VALUE("msgtype"), UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_msgs)
+/datum/vore_look/proc/attr_b_msgs(mob/user, list/params, extra)
+	var/datum/tgui/ui = extra // the window the button was pressed in
 	switch(params["msgtype"])
 		if(DIGEST_PREY)
 			host().vore_selected.set_messages(params["val"], DIGEST_PREY, limit = BELLIES_MESSAGE_MAX)
@@ -399,8 +381,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_msgs)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_verb", attr_b_verb, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_verb)
+/datum/vore_look/proc/attr_b_verb(mob/user, list/params, extra)
 	var/new_verb = html_encode(params["val"])
 
 	if(length(new_verb) > BELLIES_NAME_MAX || length(new_verb) < BELLIES_NAME_MIN)
@@ -412,8 +393,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_verb)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_release_verb", attr_b_release_verb, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_release_verb)
+/datum/vore_look/proc/attr_b_release_verb(mob/user, list/params, extra)
 	var/new_release_verb = html_encode(params["val"])
 
 	if(length(new_release_verb) > BELLIES_NAME_MAX || length(new_release_verb) < BELLIES_NAME_MIN)
@@ -425,8 +405,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_release_verb)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_eating_privacy", attr_b_eating_privacy, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_eating_privacy)
+/datum/vore_look/proc/attr_b_eating_privacy(mob/user, list/params, extra)
 	var/privacy_choice = params["val"]
 	if(!(privacy_choice in list("default", "subtle", "loud")))
 		return FALSE
@@ -435,8 +414,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_eating_privacy)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_silicon_belly", attr_b_silicon_belly, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_silicon_belly)
+/datum/vore_look/proc/attr_b_silicon_belly(mob/user, list/params, extra)
 	var/belly_choice = params["val"]
 	if(!(belly_choice in list("Sleeper", "Vorebelly", "Both")))
 		return FALSE
@@ -447,20 +425,19 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_silicon_belly)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_belly_mob_mult", attr_b_belly_mob_mult)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_mob_mult)
+/datum/vore_look/proc/attr_b_belly_mob_mult(mob/user, list/params, extra)
+	var/datum/tgui/ui = extra // the window the button was pressed in
 	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_MOB, displayed_max = 5, default = host().vore_selected.belly_mob_mult, question = "Choose the multiplier for mobs contributing to belly size, ranging from 0 to 5. Set to 0 to disable mobs contributing to belly size", title = "Set Prey Multiplier")
 
-UI_SUBACT(/datum/vore_look, "attr", "b_belly_item_mult", attr_b_belly_item_mult)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_item_mult)
+/datum/vore_look/proc/attr_b_belly_item_mult(mob/user, list/params, extra)
+	var/datum/tgui/ui = extra // the window the button was pressed in
 	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_ITEM, displayed_max = 10, default = host().vore_selected.belly_item_mult, question = "Choose the multiplier for items contributing to belly size, ranging from 0 to 10. (Item size affects how much they contribute as well) Set to 0 to disable size checks", title = "Set Item Multiplier")
 
-UI_SUBACT(/datum/vore_look, "attr", "b_belly_overall_mult", attr_b_belly_overall_mult)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_overall_mult)
+/datum/vore_look/proc/attr_b_belly_overall_mult(mob/user, list/params, extra)
+	var/datum/tgui/ui = extra // the window the button was pressed in
 	open_request(ui, /datum/prompt/number/vore_size_multiplier, TYPE_PROC_REF(/datum/tgui, vore_size_multiplier_answered), answerer = user, multiplier_kind = VORE_SIZE_MULT_OVERALL, displayed_max = 5, default = host().vore_selected.belly_overall_mult, question = "Choose the overall multiplier to be applied to belly contents after specific multipliers, ranging from 0 to 5. Set to 0 to disable showing belly sprites at all.", title = "Set minimum prey amount")
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fancy_sound", attr_b_fancy_sound)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fancy_sound)
+/datum/vore_look/proc/attr_b_fancy_sound(mob/user, list/params, extra)
 	host().vore_selected.fancy_vore = !host().vore_selected.fancy_vore
 	host().vore_selected.vore_sound = "Gulp"
 	host().vore_selected.release_sound = "Splatter"
@@ -469,8 +446,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fancy_sound)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_release", attr_b_release, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_release)
+/datum/vore_look/proc/attr_b_release(mob/user, list/params, extra)
 	var/choice = params["val"]
 	if(host().vore_selected.fancy_vore)
 		if(!(choice in GLOB.fancy_release_sounds))
@@ -482,8 +458,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_release)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_releasesoundtest", attr_b_releasesoundtest)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_releasesoundtest)
+/datum/vore_look/proc/attr_b_releasesoundtest(mob/user, list/params, extra)
 	var/sound/releasetest
 	if(host().vore_selected.fancy_vore)
 		releasetest = GLOB.fancy_release_sounds[host().vore_selected.release_sound]
@@ -499,8 +474,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_releasesoundtest)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_sound", attr_b_sound, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_sound)
+/datum/vore_look/proc/attr_b_sound(mob/user, list/params, extra)
 	var/choice = params["val"]
 	if(host().vore_selected.fancy_vore)
 		if(!(choice in GLOB.fancy_vore_sounds))
@@ -512,8 +486,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_sound)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_soundtest", attr_b_soundtest)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_soundtest)
+/datum/vore_look/proc/attr_b_soundtest(mob/user, list/params, extra)
 	var/sound/voretest
 	if(host().vore_selected.fancy_vore)
 		voretest = GLOB.fancy_vore_sounds[host().vore_selected.vore_sound]
@@ -528,8 +501,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_soundtest)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_sound_volume", attr_b_sound_volume, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_sound_volume)
+/datum/vore_look/proc/attr_b_sound_volume(mob/user, list/params, extra)
 	var/sound_volume_input = params["val"]
 	if(!isnum(sound_volume_input))
 		return FALSE
@@ -538,8 +510,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_sound_volume)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_noise_freq", attr_b_noise_freq, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_noise_freq)
+/datum/vore_look/proc/attr_b_noise_freq(mob/user, list/params, extra)
 	var/choice = params["val"]
 	if(!isnum(choice))
 		return FALSE
@@ -550,36 +521,31 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_noise_freq)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tastes", attr_b_tastes)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_tastes)
+/datum/vore_look/proc/attr_b_tastes(mob/user, list/params, extra)
 	host().vore_selected.can_taste = !host().vore_selected.can_taste
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_feedable", attr_b_feedable)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_feedable)
+/datum/vore_look/proc/attr_b_feedable(mob/user, list/params, extra)
 	host().vore_selected.is_feedable = !host().vore_selected.is_feedable
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_entrance_logs", attr_b_entrance_logs)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_entrance_logs)
+/datum/vore_look/proc/attr_b_entrance_logs(mob/user, list/params, extra)
 	host().vore_selected.entrance_logs = !host().vore_selected.entrance_logs
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_item_digest_logs", attr_b_item_digest_logs)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_item_digest_logs)
+/datum/vore_look/proc/attr_b_item_digest_logs(mob/user, list/params, extra)
 	host().vore_selected.item_digest_logs = !host().vore_selected.item_digest_logs
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_bulge_size", attr_b_bulge_size, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_bulge_size)
+/datum/vore_look/proc/attr_b_bulge_size(mob/user, list/params, extra)
 	var/new_bulge = params["val"]
 	if(!isnum(new_bulge))
 		return FALSE
@@ -593,29 +559,25 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_bulge_size)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_display_absorbed_examine", attr_b_display_absorbed_examine)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_display_absorbed_examine)
+/datum/vore_look/proc/attr_b_display_absorbed_examine(mob/user, list/params, extra)
 	host().vore_selected.display_absorbed_examine = !host().vore_selected.display_absorbed_examine
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_display_outside_struggle", attr_b_display_outside_struggle)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_display_outside_struggle)
+/datum/vore_look/proc/attr_b_display_outside_struggle(mob/user, list/params, extra)
 	host().vore_selected.toggle_displayed_message_flags(MS_FLAG_STRUGGLE_OUTSIDE)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_display_absorbed_outside_struggle", attr_b_display_absorbed_outside_struggle)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_display_absorbed_outside_struggle)
+/datum/vore_look/proc/attr_b_display_absorbed_outside_struggle(mob/user, list/params, extra)
 	host().vore_selected.toggle_displayed_message_flags(MS_FLAG_STRUGGLE_ABSORBED_OUTSIDE)
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_grow_shrink", attr_b_grow_shrink, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_grow_shrink)
+/datum/vore_look/proc/attr_b_grow_shrink(mob/user, list/params, extra)
 	var/new_grow = params["val"]
 	if (!isnum(new_grow))
 		return
@@ -624,8 +586,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_grow_shrink)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_nutritionpercent", attr_b_nutritionpercent, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_nutritionpercent)
+/datum/vore_look/proc/attr_b_nutritionpercent(mob/user, list/params, extra)
 	var/new_nutrition = params["val"]
 	if(!isnum(new_nutrition))
 		return FALSE
@@ -635,8 +596,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_nutritionpercent)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_burn_dmg", attr_b_burn_dmg, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_burn_dmg)
+/datum/vore_look/proc/attr_b_burn_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
@@ -646,8 +606,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_burn_dmg)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_brute_dmg", attr_b_brute_dmg, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_brute_dmg)
+/datum/vore_look/proc/attr_b_brute_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
@@ -657,8 +616,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_brute_dmg)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_oxy_dmg", attr_b_oxy_dmg, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_oxy_dmg)
+/datum/vore_look/proc/attr_b_oxy_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
@@ -667,8 +625,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_oxy_dmg)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tox_dmg", attr_b_tox_dmg, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_tox_dmg)
+/datum/vore_look/proc/attr_b_tox_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
@@ -677,8 +634,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_tox_dmg)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_clone_dmg", attr_b_clone_dmg, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_clone_dmg)
+/datum/vore_look/proc/attr_b_clone_dmg(mob/user, list/params, extra)
 	var/new_damage = params["val"]
 	if(!isnum(new_damage))
 		return FALSE
@@ -687,8 +643,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_clone_dmg)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_bellytemperature", attr_b_bellytemperature, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_bellytemperature)
+/datum/vore_look/proc/attr_b_bellytemperature(mob/user, list/params, extra)
 	var/new_temp = params["val"]
 	if(!isnum(new_temp))
 		return FALSE
@@ -698,15 +653,13 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_bellytemperature)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_temperature_damage", attr_b_temperature_damage)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_temperature_damage)
+/datum/vore_look/proc/attr_b_temperature_damage(mob/user, list/params, extra)
 	host().vore_selected.temperature_damage = !host().vore_selected.temperature_damage
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_drainmode", attr_b_drainmode, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_drainmode)
+/datum/vore_look/proc/attr_b_drainmode(mob/user, list/params, extra)
 	var/new_drainmode = params["val"]
 	if(!(new_drainmode in host().vore_selected.drainmodes))
 		return FALSE
@@ -715,15 +668,13 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_drainmode)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_emoteactive", attr_b_emoteactive)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_emoteactive)
+/datum/vore_look/proc/attr_b_emoteactive(mob/user, list/params, extra)
 	host().vore_selected.emote_active = !host().vore_selected.emote_active
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_selective_mode_pref_toggle", attr_b_selective_mode_pref_toggle, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_selective_mode_pref_toggle)
+/datum/vore_look/proc/attr_b_selective_mode_pref_toggle(mob/user, list/params, extra)
 	var/new_mode = params["val"]
 	switch(new_mode)
 		if(DM_DIGEST)
@@ -734,8 +685,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_selective_mode_pref_toggle)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_emotetime", attr_b_emotetime, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_emotetime)
+/datum/vore_look/proc/attr_b_emotetime(mob/user, list/params, extra)
 	var/new_time = params["val"]
 	if(!isnum(new_time))
 		return FALSE
@@ -744,8 +694,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_emotetime)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_escapable", attr_b_escapable, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_escapable)
+/datum/vore_look/proc/attr_b_escapable(mob/user, list/params, extra)
 	var/new_mode = params["val"]
 	switch(new_mode)
 		if(B_ESCAPABLE_NONE) //Never escapable.
@@ -761,8 +710,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_escapable)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_escapechance", attr_b_escapechance, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_escapechance)
+/datum/vore_look/proc/attr_b_escapechance(mob/user, list/params, extra)
 	var/escape_chance_input = params["val"]
 	if(!isnum(escape_chance_input))
 		return FALSE
@@ -771,8 +719,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_escapechance)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_belchchance", attr_b_belchchance, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_belchchance)
+/datum/vore_look/proc/attr_b_belchchance(mob/user, list/params, extra)
 	var/belch_chance_input = params["val"]
 	if(!isnum(belch_chance_input))
 		return FALSE
@@ -781,8 +728,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_belchchance)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_escapechance_absorbed", attr_b_escapechance_absorbed, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_escapechance_absorbed)
+/datum/vore_look/proc/attr_b_escapechance_absorbed(mob/user, list/params, extra)
 	var/escape_absorbed_chance_input = params["val"]
 	if(!isnum(escape_absorbed_chance_input))
 		return FALSE
@@ -791,8 +737,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_escapechance_absorbed)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_escapetime", attr_b_escapetime, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_escapetime)
+/datum/vore_look/proc/attr_b_escapetime(mob/user, list/params, extra)
 	var/escape_time_input = params["val"]
 	if(!isnum(escape_time_input))
 		return FALSE
@@ -801,8 +746,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_escapetime)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_transferchance", attr_b_transferchance, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_transferchance)
+/datum/vore_look/proc/attr_b_transferchance(mob/user, list/params, extra)
 	var/transfer_chance_input = params["val"]
 	if(!isnum(transfer_chance_input))
 		return FALSE
@@ -811,8 +755,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_transferchance)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_transferlocation", attr_b_transferlocation, UI_ARG_REF("val", null, /obj/belly))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_transferlocation)
+/datum/vore_look/proc/attr_b_transferlocation(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
 
 	if(!istype(choice))
@@ -823,8 +766,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_transferlocation)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_transferchance_secondary", attr_b_transferchance_secondary, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_transferchance_secondary)
+/datum/vore_look/proc/attr_b_transferchance_secondary(mob/user, list/params, extra)
 	var/transfer_secondary_chance_input = params["val"]
 	if(!isnum(transfer_secondary_chance_input))
 		return FALSE
@@ -833,8 +775,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_transferchance_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_transferlocation_secondary", attr_b_transferlocation_secondary, UI_ARG_REF("val", null, /obj/belly))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_transferlocation_secondary)
+/datum/vore_look/proc/attr_b_transferlocation_secondary(mob/user, list/params, extra)
 	var/obj/belly/choice_secondary = params["val"]
 
 	if(!istype(choice_secondary))
@@ -845,8 +786,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_transferlocation_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_absorbchance", attr_b_absorbchance, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbchance)
+/datum/vore_look/proc/attr_b_absorbchance(mob/user, list/params, extra)
 	var/absorb_chance_input = params["val"]
 	if(!isnum(absorb_chance_input))
 		return FALSE
@@ -855,8 +795,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbchance)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_digestchance", attr_b_digestchance, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_digestchance)
+/datum/vore_look/proc/attr_b_digestchance(mob/user, list/params, extra)
 	var/digest_chance_input = params["val"]
 	if(!isnum(digest_chance_input))
 		return FALSE
@@ -865,8 +804,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_digestchance)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferchance_primary", attr_b_autotransferchance_primary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferchance_primary)
+/datum/vore_look/proc/attr_b_autotransferchance_primary(mob/user, list/params, extra)
 	var/autotransferchance_input = params["val"]
 	if(!isnum(autotransferchance_input))
 		return FALSE
@@ -875,8 +813,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferchance_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferwait", attr_b_autotransferwait, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferwait)
+/datum/vore_look/proc/attr_b_autotransferwait(mob/user, list/params, extra)
 	var/autotransferwait_input = params["val"]
 	if(!isnum(autotransferwait_input))
 		return FALSE
@@ -885,8 +822,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferwait)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferlocation_primary", attr_b_autotransferlocation_primary, UI_ARG_REF("val", null, /obj/belly))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferlocation_primary)
+/datum/vore_look/proc/attr_b_autotransferlocation_primary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
 
 	if(!istype(choice))
@@ -897,8 +833,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferlocation_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferextralocation_primary", attr_b_autotransferextralocation_primary, UI_ARG_REF("val", null, /obj/belly))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferextralocation_primary)
+/datum/vore_look/proc/attr_b_autotransferextralocation_primary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
 	if(!istype(choice))
 		return FALSE
@@ -910,8 +845,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferextralocation_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferchance_secondary", attr_b_autotransferchance_secondary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferchance_secondary)
+/datum/vore_look/proc/attr_b_autotransferchance_secondary(mob/user, list/params, extra)
 	var/autotransferchance_secondary_input = params["val"]
 	if(!isnum(autotransferchance_secondary_input))
 		return FALSE
@@ -920,8 +854,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferchance_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferlocation_secondary", attr_b_autotransferlocation_secondary, UI_ARG_REF("val", null, /obj/belly))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferlocation_secondary)
+/datum/vore_look/proc/attr_b_autotransferlocation_secondary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
 
 	if(!choice)
@@ -932,8 +865,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferlocation_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferextralocation_secondary", attr_b_autotransferextralocation_secondary, UI_ARG_REF("val", null, /obj/belly))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferextralocation_secondary)
+/datum/vore_look/proc/attr_b_autotransferextralocation_secondary(mob/user, list/params, extra)
 	var/obj/belly/choice = params["val"]
 	if(!istype(choice)) //They cancelled, no changes
 		return FALSE
@@ -945,8 +877,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferextralocation_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_whitelist_primary", attr_b_autotransfer_whitelist_primary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_primary)
+/datum/vore_look/proc/attr_b_autotransfer_whitelist_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list[toggle_addon]))
 		return FALSE
@@ -955,8 +886,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_blacklist_primary", attr_b_autotransfer_blacklist_primary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_primary)
+/datum/vore_look/proc/attr_b_autotransfer_blacklist_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list[toggle_addon]))
 		return FALSE
@@ -965,8 +895,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_whitelist_secondary", attr_b_autotransfer_whitelist_secondary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_secondary)
+/datum/vore_look/proc/attr_b_autotransfer_whitelist_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list[toggle_addon]))
 		return FALSE
@@ -975,8 +904,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_blacklist_secondary", attr_b_autotransfer_blacklist_secondary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_secondary)
+/datum/vore_look/proc/attr_b_autotransfer_blacklist_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list[toggle_addon]))
 		return FALSE
@@ -986,8 +914,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_whitelist_items_primary", attr_b_autotransfer_whitelist_items_primary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_items_primary)
+/datum/vore_look/proc/attr_b_autotransfer_whitelist_items_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
@@ -996,8 +923,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_items_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_blacklist_items_primary", attr_b_autotransfer_blacklist_items_primary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_items_primary)
+/datum/vore_look/proc/attr_b_autotransfer_blacklist_items_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
@@ -1006,8 +932,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_items_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_whitelist_items_secondary", attr_b_autotransfer_whitelist_items_secondary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_items_secondary)
+/datum/vore_look/proc/attr_b_autotransfer_whitelist_items_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
@@ -1016,8 +941,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_whitelist_items_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_blacklist_items_secondary", attr_b_autotransfer_blacklist_items_secondary, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_items_secondary)
+/datum/vore_look/proc/attr_b_autotransfer_blacklist_items_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
 	if(!(host().vore_selected.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
@@ -1026,8 +950,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_items_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_min_amount", attr_b_autotransfer_min_amount, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_min_amount)
+/datum/vore_look/proc/attr_b_autotransfer_min_amount(mob/user, list/params, extra)
 	var/autotransfer_min_amount_input = params["val"]
 	if(!isnum(autotransfer_min_amount_input))
 		return FALSE
@@ -1036,8 +959,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_min_amount)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_max_amount", attr_b_autotransfer_max_amount, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_max_amount)
+/datum/vore_look/proc/attr_b_autotransfer_max_amount(mob/user, list/params, extra)
 	var/autotransfer_max_amount_input = params["val"]
 	if(!isnum(autotransfer_max_amount_input))
 		return FALSE
@@ -1046,52 +968,45 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_max_amount)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_enabled", attr_b_autotransfer_enabled)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_enabled)
+/datum/vore_look/proc/attr_b_autotransfer_enabled(mob/user, list/params, extra)
 	host().vore_selected.autotransfer_enabled = !host().vore_selected.autotransfer_enabled
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fullscreen", attr_b_fullscreen, UI_ARG_VALUE("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen)
+/datum/vore_look/proc/attr_b_fullscreen(mob/user, list/params, extra)
 	host().vore_selected.belly_fullscreen = params["val"]
 	host().vore_selected.update_internal_overlay()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_disable_hud", attr_b_disable_hud)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_disable_hud)
+/datum/vore_look/proc/attr_b_disable_hud(mob/user, list/params, extra)
 	host().vore_selected.disable_hud = !host().vore_selected.disable_hud
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_colorization_enabled", attr_b_colorization_enabled)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_colorization_enabled)
+/datum/vore_look/proc/attr_b_colorization_enabled(mob/user, list/params, extra)
 	host().vore_selected.colorization_enabled = !host().vore_selected.colorization_enabled
 	host().vore_selected.belly_fullscreen = "dark" //This prevents you from selecting a belly that is not meant to be colored and then turning colorization on.
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_preview_belly", attr_b_preview_belly)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_preview_belly)
+/datum/vore_look/proc/attr_b_preview_belly(mob/user, list/params, extra)
 	host().vore_selected.vore_preview(host()) //Gives them the stomach overlay. It fades away after ~2 seconds as human/life.dm removes the overlay if not in a gut.
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_clear_preview", attr_b_clear_preview)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_clear_preview)
+/datum/vore_look/proc/attr_b_clear_preview(mob/user, list/params, extra)
 	host().vore_selected.clear_preview(host()) //Clears the stomach overlay. This is a failsafe but shouldn't occur.
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fullscreen_color", attr_b_fullscreen_color, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color)
+/datum/vore_look/proc/attr_b_fullscreen_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.belly_fullscreen_color = newcolor
@@ -1100,8 +1015,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fullscreen_color2", attr_b_fullscreen_color2, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color2)
+/datum/vore_look/proc/attr_b_fullscreen_color2(mob/user, list/params, extra)
 	var/newcolor2 = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor2)
 		host().vore_selected.belly_fullscreen_color2 = newcolor2
@@ -1110,8 +1024,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color2)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fullscreen_color3", attr_b_fullscreen_color3, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color3)
+/datum/vore_look/proc/attr_b_fullscreen_color3(mob/user, list/params, extra)
 	var/newcolor3 = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor3)
 		host().vore_selected.belly_fullscreen_color3 = newcolor3
@@ -1120,8 +1033,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color3)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fullscreen_color4", attr_b_fullscreen_color4, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color4)
+/datum/vore_look/proc/attr_b_fullscreen_color4(mob/user, list/params, extra)
 	var/newcolor4 = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor4)
 		host().vore_selected.belly_fullscreen_color4 = newcolor4
@@ -1130,8 +1042,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_color4)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_fullscreen_alpha", attr_b_fullscreen_alpha, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_alpha)
+/datum/vore_look/proc/attr_b_fullscreen_alpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
@@ -1141,33 +1052,29 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fullscreen_alpha)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_save_digest_mode", attr_b_save_digest_mode)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_save_digest_mode)
+/datum/vore_look/proc/attr_b_save_digest_mode(mob/user, list/params, extra)
 	host().vore_selected.save_digest_mode = !host().vore_selected.save_digest_mode
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_del", attr_b_del)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_del)
+/datum/vore_look/proc/attr_b_del(mob/user, list/params, extra)
+	var/datum/tgui/ui = extra // the window the button was pressed in
 	open_request(ui, /datum/prompt/choice/vore_delete_belly, TYPE_PROC_REF(/datum/tgui, vore_delete_belly_answered), answerer = user, question = "Are you sure you want to delete your [lowertext(host().vore_selected.name)]?", title = "Confirmation", choices = list("Cancel", "Delete"), buttons = TRUE)
 
-UI_SUBACT(/datum/vore_look, "attr", "b_private_struggle", attr_b_private_struggle)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_private_struggle)
+/datum/vore_look/proc/attr_b_private_struggle(mob/user, list/params, extra)
 	host().vore_selected.private_struggle = !host().vore_selected.private_struggle
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_absorbedrename_enabled", attr_b_absorbedrename_enabled)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbedrename_enabled)
+/datum/vore_look/proc/attr_b_absorbedrename_enabled(mob/user, list/params, extra)
 	host().vore_selected.absorbedrename_enabled = !host().vore_selected.absorbedrename_enabled
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_absorbedrename_name", attr_b_absorbedrename_name, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbedrename_name)
+/datum/vore_look/proc/attr_b_absorbedrename_name(mob/user, list/params, extra)
 	var/new_absorbedrename_name = sanitize(params["val"], MAX_MESSAGE_LEN, FALSE, TRUE, FALSE)
 	if(new_absorbedrename_name)
 		host().vore_selected.absorbedrename_name = new_absorbedrename_name
@@ -1175,15 +1082,13 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbedrename_name)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_vorespawn_blacklist", attr_b_vorespawn_blacklist)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_vorespawn_blacklist)
+/datum/vore_look/proc/attr_b_vorespawn_blacklist(mob/user, list/params, extra)
 	host().vore_selected.vorespawn_blacklist = !host().vore_selected.vorespawn_blacklist
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_vorespawn_whitelist", attr_b_vorespawn_whitelist, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_vorespawn_whitelist)
+/datum/vore_look/proc/attr_b_vorespawn_whitelist(mob/user, list/params, extra)
 	var/new_vorespawn_whitelist = sanitize(params["val"], MAX_MESSAGE_LEN, FALSE, TRUE, FALSE)
 	if(new_vorespawn_whitelist)
 		host().vore_selected.vorespawn_whitelist = splittext(lowertext(new_vorespawn_whitelist),"\n")
@@ -1193,8 +1098,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_vorespawn_whitelist)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_vorespawn_absorbed", attr_b_vorespawn_absorbed, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_vorespawn_absorbed)
+/datum/vore_look/proc/attr_b_vorespawn_absorbed(mob/user, list/params, extra)
 	var/current_number = params["val"]
 	switch(current_number)
 		if("Yes")
@@ -1208,8 +1112,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_vorespawn_absorbed)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_belly_sprite_to_affect", attr_b_belly_sprite_to_affect, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_sprite_to_affect)
+/datum/vore_look/proc/attr_b_belly_sprite_to_affect(mob/user, list/params, extra)
 	var/belly_choice = params["val"]
 	if(!(belly_choice in host().vore_icon_bellies))
 		return FALSE
@@ -1219,24 +1122,21 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_sprite_to_affect)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_affects_vore_sprites", attr_b_affects_vore_sprites)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_affects_vore_sprites)
+/datum/vore_look/proc/attr_b_affects_vore_sprites(mob/user, list/params, extra)
 	host().vore_selected.affects_vore_sprites = !host().vore_selected.affects_vore_sprites
 	host().handle_belly_update()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_count_absorbed_prey_for_sprites", attr_b_count_absorbed_prey_for_sprites)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_count_absorbed_prey_for_sprites)
+/datum/vore_look/proc/attr_b_count_absorbed_prey_for_sprites(mob/user, list/params, extra)
 	host().vore_selected.count_absorbed_prey_for_sprite = !host().vore_selected.count_absorbed_prey_for_sprite
 	host().handle_belly_update()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_absorbed_multiplier", attr_b_absorbed_multiplier, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbed_multiplier)
+/datum/vore_look/proc/attr_b_absorbed_multiplier(mob/user, list/params, extra)
 	var/absorbed_multiplier_input = params["val"]
 	if(!isnum(absorbed_multiplier_input))
 		return FALSE
@@ -1246,16 +1146,14 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_absorbed_multiplier)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_count_items_for_sprites", attr_b_count_items_for_sprites)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_count_items_for_sprites)
+/datum/vore_look/proc/attr_b_count_items_for_sprites(mob/user, list/params, extra)
 	host().vore_selected.count_items_for_sprite = !host().vore_selected.count_items_for_sprite
 	host().handle_belly_update()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_item_multiplier", attr_b_item_multiplier, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_item_multiplier)
+/datum/vore_look/proc/attr_b_item_multiplier(mob/user, list/params, extra)
 	var/item_multiplier_input = params["val"]
 	if(!isnum(item_multiplier_input))
 		return FALSE
@@ -1265,23 +1163,20 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_item_multiplier)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_health_impacts_size", attr_b_health_impacts_size)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_health_impacts_size)
+/datum/vore_look/proc/attr_b_health_impacts_size(mob/user, list/params, extra)
 	host().vore_selected.health_impacts_size = !host().vore_selected.health_impacts_size
 	host().handle_belly_update()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_resist_animation", attr_b_resist_animation)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_resist_animation)
+/datum/vore_look/proc/attr_b_resist_animation(mob/user, list/params, extra)
 	host().vore_selected.resist_triggers_animation = !host().vore_selected.resist_triggers_animation
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_size_factor_sprites", attr_b_size_factor_sprites, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_size_factor_sprites)
+/datum/vore_look/proc/attr_b_size_factor_sprites(mob/user, list/params, extra)
 	var/size_factor_input = params["val"]
 	if(!isnum(size_factor_input))
 		return FALSE
@@ -1291,8 +1186,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_size_factor_sprites)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_vore_sprite_flags", attr_b_vore_sprite_flags, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_vore_sprite_flags)
+/datum/vore_look/proc/attr_b_vore_sprite_flags(mob/user, list/params, extra)
 	var/toggle_vs_flag = params["val"]
 	if(!(toggle_vs_flag in host().vore_selected.vore_sprite_flag_list))
 		return FALSE
@@ -1301,16 +1195,14 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_vore_sprite_flags)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_count_liquid_for_sprites", attr_b_count_liquid_for_sprites)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_count_liquid_for_sprites)
+/datum/vore_look/proc/attr_b_count_liquid_for_sprites(mob/user, list/params, extra)
 	host().vore_selected.count_liquid_for_sprite = !host().vore_selected.count_liquid_for_sprite
 	host().handle_belly_update()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_liquid_multiplier", attr_b_liquid_multiplier, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_liquid_multiplier)
+/datum/vore_look/proc/attr_b_liquid_multiplier(mob/user, list/params, extra)
 	var/liquid_multiplier_input = params["val"]
 	if(!isnum(liquid_multiplier_input))
 		return FALSE
@@ -1320,8 +1212,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liquid_multiplier)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_choice", attr_b_undergarment_choice, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_choice)
+/datum/vore_look/proc/attr_b_undergarment_choice(mob/user, list/params, extra)
 	var/new_undergarment = params["val"]
 	if(!(GLOB.global_underwear.categories_by_name[new_undergarment]))
 		return FALSE
@@ -1331,8 +1222,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_choice)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_if_none", attr_b_undergarment_if_none, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_if_none)
+/datum/vore_look/proc/attr_b_undergarment_if_none(mob/user, list/params, extra)
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[host().vore_selected.undergarment_chosen]
 	var/selected_underwear = UWC.items_by_name[params["val"]]
 	if(!selected_underwear) //They cancelled, no changes
@@ -1344,8 +1234,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_if_none)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_color", attr_b_undergarment_color, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_color)
+/datum/vore_look/proc/attr_b_undergarment_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.undergarment_color = newcolor
@@ -1354,8 +1243,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tail_to_change_to", attr_b_tail_to_change_to, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_to_change_to)
+/datum/vore_look/proc/attr_b_tail_to_change_to(mob/user, list/params, extra)
 	var/tail_choice = params["val"]
 	if(!(tail_choice in GLOB.tail_styles_list))
 		return FALSE
@@ -1364,8 +1252,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_to_change_to)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tail_color", attr_b_tail_color, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_color)
+/datum/vore_look/proc/attr_b_tail_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.tail_colouration = newcolor
@@ -1373,8 +1260,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tail_color2", attr_b_tail_color2, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_color2)
+/datum/vore_look/proc/attr_b_tail_color2(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.tail_extra_overlay = newcolor
@@ -1382,8 +1268,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_color2)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tail_color3", attr_b_tail_color3, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_color3)
+/datum/vore_look/proc/attr_b_tail_color3(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.tail_extra_overlay2 = newcolor
@@ -1391,8 +1276,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_color3)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_show_liq_fullness", attr_b_show_liq_fullness)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_show_liq_fullness)
+/datum/vore_look/proc/attr_b_show_liq_fullness(mob/user, list/params, extra)
 	if(!host().vore_selected.show_fullness_messages)
 		host().vore_selected.show_fullness_messages = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] now has liquid examination options."))
@@ -1403,36 +1287,31 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_show_liq_fullness)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_liq_msg_toggle1", attr_b_liq_msg_toggle1)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle1)
+/datum/vore_look/proc/attr_b_liq_msg_toggle1(mob/user, list/params, extra)
 	host().vore_selected.liquid_fullness1_messages = !host().vore_selected.liquid_fullness1_messages
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_liq_msg_toggle2", attr_b_liq_msg_toggle2)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle2)
+/datum/vore_look/proc/attr_b_liq_msg_toggle2(mob/user, list/params, extra)
 	host().vore_selected.liquid_fullness2_messages = !host().vore_selected.liquid_fullness2_messages
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_liq_msg_toggle3", attr_b_liq_msg_toggle3)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle3)
+/datum/vore_look/proc/attr_b_liq_msg_toggle3(mob/user, list/params, extra)
 	host().vore_selected.liquid_fullness3_messages = !host().vore_selected.liquid_fullness3_messages
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_liq_msg_toggle4", attr_b_liq_msg_toggle4)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle4)
+/datum/vore_look/proc/attr_b_liq_msg_toggle4(mob/user, list/params, extra)
 	host().vore_selected.liquid_fullness4_messages = !host().vore_selected.liquid_fullness4_messages
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_liq_msg_toggle5", attr_b_liq_msg_toggle5)
-UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle5)
+/datum/vore_look/proc/attr_b_liq_msg_toggle5(mob/user, list/params, extra)
 	host().vore_selected.liquid_fullness5_messages = !host().vore_selected.liquid_fullness5_messages
 	. = TRUE
 	if(.)
@@ -1610,5 +1489,345 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liq_msg_toggle5)
 	if(host().soulgem?.linked_belly() == host().vore_selected)
 		host().soulgem.linked_belly = null
 
-	consumed(host().vore_selected, src)
+	spent(host().vore_selected, src)
 	host().vore_selected = host().vore_organs[1]
+
+/// /datum/vore_look's "attr" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/vore_look/proc/attr_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if(BELLY_DESCRIPTION_MESSAGE)
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_belly_description_message(user, typed, extra) : FALSE
+		if(BELLY_DESCRIPTION_MESSAGE_ABSROED)
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_belly_description_message_absroed(user, typed, extra) : FALSE
+		if("b_name")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_name(user, typed, extra) : FALSE
+		if("b_display_name")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_display_name(user, typed, extra) : FALSE
+		if("b_message_mode")
+			return attr_b_message_mode(user, list(), extra)
+		if("b_wetness")
+			return attr_b_wetness(user, list(), extra)
+		if("b_wetloop")
+			return attr_b_wetloop(user, list(), extra)
+		if("b_mode")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_mode(user, typed, extra) : FALSE
+		if("b_addons")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_addons(user, typed, extra) : FALSE
+		if("b_item_mode")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_item_mode(user, typed, extra) : FALSE
+		if("b_contaminates")
+			return attr_b_contaminates(user, list(), extra)
+		if("b_contamination_flavor")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_contamination_flavor(user, typed, extra) : FALSE
+		if("b_contamination_color")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_contamination_color(user, typed, extra) : FALSE
+		if("b_egg_type")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_egg_type(user, typed, extra) : FALSE
+		if("b_egg_name")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_egg_name(user, typed, extra) : FALSE
+		if("b_egg_size")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_egg_size(user, typed, extra) : FALSE
+		if("b_recycling")
+			return attr_b_recycling(user, list(), extra)
+		if("b_storing_nutrition")
+			return attr_b_storing_nutrition(user, list(), extra)
+		if("b_msgs")
+			var/list/typed = payload_args(src, data, list("msgtype" = null, "val" = schema_text(4096)))
+			return typed ? attr_b_msgs(user, typed, extra) : FALSE
+		if("b_verb")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_verb(user, typed, extra) : FALSE
+		if("b_release_verb")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_release_verb(user, typed, extra) : FALSE
+		if("b_eating_privacy")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_eating_privacy(user, typed, extra) : FALSE
+		if("b_silicon_belly")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_silicon_belly(user, typed, extra) : FALSE
+		if("b_belly_mob_mult")
+			return attr_b_belly_mob_mult(user, list(), extra)
+		if("b_belly_item_mult")
+			return attr_b_belly_item_mult(user, list(), extra)
+		if("b_belly_overall_mult")
+			return attr_b_belly_overall_mult(user, list(), extra)
+		if("b_fancy_sound")
+			return attr_b_fancy_sound(user, list(), extra)
+		if("b_release")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_release(user, typed, extra) : FALSE
+		if("b_releasesoundtest")
+			return attr_b_releasesoundtest(user, list(), extra)
+		if("b_sound")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_sound(user, typed, extra) : FALSE
+		if("b_soundtest")
+			return attr_b_soundtest(user, list(), extra)
+		if("b_sound_volume")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_sound_volume(user, typed, extra) : FALSE
+		if("b_noise_freq")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_noise_freq(user, typed, extra) : FALSE
+		if("b_tastes")
+			return attr_b_tastes(user, list(), extra)
+		if("b_feedable")
+			return attr_b_feedable(user, list(), extra)
+		if("b_entrance_logs")
+			return attr_b_entrance_logs(user, list(), extra)
+		if("b_item_digest_logs")
+			return attr_b_item_digest_logs(user, list(), extra)
+		if("b_bulge_size")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_bulge_size(user, typed, extra) : FALSE
+		if("b_display_absorbed_examine")
+			return attr_b_display_absorbed_examine(user, list(), extra)
+		if("b_display_outside_struggle")
+			return attr_b_display_outside_struggle(user, list(), extra)
+		if("b_display_absorbed_outside_struggle")
+			return attr_b_display_absorbed_outside_struggle(user, list(), extra)
+		if("b_grow_shrink")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_grow_shrink(user, typed, extra) : FALSE
+		if("b_nutritionpercent")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_nutritionpercent(user, typed, extra) : FALSE
+		if("b_burn_dmg")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_burn_dmg(user, typed, extra) : FALSE
+		if("b_brute_dmg")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_brute_dmg(user, typed, extra) : FALSE
+		if("b_oxy_dmg")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_oxy_dmg(user, typed, extra) : FALSE
+		if("b_tox_dmg")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_tox_dmg(user, typed, extra) : FALSE
+		if("b_clone_dmg")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_clone_dmg(user, typed, extra) : FALSE
+		if("b_bellytemperature")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_bellytemperature(user, typed, extra) : FALSE
+		if("b_temperature_damage")
+			return attr_b_temperature_damage(user, list(), extra)
+		if("b_drainmode")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_drainmode(user, typed, extra) : FALSE
+		if("b_emoteactive")
+			return attr_b_emoteactive(user, list(), extra)
+		if("b_selective_mode_pref_toggle")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_selective_mode_pref_toggle(user, typed, extra) : FALSE
+		if("b_emotetime")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_emotetime(user, typed, extra) : FALSE
+		if("b_escapable")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_escapable(user, typed, extra) : FALSE
+		if("b_escapechance")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_escapechance(user, typed, extra) : FALSE
+		if("b_belchchance")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_belchchance(user, typed, extra) : FALSE
+		if("b_escapechance_absorbed")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_escapechance_absorbed(user, typed, extra) : FALSE
+		if("b_escapetime")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_escapetime(user, typed, extra) : FALSE
+		if("b_transferchance")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_transferchance(user, typed, extra) : FALSE
+		if("b_transferlocation")
+			var/list/typed = payload_args(src, data, list("val" = schema_ref(/obj/belly)))
+			return typed ? attr_b_transferlocation(user, typed, extra) : FALSE
+		if("b_transferchance_secondary")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_transferchance_secondary(user, typed, extra) : FALSE
+		if("b_transferlocation_secondary")
+			var/list/typed = payload_args(src, data, list("val" = schema_ref(/obj/belly)))
+			return typed ? attr_b_transferlocation_secondary(user, typed, extra) : FALSE
+		if("b_absorbchance")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_absorbchance(user, typed, extra) : FALSE
+		if("b_digestchance")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_digestchance(user, typed, extra) : FALSE
+		if("b_autotransferchance_primary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransferchance_primary(user, typed, extra) : FALSE
+		if("b_autotransferwait")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_autotransferwait(user, typed, extra) : FALSE
+		if("b_autotransferlocation_primary")
+			var/list/typed = payload_args(src, data, list("val" = schema_ref(/obj/belly)))
+			return typed ? attr_b_autotransferlocation_primary(user, typed, extra) : FALSE
+		if("b_autotransferextralocation_primary")
+			var/list/typed = payload_args(src, data, list("val" = schema_ref(/obj/belly)))
+			return typed ? attr_b_autotransferextralocation_primary(user, typed, extra) : FALSE
+		if("b_autotransferchance_secondary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransferchance_secondary(user, typed, extra) : FALSE
+		if("b_autotransferlocation_secondary")
+			var/list/typed = payload_args(src, data, list("val" = schema_ref(/obj/belly)))
+			return typed ? attr_b_autotransferlocation_secondary(user, typed, extra) : FALSE
+		if("b_autotransferextralocation_secondary")
+			var/list/typed = payload_args(src, data, list("val" = schema_ref(/obj/belly)))
+			return typed ? attr_b_autotransferextralocation_secondary(user, typed, extra) : FALSE
+		if("b_autotransfer_whitelist_primary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_whitelist_primary(user, typed, extra) : FALSE
+		if("b_autotransfer_blacklist_primary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_blacklist_primary(user, typed, extra) : FALSE
+		if("b_autotransfer_whitelist_secondary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_whitelist_secondary(user, typed, extra) : FALSE
+		if("b_autotransfer_blacklist_secondary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_blacklist_secondary(user, typed, extra) : FALSE
+		if("b_autotransfer_whitelist_items_primary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_whitelist_items_primary(user, typed, extra) : FALSE
+		if("b_autotransfer_blacklist_items_primary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_blacklist_items_primary(user, typed, extra) : FALSE
+		if("b_autotransfer_whitelist_items_secondary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_whitelist_items_secondary(user, typed, extra) : FALSE
+		if("b_autotransfer_blacklist_items_secondary")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_autotransfer_blacklist_items_secondary(user, typed, extra) : FALSE
+		if("b_autotransfer_min_amount")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_autotransfer_min_amount(user, typed, extra) : FALSE
+		if("b_autotransfer_max_amount")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_autotransfer_max_amount(user, typed, extra) : FALSE
+		if("b_autotransfer_enabled")
+			return attr_b_autotransfer_enabled(user, list(), extra)
+		if("b_fullscreen")
+			var/list/typed = payload_args(src, data, list("val" = null))
+			return typed ? attr_b_fullscreen(user, typed, extra) : FALSE
+		if("b_disable_hud")
+			return attr_b_disable_hud(user, list(), extra)
+		if("b_colorization_enabled")
+			return attr_b_colorization_enabled(user, list(), extra)
+		if("b_preview_belly")
+			return attr_b_preview_belly(user, list(), extra)
+		if("b_clear_preview")
+			return attr_b_clear_preview(user, list(), extra)
+		if("b_fullscreen_color")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_fullscreen_color(user, typed, extra) : FALSE
+		if("b_fullscreen_color2")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_fullscreen_color2(user, typed, extra) : FALSE
+		if("b_fullscreen_color3")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_fullscreen_color3(user, typed, extra) : FALSE
+		if("b_fullscreen_color4")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_fullscreen_color4(user, typed, extra) : FALSE
+		if("b_fullscreen_alpha")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_fullscreen_alpha(user, typed, extra) : FALSE
+		if("b_save_digest_mode")
+			return attr_b_save_digest_mode(user, list(), extra)
+		if("b_del")
+			return attr_b_del(user, list(), extra)
+		if("b_private_struggle")
+			return attr_b_private_struggle(user, list(), extra)
+		if("b_absorbedrename_enabled")
+			return attr_b_absorbedrename_enabled(user, list(), extra)
+		if("b_absorbedrename_name")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_absorbedrename_name(user, typed, extra) : FALSE
+		if("b_vorespawn_blacklist")
+			return attr_b_vorespawn_blacklist(user, list(), extra)
+		if("b_vorespawn_whitelist")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_vorespawn_whitelist(user, typed, extra) : FALSE
+		if("b_vorespawn_absorbed")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_vorespawn_absorbed(user, typed, extra) : FALSE
+		if("b_belly_sprite_to_affect")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_belly_sprite_to_affect(user, typed, extra) : FALSE
+		if("b_affects_vore_sprites")
+			return attr_b_affects_vore_sprites(user, list(), extra)
+		if("b_count_absorbed_prey_for_sprites")
+			return attr_b_count_absorbed_prey_for_sprites(user, list(), extra)
+		if("b_absorbed_multiplier")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_absorbed_multiplier(user, typed, extra) : FALSE
+		if("b_count_items_for_sprites")
+			return attr_b_count_items_for_sprites(user, list(), extra)
+		if("b_item_multiplier")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_item_multiplier(user, typed, extra) : FALSE
+		if("b_health_impacts_size")
+			return attr_b_health_impacts_size(user, list(), extra)
+		if("b_resist_animation")
+			return attr_b_resist_animation(user, list(), extra)
+		if("b_size_factor_sprites")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_size_factor_sprites(user, typed, extra) : FALSE
+		if("b_vore_sprite_flags")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_vore_sprite_flags(user, typed, extra) : FALSE
+		if("b_count_liquid_for_sprites")
+			return attr_b_count_liquid_for_sprites(user, list(), extra)
+		if("b_liquid_multiplier")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? attr_b_liquid_multiplier(user, typed, extra) : FALSE
+		if("b_undergarment_choice")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_undergarment_choice(user, typed, extra) : FALSE
+		if("b_undergarment_if_none")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_undergarment_if_none(user, typed, extra) : FALSE
+		if("b_undergarment_color")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_undergarment_color(user, typed, extra) : FALSE
+		if("b_tail_to_change_to")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_tail_to_change_to(user, typed, extra) : FALSE
+		if("b_tail_color")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_tail_color(user, typed, extra) : FALSE
+		if("b_tail_color2")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_tail_color2(user, typed, extra) : FALSE
+		if("b_tail_color3")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? attr_b_tail_color3(user, typed, extra) : FALSE
+		if("b_show_liq_fullness")
+			return attr_b_show_liq_fullness(user, list(), extra)
+		if("b_liq_msg_toggle1")
+			return attr_b_liq_msg_toggle1(user, list(), extra)
+		if("b_liq_msg_toggle2")
+			return attr_b_liq_msg_toggle2(user, list(), extra)
+		if("b_liq_msg_toggle3")
+			return attr_b_liq_msg_toggle3(user, list(), extra)
+		if("b_liq_msg_toggle4")
+			return attr_b_liq_msg_toggle4(user, list(), extra)
+		if("b_liq_msg_toggle5")
+			return attr_b_liq_msg_toggle5(user, list(), extra)
+	return null

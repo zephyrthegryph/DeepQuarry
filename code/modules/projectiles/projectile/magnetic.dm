@@ -173,10 +173,15 @@
 	range = 6
 	hud_state = "plasma_rifle_blast"
 
-// ALLOW(init/CTOR_ARGS): range_mod is a constructor argument from whoever builds it
-/obj/item/projectile/bullet/magnetic/bore/Initialize(mapload, range_mod) // i'm gonna be real honest i dunno how this works but it does
-	. = ..()
-	range += range_mod
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/bore)
+	param(nameof(range_mod), pos = 1, apply = PROC_REF(extend_range))
+
+/// Extra range the gun gives the bore (its constructor param).
+/obj/item/projectile/bullet/magnetic/bore/var/range_mod = 0
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/projectile/bullet/magnetic/bore/proc/extend_range(extra)
+	range += extra
 
 /obj/item/projectile/bullet/magnetic/bore/get_structure_damage()
 	return damage * 3 //made for boring holes

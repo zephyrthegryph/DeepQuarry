@@ -20,7 +20,7 @@ CAPABILITIES(/datum/economy_dashboard)
 	var/index = clamp(round(1 + (length(sorted_balances) - 1) * percentile), 1, length(sorted_balances))
 	return sorted_balances[index]
 
-/// The computed part of /datum/economy_dashboard's window data (declared on its UI_DATA row).
+/// /datum/economy_dashboard's window data.
 /datum/economy_dashboard/ui_data(datum/act/eval/A)
 	var/account_currency = 0
 	var/personal_currency = 0

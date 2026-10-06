@@ -27,32 +27,41 @@
 	/// Ordinary processed stock held in the core's shielded material-treatment cradle.
 	var/obj/item/stack/material/processed_alloy/material_sample
 	var/next_material_treatment = 0
+	/// Its running field (Startup()/Shutdown()); the core steps it while it has one.
+	var/obj/effect/fusion_em_field/owned_field
 
 /obj/machinery/power/fusion_core/mapped
 	anchored = TRUE
 
-REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
-
 DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
-/// Its running field (Startup()/Shutdown()); the core ticks it while it has one.
-OM_FIELD_VIEW(/obj/machinery/power/fusion_core, obj/effect/fusion_em_field, owned_field, CHANGE_MACHINE_SETTINGS)
+MSG_DEF_SELF(fusion_core/field_on, "The fusion field must be shut down before opening the material cradle.")
+MSG_DEF_SELF(fusion_core/cradle_full, "The material cradle is already occupied.")
+MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment cradle.", "%U% secures %I% in %T%'s shielded treatment cradle.")
 
+// The R-UST core (doc/rewrite/final_api.html section 16): it raises an electromagnetic field (Startup()) and, while it has one, runs it every
+// machine service interval (core_step(): the field's strength, the material cradle, then the field's own reaction a decisecond later,
+// core_tick()). The field, the material sample in its cradle and its ident are its own; with the field down the cradle opens, a part
+// replacer works and a multitool sets its ident.
 CAPABILITIES(/obj/machinery/power/fusion_core)
+	membership(joins = REGISTRY_FUSION_CORES)
 	owns_one(nameof(owned_field), /obj/effect/fusion_em_field)
-DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owned_field")
+	owns_one(nameof(material_sample), /obj/item/stack/material/processed_alloy, on_destroy = ON_DESTROY_SPILL)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(core_step)), when = nameof(owned_field))
+	part_replacement()
+	extend("part_replacement.replace", needs(req_empty(nameof(owned_field), because = MSG(fusion_core/field_on))))
+	op("load_cradle", item(/obj/item/stack/material/processed_alloy), label("Load material cradle"), wait(0),
+		needs(req_empty(nameof(owned_field), because = MSG(fusion_core/field_on)), req_empty(nameof(material_sample), because = MSG(fusion_core/cradle_full))),
+		put_in(nameof(material_sample)), says(MSG(fusion_core/sample_loaded)))
+	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), needs(req_empty(nameof(owned_field), because = MSG(fusion_core/field_on))),
+		asks(/datum/prompt/text, fields = list("title" = "Fusion Core", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
+		then(PROC_REF(ident_entered)))
+	op("use", hand(), when(req_empty_hand()), label("Use"), ungated(), wait(0), then(PROC_REF(used)))
 
 /obj/machinery/power/fusion_core/Initialize(mapload)
 	. = ..()
-
 	add_hose_connector(/datum/hose_connector/output)
-
-
 	default_apply_parts()
-
-/obj/machinery/power/fusion_core/ownership()
-	. = ..()
-	. += owns(nameof(material_sample), policy = OWN_SPILL)
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(has_stat(BROKEN))
@@ -61,10 +70,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owne
 		return
 	. = 1
 
-/// Runs its field while it has one; shut down, it sleeps until Startup(). The field is owned: when
-/// it is destroyed the ownership framework clears owned_field and raises its channel, so the
-/// declaration stops the work with no guard here.
-/obj/machinery/power/fusion_core/machine_step()
+/// Runs its field while it has one (its every(), gated on owned_field): broken or cut off it shuts the field down.
+/obj/machinery/power/fusion_core/proc/core_step(datum/act/timer/A)
 	if((has_stat(BROKEN)) || !power_region)
 		Shutdown() // clears owned_field through own_clear(): the declaration stops the work
 		return
@@ -76,18 +83,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owne
 
 	if(!QDELETED(owned_field))
 		after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
-
-TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC_NUM("str"))
-
-/obj/machinery/power/fusion_core/proc/topic_str(mob/user, list/args)
-	var/dif = args["str"]
-	if(!isnum(dif))
-		return
-	field_strength = min(max(field_strength + dif, MIN_FIELD_STR), MAX_FIELD_STR)
-	update_active_power_usage(500 * field_strength)
-	if(owned_field)
-		owned_field.ChangeFieldStrength(field_strength)
-	return TRUE
 
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)
@@ -105,7 +100,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 			owned_field.MRC()
 		else
 			owned_field.RadiateAll()
-		own_clear(src, nameof(owned_field), OWN_DELETE)
+		destroyed(rel_take(src, nameof(owned_field)), src)
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)
@@ -127,81 +122,26 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		if(owned_field)
 			owned_field.ChangeFieldStrength(value)
 
-/obj/machinery/power/fusion_core/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/fusion_core_material_insert,
-		/datum/interaction/machine_item/fusion_core_part_replacement,
-		/datum/interaction/machine_item/fusion_core_set_ident,
-		/datum/interaction/machine_hand/ungated/fusion_core_use,
-	)
-	..()
+/obj/machinery/power/fusion_core/proc/ident_entered(datum/act/op/A)
+	var/datum/prompt/text/answer = A.answer
+	if(answer?.value && A.actor?.Adjacent(src))
+		id_tag = answer.value
+	return OP_OK
 
-/// Whether the fusion field is off (the material cradle and internals can be reached).
-/obj/machinery/power/fusion_core/proc/fusion_field_off(mob/actor, atom/target, obj/item/held)
-	return !owned_field
-
-/// Old attackby: load a processed alloy stack into the material cradle.
-/datum/interaction/machine_item/fusion_core_material_insert
-	id = "fusion_core_material_insert"
-	name = "Load material cradle"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material/processed_alloy
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
-	effect = /obj/machinery/power/fusion_core/proc/interaction_material_insert
-	also_requires = list(REQ_FIELD_NOT("material_sample", "the material cradle is already occupied"))
-
-/obj/machinery/power/fusion_core/proc/interaction_material_insert(mob/user, obj/item/stack/material/processed_alloy/stock, datum/interaction/interaction)
-	if(!move_into(src, nameof(src.material_sample), stock, user))
-		return TRUE
-	act_message(user, src, others = span_notice("%U% secures [stock] in %T%'s shielded treatment cradle."))
-	return TRUE
-
-/// Old attackby: `if(default_part_replacement(user, W)) return`, gated on the fusion field being off.
-/datum/interaction/machine_item/fusion_core_part_replacement
-	id = "fusion_core_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
-	effect = /obj/machinery/proc/interaction_part_replacement
-
-/// Old attackby: a multitool sets the ident tag.
-/datum/interaction/machine_item/fusion_core_set_ident
-	id = "fusion_core_set_ident"
-	name = "Set ident tag"
-	category = INTERACTION_CAT_CONFIGURE
-	tool = TOOL_MULTITOOL
-	tool_volume = 0
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/fusion_core/proc/fusion_field_off, "the fusion field must be shut down before opening the material cradle"))
-	effect = /obj/machinery/power/fusion_core/proc/interaction_set_ident
-
-/obj/machinery/power/fusion_core/proc/interaction_set_ident(mob/user, obj/item/held, datum/interaction/interaction)
-	var/new_ident = rerun_ask(user, "k186", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Fusion Core", default = id_tag, max_length = MAX_NAME_LEN)
-	if(isnull(new_ident))
-		return
-	if(new_ident && user.Adjacent(src))
-		id_tag = new_ident
-	return TRUE
-
-/// Old attack_hand, which never called ..(): no gate. `Adjacent` is now REQ_INTERACTION_REACH.
-/datum/interaction/machine_hand/ungated/fusion_core_use
-	id = "fusion_core_use"
-	name = "Use"
-	effect = /obj/machinery/power/fusion_core/proc/interaction_use
-
-/obj/machinery/power/fusion_core/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/// A hand on the core: an emergency shutdown of a running field, else the sample comes out of the cradle.
+/obj/machinery/power/fusion_core/proc/used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(owned_field)
 		act_message(user, src, others = span_notice("%U% initiates an emergency shutdown of %T%'s fusion field."))
 		Shutdown()
 	else if(material_sample)
-		var/obj/item/stack/material/processed_alloy/finished_sample = material_sample
-		own_take(src, nameof(material_sample))
+		var/obj/item/stack/material/processed_alloy/finished_sample = rel_take(src, nameof(material_sample))
 		finished_sample.forceMove(user.drop_location())
 		user.put_in_hands(finished_sample)
 		act_message(user, src, others = span_notice("%U% releases [finished_sample] from %T%'s material cradle."))
 	else
 		to_chat(user, span_notice("The fusion field is off and the material cradle is empty."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/power/fusion_core/examine(mob/user)
 	. = ..()
@@ -259,9 +199,9 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 	owned_field.plasma_temperature = field_temperature
 	return TRUE
 
-/// The field's share of a core process tick, a tick after the core's own.
+/// The field's share of a core step, a decisecond after the core's own.
 /obj/effect/fusion_em_field/proc/core_tick()
-	periodic_step()
+	field_react()
 	stability_monitor()
 	radiation_scale()
 	temp_dump()

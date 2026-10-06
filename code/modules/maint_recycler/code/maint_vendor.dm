@@ -186,7 +186,7 @@ APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" 
 	if(LAZYLEN(open_tguis) > 0) return
 	set_on_state(FALSE)
 
-/// The computed part of /obj/machinery/maint_vendor's window data (declared on its UI_DATA row).
+/// /obj/machinery/maint_vendor's window data.
 /obj/machinery/maint_vendor/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

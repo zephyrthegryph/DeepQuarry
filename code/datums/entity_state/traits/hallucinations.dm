@@ -2,7 +2,6 @@
 ///There is a lot of math that I don't even want to try to fathom in this.
 ///There was also almost 0 commentation.
 /datum/trait_state/schizophrenia
-	life_stage = /datum/om/stage/life/trait/schizophrenia
 	///The maximum amount of hallucinations we can have.
 	var/hallucination_max = 60
 	///The amount of hallucinations to increase by each tick during an episode.
@@ -81,6 +80,6 @@
 	return total_vol
 
 /// Trait system: hallucination episodes.
-/datum/om/stage/life/trait/schizophrenia
-	name = "schizophrenia"
-	state_type = /datum/trait_state/schizophrenia
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/schizophrenia/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_schizophrenia"))

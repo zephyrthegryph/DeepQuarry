@@ -106,14 +106,14 @@
 		[pick("front","side","top","bottom","rear","inside")] of [src]. A [pick("slot","funnel","chute","tube")] opens up in the \
 		[pick("front","side","top","bottom","rear","inside")].")
 
-/obj/machinery/replicator/machine_step()
+/obj/machinery/replicator/proc/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -154,11 +154,12 @@
 	..()
 
 CAPABILITIES(/obj/machinery/replicator)
+	started_work(step = PROC_REF(work_step))
 	interface("XenoarchReplicator")
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
-/// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
+/// /obj/machinery/replicator's window data.
 /obj/machinery/replicator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_construction || list())
@@ -274,14 +275,14 @@ CAPABILITIES(/obj/machinery/replicator)
 			"foreground" = colors[color],
 		)))
 
-/obj/machinery/replicator/vore/machine_step()
+/obj/machinery/replicator/vore/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -454,7 +455,7 @@ CAPABILITIES(/obj/machinery/replicator)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/replicator/vore's window data (declared on its UI_DATA row).
+/// /obj/machinery/replicator/vore's window data.
 /obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())
@@ -566,14 +567,14 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 			"foreground" = colors[color],
 		)))
 
-/obj/machinery/replicator/clothing/machine_step()
+/obj/machinery/replicator/clothing/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -743,7 +744,7 @@ CAPABILITIES(/obj/machinery/replicator/clothing)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/replicator/clothing's window data (declared on its UI_DATA row).
+/// /obj/machinery/replicator/clothing's window data.
 /obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())

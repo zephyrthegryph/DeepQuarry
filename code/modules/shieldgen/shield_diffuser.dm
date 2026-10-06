@@ -19,8 +19,6 @@ OM_FIELD(/obj/machinery/shield_diffuser, enabled, TRUE, CHANGE_MACHINE_SETTINGS)
 OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled", "alarm"))
 /obj/machinery/shield_diffuser/proc/diffuser_has_work()
 	return enabled || alarm
-DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffuser_has_work")
-
 // ALLOW(init/INSTANCE_STATE): takes its built parts and hides under the floor tile it is placed on
 /obj/machinery/shield_diffuser/Initialize(mapload)
 	. = ..()
@@ -38,7 +36,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffus
 /obj/machinery/shield_diffuser/hides_under_flooring()
 	return 1
 
-/obj/machinery/shield_diffuser/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/shield_diffuser)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))
+
+/obj/machinery/shield_diffuser/proc/work_step(datum/act/timer/A)
 	if(alarm)
 		set_alarm(alarm - 1)
 		if(!alarm)

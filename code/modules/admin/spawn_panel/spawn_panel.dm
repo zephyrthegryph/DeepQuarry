@@ -309,7 +309,7 @@ CAPABILITIES(/datum/spawnpanel)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/spawnpanel's window data (declared on its UI_DATA row).
+/// /datum/spawnpanel's window data.
 /datum/spawnpanel/proc/ui_data_datum_spawnpanel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 	var/list/states = list()

@@ -13,7 +13,7 @@
 	var/list/split_shares
 
 /datum/unit_test/dq_harm_kind_declarations/proc/on_split_explained(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injury_explained/event = N
 	var/list/stages = event.stages
 	var/incoming_kind = event.incoming_kind
@@ -80,7 +80,7 @@
 	var/list/explained
 
 /datum/unit_test/dq_harm_armor_by_kind/proc/on_explained(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injury_explained/event = N
 	var/list/stages = event.stages
 	explained = stages.Copy()
@@ -140,7 +140,7 @@
 	var/explained_kind
 
 /datum/unit_test/dq_harm_mitigation_pipeline/proc/on_explained(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injury_explained/event = N
 	var/list/stages = event.stages
 	explained = stages.Copy()

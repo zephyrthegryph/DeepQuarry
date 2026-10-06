@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/power/rad_collector)
 	on_notice(/datum/notice/in_range_of_irradiation, then(PROC_REF(process_rads)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(collector_blast_eject))))
 	examine_line(PROC_REF(examine_meter))
-	op("toggle", hand(), label("Toggle"), ungated(), wait(0), when(nameof(anchored)), global.tag(TAG_CONTROL), then(PROC_REF(toggled)))
+	op("toggle", hand(), when(req_empty_hand()), label("Toggle"), ungated(), wait(0), when(nameof(anchored)), global.tag(TAG_CONTROL), then(PROC_REF(toggled)))
 	op("load", item(/obj/item/tank/phoron), label("Load phoron tank"), wait(0),
 		needs(req_is(nameof(anchored), TRUE, because = MSG(collector/unanchored)), req_empty(nameof(P), because = MSG(collector/tank_loaded))),
 		says(MSG(collector/tank_in)), put_in(nameof(P)), then(PROC_REF(tank_changed)))

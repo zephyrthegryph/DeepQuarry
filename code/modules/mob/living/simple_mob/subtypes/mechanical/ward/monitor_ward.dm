@@ -65,11 +65,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
 	..()
 
-/datum/om/stage/life/special/mechanical/ward/monitor
-	of = /mob/living/simple_mob/mechanical/ward/monitor
+/mob/living/simple_mob/mechanical/ward/monitor/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/mechanical/ward/monitor/perform(mob/living/simple_mob/mechanical/ward/monitor/self, datum/om/frame/life/ctx)
-	self.detect_mobs()
+/mob/living/simple_mob/mechanical/ward/monitor/life_special(datum/seq_frame/life/F)
+	src.detect_mobs()
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/ward/monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/mechanical/ward/monitor/appearance_overlays()

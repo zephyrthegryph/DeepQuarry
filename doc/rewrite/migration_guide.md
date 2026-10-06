@@ -826,8 +826,8 @@ Every `update_icon()` and `queue_icon_update()` call in a converted folder is de
 
 ## B7. UI → `tgui_data()` + `act_<x>()`
 
-```dm
-// BEFORE: round_status_panel.dm:28, :98-107
+```text
+// BEFORE: round_status_panel.dm:28, :98-107 (the deleted DECLARE_UI forms)
 DECLARE_UI_STATE(/datum/round_status_panel, ADMIN_STATE(R_ADMIN))
 UI_ACT(/datum/round_status_panel, "call_shuttle", ui_act_call_shuttle)
 UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
@@ -839,7 +839,9 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 	...
 	SStgui.update_uis(src)
 	return TRUE
+```
 
+```dm
 // AFTER (round_status_panel.dm is converted: tgui_id, ui_rights, act_<x>() procs, no update_uis)
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
 	var/why_not = shuttle_api_why_cant_call()

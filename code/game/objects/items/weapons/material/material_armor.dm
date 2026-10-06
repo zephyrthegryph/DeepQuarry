@@ -10,13 +10,11 @@
 	var/material_slowdown_modifier = 0
 	var/material_slowdown_multiplier = 0.5
 
-// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-/obj/item/clothing/Initialize(mapload, material_key)
+// ALLOW(init/INSTANCE_STATE): material clothing takes its material after its parents' init
+/obj/item/clothing/Initialize(mapload)
 	. = ..()
-	if(!material_key)
-		material_key = default_material
-	if(material_key) // May still be null if a material was not specified as a default.
-		set_material(material_key)
+	if(default_material) // May still be null if a material was not specified as a default.
+		set_material(default_material)
 
 /obj/item/clothing/get_material()
 	return material
@@ -323,11 +321,10 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_R
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null, PROC_REF(armor_insert_item)))
 
 /// Old attackby: make plating inserts for modular armour. The old body ran its parent's first, so this does too.
-/obj/item/material/armor_plating/insert/proc/armor_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = armor_plating_item(user, O, interaction)
+/obj/item/material/armor_plating/insert/armor_plating_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = ..()
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O

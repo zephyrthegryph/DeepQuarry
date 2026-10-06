@@ -173,12 +173,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_o
 
 CAPABILITIES(/obj/item/ammo_magazine)
 	owns_many(nameof(stored_ammo))
+	param(nameof(forge_material), pos = 1)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 
-// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-/obj/item/ammo_magazine/Initialize(mapload, material_key)
+/// The construction material a lathe forged the magazine from (its constructor param), or null.
+/obj/item/ammo_magazine/var/forge_material
+
+// ALLOW(init/INSTANCE_STATE): a magazine fills with its rounds (a latent count while it lies on a turf) and stamps them with the material it was forged from
+/obj/item/ammo_magazine/Initialize(mapload)
 	. = ..()
-	pixel_x = rand(-5, 5)
-	pixel_y = rand(-5, 5)
 	if(multiple_sprites)
 		initialize_magazine_icondata(src)
 
@@ -188,7 +191,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	if(initial_ammo)
 		// Lying on a turf or in a latent holder, the rounds are a count until
 		// something handles the magazine (C5). Forged rounds are always real.
-		if(!material_key && (isturf(loc) || loc?.latent_contents) && dq_latent_eligible(ammo_type))
+		if(!forge_material && (isturf(loc) || loc?.latent_contents) && dq_latent_eligible(ammo_type))
 			latent_rounds = initial_ammo
 		else
 			for(var/i in 1 to initial_ammo)
@@ -196,8 +199,8 @@ CAPABILITIES(/obj/item/ammo_magazine)
 
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
-	if(material_key)
-		var/datum/material/forged = get_material_by_name(material_key)
+	if(forge_material)
+		var/datum/material/forged = get_material_by_name(forge_material)
 		if(forged)
 			set_forged_material(forged)
 	update_icon()

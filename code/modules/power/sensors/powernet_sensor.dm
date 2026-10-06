@@ -25,6 +25,10 @@
 	var/next_record = 0
 	var/is_secret_monitor = FALSE
 
+// The sensor samples its network every record_interval (sensor_step()); the power monitors read its history.
+CAPABILITIES(/obj/machinery/power/sensor)
+	every(PROC_REF(record_delay), then(PROC_REF(sensor_step)))
+
 // Proc: Initialize(mapload)
 // Parameters: None
 // Description: Automatically assigns name according to ID tag.
@@ -37,21 +41,12 @@
 	history["demand"] = list()
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PM.power_monitor?.refresh_sensors()
-		MACHINE_WAKE(PM)
 
 // Proc: auto_set_name()
 // Parameters: None
 // Description: Sets name of this sensor according to the ID tag.
 /obj/machinery/power/sensor/proc/auto_set_name()
 	name = "[name_tag] - Powernet Sensor"
-
-// A dying sensor leaves every monitor's grid_sensors view by itself (a relation view); the
-// monitors only need a wake to redraw without it.
-/obj/machinery/power/sensor/on_destroy(force)
-	..()
-	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(PM.power_monitor)
-			MACHINE_WAKE(PM)
 
 // Proc: check_grid_warning()
 // Parameters: None
@@ -63,25 +58,18 @@
 			return 1
 	return 0
 
-// Proc: process()
-// Parameters: None
-// Description: This tracks historical usage, for TGUI power monitors
-/obj/machinery/power/sensor/machine_step()
+/// The time between samples.
+/obj/machinery/power/sensor/proc/record_delay(datum/act/A)
+	return record_interval
+
+/// One sample of its network's supply and demand, for the power monitors (unwired, it looks for a cable).
+/obj/machinery/power/sensor/proc/sensor_step(datum/act/timer/A)
 	if(!power_region)
 		set_use_power(USE_POWER_IDLE)
 		connect_to_network()
 	else
 		set_use_power(USE_POWER_ACTIVE)
 		record()
-	if(!om_timer_slot_pending(src, "record_timer"))
-		var/delay = power_region ? max(1, next_record - world.time) : record_interval
-		after(src, delay, PROC_REF(wake_for_record), key = "record_timer")
-	return PROCESS_KILL
-
-/obj/machinery/power/sensor/proc/wake_for_record()
-	// Sampling is already timer-driven and does not sleep. Do it directly rather
-	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
-	machine_step()
 
 /// What this monitor shows for the grid's load: the mean of the live ledger value and its last few history samples.
 /// The grid keeps no eased copy of its own (power_grid.dm); smoothing what a reading shows is the reader's.
@@ -124,7 +112,7 @@
 			data[key] = computed[key]
 	return data
 
-/// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).
+/// /obj/machinery/power/sensor's window data.
 /obj/machinery/power/sensor/proc/ui_data_obj_machinery_power_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

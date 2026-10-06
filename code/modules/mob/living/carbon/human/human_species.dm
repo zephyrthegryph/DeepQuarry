@@ -16,9 +16,6 @@
 /mob/living/carbon/human/dummy
 	life_set = LIFE_SET_DELIST
 
-/datum/om/stage/life/delist/carbon/human/dummy
-	of = /mob/living/carbon/human/dummy
-
 
 /mob/living/carbon/human/dummy/mannequin/Initialize(mapload)
 	. = ..()

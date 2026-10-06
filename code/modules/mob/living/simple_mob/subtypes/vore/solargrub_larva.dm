@@ -55,28 +55,28 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
 
 
-/datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva
-	of = /mob/living/simple_mob/animal/solargrub_larva
+/mob/living/simple_mob/animal/solargrub_larva/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva/perform(mob/living/simple_mob/animal/solargrub_larva/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/solargrub_larva/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(self.machine_effect && !istype(self.loc, /obj/machinery))
-		QDEL_NULL(self.machine_effect)
+	if(src.machine_effect && !istype(src.loc, /obj/machinery))
+		QDEL_NULL(src.machine_effect)
 
-	if(!ctx.fact("alive"))	// || ai_inactive
+	if(!F.alive())	// || ai_inactive
 		return
 
-	if(self.power_drained >= 7 MEGAWATTS && prob(5))
-		self.expand_grub()
+	if(src.power_drained >= 7 MEGAWATTS && prob(5))
+		src.expand_grub()
 		return
 
-	if(istype(self.loc, /obj/machinery))
-		if(self.machine_effect && SSair.times_fired%30)
+	if(istype(src.loc, /obj/machinery))
+		if(src.machine_effect && SSair.times_fired%30)
 			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				M << self.machine_effect
+				M << src.machine_effect
 		if(prob(10))
-			fx_sparks(self, 3, FALSE)
+			fx_sparks(src, 3, FALSE)
 		return
 
 /mob/living/simple_mob/animal/solargrub_larva/attack_target(atom/A)
@@ -166,18 +166,18 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	var/mob/living/simple_mob/vore/solargrub/adult = new(get_turf(src))
 	adult.tracked = tracked
 //	grub.power_drained = power_drained //TODO
-	spent(src)
+	replaced_by(src, adult)
 
-/datum/om/stage/life/light/simple_mob/animal/solargrub_larva
-	of = /mob/living/simple_mob/animal/solargrub_larva
+/mob/living/simple_mob/animal/solargrub_larva/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/simple_mob/animal/solargrub_larva/perform(mob/living/simple_mob/animal/solargrub_larva/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/solargrub_larva/life_light(datum/seq_frame/life/F)
 	. = ..()
-	if(. == 0 && !self.is_dead())
-		self.set_light(1.5, 1, COLOR_YELLOW)
+	if(. == 0 && !src.is_dead())
+		src.set_light(1.5, 1, COLOR_YELLOW)
 		return 1
-	else if(self.is_dead())
-		self.set_glow_override(FALSE)
+	else if(src.is_dead())
+		src.set_glow_override(FALSE)
 
 /obj/machinery/abstract_grub_machine
 	var/total_active_power_usage = 45 KILOWATTS
@@ -188,8 +188,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 /// 0 stopped, 1 idle drain, 2 active drain.
 OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "draining")
-
 // ALLOW(init/INSTANCE_STATE): rolls its power use and binds to the grub it is made inside
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
@@ -199,7 +197,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "
 	rel_set(src, nameof(grub), loc)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
-/obj/machinery/abstract_grub_machine/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/abstract_grub_machine)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(draining), wakes_on = list(nameof(draining)))
+
+/obj/machinery/abstract_grub_machine/proc/work_step(datum/act/timer/timer)
 	var/area/A = get_area(src)
 	if(!A)
 		return

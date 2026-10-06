@@ -31,7 +31,7 @@ CAPABILITIES(/datum/private_notes_panel)
 /datum/private_notes_panel/ui_title(mob/user)
 	return "Private Notes: [host.name]"
 
-/// The computed part of /datum/private_notes_panel's window data (declared on its UI_DATA row).
+/// /datum/private_notes_panel's window data.
 /datum/private_notes_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["owner"] = host ? host.name : "(unknown)"
@@ -103,7 +103,7 @@ CAPABILITIES(/datum/ooc_notes_panel)
 /datum/ooc_notes_panel/ui_title(mob/user)
 	return "OOC Notes: [host.name]"
 
-/// The computed part of /datum/ooc_notes_panel's window data (declared on its UI_DATA row).
+/// /datum/ooc_notes_panel's window data.
 /datum/ooc_notes_panel/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

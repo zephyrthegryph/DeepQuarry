@@ -90,7 +90,7 @@ CAPABILITIES(/datum/event/carp_migration)
 
 // If carp is bomphed, remove it from the list.
 /datum/event/carp_migration/proc/on_carp_destruction(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/carp_to_remove = A.target
 	own_take_member(src, nameof(spawned_carp), carp_to_remove)
 	unobserve(carp_to_remove, /datum/notice/qdeleting, src)

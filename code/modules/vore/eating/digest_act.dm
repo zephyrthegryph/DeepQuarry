@@ -18,7 +18,7 @@
 			V.ghostize(0) // Prevent Reenter Corpse sending observers to the shadow realm
 			V.set_stat(DEAD) // Helps with autosleeving
 			if(V.mind) V.mind.vore_death = 1 // Digested item TFs get vore_death timer
-			consumed(V)
+			dissolved(V)
 		for(var/mob/living/M in contents)//Drop mobs from objects(shoes) before deletion
 			M.forceMove(item_storage)
 		for(var/obj/item/O in contents)
@@ -26,11 +26,11 @@
 				for(var/obj/item/SO in O)
 					if(item_storage)
 						SO.forceMove(item_storage)
-					consumed(O)
+					dissolved(O)
 			else if(item_storage)
 				O.forceMove(item_storage)
 		GLOB.items_digested_roundstat++
-		consumed(src)
+		dissolved(src)
 		return w_class
 
 	var/g_damage = 1
@@ -93,7 +93,7 @@
 				for(var/obj/item/SO in O)
 					if(item_storage)
 						SO.forceMove(item_storage)
-					consumed(O)
+					dissolved(O)
 			else if(item_storage)
 				O.forceMove(item_storage)
 			else
@@ -119,16 +119,16 @@
 				V.ghostize(0) //Prevent Reenter Corpse sending observers to the shadow realm
 				V.set_stat(DEAD) //Helps with autosleeving
 				if(V.mind) V.mind.vore_death = 1 //Digested item TFs get vore_death timer
-				consumed(V) //Destroy the voice.
+				dissolved(V) //Destroy the voice.
 		if(istype(B) && recycled)
 			g_damage = w_class / 2
 			if(B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
-			consumed(src)
+			dissolved(src)
 		else if(istype(src,/obj/item/stack))
 			var/obj/item/stack/S = src
 			if(S.get_amount() <= 1)
-				consumed(src)
+				dissolved(src)
 			else
 				S.use(1)
 				digest_stage = w_class
@@ -148,7 +148,7 @@
 						new goodmeal.trash(src)
 			if(istype(B) && B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
-			consumed(src)
+			dissolved(src)
 	if(g_damage > w_class)
 		return w_class
 	return g_damage
@@ -234,7 +234,7 @@
 		else if(isliving(B.owner))
 			B.owner.adjust_nutrition(stored_nutrition * (B.nutrition_percent / 100))
 			stored_nutrition = 0
-			consumed(src)
+			dissolved(src)
 			return w_class
 	. = ..()
 

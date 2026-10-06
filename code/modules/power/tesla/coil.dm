@@ -48,10 +48,19 @@
 		else
 			. += span_warning("This tesla coil does not produce bolts!")
 
+// The tesla coils (doc/rewrite/final_api.html section 16): an energy ball's bolt that strikes a coil is turned into power on its cable network
+// (coil_act(): power / power_loss * input_power_multiplier, supplied for the next power step) and arced on; the subtypes relay, split, amplify,
+// recast or only collect it. A multitool behind the open panel turns a coil into another kind, keeping its parts; a grab buckles someone to it.
+// The curves are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (tesla_coil_curves).
 CAPABILITIES(/obj/machinery/power/tesla_coil)
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Tesla coil", count = 1, tools = FALSE)
 	on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed))
+	part_replacement()
+	op("buckle", hand(), label("Buckle"), when(req_empty_hand()), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))
+	op("modify", tool(TOOL_MULTITOOL), label("Modify"), wait(0), at(SPACE_PANEL),
+		asks(/datum/prompt/choice, fields = list("title" = "Tesla Selection", "question" = "Which tesla do you wish to change it into?", "choices" = list("Normal", "Relay", "Splitter", "Amplifier", "Recaster", "Collector"))),
+		then(PROC_REF(modified)))
 
 
 /obj/machinery/power/tesla_coil/proc/zap_wire_pulsed(datum/act/A)
@@ -66,102 +75,71 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	input_power_multiplier = get_part_rating(/obj/item/stock_parts/capacitor)
 	zap_cooldown -= (input_power_multiplier - get_part_count(/obj/item/stock_parts/capacitor))
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_open:}{anchored}")
-
-/obj/machinery/power/tesla_coil/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/tesla_coil_fingerprint,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/tesla_coil_buckle_grabbed,
-	)
+/obj/machinery/power/tesla_coil/draw(datum/look/look)
 	..()
+	look.state("[icontype][panel_open ? "_open" : ""][anchored]")
 
-/// Old attackby: added a fingerprint for any item before trying the part replacer.
-/datum/interaction/machine_item/tesla_coil_fingerprint
-	id = "tesla_coil_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
+/// Pulling someone: the empty hand buckles them.
+/proc/tesla_buckle_grabbing(datum/act/op/A)
+	var/mob/user = A.actor
+	READS_FROM(user)
+	return !!user?.pulling_target()
 
-/obj/machinery/power/tesla_coil/screwdriver_act(mob/user, obj/item/W)
-	return ..()
+/obj/machinery/power/tesla_coil/proc/grabbing(datum/act/op/A)
+	return tesla_buckle_grabbing(A)
 
-/obj/machinery/power/tesla_coil/wrench_act(mob/user, obj/item/W)
-	return ..()
+/// A grab-intent hand buckles whoever the actor is pulling to it.
+/obj/machinery/power/tesla_coil/proc/buckle_pulled(datum/act/op/A)
+	user_buckle_mob(A.actor?.pulling_target(), A.actor)
+	return OP_OK
 
-/obj/machinery/power/tesla_coil/crowbar_act(mob/user, obj/item/W)
-	return ..()
+/// The multitool's answer: the coil is rebuilt as the chosen kind, with its parts.
+/obj/machinery/power/tesla_coil/proc/modified(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	var/modification_decision = R?.value
+	if(!modification_decision || QDELETED(src) || QDELETED(user))
+		return OP_OK
+	var/turf = get_turf(src)
+	if(!turf)
+		return OP_OK
+	var/obj/machinery/power/tesla_coil/new_coil
+	switch(modification_decision)
+		if("Normal")
+			new_coil = new(turf)
+		if("Relay")
+			new_coil = new /obj/machinery/power/tesla_coil/relay(turf)
+		if("Splitter")
+			new_coil = new /obj/machinery/power/tesla_coil/splitter(turf)
+		if("Amplifier")
+			new_coil = new /obj/machinery/power/tesla_coil/amplifier(turf)
+		if("Recaster")
+			new_coil = new /obj/machinery/power/tesla_coil/recaster(turf)
+		if("Collector")
+			new_coil = new /obj/machinery/power/tesla_coil/collector(turf)
+		else //Should never happen.
+			return OP_OK
 
-/obj/machinery/power/tesla_coil/multitool_act(mob/user, obj/item/W)
-	if(panel_open)
-		var/static/list/menu_list = list(
-		"Normal",
-		"Relay",
-		"Splitter",
-		"Amplifier",
-		"Recaster",
-		"Collector",
-		)
+	// Carry the installed parts over to new_coil (roadmap C6). new_coil's
+	// own default board+parts already resolved into latent entries the
+	// moment its Initialize() first asked the ledger a question, so clear
+	// those before src's parts (real, or still latent) replace them.
+	materialize_parts()
+	var/datum/ledger/new_coil_ledger = dq_ledger(new_coil)
+	new_coil_ledger?.latent_clear()
+	for(var/obj/item/stock_parts/C in component_parts)
+		rel_take(src, nameof(component_parts), C)
+		move_into(new_coil, CONTAINER_SLOT_INTERNALS, C)
+	rel_take(new_coil, nameof(new_coil.component_parts))
+	for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
+		rel_add(new_coil, nameof(new_coil.component_parts), I)
+	new_coil.RefreshParts()
 
-		var/modification_decision = rerun_ask(user, "k110", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Which tesla do you wish to change it into?", title = "Tesla Selection", choices = menu_list)
-		if(isnull(modification_decision))
-			return ITEM_INTERACT_BLOCKING
-		if(!modification_decision)
-			return //They didn't select anything!
-		if(QDELETED(src) || QDELETED(W) || QDELETED(user) || get_dist(user, src) > W.reach)
-			return
+	new_coil.set_anchored(anchored)
 
-		var/turf = get_turf(src)
-		if(!turf)
-			return
-		var/obj/machinery/power/tesla_coil/new_coil
-		switch(modification_decision)
-			if("Normal")
-				new_coil = new(turf)
-			if("Relay")
-				new_coil = new /obj/machinery/power/tesla_coil/relay(turf)
-			if("Splitter")
-				new_coil = new /obj/machinery/power/tesla_coil/splitter(turf)
-			if("Amplifier")
-				new_coil = new /obj/machinery/power/tesla_coil/amplifier(turf)
-			if("Recaster")
-				new_coil = new /obj/machinery/power/tesla_coil/recaster(turf)
-			if("Collector")
-				new_coil = new /obj/machinery/power/tesla_coil/collector(turf)
-			else //Should never happen.
-				return
-
-		// Carry the installed parts over to new_coil (roadmap C6). new_coil's
-		// own default board+parts already resolved into latent entries the
-		// moment its Initialize() first asked the ledger a question, so clear
-		// those before src's parts (real, or still latent) replace them.
-		materialize_parts()
-		var/datum/ledger/new_coil_ledger = dq_ledger(new_coil)
-		new_coil_ledger?.latent_clear()
-		for(var/obj/item/stock_parts/C in component_parts)
-			own_take_member(src, nameof(component_parts), C)
-			move_into(new_coil, CONTAINER_SLOT_INTERNALS, C)
-		own_take_all(new_coil, nameof(new_coil.component_parts))
-		for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
-			rel_add(new_coil, nameof(new_coil.component_parts), I)
-		new_coil.RefreshParts()
-
-		new_coil.set_anchored(anchored)
-
-		to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))
-		spent(src, user)
-		return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_BLOCKING
-
-/datum/interaction/machine_hand/tesla_coil_buckle_grabbed
-	id = "tesla_coil_buckle_grabbed"
-	name = "Buckle"
-	stance = I_GRAB
-	effect = /obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed
-
-/obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
-	return user_buckle_mob(user?.pulling_target(), user) ? TRUE : FALSE
+	to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))
+	spent(src, user)
+	return OP_OK
 
 /obj/machinery/power/tesla_coil/proc/coil_act(power, explosive, current_jumps)
 	var/power_produced = power / power_loss
@@ -347,6 +325,16 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_ope
 
 CAPABILITIES(/obj/machinery/power/grounding_rod)
 	climb()
+	part_replacement()
+	op("buckle", hand(), label("Buckle"), when(req_empty_hand()), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))
+
+/obj/machinery/power/grounding_rod/proc/grabbing(datum/act/op/A)
+	return tesla_buckle_grabbing(A)
+
+/// A grab-intent hand buckles whoever the actor is pulling to it.
+/obj/machinery/power/grounding_rod/proc/buckle_pulled(datum/act/op/A)
+	user_buckle_mob(A.actor?.pulling_target(), A.actor)
+	return OP_OK
 
 /obj/machinery/power/grounding_rod/examine(user)
 	. = ..()
@@ -355,72 +343,37 @@ CAPABILITIES(/obj/machinery/power/grounding_rod)
 	else
 		. += span_warning("It is not secured!")
 
-APPEARANCE_TEMPLATE(/obj/machinery/power/grounding_rod, "grounding_rod{panel_open?_open:}{anchored}")
-
-/obj/machinery/power/grounding_rod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/grounding_rod_buckle_grabbed,
-	)
+/obj/machinery/power/grounding_rod/draw(datum/look/look)
 	..()
-
-/datum/interaction/machine_hand/grounding_rod_buckle_grabbed
-	id = "grounding_rod_buckle_grabbed"
-	name = "Buckle"
-	stance = I_GRAB
-	effect = /obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed
-
-/obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
-	return user_buckle_mob(user?.pulling_target(), user) ? TRUE : FALSE
+	look.state("grounding_rod[panel_open ? "_open" : ""][anchored]")
 
 //Mapspawn variants of each.
 /obj/machinery/power/tesla_coil/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/tesla_coil/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/machinery/power/tesla_coil/relay/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/tesla_coil/relay/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/machinery/power/tesla_coil/splitter/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/tesla_coil/splitter/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/machinery/power/tesla_coil/amplifier/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/tesla_coil/amplifier/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/machinery/power/tesla_coil/recaster/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/tesla_coil/recaster/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/machinery/power/tesla_coil/collector/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/tesla_coil/collector/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/machinery/power/grounding_rod/pre_mapped
 	anchored = TRUE
 
-/obj/machinery/power/grounding_rod/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 #undef AMPLIFIER_STRENGTH

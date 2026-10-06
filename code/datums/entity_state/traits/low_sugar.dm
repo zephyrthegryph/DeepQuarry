@@ -1,6 +1,5 @@
 ///Trait state that gives negative effects when at low nutrition.
 /datum/trait_state/diabetic
-	life_stage = /datum/om/stage/life/trait/diabetic
 	var/nutrition_threshold = 200
 	var/nutrition_weak = 100
 	var/nutrition_danger = 50
@@ -27,6 +26,6 @@
 		living_guy.status_set(EFFECT_DROWSY, min(100,living_guy.status_units(EFFECT_DROWSY)+30))
 
 /// Trait system: low blood sugar.
-/datum/om/stage/life/trait/diabetic
-	name = "diabetic"
-	state_type = /datum/trait_state/diabetic
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/diabetic/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_diabetic"))

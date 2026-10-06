@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		. += span_notice("The whole machine can be [span_bold("pried")] apart.")
 
 /obj/machinery/ore_silo/proc/on_item_consumed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/matcontainer_item_consumed/event = N
 	var/obj/item/item_inserted = event.item
 	var/mats_consumed = event.mats_consumed
@@ -70,7 +70,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
 
 /obj/machinery/ore_silo/proc/log_sheets_ejected(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/matcontainer_stack_retrieved/event = N
 	var/obj/item/stack/material/sheets = event.new_stack
 	var/atom/context = event.context
@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /obj/machinery/ore_silo/tgui_static_data(mob/user)
 	return materials.tgui_static_data(user)
 
-/// The computed part of /obj/machinery/ore_silo's window data (declared on its UI_DATA row).
+/// /obj/machinery/ore_silo's window data.
 /obj/machinery/ore_silo/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

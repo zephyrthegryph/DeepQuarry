@@ -182,39 +182,39 @@
 
 	size_factor_for_sprite = 5
 
-/datum/om/stage/life/type_post/simple_mob/vore/aggressive/corrupthound/swoopie
-	of = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/perform(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/life_type_post(datum/seq_frame/life/F)
 	..()
-	var/turf/T = get_turf(self)
-	if(istype(self.Vac))
-		if(self.Vac.loc != self)
-			var/turf/VT = get_turf(self.Vac)
-			if(!T.Adjacent(VT) || isturf(self.Vac.loc))
-				if(isliving(self.Vac.loc))
-					var/mob/living/L = self.Vac.loc
-					L.remove_from_mob(self.Vac, self)
+	var/turf/T = get_turf(src)
+	if(istype(src.Vac))
+		if(src.Vac.loc != src)
+			var/turf/VT = get_turf(src.Vac)
+			if(!T.Adjacent(VT) || isturf(src.Vac.loc))
+				if(isliving(src.Vac.loc))
+					var/mob/living/L = src.Vac.loc
+					L.remove_from_mob(src.Vac, src)
 				else
-					self.Vac.forceMove(self)
-		var/atom/movable/vac_output = self.Vac.output_dest
+					src.Vac.forceMove(src)
+		var/atom/movable/vac_output = src.Vac.output_dest
 		if(!vac_output)
-			if(isbelly(self.vore_selected))
-				rel_set(self.Vac, nameof(/obj/item/vac_attachment::output_dest), self.vore_selected)
-	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
+			if(isbelly(src.vore_selected))
+				rel_set(src.Vac, nameof(/obj/item/vac_attachment::output_dest), src.vore_selected)
+	if(!istype(T) || !istype(src.Vac) || !(src.ai_brain != null) || src.Vac.loc != src || src.stat)
 		return
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T
 		if(S.dirt > 50)
-			self.Vac.afterattack(S, self, 1)
+			src.Vac.afterattack(S, src, 1)
 			return
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(is_type_in_list(O, GLOB.edible_trash) && !O.anchored)
-			self.Vac.afterattack(T, self, 1)
+			src.Vac.afterattack(T, src, 1)
 			return
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
-		if(!L.anchored && L.devourable && L != self && !L?.buckled_to() && L.can_be_drop_prey)
-			self.Vac.afterattack(L, self, 1)
+		if(!L.anchored && L.devourable && L != src && !L?.buckled_to() && L.can_be_drop_prey)
+			src.Vac.afterattack(L, src, 1)
 			return
 
 /datum/say_list/swoopie

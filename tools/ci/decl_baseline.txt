@@ -121,12 +121,9 @@ init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 15 SECONDS, PR
 init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 init_scheduling	code/game/objects/effects/decals/Cleanable/vore.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
-init_scheduling	code/game/objects/effects/spiders.dm	after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
 init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	after(src, 40, PROC_REF(set_frequency), with = list(frequency))
-init_scheduling	code/modules/mining/resonator.dm	after(src, timetoburst, PROC_REF(burst))
-init_scheduling	code/modules/random_map/drop/droppod_doors.dm	after(src, 10 SECONDS, PROC_REF(deploy))
 init_scheduling	code/modules/shieldgen/directional_shield.dm	after(src, 0, PROC_REF(create_shields))
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
@@ -142,9 +139,6 @@ init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
-init_visuals	code/game/objects/effects/decals/cleanable.dm	src.icon_state = DEFAULTPICK(src.random_icon_states, null)
-init_visuals	code/game/objects/effects/decals/posters/posters.dm	icon_state = poster_decl.icon_state
-init_visuals	code/game/objects/structures/barsign.dm	icon_state = pick(get_valid_states())
 init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"
@@ -174,7 +168,6 @@ init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "personal[
 init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(MA)
 init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(I)
 init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
-init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "alienpod[rand(1, 9)]"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
@@ -184,7 +177,6 @@ init_visuals	code/game/turfs/unsimulated.dm	icon_state = "[((x + y) ^ ~(x * y) +
 init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water2","layer"=MOB_LAYER+0.1))
 init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1))
 init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = "hawaiian_[random_color]"
-init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = "hawaiian_red"
 init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = initial(new_item.icon_state)
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
 init_visuals	code/modules/clothing/gloves/miscellaneous.dm	icon_state = "[glovecolor]_ranger_gloves"
@@ -207,13 +199,11 @@ init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_sta
 init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
 init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-init_visuals	code/modules/organs/subtypes/nano.dm	icon_state = "posi"
+init_visuals	code/modules/body/organs/subtypes/nano.dm	icon_state = "posi"
 init_visuals	code/modules/overmap/events/overmap_event.dm	icon_state = pick(event_icon_states)
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
-init_visuals	code/modules/overmap/ships/engines/gas_thruster.dm	icon_state = "exhaust"
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
-init_visuals	code/modules/persistence/graffiti.dm	icon_state = pick(random_icon_states)
 init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
 init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
 init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
@@ -233,7 +223,6 @@ init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
-init_visuals	code/modules/power/gravitygenerator.dm	middle().add_overlay("activated")
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
 init_visuals	code/modules/reagents/reagent_containers/hypospray.dm	icon_state = "[initial(icon_state)]0"
 init_visuals	code/modules/research/tg/server.dm	add_overlay("RD-server-objective-stripes")
@@ -246,7 +235,6 @@ init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
 init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
-init_visuals	code/modules/xenoarcheaology/artifacts/crystal.dm	icon_state = pick("ano70","ano80")
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "statuette[rand(1,3)]"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "instrument"
@@ -354,21 +342,16 @@ init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	rel_set(src, n
 init_new_child	code/modules/maint_recycler/code/maint_vendor.dm	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 init_new_child	code/modules/mining/drilling/drill.dm	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
 init_new_child	code/modules/mining/machine_silo.dm	rel_set(src, nameof(materials), new /datum/material_container( \
-init_new_child	code/modules/mob/living/bot/farmbot.dm	rel_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
 init_new_child	code/modules/mob/living/silicon/ai/multicam.dm	rel_set(src, nameof(aiEye), new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	rel_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
 init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/modules/modular_computers/hardware/battery_module.dm	rel_set(src, nameof(battery), new cell_type(src))
-init_new_child	code/modules/modular_computers/hardware/battery_module.dm	rel_set(src, nameof(battery), new/obj/item/cell(src))
-init_new_child	code/modules/multiz/hoist.dm	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
-init_new_child	code/modules/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
-init_new_child	code/modules/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
-init_new_child	code/modules/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
+init_new_child	code/modules/body/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
+init_new_child	code/modules/body/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
+init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
-init_new_child	code/modules/paperwork/paperplane.dm	rel_set(src, nameof(internalPaper), new /obj/item/paper(src))
 init_new_child	code/modules/power/generator.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 init_new_child	code/modules/power/supermatter/supermatter.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 init_new_child	code/modules/power/turbine.dm	rel_set(src, nameof(gas_contained), new /datum/gas_mixture())

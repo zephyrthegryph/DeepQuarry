@@ -71,7 +71,7 @@ yet; write the legacy form in the last column until it does.
 |---|---|---|---|---|
 | Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | **new** | `capabilities()`/`reactions()`/`relations()` table procs |
 | Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | **new** | library capabilities in `code/datums/capabilities/` |
-| Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | **new** | `DECLARE_INTERACTIONS`, `DECLARE_UI`/`UI_ACT`, `om_ask` |
+| Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | **new** | `DECLARE_INTERACTIONS`, `om_ask`; a window button is already `op(key, ui_act(key, arg(...)), needs(...), asks(...), then(...))` |
 | Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | **new** | `REQ_*`, `needs = PROC_REF(x)` |
 | Typed world events | `/datum/act` contexts from `ACTION()`; `intercept()` | §8, §10 | **new** | `DAMAGE_REACTION`, `OM_EMIT` |
 | React after | `on_notice(/datum/notice/x, ...)`, `PUBLISH()` | §10 | exists; typed `NOTICE()` is **new** (master's `NOTICE()` is an unrelated log macro) | `on_notice()`, `PUBLISH()` |
@@ -82,7 +82,7 @@ yet; write the legacy form in the last column until it does.
 | Links and ownership | Relations declared in `CAPABILITIES`; lifecycle declared | §6 | **new** | `OWN`/`REL` macros, `own_set`/`rel_set` |
 | World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 | **new** | `/datum/world_service`, world lanes |
 | Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 | **new** | `code/datums/interactions/construction.dm` |
-| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | **new** | `APPEARANCE_*`, `DECLARE_UI`, `DECLARE_VERB`, `om_ask` |
+| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | **new** | `APPEARANCE_*`, `DECLARE_VERB`, `om_ask`; a window is already `interface("Window")` + `ui_data(datum/act/eval/A)` |
 
 Rules that hold under both old and new forms:
 
@@ -107,8 +107,8 @@ Rules that hold under both old and new forms:
 ### 3b. Legacy forms (still what you write until replaced)
 
 Everything built on the OM and the sys layer is legacy and will be removed: `om_after`,
-`om_hook`, `om_ask`, `om_grant`, `OM_EMIT`, `EVENT_HANDLER`, `OM_FIELD` and its relatives,
-`DECLARE_UI` / `UI_ACT` / `UI_DATA`, `TOPIC_ACTION`, `DECLARE_PERIODIC_WHILE`,
+`om_hook`, `om_ask`, `om_grant`, `OM_EMIT`, `OM_FIELD` and its relatives,
+`TOPIC_ACTION`, `DECLARE_PERIODIC_WHILE`,
 `DECLARE_REPEAT`, `DECLARE_VERB`, `DECLARE_EMAG`, `DAMAGE_REACTION`, `REQ_*`, the `OWN`/`REL`
 macros, `capabilities()`/`reactions()`/`relations()` table procs, `PERIODIC_*` lanes,
 `world_service` and the `CHANGE_*` channels with `changed(E, channel)`. They remain the correct
@@ -169,10 +169,10 @@ it. Don't annotate new debt to get under a ceiling; use the form the lint points
 the vendored TGS DMAPI are exempt by path from the lints whose `lint_scopes.toml` section lists them (instance_list,
 ownership, silent_catch, spatial, lifecycle_counts, tracked, cache, scheduler, ...): don't annotate there.
 
-No ratchet bans a §3b legacy form today. The old `dx_old_forms` sys rules were deleted because each
-named a replacement that has not landed on master (or that the design itself replaces), and
-`old_ui` contradicted the `ui` rule: a UI is `DECLARE_UI`/`UI_ACT`/`UI_DATA` and a `tgui_data()`
-override is the banned shape. The commit that lands a replacement adds its ban and converts the callers (§3b).
+The declared UI model (`DECLARE_UI`, `UI_ACT`, `UI_DATA`, `UI_SUBACT`, `act_ask`, `ui_act_allowed()`, ...) is deleted and hard-banned
+(`[lint.legacy_forms.lists] banned`): a window is `interface()` in `CAPABILITIES`, its buttons are `op(..., ui_act(...))`, its data is
+`ui_data(datum/act/eval/A)`, its questions are `asks()`. The old `dx_old_forms` sys rules were deleted because each named a replacement
+that had not landed. The commit that lands a replacement adds its ban and converts the callers (§3b).
 
 ### 3e. Debugging and tracing
 
@@ -256,8 +256,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 
 `tgui/` is TypeScript-only with Biome and Bun. `bin/tgui-fix.cmd` auto-fixes;
 `tools/build/build.sh lint` checks Biome and TypeScript. Interfaces live in
-`tgui/packages/tgui/interfaces/`. Under the final design a UI is an `ui_window()` plus a
-`ui_data(user)` output and ops with `ui_act()`; each op keeps its old action name so TSX does
+`tgui/packages/tgui/interfaces/`. A UI is an `interface()` in the type's `CAPABILITIES` block, a
+`ui_data(datum/act/eval/A)` output and ops with `ui_act()`; each op keeps its old action name so TSX does
 not change (doc §13, §19).
 
 ## 6. Changelogs

@@ -20,13 +20,24 @@
 	var/amount_grown = 0
 	var/metroid_type = /mob/living/simple_mob/metroid/juvenile/baby
 
-// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
-/obj/effect/metroid/egg/Initialize(mapload, atom/parent)
+CAPABILITIES(/obj/effect/metroid/egg)
+	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(3))
+	after_init(PROC_REF(hatch_delay), then(PROC_REF(hatch_due)))
+
+/// What laid the egg (its constructor param): it takes its light and colour.
+/obj/effect/metroid/egg/var/tmp/atom/laid_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/metroid/egg/proc/take_parent_look(atom/parent)
 	get_light_and_color(parent)
-	. = ..()
-	pixel_x = rand(3,-3)
-	pixel_y = rand(3,-3)
-	after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch)) // ALLOW(decl): the hatch delay is computed per instance from the egg's steps, which a declaration cannot express
+
+/// after_init(): the hatch delay, from the egg's steps.
+/obj/effect/metroid/egg/proc/hatch_delay(datum/act/A)
+	return egg_hatch_steps() * 2 SECONDS
+
+/obj/effect/metroid/egg/proc/hatch_due(datum/act/timer/A)
+	hatch()
 
 /// Hatches (its growth timer).
 /obj/effect/metroid/egg/proc/hatch()

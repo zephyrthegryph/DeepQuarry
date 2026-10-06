@@ -33,7 +33,10 @@ CAPABILITIES(/obj/item/towel)
 		user.adjust_fire_stacks(-1.5)
 	return OP_OK
 
-// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
-/obj/item/towel/random/Initialize(mapload)
-	. = ..()
-	color = get_random_colour()
+CAPABILITIES(/obj/item/towel/random)
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): any colour (get_random_colour()'s distribution).
+/obj/item/towel/random/proc/roll_color(datum/roller/R)
+	return R.hex_colour()
+

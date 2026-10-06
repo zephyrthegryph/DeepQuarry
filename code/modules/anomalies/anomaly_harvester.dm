@@ -1,4 +1,5 @@
 CAPABILITIES(/obj/machinery/anomaly_harvester)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("release_all", ui_act(), then(PROC_REF(ui_act_release_all)))
 	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
@@ -35,8 +36,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	efficiency = max(1, (efficient/10+1))
 	points_to_create = min(100, (100 - (rating * 5)))
 
-/obj/machinery/anomaly_harvester/machine_step()
-	..()
+/obj/machinery/anomaly_harvester/proc/work_step(datum/act/timer/A)
 	if(!operable() || !anchored)
 		set_use_power(USE_POWER_OFF)
 	else
@@ -167,7 +167,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, a
 			else
 				. += "harvester_grow"
 
-/// The computed part of /obj/machinery/anomaly_harvester's window data (declared on its UI_DATA row).
+/// /obj/machinery/anomaly_harvester's window data.
 /obj/machinery/anomaly_harvester/ui_data(datum/act/eval/A)
 	var/list/sample_data = list()
 	FOR_REAL_CONTENTS(var/obj/item/research_sample/sample, src)
@@ -203,6 +203,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, a
 		sample.forceMove(get_turf(src))
 	return OP_OK
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/anomaly_harvester/step_start_condition()
 	return anchored

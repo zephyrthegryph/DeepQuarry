@@ -1,4 +1,3 @@
-human|none menu: Armor insert item
 human|none menu: Armor plating item
 human|none menu: Collect (refused: needs a storage)
 human|none menu: Customise (refused: needs an item)
@@ -6,7 +5,6 @@ human|none menu: Move To Top
 human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: you need to be carrying it)
 human|none click: nothing
-robot|none menu: Armor insert item
 robot|none menu: Armor plating item
 robot|none menu: Collect (refused: needs a storage)
 robot|none menu: Customise (refused: needs an item)
@@ -18,7 +16,6 @@ robot|none click: nothing
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Armor insert item
 human|/obj/item/tool/screwdriver menu: Armor plating item
 human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
@@ -27,7 +24,6 @@ human|/obj/item/tool/screwdriver menu: Pick up
 human|/obj/item/tool/screwdriver menu: Repair
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/screwdriver click: Click: Repair
-human|/obj/item/tool/crowbar menu: Armor insert item
 human|/obj/item/tool/crowbar menu: Armor plating item
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
@@ -36,7 +32,6 @@ human|/obj/item/tool/crowbar menu: Pick up
 human|/obj/item/tool/crowbar menu: Repair
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/crowbar click: Click: Repair
-human|/obj/item/tool/wrench menu: Armor insert item
 human|/obj/item/tool/wrench menu: Armor plating item
 human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
@@ -45,7 +40,6 @@ human|/obj/item/tool/wrench menu: Pick up
 human|/obj/item/tool/wrench menu: Repair
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/wrench click: Click: Repair
-human|/obj/item/tool/wirecutters menu: Armor insert item
 human|/obj/item/tool/wirecutters menu: Armor plating item
 human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
@@ -55,7 +49,6 @@ human|/obj/item/tool/wirecutters menu: Repair
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/wirecutters menu: Use wirecutter
 human|/obj/item/tool/wirecutters click: Click: Use wirecutter
-human|/obj/item/multitool menu: Armor insert item
 human|/obj/item/multitool menu: Armor plating item
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
 human|/obj/item/multitool menu: Customise (refused: needs an item)
@@ -64,7 +57,6 @@ human|/obj/item/multitool menu: Pick up
 human|/obj/item/multitool menu: Repair
 human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/multitool click: Click: Repair
-human|/obj/item/weldingtool menu: Armor insert item
 human|/obj/item/weldingtool menu: Armor plating item
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
@@ -74,7 +66,6 @@ human|/obj/item/weldingtool menu: Repair
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Use welder
-human|/obj/item/stack/cable_coil menu: Armor insert item
 human|/obj/item/stack/cable_coil menu: Armor plating item
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
@@ -84,7 +75,6 @@ human|/obj/item/stack/cable_coil menu: Pick up
 human|/obj/item/stack/cable_coil menu: Repair
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/stack/cable_coil click: Click: Repair
-human|/obj/item/stack/material/steel menu: Armor insert item
 human|/obj/item/stack/material/steel menu: Armor plating item
 human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
 human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
@@ -93,7 +83,6 @@ human|/obj/item/stack/material/steel menu: Pick up
 human|/obj/item/stack/material/steel menu: Repair
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/stack/material/steel click: Click: Repair
-human|/obj/item/card/id menu: Armor insert item
 human|/obj/item/card/id menu: Armor plating item
 human|/obj/item/card/id menu: Collect (refused: needs a storage)
 human|/obj/item/card/id menu: Customise (refused: needs an item)
@@ -102,7 +91,6 @@ human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Repair
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/id click: Click: Repair
-human|/obj/item/kit menu: Armor insert item
 human|/obj/item/kit menu: Armor plating item
 human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
@@ -111,7 +99,6 @@ human|/obj/item/kit menu: Pick up
 human|/obj/item/kit menu: Repair
 human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/kit click: Click: Repair
-human|/obj/item/storage menu: Armor insert item
 human|/obj/item/storage menu: Armor plating item
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Customise (refused: needs an item)
@@ -120,5 +107,5 @@ human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Repair
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Repair
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_armor_insert_item, gen_item_armor_plating_item, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, material_interaction_item, use_welder, use_wirecutter
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_armor_plating_item, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, material_interaction_item, use_welder, use_wirecutter
 

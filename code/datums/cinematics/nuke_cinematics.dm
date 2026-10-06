@@ -6,7 +6,7 @@
 
 /datum/cinematic/nuke/play_cinematic()
 	flick("intro_nuke", screen)
-	// The intro runs its course, then the blast (om_after(), no sleep: S10b).
+	// The intro runs its course, then the blast (after(), no sleep: S10b).
 	after(src, intro_time, PROC_REF(play_nuke_blast))
 
 /// The second half of the nuke cinematic, after the intro animation.

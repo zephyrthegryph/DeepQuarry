@@ -66,6 +66,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph)
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE)
+	param(nameof(prey_mind), pos = 1)
+	param(nameof(parent_morph), pos = 2)
+	param(nameof(prey_body), pos = 3, apply = PROC_REF(swap_made))
 
 /mob/living/simple_mob/vore/morph/proc/allowed(atom/movable/A)
 	return !is_type_in_typecache(A, blacklist_typecache) && (isobj(A) || ismob(A))
@@ -377,14 +380,11 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	var/datum/mind/prey_mind
 	vore_active = FALSE
 
-// ALLOW(init/CTOR_ARGS): pmind, parent and prey are constructor arguments from whoever builds it
-/mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, datum/mind/pmind, parent, prey)
-	. = ..()
-	if(!pmind)
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(prey_mind), pmind)
-	rel_set(src, nameof(parent_morph), parent)
-	rel_set(src, nameof(prey_body), prey)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The morph and its prey swap seats.
+/mob/living/simple_mob/vore/morph/dominated_prey/proc/swap_made(prey)
+	if(!prey_mind)
+		spent(src)
+		return
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE
 	prey_body.absorbed = FALSE

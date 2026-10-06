@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/clipboard)
 	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
 	drag_onto(PROC_REF(mousedrop_input))
 
-/// The computed part of /obj/item/clipboard's window data (declared on its UI_DATA row).
+/// /obj/item/clipboard's window data.
 /obj/item/clipboard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_pen"] = !!haspen()

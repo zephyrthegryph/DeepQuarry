@@ -48,7 +48,7 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 		"feet" = "Feet", \
 	))
 
-/// The computed part of /datum/flavor_panel's window data (declared on its UI_DATA row).
+/// /datum/flavor_panel's window data.
 /datum/flavor_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host)

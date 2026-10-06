@@ -2,8 +2,16 @@
 	desc = "It's a decoy!"
 	duration = 15
 
-// ALLOW(init/CTOR_ARGS): mimiced_atom and customappearance are constructor arguments from whoever builds it
-/obj/effect/temp_visual/decoy/Initialize(mapload, atom/mimiced_atom, customappearance)
+CAPABILITIES(/obj/effect/temp_visual/decoy)
+	param(nameof(mimiced_atom), pos = 1, keep = FALSE)
+	param(nameof(customappearance), pos = 2, keep = FALSE)
+
+/// What the decoy mimics, or the look it is given (its constructor params, dropped after init).
+/obj/effect/temp_visual/decoy/var/tmp/atom/mimiced_atom
+/obj/effect/temp_visual/decoy/var/tmp/customappearance
+
+// ALLOW(init/INSTANCE_STATE): a decoy takes the look of what it mimics, after its parents' random facing
+/obj/effect/temp_visual/decoy/Initialize(mapload)
 	. = ..()
 	alpha = initial(alpha)
 	if(mimiced_atom)
@@ -72,13 +80,20 @@ CAPABILITIES(/obj/effect/temp_visual/impact_effect)
 	icon_state = "impact_laser_monochrome"
 	duration = 4
 
-// ALLOW(init/CTOR_ARGS): P, x and y are constructor arguments from whoever builds it
-/obj/effect/temp_visual/impact_effect/monochrome_laser/Initialize(mapload, obj/item/projectile/P, x, y)
+CAPABILITIES(/obj/effect/temp_visual/impact_effect/monochrome_laser)
+	param(nameof(hit_by), pos = 1, apply = PROC_REF(take_colour), keep = FALSE)
+
+/// The projectile whose colour the impact takes (its constructor param).
+/obj/effect/temp_visual/impact_effect/monochrome_laser/var/tmp/obj/item/projectile/hit_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/temp_visual/impact_effect/monochrome_laser/proc/take_colour(obj/item/projectile/P)
+	if(!P)
+		return
 	if(P.light_color)
 		color = P.light_color
 	else if(P.color)
 		color = P.color
-	return ..()
 
 /obj/effect/temp_visual/impact_effect/ion
 	icon_state = "shieldsparkles"

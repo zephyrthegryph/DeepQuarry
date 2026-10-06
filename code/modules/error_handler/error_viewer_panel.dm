@@ -52,7 +52,7 @@ CAPABILITIES(/datum/error_viewer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/error_viewer's window data (declared on its UI_DATA row).
+/// /datum/error_viewer's window data.
 /datum/error_viewer/proc/ui_data_datum_error_viewer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "unknown"
@@ -70,7 +70,7 @@ CAPABILITIES(/datum/error_viewer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/error_viewer/error_cache's window data (declared on its UI_DATA row).
+/// /datum/error_viewer/error_cache's window data.
 /datum/error_viewer/error_cache/proc/ui_data_datum_error_viewer_error_cache(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "cache"
@@ -102,7 +102,7 @@ CAPABILITIES(/datum/error_viewer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/error_viewer/error_source's window data (declared on its UI_DATA row).
+/// /datum/error_viewer/error_source's window data.
 /datum/error_viewer/error_source/proc/ui_data_datum_error_viewer_error_source(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "source"
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/error_viewer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/error_viewer/error_entry's window data (declared on its UI_DATA row).
+/// /datum/error_viewer/error_entry's window data.
 /datum/error_viewer/error_entry/proc/ui_data_datum_error_viewer_error_entry(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "entry"

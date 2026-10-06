@@ -1,4 +1,5 @@
-/obj/structure/fireplace|human|none => fireplace_item,fireplace_hand|
-/obj/structure/fireplace|robot|none => fireplace_item,fireplace_hand|
+/obj/structure/fireplace|human|none => |
+/obj/structure/fireplace|robot|none => |
 /obj/structure/fireplace|ai|none => |
 /obj/structure/fireplace|ghost|none => |
+

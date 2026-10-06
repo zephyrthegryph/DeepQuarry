@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/starcaster_news)
 	A.actor.set_machine(src)
 	return OP_OK
 
-/// The computed part of /obj/item/starcaster_news's window data (declared on its UI_DATA row).
+/// /obj/item/starcaster_news's window data.
 /obj/item/starcaster_news/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

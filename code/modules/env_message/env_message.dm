@@ -36,13 +36,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 		if(!(count == length(message_list)))
 			combined_message += "<br><br>"
 
-/obj/effect/env_message/MouseEntered(location, control, params)
-	env_message_hovered(usr, params) // ALLOW(sys_usr_outside_verb): BYOND environmental marker MouseEntered supplies the hovering mob through usr at this native callback boundary.
-	..()
+CAPABILITIES(/obj/effect/env_message)
+	tooltip(PROC_REF(env_message_tooltip))
 
-/obj/effect/env_message/proc/env_message_hovered(mob/user, params)
-	if(user)
-		openToolTip(user = user, tip_src = src, params = params, title = null, content = combined_message)
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm): the message, untitled.
+/obj/effect/env_message/proc/env_message_tooltip(mob/user)
+	return list(null, combined_message)
 
 /obj/effect/env_message/MouseDown()
 	closeToolTip(usr, src) //No reason not to, really

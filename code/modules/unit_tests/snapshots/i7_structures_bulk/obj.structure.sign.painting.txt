@@ -1,4 +1,5 @@
-/obj/structure/sign/painting|human|none => sign_painting_item|
-/obj/structure/sign/painting|robot|none => sign_painting_item|
+/obj/structure/sign/painting|human|none => |
+/obj/structure/sign/painting|robot|none => |
 /obj/structure/sign/painting|ai|none => |
 /obj/structure/sign/painting|ghost|none => |
+

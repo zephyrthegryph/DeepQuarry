@@ -35,11 +35,20 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/drain_power()
 	return -1
 
+MSG_DEF(solar/glass_off, "You take the glass off the solar panel.", "%U% takes the glass off the solar panel.")
+
+// A solar panel (doc/rewrite/final_api.html section 16): linked to a solar control computer on its network, it supplies solar_gen_rate W times
+// its exposure (cos^2 of its angle off the sun, 0 past 90 degrees, 0 obscured), summed by the controller into one persistent supply. A crowbar
+// takes the glass off; a hostile swing with anything strikes it.
 CAPABILITIES(/obj/machinery/power/solar)
 	climb()
+	ref_one(nameof(control), /obj/machinery/power/solar_control)
+	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(2 SECONDS), says(MSG(solar/glass_off)), then(PROC_REF(glass_removed)))
+	op("strike", item(/obj/item), label("Strike"), hostile(), wait(0), then(PROC_REF(struck)))
+	param(nameof(glass_type), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): glass_type is a constructor argument from whoever builds it
-/obj/machinery/power/solar/Initialize(mapload, glass_type)
+// ALLOW(init/INSTANCE_STATE): a panel in reinforced glass is twice as tough
+/obj/machinery/power/solar/Initialize(mapload)
 	. = ..()
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
 		max_integrity *= 2
@@ -72,39 +81,22 @@ CAPABILITIES(/obj/machinery/power/solar)
 		control().remove_panel(src)
 	rel_clear(src, nameof(control))
 
-/obj/machinery/power/solar/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/solar_panel_strike,
-	)
-	..()
-
-/datum/interaction/machine_item/solar_panel_strike
-	id = "solar_panel_strike"
-	name = "Strike"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	stance = I_HURT
-	effect = /obj/machinery/power/solar/proc/interaction_strike
-
-/obj/machinery/power/solar/proc/interaction_strike(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/solar/proc/struck(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	act_message(user, null, others = span_warning("%U% strikes the solar panel with [held]."))
 	user.setClickCooldown(user.get_attack_speed(held))
 	add_fingerprint(user)
 	receive_weapon_hit(held, user)
-	return FALSE
+	return OP_OK
 
-/obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
-	play_sfx(src, SFX_MACHINES_CLICK)
-	act_message(user, null, others = span_notice("%U% begins to take the glass off the solar panel."))
-	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
+/// The glass is off: an anchored assembly and the sheets are left.
+/obj/machinery/power/solar/proc/glass_removed(datum/act/op/A)
 	var/obj/item/solar_assembly/S = new(loc)
 	S.set_anchored(TRUE)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	act_message(user, null, others = span_notice("%U% takes the glass off the solar panel."))
 	replace_with(src, glass_type, 2)
+	return OP_OK
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
@@ -118,16 +110,13 @@ CAPABILITIES(/obj/machinery/power/solar)
 	new /obj/item/material/shard(src.loc)
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/solar/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/machinery/power/solar/draw(datum/look/look)
+	..()
 	if(has_stat(BROKEN))
-		. += "solar_panel-b"
+		look.overlay("solar_panel-b")
 	else
-		. += "solar_panel"
-		src.set_dir(angle2dir(adir))
-	return .
+		look.overlay("solar_panel")
+		look.set_dir(angle2dir(adir))
 
 //calculates the fraction of the sun that the panel recieves
 /obj/machinery/power/solar/proc/update_solar_exposure()
@@ -229,57 +218,61 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 	anchored = FALSE
 	var/tracker = 0
 
-DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+MSG_DEF_SELF(solar_assembly/not_placed, "It has to be on the floor.")
+MSG_DEF_SELF(solar_assembly/unanchored, "It has to be wrenched in place first.")
+MSG_DEF_SELF(solar_assembly/not_glass, "It needs glass or reinforced glass.")
+MSG_DEF(solar_assembly/glassed, "You place the glass on the solar assembly.", "%U% places the glass on the solar assembly.")
+MSG_DEF(solar_assembly/electronics_in, "You insert the electronics into the solar assembly.", "%U% inserts the electronics into the solar assembly.")
+MSG_DEF(solar_assembly/electronics_out, "You take out the electronics from the solar assembly.", "%U% takes out the electronics from the solar assembly.")
 
-/// Old attack_hand.
-/obj/item/solar_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!anchored || !isturf(loc)) // You can't pick it up
-		return FALSE
-	return TRUE
+// The assembly of a panel or tracker: wrenched down on the floor it takes two sheets of glass and becomes a panel (with tracker electronics in,
+// a tracker); a crowbar takes the electronics back out. Wrenched down, it cannot be picked up.
+CAPABILITIES(/obj/item/solar_assembly)
+	op("fixed", hand(), label("Touch"), wait(0), when(nameof(anchored)), when(req_empty_hand()), then(PROC_REF(touched)))
+	op("wrench", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req(PROC_REF(on_floor), because = MSG(solar_assembly/not_placed))), then(PROC_REF(wrenched)))
+	op("glass", stack(/obj/item/stack/material, 2), label("Add glass"), wait(0), when(req(PROC_REF(held_is_glass))),
+		needs(req(PROC_REF(on_floor), because = MSG(solar_assembly/not_placed)), req_is(nameof(anchored), TRUE, because = MSG(solar_assembly/unanchored))),
+		says(MSG(solar_assembly/glassed)), then(PROC_REF(glassed)))
+	op("electronics", item(/obj/item/tracker_electronics), label("Insert electronics"), wait(0), when(cond_not(nameof(tracker))),
+		says(MSG(solar_assembly/electronics_in)), then(PROC_REF(electronics_in)))
+	op("take_electronics", tool(TOOL_CROWBAR), label("Take out the electronics"), wait(0), when(nameof(tracker)),
+		says(MSG(solar_assembly/electronics_out)), then(PROC_REF(electronics_out)))
 
-/// Old attackby.
-/obj/item/solar_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (!isturf(loc))
-		return INTERACTION_HANDLED_PASS
-	if(anchored)
-		if(istype(W, /obj/item/stack/material) && (W.get_material_name() == MAT_GLASS || W.get_material_name() == MAT_RGLASS))
-			var/obj/item/stack/material/S = W
-			if(S.use(2))
-				play_sfx(src, SFX_MACHINES_CLICK)
-				act_message(user, null, others = span_notice("%U% places the glass on the solar assembly."))
-				replace_with(src, tracker ? /obj/machinery/power/tracker : /obj/machinery/power/solar, W.type)
-			else
-				to_chat(user, span_warning("You need two sheets of glass to put them into a solar panel."))
-				return INTERACTION_HANDLED_PASS
-			return 1
+TRACKED(/obj/item/solar_assembly, tracker)
 
-	if(!tracker)
-		if(istype(W, /obj/item/tracker_electronics))
-			if(!consume(W, user))
-				return INTERACTION_HANDLED_PASS
-			tracker = 1
-			act_message(user, null, others = span_notice("%U% inserts the electronics into the solar assembly."))
-			return 1
-	return FALSE
+/// Wrenched down it stays put (an empty hand does nothing to it).
+/obj/item/solar_assembly/proc/touched(datum/act/op/A)
+	return OP_OK
 
-/obj/item/solar_assembly/wrench_act(mob/user, obj/item/W)
-	if(!isturf(loc))
-		return ITEM_INTERACT_BLOCKING
+/obj/item/solar_assembly/proc/on_floor(datum/act/A)
+	return isturf(loc) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
+
+/obj/item/solar_assembly/proc/held_is_glass(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	return istype(S, /obj/item/stack/material/glass)
+
+/obj/item/solar_assembly/proc/wrenched(datum/act/op/A)
 	set_anchored(!anchored)
-	act_message(user, null, others = span_notice("%U% [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
-	playsound(src, W.usesound, 75, 1)
-	return ITEM_INTERACT_SUCCESS
+	act_message(A.actor, null, others = span_notice("%U% [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
+	play_sfx(src, SFX_ITEMS_RATCHET)
+	return OP_OK
 
-/obj/item/solar_assembly/crowbar_act(mob/user, obj/item/W)
-	if(!tracker)
-		return ITEM_INTERACT_BLOCKING
-	new /obj/item/tracker_electronics(src.loc)
-	tracker = 0
-	act_message(user, null, others = span_notice("%U% takes out the electronics from the solar assembly."))
-	return ITEM_INTERACT_SUCCESS
+/// The glass is on: the panel (or tracker) takes the assembly's place.
+/obj/item/solar_assembly/proc/glassed(datum/act/op/A)
+	play_sfx(src, SFX_MACHINES_CLICK)
+	replace_with(src, tracker ? /obj/machinery/power/tracker : /obj/machinery/power/solar, A.held?.type)
+	return OP_OK
+
+/obj/item/solar_assembly/proc/electronics_in(datum/act/op/A)
+	if(!global.consume(A.held, A.actor))
+		return OP_OK
+	set_tracker(1)
+	return OP_OK
+
+/obj/item/solar_assembly/proc/electronics_out(datum/act/op/A)
+	new /obj/item/tracker_electronics(loc)
+	set_tracker(0)
+	return OP_OK
 
 //
 // Solar Control Computer
@@ -366,7 +359,6 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 /obj/machinery/power/solar_control/drain_power()
 	return -1
 
-REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 /obj/machinery/power/solar_control/disconnect_from_network()
 	. = ..()
@@ -415,29 +407,31 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(connected_tracker())
 				connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/solar_control/appearance_overlays()
-	. = list()
-	if(has_stat(BROKEN))
-		icon_state = "broken"
-		return .
-	if(has_stat(NOPOWER))
-		icon_state = "c_unpowered"
-		return .
-	icon_state = "solar"
-	if(cdir > -1)
-		. += image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir))
-	return .
-
-/obj/machinery/power/solar_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
+/obj/machinery/power/solar_control/draw(datum/look/look)
 	..()
+	if(has_stat(BROKEN))
+		look.state("broken")
+		return
+	if(has_stat(NOPOWER))
+		look.state("c_unpowered")
+		return
+	look.state("solar")
+	if(cdir > -1)
+		look.overlay(image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir)))
 
+// The solar control computer (doc/rewrite/final_api.html section 16): it links the panels and the tracker on its network, turns the panels
+// (by hand, at a set rate, or after the tracker), and supplies their sum. The solar system (solar_service.dm) updates the array every minute;
+// every machine service interval the controller keeps its links honest and steps a manual rotation (control_step()). A screwdriver takes it
+// apart into its frame.
 CAPABILITIES(/obj/machinery/power/solar_control)
+	membership(joins = REGISTRY_SOLAR_CONTROLS)
+	ref_one(nameof(connected_tracker), /obj/machinery/power/tracker)
+	ref_many(nameof(connected_panels), /obj/machinery/power/solar)
+	ref_many(nameof(solar_pending), /obj/machinery/power/solar)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(control_step)), when = PROC_REF(works))
+	op("disassemble", tool(TOOL_SCREWDRIVER), label("Disconnect the monitor"), wait(2 SECONDS), then(PROC_REF(disassemble_done)))
 	interface("SolarControl")
-	without("ui_open")
+	extend("ui_open", when(req_empty_hand()))
 	op("azimuth", ui_act("azimuth", arg("adjust", num()), arg("value", num())), then(PROC_REF(ui_act_azimuth)))
 	op("azimuth_rate", ui_act("azimuth_rate", arg("adjust", num()), arg("value", num())), then(PROC_REF(ui_act_azimuth_rate)))
 	op("tracking", ui_act("tracking", arg("mode", num())), then(PROC_REF(ui_act_tracking)))
@@ -448,16 +442,6 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	data["array_angle"] = cdir
 	data["rotation_rate"] = trackrate
 	data["tracking_state"] = track
-	var/list/merged_1 = ui_data_obj_machinery_power_solar_control(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// The computed part of /obj/machinery/power/solar_control's window data (declared on its UI_DATA row).
-/obj/machinery/power/solar_control/proc/ui_data_obj_machinery_power_solar_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/data = list()
-
 	data["generated"] = round(connected_power)
 	data["generated_ratio"] = data["generated"] / round(max(length(connected_panels), 1) * GLOB.solar_gen_rate)
 
@@ -469,41 +453,41 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 
 	return data
 
-/obj/machinery/power/solar_control/screwdriver_act(mob/user, obj/item/I)
-	playsound(src, I.usesound, 50, 1)
-	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(disassemble_done), list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/solar_control/proc/disassemble_done(mob/user)
+/obj/machinery/power/solar_control/proc/disassemble_done(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	if (src.has_stat(BROKEN))
 		to_chat(user, span_blue("The broken glass falls out."))
-		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
 		new /obj/item/material/shard(src.loc)
-		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(F)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
-		rel_set(A, nameof(A.circuit), M)
-		A.state = 3
-		A.icon_state = "computer_3"
-		A.set_anchored(TRUE)
+		rel_set(F, nameof(F.circuit), M)
+		F.state = 3
+		F.icon_state = "computer_3"
+		F.set_anchored(TRUE)
 		spent(src, user)
 	else
 		to_chat(user, span_blue("You disconnect the monitor."))
-		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(F)
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
-		rel_set(A, nameof(A.circuit), M)
-		A.state = 4
-		A.icon_state = "computer_4"
-		A.set_anchored(TRUE)
+		rel_set(F, nameof(F.circuit), M)
+		F.state = 4
+		F.icon_state = "computer_4"
+		F.set_anchored(TRUE)
 		spent(src, user)
 
-/obj/machinery/power/solar_control/machine_step()
-	if(!operable())
-		return
+/// It works while it is powered and whole.
+/obj/machinery/power/solar_control/proc/works(datum/act/A)
+	return operable()
+
+/// One step: an unlinked tracker or panel off its network lets go, and a manual rotation turns the target a degree when it is due.
+/obj/machinery/power/solar_control/proc/control_step(datum/act/timer/A)
 
 	if(connected_tracker()) //NOTE : handled here so that we don't add trackers to the processing list
 		if(connected_tracker().power_region != power_region)
@@ -515,11 +499,11 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°
 
 	if(needs_panel_check)
+		needs_panel_check = FALSE
 		for(var/obj/machinery/power/solar/S in connected_panels)
 			if (S.power_region != power_region)
 				S.unset_control()
 	set_power_supply(connected_power)
-	return PROCESS_KILL
 
 /obj/machinery/power/solar_control/proc/ui_act_azimuth(datum/act/op/A, adjust_arg, value_arg)
 	var/adjust = adjust_arg
@@ -582,10 +566,6 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 #undef SOLAR_AUTO_START_NO
 #undef SOLAR_AUTO_START_YES
 #undef SOLAR_AUTO_START_CONFIG
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/solar_control/step_start_condition()
-	return TRUE // connects its trackers
 
 /// the control this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/solar/proc/control() as /obj/machinery/power/solar_control

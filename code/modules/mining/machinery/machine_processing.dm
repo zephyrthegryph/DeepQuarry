@@ -283,15 +283,17 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /// Takes in what is on its input plate and smelts while active (declared: switched off it neither
 /// takes in nor smelts, ore waits on the plate); with nothing to make it sleeps until something
 /// arrives (on_input_entered()).
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPELINE, list("active", "!panel_open"))
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/mineral/processing_unit)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 
-/obj/machinery/mineral/processing_unit/machine_step()
+/obj/machinery/mineral/processing_unit/proc/work_step(datum/act/timer/timer)
 
 	if (!src.output_marker() || !src.input_marker())
 		return PROCESS_KILL
 
 	if(!powered())
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 
 	var/list/tick_alloys = list()
 

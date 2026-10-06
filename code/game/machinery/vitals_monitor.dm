@@ -22,8 +22,6 @@
 /// The patient on the monitor (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
 /// Tracks its patient while connected to someone.
-DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim")
-
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/vitals_monitor/Initialize(mapload)
 	. = ..()
@@ -66,7 +64,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		. += span_notice("Breathing: [breathing]")
 
 /// Tracks its patient while it has one (the declaration above).
-/obj/machinery/vitals_monitor/machine_step()
+/obj/machinery/vitals_monitor/proc/work_step(datum/act/timer/A)
 	if(!victim() || QDELETED(victim()))
 		rel_clear(src, nameof(victim))
 		update_icon()
@@ -80,9 +78,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 	if(beep && victim() && victim().pulse)
 		play_sfx(src, SFX_MACHINES_QUIET_BEEP, volume = 0)
 
-/obj/machinery/vitals_monitor/MouseDrop(over_object, src_location, over_location)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native patient dragging supplies the initiating actor through BYOND usr.
-	drop_patient_with_actor(user, over_object)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/machinery/vitals_monitor/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return TRUE
 
 /obj/machinery/vitals_monitor/proc/drop_patient_with_actor(mob/user, atom/over_object)
 	if(!CanMouseDrop(over_object, user))
@@ -151,7 +150,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 	return "erratic"
 
 CAPABILITIES(/obj/machinery/vitals_monitor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
+	drag_onto(PROC_REF(drop_input))
 
 /// Old verb "Toggle Monitor Beeping".
 /obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(datum/act/op/A)

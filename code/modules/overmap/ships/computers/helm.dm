@@ -26,6 +26,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	ai_control = FALSE // AI/Borgs shouldn't really be flying off in ships without crew help
 
 CAPABILITIES(/obj/machinery/computer/ship/helm)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(autopilot), cond_not(nameof(autopilot_disabled))), wakes_on = list(nameof(autopilot), nameof(autopilot_disabled)))
 	owns_many(nameof(known_sectors))
 	// The helm's buttons (its window is the overmap console's, opened by the console's own interactions). A navigation entry's name and
 	// coordinates and the autopilot limits are asked in the op (asks()); the handler applies the answers.
@@ -52,8 +53,6 @@ CAPABILITIES(/obj/machinery/computer/ship/helm)
 
 OM_FIELD(/obj/machinery/computer/ship/helm, autopilot, FALSE, CHANGE_MACHINE_SETTINGS)
 OM_FIELD(/obj/machinery/computer/ship/helm, autopilot_disabled, TRUE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/ship/helm, MACHINE_PIPELINE, list("autopilot", "!autopilot_disabled"))
-
 // fancy sprite
 /obj/machinery/computer/ship/helm/adv
 	icon_keyboard = null
@@ -78,8 +77,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/ship/helm, MACHINE_PIPELINE, 
 			R.fields["y"] = S.y
 			rel_add(src, nameof(known_sectors), R, S.name)
 
-/obj/machinery/computer/ship/helm/machine_step()
-	..()
+/obj/machinery/computer/ship/helm/proc/work_step(datum/act/timer/A)
 	if(!dx || !dy || !linked() || !using_map)
 		return PROCESS_KILL
 	var/turf/T = locate(dx,dy,using_map.overmap_z)
@@ -133,7 +131,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/ship/helm, MACHINE_PIPELINE, 
 		data[key] = computed[key]
 	return data
 
-/// The computed part of /obj/machinery/computer/ship/helm's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/ship/helm's window data.
 /obj/machinery/computer/ship/helm/proc/ui_data_obj_machinery_computer_ship_helm(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

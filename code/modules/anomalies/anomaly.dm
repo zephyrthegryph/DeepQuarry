@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/// The computed part of /obj/item/anomaly_scanner's window data (declared on its UI_DATA row).
+/// /obj/item/anomaly_scanner's window data.
 /obj/item/anomaly_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/obj/effect/anomaly/anom = buffered_anomaly

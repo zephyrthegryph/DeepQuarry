@@ -192,7 +192,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/
 	)
 	..()
 
-/// The computed part of /obj/machinery/mineral/equipment_vendor's window data (declared on its UI_DATA row).
+/// /obj/machinery/mineral/equipment_vendor's window data.
 /obj/machinery/mineral/equipment_vendor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

@@ -5,7 +5,9 @@
 /datum/vore_look/export_panel/proc/open_export_panel(mob/user)
 	tgui_interact(user)
 
-DECLARE_UI(/datum/vore_look/export_panel, "VorePanelExport", UI_TITLE("Vore Export Panel"))
+CAPABILITIES(/datum/vore_look/export_panel)
+	interface("VorePanelExport", title = "Vore Export Panel")
+	ui_shape(db_version = schema_text(), db_repo = schema_text(), mob_name = num(), bellies = list_of(), soulcatcher = list_of())
 
 /datum/vore_look/export_panel/tgui_fallback(payload)
 	if(..())
@@ -14,10 +16,9 @@ DECLARE_UI(/datum/vore_look/export_panel, "VorePanelExport", UI_TITLE("Vore Expo
 
 
 
-UI_DATA_REPLACE(/datum/vore_look/export_panel, "merge:ui_data_datum_vore_look_export_panel{db_version:text,db_repo:text,mob_name:num,bellies:list,soulcatcher:list}")
-
-/// The computed part of /datum/vore_look/export_panel's window data (declared on its UI_DATA row).
-/datum/vore_look/export_panel/proc/ui_data_datum_vore_look_export_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/vore_look/export_panel's window data.
+/datum/vore_look/export_panel/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	var/mob/living/host = user
 

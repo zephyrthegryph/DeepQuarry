@@ -10,10 +10,12 @@
 	var/deploying
 	var/deployed
 
-// ALLOW(init/CTOR_ARGS): autoopen is a constructor argument from whoever builds it
-/obj/structure/droppod_door/Initialize(mapload, autoopen)
-	. = ..()
-	if(autoopen)
+/// A door that opens by itself after landing (its constructor param).
+/obj/structure/droppod_door/var/autoopen = FALSE
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/droppod_door/proc/arm_autoopen(opens)
+	if(opens)
 		after(src, 10 SECONDS, PROC_REF(deploy))
 
 /// Old attack_ai: an adjacent silicon opens it as by hand.
@@ -24,6 +26,7 @@
 
 CAPABILITIES(/obj/structure/droppod_door)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	param(nameof(autoopen), pos = 1, apply = PROC_REF(arm_autoopen))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/droppod_door/proc/smashed_by(datum/act/hit/generic/A)

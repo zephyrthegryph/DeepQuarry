@@ -134,7 +134,7 @@ DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 		return TRUE // Eat all commands.
 	return ..(command)
 
-/// om_after() callback from prepare_for_undocking(): the latecomers' grace is over.
+/// after() callback from prepare_for_undocking(): the latecomers' grace is over.
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/eject_timer_fired()
 	if(!closing)
 		close_door()

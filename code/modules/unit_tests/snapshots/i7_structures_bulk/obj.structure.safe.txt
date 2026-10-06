@@ -2,3 +2,4 @@
 /obj/structure/safe|robot|none => safe_open_ui,safe_item|
 /obj/structure/safe|ai|none => |
 /obj/structure/safe|ghost|none => |
+

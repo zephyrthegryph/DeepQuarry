@@ -1,4 +1,5 @@
-/obj/structure/prop/machine/disease_analyser|human|none => disease_analyser_toggle|prop_hand:not possible right now
-/obj/structure/prop/machine/disease_analyser|robot|none => disease_analyser_toggle|prop_hand:not possible right now
+/obj/structure/prop/machine/disease_analyser|human|none => |prop_hand:not possible right now
+/obj/structure/prop/machine/disease_analyser|robot|none => |prop_hand:not possible right now
 /obj/structure/prop/machine/disease_analyser|ai|none => |
 /obj/structure/prop/machine/disease_analyser|ghost|none => |
+

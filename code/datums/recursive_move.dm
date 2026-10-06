@@ -79,7 +79,7 @@
 		unobserve(holder, /datum/notice/atom_entering, src)
 
 /datum/recursive_move/proc/on_holder_entering(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	setup_parents()
 
 /datum/recursive_move/proc/unregister_hooks()
@@ -99,19 +99,19 @@
 
 //Parent at top of heirarchy moved.
 /datum/recursive_move/proc/top_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entering/event = A
 	OM_EMIT(holder, /datum/om/event/movable_attempted_move, event.old_loc, event.destination)
 
 //One of the parents other than the top parent moved.
 /datum/recursive_move/proc/on_parent_exited(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/old_loc = A.target
 	var/datum/notice/atom_exited/event = A
 	heirarchy_changed(old_loc, event.new_loc)
 
 /datum/recursive_move/proc/on_parent_equipped(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/old_loc = A.target
 	var/datum/notice/item_equipped/event = A
 	// As before: the equip signal's second argument (the slot) stood in for the new loc.
@@ -126,7 +126,7 @@
 //Some things will move their contents on qdel so we should prepare ourselves to be moved.
 //If this qdel does destroy our holder, the holder deletes us (we are owned).
 /datum/recursive_move/proc/on_qdel(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	reset_parents()
 	noparents = TRUE
 	if(holder)
@@ -142,7 +142,7 @@
 	desc = "spams world log with debugging information"
 
 /obj/item/bananapeel/test/proc/shmove(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc

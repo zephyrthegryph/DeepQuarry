@@ -464,18 +464,18 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	tool_qualities = list(TOOL_CABLE_COIL)
 	singular_name = "cable"
 
-// ALLOW(init/CTOR_ARGS): length, param_color and material_id are constructor arguments from whoever builds it
-/obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
+/// The engineered material a coil is made of (its constructor param).
+/obj/item/stack/cable_coil/var/material_id
+
+/// A coil is made full unless its first argument (the stack's amount param) says otherwise.
+/obj/item/stack/cable_coil
+	amount_at_make = MAXCOIL
+
+// ALLOW(init/INSTANCE_STATE): a coil takes its blueprint's effects and its engineered material's name
+/obj/item/stack/cable_coil/Initialize(mapload)
 	. = ..()
 	apply_blueprint_effects()
-	set_amount(length, TRUE)
 	material_engineered_id_set(src, material_id)
-	if (!color)
-		color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)
-	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
-		color = param_color
-	pixel_x = rand(-2,2)
-	pixel_y = rand(-2,2)
 	update_icon()
 	update_wclass()
 	if(material_engineered_id(src))
@@ -575,6 +575,10 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 
 CAPABILITIES(/obj/item/stack/cable_coil)
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
+	param(nameof(color), pos = 2)
+	param(nameof(material_id), pos = 3)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = cond_not(nameof(color)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /// Old verb "Make Cable Restraints" (an obj verb with no `set src`, so src in usr).
 /obj/item/stack/cable_coil/proc/cable_coil_make_restraint(datum/act/op/A)

@@ -58,7 +58,7 @@
 	for(var/mob/living/L as anything in victims)
 		victims[L] = get_turf(L)
 		L.status_at_least(EFFECT_SLEEPING, rand(10,20))
-		om_run_frame_now(L, /datum/om/pipeline/life)
+		seq_run_frame_now(L, /datum/sequence/life)
 		L.moveToNullspace()
 
 	// Blow up the shuttle

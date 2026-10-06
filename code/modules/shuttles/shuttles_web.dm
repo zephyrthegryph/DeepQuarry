@@ -238,7 +238,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/computer/shuttle_control/web's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/shuttle_control/web's window data.
 /obj/machinery/computer/shuttle_control/web/proc/ui_data_obj_machinery_computer_shuttle_control_web(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -316,8 +316,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 	return data
 
-/obj/machinery/computer/shuttle_control/web/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
+/obj/machinery/computer/shuttle_control/web/console_gate(mob/user)
 	if(!..())
 		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
@@ -466,7 +465,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 // This is called whenever a shuttle is initialized.  If its our shuttle, do our thing!
 /obj/shuttle_connector/proc/setup_routes(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/observer_shuttle_added/event = A
 	var/new_shuttle = event.shuttle
 	var/datum/shuttle/autodock/web_shuttle/ES = SSshuttles.shuttles[shuttle_name]
@@ -494,7 +493,11 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	icon_state = "airlock_sensor_standby"
 	var/id_tag
 
-/obj/machinery/shuttle_sensor/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/shuttle_sensor)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/shuttle_sensor/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL //nty
 
 /obj/machinery/shuttle_sensor/proc/air_list()

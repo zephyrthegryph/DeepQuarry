@@ -238,7 +238,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 		// ALLOW(ownership): the watch resolves its owner by weak ref each delivery; the ref is a handle, not a held relation
 		var/datum/holder = om_resolve(watch.owner_ref)
 		if(!holder)
-			destroyed(watch)
+			ended_with(watch)
 			return FALSE
 		GLOB.native_deliveries[watch.delivery_source]++
 		rx_crossed(holder, watch.rx_reaction, band, watch.rx_listener)

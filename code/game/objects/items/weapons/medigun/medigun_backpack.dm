@@ -56,6 +56,7 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(medigun_backpack_emp)))
+	drag_onto(PROC_REF(drop_input))
 
 //backpack item
 /obj/item/medigun_backpack/cmo
@@ -338,9 +339,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 		return TRUE
 	return OP_DECLINE
 
-/obj/item/medigun_backpack/MouseDrop()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
-	drag_backpack_with_actor(user)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/medigun_backpack/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
 
 /obj/item/medigun_backpack/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))

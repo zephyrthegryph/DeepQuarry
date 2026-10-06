@@ -31,7 +31,7 @@
 // Signal handling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/disposal_system_connection/proc/on_flush(datum/act/flush_disposal/flush)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/list/flushed_items = flush.items
 	var/datum/gas_mixture/flush_gas = flush.gas
@@ -39,7 +39,7 @@
 	return handle_flush(flushed_items, flush_gas) ? TRUE : HOOK_DECLINE
 
 /datum/disposal_system_connection/proc/link_to_trunk(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/datum/notice/disposal_link/event = A
 	var/obj/structure/disposalpipe/trunk/trunk = event.trunk
@@ -52,7 +52,7 @@
 	observe(trunk, /datum/act/send_disposal, src, instead(then(PROC_REF(on_recieve))))
 
 /datum/disposal_system_connection/proc/unlink_from_trunk(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(connected_trunk())
 		rel_clear(connected_trunk(), nameof(/datum/integrated_io::linked))
@@ -60,13 +60,13 @@
 		rel_clear(src, nameof(connected_trunk))
 
 /datum/disposal_system_connection/proc/on_recieve(datum/act/send_disposal/send)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	var/obj/structure/disposalholder/packet = send.packet
 	return handle_expel(packet) ? TRUE : HOOK_DECLINE
 
 /datum/disposal_system_connection/proc/on_examine(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = N
 	var/list/examine_texts = event.texts
 	if(!visible_connection)

@@ -17,9 +17,8 @@ OM_FIELD(/datum/system/mobs, profiling, FALSE, CHANGE_DATUM_A)
 DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 
 /datum/system/mobs/stat_entry(msg)
-	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
-	var/list/S = GLOB.om_live_sched?.stat_for(life.id)
-	return "[..()]P: [REGISTRY_COUNT(REGISTRY_MOBS)] | parked: [om_pipeline_parked_count(/datum/om/pipeline/life)] | [S ? round(S[OM_STAT_MS], 1) : 0]ms | D: [length(death_list)]"
+	var/datum/sequence/life = sequence_def(/datum/sequence/life)
+	return "[..()]P: [REGISTRY_COUNT(REGISTRY_MOBS)] | parked: [members_total(life.parked_key)] | frames: [life.frames] | D: [length(death_list)]"
 
 /datum/system/mobs/reactions()
 	. = ..()
@@ -47,35 +46,23 @@ DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 		return
 	SSdbcore.mass_insert_io(null, format_table_name("death"), batch)
 
-/// MOB_PROFILE lines (sampled cost per mob type and per stage, every Nth frame) and one
-/// MOB_PARK_SUMMARY line, every two minutes.
+/// MOB_STEP_PROFILE lines (sampled cost per Life step, every LIFE_PROFILE_STRIDEth frame) and one MOB_PARK_SUMMARY
+/// line, every two minutes.
 /datum/system/mobs/proc/dump_profile()
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	if(!sched)
-		return
-	var/list/types = list()
-	var/list/stages = list()
-	for(var/key in sched.stage_cost)
-		if(copytext(key, 1, 6) == "type:")
-			types[copytext(key, 6)] = sched.stage_cost[key]
-		else
-			stages[key] = sched.stage_cost[key]
-	sortTim(types, /proc/cmp_numeric_desc, TRUE)
-	sortTim(stages, /proc/cmp_numeric_desc, TRUE)
+	var/datum/sequence/life = sequence_def(/datum/sequence/life)
+	var/list/steps = list()
+	for(var/i in 1 to length(life.slot_keys))
+		steps[life.slot_keys[i]] = life.step_ms[i]
+	sortTim(steps, /proc/cmp_numeric_desc, TRUE)
 	var/rank = 0
-	for(var/mob_type in types)
-		log_runtime("MOB_PROFILE type=[mob_type] estimated_cost_ms=[round(types[mob_type], 0.01)] estimated_calls=[sched.stage_calls["type:[mob_type]"]]")
-		if(++rank >= 20)
-			break
-	rank = 0
-	for(var/stage_type in stages)
-		log_runtime("MOB_STAGE_PROFILE stage=[stage_type] estimated_cost_ms=[round(stages[stage_type], 0.01)] estimated_calls=[sched.stage_calls[stage_type]]")
+	for(var/key in steps)
+		var/i = life.slot_of[key]
+		log_runtime("MOB_STEP_PROFILE step=[key] estimated_cost_ms=[round(steps[key], 0.01)] estimated_calls=[life.step_calls[i]]")
 		if(++rank >= 30)
 			break
-	sched.stage_cost.Cut()
-	sched.stage_calls.Cut()
-	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
-	var/list/S = sched.stat_for(life.id)
-	var/list/now = list(S[OM_STAT_PARKS], S[OM_STAT_UNPARKS], S[OM_STAT_MISSED])
-	log_runtime("MOB_PARK_SUMMARY enabled=[GLOB.om_parking_enabled] parked=[om_pipeline_parked_count(life, sched)] parks=[now[1] - last_counts[1]] unparks=[now[2] - last_counts[2]] missed_wakes=[now[3] - last_counts[3]]")
+	for(var/i in 1 to length(life.slot_keys))
+		life.step_ms[i] = 0
+		life.step_calls[i] = 0
+	var/list/now = list(life.parks, life.unparks, life.missed)
+	log_runtime("MOB_PARK_SUMMARY parked=[members_total(life.parked_key)] parks=[now[1] - last_counts[1]] unparks=[now[2] - last_counts[2]] missed_wakes=[now[3] - last_counts[3]]")
 	last_counts = now

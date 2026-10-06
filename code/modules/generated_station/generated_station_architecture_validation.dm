@@ -418,15 +418,15 @@
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "unknown-room-definition", "Functional room references an unknown definition.", module.id)
 			continue
 		if(findtext(solution.definition_id, "-micro-"))
-			destroyed(definition)
+			spent(definition)
 			definition = generated_micro_room_definition_for(module_department_id, module.role)
 		else if(findtext(solution.definition_id, "-compact"))
-			destroyed(definition)
+			spent(definition)
 			definition = generated_compact_room_definition_for(module_department_id, module.role)
 		var/minimum_usable_tiles = min(definition.min_width * definition.min_height, 21)
 		if(module.footprint_tiles() < minimum_usable_tiles)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "room-below-minimum-size", "[definition.name] has [module.footprint_tiles()] usable tiles, below its [minimum_usable_tiles]-tile content contract.", module.id)
-		destroyed(definition)
+		spent(definition)
 
 	for(var/obj/machinery/door/door in doors)
 		var/turf/door_turf = get_turf(door)
@@ -615,7 +615,7 @@
 		validation.add(GENERATED_STATION_ISSUE_ERROR, "empty-station", "Materialization produced no station geometry.", station_id)
 	var/datum/generated_station_architecture_metrics/metrics = architecture_metrics()
 	generated_station_validate_aesthetic_metrics(metrics, validation, station_id)
-	destroyed(metrics)
+	spent(metrics)
 	return validation
 
 /// Produces a self-contained diagnostic map suitable for an admin browser or log artifact.

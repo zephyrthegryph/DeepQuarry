@@ -44,21 +44,21 @@
 	return MOVEMENT_FAILED // Don't leave the water!
 
 
-/datum/om/stage/life/breathing/simple_mob/animal/passive/fish
-	of = /mob/living/simple_mob/animal/passive/fish
+/mob/living/simple_mob/animal/passive/fish/life_breathing_due()
+	return TRUE
 
 /// Take damage if we are not in water.
-/datum/om/stage/life/breathing/simple_mob/animal/passive/fish/perform(mob/living/simple_mob/animal/passive/fish/self, datum/om/frame/life/ctx)
-	if(istype(self.loc, /obj/item/glass_jar/fish))
-		var/obj/item/glass_jar/fish/F = self.loc
-		if(F.filled)
+/mob/living/simple_mob/animal/passive/fish/life_breathing(datum/seq_frame/life/F)
+	if(istype(src.loc, /obj/item/glass_jar/fish))
+		var/obj/item/glass_jar/fish/jar = src.loc
+		if(jar.filled)
 			return
 
-	var/turf/T = get_turf(self)
+	var/turf/T = get_turf(src)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			after(self, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")))
-		self.add_oxygen_debt(self.unsuitable_atoms_damage, T)
+			after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")))
+		src.add_oxygen_debt(src.unsuitable_atoms_damage, T)
 
 // Subtypes.
 /mob/living/simple_mob/animal/passive/fish/bass
@@ -329,14 +329,14 @@ TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "
 
 DECLARE_REAGENTS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, 60, list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous
-	of = /mob/living/simple_mob/animal/passive/fish/koi/poisonous
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous/perform(mob/living/simple_mob/animal/passive/fish/koi/poisonous/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(isbelly(self.loc) && prob(10))
-		var/obj/belly/B = self.loc
-		self.sting(B.owner)
+	if(isbelly(src.loc) && prob(10))
+		var/obj/belly/B = src.loc
+		src.sting(B.owner)
 
 /// Flops away from M, up to `steps` tiles, 0.3 s apart.
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_flee(mob/living/M, steps)

@@ -75,12 +75,12 @@
 /obj/item/projectile/icicle/get_structure_damage()
 	return damage / 2 // They're really deadly against mobs, but less effective against solid things.
 
-/datum/om/stage/life/special/slime/feral/dark_blue
-	of = /mob/living/simple_mob/slime/feral/dark_blue
+/mob/living/simple_mob/slime/feral/dark_blue/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/feral/dark_blue/perform(mob/living/simple_mob/slime/feral/dark_blue/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.cold_aura()
+/mob/living/simple_mob/slime/feral/dark_blue/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.cold_aura()
 	..()
 
 /mob/living/simple_mob/slime/feral/dark_blue/proc/cold_aura()

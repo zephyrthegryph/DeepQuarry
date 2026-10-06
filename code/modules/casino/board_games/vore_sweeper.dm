@@ -23,15 +23,20 @@
 	. = ..()
 	rel_set(src, nameof(parent), holder)
 
-DECLARE_UI(/datum/board_game/vore_sweeper, "VoreSweeper")
+CAPABILITIES(/datum/board_game/vore_sweeper)
+	interface("VoreSweeper", state = nameof(GLOB.tgui_board_game_state))
+	op("be_dealer", ui_act("be_dealer"), then(PROC_REF(ui_act_be_dealer)))
+	op("clear_dealer", ui_act("clear_dealer"), then(PROC_REF(ui_act_clear_dealer)))
+	op("restart_game", ui_act("restart_game"), then(PROC_REF(ui_act_restart_game)))
+	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
+	op("setup_action", ui_act("setup_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_setup_action)))
 
-UI_DATA_REPLACE(/datum/board_game/vore_sweeper, "merge:ui_data_datum_board_game_vore_sweeper{grid_size:num,mine_count:num,max_mines:num,dealer:unknown,placed_mines:bool,revealed_fields:bool,placed_flags:bool,game_state:unknown,is_dealer:bool}")
-
-/// The computed part of /datum/board_game/vore_sweeper's window data (declared on its UI_DATA row).
-/datum/board_game/vore_sweeper/proc/ui_data_datum_board_game_vore_sweeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/board_game/vore_sweeper's window data.
+/datum/board_game/vore_sweeper/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/mob/dealer_mob = dealer
 
-	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? (placed_mines || list()) : null
+	var/placed_mine_data = game_state > GAME_PLAYING || (user == dealer_mob) ? (placed_mines || list()) : null
 	var/total_tiles = grid_size * grid_size
 	return list(
 		"grid_size" = grid_size,
@@ -42,33 +47,33 @@ UI_DATA_REPLACE(/datum/board_game/vore_sweeper, "merge:ui_data_datum_board_game_
 		"revealed_fields" = (revealed_fields || list()),
 		"placed_flags" = (placed_flags || list()),
 		"game_state" = game_state,
-		"is_dealer" = dealer_mob == ui.user
+		"is_dealer" = dealer_mob == user
 	)
 
-UI_ACT(/datum/board_game/vore_sweeper, "be_dealer", ui_act_be_dealer)
-UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_be_dealer)
+/datum/board_game/vore_sweeper/proc/ui_act_be_dealer(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state == GAME_PLAYING)
 		return FALSE
-	rel_set(src, nameof(/datum/board_game/vore_sweeper::dealer), ui.user)
+	rel_set(src, nameof(dealer), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/vore_sweeper, "clear_dealer", ui_act_clear_dealer)
-UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_clear_dealer)
+/datum/board_game/vore_sweeper/proc/ui_act_clear_dealer(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/dealer_mob = dealer
 	if(!dealer_mob)
 		return FALSE
-	if(dealer_mob == ui.user)
-		parent().atom_say("[ui.user] stopped dealing.")
-		rel_clear(src, nameof(/datum/board_game/vore_sweeper::dealer))
+	if(dealer_mob == user)
+		parent().atom_say("[user] stopped dealing.")
+		rel_clear(src, nameof(dealer))
 		return TRUE
-	if(get_dist(ui.user, dealer_mob) > 3)
-		parent().atom_say("Dealer has been cleared by [ui.user].")
-		rel_clear(src, nameof(/datum/board_game/vore_sweeper::dealer))
+	if(get_dist(user, dealer_mob) > 3)
+		parent().atom_say("Dealer has been cleared by [user].")
+		rel_clear(src, nameof(dealer))
 		return TRUE
 	return FALSE
 
-UI_ACT(/datum/board_game/vore_sweeper, "restart_game", ui_act_restart_game)
-UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_restart_game)
+/datum/board_game/vore_sweeper/proc/ui_act_restart_game(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/dealer_mob = dealer
 	if(game_state < GAME_PLAYING)
 		return FALSE
@@ -76,20 +81,24 @@ UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_restart_game)
 	LAZYCLEARLIST(revealed_fields)
 	LAZYCLEARLIST(placed_flags)
 	if(!dealer_mob && game_state > GAME_PLAYING)
-		auto_place_mines(ui.user, TRUE)
+		auto_place_mines(user, TRUE)
 		return TRUE
 	game_state = GAME_SETUP
 	return TRUE
 
-UI_ACT(/datum/board_game/vore_sweeper, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
-UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_game_action)
-	if(can_play(ui.user) && ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
+/datum/board_game/vore_sweeper/proc/ui_act_game_action(datum/act/op/A, action_arg, data)
+	var/mob/user = A.actor
+	if(!isnull(data) && !islist(data))
+		return FALSE
+	if(can_play(user) && game_subaction(action_arg, data, user))
 		return TRUE
 	return FALSE
 
-UI_ACT(/datum/board_game/vore_sweeper, "setup_action", ui_act_setup_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
-UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_setup_action)
-	if(can_setup(ui.user) && ui_subdispatch(src, "setup", params["action"], params["data"], ui.user, ui, state))
+/datum/board_game/vore_sweeper/proc/ui_act_setup_action(datum/act/op/A, action_arg, data)
+	var/mob/user = A.actor
+	if(!isnull(data) && !islist(data))
+		return FALSE
+	if(can_setup(user) && setup_subaction(action_arg, data, user))
 		return TRUE
 	return FALSE
 
@@ -101,8 +110,7 @@ UI_ACT_PROC(/datum/board_game/vore_sweeper, ui_act_setup_action)
 		return FALSE
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "game", "open_field", game_open_field, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, game_open_field)
+/datum/board_game/vore_sweeper/proc/game_open_field(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
 	if(!validated_data)
 		return FALSE
@@ -122,8 +130,7 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, game_open_field)
 	validate_victory()
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "game", "toggle_flag", game_toggle_flag, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, game_toggle_flag)
+/datum/board_game/vore_sweeper/proc/game_toggle_flag(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
 	if(!validated_data)
 		return FALSE
@@ -178,8 +185,7 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, game_toggle_flag)
 		return FALSE
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "change_grid_size", setup_change_grid_size, UI_ARG_NUM("new_grid"))
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_change_grid_size)
+/datum/board_game/vore_sweeper/proc/setup_change_grid_size(mob/user, list/params, extra)
 	var/new_grid_size = params["new_grid"]
 	if(!new_grid_size)
 		return FALSE
@@ -189,16 +195,14 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_change_grid_size)
 	grid_size = new_grid_size
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "change_mine_count", setup_change_mine_count, UI_ARG_NUM("new_mines"))
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_change_mine_count)
+/datum/board_game/vore_sweeper/proc/setup_change_mine_count(mob/user, list/params, extra)
 	var/new_mine_count = params["new_mines"]
 	if(!new_mine_count)
 		return FALSE
 	validate_mine_count(new_mine_count, grid_size)
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "place_mine", setup_place_mine, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_place_mine)
+/datum/board_game/vore_sweeper/proc/setup_place_mine(mob/user, list/params, extra)
 	if(length(placed_mines) >= mine_count)
 		return FALSE
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
@@ -210,8 +214,7 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_place_mine)
 	LAZYSET(placed_mines, key, TRUE)
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "remove_mine", setup_remove_mine, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_remove_mine)
+/datum/board_game/vore_sweeper/proc/setup_remove_mine(mob/user, list/params, extra)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(length(placed_mines) <= 0)
@@ -223,21 +226,17 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_remove_mine)
 	LAZYREMOVE(placed_mines, key)
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "auto_place_mines", setup_auto_place_mines)
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_auto_place_mines)
+/datum/board_game/vore_sweeper/proc/setup_auto_place_mines(mob/user, list/params, extra)
 	return auto_place_mines(user)
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "auto_place_mines_self", setup_auto_place_mines_self)
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_auto_place_mines_self)
+/datum/board_game/vore_sweeper/proc/setup_auto_place_mines_self(mob/user, list/params, extra)
 	return auto_place_mines(user, TRUE)
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "clear_all_mines", setup_clear_all_mines)
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_clear_all_mines)
+/datum/board_game/vore_sweeper/proc/setup_clear_all_mines(mob/user, list/params, extra)
 	LAZYCLEARLIST(placed_mines)
 	return TRUE
 
-UI_SUBACT(/datum/board_game/vore_sweeper, "setup", "start_game", setup_start_game)
-UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_start_game)
+/datum/board_game/vore_sweeper/proc/setup_start_game(mob/user, list/params, extra)
 	game_state = GAME_PLAYING
 	return TRUE
 
@@ -342,3 +341,39 @@ UI_SUBACT_PROC(/datum/board_game/vore_sweeper, setup_start_game)
 #undef GAME_LOST
 #undef GAME_WON
 #undef MAX_MINE_RATE
+
+/// /datum/board_game/vore_sweeper's "game" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/board_game/vore_sweeper/game_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("open_field")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? game_open_field(user, typed, extra) : FALSE
+		if("toggle_flag")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? game_toggle_flag(user, typed, extra) : FALSE
+	return ..()
+
+/// /datum/board_game/vore_sweeper's "setup" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/board_game/vore_sweeper/setup_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("change_grid_size")
+			var/list/typed = payload_args(src, data, list("new_grid" = num()))
+			return typed ? setup_change_grid_size(user, typed, extra) : FALSE
+		if("change_mine_count")
+			var/list/typed = payload_args(src, data, list("new_mines" = num()))
+			return typed ? setup_change_mine_count(user, typed, extra) : FALSE
+		if("place_mine")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? setup_place_mine(user, typed, extra) : FALSE
+		if("remove_mine")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? setup_remove_mine(user, typed, extra) : FALSE
+		if("auto_place_mines")
+			return setup_auto_place_mines(user, list(), extra)
+		if("auto_place_mines_self")
+			return setup_auto_place_mines_self(user, list(), extra)
+		if("clear_all_mines")
+			return setup_clear_all_mines(user, list(), extra)
+		if("start_game")
+			return setup_start_game(user, list(), extra)
+	return ..()

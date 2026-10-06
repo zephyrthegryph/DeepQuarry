@@ -177,7 +177,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
 	)
 
-/// The computed part of /obj/machinery/computer/rdconsole_tg's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/rdconsole_tg's window data.
 /obj/machinery/computer/rdconsole_tg/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

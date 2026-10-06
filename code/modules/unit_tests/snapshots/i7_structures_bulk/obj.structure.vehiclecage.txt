@@ -1,4 +1,5 @@
-/obj/structure/vehiclecage|human|none => vehiclecage_hand,vehiclecage_load|
-/obj/structure/vehiclecage|robot|none => vehiclecage_hand,vehiclecage_load|
+/obj/structure/vehiclecage|human|none => |
+/obj/structure/vehiclecage|robot|none => |
 /obj/structure/vehiclecage|ai|none => |
 /obj/structure/vehiclecage|ghost|none => |
+

@@ -428,7 +428,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
 		var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
 		opportunity_history.Cut(1, 2)
-		spent(expired)
+		lapsed(expired)
 
 /datum/system/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)
 	var/offer_key = "opportunity:[rule.id]:[window.bucket]"

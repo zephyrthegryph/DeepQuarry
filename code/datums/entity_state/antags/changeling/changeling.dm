@@ -459,7 +459,7 @@ CAPABILITIES(/datum/changeling_panel)
 	interface("ChangelingPanel", title = "Changeling Evolution Panel", state = nameof(GLOB.tgui_always_state))
 	op("evolve_power", ui_act("evolve_power", arg("val", schema_text(4096))), then(PROC_REF(ui_act_evolve_power)))
 
-/// The computed part of /datum/changeling_panel's window data (declared on its UI_DATA row).
+/// /datum/changeling_panel's window data.
 /datum/changeling_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/power_list = list()

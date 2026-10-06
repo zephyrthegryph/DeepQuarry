@@ -40,13 +40,11 @@
 	var/obj/effect/alien/weeds/node/linked_node
 	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
-// ALLOW(init/CTOR_ARGS): node and newcolor are constructor arguments from whoever builds it
-/obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
+// ALLOW(init/INSTANCE_STATE): weeds do not grow in space, nor where a node already marked them for removal
+/obj/effect/alien/weeds/Initialize(mapload)
 	. = ..()
 	if(isspace(loc) || delete_me)
 		return INITIALIZE_HINT_QDEL
-
-	rel_set(src, nameof(linked_node), node)
 //	if(newcolor)
 // color = newcolor // No coloration.
 
@@ -191,6 +189,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 
 CAPABILITIES(/obj/effect/alien/weeds)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	param(nameof(linked_node), pos = 1)
 
 /obj/effect/alien/weeds/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -254,13 +253,11 @@ CAPABILITIES(/obj/effect/alien/weeds)
 
 CAPABILITIES(/obj/effect/alien/acid)
 	owns_one(nameof(target), /atom)
+	param(nameof(target), pos = 1, apply = PROC_REF(start_melting))
 
-// ALLOW(init/CTOR_ARGS): target is a constructor argument from whoever builds it
-/obj/effect/alien/acid/Initialize(mapload, target)
-	. = ..()
-	rel_set(src, nameof(target), target)
-
-	if(isturf(target)) // Turf take twice as long to take down.
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). Acid takes twice as long on a turf.
+/obj/effect/alien/acid/proc/start_melting(atom/melting)
+	if(isturf(melting))
 		target_strength = 8
 	else
 		target_strength = 4

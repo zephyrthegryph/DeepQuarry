@@ -308,7 +308,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/entity_narrate's window data (declared on its UI_DATA row).
+/// /datum/entity_narrate's window data.
 /datum/entity_narrate/proc/ui_data_datum_entity_narrate(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["multi_id_selection"] = (tgui_selected_id_multi || list())

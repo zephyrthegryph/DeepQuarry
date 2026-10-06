@@ -115,11 +115,9 @@ TRACKED(/obj/machinery/atmospherics, pipe_color)
 		var/datum/material/material = engineered_material()
 		. += span_notice("Pressure construction: [material?.display_name || engineered_material_id]; exposed liner integrity [round(material_liner_integrity)]%.")
 
-// ALLOW(init/CTOR_ARGS): newdir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/Initialize(mapload, newdir)
+// ALLOW(init/INSTANCE_STATE): a pipe device takes its colour (or none it cannot show) and sets up its connection directions
+/obj/machinery/atmospherics/Initialize(mapload)
 	. = ..()
-	if(!isnull(newdir))
-		set_dir(newdir)
 	if(!pipe_color)
 		set_pipe_color(color)
 	color = null

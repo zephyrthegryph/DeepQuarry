@@ -23,6 +23,7 @@
 									)
 
 CAPABILITIES(/obj/machinery/artifact_analyser)
+	started_work(step = PROC_REF(work_step))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(scanned_object), /obj)
 	interface("XenoarchArtifactAnalyzer")
@@ -72,7 +73,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/artifact_analyser's window data (declared on its UI_DATA row).
+/// /obj/machinery/artifact_analyser's window data.
 /obj/machinery/artifact_analyser/proc/ui_data_obj_machinery_artifact_analyser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -126,12 +127,12 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 			atom_say("Scanning begun.")
 	return TRUE
 
-/// A scan finishes on its timer (om_after() at the completion time), not by polling.
+/// A scan finishes on its timer (after() at the completion time), not by polling.
 /obj/machinery/artifact_analyser/proc/scan_timer_fired()
 	if(scan_in_progress)
 		finish_scan()
 
-/obj/machinery/artifact_analyser/machine_step()
+/obj/machinery/artifact_analyser/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL
 
 /obj/machinery/artifact_analyser/proc/finish_scan()

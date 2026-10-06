@@ -88,7 +88,7 @@
 	refresh()
 
 // A status display redraws only when its input changes: a signal, an alert, power, the
-// shuttle key, or an om_after() timer for content that moves on its own (a countdown, the clock,
+// shuttle key, or an after() timer for content that moves on its own (a countdown, the clock,
 // a scrolling message). It never polls.
 
 /// Deciseconds until the display must redraw with no new input, or 0 while it is static.

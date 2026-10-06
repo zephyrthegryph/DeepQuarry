@@ -20,7 +20,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/song's window data (declared on its UI_DATA row).
+/// /datum/song's window data.
 /datum/song/proc/ui_data_datum_song(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["using_instrument"] = using_instrument()?.name || "No instrument loaded!"

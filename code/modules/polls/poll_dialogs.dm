@@ -30,7 +30,7 @@
 
 // The new player owns this dialog (privacy_poll_dialog); owner is a plain relation back.
 
-/// The computed part of /datum/privacy_poll_dialog's window data (declared on its UI_DATA row).
+/// /datum/privacy_poll_dialog's window data.
 /datum/privacy_poll_dialog/ui_data(datum/act/eval/A)
 	return list("answered" = answered)
 
@@ -146,7 +146,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 		poll_ids += id_str
 		poll_meta[id_str] = list("id" = text2num(id_str), "question" = question)
 
-/// The computed part of /datum/poll_browser_dialog's window data (declared on its UI_DATA row).
+/// /datum/poll_browser_dialog's window data.
 /datum/poll_browser_dialog/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["polls"] = list()

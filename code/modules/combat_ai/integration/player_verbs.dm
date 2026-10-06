@@ -36,7 +36,7 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 // ---------------------------------------------------------------------------
 
 /datum/ai_brain/proc/on_holder_login_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/source = A.target
 	on_holder_login(source)
 

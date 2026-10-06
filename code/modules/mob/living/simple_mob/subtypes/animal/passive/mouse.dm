@@ -54,14 +54,18 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	owns_many(nameof(rat_diseases), /datum/affliction/contagion)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
+	param(nameof(keep_parent_data), pos = 1)
 
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_identity, FALSE)
 
-// ALLOW(init/CTOR_ARGS): keep_parent_data is a constructor argument from whoever builds it
-/mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
+/// A mouse made from another keeps its name and look (its constructor param).
+/mob/living/simple_mob/animal/passive/mouse/var/keep_parent_data = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a mouse joins as a ghost role, is numbered, picks its colour's sprites and may carry a disease
+/mob/living/simple_mob/animal/passive/mouse/Initialize(mapload)
 	if(TYPE_TABLE_GET(src, preserve_mouse_identity))
 		keep_parent_data = TRUE
-		. = ..(mapload, keep_parent_data)
+		. = ..()
 	else
 		. = ..()
 	ghostjoin = TRUE

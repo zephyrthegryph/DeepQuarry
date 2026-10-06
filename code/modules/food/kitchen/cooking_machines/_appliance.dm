@@ -45,6 +45,7 @@
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
 CAPABILITIES(/obj/machinery/appliance)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), nameof(stat)))
 	owns_many(nameof(cooking_objs))
 	// the AI's ctrl-click switches it on or off over its link
 	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle power"),
@@ -59,8 +60,6 @@ CAPABILITIES(/obj/machinery/appliance)
 
 /// Whether or not the machine is currently operating (cooking its contents).
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
-
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/appliance/Initialize(mapload)
 	. = ..()
@@ -70,9 +69,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 // cooking food and its containers go with the machine.
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
-		destroyed(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
+		destroyed(CI.container(), src)//Food is fragile, it probably doesnt survive the destruction of the machine
 		own_take_member(src, nameof(cooking_objs), CI)
-		destroyed(CI)
+		ended_with(CI, src)
 	..()
 
 /obj/machinery/appliance/examine(mob/user)
@@ -418,7 +417,11 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 	return TRUE
 
-/obj/machinery/appliance/machine_step()
+/// Whether its step has work: an appliance steps while it cooks (a cooker also while it keeps its heat).
+/obj/machinery/appliance/proc/needs_step(datum/act/A)
+	return cooking
+
+/obj/machinery/appliance/proc/work_step(datum/act/timer/A)
 	if(cooking_power <= 0 || !cooking)
 		return PROCESS_KILL
 	var/all_done_cooking = TRUE
@@ -569,10 +572,10 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			S.reagents.trans_to_holder(buffer, S.reagents.total_volume)
 		//Cleanup these empty husk ingredients now
 		if (I)
-			spent(I)
+			consumed(I, src)
 			CI.container().food_items--
 		if(S && !QDELETED(S)) //Incase I = S up there.
-			spent(S)
+			consumed(S, src)
 			CI.container().food_items--
 
 	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
@@ -676,7 +679,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/appliance's window data (declared on its UI_DATA row).
+/// /obj/machinery/appliance's window data.
 /obj/machinery/appliance/proc/ui_data_obj_machinery_appliance(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -847,7 +850,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)
 	if (!istype(H) || !H.held_mob)
-		consumed(H)
+		spent(H)
 		return null
 	var/mob/living/victim = H.held_mob
 	if (victim.stat != DEAD)
@@ -875,9 +878,9 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 	// all done, now delete the old objects
 	rel_clear(H, nameof(H.held_mob))
-	consumed(victim, H)
+	consumed(victim, src)
 	victim = null
-	consumed(H)
+	spent(H)
 	H = null
 
 	return result

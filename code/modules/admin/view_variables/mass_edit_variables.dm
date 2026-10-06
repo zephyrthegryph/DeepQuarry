@@ -4,7 +4,7 @@
 	if(flow_ask(mob, "mass:sure", /datum/om/prompt/choice/alert, message = "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", title = "Slow down, chief!", choices = list("Yes", "No"), timeout = 60 SECONDS) != "Yes")
 		return
 
-	if(!check_rights(R_VAREDIT))
+	if(!admin_require(src, R_VAREDIT, "cmd_mass_modify_object_variables", TRUE))
 		return
 
 	/// if false get only the strict type, get all subtypes too otherwise
@@ -18,7 +18,7 @@
 	feedback_add_details("admin_verb","MVV") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/massmodify_variables(datum/target, var_name = "", strict_type = FALSE)
-	if(!check_rights(R_VAREDIT))
+	if(!admin_require(src, R_VAREDIT, "massmodify_variables", TRUE))
 		return
 	if(!istype(target))
 		return
@@ -44,13 +44,13 @@
 		to_chat(src, "It's forbidden to mass-modify ckeys. It'll crash everyone's client you dummy.", confidential = TRUE)
 		return
 	if(variable in GLOB.VVlocked)
-		if(!check_rights(R_DEBUG))
+		if(!admin_require(src, R_DEBUG, "massmodify_variables", TRUE))
 			return
 	if(variable in GLOB.VVicon_edit_lock)
-		if(!check_rights(R_FUN|R_DEBUG))
+		if(!admin_require(src, R_FUN|R_DEBUG, "massmodify_variables", TRUE))
 			return
 	if(variable in GLOB.VVpixelmovement)
-		if(!check_rights(R_DEBUG))
+		if(!admin_require(src, R_DEBUG, "massmodify_variables", TRUE))
 			return
 		var/prompt = flow_ask(mob, "mass:gliding", /datum/om/prompt/choice/alert, message = "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", title = "DANGER", choices = list("ABORT ", "Continue", " ABORT"))
 		if (prompt != "Continue")

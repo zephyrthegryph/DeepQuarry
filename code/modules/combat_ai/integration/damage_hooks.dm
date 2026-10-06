@@ -7,7 +7,7 @@
 // environmental). Mobs without a brain pay nothing.
 
 /datum/ai_brain/proc/on_holder_injured(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_injured/event = A
 	var/kind = event.kind
 	var/applied = event.applied

@@ -1,15 +1,17 @@
 /datum/vore_look/import_panel/proc/open_import_panel(mob/user)
 	tgui_interact(user)
 
-DECLARE_UI(/datum/vore_look/import_panel, "VorePanelImport", UI_TITLE("Vore Import Panel"))
+CAPABILITIES(/datum/vore_look/import_panel)
+	interface("VorePanelImport", title = "Vore Import Panel")
+	op("import_soulcatcher", ui_act("import_soulcatcher", arg("data")), then(PROC_REF(ui_act_import_soulcatcher)))
+	op("import_bellies", ui_act("import_bellies", arg("data")), then(PROC_REF(ui_act_import_bellies)))
 
-UI_ACT(/datum/vore_look/import_panel, "import_soulcatcher", ui_act_import_soulcatcher, UI_ARG_VALUE("data"))
-UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_soulcatcher)
-	import_soulcatcher(host(), params["data"])
+/datum/vore_look/import_panel/proc/ui_act_import_soulcatcher(datum/act/op/A, data)
+	import_soulcatcher(host(), data)
 
-UI_ACT(/datum/vore_look/import_panel, "import_bellies", ui_act_import_bellies, UI_ARG_VALUE("data"))
-UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
-	import_belly(ui.user, params["data"])
+/datum/vore_look/import_panel/proc/ui_act_import_bellies(datum/act/op/A, data)
+	var/mob/user = A.actor
+	import_belly(user, data)
 
 /datum/vore_look/import_panel/proc/import_belly(mob/host, list/input_data)
 	return import_belly_stage(host, input_data, null)

@@ -32,13 +32,12 @@
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK
 	resistance_flags = FIRE_PROOF | ACID_PROOF | LAVA_PROOF
 
-// ALLOW(init/CTOR_ARGS): new_gen is a constructor argument from whoever builds it
-/obj/effect/energy_field/Initialize(mapload, new_gen)
-	. = ..()
-	update_integrity(0) // Fields start down; the generator charges them.
-	rel_set(src, nameof(my_gen), new_gen)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A field starts down (the generator charges it), unless a diffuser stops it.
+/obj/effect/energy_field/proc/raise_field(new_gen)
+	update_integrity(0)
 	if(nearby_active_shield_diffuser(src))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	update_nearby_tiles()
 
 // Leaves its generator's field (a shield generator or a forcefield artifact).
@@ -67,6 +66,7 @@ DAMAGE_REACTION(/obj/effect/energy_field, DAMAGE_EXPLOSION, PROC_REF(field_blast
 CAPABILITIES(/obj/effect/energy_field)
 	op("hit_energy_field", item(/obj/item), then(PROC_REF(interaction_hit_energy_field)))
 	op("touch_energy_field", hand(), then(PROC_REF(interaction_touch_energy_field)))
+	param(nameof(my_gen), pos = 1, apply = PROC_REF(raise_field))
 
 /// Old attackby: a forceful hit weakens the field; the item's normal handling carries on.
 /obj/effect/energy_field/proc/interaction_hit_energy_field(datum/act/op/A)

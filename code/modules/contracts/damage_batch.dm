@@ -89,7 +89,7 @@ CAPABILITIES(/datum/system/contracts)
 	contract_batch_depth++
 	for(var/datum/contract_damage_report/report as anything in reports)
 		publish_damage_report(report)
-		destroyed(report)
+		spent(report)
 	contract_batch_depth--
 
 /datum/system/contracts/proc/publish_damage_report(datum/contract_damage_report/report)

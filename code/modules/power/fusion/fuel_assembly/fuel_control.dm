@@ -10,7 +10,12 @@
 	var/scan_range = 25
 	var/datum/tgui_module/rustfuel_control/monitor
 
+// Its window is its monitor's (a hand on a working console opens it); a multitool sets the ident tag the monitor looks for.
 CAPABILITIES(/obj/machinery/computer/fusion_fuel_control)
+	op("use", hand(), when(req_empty_hand()), label("Use"), wait(0), needs(req_operable()), then(PROC_REF(open_monitor)))
+	op("set_tag", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
+		asks(/datum/prompt/text, fields = list("title" = "Fuel Control", "question" = "Enter a new ident tag.", "max_len" = MAX_NAME_LEN)),
+		then(PROC_REF(tag_entered)))
 	owns_one(nameof(monitor), starts = /datum/tgui_module/rustfuel_control)
 
 /obj/machinery/computer/fusion_fuel_control/Initialize(mapload)
@@ -18,39 +23,14 @@ CAPABILITIES(/obj/machinery/computer/fusion_fuel_control)
 	monitor.fuel_tag = id_tag
 
 
-/obj/machinery/computer/fusion_fuel_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/fusion_fuel_control_open_ui,
-		/datum/interaction/machine_item/fusion_fuel_control_set_tag,
-	)
-	..()
+/obj/machinery/computer/fusion_fuel_control/proc/open_monitor(datum/act/op/A)
+	monitor.tgui_interact(A.actor)
+	return OP_OK
 
-/// Old attack_hand: opened the monitor UI (regardless of the gate result, which the old code ignored).
-/datum/interaction/machine_hand/fusion_fuel_control_open_ui
-	id = "fusion_fuel_control_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/fusion_fuel_control/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/fusion_fuel_control/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!operable())
-		return TRUE
-
-	monitor.tgui_interact(user)
-	return TRUE
-
-/// Old attackby: a multitool sets the fuel ident tag.
-/datum/interaction/machine_item/fusion_fuel_control_set_tag
-	id = "fusion_fuel_control_set_tag"
-	name = "Set ident tag"
-	category = INTERACTION_CAT_CONFIGURE
-	tool = TOOL_MULTITOOL
-	tool_volume = 0
-	effect = /obj/machinery/computer/fusion_fuel_control/proc/interaction_set_tag
-
-/obj/machinery/computer/fusion_fuel_control/proc/interaction_set_tag(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = rerun_ask(user, "k52", PROC_REF(interaction_set_tag), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Fuel Control", default = monitor.fuel_tag, max_length = MAX_NAME_LEN)
-	if(isnull(new_ident))
-		return
-	if(new_ident && user.Adjacent(src))
+/obj/machinery/computer/fusion_fuel_control/proc/tag_entered(datum/act/op/A)
+	var/datum/prompt/text/answer = A.answer
+	var/new_ident = sanitize_text(answer?.value)
+	if(new_ident && A.actor?.Adjacent(src))
 		monitor.fuel_tag = new_ident
-	return TRUE
+	return OP_OK
+

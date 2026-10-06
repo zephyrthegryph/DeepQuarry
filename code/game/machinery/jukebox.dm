@@ -28,9 +28,8 @@
 	var/list/obj/item/juke_remote/remotes
 	var/datum/track/current_track
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing")
-
 CAPABILITIES(/obj/machinery/media/jukebox)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
 	interface("Jukebox", title = "RetroBox - Space Style")
 	op("change_track", ui_act("change_track", arg("change_track")), then(PROC_REF(ui_act_change_track)))
@@ -67,7 +66,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 
-/obj/machinery/media/jukebox/machine_step()
+/obj/machinery/media/jukebox/proc/work_step(datum/act/timer/A)
 	if(!operable())
 		disconnect_media_source()
 		set_playing(0)
@@ -403,7 +402,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	if(!istype(M))
 		return TRUE
 
-	if(check_rights(R_FUN|R_ADMIN, show_msg=0))
+	if(admin_require(M.client, R_FUN|R_ADMIN, "ghost_jukebox_observer_use", 0))
 		interact(M)
 	else if(current_track())
 		to_chat(M, "\The [src] is playing [current_track().display()].")
@@ -507,7 +506,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /obj/machinery/media/jukebox/casinojukebox/getTracksList()
 	return SSmedia_tracks.casino_tracks
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/media/jukebox/step_start_condition()
 	return playing
 

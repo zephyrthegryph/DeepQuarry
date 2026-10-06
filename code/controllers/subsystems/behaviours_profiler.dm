@@ -11,7 +11,7 @@ CAPABILITIES(/datum/system/behaviours)
 	interface("OmProfiler", title = "Object Model Profiler", rights = R_DEBUG)
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
-/// The computed part of /datum/system/behaviours's window data (declared on its UI_DATA row).
+/// /datum/system/behaviours's window data.
 /datum/system/behaviours/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched

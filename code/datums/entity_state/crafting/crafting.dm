@@ -6,7 +6,7 @@
 		observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_owner_login)))
 
 /datum/personal_crafting/proc/on_owner_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/user = A.target
 	var/datum/notice/mob_client_login/event = A
 	create_mob_button(user, event.client)
@@ -439,7 +439,7 @@
 	return parts
 
 /datum/personal_crafting/proc/on_button_click(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/user = event.user
 	if(user == owner)
@@ -467,7 +467,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/personal_crafting's window data (declared on its UI_DATA row).
+/// /datum/personal_crafting's window data.
 /datum/personal_crafting/proc/ui_data_datum_personal_crafting(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// ANNOYING. We won't know what category will be on top (and thus first selected) in the UI
 	// until we crunch all the resources in tgui_static_data. So it just sets a hint and we

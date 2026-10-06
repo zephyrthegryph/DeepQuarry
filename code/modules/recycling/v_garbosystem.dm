@@ -18,8 +18,6 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS)
 /// Grinds what sits on it every frame while operating and operable.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list("operating", "operable"))
-
 /obj/machinery/v_garbosystem/Initialize(mapload)
 	. = ..()
 	add_hose_connector(/datum/hose_connector/output)
@@ -77,7 +75,11 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list(
 	icon_state = "cronchy_active"
 	set_use_power(USE_POWER_ACTIVE)
 
-/obj/machinery/v_garbosystem/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/v_garbosystem)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
+
+/obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
 	if(!crusher() || crusher().stat & (NOPOWER|BROKEN))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
@@ -162,7 +164,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 		if(!isobj(A) && !isliving(A))
 			continue
 		if(istype(A, /obj/effect/decal/cleanable) || istype(A, /mob/living/voice))
-			spent(A)
+			destroyed(A, src, BRUTE)
 		if(!A.anchored)
 			if(A.loc == src.loc)
 				if(isliving(A))
@@ -181,7 +183,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 								var/obj/item/meat = new L.meat_type(src)
 								if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
 									transfer_reagent_to_tank(meat.reagents,1)
-								spent(meat)
+								consumed(meat, src)
 								L.meat_amount--
 						L.gib()
 						items_taken++
@@ -233,7 +235,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 			transfer_reagent_to_tank(A.reagents,1)
 		if(istype(A, /obj/structure/closet))
 			new /obj/item/stack/material/steel(loc, 2)
-		spent(A)
+		destroyed(A, src, BRUTE)
 
 /// Connects to regular crusher (a relation view: it reads null once the target is deleted).
 /obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher

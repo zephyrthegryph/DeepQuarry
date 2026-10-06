@@ -80,7 +80,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/appliance/cooker/fryer's window data (declared on its UI_DATA row).
+/// /obj/machinery/appliance/cooker/fryer's window data.
 /obj/machinery/appliance/cooker/fryer/proc/ui_data_obj_machinery_appliance_cooker_fryer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
 	.["reagents"] = list("name" = oil.get_master_reagent_name(), "volume" = oil.total_volume, "max" = oil.maximum_volume)

@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/antag_spawner)
 	Q.query()
 
 /obj/item/antag_spawner/proc/get_winner(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len)
 		var/mob/observer/dead/D = Q.candidates[1]
 		spawn_antag(D.client, get_turf(src))

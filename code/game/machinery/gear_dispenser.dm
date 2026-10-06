@@ -896,11 +896,20 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 		)
 	var/chance_to_delete = 0
 
-// ALLOW(init/INSTANCE_STATE): a random roll removes some adventure boxes at creation
-/obj/machinery/gear_dispenser/adventure_box/Initialize(mapload)
-	. = ..()
-	if(prob(chance_to_delete))
-		return INITIALIZE_HINT_QDEL
+CAPABILITIES(/obj/machinery/gear_dispenser/adventure_box)
+	rolls(nameof(discarded), PROC_REF(roll_discarded))
+	after_init(0, then(PROC_REF(discard_rolled)))
+
+/// Rolled at creation: this box is not placed after all (chance_to_delete percent).
+/obj/machinery/gear_dispenser/adventure_box/var/discarded = FALSE
+
+/// Rolled before init (rolls()): whether this box is one of those removed.
+/obj/machinery/gear_dispenser/adventure_box/proc/roll_discarded(datum/roller/R)
+	return R.chance(chance_to_delete)
+
+/obj/machinery/gear_dispenser/adventure_box/proc/discard_rolled(datum/act/A)
+	if(discarded)
+		spent(src)
 
 /datum/gear_disp/adventure_box/medical
 	name = "Medkit"

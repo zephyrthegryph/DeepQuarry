@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/communicator)
 // Parameters: None
 // Description: This refreshes the camera location
 /obj/item/communicator/proc/update_active_camera_screen(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!video_source?.can_use())
 		show_static()
 		return
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/communicator)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/communicator's window data (declared on its UI_DATA row).
+/// /obj/item/communicator's window data.
 /obj/item/communicator/proc/ui_data_obj_item_communicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()						//General nanoUI information

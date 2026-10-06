@@ -792,11 +792,8 @@ base_var	code/modules/mob/mob_defines.dm	var/size_multiplier = 1 //multiplier fo
 base_var	code/modules/mob/mob_defines.dm	var/accumulated_rads = 0 // For radiation stuff.
 base_var	code/modules/mob/mob_defines.dm	var/faction_bump_vore = FALSE // Don't bump nom mobs of the same faction
 base_var	code/modules/nifsoft/nif.dm	/mob/living/carbon/human/var/obj/item/nif/nif
-base_var	code/modules/organs/blood.dm	/mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
-base_var	code/modules/organs/blood.dm	/mob/living/carbon/human/var/var/pale = 0 // Should affect how mob sprite is drawn, but currently doesn't.
-base_var	code/modules/organs/pain.dm	/mob/var/last_pain_message = ""
-base_var	code/modules/organs/pain.dm	/mob/var/next_pain_time = 0
-base_var	code/modules/organs/pain.dm	/mob/var/multilimb_pain_time = 0 // Global pain cooldown exists to prevent spam for multi-limb damage
+base_var	code/modules/body/organs/blood.dm	/mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
+base_var	code/modules/body/organs/blood.dm	/mob/living/carbon/human/var/var/pale = 0 // Should affect how mob sprite is drawn, but currently doesn't.
 base_var	code/modules/persistence/serialize.dm	var/tmp/map_json_data
 base_var	code/modules/projectiles/autofire.dm	var/tmp/autofire_delay = 0
 base_var	code/modules/projectiles/autofire.dm	var/tmp/obj/item/gun/autofire_gun

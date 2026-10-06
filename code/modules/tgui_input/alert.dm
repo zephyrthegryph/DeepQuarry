@@ -108,7 +108,7 @@ CAPABILITIES(/datum/tgui_alert)
 	data["title"] = title
 	return data
 
-/// The computed part of /datum/tgui_alert's window data (declared on its UI_DATA row).
+/// /datum/tgui_alert's window data.
 /datum/tgui_alert/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)

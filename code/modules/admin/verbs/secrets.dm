@@ -16,8 +16,8 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		var/mob/user_mob = user
 		rel_set(src, nameof(holder), user_mob.client) //if its a mob, assign the mob's client to holder
 
-	is_debugger = check_rights(R_DEBUG)
-	is_funmin = check_rights(R_FUN)
+	is_debugger = admin_require(holder(), R_DEBUG, "secrets_menu", TRUE)
+	is_funmin = admin_require(holder(), R_FUN, "secrets_menu", TRUE)
 
 /datum/secrets_menu/tgui_close()
 	spent(src)

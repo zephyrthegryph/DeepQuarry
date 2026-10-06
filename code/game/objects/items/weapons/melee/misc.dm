@@ -60,11 +60,12 @@ CAPABILITIES(/obj/item/melee/umbrella)
 		H.update_inv_l_hand(0)
 		H.update_inv_r_hand()
 
-// Randomizes color
-// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
-/obj/item/melee/umbrella/random/Initialize(mapload)
-	. = ..()
-	color = get_random_colour()
+CAPABILITIES(/obj/item/melee/umbrella/random)
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): any colour (get_random_colour()'s distribution).
+/obj/item/melee/umbrella/random/proc/roll_color(datum/roller/R)
+	return R.hex_colour()
 
 /obj/item/melee/cursedblade
 	name = "crystal blade"

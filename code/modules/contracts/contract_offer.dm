@@ -59,7 +59,7 @@
 	if(length(lifecycle_history) > CONTRACT_LIFECYCLE_HISTORY_LIMIT)
 		var/datum/contract_lifecycle_entry/expired = lifecycle_history[1]
 		lifecycle_history.Cut(1, 2)
-		spent(expired)
+		lapsed(expired)
 
 /datum/system/contracts/proc/find_live_offer(offer_key) as /datum/contract
 	if(!offer_key)

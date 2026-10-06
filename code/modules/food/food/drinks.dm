@@ -419,10 +419,14 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(
 	else
 		icon_state = "water_cup_e"
 
-/obj/item/reagent_containers/food/drinks/sillycup/MouseDrop(obj/over_object as obj)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native item dragging supplies its initiating actor through BYOND usr.
-	if(!cup_return_with_actor(user, over_object))
-		return ..()
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
+	drag_onto(PROC_REF(drop_input))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). An empty cup dropped on a cooler goes back in it.
+/obj/item/reagent_containers/food/drinks/sillycup/proc/drop_input(datum/act/input/A)
+	if(cup_return_with_actor(A.actor, A.over))
+		return TRUE
+	return INPUT_FALLTHROUGH
 
 /// TRUE consumes the same empty-cup/cooler branch even when its range or capacity check refuses.
 /obj/item/reagent_containers/food/drinks/sillycup/proc/cup_return_with_actor(mob/user, obj/over_object)

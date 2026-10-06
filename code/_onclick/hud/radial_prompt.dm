@@ -75,7 +75,7 @@
 	log_input("Input: [key_name(user)] was shown a radial menu ([type]) on [where].")
 	return TRUE
 
-/// om_after() target: the single choice answers itself.
+/// after() target: the single choice answers itself.
 /datum/om/prompt/choice/radial/proc/autopick()
 	om_prompt_answer(src, choices[1])
 

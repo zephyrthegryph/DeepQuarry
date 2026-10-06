@@ -276,7 +276,14 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 		span_admin("SDQL combined querys took [DisplayTimeText(end_time_total)] to complete.")) + combined_refs
 
 REGISTRY_MEMBERSHIP(/datum/SDQL2_query, REGISTRY_SDQL2_QUERIES)
-GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null, "VIEW VARIABLES (all)", null))
+/// The stat-panel button of the SDQL2 tab, made on first use: a statclick takes its name as a param(), which the lifecycle forms cannot apply
+/// while the globals are still being made.
+GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
+
+/proc/sdql2_vv_statobj()
+	if(!GLOB.sdql2_vv_statobj)
+		GLOB.sdql2_vv_statobj = new /obj/effect/statclick/SDQL2_VV_all(null, "VIEW VARIABLES (all)", null)
+	return GLOB.sdql2_vv_statobj
 
 /datum/SDQL2_query
 	/// The actor whose usr/marked values and diagnostics this query uses; a relation view.
@@ -1123,13 +1130,23 @@ CAPABILITIES(/datum/SDQL2_query)
 /proc/is_proper_datum(thing)
 	return istype(thing, /datum) || istype(thing, /client)
 
-/obj/effect/statclick/SDQL2_delete/Click()
-	var/datum/SDQL2_query/Q = target
-	Q.delete_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query deletion.
+CAPABILITIES(/obj/effect/statclick/SDQL2_delete)
+	click_on(PROC_REF(click_input))
 
-/obj/effect/statclick/SDQL2_action/Click()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/SDQL2_delete/proc/click_input(datum/act/input/A)
 	var/datum/SDQL2_query/Q = target
-	Q.action_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query execution.
+	Q.delete_click(A.actor)
+	return TRUE
+
+CAPABILITIES(/obj/effect/statclick/SDQL2_action)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/SDQL2_action/proc/click_input(datum/act/input/A)
+	var/datum/SDQL2_query/Q = target
+	Q.action_click(A.actor)
+	return TRUE
 
 /obj/effect/statclick/SDQL2_VV_all
 	name = "VIEW VARIABLES"

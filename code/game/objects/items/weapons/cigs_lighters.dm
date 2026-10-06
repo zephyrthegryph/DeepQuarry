@@ -458,11 +458,13 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 	slot_flags = SLOT_EARS
 	throwforce = 1
 
-// ALLOW(init/INSTANCE_STATE): its pixel offset and transform rolled at random for each instance
-/obj/item/trash/cigbutt/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
-	transform = turn(transform,rand(0,360))
+CAPABILITIES(/obj/item/trash/cigbutt)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
+	rolls(nameof(transform), PROC_REF(roll_transform))
+
+/// Rolled before init (rolls()): a butt lies at any angle.
+/obj/item/trash/cigbutt/proc/roll_transform(datum/roller/R)
+	return turn(transform, R.number(0, 360))
 
 /obj/item/trash/cigbutt/cigarbutt
 	name = "cigar butt"

@@ -35,7 +35,7 @@ CAPABILITIES(/datum/game_mode_panel)
 	SStgui.close_uis(src)
 	spent(src, user)
 
-/// The computed part of /datum/game_mode_panel's window data (declared on its UI_DATA row).
+/// /datum/game_mode_panel's window data.
 /datum/game_mode_panel/ui_data(datum/act/eval/A)
 	if(!target_mode)
 		return list("alive" = FALSE)

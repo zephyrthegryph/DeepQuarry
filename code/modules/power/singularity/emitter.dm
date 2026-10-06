@@ -61,7 +61,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	lock(powered = FALSE, alt = FALSE)
 	emag(then(PROC_REF(on_emag)), say = MSG(emitter/shorted), powered = FALSE)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emitter_step)), when = PROC_REF(firing))
-	op("toggle", hand(), label("Use"), ungated(), wait(0), global.tag(TAG_CONTROL),
+	op("toggle", hand(), when(req_empty_hand()), label("Use"), ungated(), wait(0), global.tag(TAG_CONTROL),
 		needs(req(PROC_REF(is_welded), because = MSG(emitter/unwelded))),
 		then(PROC_REF(toggled)))
 	op("repair", item(/obj/item/stack/material/steel), label("Repair with steel"),

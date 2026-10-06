@@ -170,7 +170,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 					for(var/datum/language/L in A.identity().languages)
 						A.add_language(L.name)
 			feedback_inc("cyborg_ais_created",1)
-			destroyed(src, user)
+			destroyed(src, user, "deconstructed")
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 

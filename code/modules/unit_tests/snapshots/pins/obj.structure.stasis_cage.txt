@@ -1,27 +1,27 @@
 human|none menu: Release
-human|none click: nothing
+human|none click: Click: Release
 robot|none menu: Release
-robot|none click: nothing
+robot|none click: Click: Release
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Release
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Release
 human|/obj/item/tool/crowbar menu: Release
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Release
 human|/obj/item/tool/wrench menu: Release
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Release
 human|/obj/item/tool/wirecutters menu: Release
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Release
 human|/obj/item/multitool menu: Release
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Release
 human|/obj/item/weldingtool menu: Release
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Release
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Release
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Release
 human|/obj/item/stack/material/steel menu: Release
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Release
 human|/obj/item/card/id menu: Release
-human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_release, gen_robot_stasis_cage_robot_release
+human|/obj/item/card/id click: Click: Release
+keys: gen_drag_interaction_drag_buckle, release, stasis_cage_robot_release
 

@@ -26,7 +26,7 @@
 	var/death_subject_ref
 
 /datum/unit_test/interim_pai_card_deletion/proc/personality_died(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/silicon/pai/personality = N.target
 	death_events++
 	death_stat = personality.stat

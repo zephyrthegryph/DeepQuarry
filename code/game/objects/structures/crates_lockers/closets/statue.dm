@@ -16,9 +16,13 @@
 	var/original_int = 100
 	var/timer = 240 //eventually the person will be freed
 
-// ALLOW(init/CTOR_ARGS): L is a constructor argument from whoever builds it
-/obj/structure/closet/statue/Initialize(mapload, mob/living/L)
+/// The mob turned to stone (its constructor param, dropped after init).
+/obj/structure/closet/statue/var/tmp/mob/living/statue_of
+
+// ALLOW(init/INSTANCE_STATE): a statue holds the mob it petrifies, shielded from harm, until it releases them
+/obj/structure/closet/statue/Initialize(mapload)
 	. = ..()
+	var/mob/living/L = statue_of
 	var/found_target = FALSE
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
 		found_target = TRUE
@@ -116,6 +120,7 @@ CAPABILITIES(/obj/structure/closet/statue)
 	without("empty_basket")
 	without("strike")
 	op("statue_strike", item(/obj/item), label("Strike"), priority(OP_PRIORITY_PART + 20), then(PROC_REF(statue_struck)))
+	param(nameof(statue_of), pos = 1, keep = FALSE)
 
 /// A held thing strikes the statue.
 /obj/structure/closet/statue/proc/statue_struck(datum/act/op/A)

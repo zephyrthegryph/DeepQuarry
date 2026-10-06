@@ -88,7 +88,7 @@
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
-	consumed(src)
+	destroyed(src, null, BURN)
 
 CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
@@ -224,12 +224,12 @@ CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/pr
 	reagent_injected = REAGENT_ID_RADIUM
 	var/rads = 25
 
-/datum/om/stage/life/special/slime/feral/green
-	of = /mob/living/simple_mob/slime/feral/green
+/mob/living/simple_mob/slime/feral/green/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/feral/green/perform(mob/living/simple_mob/slime/feral/green/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.irradiate()
+/mob/living/simple_mob/slime/feral/green/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
 	..()
 
 /mob/living/simple_mob/slime/feral/green/proc/irradiate()
@@ -248,12 +248,12 @@ CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/pr
 	coretype = /obj/item/slime_extract/pink
 	glow_toggle = TRUE
 
-/datum/om/stage/life/special/slime/feral/pink
-	of = /mob/living/simple_mob/slime/feral/pink
+/mob/living/simple_mob/slime/feral/pink/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/feral/pink/perform(mob/living/simple_mob/slime/feral/pink/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.heal_aura()
+/mob/living/simple_mob/slime/feral/pink/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.heal_aura()
 	..()
 
 /mob/living/simple_mob/slime/feral/pink/proc/heal_aura()
@@ -270,12 +270,12 @@ CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/pr
 	slime_color = "emerald"
 	coretype = /obj/item/slime_extract/emerald
 
-/datum/om/stage/life/special/slime/feral/emerald
-	of = /mob/living/simple_mob/slime/feral/emerald
+/mob/living/simple_mob/slime/feral/emerald/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/feral/emerald/perform(mob/living/simple_mob/slime/feral/emerald/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.zoom_aura()
+/mob/living/simple_mob/slime/feral/emerald/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.zoom_aura()
 	..()
 
 /mob/living/simple_mob/slime/feral/emerald/proc/zoom_aura()

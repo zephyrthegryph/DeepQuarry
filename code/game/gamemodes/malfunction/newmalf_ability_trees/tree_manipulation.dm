@@ -197,7 +197,7 @@
 			if(temp_apc.cell)
 				temp_apc.cell.maxcharge -= between(0, (temp_apc.cell.maxcharge/2) + 500, temp_apc.cell.maxcharge)
 				if(temp_apc.cell.maxcharge < 100) // That's it, you busted the APC cell completely. Break the APC and completely destroy the cell.
-					destroyed(temp_apc.cell)
+					destroyed(temp_apc.cell, null, "overload")
 					temp_apc.atom_break()
 
 
@@ -209,4 +209,4 @@
 /// The end of a malfunctioning AI's machine overload.
 /obj/machinery/proc/malf_overload_boom(explosion_intensity)
 	explosion(get_turf(src), round(explosion_intensity/4),round(explosion_intensity/2),round(explosion_intensity),round(explosion_intensity * 2))
-	destroyed(src)
+	destroyed(src, null, "explosion")

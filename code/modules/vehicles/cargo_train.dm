@@ -310,7 +310,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 		var/datum/vehicle_dummy_load/dummy_load = load
 		rel_set(src, nameof(load), dummy_load.actual_load)
 		dummy_load.actual_load = null
-		consumed(dummy_load, src)
+		spent(dummy_load, src)
 		cut_overlays()
 	..()
 

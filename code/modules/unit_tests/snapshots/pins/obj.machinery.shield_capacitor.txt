@@ -1,0 +1,67 @@
+human|none menu: Climb (refused: There's a material processor in the way.)
+human|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Swipe ID (refused: needs an identification card)
+human|none menu: Use
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb (refused: There's a material processor in the way.)
+robot|none menu: Emag (refused: needs a cryptographic sequencer)
+robot|none menu: Swipe ID (refused: needs an identification card)
+robot|none menu: Use
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/screwdriver menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/crowbar menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wrench menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wirecutters menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/multitool menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/weldingtool menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/material/steel menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/card/id menu: Swipe ID
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: nothing
+human|/obj/item/card/emag menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/emag menu: Emag
+human|/obj/item/card/emag menu: Swipe ID (refused: needs an identification card)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: nothing
+keys: charge_rate, climb.climb, climb.climb_menu, emag, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, shield_capacitor_id_swipe, shield_capacitor_use, toggle
+

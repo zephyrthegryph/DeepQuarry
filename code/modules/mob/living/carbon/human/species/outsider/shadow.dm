@@ -36,4 +36,4 @@
 /// A species death that leaves only ash.
 /mob/living/carbon/human/proc/species_death_crumble()
 	new /obj/effect/decal/cleanable/ash(loc)
-	consumed(src)
+	dissolved(src)

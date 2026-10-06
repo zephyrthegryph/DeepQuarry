@@ -968,7 +968,7 @@ DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp)
 			continue
 
 		else if(prob(1))
-			destroyed(R)
+			destroyed(R, null, "emp")
 			continue
 
 #undef GENERAL_RECORD_LIST

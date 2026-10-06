@@ -161,10 +161,14 @@ CAPABILITIES(/obj/item/shovel)
 	var/tmp/datum/material/material_static
 	resistance_flags = FLAMMABLE
 
-// ALLOW(init/CTOR_ARGS): _mat is a constructor argument from whoever builds it
-/obj/item/shovel/wood/Initialize(mapload, _mat)
-	. = ..()
-	// A shovel spawned bare (the survival recipe, a map, a test) is plain wood, not material-less.
+CAPABILITIES(/obj/item/shovel/wood)
+	param(nameof(shovel_material), pos = 1, apply = PROC_REF(carve))
+
+/// The material a shovel is carved from (its constructor param); a bare one (the survival recipe, a map, a test) is plain wood.
+/obj/item/shovel/wood/var/shovel_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/shovel/wood/proc/carve(_mat)
 	material_static = get_material_by_name(_mat || MAT_WOOD)
 	if(!istype(material(), /datum/material))
 		material_static = null

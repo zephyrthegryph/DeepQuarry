@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/librarypubliccomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarypubliccomp's window data.
 /obj/machinery/librarypubliccomp/proc/ui_data_obj_machinery_librarypubliccomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["title"] = title || ""
@@ -320,7 +320,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/librarycomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarycomp's window data.
 /obj/machinery/librarycomp/proc/ui_data_obj_machinery_librarycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["emagged"] = !!emagged
@@ -497,7 +497,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 
 /obj/machinery/librarycomp/proc/ui_act_delid(datum/act/op/A, id)
 	var/mob/user = A.actor
-	if(!check_rights(R_ADMIN))
+	if(!admin_require(A.actor?.client, R_ADMIN, "ui_act_delid", TRUE))
 		return TRUE
 	var/numeric_id = id
 	// Validate that the id is a positive integer before deleting.
@@ -564,7 +564,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 // set; non-admin ghosts fall through to default handling.
 /// Old attack_ghost: admins get the admin view; other ghosts the default.
 /obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!check_rights(R_ADMIN, show_msg = FALSE))
+	if(!admin_require(user.client, R_ADMIN, "librarycomp_ghost_admin_view", FALSE))
 		return FALSE
 	user.set_machine(src)
 	is_admin_view = TRUE
@@ -628,7 +628,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 
-/// The computed part of /obj/machinery/libraryscanner's window data (declared on its UI_DATA row).
+/// /obj/machinery/libraryscanner's window data.
 /obj/machinery/libraryscanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_cache"] = !!cache()
@@ -707,7 +707,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	b.dat = source_paper.info
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
-	spent(source_paper)
+	consumed(source_paper, src)
 
 /obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
 	src.visible_message("[src] whirs as it prints and binds a new book.")
@@ -719,7 +719,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		P.forceMove(b)
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"
-	spent(source_bundle)
+	consumed(source_bundle, src)
 
 /// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner

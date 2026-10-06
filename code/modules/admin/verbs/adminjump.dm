@@ -241,7 +241,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 /client/proc/sendmob()
 	set category = VERB_CAT_ADMIN_GAME
 	set name = "Send Mob"
-	if(!check_rights(R_ADMIN|R_MOD|R_DEBUG|R_EVENT))
+	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "sendmob", TRUE))
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))

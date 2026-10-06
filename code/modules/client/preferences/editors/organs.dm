@@ -67,8 +67,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 		"internal_order"  = list(O_HEART, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_VOICE, O_EYES, O_BRAIN),
 	)
 
-UI_ACT(/datum/preference_editor/organs, "set_external_status", ui_act_set_external_status, UI_ARG_VALUE("limb"), UI_ARG_TEXT("status"))
-UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_external_status)
+/datum/preference_editor/organs/proc/ui_act_set_external_status(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]
 	if(!limb)
 		return FALSE
@@ -92,8 +91,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_external_status)
 	preferences.end_update_batch()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/organs, "set_external_model", ui_act_set_external_model, UI_ARG_VALUE("limb"), UI_ARG_VALUE("model"))
-UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_external_model)
+/datum/preference_editor/organs/proc/ui_act_set_external_model(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]
 	if(!limb)
 		return FALSE
@@ -110,8 +108,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_external_model)
 	preferences.end_update_batch()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/organs, "set_internal_status", ui_act_set_internal_status, UI_ARG_VALUE("limb"), UI_ARG_TEXT("status"))
-UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_internal_status)
+/datum/preference_editor/organs/proc/ui_act_set_internal_status(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]
 	if(!limb)
 		return FALSE
@@ -127,3 +124,27 @@ UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_internal_status)
 		organ_data[limb] = status
 	preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/organs's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/organs/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_external_status")
+			typed = payload_args(src, params, list("limb" = null, "status" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_external_status(user, typed, preferences, null, action)
+		if("set_external_model")
+			typed = payload_args(src, params, list("limb" = null, "model" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_external_model(user, typed, preferences, null, action)
+		if("set_internal_status")
+			typed = payload_args(src, params, list("limb" = null, "status" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_internal_status(user, typed, preferences, null, action)
+	return ..()

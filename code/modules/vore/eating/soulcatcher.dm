@@ -325,7 +325,7 @@ CAPABILITIES(/obj/soulgem)
 // Handles the vore fx updates for the captured souls
 /// Event wrapper: the linked belly refreshed its vore fx.
 /obj/soulgem/proc/on_belly_vore_fx_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/belly_update_vore_fx/event = N
 	soulgem_show_vfx(event.volume)
 

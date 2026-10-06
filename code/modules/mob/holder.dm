@@ -24,12 +24,15 @@
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
-// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
-/obj/item/holder/Initialize(mapload, mob/held)
-	. = ..()
+/// The mob a holder is made around (its constructor param): it moves in at init, the holder keeps no reference to the argument.
+/obj/item/holder/var/tmp/mob/held_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/holder/proc/take_held(mob/held)
 	if(!ismob(held))
 		stack_trace("Holder was not passed a mob.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	held.forceMove(src)
 	if(isturf(loc) || isbelly(loc))
 		schedule_cleanup_check()
@@ -183,10 +186,10 @@
 
 /obj/item/holder/pai
 
-// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
-/obj/item/holder/pai/Initialize(mapload, mob/held)
-	. = ..()
-	item_state = held.icon_state
+/obj/item/holder/pai/take_held(mob/held)
+	..()
+	if(held)
+		item_state = held.icon_state
 
 /obj/item/holder/mouse
 	name = "mouse"

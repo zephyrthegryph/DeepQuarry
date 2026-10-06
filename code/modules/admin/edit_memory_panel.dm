@@ -57,7 +57,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	SStgui.close_uis(src)
 	spent(src, user)
 
-/// The computed part of /datum/edit_memory_panel's window data (declared on its UI_DATA row).
+/// /datum/edit_memory_panel's window data.
 /datum/edit_memory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!target_mind)

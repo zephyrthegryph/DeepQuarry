@@ -551,7 +551,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			return abort_structural("tile-application")
 		for(var/atom/movable/occupant in contents_of(T))
 			if(!ismob(occupant))
-				consumed(occupant, src)
+				spent(occupant, src)
 		switch(intent.structure_kind)
 			if(GENERATED_STATION_TILE_FLOOR)
 				T = T.ChangeTurf(intent.floor_type, tell_universe = FALSE)

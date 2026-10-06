@@ -66,15 +66,14 @@ CAPABILITIES(/obj/item/storage/backpack)
 	var/tilted = 0
 	icon_state = "holdingduffle"
 
-// ALLOW(init/INSTANCE_STATE): icon_state and tilted rolled at random for each instance
-/obj/item/storage/backpack/holding/duffle/Initialize(mapload)
-	. = ..()
-	if(prob(50))
-		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-		tilted = 1
+/// Rolled before init (rolls()): half the bags lie tilted.
+/obj/item/storage/backpack/holding/duffle/proc/roll_tilted_look(datum/roller/R)
+	return tilted ? "[icon_state]_tilted" : icon_state
 
 CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried()), then(PROC_REF(duffle_tilt_effect)))
+	rolls(nameof(tilted), chance(50))
+	rolls(nameof(icon_state), PROC_REF(roll_tilted_look), from = list(nameof(tilted)))
 
 /obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -182,17 +181,16 @@ CAPABILITIES(/obj/item/storage/backpack/holding)
 	var/can_tilt = 1
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
 
-// ALLOW(init/INSTANCE_STATE): icon_state and tilted rolled at random for each instance
-/obj/item/storage/backpack/dufflebag/Initialize(mapload)
-	. = ..()
-	if(prob(50))
-		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-		tilted = 1
+/// Rolled before init (rolls()): half the bags lie tilted.
+/obj/item/storage/backpack/dufflebag/proc/roll_tilted_look(datum/roller/R)
+	return tilted ? "[icon_state]_tilted" : icon_state
 
 MSG_DEF_SELF(backpack/cant_tilt, "It can't be adjusted like that.")
 
 CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), then(PROC_REF(dufflebag_tilt_effect)))
+	rolls(nameof(tilted), chance(50))
+	rolls(nameof(icon_state), PROC_REF(roll_tilted_look), from = list(nameof(tilted)))
 
 /// Only some duffelbags tilt.
 /obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt(datum/act/op/A)

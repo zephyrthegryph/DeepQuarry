@@ -381,7 +381,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 			// Created their playable character, delete their /mob/new_player
 			if(new_char)
-				consumed(player)
+				replaced_by(player, new_char)
 				if(new_char.client)
 					new_char.client.init_verbs()
 

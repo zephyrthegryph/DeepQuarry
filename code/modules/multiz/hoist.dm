@@ -66,9 +66,13 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	AM.set_anchored(TRUE) // why isn't this being set by buckle_mob for silicons?
 	source_hook.layer = AM.layer + 0.1
 
-/obj/effect/hoist_hook/MouseDrop(atom/dest)
-	..()
-	detach_with_actor(usr, dest) // ALLOW(sys_usr_outside_verb): native hoist drag supplies its initiating actor after the unchanged parent drag router
+CAPABILITIES(/obj/effect/hoist_hook)
+	drag_onto(PROC_REF(drop_input))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
+	detach_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
 
 /obj/effect/hoist_hook/proc/detach_with_actor(mob/user, atom/dest)
 	if(!Adjacent(user) || !dest.Adjacent(user)) return // carried over from the default proc
@@ -122,11 +126,10 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
+	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
 
-// ALLOW(init/CTOR_ARGS): ndir is a constructor argument from whoever builds it
-/obj/structure/hoist/Initialize(mapload, ndir)
-	. = ..()
-	dir = ndir
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
+/obj/structure/hoist/proc/hang_hook(ndir)
 	var/turf/newloc = get_step(src, dir)
 	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
 	rel_set(source_hook, nameof(source_hook.source_hoist), src)

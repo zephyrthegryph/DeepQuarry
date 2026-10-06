@@ -28,9 +28,8 @@
 OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "anchored"))
 /obj/machinery/shieldwallgen/proc/wallgen_has_work()
 	return active || anchored
-DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_has_work")
-
 CAPABILITIES(/obj/machinery/shieldwallgen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(wallgen_has_work), wakes_on = list(nameof(active), nameof(anchored)))
 	climb()
 
 /obj/machinery/shieldwallgen/declare_interactions(list/into)
@@ -103,7 +102,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 	power = 1	// IVE GOT THE POWER!
 	return 1
 
-/obj/machinery/shieldwallgen/machine_step()
+/obj/machinery/shieldwallgen/proc/work_step(datum/act/timer/A)
 	if(!active && storedpower >= max_stored_power)
 		storedpower = max_stored_power
 		return PROCESS_KILL // charged: parks until switched on (or re-bolted)
@@ -265,12 +264,15 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
-// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
-/obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
-	. = ..()
+CAPABILITIES(/obj/machinery/shieldwall)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	param(nameof(gen_primary), pos = 1)
+	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A wall stands between two active generators, which pay for it.
+/obj/machinery/shieldwall/proc/span_generators(obj/machinery/shieldwallgen/B)
 	update_nearby_tiles()
-	rel_set(src, nameof(gen_primary), A)
-	rel_set(src, nameof(gen_secondary), B)
+	var/obj/machinery/shieldwallgen/A = gen_primary
 	if(istype(A) && istype(B) && A.active && B.active)
 		needs_power = 1
 		if(prob(50))
@@ -278,7 +280,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		else
 			B.storedpower -= generate_power_usage
 	else
-		return INITIALIZE_HINT_QDEL
+		spent(src)
 
 /obj/machinery/shieldwall/declare_interactions(list/into)
 	into += list(
@@ -292,7 +294,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 	name = "Touch"
 	effect = /atom/proc/interaction_swallow
 
-/obj/machinery/shieldwall/machine_step()
+/obj/machinery/shieldwall/proc/work_step(datum/act/timer/A)
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
 			spent(src)
@@ -335,6 +337,6 @@ DAMAGE_REACTION(/obj/machinery/shieldwall, DAMAGE_EXPLOSION, PROC_REF(shieldwall
 		return prob(10)
 	return !density
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/shieldwall/step_start_condition()
 	return needs_power

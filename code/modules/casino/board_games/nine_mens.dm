@@ -90,12 +90,20 @@
 	var/winner
 	var/phase = GAME_PHASE_PLACING
 
-DECLARE_UI(/datum/board_game/nine_mens, "NineMen")
+CAPABILITIES(/datum/board_game/nine_mens)
+	interface("NineMen", state = nameof(GLOB.tgui_board_game_state))
+	op("be_player_one", ui_act("be_player_one"), then(PROC_REF(ui_act_be_player_one)))
+	op("be_player_two", ui_act("be_player_two"), then(PROC_REF(ui_act_be_player_two)))
+	op("swap_players", ui_act("swap_players"), then(PROC_REF(ui_act_swap_players)))
+	op("clear_game", ui_act("clear_game"), then(PROC_REF(ui_act_clear_game)))
+	op("start_game", ui_act("start_game"), then(PROC_REF(ui_act_start_game)))
+	op("play_again", ui_act("play_again"), then(PROC_REF(ui_act_play_again)))
+	op("play_again_swapped", ui_act("play_again_swapped"), then(PROC_REF(ui_act_play_again_swapped)))
+	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
-UI_DATA_REPLACE(/datum/board_game/nine_mens, "merge:ui_data_datum_board_game_nine_mens{player_one:unknown,player_two:unknown,player_one_time:unknown,player_two_time:unknown,current_board:list,selected_node:unknown,valid_moves:bool,valid_removes:bool,game_state:unknown,winner:unknown,has_won:bool,phase:text,pone_pieces:num,ptwo_pieces:num}")
-
-/// The computed part of /datum/board_game/nine_mens's window data (declared on its UI_DATA row).
-/datum/board_game/nine_mens/proc/ui_data_datum_board_game_nine_mens(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/board_game/nine_mens's window data.
+/datum/board_game/nine_mens/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one
 	var/mob/player_two_mob = player_two
 
@@ -110,51 +118,48 @@ UI_DATA_REPLACE(/datum/board_game/nine_mens, "merge:ui_data_datum_board_game_nin
 		"valid_removes" = (valid_removes || list()),
 		"game_state" = game_state,
 		"winner" = winner,
-		"has_won" = winner == ui.user.name,
+		"has_won" = winner == user.name,
 		"phase" = phase,
 		"pone_pieces" = pone_pieces,
 		"ptwo_pieces" = ptwo_pieces
 	)
 
-UI_ACT(/datum/board_game/nine_mens, "be_player_one", ui_act_be_player_one)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_be_player_one)
+/datum/board_game/nine_mens/proc/ui_act_be_player_one(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_one == ui.user)
-		rel_clear(src, nameof(/datum/board_game/checkers::player_one))
+	if(player_one == user)
+		rel_clear(src, nameof(player_one))
 		return TRUE
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), ui.user)
+	rel_set(src, nameof(player_one), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/nine_mens, "be_player_two", ui_act_be_player_two)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_be_player_two)
+/datum/board_game/nine_mens/proc/ui_act_be_player_two(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_two == ui.user)
-		rel_clear(src, nameof(/datum/board_game/checkers::player_two))
+	if(player_two == user)
+		rel_clear(src, nameof(player_two))
 		return TRUE
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), ui.user)
+	rel_set(src, nameof(player_two), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/nine_mens, "swap_players", ui_act_swap_players)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_swap_players)
+/datum/board_game/nine_mens/proc/ui_act_swap_players(datum/act/op/A)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
 	var/mob/temp_player = player_one
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
+	rel_set(src, nameof(player_one), player_two)
+	rel_set(src, nameof(player_two), temp_player)
 
-UI_ACT(/datum/board_game/nine_mens, "clear_game", ui_act_clear_game)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_clear_game)
+/datum/board_game/nine_mens/proc/ui_act_clear_game(datum/act/op/A)
 	if(game_state == GAME_SETUP)
 		return FALSE
 	reset(TRUE)
 	return TRUE
 
-UI_ACT(/datum/board_game/nine_mens, "start_game", ui_act_start_game)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_start_game)
+/datum/board_game/nine_mens/proc/ui_act_start_game(datum/act/op/A)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(!player_one || !player_two)
@@ -163,8 +168,7 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_start_game)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
-UI_ACT(/datum/board_game/nine_mens, "play_again", ui_act_play_again)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_play_again)
+/datum/board_game/nine_mens/proc/ui_act_play_again(datum/act/op/A)
 	if(game_state < GAME_OVER)
 		return FALSE
 	if(!player_one || !player_two)
@@ -173,30 +177,31 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_play_again)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
-UI_ACT(/datum/board_game/nine_mens, "play_again_swapped", ui_act_play_again_swapped)
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_play_again_swapped)
+/datum/board_game/nine_mens/proc/ui_act_play_again_swapped(datum/act/op/A)
 	if(game_state < GAME_OVER)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
 	reset()
 	var/mob/temp_player = player_one
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
+	rel_set(src, nameof(player_one), player_two)
+	rel_set(src, nameof(player_two), temp_player)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
-UI_ACT(/datum/board_game/nine_mens, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
-UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_game_action)
-	if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
-		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "w")
+/datum/board_game/nine_mens/proc/ui_act_game_action(datum/act/op/A, action_arg, data)
+	var/mob/user = A.actor
+	if(!isnull(data) && !islist(data))
+		return FALSE
+	if(user == player_one && game_state == GAME_PLAYER_ONE)
+		var/game_action = game_subaction(action_arg, data, user, "w")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 				game_state = GAME_PLAYER_TWO
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-	if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
-		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "b")
+	if(user == player_two && game_state == GAME_PLAYER_TWO)
+		var/game_action = game_subaction(action_arg, data, user, "b")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
 				game_state = GAME_PLAYER_ONE
@@ -223,8 +228,7 @@ UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_game_action)
 	else
 		game_state = GAME_PLAYER_ONE
 
-UI_SUBACT(/datum/board_game/nine_mens, "game", "select_figure", game_select_figure, UI_ARG_NUM("node_number"))
-UI_SUBACT_PROC(/datum/board_game/nine_mens, game_select_figure)
+/datum/board_game/nine_mens/proc/game_select_figure(mob/user, list/params, extra)
 	var/node = validate_node(params["node_number"])
 	if(!node)
 		return GAME_ACTION_NONE
@@ -237,8 +241,7 @@ UI_SUBACT_PROC(/datum/board_game/nine_mens, game_select_figure)
 	update_valid_moves()
 	return GAME_ACTION_SELECT
 
-UI_SUBACT(/datum/board_game/nine_mens, "game", "move_figure", game_move_figure, UI_ARG_NUM("node_number"))
-UI_SUBACT_PROC(/datum/board_game/nine_mens, game_move_figure)
+/datum/board_game/nine_mens/proc/game_move_figure(mob/user, list/params, extra)
 	var/target_node = validate_node(params["node_number"])
 	if(!target_node)
 		return GAME_ACTION_NONE
@@ -420,3 +423,14 @@ UI_SUBACT_PROC(/datum/board_game/nine_mens, game_move_figure)
 #undef GAME_PHASE_MOVING
 #undef GAME_PHASE_REMOVING
 #undef GAME_PHASE_NONE
+
+/// /datum/board_game/nine_mens's "game" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/board_game/nine_mens/game_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("select_figure")
+			var/list/typed = payload_args(src, data, list("node_number" = num()))
+			return typed ? game_select_figure(user, typed, extra) : FALSE
+		if("move_figure")
+			var/list/typed = payload_args(src, data, list("node_number" = num()))
+			return typed ? game_move_figure(user, typed, extra) : FALSE
+	return ..()

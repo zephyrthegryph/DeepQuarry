@@ -1624,4 +1624,4 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 /proc/slime_extract_explode(atom/extract, power)
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)
 	if(!QDELETED(extract)) // Explosion may or may not have deleted the extract.
-		destroyed(extract)
+		destroyed(extract, null, "explosion")

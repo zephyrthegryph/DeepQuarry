@@ -43,11 +43,11 @@ APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 	melee_damage_upper = 7
 
 
-/datum/om/stage/life/type_pre/simple_mob/homunculus/evil
-	of = /mob/living/simple_mob/homunculus/evil
+/mob/living/simple_mob/homunculus/evil/life_type_pre_due()
+	return TRUE
 
-/datum/om/stage/life/type_pre/simple_mob/homunculus/evil/perform(mob/living/simple_mob/homunculus/evil/self, datum/om/frame/life/ctx)
-	self.handle_homunculus()
+/mob/living/simple_mob/homunculus/evil/life_type_pre(datum/seq_frame/life/F)
+	src.handle_homunculus()
 	return ..()
 
 /mob/living/simple_mob/homunculus/evil/proc/handle_homunculus()

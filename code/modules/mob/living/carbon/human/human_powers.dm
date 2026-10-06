@@ -211,14 +211,14 @@
 		src.death()
 
 		for(var/obj/item/organ/internal/diona/Org in internal_organ_list()) // Remove Nymph organs. (a fresh list from the organ slots)
-			spent(Org)
+			ended_with(Org, src)
 
 		for(var/obj/item/organ/external/E in organs.Copy()) // Just fall apart.
 			E.droplimb(TRUE)
 
 	else
 		act_message(src, null, others = span_warning("%U% quivers slightly, then splits apart with a wet slithering noise."))
-		spent(src)
+		replaced_by(src)
 
 /mob/living/carbon/human/proc/self_diagnostics()
 	set name = "Self-Diagnostics"

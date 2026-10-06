@@ -1,4 +1,5 @@
-/obj/structure/stasis_cage|human|none => stasis_cage_release|
-/obj/structure/stasis_cage|robot|none => gen_robot_stasis_cage_robot_release,stasis_cage_release|
+/obj/structure/stasis_cage|human|none => |
+/obj/structure/stasis_cage|robot|none => |
 /obj/structure/stasis_cage|ai|none => |
 /obj/structure/stasis_cage|ghost|none => |
+

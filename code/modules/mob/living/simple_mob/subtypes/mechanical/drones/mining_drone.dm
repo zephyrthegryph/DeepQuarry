@@ -136,30 +136,31 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 
 /mob/living/simple_mob/mechanical/mining_drone/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	return ..()
-/datum/om/stage/life/special/mechanical/mining_drone
-	of = /mob/living/simple_mob/mechanical/mining_drone
 
-/datum/om/stage/life/special/mechanical/mining_drone/perform(mob/living/simple_mob/mechanical/mining_drone/self, datum/om/frame/life/ctx)
-	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (COOLDOWN_FINISHED(self, search_cooldown_until)) && (contents_count(self.my_storage) < self.my_storage.max_storage_space))
-		COOLDOWN_START(self, search_cooldown_until, self.search_cooldown)
+/mob/living/simple_mob/mechanical/mining_drone/life_special_due()
+	return TRUE
 
-		for(var/turf/T in view(world.view,self))
-			if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
+/mob/living/simple_mob/mechanical/mining_drone/life_special(datum/seq_frame/life/F)
+	if(src.my_storage && ((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(src) && isturf(src.loc) && (COOLDOWN_FINISHED(src, search_cooldown_until)) && (contents_count(src.my_storage) < src.my_storage.max_storage_space))
+		COOLDOWN_START(src, search_cooldown_until, src.search_cooldown)
+
+		for(var/turf/T in view(world.view,src))
+			if(contents_count(src.my_storage) >= src.my_storage.max_storage_space)
 				break
 
 			if((locate_within(T, /obj/item/ore)) && prob(40))
-				self.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
-				self.my_storage.rangedload(T, self)
+				src.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
+				src.my_storage.rangedload(T, src)
 
-		if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
-			act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " emits a shrill beep, indicating its storage is full.")))
+		if(contents_count(src.my_storage) >= src.my_storage.max_storage_space)
+			act_message(src, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " emits a shrill beep, indicating its storage is full.")))
 
-		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), /obj/structure/ore_box)
+		var/obj/structure/ore_box/OB = locate_in_list(view(2, src), /obj/structure/ore_box)
 
-		if(istype(OB) && self.my_storage && contents_count(self.my_storage))
-			self.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
-			for(var/obj/item/I in self.my_storage)
-				self.my_storage.remove_from_storage(I, OB)
+		if(istype(OB) && src.my_storage && contents_count(src.my_storage))
+			src.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
+			for(var/obj/item/I in src.my_storage)
+				src.my_storage.remove_from_storage(I, OB)
 
 /datum/decl/mob_organ_names/miningdrone
 TYPE_TABLE(/datum/decl/mob_organ_names/miningdrone, mob_organ_hit_zones, list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster"))

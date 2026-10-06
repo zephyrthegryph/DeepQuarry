@@ -192,7 +192,7 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 		if(isliving(G?.grab_target()))
 			var/mob/living/M = G?.grab_target()
 			var/state = G.state
-			consumed(W, src)	//gotta delete it here because if window breaks, it won't get deleted
+			spent(W, user)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))

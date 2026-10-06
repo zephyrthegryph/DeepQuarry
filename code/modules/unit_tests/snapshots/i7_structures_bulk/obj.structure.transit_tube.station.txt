@@ -1,4 +1,5 @@
-/obj/structure/transit_tube/station|human|none => transit_tube_toggle|
-/obj/structure/transit_tube/station|robot|none => transit_tube_toggle|
+/obj/structure/transit_tube/station|human|none => |
+/obj/structure/transit_tube/station|robot|none => |
 /obj/structure/transit_tube/station|ai|none => |
 /obj/structure/transit_tube/station|ghost|none => |
+

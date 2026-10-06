@@ -2,3 +2,4 @@
 /obj/structure/flora/pottedplant|robot|none => pottedplant_item,pottedplant_hand|
 /obj/structure/flora/pottedplant|ai|none => |
 /obj/structure/flora/pottedplant|ghost|none => |
+

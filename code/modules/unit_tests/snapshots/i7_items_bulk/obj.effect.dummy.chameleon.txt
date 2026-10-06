@@ -1,6 +1,5 @@
-/obj/effect/dummy/chameleon|human|none => gen_item_interaction_disrupt,gen_hand_interaction_disrupt|gen_insert_interaction_pass:needs a mop,gen_insert_interaction_pass:needs a soap
-/obj/effect/dummy/chameleon|robot|none => gen_item_interaction_disrupt,gen_hand_interaction_disrupt|gen_insert_interaction_pass:needs a mop,gen_insert_interaction_pass:needs a soap
+/obj/effect/dummy/chameleon|human|none => |
+/obj/effect/dummy/chameleon|robot|none => |
 /obj/effect/dummy/chameleon|ai|none => |
 /obj/effect/dummy/chameleon|ghost|none => |
-/obj/effect/dummy/chameleon|human|/obj/item/mop_deploy => gen_item_interaction_disrupt,gen_hand_interaction_disrupt,gen_insert_interaction_pass|gen_insert_interaction_pass:needs a soap
-/obj/effect/dummy/chameleon|human|/obj/item/soap => gen_item_interaction_disrupt,gen_hand_interaction_disrupt,gen_insert_interaction_pass|gen_insert_interaction_pass:needs a mop
+

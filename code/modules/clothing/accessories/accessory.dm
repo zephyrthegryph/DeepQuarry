@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/clothing/accessory)
 	icon_state = "stethoscope"
 	slot = ACCESSORY_SLOT_TIE
 
-/obj/item/clothing/accessory/stethoscope/do_surgery(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
+/obj/item/clothing/accessory/stethoscope/use_on_patient(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
 	if(stance != I_HELP) //in case it is ever used as a surgery tool
 		return ..()
 	attack(M, user, user.zone_sel?.selecting || BP_TORSO, 1, stance) //default surgery behaviour is just to scan as usual
@@ -1188,7 +1188,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data (declared on its UI_DATA row).
+/// /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data.
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["target_size"] = "code"
@@ -1267,7 +1267,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data (declared on its UI_DATA row).
+/// /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data.
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["target_size"] = "locked"

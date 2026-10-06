@@ -19,31 +19,31 @@
 	..()
 
 // Handling the automatic transcore backups in a set interval
-/datum/om/stage/life/type_post/carbon/brain/caught_soul/vore
-	of = /mob/living/carbon/brain/caught_soul/vore
+/mob/living/carbon/brain/caught_soul/vore/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/carbon/brain/caught_soul/vore/perform(mob/living/carbon/brain/caught_soul/vore/self, datum/om/frame/life/ctx)
+/mob/living/carbon/brain/caught_soul/vore/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(QDELETED(self))
+	if(QDELETED(src))
 		return
 
-	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.gem().setting_flags & NIF_SC_BACKUPS)
-		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+	if(!src.parent_mob && !src.transient &&(src.life_tick % 150 == 0) && src.gem().setting_flags & NIF_SC_BACKUPS)
+		SStranscore.m_backup(src.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
-	if(!self.client)
+	if(!src.client)
 		return
 
-	if(self.ext_blind)
-		self.status_set(EFFECT_BLINDED, 5)
-		self.client.screen.Remove(GLOB.global_hud.whitense)
-		self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if(src.ext_blind)
+		src.status_set(EFFECT_BLINDED, 5)
+		src.client.screen.Remove(GLOB.global_hud.whitense)
+		src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 	else
-		self.status_set(EFFECT_BLINDED, 0)
-		self.clear_fullscreen("blind")
-		if(!self.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
-			self.client.screen.Add(GLOB.global_hud.whitense)
-	if(self.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
-		self.client.screen.Remove(GLOB.global_hud.whitense)
+		src.status_set(EFFECT_BLINDED, 0)
+		src.clear_fullscreen("blind")
+		if(!src.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
+			src.client.screen.Add(GLOB.global_hud.whitense)
+	if(src.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
+		src.client.screen.Remove(GLOB.global_hud.whitense)
 
 // Say proc for captures souls
 /mob/living/carbon/brain/caught_soul/vore/say(message, datum/language/speaking = null, whispering = 0)

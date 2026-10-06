@@ -3,60 +3,53 @@
 // tissue of its mind host (refresh_host_status()); what's left here is what a
 // client in a container needs: EMP interference on an MMI's I/O, vision and HUD.
 
-/datum/om/stage/life/breathing/carbon/brain
-	of = /mob/living/carbon/brain
-
-/datum/om/stage/life/breathing/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
+/mob/living/carbon/brain/life_breathing(datum/seq_frame/life/F)
 	return
 
-/datum/om/stage/life/radiation/carbon/brain
-	of = /mob/living/carbon/brain
+/mob/living/carbon/brain/life_radiation_due()
+	return TRUE
 
-/datum/om/stage/life/radiation/carbon/brain/applies(mob/living/carbon/brain/self)
+/mob/living/carbon/brain/life_radiation_applies()
 	return FALSE
 
-/datum/om/stage/life/environment/carbon/brain
-	of = /mob/living/carbon/brain
+/mob/living/carbon/brain/life_environment_due()
+	return TRUE
 
-/datum/om/stage/life/environment/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
+/mob/living/carbon/brain/life_environment(datum/seq_frame/life/F)
 	return
 
-/datum/om/stage/life/chemicals/carbon/brain
-	of = /mob/living/carbon/brain
+/mob/living/carbon/brain/life_chemicals_due()
+	return TRUE
 
-/datum/om/stage/life/chemicals/carbon/brain/perform(mob/living/carbon/brain/self, datum/om/frame/life/ctx)
+/mob/living/carbon/brain/life_chemicals(datum/seq_frame/life/F)
 	return
-
-/datum/om/stage/life/status/carbon/brain
-	of = /mob/living/carbon/brain
-	woken_by = "injure/mend (refresh_host_status), brain removal/insertion, MMI emp_act; slow rewake for tissue drift"
 
 /// A hosted view's status follows its tissue, which tells it through refresh_host_status()
 /// (removal, insertion, injure, mend); a slow rewake covers drift. Awake while EMP interference
 /// is wearing off.
-/datum/om/stage/life/status/carbon/brain/idle(mob/living/carbon/brain/self)
-	if(self.emp_damage)
-		return FALSE
-	if(self.host)
+/mob/living/carbon/brain/life_status_due()
+	if(src.emp_damage)
 		return TRUE
-	return self.stat == DEAD || !self.body || self.body.life_settled()
+	if(src.host)
+		return FALSE
+	return src.stat != DEAD && src.body && !src.body.life_settled()
 
-/datum/om/stage/life/status/carbon/brain/rewake_delay(mob/living/carbon/brain/self)
-	return self.host ? 5 SECONDS : 0
+/mob/living/carbon/brain/life_status_rewake()
+	return src.host ? 5 SECONDS : 0
 
-/datum/om/stage/life/status/carbon/brain/update_status(mob/living/carbon/brain/self)
-	if(self.host)
-		self.refresh_host_status()
-	else if(self.stat != DEAD)
-		self.body?.life_tick() // tissue-less views (souls) keep a simple body
+/mob/living/carbon/brain/life_status_update_status()
+	if(src.host)
+		src.refresh_host_status()
+	else if(src.stat != DEAD)
+		src.body?.life_tick() // tissue-less views (souls) keep a simple body
 
-	if(self.stat == DEAD)
-		self.set_blinded(1)
-		self.status_set(EFFECT_MUTED, 0)
-		self.deaf_loop.stop()
+	if(src.stat == DEAD)
+		src.set_blinded(1)
+		src.status_set(EFFECT_MUTED, 0)
+		src.deaf_loop.stop()
 		return 1
 
-	self.handle_emp_interference()
+	src.handle_emp_interference()
 	return 1
 
 /// EMP interference with an MMI's sensors and speech. Not damage: the MMI's

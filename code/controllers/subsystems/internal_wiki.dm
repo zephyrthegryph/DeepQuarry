@@ -518,7 +518,7 @@ SYSTEM_DEF(internal_wiki)
 		smashers[id] = P
 		searchcache_smasher.Add(id)
 		pages.Add(P)
-		destroyed(R)
+		spent(R)
 
 /datum/system/internal_wiki/proc/init_reagent_data()
 	SHOULD_NOT_OVERRIDE(TRUE)

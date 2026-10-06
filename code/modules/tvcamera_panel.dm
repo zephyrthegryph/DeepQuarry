@@ -2,7 +2,7 @@
 
 // ---- TV camera ------------------------------------------------------------
 
-/// The computed part of /obj/item/tvcamera's window data (declared on its UI_DATA row).
+/// /obj/item/tvcamera's window data.
 /obj/item/tvcamera/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["channel"] = channel ? channel : "unidentified broadcast"
@@ -35,7 +35,7 @@
 
 // ---- Bodycam --------------------------------------------------------------
 
-/// The computed part of /obj/item/clothing/accessory/bodycam's window data (declared on its UI_DATA row).
+/// /obj/item/clothing/accessory/bodycam's window data.
 /obj/item/clothing/accessory/bodycam/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["channel"] = channel ? channel : "unidentified broadcast"

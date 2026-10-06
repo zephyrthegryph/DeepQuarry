@@ -59,6 +59,8 @@ CAPABILITIES(/obj/item/tank)
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("tank_item", item(/obj/item), label("Tank item"), then(PROC_REF(tank_item)))
 
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
@@ -152,7 +154,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
 /// Old attackby (its ..() ran first; the base item handling now follows the pass).
-/obj/item/tank/proc/tank_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/tank/proc/tank_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(src.loc, /obj/item/assembly))
 		icon = src.loc
 
@@ -174,7 +178,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 			om_task_start(/datum/om/task/timed/tank_attackby, user, src, receiver = src, W = W)
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /datum/om/task/timed/tank_attackby
 	duration = 5 SECONDS
@@ -278,13 +282,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 			update_integrity(max_integrity)
 		heat_add(src.air_contents, rand(2000,50000), HEAT_SOURCE_OTHER)
 
-DECLARE_INTERACTIONS(/obj/item/tank, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(tank_item)), \
-)
-
 /// Old attack_self.
-/obj/item/tank/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if (!(src.air_contents))
 		return TRUE
@@ -295,7 +295,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		src.proxyassembly.assembly.attack_self(user)
 	return TRUE
 
-/// The computed part of /obj/item/tank's window data (declared on its UI_DATA row).
+/// /obj/item/tank's window data.
 /obj/item/tank/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()
@@ -629,27 +629,35 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, null)
 
-// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
-/obj/item/tank/phoron/onetankbomb/Initialize(mapload, amount = 1)
+CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
+	param(nameof(bomb_fill), pos = 1)
+
+/// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
+/obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
+
+// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/obj/item/tank/phoron/onetankbomb/Initialize(mapload)
 	var/forced_fill = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
 	if(!isnull(forced_fill))
-		amount = forced_fill
-		. = ..(mapload, amount)
-	else
-		. = ..()
-	onetankbomb(amount)
+		bomb_fill = forced_fill
+	. = ..()
+	onetankbomb(bomb_fill)
 
 TYPE_TABLE_DECLARE(/obj/item/tank/oxygen/onetankbomb, oxygen_bomb_forced_fill, null)
 
-// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
-/obj/item/tank/oxygen/onetankbomb/Initialize(mapload, amount = 1)
+CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
+	param(nameof(bomb_fill), pos = 1)
+
+/// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
+/obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
+
+// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
 	var/forced_fill = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
 	if(!isnull(forced_fill))
-		amount = forced_fill
-		. = ..(mapload, amount)
-	else
-		. = ..()
-	onetankbomb(amount)
+		bomb_fill = forced_fill
+	. = ..()
+	onetankbomb(bomb_fill)
 
 TYPE_TABLE(/obj/item/tank/phoron/onetankbomb/full, phoron_bomb_forced_fill, 2)
 

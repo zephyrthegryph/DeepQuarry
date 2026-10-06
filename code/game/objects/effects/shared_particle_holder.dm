@@ -16,12 +16,18 @@ GLOBAL_LIST_EMPTY(shared_particles)
 	/// See \code\__DEFINES\particles.dm
 	var/particle_flags = NONE
 
-// ALLOW(init/CTOR_ARGS): particle_path and particle_flags are constructor arguments from whoever builds it
-/obj/effect/abstract/shared_particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
+CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
+	param(nameof(particle_path), pos = 1)
+	param(nameof(particle_flags), pos = 2)
+
+/// The particles a holder shows (its constructor param).
+/obj/effect/abstract/shared_particle_holder/var/particle_path = /particles/smoke
+
+// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
+/obj/effect/abstract/shared_particle_holder/Initialize(mapload)
 	. = ..()
 	// Shouldn't exist outside of nullspace
 	moveToNullspace()
-	src.particle_flags = particle_flags
 	particles = new particle_path()
 
 

@@ -309,7 +309,7 @@ CAPABILITIES(/obj/item/card_fluff)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
 /obj/item/card/id/synthetic/borg/proc/check_loc(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == robot_owner() || old_loc == robot_owner().module)

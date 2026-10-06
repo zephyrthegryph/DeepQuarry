@@ -1,4 +1,5 @@
-/obj/structure/largecrate|human|none => largecrate_hand|
-/obj/structure/largecrate|robot|none => largecrate_hand|
+/obj/structure/largecrate|human|none => |
+/obj/structure/largecrate|robot|none => |
 /obj/structure/largecrate|ai|none => |
 /obj/structure/largecrate|ghost|none => |
+

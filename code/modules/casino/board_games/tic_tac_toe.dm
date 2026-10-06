@@ -19,8 +19,7 @@
 		"colors" = possible_colors - "blue"
 	)
 
-UI_SUBACT(/datum/board_game/four_row/tic_tac_toe, "game", "place_chip", game_place_chip, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_OVERRIDE(/datum/board_game/four_row/tic_tac_toe, game_place_chip)
+/datum/board_game/four_row/tic_tac_toe/game_place_chip(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
 	if(!validated_data)
 		return FALSE
@@ -48,3 +47,11 @@ UI_SUBACT_OVERRIDE(/datum/board_game/four_row/tic_tac_toe, game_place_chip)
 
 #undef GAME_PLAYER_ONE
 #undef GRID_SIZE
+
+/// /datum/board_game/four_row/tic_tac_toe's "game" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/board_game/four_row/tic_tac_toe/game_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("place_chip")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? game_place_chip(user, typed, extra) : FALSE
+	return ..()

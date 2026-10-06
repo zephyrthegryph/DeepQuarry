@@ -330,7 +330,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 	var/mob/adminmob = user.mob
 	M.ckey = user.ckey
 	if( isobserver(adminmob) )
-		consumed(adminmob, src)
+		replaced_by(adminmob, M)
 	feedback_add_details("admin_verb","ADC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(take_picture, R_DEBUG, "Save PNG", "Opens a dialog to save a PNG of any object in the game.", ADMIN_CATEGORY_DEBUG_MISC, atom/selected_atom in world)
@@ -827,7 +827,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	set name = "Quick Auth NIF"
 	set desc = "Spawns an authentic NIF into someone in quick-implant mode."
 
-	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
+	if(!admin_require(owner(), R_ADMIN|R_EVENT|R_DEBUG, "quick_authentic_nif", TRUE)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
 	open_request(src, /datum/prompt/choice, PROC_REF(quick_authentic_nif_chosen), answerer = usr, title = "Quick Authentic NIF", question = "Pick a mob with a player", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), rights = R_ADMIN|R_EVENT|R_DEBUG, timeout = 0)

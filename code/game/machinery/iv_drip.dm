@@ -8,7 +8,6 @@
 
 OM_FIELD_VIEW(/obj/machinery/iv_drip, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
 /// Drips (or draws) while hooked up to a patient.
-DECLARE_PERIODIC_WHILE(/obj/machinery/iv_drip, MACHINE_PIPELINE, "attached")
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
@@ -39,9 +38,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 			filling.icon += reagents.get_color()
 			. += filling
 
-/obj/machinery/iv_drip/MouseDrop(over_object, src_location, over_location)
-	..()
-	return drop_patient_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native patient attachment drag supplies the actor after unchanged parent input routing.
+CAPABILITIES(/obj/machinery/iv_drip)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
+	drag_onto(PROC_REF(drop_input))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
+/// then the native drop goes on.
+/obj/machinery/iv_drip/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
 
 /obj/machinery/iv_drip/proc/drop_patient_with_actor(mob/user, atom/over_object)
 	if(!isliving(user))
@@ -90,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		own_take(src, nameof(beaker))
 	replace_with(src, rods)
 
-/obj/machinery/iv_drip/machine_step()
+/obj/machinery/iv_drip/proc/work_step(datum/act/timer/A)
 	set background = 1
 	if(attached())
 

@@ -104,20 +104,23 @@
 	// (factors recomputed, dirty condition domains processed), as the first Life() would.
 	H.factor(BF_ALLERGY)
 	H.dq_process_dirty_medical_conditions()
-	var/list/stages = list(
-		/datum/om/stage/life/medical,
-		/datum/om/stage/life/npc,
-		/datum/om/stage/life/changeling,
-		/datum/om/stage/life/shock,
-		/datum/om/stage/life/heartbeat,
-		/datum/om/stage/life/weight,
-		/datum/om/stage/life/nif,
-		/datum/om/stage/life/phobias,
-		/datum/om/stage/life/addictions,
-		/datum/om/stage/life/radiation,
+	var/list/steps = list(
+		"life_medical",
+		"life_npc",
+		"life_changeling",
+		"life_shock",
+		"life_heartbeat",
+		"life_weight",
+		"life_nif",
+		"life_phobias",
+		"life_addictions",
+		"life_radiation",
 	)
-	for(var/stage_type in stages)
-		var/datum/om/stage/S = om_stage_for(H, stage_type)
-		if(!S)
+	var/datum/sequence/seq = sequence_def(/datum/sequence/life)
+	var/datum/seq_state/state = SEQ_STATE_OF(H, seq.idx)
+	for(var/key in steps)
+		var/pos = state?.table.pos_of[key]
+		if(!pos)
 			continue
-		TEST_ASSERT(S.idle(H), "[S.type] should idle on a healthy human")
+		var/datum/seq_step/S = state.table.steps[pos]
+		TEST_ASSERT(!seq_should_run(S, H, state), "[key] should sleep on a healthy human")

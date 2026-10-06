@@ -563,7 +563,7 @@
 		T.wash(CLEAN_SCRUB)
 		for(var/obj/effect/O in turf_contents_of_type(T, /obj/effect))
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
-				spent(O)
+				dissolved(O)
 
 		for(var/mob/living/simple_mob/slime/M in turf_contents_of_type(T, /mob/living/simple_mob/slime))
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)

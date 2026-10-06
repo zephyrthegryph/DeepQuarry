@@ -22,7 +22,7 @@ CAPABILITIES(/datum/filter_editor)
 	data["filter_info"] = GLOB.master_filter_info
 	return data
 
-/// The computed part of /datum/filter_editor's window data (declared on its UI_DATA row).
+/// /datum/filter_editor's window data.
 /datum/filter_editor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["target_name"] = target().name

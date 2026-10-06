@@ -54,8 +54,8 @@ CAPABILITIES(/datum/proximity_monitor)
 	set_range(current_range, TRUE)
 
 /datum/proximity_monitor/proc/on_host_or_receiver_del(datum/act/notice/A)
-	EVENT_HANDLER
-	spent(src)
+	SHOULD_NOT_SLEEP(TRUE)
+	ended_with(src)
 
 /datum/proximity_monitor/proc/set_range(range, force_rebuild = FALSE)
 	if(!force_rebuild && range == current_range)
@@ -74,13 +74,13 @@ CAPABILITIES(/datum/proximity_monitor)
 	rel_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
 
 /datum/proximity_monitor/proc/on_moved(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/source = N.target
 	if(source == host())
 		hasprox_receiver()?.HasProximity(host())
 
 /datum/proximity_monitor/proc/on_z_change(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return
 
 /datum/proximity_monitor/proc/set_ignore_if_not_on_turf(does_ignore = TRUE)
@@ -91,7 +91,7 @@ CAPABILITIES(/datum/proximity_monitor)
 	update_range_connector(ignore_if_not_on_turf)
 
 /datum/proximity_monitor/proc/on_uncrossed(atom/source, atom/movable/gone, atom/new_loc)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	uncrossed(source, gone, new_loc)
 
 /// Something left a turf in range. Used by the advanced subtype for effect fields.
@@ -99,11 +99,11 @@ CAPABILITIES(/datum/proximity_monitor)
 	return
 
 /datum/proximity_monitor/proc/on_entered(atom/source, atom/movable/arrived, atom/old_loc)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	entered(source, arrived)
 
 /datum/proximity_monitor/proc/on_initialized_on(atom/source, atom/movable/created, mapload)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	entered(source, created)
 
 /// Something entered (or was created on) a turf in range.

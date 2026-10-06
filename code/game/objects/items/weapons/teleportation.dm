@@ -42,7 +42,7 @@ CAPABILITIES(/obj/item/locator)
 	tgui_interact(A.actor)
 	return OP_OK
 
-/// The computed part of /obj/item/locator's window data (declared on its UI_DATA row).
+/// /obj/item/locator's window data.
 /obj/item/locator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["frequency"] = format_frequency(frequency)

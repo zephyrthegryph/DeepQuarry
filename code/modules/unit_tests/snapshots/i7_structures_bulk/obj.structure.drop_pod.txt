@@ -1,4 +1,5 @@
-/obj/structure/drop_pod|human|none => drop_pod_open|
-/obj/structure/drop_pod|robot|none => drop_pod_open|
+/obj/structure/drop_pod|human|none => |
+/obj/structure/drop_pod|robot|none => |
 /obj/structure/drop_pod|ai|none => |
 /obj/structure/drop_pod|ghost|none => |
+

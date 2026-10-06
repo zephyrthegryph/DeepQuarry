@@ -137,7 +137,7 @@ CAPABILITIES(/datum/remote_view)
 // Event handlers
 
 /datum/remote_view/proc/on_hostmob_moved_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	var/atom/source = N.target
 	var/atom/oldloc
@@ -156,7 +156,7 @@ CAPABILITIES(/datum/remote_view)
 	spent(src)
 
 /datum/remote_view/proc/on_recursive_moved_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	var/atom/source = A.target
 	var/datum/notice/movable_attempted_move/event = A
@@ -175,7 +175,7 @@ CAPABILITIES(/datum/remote_view)
 	spent(src)
 
 /datum/remote_view/proc/on_forced_endview_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	var/datum/source = A.target
 	handle_forced_endview(source)
@@ -188,7 +188,7 @@ CAPABILITIES(/datum/remote_view)
 	handle_endview()
 
 /datum/remote_view/proc/handle_endview(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
@@ -198,7 +198,7 @@ CAPABILITIES(/datum/remote_view)
 	spent(src)
 
 /datum/remote_view/proc/on_status_effect_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	var/datum/source = N.target
 	var/amount = 0
@@ -233,7 +233,7 @@ CAPABILITIES(/datum/remote_view)
 	handle_endview()
 
 /datum/remote_view/proc/on_reset_perspective(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
 	if(!host_mob)
@@ -245,7 +245,7 @@ CAPABILITIES(/datum/remote_view)
 	spent(src)
 
 /datum/remote_view/proc/on_remotetarget_reset_perspective(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
 	// Non-mobs can't do this anyway
@@ -277,7 +277,7 @@ CAPABILITIES(/datum/remote_view)
 // Optional event handlers for more advanced remote views
 
 /datum/remote_view/proc/handle_relay_movement(datum/act/relay_movement/move)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
@@ -285,7 +285,7 @@ CAPABILITIES(/datum/remote_view)
 	return settings.handle_relay_movement(src, host_mob, move.direction) ? TRUE : HOOK_DECLINE
 
 /datum/remote_view/proc/handle_hud_override(datum/act/draw_hud/draw)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
@@ -293,7 +293,7 @@ CAPABILITIES(/datum/remote_view)
 	return settings.handle_hud_override(src, host_mob) ? TRUE : HOOK_DECLINE
 
 /datum/remote_view/proc/handle_hud_health(datum/act/draw_health_icon/draw)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
@@ -301,7 +301,7 @@ CAPABILITIES(/datum/remote_view)
 	return settings.handle_hud_health(src, host_mob) ? TRUE : HOOK_DECLINE
 
 /datum/remote_view/proc/handle_hud_darkvision(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	RETURN_TYPE(null)
 	PRIVATE_PROC(TRUE)
@@ -310,7 +310,7 @@ CAPABILITIES(/datum/remote_view)
 	settings.handle_hud_darkvision(src, host_mob)
 
 /datum/remote_view/proc/handle_mob_vision_update(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
@@ -408,7 +408,7 @@ CAPABILITIES(/datum/remote_view)
 		observe(remote_view_target, /datum/notice/mob_death, src, then(PROC_REF(handle_endview)))
 
 /datum/remote_view/mremote_mutation/proc/on_mutation(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
 		return

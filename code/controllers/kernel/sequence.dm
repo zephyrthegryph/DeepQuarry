@@ -58,6 +58,9 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/autoregister = TRUE
 	/// TRUE when the sequence overrides admit(): the sweep asks it per member only then.
 	var/admit_guard = FALSE
+	/// TRUE when the sequence overrides run_step() and ask_step() (a typed dispatch for entities with big proc tables);
+	/// otherwise steps are called by name directly.
+	var/typed_dispatch = FALSE
 
 	// ---- built
 	/// Position in sequence_all(): the index of its state in an entity's seq_states.
@@ -142,6 +145,15 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 /// Whether `E` is relevant enough to be in the sweep.
 /datum/sequence/proc/relevant(datum/E)
 	return !min_relevance || om_relevance(E) >= min_relevance
+
+/// Runs the entity's step proc `name` with frame `F`. By name (call()); a sequence whose entities have big proc tables
+/// overrides this with a typed dispatch (a by-name call looks the name up in the entity type's proc table on every call).
+/datum/sequence/proc/run_step(datum/E, name, datum/seq_frame/F)
+	return call(E, name)(F)
+
+/// Asks the entity's argumentless proc `name` (a step's should_run or rewake). By name; overridable like run_step().
+/datum/sequence/proc/ask_step(datum/E, name)
+	return call(E, name)()
 
 /datum/sequence/proc/error(msg)
 	errors += msg
@@ -353,9 +365,9 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 // ---------------------------------------------------------------- the frame loop
 
 /// A step's work. Locals of the frame loop: E, F, state.
-#define SEQ_PERFORM(S) (S.target_kind ? seq_call_contributed(S, E, F, state) : call(E, S.handler)(F))
+#define SEQ_PERFORM(S) (S.target_kind ? seq_call_contributed(S, E, F, state) : (typed_dispatch ? run_step(E, S.handler, F) : call(E, S.handler)(F)))
 /// A step's should_run() (the step has one).
-#define SEQ_ASK(S) (S.target_kind ? seq_ask_contributed(S, E, state) : call(E, S.should_run)())
+#define SEQ_ASK(S) (S.target_kind ? seq_ask_contributed(S, E, state) : (typed_dispatch ? ask_step(E, S.should_run) : call(E, S.should_run)()))
 /// Step `S` at position _i (word _w, bit _bit) falls asleep this frame (tests also note what it read).
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 #define SEQ_SLEEP(_i, _w, _bit) bits[_w] |= _bit; asleep++; LAZYADD(slept, _i); seq_snapshot_note(E, state, S)
@@ -521,7 +533,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 /// One timed step (profiled frames only).
 /datum/sequence/proc/timed_step(datum/seq_step/S, datum/E, datum/seq_frame/F, datum/seq_state/state)
 	var/t0 = TICK_USAGE
-	. = S.target_kind ? seq_call_contributed(S, E, F, state) : call(E, S.handler)(F)
+	. = S.target_kind ? seq_call_contributed(S, E, F, state) : run_step(E, S.handler, F)
 	step_ms[S.slot] += TICK_DELTA_TO_MS(TICK_USAGE - t0) * profile_stride
 	step_calls[S.slot] += profile_stride
 
@@ -582,7 +594,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	if(!S.should_run)
 		return TRUE
 	if(S.target_kind == SEQ_TARGET_ENTITY)
-		return call(E, S.should_run)()
+		return state ? state.seq.ask_step(E, S.should_run) : call(E, S.should_run)()
 	return seq_ask_contributed(S, E, state)
 
 // ---------------------------------------------------------------- joining and leaving
@@ -837,8 +849,10 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		if(!positions)
 			continue
 		var/woke = FALSE
+		var/list/steps = state.table.steps
 		for(var/pos in positions)
-			if(seq_wake_pos(state, pos))
+			var/datum/seq_step/S = steps[pos]
+			if(seq_wake_pos(state, pos, !S.once))
 				woke = TRUE
 		if(woke)
 			seq_woke(E, state, "[key]")
@@ -866,7 +880,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 				if(!(word & (1 << b)))
 					continue
 				var/datum/seq_step/S = steps[base + b + 1]
-				if((S.chan_mask & bits) && seq_wake_pos(state, base + b + 1))
+				if((S.chan_mask & bits) && seq_wake_pos(state, base + b + 1, !S.once))
 					woke = TRUE
 		if(woke)
 			seq_woke(E, state, "channels [bits]")
@@ -887,30 +901,64 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 
 // ---------------------------------------------------------------- rewakes
 
-/// Arms step `S`'s rewake on `E` (it fell asleep): the one timer, keyed by entity, sequence and step (a TIMER relation).
+/// The time rewakes are reckoned in: the member's own timer clock (what its after() timers run on).
+/proc/seq_rewake_now(datum/E)
+	return E.om_rec ? E.om_rec.sched.now() : om_scheduler().now()
+
+/// Arms step `S`'s rewake on `E` (it fell asleep). Each step keeps a due time on the member's state; the member has one
+/// timer, for the soonest (a TIMER relation keyed by entity and sequence), on its own clock. Falling asleep again moves
+/// the step's due time later and touches no timer unless it is now the soonest.
 /proc/seq_arm_rewake(datum/E, datum/sequence/seq, datum/seq_step/S, datum/seq_state/state)
 	var/delay = S.rewake
 	if(!isnum(delay))
 		switch(S.target_kind)
 			if(SEQ_TARGET_ENTITY)
-				delay = call(E, S.rewake)()
+				delay = seq.ask_step(E, S.rewake)
 			if(SEQ_TARGET_STATIC)
 				delay = call(S.contributor, S.rewake)(E)
 			else
 				var/datum/X = state?.extras[S.extra_slot]
 				delay = X ? call(X, S.rewake)(E) : 0
-	if(delay > 0)
-		rx_after(E, delay, TYPE_PROC_REF(/datum, seq_rewake), S.rewake_key, seq.clock == CLOCK_WORLD ? CLOCK_WORLD : CLOCK_OWN, list(seq.idx, S.key))
+	if(!(delay > 0))
+		return
+	var/due = seq_rewake_now(E) + delay
+	if(!state.rewake_at)
+		state.rewake_at = new /list(state.table.n)
+	state.rewake_at[S.pos] = due
+	if(state.rewake_next && state.rewake_next <= due)
+		return
+	state.rewake_next = due
+	rx_after(E, delay, TYPE_PROC_REF(/datum, seq_rewake), "seq:[seq.idx]:rewake", CLOCK_OWN, list(seq.idx))
 
-/// A step's rewake went off: that step wakes and runs on its next frame (no should_run() pre-check: a rewake is for
-/// work that drifts with time). A parked member comes back for it and parks again as soon as the step sleeps (it
-/// counts as one idle frame already).
-/datum/proc/seq_rewake(seq_idx, key)
+/// The member's rewake timer went off: every step whose due time has come wakes and runs on its next frame (no
+/// should_run() pre-check: a rewake is for work that drifts with time), and the timer is armed for the next one. A parked
+/// member comes back and parks again as soon as the step sleeps (it counts as one idle frame already).
+/datum/proc/seq_rewake(seq_idx)
 	var/datum/seq_state/state = SEQ_STATE_OF(src, seq_idx)
 	if(!state)
 		return
-	var/pos = state.table.pos_of[key]
-	if(!pos || !seq_wake_pos(state, pos, FALSE))
+	state.rewake_next = 0
+	var/list/due_at = state.rewake_at
+	if(!due_at)
+		return
+	var/now = seq_rewake_now(src) + 0.001
+	var/next = 0
+	var/woke = FALSE
+	for(var/pos in 1 to length(due_at))
+		var/due = due_at[pos]
+		if(isnull(due))
+			continue
+		if(due > now)
+			if(!next || due < next)
+				next = due
+			continue
+		due_at[pos] = null
+		if(seq_wake_pos(state, pos, FALSE))
+			woke = TRUE
+	if(next)
+		state.rewake_next = next
+		rx_after(src, next - seq_rewake_now(src), TYPE_PROC_REF(/datum, seq_rewake), "seq:[seq_idx]:rewake", CLOCK_OWN, list(seq_idx))
+	if(!woke)
 		return
 	state.seq.wakes++
 	if(state.parked)
@@ -918,19 +966,16 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		state.idle_frames = max(state.seq.park_after - 1, 0)
 
 /proc/seq_cancel_rewakes(datum/E, datum/seq_state/state)
-	for(var/datum/seq_step/S as anything in state.table?.steps)
-		if(S.rewake_key)
-			cancel_after(E, S.rewake_key)
+	state.rewake_at = null
+	state.rewake_next = 0
+	cancel_after(E, "seq:[state.seq.idx]:rewake")
 
 /// TRUE while step `key`'s rewake is pending on `E`.
 /proc/seq_rewake_pending(datum/E, path, key)
 	var/datum/sequence/seq = sequence_def(path)
 	var/datum/seq_state/state = SEQ_STATE_OF(E, seq.idx)
 	var/pos = state?.table.pos_of[key]
-	if(!pos)
-		return FALSE
-	var/datum/seq_step/S = state.table.steps[pos]
-	return !!S.rewake_key && after_pending(E, S.rewake_key)
+	return pos && length(state.rewake_at) >= pos && !isnull(state.rewake_at[pos])
 
 // ---------------------------------------------------------------- on demand
 
@@ -966,7 +1011,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	F.entity = E
 	F.state = state
 	F.dt = seq.step || seq.interval / 10
-	. = S.target_kind ? seq_call_contributed(S, E, F, state) : call(E, S.handler)(F)
+	. = S.target_kind ? seq_call_contributed(S, E, F, state) : seq.run_step(E, S.handler, F)
 	F.release()
 
 /// Runs one whole frame of sequence `path` on `E` now (content that must see a frame at once, and tests). A real
@@ -1038,7 +1083,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		if(state.pending && (state.pending[w] & bit))
 			continue
 		var/datum/seq_step/S = table.steps[i]
-		if(S.rewake_key && after_pending(E, S.rewake_key))
+		if(length(state.rewake_at) >= i && !isnull(state.rewake_at[i]))
 			continue
 		if((S.cond_req || S.cond_forbid) && F.conds_failed(S.cond_req, S.cond_forbid))
 			continue

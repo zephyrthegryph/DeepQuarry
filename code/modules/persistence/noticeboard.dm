@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 	tgui_interact(user)
 	return ..()
 
-/// The computed part of /obj/structure/noticeboard's window data (declared on its UI_DATA row).
+/// /obj/structure/noticeboard's window data.
 /obj/structure/noticeboard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

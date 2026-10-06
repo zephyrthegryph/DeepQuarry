@@ -10,8 +10,15 @@
 	var/obj/item/extinguisher/has_extinguisher
 	var/opened = 0
 
-// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-/obj/structure/extinguisher_cabinet/Initialize(mapload, dir, building = 0)
+CAPABILITIES(/obj/structure/extinguisher_cabinet)
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+
+/// A cabinet built on a wall (its constructor param).
+/obj/structure/extinguisher_cabinet/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a built cabinet sits on its wall empty; a mapped one comes with its extinguisher
+/obj/structure/extinguisher_cabinet/Initialize(mapload)
 	. = ..()
 
 	if(building)

@@ -23,6 +23,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	interface("NTNetRelay")
 	without("ui_open")
@@ -53,7 +54,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 		soundloop.stop()
 		noisy = FALSE
 
-/obj/machinery/ntnet_relay/machine_step()
+/obj/machinery/ntnet_relay/proc/work_step(datum/act/timer/A)
 	if(operable())
 		set_use_power(USE_POWER_ACTIVE)
 	else
@@ -72,7 +73,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 		dos_failure = 0
 		update_icon()
 		GLOB.ntnet_global.add_log("Quantum relay switched from overload recovery mode to normal operation mode.")
-	..()
 
 /obj/machinery/ntnet_relay/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -141,7 +141,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/ntnet_relay
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ntnet_relay/step_start_condition()
 	return TRUE // sets its power draw
 

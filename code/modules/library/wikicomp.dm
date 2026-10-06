@@ -65,7 +65,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	sub_category= null
 	searchmode = null
 
-/// The computed part of /obj/machinery/librarywikicomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarywikicomp's window data.
 /obj/machinery/librarywikicomp/ui_data(datum/act/eval/A)
 	var/data = list()
 	if(SSinternal_wiki)
@@ -302,6 +302,6 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	name = "personal datacore computer"
 	desc = "Have you Bingled THAT today?"
 
-/// om_after() target: the prank crash fixes itself.
+/// after() target: the prank crash fixes itself.
 /obj/machinery/librarywikicomp/proc/uncrash()
 	crash = FALSE

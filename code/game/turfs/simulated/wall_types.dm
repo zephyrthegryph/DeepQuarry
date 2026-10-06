@@ -611,7 +611,7 @@ TYPE_TABLE(/turf/simulated/wall/rplastihull, wall_forced_materials, list(MAT_PLA
 	observe(src, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(radiate)))
 
 /turf/simulated/wall/uranium/radiate(datum/act/notice/N)
-	// EVENT_HANDLER is declared on /turf/simulated/wall/radiate(); this override
+	// SHOULD_NOT_SLEEP is declared on /turf/simulated/wall/radiate(); this override
 	// inherits the contract and must not re-set the should_not_sleep pragma.
 	if(active)
 		return

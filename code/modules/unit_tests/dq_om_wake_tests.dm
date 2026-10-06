@@ -1,11 +1,11 @@
-// S3 wake tests: every sleeper on om_after() timers and om_watch()ed change channels wakes
+// S3 wake tests: every sleeper on after() timers and om_watch()ed change channels wakes
 // when its input changes and stays asleep while the input is held steady, and its
 // om_sleep_violation() holds while it sleeps.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /**
- * The wake test for any sleeper (a sleeper behaviour, om_after() timers): with its input held steady `D` must stay asleep,
+ * The wake test for any sleeper (a sleeper behaviour, after() timers): with its input held steady `D` must stay asleep,
  * and after `change` runs it must wake within `ticks`. Returns null on success or the failure.
  */
 /proc/om_wake_test(datum/D, list/change, ticks = 4)
@@ -33,7 +33,7 @@
 		return "[D.type] did not wake after its input changed"
 	return null
 
-/// TRUE while `D` has a wake queued or pending delivery, or an om_after() timer already due
+/// TRUE while `D` has a wake queued or pending delivery, or an after() timer already due
 /// (a spawn-time materialize_wakes(), say): work raised before now that hasn't landed yet.
 /proc/om_wakes_pending(datum/D)
 	var/datum/om/rec/rec = D.om_rec
@@ -84,7 +84,7 @@
 	om_attach(S, /datum/om/behaviour/sleeper/test_subscriber)
 	om_watch(S, target, mask, /datum/om/behaviour/sleeper/test_subscriber)
 
-/// Deadline wakes: a door's autoclose runs on one om_after() timer; power and electrification restore through timed_set().
+/// Deadline wakes: a door's autoclose runs on one after() timer; power and electrification restore through timed_set().
 /datum/unit_test/dq_om_wake_airlock_deadlines
 
 /datum/unit_test/dq_om_wake_airlock_deadlines/Run()

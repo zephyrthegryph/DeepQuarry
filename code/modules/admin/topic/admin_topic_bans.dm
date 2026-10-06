@@ -203,7 +203,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				to_chat(M, span_filter_system(span_red("This jobban will be lifted in [mins] minutes.")))
 				return 1
 			if("No")
-				if(!check_rights(R_BAN))
+				if(!admin_require(user.client, R_BAN, "topic_jobban3", TRUE))
 					return
 				var/reason = ban_topic_ask(user, args, "a12", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
 				if(reason)
@@ -338,7 +338,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				T.Resolve(user)
 			spent(M.client, user)
 		if("No")
-			if(!check_rights(R_BAN))
+			if(!admin_require(user.client, R_BAN, "topic_newban", TRUE))
 				return
 			var/reason = ban_topic_ask(user, args, "a19", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
 			if(!reason)

@@ -98,7 +98,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/computer/HolodeckControl's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/HolodeckControl's window data.
 /obj/machinery/computer/HolodeckControl/proc/ui_data_obj_machinery_computer_HolodeckControl(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/program_list = list()
@@ -192,6 +192,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
 CAPABILITIES(/obj/machinery/computer/HolodeckControl)
+	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(holographic_objs))
 	ref_many(nameof(holographic_mobs))
 	interface("Holodeck")
@@ -217,7 +218,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;
 /// otherwise it sleeps until a program loads (its UI).
-/obj/machinery/computer/HolodeckControl/machine_step()
+/obj/machinery/computer/HolodeckControl/proc/work_step(datum/act/timer/A)
 	if(!active && !length(holographic_objs) && !length(holographic_mobs))
 		return PROCESS_KILL
 	for(var/item in holographic_objs) // do this first, to make sure people don't take items out when power is down.
@@ -321,10 +322,10 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		C.derez()
 
 	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck())
-		consumed(B, src)
+		spent(B, src)
 
 	for(var/obj/effect/landmark/L in linkedholodeck())
-		consumed(L, src)
+		spent(L, src)
 
 	// The program's objects are cloned into the room (entity_clone, via copy_contents_to()); the
 	// holodeck tracks them in a relation roster and derezzes them itself (derez()) on the next
@@ -362,7 +363,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		if(L.name=="Holocarp Spawn Random")
 			if(prob(4)) //With 4 spawn points, carp should only appear 15% of the time.
 				rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
-		consumed(L, src)
+		spent(L, src)
 
 		update_projections()
 

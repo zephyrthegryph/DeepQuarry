@@ -125,7 +125,7 @@ B1:code/modules/admin/verbs/randomverbs.dm:SSemergency_shuttle 3
 B1:code/modules/admin/verbs/randomverbs.dm:SSjob 2
 B1:code/modules/admin/verbs/randomverbs.dm:SSticker 3
 B1:code/modules/admin/verbs/secrets.dm:SSnightshift 3
-B1:code/modules/admin/verbs/secrets.dm:SSshuttles 11
+B1:code/modules/admin/verbs/secrets.dm:SSshuttles 9
 B1:code/modules/admin/verbs/secrets.dm:SSticker 1
 B1:code/modules/admin/verbs/striketeam.dm:SSmapping 1
 B1:code/modules/admin/verbs/striketeam.dm:SSticker 1
@@ -151,7 +151,6 @@ B1:code/modules/benchmarks/boot_profile.dm:SSair 2
 B1:code/modules/benchmarks/boot_profile.dm:SSexplosions 1
 B1:code/modules/benchmarks/boot_profile.dm:SSgarbage 4
 B1:code/modules/benchmarks/boot_profile.dm:SSlighting 5
-B1:code/modules/benchmarks/life_sweep_adapter.dm:SSbehaviours 1
 B1:code/modules/benchmarks/scenarios.dm:SSair 10
 B1:code/modules/benchmarks/scenarios.dm:SSexpedition 2
 B1:code/modules/benchmarks/scenarios.dm:SSexplosions 1
@@ -237,7 +236,7 @@ B1:code/modules/mob/new_player/lobby_browser.dm:SSticker 10
 B1:code/modules/mob/new_player/new_player.dm:SSjob 2
 B1:code/modules/mob/new_player/new_player.dm:SSticker 9
 B1:code/modules/modular_computers/NTNet/NTNet.dm:SSatoms 1
-B1:code/modules/organs/subtypes/diona.dm:SSplants 1
+B1:code/modules/body/organs/subtypes/diona.dm:SSplants 1
 B1:code/modules/overmap/champagne.dm:SSshuttles 3
 B1:code/modules/overmap/sectors.dm:SSshuttles 2
 B1:code/modules/overmap/ships/computers/shuttle.dm:SSshuttles 3

@@ -45,18 +45,20 @@
 	var/last_range
 	var/last_power
 
+// The core owns its field (fusion_core/Startup()); the field names its core back and owns the catchers that take particles into it.
 CAPABILITIES(/obj/effect/fusion_em_field)
 	owns_many(nameof(particle_catchers))
+	ref_one(nameof(owned_core), /obj/machinery/power/fusion_core)
+	param(nameof(owned_core), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): new_owned_core is a constructor argument from whoever builds it
-/obj/effect/fusion_em_field/Initialize(mapload, obj/machinery/power/fusion_core/new_owned_core)
+// ALLOW(init/INSTANCE_STATE): a field lights up and lays out its particle catchers around its core
+/obj/effect/fusion_em_field/Initialize(mapload)
 	. = ..()
 
 	set_light(light_min_range,light_min_power)
 	last_range = light_min_range
 	last_power = light_min_power
 
-	rel_set(src, nameof(owned_core), new_owned_core)
 	if(!owned_core)
 		return INITIALIZE_HINT_QDEL
 	id_tag = owned_core.id_tag
@@ -107,10 +109,6 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 	catcher.SetSize(7)
 	rel_add(src, nameof(particle_catchers), catcher)
 
-	// Idle traps do not scan their surroundings. Field creation is the dependency
-	// that wakes only traps close enough to use it.
-	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
-		MACHINE_WAKE(trap)
 	catcher = new (locate(src.x+3,src.y,src.z))
 	rel_set(catcher, nameof(catcher.parent), src)
 	catcher.SetSize(7)
@@ -124,7 +122,9 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 	catcher.SetSize(7)
 	rel_add(src, nameof(particle_catchers), catcher)
 
-/obj/effect/fusion_em_field/periodic_step()
+/// The field's reaction (its core's step runs it): it takes fuel gas from the room, reacts, pays its heat to the grid (FUSION_ENERGY_PER_K W
+/// per K), loses 1% of its heat to radiation, checks its stability and radiates.
+/obj/effect/fusion_em_field/proc/field_react()
 	//make sure the field generator is still intact
 	if(!owned_core || QDELETED(owned_core))
 		spent(src)
@@ -507,11 +507,6 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		// Check whether there are reactants left, and add them back to the pool.
 		for(var/reactant in react_pool)
 			AddParticles(reactant, react_pool[reactant])
-
-// The core owns its field (rel_set in fusion_core/Startup()); the field names its core back.
-/obj/effect/fusion_em_field/relations()
-	. = ..()
-	. += rel_one(nameof(owned_core))
 
 // a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/on_destroy(force)

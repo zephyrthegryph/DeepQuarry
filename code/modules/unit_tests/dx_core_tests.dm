@@ -538,3 +538,9 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 				entry = E
 		TEST_ASSERT(run_chosen_interaction(user, F, entry.id), "the Menu ran [path]'s entry by id")
 		TEST_ASSERT_NOTNULL(F.form_answers, "[path]'s handler ran")
+
+/// A tgui window on `host` for a test, interactive, with no client behind it.
+/proc/ui_test_window(datum/host)
+	var/datum/tgui/ui = new(null, host, "UiTest")
+	ui.status = STATUS_INTERACTIVE
+	return ui

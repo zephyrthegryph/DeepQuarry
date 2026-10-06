@@ -557,41 +557,34 @@ CAPABILITIES(/datum/body)
 
 /// Oxygen debt and its consequences, before the Body's status pass. Cheap while
 /// the body is settled; bodies without a physiology never get it.
-/datum/om/stage/life/physiology
-	order = LIFE_PHASE_BODY + 85
-	name = "physiology"
-	wake_on = CHANGE_MOB_HEALTH
-	// P2-S6: oxygen debt stops on a paused (stasis) frame; the pipeline skips the stage.
-	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
-
-/datum/om/stage/life/physiology/applies(mob/living/self)
-	var/datum/body/proto = self.body_type
+/mob/living/proc/life_physiology_applies()
+	var/datum/body/proto = src.body_type
 	return !!initial(proto.physiology_type)
 
-/datum/om/stage/life/physiology/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.body?.physiology_tick(ctx.dt)
+/mob/living/proc/life_physiology(datum/seq_frame/life/F)
+	src.body?.physiology_tick(F.dt)
 
 /// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses by a
 /// validity check. Woken by CHANGE_MOB_HEALTH through the body's invalidate() (factors, organs,
 /// breath quality, blood volume, supports); a timed support's expiry is the rewake.
-/datum/om/stage/life/physiology/idle(mob/living/self)
-	var/datum/body/B = self.body
+/mob/living/proc/life_physiology_due()
+	var/datum/body/B = src.body
 	if(!B?.physiology)
-		return TRUE
-	if(B.dirty & BODY_DIRTY_PHYSIOLOGY)
 		return FALSE
+	if(B.dirty & BODY_DIRTY_PHYSIOLOGY)
+		return TRUE
 	var/datum/physiology/P = B.physiology
 	if(P.shortfall || P.oxygen_debt)
-		return FALSE
+		return TRUE
 	for(var/datum/body_support/S as anything in B.supports)
 		if(S.still_valid)
-			return FALSE
-	return TRUE
+			return TRUE
+	return FALSE
 
 /// The soonest timed support's expiry, so the physiology prunes it on time.
-/datum/om/stage/life/physiology/rewake_delay(mob/living/self)
+/mob/living/proc/life_physiology_rewake()
 	. = 0
-	for(var/datum/body_support/S as anything in self.body?.supports)
+	for(var/datum/body_support/S as anything in src.body?.supports)
 		if(!COOLDOWN_STARTED(S, expires_at))
 			continue
 		var/left = max(COOLDOWN_TIMELEFT(S, expires_at), 1)

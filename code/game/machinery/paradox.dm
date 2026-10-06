@@ -14,8 +14,6 @@ OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, list("stat"))
 /obj/machinery/paradoxrift/proc/unpowered()
 	return has_stat(NOPOWER)
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/paradoxrift, MACHINE_PIPELINE, "unpowered")
-
 /obj/item/circuitboard/paradoxrift
 	name = "paradox rift generator circuit"
 	build_path = /obj/machinery/paradoxrift
@@ -39,7 +37,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/paradoxrift, MACHINE_PIPELINE, "unpowered"
 
 
 /// Spills loot while unpowered (the declaration above runs it only then).
-/obj/machinery/paradoxrift/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/paradoxrift)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(unpowered), wakes_on = list(nameof(stat)))
+
+/obj/machinery/paradoxrift/proc/work_step(datum/act/timer/A)
 	if(prob(0.5*build_eff))
 		if(prob(3*loot_eff))
 			new /obj/random/greaterportalloot (src.loc)
@@ -128,6 +130,6 @@ DECLARE_LOOT(/obj/random/mob/interspace, LOOT_TABLE(\
 	/mob/living/simple_mob/vore/vore_hostile/abyss_lurker = 5))
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/paradoxrift/step_start_condition()
 	return has_stat(NOPOWER)

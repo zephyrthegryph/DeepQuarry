@@ -231,12 +231,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 /mob/living/simple_mob/animal/space/mouse_army/stealth/is_cloaked()
 	return dq_get_cloaked(src)
 
-/datum/om/stage/life/special/animal/space/mouse_army/stealth
-	of = /mob/living/simple_mob/animal/space/mouse_army/stealth
+/mob/living/simple_mob/animal/space/mouse_army/stealth/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/space/mouse_army/stealth/perform(mob/living/simple_mob/animal/space/mouse_army/stealth/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.start_cloaking()
+/mob/living/simple_mob/animal/space/mouse_army/stealth/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.start_cloaking()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))
@@ -446,7 +446,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body detonates!")))
 		exploded = 1
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-		destroyed(src)
+		destroyed(src, null, "explosion")
 
 /// Red and black, alternating, one colour per decisecond for `steps` deciseconds.
 /proc/mouse_warning_flash(steps)

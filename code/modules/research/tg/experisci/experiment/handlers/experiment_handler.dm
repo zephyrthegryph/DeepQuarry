@@ -105,7 +105,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Hooks on attack to try and run an experiment (When using a handheld handler)
  */
 /datum/experiment_handler/proc/try_run_handheld_experiment(datum/act/pre_attack/swing)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/target = swing.target_
 	var/mob/user = swing.user
 	var/datum/source = swing.target
@@ -164,7 +164,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Hooks on destructive scans to try and run a destructive analyzer experiment.
  */
 /datum/experiment_handler/proc/try_run_destructive_experiment(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/source = N.target
 	var/datum/notice/machinery_destructive_scan/event = N
 	var/atom/scan_target = event.scanned_atoms
@@ -177,7 +177,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Hooks on to RD server to try and run a spectral experiment.
  */
 /datum/experiment_handler/proc/try_run_spectral_experiment(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/source = N.target
 	var/atom/scan_target
 	if(istype(N, /datum/notice/world_ghost_captured))
@@ -195,7 +195,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Hooks on doppler array scans to try and run a explosive experiment.
  */
 /datum/experiment_handler/proc/try_run_ordinance_experiment(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/source = N.target
 	var/datum/notice/machinery_explosion_detected/event = N
 
@@ -254,7 +254,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Hook for handling UI interaction via signals
  */
 /datum/experiment_handler/proc/ui_handle_experiment(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/ui_act/event = N
 	switch(event.action)
 		if("open_experiments")
@@ -267,7 +267,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * * user - The user to show the experiment configuration panel to
  */
 /datum/experiment_handler/proc/on_config_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = N.target
 	var/mob/user
 	if(istype(N, /datum/notice/attack_self))
@@ -371,7 +371,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		var/mob/living/silicon/robot/owner_robot = parent_atom.loc
 		.["theme"] = owner_robot.get_ui_theme()
 
-/// The computed part of /datum/experiment_handler's window data (declared on its UI_DATA row).
+/// /datum/experiment_handler's window data.
 /datum/experiment_handler/ui_data(datum/act/eval/A)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),

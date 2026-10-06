@@ -95,7 +95,7 @@
 	om_link(hand_held, src, /datum/om/relation/tethered_to)
 	om_attach(hand_held, /datum/om/behaviour/tether_handheld)
 
-/// om_after() target: remakes a deleted handheld.
+/// after() target: remakes a deleted handheld.
 /obj/item/proc/tether_remake_handheld()
 	if(QDELETED(src) || !tether_path)
 		return

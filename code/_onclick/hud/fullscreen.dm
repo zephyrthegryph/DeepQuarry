@@ -166,4 +166,4 @@
 /mob/proc/remove_faded_fullscreen(atom/movable/screen/fullscreen/screen)
 	if(client)
 		client.screen -= screen
-	spent(screen)
+	lapsed(screen)

@@ -1,5 +1,4 @@
 /datum/trait_state/gargoyle
-	life_stage = /datum/om/stage/life/trait/gargoyle
 	var/energy = 100
 	var/transformed = FALSE
 	var/paused = FALSE
@@ -57,7 +56,7 @@
 	return
 
 /datum/trait_state/gargoyle/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	unpause()
 
 //verbs or action buttons...?
@@ -109,9 +108,9 @@
 	to_chat(owner, span_notice("You have [round(energy,0.01)] energy remaining. It is currently [paused ? "stable" : (transformed ? "increasing" : "decreasing")]."))
 
 /// Trait system: gargoyle energy.
-/datum/om/stage/life/trait/gargoyle
-	name = "gargoyle"
-	state_type = /datum/trait_state/gargoyle
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/gargoyle/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_gargoyle"))
 
 /// LC-refs: the gargoyle mob (our owner).
 /datum/trait_state/gargoyle/proc/gargoyle() as /mob/living/carbon/human

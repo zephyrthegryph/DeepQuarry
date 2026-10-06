@@ -95,8 +95,6 @@
 	item_state = "crowbar_red"
 	random_color = FALSE
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/tool/prybar/Initialize(mapload)
-	. = ..()
-	if(random_color)
-		icon_state = "prybar[pick("","_green","_aubergine","_blue")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+CAPABILITIES(/obj/item/tool/prybar)
+	rolls(nameof(icon_state), pick_one(list("prybar", "prybar_green", "prybar_aubergine", "prybar_blue")), when = nameof(random_color))
+

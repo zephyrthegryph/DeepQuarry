@@ -42,7 +42,7 @@ CAPABILITIES(/datum/tgui_bitfield_input)
 	. = ..()
 	closed = TRUE
 
-/// The computed part of /datum/tgui_bitfield_input's window data (declared on its UI_DATA row).
+/// /datum/tgui_bitfield_input's window data.
 /datum/tgui_bitfield_input/ui_data(datum/act/eval/A)
 	var/list/flags = list()
 	for(var/name in bitflags)

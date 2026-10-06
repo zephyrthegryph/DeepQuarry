@@ -86,7 +86,7 @@ CAPABILITIES(/datum/mind_host)
 	view?.refresh_host_status()
 
 /datum/mind_host/proc/on_tissue_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	set_tissue(null)
 
 /// The view mob, creating it if needed.

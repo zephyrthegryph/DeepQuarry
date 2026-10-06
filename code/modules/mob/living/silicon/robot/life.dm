@@ -12,76 +12,36 @@
 	life_set = LIFE_SET_ROBOT
 
 /// `if(transforming) return` and the per-cycle power counter reset.
-/datum/om/stage/life/robot_cycle
-	order = LIFE_PHASE_INPUT + 0
-	name = "robot cycle"
-	wake_on = 0
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_cycle/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.transforming)
-		return ctx.abort()
-	self.used_power_this_tick = 0
-
-/datum/om/stage/life/instability/silicon/robot
-	order = LIFE_PHASE_INPUT + 40
-	of = /mob/living/silicon/robot
+/mob/living/silicon/robot/proc/life_robot_cycle(datum/seq_frame/life/F)
+	if(src.transforming)
+		return F.abort()
+	src.used_power_this_tick = 0
 
 /// One ledger draw of the cached demand; brownout on shortfall; heat debt.
-/datum/om/stage/life/robot_power
-	order = LIFE_PHASE_BODY + 10
-	name = "robot power"
-	wake_on = 0
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_power/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.process_power()
+/mob/living/silicon/robot/proc/life_robot_power(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.process_power()
 
 /// Vitals, part breakage, consciousness and death: the machine plan decides.
-/datum/om/stage/life/robot_body
-	order = LIFE_PHASE_BODY + 20
-	name = "robot body"
-	wake_on = CHANGE_MOB_HEALTH
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_body/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	self.body?.life_tick()
+/mob/living/silicon/robot/proc/life_robot_body(datum/seq_frame/life/F)
+	src.body?.life_tick()
 
 /// Queued alarms reach the robot.
-/datum/om/stage/life/robot_alarms
-	order = LIFE_PHASE_OUTPUT + 20
-	name = "robot alarms"
-	wake_on = 0
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_alarms/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.process_queued_alarms()
+/mob/living/silicon/robot/proc/life_robot_alarms(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.process_queued_alarms()
 
 
 /// Ear damage heals; a deafness disability keeps deafness up. Temporary blindness, deafness and
 /// blur are timed statuses that end on their own (update_senses() follows blindness ending).
-/datum/om/stage/life/robot_senses
-	reads = list("sdisabilities", "ear_damage")
-	order = LIFE_PHASE_INPUT + 30
-	name = "robot senses"
-	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
+/mob/living/silicon/robot/proc/life_robot_senses(datum/seq_frame/life/F)
+	if(src.ear_damage < 25)
+		src.set_ear_damage(max(src.ear_damage - 0.05, 0))
+	if(src.sdisabilities & DEAF)
+		src.status_at_least(EFFECT_DEAFENED, 1)
 
-/datum/om/stage/life/robot_senses/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.ear_damage < 25)
-		self.set_ear_damage(max(self.ear_damage - 0.05, 0))
-	if(self.sdisabilities & DEAF)
-		self.status_at_least(EFFECT_DEAFENED, 1)
-
-/datum/om/stage/life/robot_senses/idle(mob/living/silicon/robot/self)
-	return !(self.sdisabilities & DEAF) && (self.ear_damage <= 0 || self.ear_damage >= 25)
+/mob/living/silicon/robot/proc/life_robot_senses_due()
+	return (src.sdisabilities & DEAF) || !(src.ear_damage <= 0 || src.ear_damage >= 25)
 
 /// Blindness ending: the robot's sensors come back.
 /mob/living/silicon/robot/status_sight_returned()

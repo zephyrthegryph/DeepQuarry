@@ -13,6 +13,13 @@
 /obj/effect/projectile/singularity_act()
 	return
 
+CAPABILITIES(/obj/effect/projectile)
+	param(nameof(angle_at_make), pos = 1)
+	param(nameof(p_x_at_make), pos = 2)
+	param(nameof(p_y_at_make), pos = 3)
+	param(nameof(color_at_make), pos = 4)
+	param(nameof(scaling_at_make), pos = 5, apply = PROC_REF(orient))
+
 /obj/effect/projectile/proc/scale_to(nx,ny,override=TRUE)
 	var/matrix/M
 	if(!override)
@@ -31,11 +38,17 @@
 	M.Turn(angle)
 	transform = M
 
-// ALLOW(init/CTOR_ARGS): angle_override, p_x, p_y, color_override and scaling are constructor arguments from whoever builds it
-/obj/effect/projectile/Initialize(mapload, angle_override, p_x, p_y, color_override, scaling = 1)
-	. = ..()
-	if(angle_override && p_x && p_y && color_override && scaling)
-		apply_vars(angle_override, p_x, p_y, color_override, scaling)
+/// The tracer's angle, offsets, colour and scale (its constructor params).
+/obj/effect/projectile/var/angle_at_make
+/obj/effect/projectile/var/p_x_at_make
+/obj/effect/projectile/var/p_y_at_make
+/obj/effect/projectile/var/color_at_make
+/obj/effect/projectile/var/scaling_at_make = 1
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/projectile/proc/orient(scaling)
+	if(angle_at_make && p_x_at_make && p_y_at_make && color_at_make && scaling)
+		apply_vars(angle_at_make, p_x_at_make, p_y_at_make, color_at_make, scaling)
 
 /obj/effect/projectile/proc/apply_vars(angle_override, p_x = 0, p_y = 0, color_override, scaling = 1, new_loc, increment = 0)
 	var/mutable_appearance/look = new(src)
@@ -55,8 +68,17 @@
 /obj/effect/projectile_lighting
 	var/owner
 
-// ALLOW(init/CTOR_ARGS): color, range, intensity and owner_key are constructor arguments from whoever builds it
-/obj/effect/projectile_lighting/Initialize(mapload, color, range, intensity, owner_key)
-	. = ..()
-	set_light(range, intensity, color)
-	owner = owner_key
+CAPABILITIES(/obj/effect/projectile_lighting)
+	param(nameof(glow_color), pos = 1)
+	param(nameof(glow_range), pos = 2)
+	param(nameof(glow_intensity), pos = 3, apply = PROC_REF(glow))
+	param(nameof(owner), pos = 4)
+
+/// The light a tracer casts (its constructor params).
+/obj/effect/projectile_lighting/var/glow_color
+/obj/effect/projectile_lighting/var/glow_range
+/obj/effect/projectile_lighting/var/glow_intensity
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/projectile_lighting/proc/glow(intensity)
+	set_light(glow_range, glow_intensity, glow_color)

@@ -42,7 +42,7 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
 	rel_set(src, nameof(active_ui), ui)
 
-/// The computed part of /datum/belly_overlay_tgui's window data (declared on its UI_DATA row).
+/// /datum/belly_overlay_tgui's window data.
 /datum/belly_overlay_tgui/ui_data(datum/act/eval/A)
 	return src.state
 

@@ -85,6 +85,7 @@
 
 CAPABILITIES(/atom/movable/screen/alert)
 	tooltip(PROC_REF(input_tooltip), theme = nameof(alerttooltipstyle))
+	click_on(PROC_REF(alert_click_input))
 
 /// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
 /atom/movable/screen/alert/proc/input_tooltip(mob/user)
@@ -502,17 +503,20 @@ CAPABILITIES(/atom/movable/screen/alert/open_ticket)
 /mob
 	var/list/alerts = null // contains /atom/movable/screen/alert only // On /mob so clientless mobs will throw alerts properly
 
-/atom/movable/screen/alert/Click(location, control, params)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native alert click captures its actor while retaining native master forwarding and parent fallback.
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). An inspect or a master
+/// forwards the click; anything else goes on to the native parent (click_vr).
+/atom/movable/screen/alert/proc/alert_click_input(datum/act/input/A)
+	var/mob/user = A.actor
 	if(!user || !user.client)
-		return
-	var/decision = prepare_alert_click(user, params)
+		return TRUE
+	var/decision = prepare_alert_click(user, A.params)
 	if(decision == TRUE)
-		return
+		return TRUE
 	if(istype(decision, /obj))
 		var/obj/master = decision
-		return user.client.Click(master, location, control, params)
-	..() // Pass through to click_vr
+		user.client.Click(master, A.native["location"], A.native["control"], A.params)
+		return TRUE
+	return INPUT_FALLTHROUGH
 
 /atom/movable/screen/alert/proc/prepare_alert_click(mob/user, params)
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT)) // screen objects don't do the normal Click() stuff so we'll cheat

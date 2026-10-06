@@ -4,3 +4,4 @@
 /obj/item/communicator|ghost|none => gen_observer_communicator_observer_use|
 /obj/item/communicator|human|/obj/item/kit => gen_insert_interaction_kit_customize,gen_alt_interaction_alt,gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
 /obj/item/communicator|human|/obj/item/storage => gen_alt_interaction_alt,gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up,gen_insert_interaction_collected|gen_insert_interaction_kit_customize:needs an item,gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it
+

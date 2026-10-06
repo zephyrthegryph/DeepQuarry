@@ -121,20 +121,20 @@ GLOBAL_LIST_INIT(cap_examine_unwielded, list("It can be wielded in both hands.")
 	return TRUE
 
 /obj/item/proc/cap_two_handed_dropped(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/item_dropped/event = A
 	cap_two_handed_set(src, FALSE, event.user)
 
 /// Equipped into a slot that isn't a hand (a back, a belt): unwielded.
 /obj/item/proc/cap_two_handed_equipped(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/item_equipped/event = A
 	if(event.slot != SLOT_ID_HAND_L && event.slot != SLOT_ID_HAND_R)
 		cap_two_handed_set(src, FALSE, event.equipper)
 
 /// The wielder put something else in a hand: the other hand is no longer free.
 /obj/item/proc/cap_two_handed_other_hand(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/mob_equipped_item/event = A
 	if(event.equipped_item == src)

@@ -15,9 +15,17 @@
 CAPABILITIES(/obj/structure/mirror)
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
+	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
 
-// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
-/obj/structure/mirror/Initialize(mapload, dir, building = 0)
+/// A mirror built on a wall (its constructor param).
+/obj/structure/mirror/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a mirror makes its appearance changer, and a built one is an empty frame on its wall
+/obj/structure/mirror/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 	if(building)
@@ -27,35 +35,12 @@ CAPABILITIES(/obj/structure/mirror)
 		pixel_y = (dir & 3)? (dir == 1 ? -30 : 30) : 0
 
 
-/obj/structure/mirror/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/mirror_open_ui,
-		/datum/interaction/entry_item/mirror_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(mirror_silicon_use)))
-	..()
-
-/// Old attack_hand: open the appearance changer.
-/datum/interaction/entry_hand/mirror_open_ui
-	id = "mirror_open_ui"
-	name = "Use"
-	effect = /obj/structure/mirror/proc/mirror_open_ui
-
-/obj/structure/mirror/proc/mirror_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!glass) return TRUE
-	if(shattered)	return TRUE
-
-	M.tgui_interact(user)
-	return TRUE
-
-/// Old attack_ai: a silicon next to it opens the appearance changer.
-/obj/structure/mirror/proc/mirror_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!glass) return TRUE
-	if(shattered)	return TRUE
-	if(!Adjacent(user)) return TRUE
-
-	M.tgui_interact(user)
-	return TRUE
+/// A hand, or a silicon beside it: the appearance changer, while the glass is whole.
+/obj/structure/mirror/proc/mirror_open_ui(datum/act/op/A)
+	if(!glass || shattered)
+		return OP_OK
+	M.tgui_interact(A.actor)
+	return OP_OK
 
 /obj/structure/mirror/proc/shatter()
 	if(!glass) return
@@ -74,26 +59,22 @@ CAPABILITIES(/obj/structure/mirror)
 			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
 	..()
 
-/// Old attackby: re-glaze with two sheets of glass, or smash it.
-/datum/interaction/entry_item/mirror_item
-	id = "mirror_item"
-	name = "Use"
-	effect = /obj/structure/mirror/proc/interaction_item
-
-/obj/structure/mirror/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/mirror/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/stack/material/glass))
 		if(!glass)
 			var/obj/item/stack/material/glass/G = I
 			if (G.get_amount() < 2)
 				to_chat(user, span_warning("You need two sheets of glass to add them to the frame."))
-				return TRUE
+				return OP_OK
 			to_chat(user, span_notice("You start to add the glass to the frame."))
 			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, G))
-			return TRUE
+			return OP_OK
 
 	if(shattered && glass)
 		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
-		return TRUE
+		return OP_OK
 
 	if(prob(I.force * 2))
 		act_message(user, src, others = span_warning("%U% smashes %T% with [I]!"))
@@ -102,7 +83,7 @@ CAPABILITIES(/obj/structure/mirror)
 	else
 		act_message(user, src, others = span_warning("%U% hits %T% with [I]!"))
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 70)
-	return TRUE
+	return OP_OK
 
 /obj/structure/mirror/proc/attackby_timed_done(mob/user, obj/item/stack/material/glass/G)
 	if (G.use(2))

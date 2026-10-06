@@ -86,7 +86,7 @@ CAPABILITIES(/datum/event/shark_migration)
 
 // If shark is bomphed, remove it from the list.
 /datum/event/shark_migration/proc/on_shark_destruction(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_shark), M)
 	unobserve(M, /datum/notice/qdeleting, src)

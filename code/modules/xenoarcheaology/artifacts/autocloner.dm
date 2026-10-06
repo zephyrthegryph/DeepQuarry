@@ -15,37 +15,25 @@
 	active_power_usage = 2000
 	idle_power_usage = 1000
 
-// ALLOW(init/INSTANCE_STATE): time_per_spawn and spawn_type rolled at random for each instance
-/obj/machinery/auto_cloner/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/auto_cloner)
+	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
+	rolls(nameof(time_per_spawn), range_of(1200, 3600))
+	rolls(nameof(spawn_type), PROC_REF(roll_spawn_type))
 
-	time_per_spawn = rand(1200,3600)
-
-	//33% chance to spawn nasties
-	if(prob(33))
-		spawn_type = pick(
-		/mob/living/simple_mob/animal/space/alien,
-		/mob/living/simple_mob/animal/space/bear,
-		/mob/living/simple_mob/creature,
-		/mob/living/simple_mob/slime/xenobio,
-		/mob/living/simple_mob/animal/space/carp)
-	else
-		spawn_type = pick(\
-		/mob/living/simple_mob/animal/passive/cat,
-		/mob/living/simple_mob/animal/passive/dog/corgi,
-		/mob/living/simple_mob/animal/passive/dog/corgi/puppy,
-		/mob/living/simple_mob/animal/passive/chicken,
-		/mob/living/simple_mob/animal/passive/cow,
-		/mob/living/simple_mob/animal/passive/bird/parrot,
-		/mob/living/simple_mob/animal/passive/crab,
-		/mob/living/simple_mob/animal/passive/mouse,
-		/mob/living/simple_mob/animal/passive/mothroach,
-		/mob/living/simple_mob/animal/goat)
+/// Rolled before init (rolls()): a third of the cloners grow something nasty.
+/obj/machinery/auto_cloner/proc/roll_spawn_type(datum/roller/R)
+	if(R.chance(33))
+		return R.choose(list(/mob/living/simple_mob/animal/space/alien, /mob/living/simple_mob/animal/space/bear, /mob/living/simple_mob/creature,
+			/mob/living/simple_mob/slime/xenobio, /mob/living/simple_mob/animal/space/carp))
+	return R.choose(list(/mob/living/simple_mob/animal/passive/cat, /mob/living/simple_mob/animal/passive/dog/corgi,
+		/mob/living/simple_mob/animal/passive/dog/corgi/puppy, /mob/living/simple_mob/animal/passive/chicken, /mob/living/simple_mob/animal/passive/cow,
+		/mob/living/simple_mob/animal/passive/bird/parrot, /mob/living/simple_mob/animal/passive/crab, /mob/living/simple_mob/animal/passive/mouse,
+		/mob/living/simple_mob/animal/passive/mothroach, /mob/living/simple_mob/animal/goat))
 
 //todo: how the hell is the asteroid permanently powered?
 /// Grows its mob while powered; unpowered, the half-grown mob breaks down and, once gone, the
 /// cloner sleeps until power returns (a power change runs a step).
-/obj/machinery/auto_cloner/machine_step()
+/obj/machinery/auto_cloner/proc/work_step(datum/act/timer/A)
 	if(!last_process)
 		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(powered(power_channel))

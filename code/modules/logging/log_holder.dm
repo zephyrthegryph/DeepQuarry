@@ -64,7 +64,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 	return data
 
-/// The computed part of /datum/log_holder's window data (declared on its UI_DATA row).
+/// /datum/log_holder's window data.
 /datum/log_holder/ui_data(datum/act/eval/A)
 	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()

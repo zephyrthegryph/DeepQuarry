@@ -62,7 +62,7 @@
 
 /// Parent item has been altered, search object no longer valid
 /datum/search_object/proc/on_item_moved(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(QDELETED(src))
 		return
@@ -71,7 +71,7 @@
 
 /// Parent tile has been altered, entire search needs reset
 /datum/search_object/proc/on_turf_change(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/turf_change/event = A
 	var/list/post_change_callbacks = event.post_change_callbacks
 

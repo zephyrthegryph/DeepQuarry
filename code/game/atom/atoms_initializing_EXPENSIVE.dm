@@ -31,6 +31,9 @@
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
+	// param(keep = FALSE) values were for Initialize() alone (code/engine/lifeforms/params.dm)
+	if(param_drop_pending?[A])
+		params_drop(A)
 
 	#ifdef BENCHMARK_DEEP_PROFILE
 	var/list/bench_init_mark = benchmark_init_frame_mark(bench_depth)

@@ -18,5 +18,5 @@
 	. += EXPERIMENT_PROG_BOOL("Win an arcade game at a tracked arcade cabinet.", is_complete())
 
 /datum/experiment/physical/arcade_winner/proc/win_arcade(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	finish_experiment(linked_experiment_handler)

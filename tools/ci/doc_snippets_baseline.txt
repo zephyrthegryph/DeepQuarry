@@ -56,7 +56,6 @@ doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:230
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:51-61
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:63-69
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: megaphone.dm:48-58
-doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: round_status_panel.dm:28, :98-107
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: throw_of in three storages (thrownthing.dm:10-19, :73; atoms_movable.dm:572)
 doc_legacy_block	doc/rewrite/migration_guide.md	/obj/item/laser_pointer
 doc_legacy_block	doc/rewrite/migration_guide.md	/obj/machinery/thing

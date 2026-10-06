@@ -102,14 +102,17 @@ CAPABILITIES(/datum/protean_power)
 	icon = 'icons/mob/species/protean/protean_powers.dmi'
 	var/datum/protean_power/power
 
-// ALLOW(init/CTOR_ARGS): new_power is a constructor argument from whoever builds it
-/obj/effect/protean_power_button/Initialize(mapload, datum/protean_power/new_power)
-	. = ..()
-	rel_set(src, nameof(power), new_power)
+CAPABILITIES(/obj/effect/protean_power_button)
+	param(nameof(power), pos = 1, apply = PROC_REF(show_power))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/protean_power_button/proc/show_power(datum/protean_power/new_power)
+	if(!power)
+		return
 	name = power.name
 	desc = power.desc
 	icon = power.icon
-	icon_state = power.icon_state // ALLOW(decl): copied from the power passed in
+	icon_state = power.icon_state
 
 /obj/effect/protean_power_button/Click(location, control, params)
 	var/mob/living/carbon/human/H = usr
@@ -384,7 +387,7 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
 	if(oldlimb)
 		oldlimb.removed()
-		spent(oldlimb)
+		replaced_by(oldlimb, H)
 	var/list/limblist = H.species.has_limbs[choice]
 	var/limbpath = limblist["path"]
 	var/obj/item/organ/external/new_eo = new limbpath(H) // joins onto its parent limb

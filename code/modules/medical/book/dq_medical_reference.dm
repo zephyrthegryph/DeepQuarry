@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/book/dq_medical_reference)
 	without("ui_open")
 	ui_shape(conditions = any, symptoms = any, reagents = any, causes = any, surgeries = any)
 
-/// The computed part of /obj/item/book/dq_medical_reference's window data (declared on its UI_DATA row).
+/// /obj/item/book/dq_medical_reference's window data.
 /obj/item/book/dq_medical_reference/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["conditions"] = _dq_book_conditions()

@@ -127,7 +127,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/electronic_assembly's window data (declared on its UI_DATA row).
+/// /obj/item/electronic_assembly's window data.
 /obj/item/electronic_assembly/proc/ui_data_obj_item_electronic_assembly(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 
@@ -189,7 +189,7 @@ CAPABILITIES(/datum/ic_export_view)
 /datum/ic_export_view/tgui_state(mob/user)
 	return assembly()?.tgui_state(user) || ..()
 
-/// The computed part of /datum/ic_export_view's window data (declared on its UI_DATA row).
+/// /datum/ic_export_view's window data.
 /datum/ic_export_view/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	return assembly()?.tgui_data(user) || list()

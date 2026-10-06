@@ -39,7 +39,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 /obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
-	destroyed(src)
+	destroyed(src, null, BURN)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
 	if(damage)

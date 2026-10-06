@@ -219,7 +219,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
  */
 
 /datum/artifact_master/proc/on_exact(datum/act/explode/blast)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/severity = blast.severity
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
@@ -243,7 +243,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	return HOOK_DECLINE
 
 /datum/artifact_master/proc/on_bullet(datum/act/shoot/round)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/item/projectile/P = round.projectile
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
@@ -265,7 +265,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	return HOOK_DECLINE
 
 /datum/artifact_master/proc/on_bump(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/movable_bump/event = N
 	var/atom/bumped = event.atom
 	var/warn = FALSE
@@ -290,7 +290,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder()] as it hits you.")))
 
 /datum/artifact_master/proc/on_bumped(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_bumped/event = A
 	bumped_by(event.bumped)
 
@@ -319,7 +319,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder()].")))
 
 /datum/artifact_master/proc/on_attack_hand(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/hand_attacked/event = N
 	var/mob/living/user = event.user
 	if(!istype(user))
@@ -349,7 +349,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		to_chat(user, span_filter_notice(span_bold("You touch [holder()],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
 
 /datum/artifact_master/proc/on_attackby(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/attacked_by/event = N
 	var/obj/item/W = event.item
 
@@ -401,7 +401,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 				my_effect.ToggleActivate()
 
 /datum/artifact_master/proc/on_reagent(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/reagent_expose_obj/event = A
 	//A strange bug here is that, when a reagent is splashed on an artifact, it calls this proc twice.
 	//Why? I have no clue. I only accidentally stumbled upon it during debugging!
@@ -424,7 +424,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 				my_effect.ToggleActivate()
 
 /datum/artifact_master/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)
 			my_effect.UpdateMove()
@@ -433,7 +433,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
 		om_task_periodic_stop(src)
 		if(!QDELETED(src))
-			spent(src)
+			ended_with(src)
 			return
 
 	var/turf/L = holder().loc

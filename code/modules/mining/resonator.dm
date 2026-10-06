@@ -141,15 +141,19 @@ CAPABILITIES(/obj/item/resonator)
 	/// Relation view: who made the field (for attack logs); null once they are gone.
 	var/tmp/mob/creator
 
-// ALLOW(init/CTOR_ARGS): new_creator and timetoburst are constructor arguments from whoever builds it
-/obj/effect/resonance/Initialize(mapload, mob/new_creator = null, timetoburst)
-	. = ..()
+CAPABILITIES(/obj/effect/resonance)
+	param(nameof(creator), pos = 1)
+	param(nameof(timetoburst), pos = 2, apply = PROC_REF(charge))
+
+/// How long the field takes to burst (its constructor param).
+/obj/effect/resonance/var/timetoburst = 0
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The field grows until it bursts.
+/obj/effect/resonance/proc/charge(delay)
 	// Start small and grow to big size as we are about to burst
 	transform = matrix()*0.75
-	animate(src, transform = matrix()*1.5, time = timetoburst)
-	// Queue the actual bursting
-	rel_set(src, nameof(creator), new_creator)
-	after(src, timetoburst, PROC_REF(burst))
+	animate(src, transform = matrix()*1.5, time = delay)
+	after(src, delay, PROC_REF(burst))
 
 /obj/effect/resonance/proc/burst()
 	var/turf/T = get_turf(src)

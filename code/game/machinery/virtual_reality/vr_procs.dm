@@ -3,29 +3,22 @@
 	name = "Virtual Reality"
 
 // Gross system which runs every Life() to check for escaped VR mobs. Tried to do this with Exited() on area/vr but ended up being too heavy.
-/datum/om/stage/life/vr_derez
-	reads = list("virtual_reality_mob")
-	order = LIFE_PHASE_OUTPUT + 50
-	name = "vr derez"
-	run_if = LIFE_RUN_IF_PLACED
-	woken_by = "Moved (a VR mob can only leave the VR area by moving)"
-
 /// Only virtual reality mobs have anything to check, and only after moving.
-/datum/om/stage/life/vr_derez/idle(mob/living/self)
-	return !self.virtual_reality_mob || istype(get_area(self), /area/vr)
+/mob/living/proc/life_vr_derez_due()
+	return src.virtual_reality_mob && !istype(get_area(src), /area/vr)
 
-/datum/om/stage/life/vr_derez/perform(mob/living/self, datum/om/frame/life/ctx)
-	if(self.virtual_reality_mob && !istype(get_area(self), /area/vr))
-		log_admin("[self] escaped virtual reality")
-		act_message(self, null, others = "%U% blinks out of existence.")
-		self.return_from_vr()
-		for(var/obj/belly/B in self.vore_organs) // Assume anybody inside an escaped VR mob is also an escaped VR mob.
+/mob/living/proc/life_vr_derez(datum/seq_frame/life/F)
+	if(src.virtual_reality_mob && !istype(get_area(src), /area/vr))
+		log_admin("[src] escaped virtual reality")
+		act_message(src, null, others = "%U% blinks out of existence.")
+		src.return_from_vr()
+		for(var/obj/belly/B in src.vore_organs) // Assume anybody inside an escaped VR mob is also an escaped VR mob.
 			for(var/mob/living/L in B)
-				log_vore("[L] was inside an escaped VR mob ([self]) and has been deleted.")
-				om_stage_run_now(L, /datum/om/stage/life/vr_derez) //Recursive! Let's get EVERYONE properly out of here!
+				log_vore("[L] was inside an escaped VR mob ([src]) and has been deleted.")
+				L.life_vr_derez() //Recursive! Let's get EVERYONE properly out of here!
 				if(!QDELETED(L)) //This is so we don't double qdel() things when we're doing recursive removal.
 					spent(L)
-		spent(self) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.
+		spent(src) // Would like to convert escaped players into AR holograms in the future to encourage exploit finding.
 
 // This proc checks to see two things: 1. If we have a tf_mob_holder (we are a simple mob) and 2. If we are a human. If so, we try to exit VR properly.
 /mob/living/proc/return_from_vr()

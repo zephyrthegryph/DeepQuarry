@@ -78,7 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(isturf(A))
 		narsiewall(A)
 	else if(istype(A, /obj/structure/cult))
-		destroyed(A)
+		consumed(A, src)
 
 /// What runs into the large one is walled in or broken (with hell coming), not consumed.
 /obj/singularity/narsie/large/bumped_into(datum/act/act)
@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(isturf(A))
 		narsiewall(A)
 	else if(istype(A, /obj/structure/cult))
-		destroyed(A)
+		consumed(A, src)
 
 /obj/singularity/narsie/move(force_move = 0)
 	if(!move_self)
@@ -228,10 +228,10 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		C2.dust() // Changed from gib(), just for less lag.
 
 	else if (istype(A, /obj/))
-		consumed(A)
+		consumed(A, src)
 
 		if (A)
-			consumed(A)
+			consumed(A, src)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 

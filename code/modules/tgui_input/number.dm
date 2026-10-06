@@ -122,7 +122,7 @@ CAPABILITIES(/datum/tgui_input_number)
 	data["round_value"] = round_value
 	return data
 
-/// The computed part of /datum/tgui_input_number's window data (declared on its UI_DATA row).
+/// /datum/tgui_input_number's window data.
 /datum/tgui_input_number/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)

@@ -22,7 +22,7 @@
 	var/last_flag
 
 /datum/dq_breakpoint_listener/proc/on_broken(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/machinery_broken/event = N
 	heard++
 	last_flag = event.damage_flag

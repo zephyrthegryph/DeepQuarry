@@ -10,7 +10,7 @@ CAPABILITIES(/obj/item/gun/projectile/dartgun)
 /obj/item/gun/projectile/dartgun/ui_title(mob/user)
 	return "[src] mixing control"
 
-/// The computed part of /obj/item/gun/projectile/dartgun's window data (declared on its UI_DATA row).
+/// /obj/item/gun/projectile/dartgun's window data.
 /obj/item/gun/projectile/dartgun/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/beaker_rows = list()

@@ -34,7 +34,7 @@ CAPABILITIES(/datum/xenochimera)
 		revoke(owner, granted_verb(/mob/living/carbon/human/proc/reconstitute_form), src)
 
 /datum/xenochimera/proc/on_dna_finalized(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	handle_record()
 
 /datum/xenochimera/proc/handle_record()

@@ -16,8 +16,6 @@
 	var/report_num = 0
 
 OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning")
-
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/dnaforensics/Initialize(mapload)
 	. = ..()
@@ -76,6 +74,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning"
 	effect = /atom/proc/interaction_open_ui
 
 CAPABILITIES(/obj/machinery/dnaforensics)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
 	without("ui_open")
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
@@ -95,7 +94,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/dnaforensics's window data (declared on its UI_DATA row).
+/// /obj/machinery/dnaforensics's window data.
 /obj/machinery/dnaforensics/proc/ui_data_obj_machinery_dnaforensics(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["scan_progress"] = round(scanner_progress)
@@ -138,7 +137,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		update_icon()
 
 /// Scans while scanning (started from its UI); otherwise it sleeps.
-/obj/machinery/dnaforensics/machine_step()
+/obj/machinery/dnaforensics/proc/work_step(datum/act/timer/A)
 	if(!bloodsamp() || bloodsamp().loc != src)
 		rel_clear(src, nameof(bloodsamp))
 		set_scanning(FALSE)

@@ -209,7 +209,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_hose)))
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 

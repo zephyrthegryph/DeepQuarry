@@ -12,7 +12,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
-		spent(t)
+		ended_with(t, src)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
 	animation.icon_state = "blank"
 	animation.icon = 'icons/mob/mob.dmi'
@@ -49,7 +49,7 @@
 	if (transforming)
 		return
 	for(var/t in organs)
-		spent(t)
+		ended_with(t, src)
 
 	var/mob/living/silicon/ai/O = ..(move)
 	if(O)
@@ -156,7 +156,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
-		spent(t)
+		ended_with(t, src)
 
 	var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(loc)
 
@@ -206,7 +206,7 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
-		spent(t)
+		ended_with(t, src)
 
 	var/alien_caste = pick("Hunter","Sentinel","Drone")
 	var/mob/living/carbon/human/new_xeno = create_new_xenomorph(alien_caste,loc)
@@ -215,7 +215,7 @@
 	move_player(src, new_xeno, "alienized")
 
 	to_chat(new_xeno, span_infoplain(span_bold("You are now an alien.")))
-	spent(src)
+	replaced_by(src, new_xeno)
 	return
 
 
@@ -230,14 +230,14 @@
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)	//this really should not be necessary
-		spent(t)
+		ended_with(t, src)
 
 	var/mob/living/simple_mob/animal/passive/dog/corgi/new_corgi = new /mob/living/simple_mob/animal/passive/dog/corgi (loc)
 	new_corgi.set_use_stance(I_HURT)
 	move_player(src, new_corgi, "corgized")
 
 	to_chat(new_corgi, span_infoplain(span_bold("You are now a Corgi. Yap Yap!")))
-	spent(src)
+	replaced_by(src, new_corgi)
 	return
 
 /mob/living/carbon/human/Animalize(mob/user)
@@ -266,7 +266,7 @@
 	invisibility = INVISIBILITY_ABSTRACT
 
 	for(var/t in organs)
-		spent(t)
+		ended_with(t, src)
 
 	var/mob/new_mob = new mobpath(src.loc)
 
@@ -301,7 +301,7 @@
 	new_mob.set_use_stance(I_HURT)
 	to_chat(new_mob, "You feel more... animalistic")
 
-	spent(src)
+	replaced_by(src, new_mob)
 
 /* Certain mob types have problems and should not be allowed to be controlled by players.
  *

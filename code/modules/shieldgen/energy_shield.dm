@@ -378,7 +378,7 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 	S.take_damage(get_shield_damage(), SHIELD_DAMTYPE_PHYSICAL, src)
 	visible_message(span_danger("\The [src] breaks into dust!"))
 	make_debris()
-	destroyed(src)
+	destroyed(src, null, BRUTE)
 
 /// Owning generator (a relation view: it reads null once the target is deleted).
 /obj/effect/shield/proc/gen() as /obj/machinery/power/shield_generator

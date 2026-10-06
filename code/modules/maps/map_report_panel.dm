@@ -16,7 +16,7 @@ CAPABILITIES(/datum/map_report)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/map_report's window data (declared on its UI_DATA row).
+/// /datum/map_report's window data.
 /datum/map_report/proc/ui_data_datum_map_report(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["crashed"] = !!crashed

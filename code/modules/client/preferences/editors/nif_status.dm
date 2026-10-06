@@ -19,4 +19,3 @@
 		"durability" = preferences.read_preference(/datum/preference/numeric/nif_durability),
 	)
 
-

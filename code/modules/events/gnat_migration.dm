@@ -86,7 +86,7 @@ CAPABILITIES(/datum/event/gnat_migration)
 
 // If gnat is bomphed, remove it from the list.
 /datum/event/gnat_migration/proc/on_gnat_destruction(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_gnat), M)
 	unobserve(M, /datum/notice/qdeleting, src)

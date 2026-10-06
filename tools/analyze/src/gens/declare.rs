@@ -632,8 +632,8 @@ fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
 
 /// The lifecycle forms (code/engine/lifeforms/) a type's block needs the generator for:
 /// - a non-atom type whose block names a form, or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
-/// - a type whose block names click_on(), drag_onto(), hover() or tooltip() gets the native override that reads `usr` (the engine's, here) and
-///   hands the engine the actor: Click(), MouseDrop(), MouseEntered()/MouseExited().
+/// - a type whose block names click_on(), drag_onto(), drag_over(), hover() or tooltip() gets the native override that reads `usr` (the engine's,
+///   here) and hands the engine the actor: Click(), MouseDrop(), MouseDrag(), MouseEntered()/MouseExited().
 fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
     const FORMS: &[&str] = &["rolls", "param", "built_from", "registry", "radio_listen", "per_type", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending"];
     let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
@@ -659,6 +659,7 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
         }
         let click = !block_calls(&m.args, "click_on").is_empty();
         let drag = !block_calls(&m.args, "drag_onto").is_empty();
+        let drag_over = !block_calls(&m.args, "drag_over").is_empty();
         let hover = !block_calls(&m.args, "hover").is_empty();
         let tip = !block_calls(&m.args, "tooltip").is_empty();
         if click {
@@ -666,14 +667,24 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
             out.line(format!("{}/Click(location, control, params)", ty));
             out.line("\tif(input_dispatch(src, usr, INPUT_CLICK_ON, params, null, FALSE, list(\"location\" = location, \"control\" = control, \"params\" = params)))");
             out.line("\t\treturn");
-            out.line("\treturn ..()");
+            out.line("\t. = ..()");
+            out.line("\tinput_fell(src)");
         }
         if drag {
             out.doc(format!("drag_onto() of {} ({}:{}): the native drop hands the engine its actor.", ty, m.rel, m.line));
             out.line(format!("{}/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)", ty));
             out.line("\tif(input_dispatch(src, usr, INPUT_DRAG_ONTO, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
             out.line("\t\treturn");
-            out.line("\treturn ..()");
+            out.line("\t. = ..()");
+            out.line("\tinput_fell(src)");
+        }
+        if drag_over {
+            out.doc(format!("drag_over() of {} ({}:{}): the native drag hands the engine its actor.", ty, m.rel, m.line));
+            out.line(format!("{}/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)", ty));
+            out.line("\tif(input_dispatch(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list(\"over_object\" = over_object, \"src_location\" = src_location, \"over_location\" = over_location, \"src_control\" = src_control, \"over_control\" = over_control, \"params\" = params)))");
+            out.line("\t\treturn");
+            out.line("\t. = ..()");
+            out.line("\tinput_fell(src)");
         }
         if hover || tip {
             out.doc(format!("hover()/tooltip() of {} ({}:{}): the native mouse-over hands the engine its actor.", ty, m.rel, m.line));
@@ -685,10 +696,11 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
                 if hover {
                     out.line(format!("\tinput_dispatch(src, usr, INPUT_HOVER, params, null, {}, list(\"location\" = location, \"control\" = control, \"params\" = params))", entered));
                 }
-                out.line("\treturn ..()");
+                out.line("\t. = ..()");
+                out.line("\tinput_fell(src)");
             }
         }
-        if click || drag || hover || tip {
+        if click || drag || drag_over || hover || tip {
             out.blank();
         }
     }
@@ -806,7 +818,7 @@ CAPABILITIES(/obj/thing, \
 
     #[test]
     fn lifecycle_forms_get_make_a_datum_flag_and_native_input() {
-        let src = "CAPABILITIES(/datum/req, \\\n\tparam(nameof(charge), int()), \\\n\trolls(nameof(x), range_of(1, 2)))\nCAPABILITIES(/obj/screen_thing, \\\n\tclick_on(PROC_REF(clicked)), \\\n\ttooltip(PROC_REF(tip)))\n";
+        let src = "CAPABILITIES(/datum/req, \\\n\tparam(nameof(charge), int()), \\\n\trolls(nameof(x), range_of(1, 2)))\nCAPABILITIES(/obj/screen_thing, \\\n\tclick_on(PROC_REF(clicked)), \\\n\tdrag_over(PROC_REF(dragged)), \\\n\ttooltip(PROC_REF(tip)))\n";
         let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
         assert!(diags.is_empty(), "{:?}", diags);
         assert!(decl.contains("/proc/make(type, at = null, by = null, parts = null, charge = MAKE_UNSET)"), "{}", decl);
@@ -814,6 +826,7 @@ CAPABILITIES(/obj/thing, \
         assert!(decl.contains("/datum/req\n\tlifeform_declared = TRUE"), "{}", decl);
         assert!(decl.contains("/obj/screen_thing/Click(location, control, params)\n\tif(input_dispatch(src, usr, INPUT_CLICK_ON, params, null, FALSE, list("), "{}", decl);
         assert!(decl.contains("/obj/screen_thing/MouseEntered(location, control, params)\n\tinput_tooltip(src, usr, TRUE, params)"), "{}", decl);
+        assert!(decl.contains("/obj/screen_thing/MouseDrag(over_object, src_location, over_location, src_control, over_control, params)\n\tif(input_dispatch(src, usr, INPUT_DRAG_OVER, params, over_object, FALSE, list("), "{}", decl);
         assert!(!decl.contains("/obj/screen_thing\n\tlifeform_declared"), "an atom runs its forms from Initialize()");
     }
 

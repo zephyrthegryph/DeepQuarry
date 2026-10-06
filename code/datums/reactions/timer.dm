@@ -1,4 +1,4 @@
-// after(): the one timer. rx_after() is its implementation (internal: callers use after(), timed.dm); om_after()
+// after(): the one timer. rx_after() is its implementation (internal: callers use after(), timed.dm); after()
 // and after_slot() (om/timer.dm) are legacy wrappers over it.
 //
 // A timer with a `key` is a TIMER relation on its owner: scheduling the same key again replaces the

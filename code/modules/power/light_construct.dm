@@ -41,17 +41,21 @@ CAPABILITIES(/obj/machinery/light_construct)
 	extend("cell_bay.cell.take", when(req_empty_hand()))
 	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells), because = MSG(light_frame/no_cells)), req_empty(nameof(cell), because = MSG(bay/full))))
 	examine_line(PROC_REF(examine_cell))
+	param(nameof(dir), pos = 1)
+	param(nameof(fixture_at_make), pos = 4, keep = FALSE)
 
-// ALLOW(init/CTOR_ARGS): fixture_type, facing and build stage taken from the fixture it was opened from
-/obj/machinery/light_construct/Initialize(mapload, newdir, building = 0, datum/frame/frame_types/frame_type, obj/machinery/light/fixture = null)
+/// The fixture the frame was taken down from (its constructor param, dropped after init).
+/obj/machinery/light_construct/var/tmp/obj/machinery/light/fixture_at_make
+
+// ALLOW(init/INSTANCE_STATE): a frame taken down from a fixture keeps its facing and wiring
+/obj/machinery/light_construct/Initialize(mapload)
 	. = ..()
-	if(fixture)
+	if(fixture_at_make)
+		var/obj/machinery/light/fixture = fixture_at_make
 		fixture_type = fixture.type
 		fixture.transfer_fingerprints_to(src)
 		set_dir(fixture.dir)
 		graph_place(src, STAGE_LIGHT_FRAME_WIRED)
-	else if(newdir)
-		set_dir(newdir)
 	update_state()
 
 /// The picture follows how far the frame is built.

@@ -88,20 +88,20 @@
 		return TRUE
 	. = ..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/demonAI
-	of = /mob/living/simple_mob/vore/demonAI
+/mob/living/simple_mob/vore/demonAI/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/demonAI/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.shifted_out)
-		self.set_density(FALSE)
+	if(src.shifted_out)
+		src.set_density(FALSE)
 
-/datum/om/stage/life/environment/simple_mob/vore/demonAI
-	of = /mob/living/simple_mob/vore/demonAI
+/mob/living/simple_mob/vore/demonAI/life_environment_due()
+	return TRUE
 
 /// TODO - Refactor demons to use is_incorporeal()
-/datum/om/stage/life/environment/simple_mob/vore/demonAI/exchange(mob/living/simple_mob/vore/demonAI/self, datum/gas_mixture/environment)
-	if(self.shifted_out)
+/mob/living/simple_mob/vore/demonAI/life_environment_exchange(datum/gas_mixture/environment)
+	if(src.shifted_out)
 		return
 	. = ..()
 
@@ -143,12 +143,12 @@
 	return dq_get_cloaked(src)
 
 // Cloaks the spider automatically, if possible.
-/datum/om/stage/life/special/vore/demonAI
-	of = /mob/living/simple_mob/vore/demonAI
+/mob/living/simple_mob/vore/demonAI/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/vore/demonAI/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 // Applies bonus base damage if dq_get_cloaked(src).
 /mob/living/simple_mob/vore/demonAI/apply_bonus_melee_damage(atom/A, damage_amount)

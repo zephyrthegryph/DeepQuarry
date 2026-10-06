@@ -26,7 +26,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/customizable, TYPE_PROC_REF(/atom,
 	. = ..()
 	update_icon()
 
-/// The computed part of /obj/item/toy/plushie/customizable's window data (declared on its UI_DATA row).
+/// /obj/item/toy/plushie/customizable's window data.
 /obj/item/toy/plushie/customizable/ui_data(datum/act/eval/A)
 	var/list/possible_overlay_data = list()
 	if(possible_overlays)

@@ -22,7 +22,7 @@
 // Order for one instance, inside the root of the Initialize() chain (section 6 "Order for one instance", steps 1a and 5a):
 //	preinit:  make() arguments were applied in /atom/New(); positional constructor arguments map to param(pos =); params are checked; per_type
 //	          tables are bound; rolls() roll (a map-edited or param-given value suppresses its roll)
-//	init:     initial_contents() and knows() create contents; starts_as() runs; derives() compute; registry(), radio_listen() and adjacency() join;
+//	init:     initial_contents() and knows() create contents; param(apply =) setters run; starts_as() runs; derives() compute; registry(), radio_listen() and adjacency() join;
 //	          lives_while() arms its scope
 //	destroy:  on_ending() runs, the "ended" notice goes out with its cause, then registries, radio and adjacency are left
 
@@ -49,6 +49,10 @@
 	var/list/watch
 	/// param pos -> var name (positional constructor arguments).
 	var/list/param_pos
+	/// The params declared with apply =, in order: their setters run at init.
+	var/list/param_applies
+	/// The params declared keep = FALSE: dropped once the setters ran.
+	var/list/param_drops
 	/// TRUE when anything must run at preinit / init / destroy.
 	var/pre = FALSE
 	var/init = FALSE
@@ -107,7 +111,6 @@
 /// Works out what runs when, the watched vars and the positional params; validates against the first instance.
 /proc/lifeform_plan_finish(datum/lifeform_plan/P, datum/D)
 	P.pre = !!(P.rolls || P.params || P.per_types || P.built_from)
-	P.init = !!(P.contains || P.knows || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
 	P.destroy = !!(P.registries || P.radios || P.adjacencies || P.on_ending || P.lives_while || P.derives)
 	for(var/datum/centry/C as anything in P.params)
 		var/datum/entry/E = C.item
@@ -115,6 +118,14 @@
 			declare_report("[C.origin]: param(\"[E.args["var"]]\") on [D.type]: no such var")
 		if(isnum(E.args["pos"]))
 			LAZYSET(P.param_pos, "[E.args["pos"]]", E.args["var"])
+		if(E.args["apply"])
+			if(!hascall(D, E.args["apply"]))
+				declare_report("[C.origin]: param(\"[E.args["var"]]\", apply = [E.args["apply"]]) on [D.type]: no such proc")
+			else
+				LAZYADD(P.param_applies, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
+		if(E.args["keep"] == FALSE)
+			LAZYADD(P.param_drops, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
+	P.init = !!(P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
 	for(var/kind_list in list(P.registries, P.radios, P.derives, P.lives_while, P.adjacencies))
 		for(var/datum/centry/C as anything in kind_list)
 			var/datum/entry/E = C.item
@@ -183,6 +194,10 @@
 		GLOB.roll_rollers -= holder // its own rolls are done
 	if(P.knows)
 		knows_init(holder, P)
+	if(P.param_applies || P.param_drops)
+		params_apply(holder, P)
+		if(QDELETED(holder))
+			return
 	if(P.starts_as)
 		starts_as_init(holder, P)
 	if(P.derives)
@@ -265,4 +280,6 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 	var/datum/type_table/T = table_of(D)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_init(D, FALSE)
+		if(param_drop_pending?[D])
+			params_drop(D)
 		hooks_change_baseline(D)

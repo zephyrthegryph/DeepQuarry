@@ -236,7 +236,6 @@
 #define PROMETHEAN_STARVING_PAIN_CAP 90
 
 /datum/trait_state/promethean_biology
-	life_stage = /datum/om/stage/life/trait/promethean_biology
 	/// Held still for PROMETHEAN_STILLNESS_TIME.
 	var/still = FALSE
 
@@ -410,6 +409,6 @@
 #undef PROMETHEAN_STARVING_PAIN_CAP
 
 /// Trait system: promethean biology.
-/datum/om/stage/life/trait/promethean_biology
-	name = "promethean biology"
-	state_type = /datum/trait_state/promethean_biology
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/promethean_biology/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_promethean_biology"))

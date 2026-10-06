@@ -1,0 +1,69 @@
+
+/obj/item/organ/internal/robotic/heatsink
+	name = "heatsink"
+	icon_state = "heatsink"
+
+	organ_tag = O_HEATSINK
+
+/obj/item/organ/internal/robotic/heatsink/handle_organ_proc_special(cycles)
+	if(owner && owner.is_alive())
+
+		var/thermostat = owner.species.body_temperature
+		var/turf/T = get_turf(src)
+		var/datum/gas_mixture/environment = T.return_air()
+		var/efficiency = max(0,(1 - owner.get_pressure_weakness(environment.return_pressure())) * (1 - damage / max_damage))
+		var/temp_adj = 0
+		var/env_temp = get_environment_temperature()
+		var/thermal_protection = owner.get_heat_protection(env_temp)
+
+		if(!efficiency)
+			owner.adjust_bodytemperature(-(round(owner.robobody_count * (1 - damage / max_damage), 0.1))) // We are dissipating added heat under normal conditions and without damage
+
+		if(thermal_protection < 0.99)
+			temp_adj = min(owner.body_temperature() - max(thermostat, env_temp), owner.robobody_count * 2)
+		else
+			temp_adj = min(owner.body_temperature() - thermostat, owner.robobody_count * 2)
+
+		if(temp_adj < 0)
+			return
+
+		owner.adjust_bodytemperature(-(temp_adj*efficiency))
+
+		if(owner.body_temperature() > owner.species.heat_level_3)    // If you're already overheating to the point of melting, the heatsink starts causing problems.
+			owner.injure(INJURY_TOXIN, 2 * damage / max_damage, flags = INJURE_SILENT)
+			apply_lesion_damage(max(0.5,round(damage / max_damage, 0.1)))
+		else if (owner.body_temperature() > owner.species.heat_level_2)
+			owner.injure(INJURY_TOXIN, damage / max_damage, flags = INJURE_SILENT)
+			apply_lesion_damage(max(0.25,round(damage / max_damage, 0.1)))
+
+	return
+
+/obj/item/organ/internal/robotic/heatsink/proc/get_environment_temperature()
+	if(istype(owner.loc, /obj/mecha))
+		var/obj/mecha/M = owner.loc
+		return M.get_interior_temperature()
+	else if(istype(owner.loc, /obj/machinery/atmospherics/unary/cryo_cell))
+		var/obj/machinery/atmospherics/unary/cryo_cell/cc = owner.loc
+		return cc.air_contents.return_temperature()
+
+	var/turf/T = get_turf(src)
+
+	var/datum/gas_mixture/environment = T.return_air()
+
+	var/efficiency = 1
+
+	if(environment)
+		efficiency = (1 - owner.get_pressure_weakness(environment.return_pressure())) * (1 - damage / max_damage)
+
+	if(istype(T, /turf/space))
+		return owner.species.heat_level_2 * efficiency
+
+	if(!environment)
+		return owner.species.heat_level_2
+
+	return environment.return_temperature()
+
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
+/obj/item/organ/internal/robotic/heatsink/life_step_idle()
+	return FALSE
+

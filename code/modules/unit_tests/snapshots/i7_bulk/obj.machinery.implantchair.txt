@@ -2,3 +2,4 @@
 /obj/machinery/implantchair|robot|none => implantchair_open_ui,implantchair_insert,implantchair_get_out,implantchair_move_inside|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/implantchair|ai|none => |
 /obj/machinery/implantchair|ghost|none => |
+

@@ -1,26 +1,25 @@
-// life_sweep adapter for the object-model Life pipelines (code/modules/mob/living/life/life_om.dm).
+// life_sweep adapter for the kernel's Life sequence (code/modules/mob/living/life/life_sequence.dm).
 
 /proc/life_bench_scheduler()
-	return "object model (life pipeline, LIFE_CYCLE [LIFE_CYCLE_DS] ds)"
+	return "kernel (life sequence, LIFE_CYCLE [LIFE_CYCLE_DS] ds)"
 
 /proc/life_bench_frames(list/mobs)
-	return om_pipeline_frames(mobs, /datum/om/pipeline/life)
+	return seq_frames(mobs, /datum/sequence/life)
 
-/// The OM scheduler's own pass (what SSbehaviours.fire() measured before the kernel): comparable across the kernel change.
+/// The Life sweep's own cost: its work item's total (the pipeline's was the OM scheduler pass, SSbehaviours.bench_ms).
 /proc/life_bench_ms()
-	return SSbehaviours.bench_ms
+	var/datum/sequence/S = sequence_def(/datum/sequence/life)
+	return S.work.total_ms
 
 /// The kernel's whole N..R span: the scheduler plus the native frame and the work items of those phases.
 /proc/life_bench_pass_ms()
 	return kernel().pass_ms_total
 
-/// The life pipeline's scheduler counters since boot (runs, deferrals, breaches, lateness).
+/// The Life sequence's counters since boot (frames, parks, wakes, breaches, step costs).
 /proc/life_bench_diag()
-	var/list/diagnostics = om_diagnostics(GLOB.om_live_sched)
-	var/list/types = diagnostics["types"]
-	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
-	return types[life.name]
+	var/datum/sequence/S = sequence_def(/datum/sequence/life)
+	return S.metrics()
 
-/// TRUE while `L` is off the Life ring because every stage is idle.
+/// TRUE while `L` is out of the Life sweep because every step sleeps.
 /proc/life_bench_parked(mob/living/L)
-	return om_pipe_parked(L, /datum/om/pipeline/life)
+	return seq_parked(L, /datum/sequence/life)

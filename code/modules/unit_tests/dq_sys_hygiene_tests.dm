@@ -1,5 +1,5 @@
 // Hygiene wave (doc/rewrite/systems.md, "Hygiene"): declared caches, shared caches and
-// om_after() deadlines that replaced hand-maintained cached_* vars and world.time polling.
+// after() deadlines that replaced hand-maintained cached_* vars and world.time polling.
 
 /// A choiced preference's possible values come from one shared cache per type, not a per-instance var.
 /datum/unit_test/dq_sys_hygiene_preference_choices
@@ -25,7 +25,7 @@
 	TEST_ASSERT(isnull(A.cached_serialized_url_mappings_transport_type), "CHANGE_EXPLICIT did not clear the transport key")
 	TEST_ASSERT(!isnull(A.get_serialized_url_mappings()), "serialized mappings were not rebuilt after clearing")
 
-/// The anomaly device's run ends on its om_after() timer, not a world.time check in its step.
+/// The anomaly device's run ends on its after() timer, not a world.time check in its step.
 /datum/unit_test/dq_sys_hygiene_anodevice_timer
 
 /datum/unit_test/dq_sys_hygiene_anodevice_timer/Run()

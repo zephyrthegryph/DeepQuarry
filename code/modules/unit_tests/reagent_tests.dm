@@ -249,7 +249,7 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 	return RESULT_REACTION_FAILED
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/reagents_holder_reacted/event = N
 	LAZYADD(result_reactions, event.chemical_reaction) // Append the reactions that happened, then use that to check their inhibitors
 

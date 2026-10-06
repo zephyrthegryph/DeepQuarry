@@ -54,7 +54,7 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/analyzer/plant_analyzer's window data (declared on its UI_DATA row).
+/// /obj/item/analyzer/plant_analyzer's window data.
 /obj/item/analyzer/plant_analyzer/proc/ui_data_obj_item_analyzer_plant_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

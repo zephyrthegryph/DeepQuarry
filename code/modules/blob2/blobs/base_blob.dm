@@ -19,10 +19,12 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
-// ALLOW(init/CTOR_ARGS): new_overmind is a constructor argument from whoever builds it
-/obj/structure/blob/Initialize(mapload, new_overmind)
-	if(new_overmind)
-		rel_set(src, nameof(overmind), new_overmind)
+CAPABILITIES(/obj/structure/blob)
+	param(nameof(overmind), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): a blob takes its overmind's faction, faces a random way and consumes its tile before its parents' init
+/obj/structure/blob/Initialize(mapload)
+	if(overmind)
 		faction = overmind.blob_type.faction
 	set_dir(pick(GLOB.cardinal))
 	consume_tile()

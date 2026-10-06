@@ -94,20 +94,20 @@
 		act_message(src, L, null, MSG_OTHERS(span_danger("%U% trips %T%!")))
 		L.status_adjust(EFFECT_WEAKENED, rand(1,10))
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader
-	of = /mob/living/simple_mob/vore/alienanimals/startreader
+/mob/living/simple_mob/vore/alienanimals/startreader/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader/perform(mob/living/simple_mob/vore/alienanimals/startreader/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/startreader/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.flip_cooldown == 1)
-		self.flip_cooldown = 0
-		self.flipped = FALSE
-		self.handle_flip()
-		act_message(self, null, null, MSG_OTHERS(span_notice("%U% rights itself!!!")))
+	if(src.flip_cooldown == 1)
+		src.flip_cooldown = 0
+		src.flipped = FALSE
+		src.handle_flip()
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% rights itself!!!")))
 		return
-	if(self.flip_cooldown)
-		self.flip_cooldown --
-		self.status_set(EFFECT_STUNNED, 2)
+	if(src.flip_cooldown)
+		src.flip_cooldown --
+		src.status_set(EFFECT_STUNNED, 2)
 
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)

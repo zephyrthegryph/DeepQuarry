@@ -4,56 +4,6 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/unit_test/dq_om_keys_wake_power_monitor
-
-/datum/unit_test/dq_om_keys_wake_power_monitor/Run()
-	var/turf/T = test_floor()
-	var/P = power_test_grid()
-	var/obj/machinery/power/sensor/S = allocate(/obj/machinery/power/sensor, T)
-	var/obj/machinery/computer/power_monitor/M = allocate(/obj/machinery/computer/power_monitor, T)
-	power_test_join(P, S)
-	// Regression (b11/b12 flake): a power step inside the window must not pull S off the test grid.
-	SSmachines.process_power()
-	TEST_ASSERT_EQUAL(S.power_region, P, "a power step kept the sensor on its detached test grid")
-	rel_clear(M.power_monitor, nameof(/datum/tgui_module/power_monitor::grid_sensors))
-	rel_add(M.power_monitor, nameof(/datum/tgui_module/power_monitor::grid_sensors), S)
-	MACHINE_WAKE(M)
-	M.machine_step()
-	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")
-	TEST_ASSERT_NULL(M.om_sleep_violation(), "a stable sleeping power monitor reported a violation")
-	var/failure = om_wake_test(M, om_callable(null, GLOBAL_PROC_REF(power_warn), P))
-	TEST_ASSERT(!failure, failure)
-	power_test_drop_grid(P)
-
-/datum/unit_test/dq_om_keys_wake_shield_capacitor
-
-/datum/unit_test/dq_om_keys_wake_shield_capacitor/Run()
-	var/P = power_test_grid()
-	// Grid channels are raised on the machines bound to the grid; the capacitor watches one.
-	var/obj/machinery/power/terminal/node = allocate(/obj/machinery/power/terminal, test_floor())
-	power_test_join(P, node)
-	var/obj/machinery/shield_capacitor/C = allocate(/obj/machinery/shield_capacitor, test_floor())
-	// The keys process() sleeps on when the grid gives it nothing.
-	TEST_ASSERT(C.sleep_until_keys(list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE)), "capacitor refused to sleep")
-	var/failure = om_wake_test(C, om_callable(null, GLOBAL_PROC_REF(power_test_set_brownout), P, TRUE))
-	TEST_ASSERT(!failure, failure)
-	// A topology-only change is not the capacitor's input.
-	C.sleep_until_keys(list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE))
-	// Let the brownout wake above finish landing before the window opens.
-	om_settle(C)
-	om_trace(C)
-	power_grid_changed(P, CHANGE_POWER_GRID_TOPOLOGY)
-	om_test_ticks(4)
-	// Only a watch wake (CHANGE_RELATED) can come from P. The capacitor has other real inputs
-	// (its area's power, a machine timer) that a full-suite world can move inside the window:
-	// those are not what this asserts, so they are reported but not counted.
-	var/stray = om_traced_wake_bits(C)
-	TEST_ASSERT(!(stray & CHANGE_RELATED), "a topology change woke a rate subscriber (wake bits [stray], [om_traced_count(C)] wake(s))")
-	if(om_traced_count(C))
-		log_test("dq_om_keys_wake_shield_capacitor: unrelated wake(s) in the window, bits [stray]")
-	om_untrace(C)
-	power_test_drop_grid(P)
-
 /datum/unit_test/dq_om_keys_wake_turret
 
 /datum/unit_test/dq_om_keys_wake_turret/Run()
@@ -64,38 +14,6 @@
 	TEST_ASSERT(!turret.armed, "a switched-off turret is not armed (its scan parks)")
 	turret.set_enabled(TRUE)
 	TEST_ASSERT(turret.armed, "switching it on arms it again (its scan wakes)")
-
-/datum/unit_test/dq_om_keys_wake_point_defense
-
-/datum/unit_test/dq_om_keys_wake_point_defense/Run()
-	var/obj/machinery/pointdefense/PD = allocate(/obj/machinery/pointdefense, test_floor())
-	PD.set_stat(0)
-	PD.set_active(TRUE)
-	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		return
-	PD.machine_step()
-	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")
-	TEST_ASSERT_NULL(PD.om_sleep_violation(), "an idle point defense reported a violation")
-	// The meteor key is what /obj/effect/meteor publishes on Initialize and Destroy.
-	var/failure = om_wake_test(PD, om_callable(null, GLOBAL_PROC_REF(changed), GLOB.meteor_watch, CHANGE_METEORS))
-	TEST_ASSERT(!failure, failure)
-
-/datum/unit_test/dq_om_keys_wake_disposal
-
-/datum/unit_test/dq_om_keys_wake_disposal/Run()
-	var/obj/machinery/disposal/D = allocate(/obj/machinery/disposal, test_floor())
-	if(!D.air_contents)
-		return
-	D.set_stat(0)
-	D.flush = 0
-	D.set_mode(2) // DISPOSALMODE_CHARGED, which disposal_machines.dm #undefs
-	for(var/atom/movable/AM as anything in contents_of(D))
-		qdel(AM)
-	D.machine_step()
-	TEST_ASSERT(D.asleep_on_keys(), "idle disposal did not sleep on its key")
-	TEST_ASSERT_NULL(D.om_sleep_violation(), "an idle disposal reported a violation")
-	var/failure = om_wake_test(D, om_callable(D, TYPE_PROC_REF(/obj/machinery/disposal, wake_for_state_change)))
-	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_keys_wake_calm_brain
 

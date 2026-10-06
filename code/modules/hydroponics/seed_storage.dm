@@ -52,6 +52,7 @@ CAPABILITIES(/datum/seed_pile)
 STAT(/obj/machinery/seed_storage, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/seed_storage)
+	started_work(step = PROC_REF(work_step))
 	owns_many(nameof(piles), /datum/seed_pile)
 	owns_many(nameof(piles_contra), /datum/seed_pile)
 	interface("SeedStorage")
@@ -145,8 +146,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		)
 
 /// Seed storage has no timed work of its own (its shock is a timed hold).
-/obj/machinery/seed_storage/machine_step()
-	..()
+/obj/machinery/seed_storage/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL
 
 /obj/machinery/seed_storage/random // This is mostly for testing, but I guess admins could spawn it
@@ -348,7 +348,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 	return TRUE
 
-/// The computed part of /obj/machinery/seed_storage's window data (declared on its UI_DATA row).
+/// /obj/machinery/seed_storage's window data.
 /obj/machinery/seed_storage/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

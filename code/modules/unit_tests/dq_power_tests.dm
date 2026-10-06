@@ -106,11 +106,11 @@
 	var/restored_signals = 0
 
 /datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	lost_signals++
 
 /datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	restored_signals++
 
 /// One power step as the game runs it: DM's loads and topology in, one

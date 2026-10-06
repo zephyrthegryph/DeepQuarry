@@ -113,7 +113,7 @@ SYSTEM_DEF(profiler)
 		"counts" = list("parked" = om_pipeline_parked_count(/datum/om/pipeline/machine), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_grids)),
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
-	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = om_pipeline_parked_count(/datum/om/pipeline/life), "deaths_pending" = length(SSmobs.death_list)))
+	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(SSmobs.death_list)))
 	subsystems["periodic"] = periodic_diagnostics()
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()

@@ -90,17 +90,17 @@
 
 ///Called right before the user's Destroy()
 /datum/progressbar/proc/on_user_delete(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
-	spent(src)
+	ended_with(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
 /datum/progressbar/proc/clean_user_client(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(!user_client()) //Disconnected, already gone.
 		return
@@ -109,7 +109,7 @@
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
 /datum/progressbar/proc/on_user_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(user_client())
 		if(user_client() == user().client) //If this was not client handling I'd condemn this sanity check. But clients are fickle things.

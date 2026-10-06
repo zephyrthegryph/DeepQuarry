@@ -81,15 +81,15 @@
 		play_sfx(src, SFX_H_SOUNDS_HEADCRAB_2)
 
 //Plays the sound every ~4 seconds.
-/datum/om/stage/life/type_post/simple_mob/humanoid/possessed
-	of = /mob/living/simple_mob/humanoid/possessed
+/mob/living/simple_mob/humanoid/possessed/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/humanoid/possessed/perform(mob/living/simple_mob/humanoid/possessed/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/humanoid/possessed/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.idle <= 0 && self.silenced == 0)
-		play_sfx(self, SFX_H_SOUNDS_BREATHING)
-		self.idle = 4
-	self.idle--
+	if(src.idle <= 0 && src.silenced == 0)
+		play_sfx(src, SFX_H_SOUNDS_BREATHING)
+		src.idle = 4
+	src.idle--
 
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
 // the possessed suit collapses into remains and miasma.

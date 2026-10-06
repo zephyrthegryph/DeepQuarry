@@ -293,12 +293,12 @@
 	water_resist = 10 //I heard putting this higher makes them heal.
 
 
-/datum/om/stage/life/special/slime/xenobio/oceanic
-	of = /mob/living/simple_mob/slime/xenobio/oceanic
+/mob/living/simple_mob/slime/xenobio/oceanic/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/oceanic/perform(mob/living/simple_mob/slime/xenobio/oceanic/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.ocean_aura()
+/mob/living/simple_mob/slime/xenobio/oceanic/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.ocean_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/oceanic/proc/ocean_aura()
@@ -390,12 +390,12 @@
 		/mob/living/simple_mob/slime/xenobio/nuclear
 		)
 
-/datum/om/stage/life/special/slime/xenobio/nuclear
-	of = /mob/living/simple_mob/slime/xenobio/nuclear
+/mob/living/simple_mob/slime/xenobio/nuclear/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/nuclear/perform(mob/living/simple_mob/slime/xenobio/nuclear/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.nuclear_aura()
+/mob/living/simple_mob/slime/xenobio/nuclear/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.nuclear_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/nuclear/proc/nuclear_aura()
@@ -526,12 +526,12 @@
 		)
 
 
-/datum/om/stage/life/special/slime/xenobio/nightmare
-	of = /mob/living/simple_mob/slime/xenobio/nightmare
+/mob/living/simple_mob/slime/xenobio/nightmare/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/nightmare/perform(mob/living/simple_mob/slime/xenobio/nightmare/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.nightmare_aura()
+/mob/living/simple_mob/slime/xenobio/nightmare/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.nightmare_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/nightmare/proc/nightmare_aura()
@@ -646,12 +646,12 @@
 			/mob/living/simple_mob/slime/xenobio/sound
 		)
 
-/datum/om/stage/life/special/slime/xenobio/sound
-	of = /mob/living/simple_mob/slime/xenobio/sound
+/mob/living/simple_mob/slime/xenobio/sound/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/slime/xenobio/sound/perform(mob/living/simple_mob/slime/xenobio/sound/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.sound_aura()
+/mob/living/simple_mob/slime/xenobio/sound/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.sound_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/sound/proc/sound_aura()

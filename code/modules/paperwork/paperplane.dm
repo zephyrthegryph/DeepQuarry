@@ -13,14 +13,13 @@
 
 CAPABILITIES(/obj/item/paperplane)
 	owns_one(nameof(internalPaper), /obj/item/paper)
+	param(nameof(internalPaper), pos = 1, apply = PROC_REF(fold_from))
+	rolls(nameof(pixel_x), range_of(-9, 9))
+	rolls(nameof(pixel_y), range_of(-8, 8))
 
-// ALLOW(init/CTOR_ARGS): newPaper is a constructor argument from whoever builds it
-/obj/item/paperplane/Initialize(mapload, obj/item/paper/newPaper)
-	. = ..()
-	pixel_y = rand(-8, 8)
-	pixel_x = rand(-9, 9)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A plane folded from a paper takes it in; one made bare folds a blank sheet.
+/obj/item/paperplane/proc/fold_from(obj/item/paper/newPaper)
 	if(newPaper)
-		rel_set(src, nameof(internalPaper), newPaper)
 		flags = newPaper.flags
 		color = newPaper.color
 		if(isstorage(newPaper.loc))

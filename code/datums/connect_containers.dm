@@ -54,8 +54,8 @@
 	update_hooks(tracked())
 
 /datum/connect_containers/proc/handle_tracked_qdel(datum/act/notice/A)
-	EVENT_HANDLER
-	spent(src)
+	SHOULD_NOT_SLEEP(TRUE)
+	ended_with(src)
 
 /datum/connect_containers/proc/update_hooks(atom/movable/moved_thing)
 	if(!ismovable(moved_thing.loc) || !listener)
@@ -80,7 +80,7 @@
 				unobserve(target, event_path, listener)
 
 /datum/connect_containers/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/moved_thing = A.target
 	var/datum/notice/moved/event = A
 	unregister_hooks(event.old_loc)

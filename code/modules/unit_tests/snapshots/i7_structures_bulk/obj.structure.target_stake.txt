@@ -1,4 +1,5 @@
-/obj/structure/target_stake|human|none => target_stake_item,target_stake_hand|
-/obj/structure/target_stake|robot|none => target_stake_item,target_stake_hand|
+/obj/structure/target_stake|human|none => |
+/obj/structure/target_stake|robot|none => |
 /obj/structure/target_stake|ai|none => |
 /obj/structure/target_stake|ghost|none => |
+

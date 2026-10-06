@@ -368,10 +368,19 @@ TRACKED(/obj/item/storage/box/tgmc_mre, isopened)
 	/// The one reagent the flavour adds (a per-instance pick, so not a declaration).
 	var/seasoning
 
-// ALLOW(init/CTOR_ARGS): newflavor is a constructor argument from whoever builds it
-/obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload, newflavor)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tgmc_mre_component)
+	param(nameof(flavor_at_make), pos = 1, apply = PROC_REF(pack_flavor))
+
+/// The flavour a component is made as (its constructor param).
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/var/flavor_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/proc/pack_flavor(newflavor)
 	determinetype(newflavor)
 	desc = "A packaged [flavor] from a Meal Ready-to-Eat, there is a lengthy list of [pick("obscure", "arcane", "unintelligible", "revolutionary", "sophisticated", "unspellable")] ingredients and addictives printed on the back."
+
+// ALLOW(init/INSTANCE_STATE): a component is seasoned once its parents made its reagents
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload)
 	. = ..()
 	if(seasoning)
 		reagents.add_reagent(seasoning, 1) // ALLOW(decl): state picked in determinetype()

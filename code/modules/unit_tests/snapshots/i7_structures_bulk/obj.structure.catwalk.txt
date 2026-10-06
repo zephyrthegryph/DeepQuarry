@@ -3,3 +3,4 @@
 /obj/structure/catwalk|ai|none => |
 /obj/structure/catwalk|ghost|none => |
 /obj/structure/catwalk|human|/obj/item/stack/tile/floor => catwalk_plate|catwalk_slice_help:needs a welder,catwalk_slice_grab:hold Grab,catwalk_slice_disarm:hold Disarm,catwalk_slice_harm:combat mode is off
+

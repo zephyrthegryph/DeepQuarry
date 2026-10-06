@@ -28,7 +28,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, TYPE_PROC_REF(/atom, appe
 	play_sfx(src, SFX_EFFECTS_SUPERMATTER, 2, vary = FALSE)
 	supermatter_pull(src, world.view, STAGE_THREE)
 
-/// om_after() callback from detonate(): the pull ends in the implosion.
+/// after() callback from detonate(): the pull ends in the implosion.
 /obj/item/grenade/supermatter/proc/implode()
 	explosion(loc, 1, 3, 5, 4)
 	spent(src)

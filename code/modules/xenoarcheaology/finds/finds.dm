@@ -18,12 +18,16 @@
 
 CAPABILITIES(/obj/item/strangerock)
 	owns_one(nameof(geologic_data), /datum/geosample)
+	param(nameof(inside_item_type), pos = 1)
+	rolls(nameof(pixel_x), range_of(-8, 8))
+	rolls(nameof(pixel_y), range_of(-8, 0))
 
-// ALLOW(init/CTOR_ARGS): inside_item_type is a constructor argument from whoever builds it
-/obj/item/strangerock/Initialize(mapload, inside_item_type = 0)
+/// The find the rock holds (its constructor param), or 0 for a research sample at most.
+/obj/item/strangerock/var/inside_item_type = 0
+
+// ALLOW(init/INSTANCE_STATE): a strange rock holds its find or a research sample, rolled
+/obj/item/strangerock/Initialize(mapload)
 	. = ..()
-	pixel_x = rand(0,16)-8
-	pixel_y = rand(0,8)-8
 	var/d100 = rand(1,100)
 
 	if(inside_item_type)

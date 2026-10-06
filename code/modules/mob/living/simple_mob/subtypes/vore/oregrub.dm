@@ -110,16 +110,16 @@
 		i--
 	..()
 
-/datum/om/stage/life/light/simple_mob/vore/oregrub/lava
-	of = /mob/living/simple_mob/vore/oregrub/lava
+/mob/living/simple_mob/vore/oregrub/lava/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/simple_mob/vore/oregrub/lava/perform(mob/living/simple_mob/vore/oregrub/lava/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/oregrub/lava/life_light(datum/seq_frame/life/F)
 	. = ..()
-	if(. == 0 && !self.is_dead())
-		self.set_light(2.5, 1, COLOR_ORANGE)
+	if(. == 0 && !src.is_dead())
+		src.set_light(2.5, 1, COLOR_ORANGE)
 		return 1
-	else if(self.is_dead())
-		self.set_glow_override(FALSE)
+	else if(src.is_dead())
+		src.set_glow_override(FALSE)
 
 /mob/living/simple_mob/vore/oregrub/lava/on_death(gibbed)
 	set_light(0)

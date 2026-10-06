@@ -146,15 +146,15 @@
 	to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
 	return FALSE
 
-/datum/om/stage/life/special/animal/giant_spider/nurse
-	of = /mob/living/simple_mob/animal/giant_spider/nurse
+/mob/living/simple_mob/animal/giant_spider/nurse/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/giant_spider/nurse/perform(mob/living/simple_mob/animal/giant_spider/nurse/self, datum/om/frame/life/ctx)
-	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(self) && isturf(self.loc))
-		if(self.fed && self.can_lay_eggs)
-			self.lay_eggs(self.loc)
+/mob/living/simple_mob/animal/giant_spider/nurse/life_special(datum/seq_frame/life/F)
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(src) && isturf(src.loc))
+		if(src.fed && src.can_lay_eggs)
+			src.lay_eggs(src.loc)
 		else
-			self.web_tile(self.loc)
+			src.web_tile(src.loc)
 
 /// Starts spinning a web on `T`: a 5 s task that holds its claim on the turf and ends when the
 /// spider moves off, stops being conscious, or dies. TRUE when it started.

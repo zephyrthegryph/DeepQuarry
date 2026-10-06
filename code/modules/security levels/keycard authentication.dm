@@ -52,7 +52,7 @@
 	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/keycard_auth/declare_interactions(list/into)
@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/keycard_auth's window data (declared on its UI_DATA row).
+/// /obj/machinery/keycard_auth's window data.
 /obj/machinery/keycard_auth/proc/ui_data_obj_machinery_keycard_auth(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0

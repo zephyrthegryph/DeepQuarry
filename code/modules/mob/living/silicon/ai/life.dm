@@ -9,56 +9,35 @@
 	life_set = LIFE_SET_AI
 
 /// `if(stat == DEAD) return`, local failure cleanup and power.
-/datum/om/stage/life/ai_power
-	order = LIFE_PHASE_INPUT + 0
-	name = "ai power"
-	wake_on = 0
-	life_sets = LIFE_SET_AI
-	of = /mob/living/silicon/ai
+/mob/living/silicon/ai/proc/life_ai_power(datum/seq_frame/life/F)
+	if(src.stat == DEAD)
+		return F.abort()
 
-/datum/om/stage/life/ai_power/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
-	if(self.stat == DEAD)
-		return ctx.abort()
-
-	if(self.stat != CONSCIOUS)
-		rel_clear(self, nameof(self.cameraFollow))
-		self.reset_perspective()
-		self.disconnect_shell("Disconnecting from remote shell due to local system failure.")
+	if(src.stat != CONSCIOUS)
+		rel_clear(src, nameof(src.cameraFollow))
+		src.reset_perspective()
+		src.disconnect_shell("Disconnecting from remote shell due to local system failure.")
 
 	// If our powersupply object was destroyed somehow, create new one.
-	if(!self.psupply)
-		self.create_powersupply()
+	if(!src.psupply)
+		src.create_powersupply()
 
-	self.process_ai_power()
+	src.process_ai_power()
 
 /// Hardware integrity, capacitor and death are decided by the machine body.
-/datum/om/stage/life/ai_body
-	order = LIFE_PHASE_INPUT + 10
-	name = "ai body"
-	wake_on = CHANGE_MOB_HEALTH
-	life_sets = LIFE_SET_AI
-	of = /mob/living/silicon/ai
-
-/datum/om/stage/life/ai_body/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
-	self.body?.life_tick()
-	if(self.stat == DEAD)
-		return ctx.abort()
+/mob/living/silicon/ai/proc/life_ai_body(datum/seq_frame/life/F)
+	src.body?.life_tick()
+	if(src.stat == DEAD)
+		return F.abort()
 
 /// Lying down, malfunction, APU and queued alarms.
-/datum/om/stage/life/ai_upkeep
-	order = LIFE_PHASE_BODY + 10
-	name = "ai upkeep"
-	wake_on = 0
-	life_sets = LIFE_SET_AI
-	of = /mob/living/silicon/ai
+/mob/living/silicon/ai/proc/life_ai_upkeep(datum/seq_frame/life/F)
+	src.lying = 0			// Handle lying down
 
-/datum/om/stage/life/ai_upkeep/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
-	self.lying = 0			// Handle lying down
+	src.malf_process()
+	src.process_apu()
 
-	self.malf_process()
-	self.process_apu()
-
-	self.process_queued_alarms()
+	src.process_queued_alarms()
 
 // --- Power ---------------------------------------------------------------------------------------
 

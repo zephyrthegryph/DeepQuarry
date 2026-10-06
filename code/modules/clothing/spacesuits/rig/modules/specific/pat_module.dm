@@ -40,7 +40,7 @@
 	unobserve(H, /datum/notice/movable_attempted_move, src)
 
 /obj/item/rig_module/pat_module/proc/boop(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = N.target
 	var/datum/notice/movable_attempted_move/event = N
 	var/mob/living/carbon/human/user = source

@@ -129,14 +129,14 @@
 	var/mob/living/carbon/human/friend
 	var/befriend_job = null
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/fox/fluff
-	of = /mob/living/simple_mob/animal/passive/fox/fluff
+/mob/living/simple_mob/animal/passive/fox/fluff/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/fox/fluff/perform(mob/living/simple_mob/animal/passive/fox/fluff/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/fox/fluff/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive") || !friend) return
+	if(!F.alive() || !friend) return
 
-	var/friend_dist = get_dist(self,friend)
+	var/friend_dist = get_dist(src,friend)
 
 	if (friend_dist <= 4)
 		if(stance == STANCE_IDLE)

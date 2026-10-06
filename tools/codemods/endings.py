@@ -11,7 +11,9 @@ why X ends, chosen from where it happens:
   consumed(X, by)    in an eating or drinking path (eat, bite, consume, drink, feed, digest, absorb, ...) and, for an X other than src,
                      in an item interaction (attackby, interaction_item, item_interact, afterattack, load, insert, merge, refill, ...):
                      the item is used up into src, which is `by`
-  dissolved(X, by)   in an acid, melting, decay or evaporation path
+  dissolved(X, by)   in an acid, melting, digestion, decay or evaporation path
+  ended_with(X, src) for an X other than src in an owner's teardown (on_destroy, *_teardown)
+  lapsed(X)          in an expiry, duration, timeout or fade path
   spent(X, by)       anywhere else: the thing has done what it was for (a used charge, a finished effect, a closed window, a dropped record)
 
 `by` is the proc's acting mob when it takes one (`user`, `M`, `L`, `H`, `attacker`, `eater`, `feeder`, `user_mob`), src for a consumed()
@@ -35,7 +37,10 @@ QDEL = re.compile(r"(?<![\w.])qdel\s*\(")
 DESTROY = re.compile(r"(ex_act|emp_act|bullet_act|take_damage|damage|atom_break|atom_destruction|deconstruct|dismantle|_act_tool|tool_done|welder|crowbar|"
                      r"wrench|screwdriver|wirecutter|break|shatter|smash|destroy|explode|explosion|detonate|burst|blow|crush|collapse|impact|"
                      r"die\b|death|gib|kill|hit|fire_act|burn|ignite|overload|meteor|bump|crossed|throw)", re.I)
-CONSUME = re.compile(r"(eat|bite|consume|drink|feed|digest|absorb|devour|ingest|swallow|slurp|nom)", re.I)
+# A word start: "eat" must not match create/treat/feature/repeat (the first run consumed() 40 such sites; ending_fix.py re-caused them).
+CONSUME = re.compile(r"(?<![a-z])(eat|bite|consume|drink|feed|absorb|devour|ingest|swallow|slurp|nom)", re.I)
+OWNER_TEARDOWN = re.compile(r"^(on_destroy|Destroy|\w*_teardown|caps_destroy|legacy_holder_destroy)$")
+LAPSE = re.compile(r"(expire|duration|timeout|timed_out|lapse|flick|fade)", re.I)
 INTERACT = re.compile(r"(attackby|interaction_item|item_interact|afterattack|attack_obj|use_on|load|insert|merge|combine|refill|stack|transfer|"
                       r"apply|install|attach|add_to|put_in|feed)", re.I)
 DISSOLVE = re.compile(r"(acid|melt|dissolve|decay|rot\b|rotting|evaporate|dry_|wither|corrode)", re.I)
@@ -109,6 +114,10 @@ def choose(proc_name, target, reason):
             if pat.search(reason):
                 return verb
     name = proc_name or ""
+    if OWNER_TEARDOWN.search(name) and target != "src":
+        return "ended_with"
+    if LAPSE.search(name):
+        return "lapsed"
     if DISSOLVE.search(name):
         return "dissolved"
     if CONSUME.search(name):
@@ -164,7 +173,9 @@ def convert(f, counts, sites, apply):
         verb = choose(pname, "src" if target == "src" else "other", reason)
         by = None
         is_global = proc is None or f.lines[proc.start].startswith("/proc/")
-        if verb == "consumed" and target != "src" and not (pname and CONSUME.search(pname)):
+        if verb == "ended_with":
+            by = None if is_global else "src"
+        elif verb == "consumed" and target != "src" and not (pname and CONSUME.search(pname)):
             by = None if is_global else "src"
         else:
             by = actor_of(proc.params() if proc else None)

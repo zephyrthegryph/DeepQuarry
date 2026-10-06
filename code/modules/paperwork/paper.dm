@@ -77,6 +77,10 @@ CAPABILITIES(/obj/item/paper)
 	without("ui_open")
 	op("write_field", ui_act("write_field", arg("id", schema_text(4096))), then(PROC_REF(ui_act_write_field)))
 	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
+	param(nameof(info), pos = 1)
+	param(nameof(name), pos = 2)
+	rolls(nameof(pixel_x), range_of(-9, 9))
+	rolls(nameof(pixel_y), range_of(-8, 8))
 
 /obj/item/paper/card
 	name = "blank card"
@@ -130,30 +134,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_o
 	plane_foldable = FALSE // No airplanes for me.
 
 
-// ALLOW(init/CTOR_ARGS): text and title are constructor arguments from whoever builds it
-/obj/item/paper/Initialize(mapload, text, title)
+// ALLOW(init/INSTANCE_STATE): a paper encodes the text it was written with, titles its description and builds its info links
+/obj/item/paper/Initialize(mapload)
 	. = ..()
-
-	if(istext(title))
-		name = title
-	if(istext(text))
-		info = text
 
 	if(mapload) // Jank, but we do this to prevent maploaded papers from somehow stacking across rounds if re-added to the board by a player.
 		was_maploaded = TRUE
 
-	pixel_y = rand(-8, 8)
-	pixel_x = rand(-9, 9)
 	stamps = ""
-
-	if(!isnull(title))
-		name = title
 
 	if(name != "paper")
 		desc = "This is a paper titled '" + name + "'."
-
-	if(!isnull(text))
-		info = text
 
 	if(info != initial(info))
 		info = html_encode(info)
@@ -207,7 +198,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/paper's window data (declared on its UI_DATA row).
+/// /obj/item/paper's window data.
 /obj/item/paper/proc/ui_data_obj_item_paper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["segments"] = get_segments()

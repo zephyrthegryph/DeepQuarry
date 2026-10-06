@@ -30,6 +30,10 @@
 	var/is_infesting = FALSE
 
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	param(nameof(factory), /obj/structure/blob/factory, pos = 1)
+
 /datum/say_list/spore
 	emote_see = list("sways", "inflates briefly")
 
@@ -46,11 +50,6 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 2
 
-// ALLOW(init/CTOR_ARGS): my_factory is a constructor argument from whoever builds it
-/mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
-	if(istype(my_factory))
-		rel_set(src, nameof(factory), my_factory) // the pair adds us to factory.spores
-	return ..()
 
 // Destroy() drops the body out before letting go.
 
@@ -95,25 +94,25 @@
 		color = initial(color)//looks better.
 		add_overlay(blob_head_overlay)
 
-/datum/om/stage/life/special/blob/spore
-	of = /mob/living/simple_mob/blob/spore
+/mob/living/simple_mob/blob/spore/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/blob/spore/perform(mob/living/simple_mob/blob/spore/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/blob/spore/life_special(datum/seq_frame/life/F)
 	..()
-	if(self.can_infest && !self.is_infesting && isturf(self.loc))
-		for(var/mob/living/carbon/human/H in view(self,1))
+	if(src.can_infest && !src.is_infesting && isturf(src.loc))
+		for(var/mob/living/carbon/human/H in view(src,1))
 			if(H.stat != DEAD) // We want zombies.
 				continue
 			if(HAS_SYNTHETIC_BIOLOGY(H)) // Not philosophical zombies.
 				continue
-			self.infest(H)
+			src.infest(H)
 			break
 
-	if(self.overmind)
-		self.overmind.blob_type.on_spore_lifetick(self)
+	if(src.overmind)
+		src.overmind.blob_type.on_spore_lifetick(src)
 
-	if(self.factory && self.z != self.factory.z) // This is to prevent spores getting lost in space and making the factory useless.
-		spent(self)
+	if(src.factory && src.z != src.factory.z) // This is to prevent spores getting lost in space and making the factory useless.
+		spent(src)
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE

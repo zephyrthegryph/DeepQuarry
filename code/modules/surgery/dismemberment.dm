@@ -8,7 +8,7 @@
 	for(var/organ in zone_list)
 		regenerate_limb(organ)
 	for(var/obj/item/organ/external/stump/stump in organs)
-		spent(stump)
+		replaced_by(stump, src)
 
 /mob/living/proc/regenerate_limb(limb_zone, noheal)
 	return
@@ -20,7 +20,7 @@
 		if(!bodypart.is_stump())
 			return FALSE
 		bodypart.removed()
-		spent(bodypart)
+		replaced_by(bodypart, src)
 		bodypart = null
 	var/list/organ_data = species.has_limbs[limb_zone]
 	var/limb_path = organ_data["path"]

@@ -540,14 +540,20 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/list/data = ..()
 	return data
 
-UI_ACT(/datum/preference_middleware/character_setup, "dq_select_category", ui_act_dq_select_category, UI_ARG_TEXT("category"), UI_ARG_BOOL("force_catalogs"))
-UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_select_category)
+CAPABILITIES(/datum/preference_middleware/character_setup)
+	op("dq_select_category", ui_act("dq_select_category", arg("category", schema_text(4096)), arg("force_catalogs", bool())), then(PROC_REF(ui_act_dq_select_category)))
+	op("dq_update_preference", ui_act("dq_update_preference", arg("key", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_dq_update_preference)))
+	op("dq_pick_color", ui_act("dq_pick_color", arg("key", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("title" = "Color", "question" = "Pick a color", "default" = computed(PROC_REF(pick_color_default)), "preferences" = computed(PROC_REF(prefs_of_setup)), "pref_key" = computed(PROC_REF(pick_color_key))), step = "color", when = PROC_REF(pick_color_writable)), then(PROC_REF(ui_act_dq_pick_color)))
+	op("dq_editor_action", ui_act("dq_editor_action", arg("action", schema_text(128)), arg("editor", schema_text(128)), arg("params")), then(PROC_REF(ui_act_dq_editor_action)))
+/datum/preference_middleware/character_setup/proc/ui_act_dq_select_category(datum/act/op/A, category, force_catalogs)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	dq_ensure_category_cache()
-	var/category_key = params["category"]
+	var/category_key = category
 	if(!(category_key in preferences().dq_category_index))
 		return FALSE
 	preferences().dq_active_category = category_key
-	if(params["force_catalogs"])
+	if(force_catalogs)
 		var/window_id = ui?.window()?.id || "unpooled"
 		var/datum/preferences/prefs_datum = preferences()
 		LAZYINITLIST(prefs_datum.dq_force_catalogs_by_window)
@@ -562,17 +568,17 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_select_categ
 
 // Single-pref update from the auto-renderer.
 
-UI_ACT(/datum/preference_middleware/character_setup, "dq_update_preference", ui_act_dq_update_preference, UI_ARG_TEXT("key"), UI_ARG_VALUE("value"))
-UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_update_preference)
-	var/key = params["key"]
-	var/value = params["value"]
+/datum/preference_middleware/character_setup/proc/ui_act_dq_update_preference(datum/act/op/A, key_arg, value_arg)
+	var/mob/user = A.actor
+	var/key = key_arg
+	var/value = value_arg
 	var/datum/preference/pref = GLOB.preference_entries_by_key[key]
 	if(!pref)
 		return FALSE
 	// Hidden / managed / editor-owned prefs are not reachable from the raw wire —
 	// see /datum/preference/proc/is_client_writable.
 	if(!pref.is_client_writable(preferences()))
-		log_world("dq_update_preference: [ui.user?.ckey] attempted to write non-client-writable pref [key]")
+		log_world("dq_update_preference: [user?.ckey] attempted to write non-client-writable pref [key]")
 		return FALSE
 	preferences().update_preference(pref, value)
 	return TRUE
@@ -582,28 +588,40 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_update_prefe
 // chosen value is written through the same update_preference path so constraints
 // and apply-hooks fire identically to a typed write.
 
-UI_ACT(/datum/preference_middleware/character_setup, "dq_pick_color", ui_act_dq_pick_color, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_pick_color)
-	var/key = params["key"]
+/datum/preference_middleware/character_setup/proc/ui_act_dq_pick_color(datum/act/op/A, key)
 	var/datum/preference/pref = GLOB.preference_entries_by_key[key]
-	if(!pref)
+	if(!pref || !pref.is_client_writable(preferences()))
 		return FALSE
-	if(!pref.is_client_writable(preferences()))
+	var/picked = A.step_value("color")
+	if(isnull(picked))
 		return FALSE
-	var/current = preferences().read_preference(pref.type)
-	// The pick is re-checked (same prefs, still accessible) and written in pref_color_picked().
-	open_request(preferences(), /datum/prompt/color/prefs/entry, TYPE_PROC_REF(/datum/preferences, pref_color_picked), answerer = ui.user, title = "Color", question = "Pick a color", default = current || "#000000", preferences = preferences(), pref_key = key)
-	return TRUE
+	return preferences().update_preference(pref, picked)
+
+/// The picker opens for a known preference (the handler refuses one the client may not write).
+/datum/preference_middleware/character_setup/proc/pick_color_writable(datum/act/op/A)
+	return !isnull(GLOB.preference_entries_by_key[A.args["key"]])
+
+/datum/preference_middleware/character_setup/proc/pick_color_key(datum/act/op/A)
+	return A.args["key"]
+
+/datum/preference_middleware/character_setup/proc/prefs_of_setup(datum/act/op/A)
+	return preferences()
+
+/datum/preference_middleware/character_setup/proc/pick_color_default(datum/act/op/A)
+	var/datum/preference/pref = GLOB.preference_entries_by_key[A.args["key"]]
+	return (pref && preferences().read_preference(pref.type)) || "#000000"
 
 // Atomic multi-pref operation handled by a registered editor.
 
-UI_ACT(/datum/preference_middleware/character_setup, "dq_editor_action", ui_act_dq_editor_action, UI_ARG_TEXT("action", 128), UI_ARG_TEXT("editor", 128), UI_ARG_LIST("params"))
-UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_editor_action)
-	var/editor_key = params["editor"]
+/datum/preference_middleware/character_setup/proc/ui_act_dq_editor_action(datum/act/op/A, action_arg, editor_arg, params_arg)
+	var/mob/user = A.actor
+	if(!isnull(params_arg) && !islist(params_arg))
+		return FALSE
+	var/editor_key = editor_arg
 	var/datum/preference_editor/editor = GLOB.preference_editors_by_key[editor_key]
 	if(!editor)
 		return FALSE
-	var/result = editor.handle_action(preferences(), params["action"], params["params"], ui.user)
+	var/result = editor.handle_action(preferences(), action_arg, params_arg, user)
 	// Switching human/robot/pAI mode changes which category groups exist.
 	// Drop the structure cache and bump its version; each pooled browser
 	// receives the new active-category patch on its next update.
@@ -623,13 +641,3 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_editor_actio
 	if(!pref || !pref.is_accessible(preferences))
 		return "not accessible"
 
-/// The picked colour is written through update_preference(); TRUE refreshes the prefs window.
-/datum/preferences/proc/pref_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/color/prefs/entry/ask = A.answer
-	var/datum/preference/pref = GLOB.preference_entries_by_key[ask.pref_key]
-	var/result = update_preference(pref, ask.value)
-	if(result)
-		SStgui.update_uis(src)
-	return result

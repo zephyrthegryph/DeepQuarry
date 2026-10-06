@@ -38,16 +38,15 @@ CAPABILITIES(/obj/item/supply_beacon)
 	layer = MOB_LAYER - 0.1
 	stat = 0
 
-	/// om_after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
+	/// after() timer that sends the drop once the beacon has stayed powered for drop_delay, or 0.
 	var/drop_delay = 450
 	var/drop_type
 
 /// Spent: the drop was sent, the beacon never works again.
 OM_FIELD(/obj/machinery/power/supply_beacon, expended, FALSE, CHANGE_MACHINE_SETTINGS)
 /// Draws power (and arms the drop) while switched on and not yet spent.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE, list("use_power", "!expended"))
-
 CAPABILITIES(/obj/machinery/power/supply_beacon)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(use_power), cond_not(nameof(expended))), wakes_on = list(nameof(use_power), nameof(expended)))
 	rolls(nameof(drop_type), PROC_REF(roll_drop_type), when = cond_not(nameof(drop_type)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
@@ -124,7 +123,7 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 		deactivate()
 	..()
 
-/obj/machinery/power/supply_beacon/machine_step()
+/obj/machinery/power/supply_beacon/proc/work_step(datum/act/timer/A)
 	if(draw_power(500) < 500)
 		deactivate()
 		return

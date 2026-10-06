@@ -1,4 +1,5 @@
-/obj/structure/holosign|human|none => holosign_hand,holosign_item|
-/obj/structure/holosign|robot|none => holosign_hand,holosign_item|
+/obj/structure/holosign|human|none => |
+/obj/structure/holosign|robot|none => |
 /obj/structure/holosign|ai|none => |
 /obj/structure/holosign|ghost|none => |
+

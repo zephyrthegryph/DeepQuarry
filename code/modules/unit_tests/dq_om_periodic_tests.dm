@@ -165,7 +165,7 @@
 	om_task_periodic_stop(M)
 
 /// Change channels and timers for sleepers: a watcher wakes on a watched channel and not on
-/// another; unwatching stops it; an om_after() timer fires once.
+/// another; unwatching stops it; an after() timer fires once.
 /datum/unit_test/dq_om_keys_and_timers
 
 /datum/proc/dq_om_test_timer_hit()
@@ -188,7 +188,7 @@
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(S), before, "an unwatched datum woke")
 
-	var/id = om_after(S, 1, /datum/proc/dq_om_test_timer_hit)
+	var/id = after(S, 1, /datum/proc/dq_om_test_timer_hit)
 	TEST_ASSERT(om_timer_pending(S, id), "the timer is not pending")
 	TEST_ASSERT(om_wait_for_wake(S, before), "the timer did not fire")
 	om_test_ticks(8)
@@ -209,21 +209,22 @@
 
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, T)
 	igniter.set_on(FALSE)
-	TEST_ASSERT(!sys_periodic_allows(igniter, MACHINE_PIPELINE), "a switched-off igniter may still step")
+	TEST_ASSERT(!test_work_allowed(igniter), "a switched-off igniter may still step")
 	MACHINE_SLEEP(igniter)
 	igniter.interaction_toggle(null, null, null)
-	TEST_ASSERT(igniter.on && machine_stepping(igniter), "switching an igniter on did not wake it")
+	kernel_drain_now() // the switch's change reaches its work at the drain
+	TEST_ASSERT(igniter.on && test_work_allowed(igniter), "switching an igniter on did not wake it")
 	igniter.set_on(FALSE)
 
 	var/obj/machinery/feeder/feeder = allocate(/obj/machinery/feeder, T)
-	TEST_ASSERT(!sys_periodic_allows(feeder, MACHINE_PIPELINE), "an unattached feeder may still step")
+	TEST_ASSERT(!test_work_allowed(feeder), "an unattached feeder may still step")
 
 	var/obj/machinery/pump/pump = allocate(/obj/machinery/pump, T)
 	pump.set_on(FALSE)
-	TEST_ASSERT(!sys_periodic_allows(pump, MACHINE_PIPELINE), "a switched-off reagent pump may still step")
+	TEST_ASSERT(!test_work_allowed(pump), "a switched-off reagent pump may still step")
 
 	var/obj/machinery/bunsen_burner/bunsen = allocate(/obj/machinery/bunsen_burner, T)
-	TEST_ASSERT(!sys_periodic_allows(bunsen, MACHINE_PIPELINE), "a cold bunsen burner may still step")
+	TEST_ASSERT(!test_work_allowed(bunsen), "a cold bunsen burner may still step")
 
 	var/obj/machinery/vitals_monitor/vitals = allocate(/obj/machinery/vitals_monitor, T)
 	TEST_ASSERT(test_machine_idle(vitals), "an unattached vitals monitor kept stepping")
@@ -235,10 +236,10 @@
 	TEST_ASSERT(test_machine_idle(pa), "an inactive particle accelerator kept stepping")
 
 	var/obj/machinery/suspension_gen/suspension = allocate(/obj/machinery/suspension_gen, T)
-	TEST_ASSERT(!sys_periodic_allows(suspension, MACHINE_PIPELINE), "an inactive suspension generator may still step")
+	TEST_ASSERT(!test_work_allowed(suspension), "an inactive suspension generator may still step")
 
 	var/obj/machinery/radiocarbon_spectrometer/spectrometer = allocate(/obj/machinery/radiocarbon_spectrometer, T)
-	TEST_ASSERT(!sys_periodic_allows(spectrometer, MACHINE_PIPELINE), "an idle spectrometer may still step")
+	TEST_ASSERT(!test_work_allowed(spectrometer), "an idle spectrometer may still step")
 
 	var/obj/machinery/dnaforensics/dna = allocate(/obj/machinery/dnaforensics, T)
 	TEST_ASSERT(test_machine_idle(dna), "an idle DNA scanner kept stepping")
@@ -251,7 +252,7 @@
 	TEST_ASSERT(test_machine_idle(pipe), "an empty refinery pipe kept stepping")
 	MACHINE_SLEEP(pipe)
 	pipe.reagents.add_reagent(REAGENT_ID_WATER, 10)
-	TEST_ASSERT(machine_stepping(pipe), "reagents arriving did not wake a refinery pipe")
+	TEST_ASSERT(test_work_allowed(pipe), "reagents arriving did not wake a refinery pipe")
 	TEST_ASSERT(test_machine_idle(pipe), "a refinery pipe with nowhere to send its reagents kept stepping")
 
 	// A door timer counts down only while timing, and wakes when started.
@@ -263,28 +264,27 @@
 	brig.timer_end()
 	TEST_ASSERT(!brig.timing && !after_pending(brig, "end"), "a finished brig timer kept a timer pending")
 
-/// A machine that ended its work for lack of power resumes when power returns, and the audit
-/// sees it as idle only while it is unpowered.
-/datum/unit_test/dq_om_machine_sleeps_until_powered
+/// Started work (code/library/machine/started_work.dm): a machine whose step finds it unpowered stops its work and waits for power, and its
+/// work starts again by itself when power returns.
+/datum/unit_test/dq_started_work_waits_for_power
 
-/datum/unit_test/dq_om_machine_sleeps_until_powered/Run()
+/datum/unit_test/dq_started_work_waits_for_power/Run()
+	test_driver_begin()
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, test_floor())
-	var/P = /datum/om/pipeline/machine
-	var/datum/om/stage/machine/step/stage = om_registry().stage_by_type[/datum/om/stage/machine/step]
 	igniter.set_on(TRUE)
 	igniter.stat_add(NOPOWER)
-	MACHINE_WAKE(igniter)
-	igniter.om_rec.sched.run_pass(1e9)
-	om_run_frame_now(igniter, P)
-	TEST_ASSERT(!igniter.step_active && igniter.step_waiting_power, "an unpowered igniter did not wait for power")
-	TEST_ASSERT(stage.idle(igniter), "an unpowered waiting machine is not idle")
+	work_start(igniter)
+	test_time(MACHINE_SERVICE_INTERVAL + 1)
+	TEST_ASSERT(!work_started(igniter), "an unpowered igniter's step stopped its work")
+	TEST_ASSERT(cap_key_get(igniter, STARTED_WORK_WAITING_POWER), "and it waits for power")
 	igniter.stat_remove(NOPOWER)
-	TEST_ASSERT(!stage.idle(igniter), "a powered waiting machine still looks idle to the audit")
-	changed(igniter, CHANGE_MACHINE_POWER)
-	igniter.om_rec.sched.run_pass(1e9)
-	om_run_frame_now(igniter, P)
-	TEST_ASSERT(igniter.step_active, "power returning did not restart its work")
+	test_time(1)
+	TEST_ASSERT(work_started(igniter), "power returning restarted its work")
+	TEST_ASSERT(!cap_key_get(igniter, STARTED_WORK_WAITING_POWER), "and it no longer waits")
+	work_stop(igniter)
+	TEST_ASSERT(!work_started(igniter), "work_stop() stops it")
 	igniter.set_on(FALSE)
+	test_driver_end()
 
 #endif
 

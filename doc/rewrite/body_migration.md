@@ -67,4 +67,15 @@ Behaviour changes are recorded in `intended_changes.md` under "Body migration".
 
 ## 5. Status
 
-Per-slice status lives in the commit log of `rewrite/body-full`; this section is updated when a slice lands.
+| Slice | State | What landed |
+|---|---|---|
+| 1 Wounds and bleeding | landed | body clock (`body_clock.dm`); Life `blood` stage, `update_wounds()`, bleed clock procs deleted |
+| 2 External limbs | landed | stance/grip derived (`limb_state.dm`); `bad_external_organs`, `need_process()` deleted; deterministic splints |
+| 3 Internal organs | landed | `organ_tick(cycles)` on the organ clock; Life `organs` stage, `process_organs()`, `PROCESS_ACCURACY` deleted |
+| 4 Pain and germs | landed | germ rates; Life `pain` stage moved to the body (`pain.dm`) |
+| 5 Surgery | landed | `surgery_ops.dm`; `do_surgery()`, the surgery om tasks and `surgery_ask()` deleted |
+| 6 Delete / consolidate | landed | loose organs on a held stat; `code/modules/organs` moved to `code/modules/body/organs` |
+
+Still legacy inside the organ types (owned by the framework waves, not this track): `OM_FIELD` organ state, `om_task` timed tasks
+(robotic repair, butchery), `DECLARE_INTERACTIONS` on organs. The lifecycle-forms (`contains()`, declared lifetimes) apply to organ
+setup and amputation once they land on master.

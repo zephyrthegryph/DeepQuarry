@@ -14,15 +14,21 @@ CAPABILITIES(/obj/structure/drop_pod)
 	owns_one(nameof(air), /datum/gas_mixture/pod_air)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
+	param(nameof(cargo_at_make), pos = 1, keep = FALSE)
+	param(nameof(auto_open), pos = 2)
 
 /obj/structure/drop_pod/polite
 	polite = TRUE
 
-// ALLOW(init/CTOR_ARGS): A and auto_open are constructor arguments from whoever builds it
-/obj/structure/drop_pod/Initialize(mapload, atom/movable/A, auto_open = FALSE)
+/// What the pod carries down, and whether it opens by itself (its constructor params).
+/obj/structure/drop_pod/var/tmp/atom/movable/cargo_at_make
+/obj/structure/drop_pod/var/auto_open = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a pod with cargo falls, and every pod makes its air
+/obj/structure/drop_pod/Initialize(mapload)
 	. = ..()
-	if(A)
-		A.forceMove(src) // helo
+	if(cargo_at_make)
+		cargo_at_make.forceMove(src) // helo
 		podfall(auto_open)
 	rel_set(src, nameof(air), new /datum/gas_mixture/pod_air)
 

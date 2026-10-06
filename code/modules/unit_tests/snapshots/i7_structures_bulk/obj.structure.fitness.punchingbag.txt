@@ -1,4 +1,5 @@
-/obj/structure/fitness/punchingbag|human|none => |punchingbag_hand:combat mode is off
-/obj/structure/fitness/punchingbag|robot|none => |punchingbag_hand:combat mode is off
+/obj/structure/fitness/punchingbag|human|none => |
+/obj/structure/fitness/punchingbag|robot|none => |
 /obj/structure/fitness/punchingbag|ai|none => |
 /obj/structure/fitness/punchingbag|ghost|none => |
+

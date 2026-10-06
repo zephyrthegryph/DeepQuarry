@@ -40,7 +40,7 @@
 
 	obj/proc/receive_signal(datum/signal/signal, var/receive_method as num, var/receive_param)
 		Handler from received signals. By default does nothing. Define your own for your object.
-		Avoid sending signals directly from this proc: defer them with om_after(). Never block here; take time with om_task_timed() or om_after().
+		Avoid sending signals directly from this proc: defer them with after(). Never block here; take time with om_task_timed() or after().
 		parameters:
 			signal - see description below. Extract all needed data from the signal before deferring work or returning!
 			receive_method - may be TRANSMISSION_WIRE or TRANSMISSION_RADIO.
@@ -132,7 +132,7 @@ CAPABILITIES(/datum/system/radio)
 	observe(device, /datum/notice/qdeleting, src, then(PROC_REF(on_listener_deleted)))
 
 /datum/radio_frequency/proc/on_listener_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/device = A.target
 	SSradio.remove_object(device, frequency)
 

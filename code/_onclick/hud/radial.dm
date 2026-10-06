@@ -23,38 +23,44 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(parent())
 		icon_state = parent().radial_slice_icon
 
-/// om_after() target: hovering clicks, once the entry animation has played.
+/// after() target: hovering clicks, once the entry animation has played.
 /atom/movable/screen/radial/slice/proc/enable_hover_click()
 	click_on_hover = TRUE
 
-/atom/movable/screen/radial/slice/MouseEntered(location, control, params)
-	. = ..()
+CAPABILITIES(/atom/movable/screen/radial/slice)
+	hover(PROC_REF(hover_input))
+	click_on(PROC_REF(click_input))
+
+/// The native mouse-over's actor (hover(), code/engine/lifeforms/input.dm): the slice lights up, shows its name and, on a hover-click
+/// menu, is chosen (its own native Click, still inside this mouse-over).
+/atom/movable/screen/radial/slice/proc/hover_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(!A.entered)
+		if(next_page || !parent())
+			icon_state = "radial_slice"
+		else
+			icon_state = parent().radial_slice_icon
+		if(tooltips)
+			closeToolTip(user, src)
+		return
 	if(next_page || !parent())
 		icon_state = "radial_slice_focus"
 	else
 		icon_state = "[parent().radial_slice_icon]_focus"
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native radial hover supplies one initiating mob for tooltip delivery and the existing hover-click gate.
 	if(tooltips)
-		openToolTip(user, src, params, title = name)
-	if (click_on_hover && !isnull(user) && !isnull(parent()))
-		Click(location, control, params)
+		openToolTip(user, src, A.params, title = name)
+	if(click_on_hover && !isnull(user) && !isnull(parent()))
+		Click(A.native["location"], A.native["control"], A.params)
 
-/atom/movable/screen/radial/slice/MouseExited(location, control, params)
-	. = ..()
-	if(next_page || !parent())
-		icon_state = "radial_slice"
-	else
-		icon_state = parent().radial_slice_icon
-	if(tooltips)
-		closeToolTip(usr, src)
-
-/atom/movable/screen/radial/slice/Click(location, control, params)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native radial slice Click supplies the initiating mob for both client ownership and selection.
-	if(user.client == parent().current_user())
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). Only the menu's own user chooses.
+/atom/movable/screen/radial/slice/proc/click_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(user?.client == parent()?.current_user())
 		if(next_page)
 			parent().next_page()
 		else
-			parent().element_chosen(choice, user, params)
+			parent().element_chosen(choice, user, A.params)
+	return TRUE
 
 /atom/movable/screen/radial/center
 	name = "Close Menu"

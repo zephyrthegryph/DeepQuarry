@@ -212,7 +212,7 @@ CAPABILITIES(/obj/item/radio)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/radio's window data (declared on its UI_DATA row).
+/// /obj/item/radio's window data.
 /obj/item/radio/proc/ui_data_obj_item_radio(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 

@@ -27,18 +27,24 @@
 	var/can_unpad = TRUE
 	var/can_dismantle = TRUE
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/structure/bed/Initialize(mapload, new_material, new_padding_material)
-	..()
+/// The frame's material and the padding's (its constructor params; a subtype's defaults).
+/obj/structure/bed/var/material_key = MAT_STEEL
+/obj/structure/bed/var/padding_key
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A bed of no known material is not made.
+/obj/structure/bed/proc/make_of(padding)
 	color = null
-	if(!new_material)
-		new_material = MAT_STEEL
-	material = get_material_by_name(new_material)
+	material = get_material_by_name(material_key || MAT_STEEL)
 	if(!istype(material))
-		stack_trace("Material of type: [new_material] does not exist.")
-		return INITIALIZE_HINT_QDEL
-	if(new_padding_material)
-		padding_material = get_material_by_name(new_padding_material)
+		stack_trace("Material of type: [material_key] does not exist.")
+		spent(src)
+		return
+	if(padding)
+		padding_material = get_material_by_name(padding)
+
+// ALLOW(init/INSTANCE_STATE): a bed draws its frame and padding, and turns like a chair (or only flips)
+/obj/structure/bed/Initialize(mapload)
+	. = ..()
 	update_icon()
 	if(flippable) // If we can't change directions, don't bother.
 		// Ugly check for chairs, beds can only be flipped north and south...
@@ -46,7 +52,6 @@
 			make_rotatable()
 		else
 			make_rotatable(only_flip = TRUE)
-	return INITIALIZE_HINT_NORMAL
 
 /obj/structure/bed/get_material()
 	return material
@@ -107,6 +112,8 @@ CAPABILITIES(/obj/structure/bed)
 		then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
 	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"),
 		needs(req(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
+	param(nameof(material_key), pos = 1)
+	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
 
 /// What a bed that is not for lying on does without: the nest, the pillow piles (their own hands and items replace the bed's).
 /proc/bed_hands_off()
@@ -200,19 +207,22 @@ CAPABILITIES(/obj/structure/bed)
 	icon_state = "psychbed"
 	base_icon = "psychbed"
 
-/obj/structure/bed/psych/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD, MAT_LEATHER)
+/obj/structure/bed/psych
+	material_key = MAT_WOOD
+	padding_key = MAT_LEATHER
 
-/obj/structure/bed/padded/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC, MAT_CLOTH)
+/obj/structure/bed/padded
+	material_key = MAT_PLASTIC
+	padding_key = MAT_CLOTH
 
 /obj/structure/bed/double
 	name = "double bed"
 	icon_state = "doublebed"
 	base_icon = "doublebed"
 
-/obj/structure/bed/double/padded/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD, MAT_CLOTH)
+/obj/structure/bed/double/padded
+	material_key = MAT_WOOD
+	padding_key = MAT_CLOTH
 
 /obj/structure/bed/double/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)
@@ -250,6 +260,7 @@ APPEARANCE_NONE(/obj/structure/bed/roller)
 
 CAPABILITIES(/obj/structure/bed/roller)
 	op("collapse", item(/obj/item/roller_holder), label("Collapse"), then(PROC_REF(collapse_with_rack)))
+	drag_onto(PROC_REF(drop_input))
 
 /// A roller bed rack collapses an empty bed into its folded item; a bed with somebody on it lets them go instead.
 /obj/structure/bed/roller/proc/collapse_with_rack(datum/act/op/A)
@@ -348,9 +359,11 @@ CAPABILITIES(/obj/item/roller_holder)
 	update_icon()
 	return ..()
 
-/obj/structure/bed/roller/MouseDrop(over_object, src_location, over_location)
-	..()
-	return collapse_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native roller bed drag supplies the actor after the unchanged parent input routing.
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dragged onto its user, the bed
+/// collapses; the native drop goes on either way.
+/obj/structure/bed/roller/proc/drop_input(datum/act/input/A)
+	collapse_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
 
 /obj/structure/bed/roller/proc/collapse_with_actor(mob/user, atom/over_object)
 	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))

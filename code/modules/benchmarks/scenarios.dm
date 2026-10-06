@@ -489,9 +489,9 @@
 	if(call_ext(hash_fn)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
-/// Idle mob Life cost with parking off, then on (doc/rewrite/life_on_om.md §5).
-/// Spawns idle mice (every stage has an idle rule, so they park) and humans on a fixture,
-/// then measures the life pipeline with GLOB.om_parking_enabled FALSE and TRUE.
+/// Idle mob Life cost with parking off, then on (doc/rewrite/life_sequences.md §5).
+/// Spawns idle mice (every step has a should_run, so they park) and humans on a fixture,
+/// then measures the Life sequence with GLOB.seq_parking_enabled FALSE and TRUE.
 /datum/benchmark/idle_mobs
 	id = "idle_mobs"
 	description = "Idle mob Life cost with mob hibernation off and on"
@@ -512,11 +512,11 @@
 		mobs += new /mob/living/carbon/human(pick(turfs))
 		CHECK_TICK
 	count_metric("idle_mobs_spawned", length(mobs), "mobs", "none")
-	var/was_enabled = GLOB.om_parking_enabled
+	var/was_enabled = GLOB.seq_parking_enabled
 
-	GLOB.om_parking_enabled = FALSE
+	GLOB.seq_parking_enabled = FALSE
 	for(var/mob/living/L as anything in mobs)
-		om_wake(L, /datum/om/pipeline/life)
+		seq_wake(L, /datum/sequence/life)
 	wait_seconds(LIFE_CYCLE_SECONDS * 2)
 	var/list/before = benchmark_life_totals(mobs)
 	begin_window()
@@ -525,7 +525,7 @@
 	benchmark_life_metrics("hibernation_off", before, mobs)
 	count_metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
 
-	GLOB.om_parking_enabled = TRUE
+	GLOB.seq_parking_enabled = TRUE
 	wait_seconds(LIFE_CYCLE_SECONDS * 4)
 	before = benchmark_life_totals(mobs)
 	begin_window()
@@ -535,20 +535,19 @@
 	count_metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
 	var/list/awake = list()
 	for(var/mob/living/L as anything in mobs)
-		if(!om_pipe_parked(L, /datum/om/pipeline/life))
+		if(!seq_parked(L, /datum/sequence/life))
 			awake["[L.type]"]++
 	detail("hibernation_on_awake_by_type", awake)
 
-	GLOB.om_parking_enabled = was_enabled
+	GLOB.seq_parking_enabled = was_enabled
 	for(var/mob/living/L as anything in mobs)
 		qdel(L)
 		CHECK_TICK
 
-/// The life pipeline's cumulative totals on the live scheduler: ms, frames.
+/// The Life sequence's cumulative totals: its sweep's ms, the frames these mobs ran.
 /proc/benchmark_life_totals(list/mobs)
-	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
-	var/list/S = GLOB.om_live_sched.stat_for(life.id)
-	return list(S[OM_STAT_MS], om_pipeline_frames(mobs, life))
+	var/datum/sequence/S = sequence_def(/datum/sequence/life)
+	return list(S.work.total_ms, seq_frames(mobs, /datum/sequence/life))
 
 /// Life cost and delivered frames since `before` (benchmark_life_totals()).
 /datum/benchmark/proc/benchmark_life_metrics(prefix, list/before, list/mobs)
@@ -577,11 +576,11 @@
 	M.maxbodytemp = INFINITY
 	M.temperature_range = INFINITY
 
-/// How many of `mobs` are parked in the life pipeline.
+/// How many of `mobs` are parked on the Life sequence.
 /proc/benchmark_count_hibernating(list/mobs)
 	. = 0
 	for(var/mob/living/L as anything in mobs)
-		if(om_pipe_parked(L, /datum/om/pipeline/life))
+		if(seq_parked(L, /datum/sequence/life))
 			.++
 
 /// Radiation: pulses from many sources over a walled fixture full of mobs and

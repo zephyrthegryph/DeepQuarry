@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/soulstone)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/soulstone's window data (declared on its UI_DATA row).
+/// /obj/item/soulstone's window data.
 /obj/item/soulstone/proc/ui_data_obj_item_soulstone(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
@@ -142,7 +142,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), T)
 	flick("dust-h", animation)
-	consumed(animation, src)
+	lapsed(animation)
 
 	var/mob/living/simple_mob/construct/shade/S = new /mob/living/simple_mob/construct/shade( T.loc )
 	S.forceMove(src) //put shade in stone
@@ -216,7 +216,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 			move_player(A, Z, "shade bound into [Z]")
 			if(iscultist(U))
 				GLOB.cult.add_antagonist(Z.mind)
-			consumed(T, src)
+			replaced_by(T, Z)
 			to_chat(Z, span_infoplain(span_bold("You are playing a Juggernaut. Though slow, you can withstand extreme punishment, and rip apart enemies and walls alike.")))
 			to_chat(Z, span_infoplain(span_bold("You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.")))
 			Z.cancel_camera()
@@ -226,7 +226,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 			move_player(A, Z, "shade bound into [Z]")
 			if(iscultist(U))
 				GLOB.cult.add_antagonist(Z.mind)
-			consumed(T, src)
+			replaced_by(T, Z)
 			to_chat(Z, span_infoplain(span_bold("You are playing a Wraith. Though relatively fragile, you are fast, deadly, and even able to phase through walls.")))
 			to_chat(Z, span_infoplain(span_bold("You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.")))
 			Z.cancel_camera()
@@ -236,7 +236,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 			move_player(A, Z, "shade bound into [Z]")
 			if(iscultist(U))
 				GLOB.cult.add_antagonist(Z.mind)
-			consumed(T, src)
+			replaced_by(T, Z)
 			to_chat(Z, span_infoplain(span_bold("You are playing an Artificer. You are incredibly weak and fragile, but you are able to construct fortifications, repair allied constructs (by clicking on them), and even create new constructs")))
 			to_chat(Z, span_infoplain(span_bold("You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.")))
 			Z.cancel_camera()
@@ -246,7 +246,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 			move_player(A, Z, "shade bound into [Z]")
 			if(iscultist(U))
 				GLOB.cult.add_antagonist(Z.mind)
-			consumed(T, src)
+			replaced_by(T, Z)
 			to_chat(Z, span_infoplain(span_bold("You are playing a Harvester. You are relatively weak, but your physical frailty is made up for by your ranged abilities.")))
 			to_chat(Z, span_infoplain(span_bold("You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.")))
 			Z.cancel_camera()
@@ -256,7 +256,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 			move_player(A, Z, "shade bound into [Z]")
 			if(iscultist(U))
 				GLOB.cult.add_antagonist(Z.mind)
-			consumed(T, src)
+			replaced_by(T, Z)
 			to_chat(Z, span_infoplain(span_bold("You are playing a Behemoth. You are incredibly slow, though your slowness is made up for by the fact your shell is far larger than any of your bretheren. You are the Unstoppable Force, and Immovable Object.")))
 			to_chat(Z, span_infoplain(span_bold("You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.")))
 			Z.cancel_camera()

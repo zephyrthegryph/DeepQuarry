@@ -24,14 +24,32 @@
 // required one. OWNER as a value is the caller (`by =`, default: the instance whose code is running the make is unknown to DM, so pass it).
 //
 // built_from(nameof(var)) takes make(..., parts = list(...)): the parts move into the instance and the var holds them, before init.
+//
+// `apply = PROC_REF(x)` is for a param the type puts into effect through a setter (a material key, a colour, a lifespan): x(value) runs at
+// init, after the capabilities and initial contents (where the old `Initialize(mapload, arg)` called it after `..()`), with the param's value,
+// given or not. A subtype that only changed the value passed up (`..(mapload, MAT_IRON)`) sets the var's default instead.
+//
+//	CAPABILITIES(/obj/structure/simple_door)
+//		param(nameof(material_name), pos = 1, apply = PROC_REF(set_material))
+//	/obj/structure/simple_door/iron
+//		material_name = MAT_IRON
+//
+// A positional argument that is null is not given: the var keeps its default (the `arg || default` the old overrides wrote).
+//
+// `keep = FALSE` is for a value init only builds from: a mob a statue copies, the assembly a door is built from. The setters (apply =) and
+// an Initialize() that remains read it; when Initialize() has returned (an atom) or the init ran (a plain datum), the var goes back to its
+// compiled default, so the instance holds no reference to it.
 
-/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null)
+/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null, keep = TRUE)
 	if(!istext(var_name))
 		declare_report("param(): the var is nameof(var), got [var_name]")
 		return null
 	if(ispath(schema, /datum))
 		schema = schema_ref(schema)
-	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos))
+	if(!isnull(apply) && !istext(apply))
+		declare_report("param([var_name]): apply = is PROC_REF(x), got [apply]")
+		apply = null
+	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply, "keep" = !!keep))
 
 /proc/built_from(var_name)
 	return entry_make(ENTRY_BUILT_FROM, "built_from", list("var" = var_name))
@@ -96,7 +114,8 @@
 /// make() records of plain datums being made now (innermost last): /datum/New() takes the top one for an instance of its type.
 GLOBAL_LIST_EMPTY(make_pending)
 /// instance -> param names a creator gave (make() or a positional argument), until its preinit checks them.
-GLOBAL_LIST_EMPTY(param_given)
+/// A real global: atoms are made (and take positional params) while the globals are still being made.
+GLOBAL_REAL_VAR(list/param_given)
 
 /// /atom/New(loc, ...) with more than a location: a make() record, or positional arguments a param(pos =) takes. Writes the values before init.
 /// Returns TRUE when it consumed a make() record (the caller drops it from the arguments Initialize() gets).
@@ -114,11 +133,12 @@ GLOBAL_LIST_EMPTY(param_given)
 	var/list/given = list()
 	for(var/i in 2 to length(new_args))
 		var/var_name = P.param_pos["[i - 1]"]
-		if(var_name)
+		if(var_name && !isnull(new_args[i]))
 			param_write(A, var_name, new_args[i])
 			given += var_name
 	if(length(given))
-		GLOB.param_given[A] = given
+		LAZYINITLIST(param_given)
+		param_given[A] = given
 	return FALSE
 
 /// Writes a make() record's values onto the instance being made, before its init: params, then the built_from parts.
@@ -150,12 +170,14 @@ GLOBAL_LIST_EMPTY(param_given)
 		var/base = creator ? "[creator.base]/[++creator.children]" : "[roll_base_for(M.by)]/[++GLOB.roll_serial]"
 		GLOB.roll_rollers[D] = new /datum/roller(base)
 	if(length(given))
-		GLOB.param_given[D] = given
+		LAZYINITLIST(param_given)
+		param_given[D] = given
 
 /// At preinit: each param checked against its schema, defaulted when nothing gave it, and a missing required one reported.
 /proc/params_preinit(datum/holder, datum/lifeform_plan/P, mapload)
-	var/list/given = GLOB.param_given[holder]
-	GLOB.param_given -= holder
+	var/list/given = param_given?[holder]
+	if(given)
+		param_given -= holder
 	for(var/datum/centry/C as anything in P.params)
 		var/datum/entry/E = C.item
 		var/var_name = E.args["var"]
@@ -199,3 +221,34 @@ GLOBAL_LIST_EMPTY(param_given)
 		rel_set(D, var_name, value)
 		return
 	D.vars[var_name] = value // ALLOW(api): a param is written before init, as a map edit would be
+
+/// At init: each param declared with apply = is put into effect through its setter, with its value (given, defaulted or the compiled one).
+/// The keep = FALSE params are marked to drop when Initialize() returns (params_drop()).
+/proc/params_apply(datum/holder, datum/lifeform_plan/P)
+	for(var/datum/centry/C as anything in P.param_applies)
+		var/datum/entry/E = C.item
+		var/var_name = E.args["var"]
+		try
+			call(holder, E.args["apply"])(holder.vars[var_name])
+		catch(var/exception/e)
+			stack_trace("param([var_name], apply = [E.args["apply"]]) on [holder.type]: [e] ([e.file]:[e.line])")
+		if(QDELETED(holder))
+			return
+	if(P.param_drops)
+		if(!param_drop_pending)
+			param_drop_pending = list()
+		param_drop_pending[holder] = TRUE
+
+/// instance -> TRUE while it holds keep = FALSE params to drop (InitAtom() drops them when Initialize() returns). A real global: atoms
+/// initialize while the globals are still being made.
+GLOBAL_REAL_VAR(list/param_drop_pending)
+
+/// Drops `holder`'s keep = FALSE params: each var goes back to its compiled default.
+/proc/params_drop(datum/holder)
+	param_drop_pending -= holder
+	if(QDELETED(holder))
+		return
+	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
+	for(var/datum/centry/C as anything in P.param_drops)
+		var/datum/entry/E = C.item
+		holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]])

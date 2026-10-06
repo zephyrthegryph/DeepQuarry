@@ -356,7 +356,7 @@ CAPABILITIES(/obj/structure/table)
 		S = M.place_shard(loc)
 		if(S) shards += S
 	last_break_shards = shards
-	destroyed(src)
+	destroyed(src, null, BRUTE)
 	return shards
 
 /obj/structure/table/can_visually_connect_to(obj/structure/S)

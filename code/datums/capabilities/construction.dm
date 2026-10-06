@@ -103,7 +103,7 @@ CAPABILITIES(/datum/capability/construction)
 	var/datum/ladder_progress/progress = holder.cap_data?[key]
 	if(progress)
 		LAZYREMOVE(holder.cap_data, key)
-		destroyed(progress)
+		ended_with(progress, holder)
 
 /// The stage's icon state, when the ladder draws its stages. Writes no holder state (ladder_for()
 /// only builds the type's shared ladder the first time, which the type's first draw may be).

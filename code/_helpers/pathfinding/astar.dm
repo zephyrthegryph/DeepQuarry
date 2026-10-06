@@ -20,7 +20,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 #define ASTAR_TRACE_COLOR_REDIRECTED "#7777ff"
 
 /proc/astar_wipe_colors_after(list/turf/turfs, time)
-	om_after(null, time, /proc/astar_wipe_colors_now, turfs)
+	after(null, time, /proc/astar_wipe_colors_now, with = list(turfs))
 
 /proc/astar_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
@@ -77,7 +77,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 					open.enqueue(considering_node); \
 					node_by_turf[considering] = considering_node; \
 					turfs_got_colored[considering] = TRUE; \
-					om_after(considering, debug_t, TYPE_PROC_REF(/atom, set_base_color), ASTAR_VISUAL_COLOR_OPEN); \
+					after(considering, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_OPEN)); \
 					considering.maptext = MAPTEXT("[top[ASTAR_NODE_DEPTH] + 1], [considering_cost], [considering_score]"); \
 					considering.overlays += get_astar_scan_overlay(DIR); \
 				} \
@@ -163,7 +163,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 
 	#ifdef ASTAR_DEBUGGING
 	turfs_got_colored[start] = TRUE
-	om_after(start, debug_t, TYPE_PROC_REF(/atom, set_base_color), ASTAR_VISUAL_COLOR_OPEN)
+	after(start, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_OPEN))
 	#endif
 
 	while(length(open.array))
@@ -171,9 +171,9 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 		var/list/top = open.dequeue()
 		current = top[ASTAR_NODE_POS]
 		#ifdef ASTAR_DEBUGGING
-		om_after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), ASTAR_VISUAL_COLOR_CURRENT)
+		after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_CURRENT))
 		turfs_got_colored[top[ASTAR_NODE_POS]] = TRUE
-		debug_t += GLOB.astar_visualization_delay // the replay moves on a step (om_after(), no sleep)
+		debug_t += GLOB.astar_visualization_delay // the replay moves on a step (after(), no sleep)
 		#else
 		CHECK_TICK
 		#endif
@@ -185,7 +185,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 			while(top)
 				path_built += top[ASTAR_NODE_POS]
 				#ifdef ASTAR_DEBUGGING
-				om_after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), ASTAR_VISUAL_COLOR_FOUND)
+				after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_FOUND))
 				turfs_got_colored[top] = TRUE
 				#endif
 				top = top[ASTAR_NODE_PREV]
@@ -202,7 +202,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 		// too deep, abort
 		if(top[ASTAR_NODE_DEPTH] + get_dist(current, goal) > max_depth)
 			#ifdef ASTAR_DEBUGGING
-			om_after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), ASTAR_VISUAL_COLOR_OUT_OF_BOUNDS)
+			after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_OUT_OF_BOUNDS))
 			turfs_got_colored[top[ASTAR_NODE_POS]] = TRUE
 			#endif
 			continue
@@ -217,7 +217,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 		ASTAR_HELL_DEFINE(considering, WEST)
 
 		#ifdef ASTAR_DEBUGGING
-		om_after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), ASTAR_VISUAL_COLOR_CLOSED)
+		after(top[ASTAR_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_CLOSED))
 		turfs_got_colored[top[ASTAR_NODE_POS]] = TRUE
 		#endif
 

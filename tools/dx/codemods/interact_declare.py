@@ -42,10 +42,13 @@ KINDS = {
     "ALT": "hand()",
     "DRAG": "item(/atom/movable)",
     "TK": "tk()",
+    # a silicon's use (the old attack_ai/attack_robot adapter): the interface binding, reach as far as the silicon sees
+    "SILICON": "remote()",
+    "ROBOT": "remote()",
 }
 # the macro's own name: INTERACT_<BASE><suffix>; _AS takes the stance as its first argument, _HOSTILE and _PEACEFUL fix it, _DEFAULT is the type's default for
 # the input (tried after everything else it offers)
-SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|ALT|TK|VERB)(_AS|_HOSTILE|_PEACEFUL|_DEFAULT_AS|_DEFAULT)?$")
+SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|ALT|TK|VERB|SILICON|ROBOT)(_AS|_HOSTILE|_PEACEFUL|_DEFAULT_AS|_DEFAULT)?$")
 STANCE_LITERAL = re.compile(r"^I_(HELP|DISARM|GRAB|HURT)$")
 FALLS_THROUGH = ("USE", "VERB")  # an effect whose return is ignored (always handled): every other kind falls through to the next candidate on a falsy return
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
@@ -69,8 +72,13 @@ def translate_req(clause, t, kind):
     fm = REQ_FIELD_CLAUSE.match(clause)
     if fm:
         value = "FALSE" if fm.group(1) else "TRUE"
-        because = (", because = %s" % fm.group(3)) if fm.group(3) else ""
-        return ("req_is(nameof(%s), %s%s)" % (fm.group(2), value, because), [])
+        if not fm.group(3):
+            return ("req_is(nameof(%s), %s)" % (fm.group(2), value), [])
+        # a reason is a message type, never text (a text `because` is read as a proc name)
+        text = fm.group(3).strip('"')
+        msg = "%s/%s" % (t.split("/")[-1], fm.group(2))
+        sentence = text[:1].upper() + text[1:] + ("" if text.endswith((".", "!", "?")) else ".")
+        return ("req_is(nameof(%s), %s, because = MSG(%s))" % (fm.group(2), value, msg), ['MSG_DEF_SELF(%s, "%s")' % (msg, sentence)])
     pm = REQ_PROC_CLAUSE.match(clause)
     if not pm:
         return None
@@ -356,6 +364,8 @@ def main():
                 mention_idx[w].add(line_owner)
                 mention_count[(w, line_owner)] += 1
     tree_text = "\n".join(tree_lines)
+    # a handler called on a receiver (`jets.toggle_rockets_effect(wearer)` from a rig module) is called from outside, whatever the caller's type
+    qualified_calls = set(re.findall(r"\.\s*(\w+)\s*\(", "\n".join(strip_code(l) for l in tree_lines if l)))
     defs_by_name = defaultdict(list)
     dre = re.compile(r"^(/[\w/]+?)/(?:proc/)?(\w+)\(([^)]*)\)\s*(//.*)?$")
     for rel, f in files.items():
@@ -498,9 +508,25 @@ def main():
         if not specs:
             residue[t] = "interaction_forms"
             continue
-        if len({s["proc"] for s in specs}) != len(specs):
+        # specs that share one handler and differ only in their input (a hand and an item doing the same thing) are one op with inputs(...)
+        merged_specs = []
+        for sp in specs:
+            twin = None if sp["proc"] == "interaction_pass" else next((m for m in merged_specs if m["proc"] == sp["proc"]), None)
+            if twin is None:
+                sp["extra_kinds"] = []
+                merged_specs.append(sp)
+                continue
+            same = all(twin.get(k) == sp.get(k) for k in ("name", "stance", "default", "carried", "req_parts"))
+            if same and twin["name"] is None and "INSERT" in (sp["kind"], twin["kind"]):
+                same = False  # an unnamed insert's label is its item's ("Insert a mop"): two of them are two labels
+            if not same or sp["kind"] in ("VERB", "DRAG", "ALT", "SILICON", "ROBOT", "USE", "SELF") or twin["kind"] in ("VERB", "DRAG", "ALT", "SILICON", "ROBOT", "USE", "SELF"):
+                merged_specs = None
+                break
+            twin["extra_kinds"].append(sp)
+        if merged_specs is None:
             residue[t] = "handler_shared"
             continue
+        specs = merged_specs
         tre = re.escape(t)
         handlers = []
         for s in specs:
@@ -508,7 +534,23 @@ def main():
                 handlers.append({"actor_type": "mob", "spec": s, "rel": None, "idx": None, "first": None, "last": None, "actor": None, "held": None, "held_type": "obj/item", "body": "", "asks": [], "pass": True})
                 continue
             hits = [(r, i, prm) for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty == t]
-            others = [1 for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty != t and related(ty, t)]
+            others = [1 for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty != t and related(ty, t) and not ty.startswith(t + "/")]
+            # overrides of the handler below T (a subtype that runs its parent's handler first, tools/codemods/parent_call_override.py): they
+            # change shape with it, so each must take the three legacy parameters and use none of the interaction's
+            overrides = []
+            for (ty, r, i, prm) in defs_by_name.get(s["proc"], []):
+                if ty == t or not ty.startswith(t + "/"):
+                    continue
+                ops_ = [x.strip() for x in prm.split(",")]
+                if len(ops_) != 3 or any("=" in x for x in ops_):
+                    others.append(1)
+                    continue
+                ofb, olb = body_range(files[r].lines, i)
+                obody = chr(10).join(strip_code(x) for x in files[r].lines[ofb : olb + 1] if x is not None)
+                if words_in(obody, ops_[2].split("/")[-1]) or words_in(obody, "A") or re.search(r"\.\s*==|==\s*\.(?!\w)", obody):
+                    others.append(1)
+                    continue
+                overrides.append((ty, r, i, ofb, olb, [x.split("/")[-1] for x in ops_], ["mob" if "/" not in ops_[0] else ops_[0].replace("var/", "").rsplit("/", 1)[0], "obj/item" if "/" not in ops_[1] else ops_[1].replace("var/", "").rsplit("/", 1)[0]], obody))
             if len(hits) != 1:
                 bad = "handler_shape"
                 break
@@ -538,7 +580,19 @@ def main():
                     break
             self_mentions = sum(len(words_in(strip_code(f.lines[k]), s["proc"])) for a in asks for k in a["remove"])
             outside = sum(mention_count[(s["proc"], o)] for o in mention_idx.get(s["proc"], ()) if o == "" or related(o, t))
-            if others or outside - self_mentions > 0:
+            if others or outside - self_mentions > 0 or s["proc"] in qualified_calls:
+                # a Use or verb effect the type also calls itself (an older verb, a hotkey): the proc stays as it is, and the op's effect is a thin
+                # one that calls it the way the old resolver did (its return was never read)
+                wbody = chr(10).join(strip_code(l) for l in body_lines)
+                if not others and s["kind"] in FALLS_THROUGH and not asks and "open_request(" not in wbody and not words_in(wbody, n_inter):
+                    wrapper = "%s_op" % s["proc"]
+                    if defs_by_name.get(wrapper) or re.search(r"\b" + wrapper + r"\b", tree_text):
+                        bad = "name_clash"
+                        break
+                    helper = "/// The %s op: the verb's effect, as the old resolver ran it.%s%s/proc/%s(datum/act/op/A)%s%s(A.actor, A.held, null)%sreturn OP_OK" % (
+                        s["proc"], chr(10), t, wrapper, chr(10) + chr(9), s["proc"], chr(10) + chr(9))
+                    handlers.append({"actor_type": "mob", "spec": s, "rel": None, "idx": None, "first": None, "last": None, "actor": None, "held": None, "held_type": "obj/item", "body": "", "asks": [], "wrap": wrapper, "wrap_helper": helper})
+                    continue
                 bad = "handler_shared"
                 break
             # a test that calls the handler on an unknown receiver blocks; one that calls it on a related type is rewritten to the driver by hand
@@ -588,7 +642,7 @@ def main():
             actor_type = "mob"
             if "/" in ps[0].replace("var/", ""):
                 actor_type = ps[0].replace("var/", "").rsplit("/", 1)[0]
-            handlers.append({"actor_type": actor_type, "spec": s, "rel": drel, "idx": di, "first": fb, "last": lb, "actor": n_actor, "held": n_held, "held_type": held_type, "body": body, "asks": asks})
+            handlers.append({"actor_type": actor_type, "spec": s, "rel": drel, "idx": di, "first": fb, "last": lb, "actor": n_actor, "held": n_held, "held_type": held_type, "body": body, "asks": asks, "overrides": overrides})
         if bad:
             residue[t] = bad
             continue
@@ -599,6 +653,10 @@ def main():
             key = re.sub(r"^interaction_", "", proc) or proc
             if h.get("pass"):
                 key = "pass_%s" % h["spec"]["kind"].lower()
+                n = 2
+                while key in used:
+                    key = "pass_%s_%d" % (h["spec"]["kind"].lower(), n)
+                    n += 1
             if key in used or key_taken(key, t):
                 key = proc
             if key in used or key_taken(key, t):
@@ -637,7 +695,8 @@ def main():
         emitted = set()
         for h in handlers:
             for hp in h["spec"].get("req_helpers", []):
-                hname = re.search(r"^/[\w/]+/proc/(\w+)\(", hp, re.M).group(1)
+                hm = re.search(r"^/[\w/]+/proc/(\w+)\(", hp, re.M) or re.search(r"^MSG_DEF\w*\(([\w/]+),", hp)
+                hname = hm.group(1)
                 if hname in emitted:
                     continue
                 if defs_by_name.get(hname) or re.search(r"\b" + hname + r"\b", tree_text):
@@ -709,11 +768,15 @@ def main():
         for t, plan in sorted(plans.items()):
             tre = re.escape(t)
             entries = []
+            wrap_helpers = []
             for h in plan["handlers"]:
                 s = h["spec"]
-                parts = ['op("%s"' % h["key"], h["binding"]]
+                extra_b = [binding_of(x, h)[0] for x in s.get("extra_kinds", [])]
+                parts = ['op("%s"' % h["key"], ("inputs(%s)" % ", ".join([h["binding"]] + extra_b)) if extra_b else h["binding"]]
                 if s["kind"] in ("HAND_UNGATED", "ALT"):
                     parts.append("ungated()")
+                if s["kind"] == "ROBOT":
+                    parts.append("when(req(/mob/living/silicon/robot, of = ON_ACTOR))")
                 if h["gesture"]:
                     parts.append("gesture(%s)" % h["gesture"])
                 if s["stance"]:
@@ -738,6 +801,12 @@ def main():
                 if h.get("pass"):
                     parts.append("passes()")
                     entries.append(", ".join(parts) + ")")
+                    continue
+                if h.get("wrap"):
+                    parts.append("then(PROC_REF(%s))" % h["wrap"])
+                    entries.append(", ".join(parts) + ")")
+                    wrap_helpers.extend((t, hp) for hp in h["helpers"])  # its requirement wrappers: no rewritten handler carries them
+                    wrap_helpers.append((t, h["wrap_helper"]))
                     continue
                 parts.append("then(PROC_REF(%s))" % s["proc"])
                 entries.append(", ".join(parts) + ")")
@@ -791,6 +860,26 @@ def main():
                     f.lines[k3] = re.sub(r"\breturn\s+INTERACTION_HANDLED_PASS\b", "return OP_PASS", f.lines[k3])
                 f.lines[h["idx"]] = sig + extra
                 f.dirty = True
+                # the overrides below T: the same signature, the same locals, the same returns; a bare return after `. = ..()` keeps `.`
+                for (oty, orel, oi, ofb, olb, onames, otypes, obody) in h.get("overrides", []):
+                    of = files[orel]
+                    keeps_dot = bool(re.search(r"(^|\s)\.\s*=\s*\.\.\(\)", obody, re.M))
+                    for k4 in range(ofb, olb + 1):
+                        if of.lines[k4] is None:
+                            continue
+                        if keeps_dot:
+                            of.lines[k4] = re.sub(r"\breturn(?=\s*(?://.*)?$)", "return .", of.lines[k4])
+                            of.lines[k4] = re.sub(r"\breturn\s+(?:FALSE|0|null)(?=\s*(?://.*)?$)", "return OP_DECLINE", of.lines[k4])
+                        elif s["kind"] not in FALLS_THROUGH:
+                            of.lines[k4] = re.sub(r"\breturn\b(?:\s+(?:FALSE|0|null))?(?=\s*(?://.*)?$)", "return OP_DECLINE", of.lines[k4])
+                        of.lines[k4] = re.sub(r"\breturn\s+INTERACTION_HANDLED_PASS\b", "return OP_PASS", of.lines[k4])
+                    olocals = []
+                    if words_in(obody, onames[0]):
+                        olocals.append(chr(9) + "var/%s/%s = A.actor" % (otypes[0], onames[0]))
+                    if words_in(obody, onames[1]):
+                        olocals.append(chr(9) + "var/%s/%s = A.held" % (otypes[1], onames[1]))
+                    of.lines[oi] = "%s/%s(datum/act/op/A)" % (oty, s["proc"]) + "".join(chr(10) + x for x in olocals)
+                    of.dirty = True
             kind0, rel, first, last, text = plan["decl"]
             f = files[rel]
             block_at = None
@@ -810,8 +899,12 @@ def main():
                 fb, lb = body_range(bf.lines, bi)
                 bf.lines[lb] = bf.lines[lb] + "".join("\n\t" + e for e in entries)
                 bf.dirty = True
+                if wrap_helpers:
+                    f.lines[first] = "\n\n".join(hp for _t, hp in wrap_helpers)
             else:
                 f.lines[first] = "CAPABILITIES(%s)" % t + "".join("\n\t" + e for e in entries)
+                if wrap_helpers:
+                    f.lines[first] += "\n\n" + "\n\n".join(hp for _t, hp in wrap_helpers)
             f.dirty = True
         for f in files.values():
             if f.dirty:

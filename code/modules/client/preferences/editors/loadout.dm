@@ -660,8 +660,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 /datum/preference_editor/loadout/before_action(datum/preferences/preferences, mob/user, action)
 	_validate_and_persist_slot(preferences)
 
-UI_ACT(/datum/preference_editor/loadout, "set_loadout_key", ui_act_set_loadout_key, UI_ARG_TEXT("key"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_loadout_key)
+/datum/preference_editor/loadout/proc/ui_act_set_loadout_key(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// was "switch_slot" + numeric index. Now switches which per-job loadout
 	// is being edited. Validates against priorities + the "_default" sentinel.
 	var/new_key = params["key"]
@@ -672,8 +671,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_loadout_key)
 	preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "toggle_gear", ui_act_toggle_gear, UI_ARG_VALUE("gear"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_toggle_gear)
+/datum/preference_editor/loadout/proc/ui_act_toggle_gear(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/datum/gear/G = GLOB.gear_datums[params["gear"]]
 	if(!G || !_gear_permitted_for(G, preferences))
 		return PREF_UPDATE_REJECTED
@@ -689,8 +687,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_toggle_gear)
 	preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "set_body_slot", ui_act_set_body_slot, UI_ARG_TEXT("body_slot"), UI_ARG_VALUE("gear"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_body_slot)
+/datum/preference_editor/loadout/proc/ui_act_set_body_slot(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// Replaces (or adds, for multi-slots) the item occupying body_slot.
 	var/datum/gear/G = GLOB.gear_datums[params["gear"]]
 	if(!G || !_gear_permitted_for(G, preferences))
@@ -718,8 +715,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_body_slot)
 	preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "clear_body_slot", ui_act_clear_body_slot, UI_ARG_TEXT("body_slot"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_clear_body_slot)
+/datum/preference_editor/loadout/proc/ui_act_clear_body_slot(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/body_slot_str = "[params["body_slot"]]"
 	var/slot = _current_slot(preferences)
 	var/list/active = _active_list(preferences, slot)
@@ -731,15 +727,13 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_clear_body_slot)
 	preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "clear_loadout", ui_act_clear_loadout)
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_clear_loadout)
+/datum/preference_editor/loadout/proc/ui_act_clear_loadout(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/slot = _current_slot(preferences)
 	_save_active(preferences, slot, list())
 	preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "set_tweak", ui_act_set_tweak, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_tweak)
+/datum/preference_editor/loadout/proc/ui_act_set_tweak(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// opens the gear_tweak's input dialog and saves the returned value.
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
@@ -760,8 +754,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_tweak)
 	gt.ask_metadata(user, cur_value, G, null, src, PROC_REF(tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/loadout(preferences, gear_name, tweak_idx, loadout_key))
 	return PREF_UPDATE_UNCHANGED
 
-UI_ACT(/datum/preference_editor/loadout, "set_tweak_value", ui_act_set_tweak_value, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"), UI_ARG_VALUE("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_tweak_value)
+/datum/preference_editor/loadout/proc/ui_act_set_tweak_value(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// direct write from React inline widget (text/dropdown/color/boolean).
 	// Bypasses get_metadata's tgui_input_X dialog because the React side already
 	// did the input collection. Per-kind validation lives on /datum/gear_tweak
@@ -793,8 +786,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_tweak_value)
 		preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "pick_tweak_color", ui_act_pick_tweak_color, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_pick_tweak_color)
+/datum/preference_editor/loadout/proc/ui_act_pick_tweak_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// opens BYOND's tgui_color_picker for a standalone /datum/gear_tweak/color
 	// tweak (kind=color in React). Mirrors how the trait_picker editor handles its
 	// blood color action — single explicit picker call, no JS-side color input.
@@ -818,8 +810,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_pick_tweak_color)
 	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(tweak_color_picked), answerer = user, title = "[G.display_name]", question = "Pick a color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
 	return PREF_UPDATE_UNCHANGED
 
-UI_ACT(/datum/preference_editor/loadout, "recolor_pick_tint", ui_act_recolor_pick_tint, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_tint)
+/datum/preference_editor/loadout/proc/ui_act_recolor_pick_tint(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// opens tgui_color_picker for the unified recolor tweak's tint mode.
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
@@ -842,8 +833,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_tint)
 	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(tint_color_picked), answerer = user, title = "[G.display_name]", question = "Tint color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
 	return PREF_UPDATE_UNCHANGED
 
-UI_ACT(/datum/preference_editor/loadout, "recolor_pick_palette_swatch", ui_act_recolor_pick_palette_swatch, UI_ARG_VALUE("gear"), UI_ARG_TEXT("original"), UI_ARG_NUM("tweak"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_palette_swatch)
+/datum/preference_editor/loadout/proc/ui_act_recolor_pick_palette_swatch(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// palette-mode swatch picker. Takes `original` hex; opens tgui_color_picker
 	// and updates the `original → new` mapping inside the recolor metadata's value dict.
 	var/gear_name = params["gear"]
@@ -872,8 +862,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_palette_s
 	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(swatch_color_picked), answerer = user, title = "[G.display_name]", question = "Recolor source [original]", default = cur_value, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = original)
 	return PREF_UPDATE_UNCHANGED
 
-UI_ACT(/datum/preference_editor/loadout, "recolor_pick_matrix", ui_act_recolor_pick_matrix, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_matrix)
+/datum/preference_editor/loadout/proc/ui_act_recolor_pick_matrix(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// opens the matrix colormatrix picker for the unified recolor tweak.
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
@@ -907,8 +896,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_recolor_pick_matrix)
 	SStgui.update_uis(preferences)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "set_recolor", ui_act_set_recolor, UI_ARG_VALUE("gear"), UI_ARG_NUM("tweak"), UI_ARG_LIST("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_recolor)
+/datum/preference_editor/loadout/proc/ui_act_set_recolor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// direct write for the unified recolor tweak. value is a dict:
 	//   {mode: "off"|"tint"|"palette"|"matrix", value: <mode-specific>}
 	var/gear_name = params["gear"]
@@ -971,8 +959,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_set_recolor)
 	preferences.update_preview_icon()
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/loadout, "reset_tweaks", ui_act_reset_tweaks, UI_ARG_VALUE("gear"))
-UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_reset_tweaks)
+/datum/preference_editor/loadout/proc/ui_act_reset_tweaks(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/gear_name = params["gear"]
 	var/loadout_key = _current_slot(preferences)
 	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
@@ -990,3 +977,87 @@ UI_ACT_PREF_PROC(/datum/preference_editor/loadout, ui_act_reset_tweaks)
 // React never called it; removed.
 
 #undef DQ_LOADOUT_OTHER_SLOT
+
+/// /datum/preference_editor/loadout's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/loadout/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_loadout_key")
+			typed = payload_args(src, params, list("key" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_loadout_key(user, typed, preferences, null, action)
+		if("toggle_gear")
+			typed = payload_args(src, params, list("gear" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_toggle_gear(user, typed, preferences, null, action)
+		if("set_body_slot")
+			typed = payload_args(src, params, list("body_slot" = schema_text(4096), "gear" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_body_slot(user, typed, preferences, null, action)
+		if("clear_body_slot")
+			typed = payload_args(src, params, list("body_slot" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_clear_body_slot(user, typed, preferences, null, action)
+		if("clear_loadout")
+			typed = payload_args(src, params, list())
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_clear_loadout(user, typed, preferences, null, action)
+		if("set_tweak")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_tweak(user, typed, preferences, null, action)
+		if("set_tweak_value")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num(), "value" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_tweak_value(user, typed, preferences, null, action)
+		if("pick_tweak_color")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_pick_tweak_color(user, typed, preferences, null, action)
+		if("recolor_pick_tint")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_recolor_pick_tint(user, typed, preferences, null, action)
+		if("recolor_pick_palette_swatch")
+			typed = payload_args(src, params, list("gear" = null, "original" = schema_text(4096), "tweak" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_recolor_pick_palette_swatch(user, typed, preferences, null, action)
+		if("recolor_pick_matrix")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_recolor_pick_matrix(user, typed, preferences, null, action)
+		if("set_recolor")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num(), "value" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_recolor(user, typed, preferences, null, action)
+		if("reset_tweaks")
+			typed = payload_args(src, params, list("gear" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_reset_tweaks(user, typed, preferences, null, action)
+	return ..()

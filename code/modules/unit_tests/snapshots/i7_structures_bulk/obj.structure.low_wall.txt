@@ -2,3 +2,4 @@
 /obj/structure/low_wall|robot|none => low_wall_item,low_wall_drag|
 /obj/structure/low_wall|ai|none => |
 /obj/structure/low_wall|ghost|none => |
+

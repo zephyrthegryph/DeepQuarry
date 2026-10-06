@@ -34,13 +34,12 @@
 	var/datum/station_holomap/holomap_datum
 
 CAPABILITIES(/obj/machinery/station_map)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(watching_mob), wakes_on = list(nameof(watching_mob)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	owns_one(nameof(holomap_datum), starts = /datum/station_holomap)
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
 OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_mob")
-
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
 	original_zLevel = loc.z
@@ -152,7 +151,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 // TODO - Implement for AI ~Leshana
 // user.station_holomap.toggleHolomap(user, isAI(user))
 
-/obj/machinery/station_map/machine_step()
+/obj/machinery/station_map/proc/work_step(datum/act/timer/A)
 	if((!operable()) || !anchored || !watching_mob())
 		stopWatching()
 
@@ -162,7 +161,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 		stopWatching()
 
 /obj/machinery/station_map/proc/on_watcher_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	// watching_mob() already reads null for a watcher mid-delete: hand it over.
 	if((watching_mob == source))

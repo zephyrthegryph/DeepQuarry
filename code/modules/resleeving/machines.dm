@@ -58,7 +58,7 @@
 	return 1
 
 /// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
-/obj/machinery/clonepod/transhuman/machine_step()
+/obj/machinery/clonepod/transhuman/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
 	if(has_stat(NOPOWER))
 		if(occupant)
@@ -145,8 +145,6 @@
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
 /// Print progress (percent); 0 while idle.
 OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE, "busy")
-
 /obj/machinery/transhuman/synthprinter/latent_generator()
 	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
 	// the key (DM's named-argument list syntax), not circuit's value -- the
@@ -190,7 +188,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	max_res_amount = store_rating
 
 /// Prints while busy with a body; idle, it sleeps until one is queued.
-/obj/machinery/transhuman/synthprinter/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
+
+/obj/machinery/transhuman/synthprinter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
@@ -384,7 +386,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 
 	return TRUE
 
-/// The computed part of /obj/machinery/transhuman/resleever's window data (declared on its UI_DATA row).
+/// /obj/machinery/transhuman/resleever's window data.
 /obj/machinery/transhuman/resleever/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

@@ -919,15 +919,15 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 			var/datum/money_account/personal_account = requester.mind?.initial_account()
 			var/price = order_price(new_order)
 			if(!personal_account || !personal_account.debit(price, "Supply procurement", "Personal order #[new_order.ordernum]: [S.name]", "Supply console"))
-				consumed(new_order, user)
-				consumed(adm_order, user)
+				spent(new_order, user)
+				spent(adm_order, user)
 				return FALSE
 			new_order.personal_order = TRUE
 			new_order.funding_account_number = personal_account.account_number
 			new_order.paid_amount = price
 	else if(personal_funding)
-		consumed(new_order, user)
-		consumed(adm_order, user)
+		spent(new_order, user)
+		spent(adm_order, user)
 		return FALSE
 	new_order.ordered_by = idname
 	new_order.comment = reason

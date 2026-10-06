@@ -41,7 +41,7 @@
 				potential_damage /= 2
 			// Rubber bullets, I guess.
 			potential_damage += P.agony / 2
-		consumed(P)
+		spent(P)
 
 		potential_damage *= 1 SECOND / (base_attack_cooldown + ranged_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
 
@@ -186,7 +186,7 @@
 				if(will_point_blank && combat_mode)
 					weapon_damage *= 1.5
 				weapon_attack_speed = G.fire_delay / (1 SECOND)
-				consumed(P)
+				spent(P)
 			if(weapon_attack_speed == 0)
 				CRASH("[G.type], using [G.projectile_type] has a 0 fire delay!")
 		var/average_damage = weapon_damage / weapon_attack_speed

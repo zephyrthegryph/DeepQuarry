@@ -158,7 +158,7 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 	unobserve(user, /datum/notice/movable_attempted_move, src)
 
 /obj/item/ore_bag/proc/autoload(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/user = A.target
 	var/obj/item/ore/O = locate_on(get_turf(user), /obj/item/ore)
 	if(O)

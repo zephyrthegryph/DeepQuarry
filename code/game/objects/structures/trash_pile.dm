@@ -16,22 +16,11 @@ CAPABILITIES(/obj/structure/trash_pile)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	climb()
 	owns_one(nameof(mouse_nest), starts = /obj/structure/mob_spawner/mouse_nest)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/trash_pile/Initialize(mapload)
-	. = ..()
-	icon_state = pick(
-		"pile1",
-		"pile2",
-		"pilechair",
-		"piletable",
-		"pilevending",
-		"brtrashpile",
-		"microwavepile",
-		"rackpile",
-		"boxfort",
-		"trashbag",
-		"brokecomp")
+/// Rolled before init (rolls()): what the pile looks like.
+/obj/structure/trash_pile/proc/roll_icon_state(datum/roller/R)
+	return R.choose(list("pile1", "pile2", "pilechair", "piletable", "pilevending", "brtrashpile", "microwavepile", "rackpile", "boxfort", "trashbag", "brokecomp"))
 
 /obj/structure/trash_pile/declare_interactions(list/into)
 	var/static/list/actor_specs = list(

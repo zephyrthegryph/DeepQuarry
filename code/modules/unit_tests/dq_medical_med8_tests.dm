@@ -37,11 +37,12 @@
 
 /datum/unit_test/dq_med8_a21_plan_key_body_type/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/frame/S = om_pipe_state(H, /datum/om/pipeline/life, TRUE)
-	TEST_ASSERT_NOTNULL(S, "setup: the human has a Life pipeline")
-	TEST_ASSERT(findtext(S.plan.key, "[H.body_type]"), "the Life plan key [S.plan.key] names the body plan [H.body_type]")
+	var/datum/sequence/seq = sequence_def(/datum/sequence/life)
+	var/datum/seq_state/S = SEQ_STATE_OF(H, seq.idx)
+	TEST_ASSERT_NOTNULL(S, "setup: the human runs the Life sequence")
+	TEST_ASSERT(findtext(S.table.key, "[H.body_type]"), "the Life table key [S.table.key] names the body plan [H.body_type]")
 	H.recompose_life()
-	TEST_ASSERT(findtext(S.plan.key, "[H.body_type]"), "recompose_life() keeps a body-plan key")
+	TEST_ASSERT(findtext(S.table.key, "[H.body_type]"), "recompose_life() keeps a body-plan key")
 
 /// C18: pneumothorax drift is derived each tick, not written into progression_rate.
 /datum/unit_test/dq_med8_c18_derived_drift
@@ -103,20 +104,16 @@
 
 /datum/unit_test/dq_med8_a19_brain_status_idle/Run()
 	var/mob/living/carbon/brain/B = allocate(/mob/living/carbon/brain)
-	var/datum/om/stage/T = om_registry().stage_by_type[/datum/om/stage/life/status/carbon/brain]
-	TEST_ASSERT_NOTNULL(T, "setup: the brain status stage is registered")
 	B.emp_damage = 10
-	TEST_ASSERT(!T.idle(B), "EMP interference keeps the brain's status stage awake")
+	TEST_ASSERT(B.life_status_due(), "EMP interference keeps the brain's status step awake")
 	B.emp_damage = 0
 
-/// A12: the forms stage sleeps for a character with no self-drawn or ticking form.
+/// A12: the forms step is absent for a character with no self-drawn or ticking form.
 /datum/unit_test/dq_med8_a12_forms_idle
 
 /datum/unit_test/dq_med8_a12_forms_idle/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/stage/T = om_registry().stage_by_type[/datum/om/stage/life/trait/forms]
-	TEST_ASSERT_NOTNULL(T, "setup: the forms stage is registered")
-	TEST_ASSERT(T.idle(H), "a character without forms lets the forms stage sleep")
+	TEST_ASSERT(!("life_trait_forms" in life_test_steps(H)), "a character without forms has no forms step")
 
 /// D23: the split wound path picks the same wound for each kind of hit, and a spread over a
 /// limb's children survives one of them being gone.

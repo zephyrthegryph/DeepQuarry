@@ -14,11 +14,12 @@
 	name = "Dangerous drone carrier"
 	starts_with = list(/mob/living/simple_mob/vore/sect_drone)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/bugsect/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/vore/sect_drone,
-							/mob/living/simple_mob/vore/sect_queen))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/bugsect)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/bugsect/proc/roll_starts_with(datum/roller/R)
+	return list(R.choose(list(/mob/living/simple_mob/vore/sect_drone, /mob/living/simple_mob/vore/sect_queen)))
 
 /obj/structure/largecrate/animal/swoopie
 	name = "SWOOPIE XL CleanBot Starter Kit"

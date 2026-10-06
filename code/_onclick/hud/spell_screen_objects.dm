@@ -177,7 +177,7 @@
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	var/datum/spell/spell = spell()
 	if(!spell)
-		spent(src)
+		ended_with(src)
 		return
 
 	if((last_charge == spell.charge_counter || !handle_icon_updates) && !forced_update)

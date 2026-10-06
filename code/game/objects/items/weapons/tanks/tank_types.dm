@@ -61,21 +61,22 @@ DECLARE_GAS(/obj/item/tank/air, "air_contents", "volume", T20C, list(GAS_O2 = 6*
 	slot_flags = null	//they have no straps!
 
 DECLARE_GAS(/obj/item/tank/phoron, "air_contents", "volume", T20C, list(GAS_PHORON = 3*ONE_ATMOSPHERE))
-EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_tank_item)))
 
 /// Old attackby: the tank's handling first (its old ..()), then fitting into a flamethrower.
-/obj/item/tank/phoron/proc/phoron_tank_item(mob/user, obj/item/W, datum/interaction/interaction)
-	tank_item(user, W, interaction)
+/obj/item/tank/phoron/tank_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	..()
 
 	if (istype(W, /obj/item/flamethrower))
 		var/obj/item/flamethrower/F = W
 		if ((!F.status)||(F.ptank))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!move_into(F, nameof(F.ptank), src, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		rel_set(src, nameof(src.master), F)
 		F.update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/tank/vox	//Can't be a child of phoron or the gas amount gets screwey.
 	name = "phoron tank"

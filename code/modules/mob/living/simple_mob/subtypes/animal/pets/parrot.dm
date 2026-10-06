@@ -134,14 +134,21 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 	icon_dead = "eclectus-dead"
 	tt_desc = "E Eclectus roratus"
 
-// ALLOW(init/INSTANCE_STATE): gender, icon_state, icon_rest and icon_dead rolled at random for each instance
-/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/Initialize(mapload)
-	gender = pick(MALE, FEMALE)
-	if(gender == FEMALE)
-		icon_state = "eclectusf" // ALLOW(decl): Initialize picks the parrot's icon from a random gender; a declaration has no random form
-		icon_rest = "eclectusf-held"
-		icon_dead = "eclectusf-dead"
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot/eclectus)
+	rolls(nameof(gender), pick_one(list(MALE, FEMALE)))
+	rolls(nameof(icon_state), PROC_REF(roll_gendered_look), from = list(nameof(gender)))
+	rolls(nameof(icon_rest), PROC_REF(roll_gendered_rest), from = list(nameof(gender)))
+	rolls(nameof(icon_dead), PROC_REF(roll_gendered_dead), from = list(nameof(gender)))
+
+/// Rolled before init (rolls()): a female eclectus has her own sprites.
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/proc/roll_gendered_look(datum/roller/R)
+	return gender == FEMALE ? "eclectusf" : icon_state
+
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/proc/roll_gendered_rest(datum/roller/R)
+	return gender == FEMALE ? "eclectusf-held" : icon_rest
+
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/proc/roll_gendered_dead(datum/roller/R)
+	return gender == FEMALE ? "eclectusf-dead" : icon_dead
 
 /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot
 	name = "grey parrot"

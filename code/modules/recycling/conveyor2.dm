@@ -29,23 +29,26 @@
 OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
 /// Moves what sits on it while running and operable (the declaration also picks the machine
 /// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("operating", "operable"))
-
 /obj/machinery/conveyor/centcom_auto
 	id = "round_end_belt"
 
 	// create a conveyor
-// ALLOW(init/CTOR_ARGS): newdir and on are constructor arguments from whoever builds it
-/obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
+CAPABILITIES(/obj/machinery/conveyor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
+	param(nameof(dir), pos = 1)
+	param(nameof(starts_on), pos = 2)
+
+/// A conveyor that starts running (its constructor param).
+/obj/machinery/conveyor/var/starts_on = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a conveyor watches what enters its turf, sets its belt direction and parts, and may start running
+/obj/machinery/conveyor/Initialize(mapload)
 	. = ..()
 	if(loc)
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
-	if(newdir)
-		set_dir(newdir)
-
 	update_dir()
 
-	if(on)
+	if(starts_on)
 		set_operating(FORWARDS)
 
 	default_apply_parts()
@@ -58,11 +61,11 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 
 /obj/machinery/conveyor/proc/on_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
@@ -126,7 +129,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 
 	// machine process
 	// move items to the target location
-/obj/machinery/conveyor/machine_step()
+/obj/machinery/conveyor/proc/work_step(datum/act/timer/timer)
 	var/list/movable_contents = list()
 	for(var/atom/movable/A in contents_of(loc))
 		if(A == src || A.anchored || istype(A, /obj/effect/abstract) || A.is_incorporeal())
@@ -249,9 +252,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 
 /// TRUE when just operated: one step pushes the position to the linked conveyors.
 OM_FIELD(/obj/machinery/conveyor_switch, operated, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operated")
-
 CAPABILITIES(/obj/machinery/conveyor_switch)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
 	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
 
@@ -281,7 +283,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 // timed process
 // if the switch changed, update the linked conveyors
 
-/obj/machinery/conveyor_switch/machine_step()
+/obj/machinery/conveyor_switch/proc/work_step(datum/act/timer/timer)
 	set_operated(FALSE)
 
 	for(var/obj/machinery/conveyor/C in conveyors)

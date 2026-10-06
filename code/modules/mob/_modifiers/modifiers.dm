@@ -125,7 +125,7 @@
 		. = isnull(.) ? mult : . * mult
 
 /datum/body_effect/shield_projection/proc/on_holder_injure(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/source = A.target
 	var/datum/notice/living_shield_injury/event = A
 	var/kind = event.kind

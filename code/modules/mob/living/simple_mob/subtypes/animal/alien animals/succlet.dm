@@ -93,20 +93,20 @@
 	else
 		. = ..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/succlet
-	of = /mob/living/simple_mob/vore/alienanimals/succlet
+/mob/living/simple_mob/vore/alienanimals/succlet/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/succlet/perform(mob/living/simple_mob/vore/alienanimals/succlet/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/succlet/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.stat)
+	if(src.stat)
 		return
-	if(self.client)
+	if(src.client)
 		return
-	if(isbelly(self.loc))	//No teleporting out of bellies
+	if(isbelly(src.loc))	//No teleporting out of bellies
 		return
-	if(prob(self.succlet_move_chance) || self.vitality() < self.succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
+	if(prob(src.succlet_move_chance) || src.vitality() < src.succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
 		var/list/mylist = list()	//Look I'm just saying, you can make it higher if you want but don't cry to me if the server lags, I made this as a joke
-		for(var/mob/M in view(world.view, get_turf(self)))	//Is there anyone nearby to target?
+		for(var/mob/M in view(world.view, get_turf(src)))	//Is there anyone nearby to target?
 			if(istype(M, /mob/living/simple_mob/vore/alienanimals/succlet))
 				continue
 			if(isobserver(M))
@@ -116,14 +116,14 @@
 			if(ismob(M))
 				mylist |= M
 		if(mylist.len > 0)
-			self.succlet_move(pick(mylist))
+			src.succlet_move(pick(mylist))
 		else
-			for(var/turf/T in view(world.view, get_turf(self)))	//No, so let's pick a turf to travel to
+			for(var/turf/T in view(world.view, get_turf(src)))	//No, so let's pick a turf to travel to
 				if(isturf(T))
 					mylist |= T
 			if(mylist.len)
-				self.succlet_move(pick(mylist))
-	self.succlet_last_health = self.vitality()	//The succlet will try to move if it has taken damage
+				src.succlet_move(pick(mylist))
+	src.succlet_last_health = src.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet
 	death_message = "shrieks in agony as it is eradicated from reality."

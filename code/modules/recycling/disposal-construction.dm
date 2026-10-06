@@ -17,11 +17,19 @@
 	var/dpdir = 0	// directions as disposalpipe
 	var/base_state = "pipe-s"
 
-// ALLOW(init/CTOR_ARGS): newtype, newdir, flipped and newsubtype are constructor arguments from whoever builds it
-/obj/structure/disposalconstruct/Initialize(mapload, newtype, newdir, flipped, newsubtype)
+CAPABILITIES(/obj/structure/disposalconstruct)
+	param(nameof(ptype), pos = 1)
+	param(nameof(dir), pos = 2)
+	param(nameof(flipped_at_make), pos = 3)
+	param(nameof(subtype_at_make), pos = 4)
+
+/// Whether the part is made flipped, and its sort type (its constructor params).
+/obj/structure/disposalconstruct/var/flipped_at_make = FALSE
+/obj/structure/disposalconstruct/var/subtype_at_make = 0
+
+// ALLOW(init/INSTANCE_STATE): a pipe part normalises a bent straight into a corner, its facing to a cardinal, and its density and sort type to its kind
+/obj/structure/disposalconstruct/Initialize(mapload)
 	. = ..()
-	ptype = newtype
-	dir = newdir
 	// Disposals handle "bent"/"corner" strangely, handle this specially.
 	if(ptype == DISPOSAL_PIPE_STRAIGHT && (dir in GLOB.cornerdirs))
 		ptype = DISPOSAL_PIPE_CORNER
@@ -39,9 +47,9 @@
 		if(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE)
 			set_density(TRUE)
 		if(DISPOSAL_PIPE_SORTER, DISPOSAL_PIPE_SORTER_FLIPPED)
-			subtype = newsubtype
+			subtype = subtype_at_make
 
-	if(flipped)
+	if(flipped_at_make)
 		do_a_flip()
 	else
 		update() // do_a_flip() calls update anyway, so, lazy way of catching unupdated pipe!
@@ -307,7 +315,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 		var/obj/machinery/disposal/deliveryChute/P = new(src.loc)
 		transfer_fingerprints_to(P)
 		P.set_dir(dir)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalconstruct/hides_under_flooring()

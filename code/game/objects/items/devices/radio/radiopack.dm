@@ -18,6 +18,7 @@
 
 CAPABILITIES(/obj/item/bluespaceradio)
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	drag_onto(PROC_REF(drop_input))
 
 /// See important note in code/datums/behaviours/tethered_item.dm
 /obj/item/bluespaceradio/proc/interaction_hand(datum/act/op/A)
@@ -26,9 +27,10 @@ CAPABILITIES(/obj/item/bluespaceradio)
 		return TRUE
 	return OP_DECLINE
 
-/obj/item/bluespaceradio/MouseDrop()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
-	drag_backpack_with_actor(user)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/bluespaceradio/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
 
 /obj/item/bluespaceradio/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(loc))

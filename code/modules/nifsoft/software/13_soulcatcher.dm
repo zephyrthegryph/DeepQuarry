@@ -324,53 +324,53 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 		reenter_soulcatcher()
 	..()
 
-/datum/om/stage/life/type_pre/carbon/brain/caught_soul
-	of = /mob/living/carbon/brain/caught_soul
+/mob/living/carbon/brain/caught_soul/life_type_pre_due()
+	return TRUE
 
-/datum/om/stage/life/type_pre/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
-	if(!self.mind || !self.key)
-		spent(self)
-		return ctx.abort()
+/mob/living/carbon/brain/caught_soul/life_type_pre(datum/seq_frame/life/F)
+	if(!src.mind || !src.key)
+		spent(src)
+		return F.abort()
 	return ..()
 
-/datum/om/stage/life/type_post/carbon/brain/caught_soul
-	of = /mob/living/carbon/brain/caught_soul
+/mob/living/carbon/brain/caught_soul/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
+/mob/living/carbon/brain/caught_soul/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
-		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+	if(!src.parent_mob && !src.transient &&(src.life_tick % 150 == 0) && src.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
+		SStranscore.m_backup(src.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
-	self.life_tick++
+	src.life_tick++
 
-	if(!self.client)
-		if(++self.client_missing == 300)
-			spent(self)
+	if(!src.client)
+		if(++src.client_missing == 300)
+			spent(src)
 		return
 	else
-		self.client_missing = 0
+		src.client_missing = 0
 
-	if(self.parent_mob) return
+	if(src.parent_mob) return
 
 	//If they're blinded
-	if(self.soulcatcher()) // needs it's own handling to allow vore_fx
-		if(self.ext_blind)
-			self.status_set(EFFECT_BLINDED, 5)
-			self.client.screen.Remove(GLOB.global_hud.whitense)
-			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if(src.soulcatcher()) // needs it's own handling to allow vore_fx
+		if(src.ext_blind)
+			src.status_set(EFFECT_BLINDED, 5)
+			src.client.screen.Remove(GLOB.global_hud.whitense)
+			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			self.status_set(EFFECT_BLINDED, 0)
-			self.clear_fullscreens()
-			self.client.screen.Add(GLOB.global_hud.whitense)
+			src.status_set(EFFECT_BLINDED, 0)
+			src.clear_fullscreens()
+			src.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf
-	if(self.ext_deaf)
-		self.status_set(EFFECT_DEAFENED, 5)
-		self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
+	if(src.ext_deaf)
+		src.status_set(EFFECT_DEAFENED, 5)
+		src.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 	else
-		self.status_set(EFFECT_DEAFENED, 0)
-		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
+		src.status_set(EFFECT_DEAFENED, 0)
+		src.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
 
 /mob/living/carbon/brain/caught_soul/hear_say()
 	if(ext_deaf || !client)
@@ -448,15 +448,17 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	icon_state = "beacon"
 	var/tmp/mob/living/parent_human
 
-// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
-/mob/observer/eye/ar_soul/Initialize(mapload, human)
+CAPABILITIES(/mob/observer/eye/ar_soul)
+	param(nameof(parent_human), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob, follows its owner's body and dresses as its owner's character
+/mob/observer/eye/ar_soul/Initialize(mapload)
 	. = ..()
 	var/mob/brainmob = loc
 	if(!istype(brainmob) || !brainmob.client)
 		return INITIALIZE_HINT_QDEL
 
 	brainmob.take_eye(src)			//Look through us
-	rel_set(src, nameof(parent_human), human)			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name
@@ -498,7 +500,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	return 1
 
 /mob/observer/eye/ar_soul/proc/human_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!can_see(parent_human(),src))
 		forceMove(get_turf(parent_human()))
 

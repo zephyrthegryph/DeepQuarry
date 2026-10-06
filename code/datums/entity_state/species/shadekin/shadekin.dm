@@ -92,7 +92,7 @@
 	rel_set(src, nameof(owner), new_owner) // one-sided back view: the mob owns us in its shadekin var
 	rel_set(owner, nameof(owner.shadekin), src)
 	if(!ishuman(owner))
-		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
+		seq_extra_add(owner, /datum/sequence/life, src) //Happens every life tick (mobs)
 	//Humans are ticked by the species_components life stage instead.
 
 	// Voice/name hooks
@@ -143,7 +143,7 @@
 	for(var/ability_id in granted_ability_ids())
 		owner.revoke_ability(ability_id, src)
 	if(!ishuman(owner))
-		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
+		seq_extra_remove(owner, /datum/sequence/life, src)
 	revoke(owner, granted_verb(/mob/living/proc/shadekin_control_panel), src)
 	if(!QDELING(owner) && owner.shadekin_display)
 		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
@@ -221,7 +221,7 @@
 		return TRUE
 	return FALSE
 
-/// The computed part of /datum/shadekin's window data (declared on its UI_DATA row).
+/// /datum/shadekin's window data.
 /datum/shadekin/ui_data(datum/act/eval/A)
 	var/data = list(
 		"stun_time" = calculate_stun(),
@@ -303,14 +303,14 @@
 
 /// The voice answer of GetVoice(): phase-shifted shadekin who hide their voice are "Something". The handler's value is the voice (the act's reply).
 /datum/shadekin/proc/on_get_voice(datum/act/name_voice/voice)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(in_phase && hide_voice_in_phase)
 		return "Something"
 	return HOOK_DECLINE
 
 /// The alt name answer of GetAltName(): no alt name while hidden in phase, and none for shadekin with voice changers or no identification.
 /datum/shadekin/proc/on_get_alt_name(datum/act/name_alt/alt)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = alt.target
 	if(in_phase && hide_voice_in_phase)
 		return ""
@@ -322,7 +322,7 @@
 
 /// The visible name answer of get_visible_name().
 /datum/shadekin/proc/on_get_visible_name(datum/act/name_visible/shown)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(in_phase && hide_voice_in_phase)
 		return "Something"
 	return HOOK_DECLINE
@@ -339,12 +339,12 @@
 
 	SK.tgui_interact(src)
 
-/// Trait system: shadekin energy for non-human mobs.
-/datum/om/stage/life/trait/shadekin
-	name = "shadekin"
+/// Life: shadekin energy for non-human mobs (humans are ticked by their species_components step).
+/datum/shadekin/proc/life_steps()
+	return list(seq_step(PROC_REF(life_trait_shadekin), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_shadekin"))
 
-/datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.shadekin?.handle_comp()
+/datum/shadekin/proc/life_trait_shadekin(mob/living/holder, datum/seq_frame/life/F)
+	handle_comp()
 
 CAPABILITIES(/datum/shadekin)
 	ref_many(nameof(active_dark_maws))

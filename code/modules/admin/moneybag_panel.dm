@@ -8,7 +8,7 @@ CAPABILITIES(/obj/item/moneybag)
 	without("ui_open")
 	op("remove", ui_act("remove", arg("coin", schema_text(4096))), then(PROC_REF(ui_act_remove)))
 
-/// The computed part of /obj/item/moneybag's window data (declared on its UI_DATA row).
+/// /obj/item/moneybag's window data.
 /obj/item/moneybag/ui_data(datum/act/eval/A)
 	return list("counts" = count_coins())
 

@@ -16,8 +16,7 @@
 		"cold" = preferences.read_preference(/datum/preference/custom_cold) || list(),
 	)
 
-UI_ACT(/datum/preference_editor/vore_messages, "add_message", ui_act_add_message, UI_ARG_TEXT("text"), UI_ARG_TEXT("which"))
-UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_add_message)
+/datum/preference_editor/vore_messages/proc/ui_act_add_message(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/which = params["which"]
 	var/pref_type = which == "heat" ? /datum/preference/custom_heat : /datum/preference/custom_cold
 	var/list/messages = preferences.read_preference(pref_type) || list()
@@ -32,8 +31,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_add_message)
 	preferences.update_preference_by_type(pref_type, messages)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/vore_messages, "edit_message", ui_act_edit_message, UI_ARG_NUM("index"), UI_ARG_TEXT("text"), UI_ARG_TEXT("which"))
-UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_edit_message)
+/datum/preference_editor/vore_messages/proc/ui_act_edit_message(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/which = params["which"]
 	var/pref_type = which == "heat" ? /datum/preference/custom_heat : /datum/preference/custom_cold
 	var/list/messages = preferences.read_preference(pref_type) || list()
@@ -49,8 +47,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_edit_message)
 	preferences.update_preference_by_type(pref_type, messages)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/vore_messages, "remove_message", ui_act_remove_message, UI_ARG_NUM("index"), UI_ARG_TEXT("which"))
-UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_remove_message)
+/datum/preference_editor/vore_messages/proc/ui_act_remove_message(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/which = params["which"]
 	var/pref_type = which == "heat" ? /datum/preference/custom_heat : /datum/preference/custom_cold
 	var/list/messages = preferences.read_preference(pref_type) || list()
@@ -62,3 +59,27 @@ UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_remove_message)
 	messages.Cut(index, index + 1)
 	preferences.update_preference_by_type(pref_type, messages)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/vore_messages's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/vore_messages/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("add_message")
+			typed = payload_args(src, params, list("text" = schema_text(4096), "which" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_add_message(user, typed, preferences, null, action)
+		if("edit_message")
+			typed = payload_args(src, params, list("index" = num(), "text" = schema_text(4096), "which" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_edit_message(user, typed, preferences, null, action)
+		if("remove_message")
+			typed = payload_args(src, params, list("index" = num(), "which" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_remove_message(user, typed, preferences, null, action)
+	return ..()

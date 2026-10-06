@@ -67,7 +67,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/computer/roguezones's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/roguezones's window data.
 /obj/machinery/computer/roguezones/proc/ui_data_obj_machinery_computer_roguezones(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/chargePercent = min(100, ((((world.time - GLOB.rm_controller.last_scan) / 10) / 60) / GLOB.rm_controller.scan_wait) * 100)
 	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0

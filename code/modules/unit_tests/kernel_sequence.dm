@@ -434,7 +434,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(!member_is(SEQ_TEST, E), "a destroyed member leaves the sweep")
 	TEST_ASSERT_NULL(E.seq_states, "and its state goes")
 
-/// A step's rewake is the one timer (after(), keyed by entity, sequence and step): it wakes that step only, and a
+/// A step's rewake is a due time on the member's one rewake timer (after(), keyed by entity and sequence): it wakes that step only, and a
 /// parked member comes back for it and parks again at once when it sleeps again.
 /datum/unit_test/kernel_sequence_rewake
 
@@ -446,7 +446,7 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(S.parked, "parked")
 	TEST_ASSERT(seq_rewake_pending(E, SEQ_TEST, "se"), "se's rewake is pending")
-	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:se"), "as a TIMER relation")
+	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:rewake"), "on the member's one rewake timer, a TIMER relation")
 	E.log.Cut()
 	var/waited = 0
 	while(S.parked && waited < 60)
@@ -630,46 +630,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_EQUAL(item["sequence"]["frames"], def.frames, "and the frame count")
 
 // ---------------------------------------------------------------- Life's order
-
-/// Locks today's Life order: the edges seq_derive_edges() derives from the Life pipeline's plans make the
-/// sequence's solver (seq_order_keys(), what every table uses) put every plan in the pipeline's exact order,
-/// with each trait stage alone and all of them together.
-/datum/unit_test/kernel_sequence_life_order
-
-/datum/unit_test/kernel_sequence_life_order/Run()
-	var/list/mobs = list(
-		allocate(/mob/living/carbon/human),
-		allocate(/mob/living/simple_mob/animal/passive/mouse),
-	)
-	var/datum/om/registry/reg = om_registry()
-	var/list/traits = list()
-	for(var/path in reg.stage_by_type)
-		var/datum/om/stage/T = reg.stage_by_type[path]
-		if(T.extra && T.family == path && T.pipeline == /datum/om/pipeline/life)
-			traits += path
-	TEST_ASSERT(length(traits), "the Life pipeline has trait stages")
-	var/list/errors = list()
-	var/list/result = life_sequence_edges(mobs, traits, errors)
-	TEST_ASSERT(!length(errors), "the plans agree on one order: [jointext(errors, "; ")]")
-	var/list/edges = result[1]
-	var/list/plans = result[2]
-	TEST_ASSERT(length(plans) >= 3, "plans for the mobs and their traits ([length(plans)])")
-	var/list/anchors = list(LIFE_INPUT, LIFE_BODY, LIFE_MIND, LIFE_OUTPUT, LIFE_TAIL)
-	var/ok = seq_check_edges(plans, edges, anchors, errors)
-	TEST_ASSERT(ok, "every plan comes out in today's order: [jointext(errors, "; ")]")
-	var/edge_count = 0
-	for(var/key in edges)
-		var/list/after = edges[key]
-		edge_count += length(after)
-		for(var/target in after)
-			TEST_ASSERT(!isnull(edges[target]), "[key] runs after [target], which is a step or an anchor")
-	var/list/nodes = list()
-	for(var/key in edges)
-		nodes += key
-	var/datum/graph_check/G = graph_validate(nodes, edges)
-	TEST_ASSERT(G.ok(), "the derived graph validates: [jointext(G.errors, "; ")]")
-	TEST_ASSERT(length(life_sequence_edge_report(edges)), "the report renders")
-	TEST_NOTICE(src, "Life: [length(nodes)] keys, [edge_count] edges over [length(plans)] plans")
 
 // ---------------------------------------------------------------- on_change(at_most =)
 

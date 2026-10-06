@@ -192,7 +192,11 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
-/obj/machinery/food_replicator/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/food_replicator)
+	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
+
+/obj/machinery/food_replicator/proc/work_step(datum/act/timer/A)
 	if(!operable())
 		set_use_power(USE_POWER_OFF)
 		return PROCESS_KILL

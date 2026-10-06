@@ -58,21 +58,21 @@
 
 	allow_mind_transfer = TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/pakkun
-	of = /mob/living/simple_mob/vore/pakkun
+/mob/living/simple_mob/vore/pakkun/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/pakkun/perform(mob/living/simple_mob/vore/pakkun/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/pakkun/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.client)
+	if(src.client)
 		return
-	if(!self.ai_brain)
+	if(!src.ai_brain)
 		return
 
-	if(self.autorest_cooldown)
-		self.autorest_cooldown --
-	else if(prob(5) && (self.resting || !self.ai_brain.primary_threat))
-		self.autorest_cooldown = rand(50,200)
-		self.lay_down()
+	if(src.autorest_cooldown)
+		src.autorest_cooldown --
+	else if(prob(5) && (src.resting || !src.ai_brain.primary_threat))
+		src.autorest_cooldown = rand(50,200)
+		src.lay_down()
 
 /mob/living/simple_mob/vore/pakkun/lay_down()
 	. = ..()

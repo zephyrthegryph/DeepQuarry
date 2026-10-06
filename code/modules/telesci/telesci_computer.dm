@@ -121,7 +121,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((length(crystals) * telepad().efficiency * powerCoefficient), 1)
 
-/// The computed part of /obj/machinery/computer/telescience's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/telescience's window data.
 /obj/machinery/computer/telescience/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!telepad())

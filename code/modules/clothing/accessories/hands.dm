@@ -75,17 +75,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
 
-// ALLOW(init/CTOR_ARGS): new_material is a constructor argument from whoever builds it
-/obj/item/clothing/accessory/bracelet/material/Initialize(mapload, new_material)
+// ALLOW(init/INSTANCE_STATE): a material bracelet is named and coloured for its material (or the type's forced one)
+/obj/item/clothing/accessory/bracelet/material/Initialize(mapload)
 	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
 	if(forced_material)
-		. = ..(mapload, forced_material)
-		new_material = forced_material
-	else
-		. = ..()
-	if(!new_material)
-		new_material = MAT_STEEL
-	material = get_material_by_name(new_material)
+		default_material = forced_material
+	. = ..()
+	material = get_material_by_name(default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
 	name = "[material.display_name] bracelet"

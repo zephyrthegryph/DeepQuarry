@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 #define JPS_VISUAL_COLOR_INTERMEDIATE "#ff00ff"
 
 /proc/jps_wipe_colors_after(list/turf/turfs, time)
-	om_after(null, time, /proc/jps_wipe_colors_now, turfs)
+	after(null, time, /proc/jps_wipe_colors_now, with = list(turfs))
 
 /proc/jps_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
@@ -177,7 +177,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	var/turf/start_check
 	#ifdef JPS_DEBUGGING
 	turfs_got_colored[start] = 8
-	om_after(start, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN)
+	after(start, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OPEN))
 	#define JPS_START_DIR(DIR) \
 		start_check_dir = DIR ; \
 		start_check = get_step(start, start_check_dir); \
@@ -233,7 +233,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	cscan_initial = JPS_CARDINAL_DURING_DIAGONAL? node_top[JPS_NODE_DEPTH] + dscan_steps : node_top[JPS_NODE_DEPTH]; \
 	do { \
 		if(cscan_steps + cscan_initial + get_dist(cscan_current, goal) > max_depth) { \
-			om_after(cscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OUT_OF_BOUNDS); \
+			after(cscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OUT_OF_BOUNDS)); \
 			break; \
 		} \
 		if(JPS_COMPLETION_CHECK(cscan_current)) { \
@@ -264,7 +264,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 					node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 				} \
 				turfs_got_colored[cscan_last] = turfs_got_colored[cscan_last] + 1; \
-				om_after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN); \
+				after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OPEN)); \
 				open.enqueue(node_creating); \
 				cscan_pass = FALSE; \
 			} \
@@ -282,7 +282,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 					node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir2); \
 				} \
 				turfs_got_colored[cscan_last] = turfs_got_colored[cscan_last] + 1; \
-				om_after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN); \
+				after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OPEN)); \
 				open.enqueue(node_creating); \
 				cscan_pass = FALSE; \
 			} \
@@ -296,7 +296,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 				node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR); \
 			} \
 			turfs_got_colored[cscan_last] = turfs_got_colored[cscan_last] + 1; \
-			om_after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN); \
+			after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OPEN)); \
 			open.enqueue(node_creating); \
 			break; \
 		} \
@@ -397,8 +397,8 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		node_top = open.dequeue()
 		node_top_pos = node_top[JPS_NODE_POS]
 		#ifdef JPS_DEBUGGING
-		om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_CURRENT)
-		debug_t += GLOB.jps_visualization_delay // the replay moves on a step (om_after(), no sleep)
+		after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_CURRENT))
+		debug_t += GLOB.jps_visualization_delay // the replay moves on a step (after(), no sleep)
 		#else
 		CHECK_TICK
 		#endif
@@ -414,16 +414,16 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		// too deep, abort
 		if(node_top[JPS_NODE_DEPTH] + get_dist(node_top_pos, goal) >= max_depth)
 			#ifdef JPS_DEBUGGING
-			om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OUT_OF_BOUNDS)
+			after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OUT_OF_BOUNDS))
 			turfs_got_colored[node_top[JPS_NODE_POS]] = turfs_got_colored[node_top[JPS_NODE_POS]] || 0
 			#endif
 			continue
 
 		#ifdef JPS_DEBUGGING
 		if(!(turfs_got_colored[node_top[JPS_NODE_POS]] -= 1))
-			om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_CLOSED)
+			after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_CLOSED))
 		else if(turfs_got_colored[node_top[JPS_NODE_POS]] > 0)
-			om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN)
+			after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OPEN))
 		node_top_pos.maptext = MAPTEXT("d [node_top[JPS_NODE_DEPTH]]<br>s [node_top[JPS_NODE_SCORE]]<br>o [max(turfs_got_colored[node_top[JPS_NODE_POS]], 0)]")
 		#endif
 
@@ -442,7 +442,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 				// check if we're out of bounds
 				if(dscan_steps + dscan_initial + get_dist(dscan_current, goal) > max_depth)
 					#ifdef JPS_DEBUGGING
-					om_after(dscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OUT_OF_BOUNDS)
+					after(dscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OUT_OF_BOUNDS))
 					turfs_got_colored[dscan_current] = -1
 					#endif
 					break
@@ -481,7 +481,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 					if(isnull(dscan_node))
 						dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir)
 					#ifdef JPS_DEBUGGING
-					om_after(dscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN)
+					after(dscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_OPEN))
 					turfs_got_colored[dscan_current] = turfs_got_colored[dscan_current] + 1
 					#endif
 					open.enqueue(dscan_node)
@@ -527,7 +527,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	while(top)
 		path_built += top[JPS_NODE_POS]
 		#ifdef JPS_DEBUGGING
-		om_after(top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), GLOB.jps_visualization_resolve? JPS_VISUAL_COLOR_INTERMEDIATE : JPS_VISUAL_COLOR_FOUND)
+		after(top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(GLOB.jps_visualization_resolve? JPS_VISUAL_COLOR_INTERMEDIATE : JPS_VISUAL_COLOR_FOUND))
 		turfs_got_colored[top] = TRUE
 		#endif
 		top = top[JPS_NODE_PREV]
@@ -539,7 +539,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	#ifdef JPS_DEBUGGING
 	if(GLOB.jps_visualization_resolve)
 		for(var/turf/T in jps_output_turfs(path_built))
-			om_after(T, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_FOUND)
+			after(T, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(JPS_VISUAL_COLOR_FOUND))
 			turfs_got_colored[top] = TRUE
 	jps_wipe_colors_after(turfs_got_colored, GLOB.jps_visualization_persist + debug_t)
 	#endif

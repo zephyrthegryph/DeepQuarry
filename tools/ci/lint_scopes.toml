@@ -296,7 +296,7 @@ bodytemp_allow = ["code/modules/heat/heat_mobs.dm"]
 # the heat and gas domains own every temperature and energy write
 heat_writes_allow = ["code/domains/", "code/__defines/verdigris/_bindings.dm"]
 weapon_damage_type_allow = ["code/modules/medical/conditions/wounds.dm"]
-organ_damage_allow = ["code/modules/body/", "code/modules/organs/"]
+organ_damage_allow = ["code/modules/body/"]
 rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
@@ -306,10 +306,10 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 50
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 22
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 107
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
-objects_ratchet_on_legacy_interactions = 158
+objects_ratchet_on_legacy_interactions = 140
 objects_ratchet_on_tool_act_overrides = 8
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 1
@@ -351,4 +351,30 @@ banned = [
   "own_put = rel_add(holder, nameof(v), value, key): the engine's accessor is _own_put, never called from content",
   "ability_pay = a malf ability's price is costs = list(\"[RES_CPU]\" = price) on its request, or res_spend(user, RES_CPU, price) when it asks nothing",
   "explosion_contents_severity = declare blast_contents() (code/library/structures/blast_contents.dm); the explosion service reads explosion_contents_severity_of()",
+  "DECLARE_UI = interface(\"Window\") in the type's CAPABILITIES block (doc/rewrite/final_api.html section 13)",
+  "DECLARE_UI_STATE = interface(..., state = nameof(GLOB.x_state)), or a tgui_state() override for a state per instance",
+  "UI_ACT = op(\"action\", ui_act(\"action\", arg(...)), needs(...), then(PROC_REF(handler))) with handler(datum/act/op/A, args...)",
+  "UI_ACT_PROC = an op's handler proc(datum/act/op/A, args...)",
+  "UI_ACT_OVERRIDE = override the op's handler proc on the subtype",
+  "UI_ACT_FORWARD = interface(..., forwards = nameof(var))",
+  "UI_ACT_FALLBACK = op(key, ui_act(\"*\"), then(...)): answers every action no op names; A.window_action() says which",
+  "UI_ACT_NESTED = an op whose handler routes the nested message itself (payload_args() runs its data through schemas)",
+  "UI_SUBACT = a plain proc, routed by the op's handler through payload_args()",
+  "UI_SUBACT_PROC = a plain proc, routed by the op's handler through payload_args()",
+  "UI_SUBACT_OVERRIDE = override the plain sub-action proc",
+  "UI_ACT_PREF_PROC = a preference editor routes its actions in its handle_action() override",
+  "UI_DATA = ui_data(datum/act/eval/A) returning the window's data",
+  "UI_DATA_REPLACE = ui_data(datum/act/eval/A) returning the window's data",
+  "ui_dispatch = a window button is an op with a ui_act() binding (op_ui_act())",
+  "ui_subdispatch = the op's handler routes its sub-actions (payload_args())",
+  "ui_dispatch_typed = asks() on the op; the handler reads A.step_value()",
+  "ui_decl_of = present_interface(holder) for the window's declaration",
+  "ui_declared_data = ui_data(datum/act/eval/A)",
+  "ui_act_allowed = a requirement on the op (needs(req(PROC_REF(x)))), or an inline gate in the handler",
+  "ui_nested_allowed = a check in the op's handler",
+  "ui_nested_done = the op's handler runs it after the sub-action",
+  "act_ask = asks(/datum/prompt/kind, fields = list(...), step = \"k\") on the op; the handler reads A.step_value(\"k\")",
+  "om_act_ask = asks() on the op; the handler reads A.step_value()",
+  "ui_modal_opened = an op bound to \"modal:<id>\" that asks() its question",
+  "ui_modal_answered = an op bound to \"modal:<id>\"; its handler reads A.step_value()",
 ]

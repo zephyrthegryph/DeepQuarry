@@ -53,7 +53,7 @@
 	unobserve(AM, /datum/notice/moved, src)
 
 /datum/om/relation/orbiting/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/mover = A.target
 	var/involved = FALSE
 	// An orbiter that left its center's turf stops orbiting.

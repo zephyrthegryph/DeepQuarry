@@ -469,7 +469,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 
 //The clean up procs!
 /obj/item/capture_crystal/proc/mob_was_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(bound_mob, /datum/notice/qdeleting, src)
 	unobserve(owner, /datum/notice/qdeleting, src)
 	bound_mob.capture_caught = FALSE
@@ -480,7 +480,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	update_icon()
 
 /obj/item/capture_crystal/proc/owner_was_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(owner, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(owner))
 	active = FALSE

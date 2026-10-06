@@ -1,4 +1,5 @@
-/obj/structure/simple_door/resin|human|none => simple_door_resin_hand|simple_door_resin_tear:combat mode is off
-/obj/structure/simple_door/resin|robot|none => simple_door_resin_hand,gen_silicon_simple_door_silicon_use|simple_door_resin_tear:combat mode is off
-/obj/structure/simple_door/resin|ai|none => gen_silicon_simple_door_silicon_use|
+/obj/structure/simple_door/resin|human|none => |
+/obj/structure/simple_door/resin|robot|none => |
+/obj/structure/simple_door/resin|ai|none => |
 /obj/structure/simple_door/resin|ghost|none => |
+

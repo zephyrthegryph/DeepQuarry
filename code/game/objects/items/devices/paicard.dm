@@ -153,7 +153,7 @@ CAPABILITIES(/obj/item/paicard)
 		get_asset_datum(/datum/asset/spritesheet_batched/pai_icons),
 	)
 
-/// The computed part of /obj/item/paicard's window data (declared on its UI_DATA row).
+/// /obj/item/paicard's window data.
 /obj/item/paicard/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"active_pai_data" = null,

@@ -24,7 +24,7 @@ CAPABILITIES(/datum/attacks_panel)
 		return FALSE
 	return TRUE
 
-/// The computed part of /datum/attacks_panel's window data (declared on its UI_DATA row).
+/// /datum/attacks_panel's window data.
 /datum/attacks_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host || !host.species)

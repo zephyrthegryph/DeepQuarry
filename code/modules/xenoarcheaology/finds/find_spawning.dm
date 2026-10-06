@@ -20,14 +20,13 @@
 		return
 	new /obj/item/archaeological_find(target.loc, ask.number)
 
-// ALLOW(init/CTOR_ARGS): new_item_type is a constructor argument from whoever builds it
-/obj/item/archaeological_find/Initialize(mapload, new_item_type)
-	. = ..()
-	if(new_item_type)
-		find_type = new_item_type
-	else
-		find_type = rand(1, MAX_ARCHAEO)
+CAPABILITIES(/obj/item/archaeological_find)
+	param(nameof(find_type), pos = 1)
+	rolls(nameof(find_type), range_of(1, MAX_ARCHAEO))
 
+// ALLOW(init/INSTANCE_STATE): a find makes the item it is, decorates and describes it, and gives way to it
+/obj/item/archaeological_find/Initialize(mapload)
+	. = ..()
 	var/item_type = "object"
 	var/secondary_item_type = "object"
 	icon_state = "unknown[rand(1,4)]"

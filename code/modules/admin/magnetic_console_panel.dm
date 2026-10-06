@@ -10,6 +10,7 @@
 // directly instead of the legacy HTML body.
 
 CAPABILITIES(/obj/machinery/magnetic_controller)
+	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
 	interface("MagneticConsole", title = "Magnetic Control Console", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("set_frequency", ui_act("set_frequency"), then(PROC_REF(ui_act_set_frequency)))
@@ -37,7 +38,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/magnetic_controller's window data (declared on its UI_DATA row).
+/// /obj/machinery/magnetic_controller's window data.
 /obj/machinery/magnetic_controller/proc/ui_data_obj_machinery_magnetic_controller(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["autolink"] = !!autolink

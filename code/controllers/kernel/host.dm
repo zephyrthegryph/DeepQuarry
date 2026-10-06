@@ -150,7 +150,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/controller/kernel's window data (declared on its UI_DATA row).
+/// /datum/controller/kernel's window data.
 /datum/controller/kernel/proc/ui_data_datum_controller_kernel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

@@ -18,12 +18,12 @@
 CAPABILITIES(/datum/computer_file/program/email_administration)
 	ref_one(nameof(current_account), /datum/computer_file/data/email_account)
 	interface("NtosEmailAdministration")
-	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
-	op("ban", ui_act("ban"), then(PROC_REF(ui_act_ban)))
-	op("changepass", ui_act("changepass"), needs(req(PROC_REF(has_account), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Password", "question" = computed(PROC_REF(newpass_question)), "max_len" = 100)), then(PROC_REF(ui_act_changepass)))
-	op("viewmail", ui_act("viewmail", arg("viewmail", num())), then(PROC_REF(ui_act_viewmail)))
-	op("viewaccount", ui_act("viewaccount", arg("viewaccount", num())), then(PROC_REF(ui_act_viewaccount)))
-	op("newaccount", ui_act("newaccount"), asks(/datum/prompt/choice, fields = list("title" = "Domain name", "question" = "Pick domain:", "choices" = computed(PROC_REF(email_domains))), step = "domain"), asks(/datum/prompt/text, fields = list("title" = "Account name", "question" = computed(PROC_REF(account_question)), "max_len" = 100), step = "login", when = PROC_REF(domain_chosen)), then(PROC_REF(ui_act_newaccount)))
+	op("back", ui_act("back"), needs(req(PROC_REF(network_admin_access), silent = TRUE)), then(PROC_REF(ui_act_back)))
+	op("ban", ui_act("ban"), needs(req(PROC_REF(network_admin_access), silent = TRUE)), then(PROC_REF(ui_act_ban)))
+	op("changepass", ui_act("changepass"), needs(req(PROC_REF(network_admin_access), silent = TRUE)), needs(req(PROC_REF(has_account), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Password", "question" = computed(PROC_REF(newpass_question)), "max_len" = 100)), then(PROC_REF(ui_act_changepass)))
+	op("viewmail", ui_act("viewmail", arg("viewmail", num())), needs(req(PROC_REF(network_admin_access), silent = TRUE)), then(PROC_REF(ui_act_viewmail)))
+	op("viewaccount", ui_act("viewaccount", arg("viewaccount", num())), needs(req(PROC_REF(network_admin_access), silent = TRUE)), then(PROC_REF(ui_act_viewaccount)))
+	op("newaccount", ui_act("newaccount"), needs(req(PROC_REF(network_admin_access), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Domain name", "question" = "Pick domain:", "choices" = computed(PROC_REF(email_domains))), step = "domain"), asks(/datum/prompt/text, fields = list("title" = "Account name", "question" = computed(PROC_REF(account_question)), "max_len" = 100), step = "login", when = PROC_REF(domain_chosen)), then(PROC_REF(ui_act_newaccount)))
 
 /datum/computer_file/program/email_administration/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
@@ -69,13 +69,11 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 
 	return data
 
-/datum/computer_file/program/email_administration/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/obj/item/card/id/I = ui.user.GetIdCard()
-	if(!istype(I) || !(ACCESS_NETWORK in I.GetAccess()))
-		return FALSE
-	return TRUE
+/// Requirement on every button: the user's ID has network access (silent, as the old guard was).
+/datum/computer_file/program/email_administration/proc/network_admin_access(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = user?.GetIdCard()
+	return istype(I) && (ACCESS_NETWORK in I.GetAccess())
 
 /datum/computer_file/program/email_administration/proc/ui_act_back(datum/act/op/A)
 	if(error)

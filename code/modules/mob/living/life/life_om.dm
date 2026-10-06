@@ -1,32 +1,25 @@
-// Mob Life on object-model pipelines (doc/rewrite/life_on_om.md).
+// Mob Life: membership in the Life sequence, relevance, and the producers that raise mob channels.
 //
-// Life is declarations: a pipeline of /datum/om/stage/life stages, a frame with the old gates
-// as facts, and the producers that raise mob channels. When stages run, idle, wake and park is
-// the core pipeline runner's business (code/datums/om/pipeline.dm); nothing here decides it.
-
-/datum/om/decl/living
-	of = /mob/living
-	behaviours = list(/datum/om/pipeline/life)
+// Life is a kernel sequence (/datum/sequence/life, life_sequence.dm): steps are procs on the mob types, declared in
+// life_steps() (life_steps.dm). When steps run, sleep, wake and park is the kernel's business
+// (code/controllers/kernel/sequence.dm); nothing here decides it.
 
 /datum/om/decl/observer
 	of = /mob/observer
 	behaviours = list(/datum/om/behaviour/observer_upkeep)
 
-/// One Life frame per LIFE_CYCLE of (fixed-step) time. Parked while every stage is idle, and at
-/// relevance NONE: a low-priority mob on a z-level with no living player (life_update_relevance()).
-/datum/om/pipeline/life
-	name = "life"
-	every = LIFE_CYCLE
-	step_interval = LIFE_CYCLE_SECONDS
-	max_catchup = LIFE_MAX_CATCHUP
-	lane = LANE_SIMULATION
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	relevance = list(OM_PARK, null, null, null)
-	stages = list(/datum/om/stage/life)
-	frame_type = /datum/om/frame/life
-	wake_all = LIFE_WAKE_ALL
-	park_after = LIFE_PARK_AFTER
-	profile_stride = LIFE_PROFILE_STRIDE
+/// A living mob runs Life while it is in the world.
+/mob/living/on_materialize()
+	. = ..()
+	seq_start(src, /datum/sequence/life)
+	// Trait states attached before the mob was live (species and trait setup in Initialize) contribute their steps now.
+	for(var/datum/trait_state/S as anything in trait_states)
+		if(length(S.life_steps()))
+			seq_extra_add(src, /datum/sequence/life, S)
+
+/mob/living/on_dematerialize()
+	seq_stop(src, /datum/sequence/life)
+	return ..()
 
 /// Ghosts, AI eyes and the blob overmind: their old Life() upkeep.
 /datum/om/behaviour/observer_upkeep
@@ -48,8 +41,8 @@
 // The old frame returned early for a low_priority mob on a z-level with no living player. Now a mob
 // is relevant (RELEVANCE_NEAR) while something holds it: a mob that isn't low priority holds it on
 // itself, and a z-level's presence holds it on the low-priority mobs there while a living player
-// is on that z-level. At RELEVANCE_NONE the life pipeline parks (its relevance list), so nothing
-// is tested per frame.
+// is on that z-level. Below RELEVANCE_NEAR the Life sequence takes it out of the sweep (min_relevance),
+// so nothing is tested per frame.
 
 /// z -> /datum/life_z_presence.
 GLOBAL_LIST_EMPTY(life_z_presence)

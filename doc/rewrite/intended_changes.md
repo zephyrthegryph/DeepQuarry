@@ -1725,6 +1725,49 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
 - Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
 
+## Lifecycle forms, second pass (rewrite/lifecycle-forms-2)
+
+- The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
+  list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
+  before. The reviewed state is `tools/ci/ending_causes_snapshot.txt` (`ending_sites.py --update/--check`).
+- Three verbs join spent/consumed/destroyed/dissolved: `lapsed(thing, by)` (END_EXPIRED now: a status effect's duration, a capped history,
+  an animation or flash), `replaced_by(thing, successor)` (END_REPLACED for a transformation whose successor the caller already made: mob
+  transforms, evolutions, soulstone constructs, organ and limb swaps, a turf change) and `ended_with(thing, owner)` (END_OWNER for an
+  owner's teardown: `on_destroy()` loops, a container's leftovers, windows and huds whose host is gone).
+- Digestion, stomach acid, cleaning reagents and acid melting are `dissolved`; eating, feeding, grinding, recipes and machines that take an
+  item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
+  `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
+  they are `spent` (a discarded temporary) or `replaced_by`.
+- Rolled at creation (`rolls()`, seeded; the distributions are unchanged): the hallucination decoy's report, tabloids, target paper, cig
+  butts, the advanced gift's chaos roll, random umbrellas and towels (`R.hex_colour()`), tilted duffle bags, first-aid kit looks, prybars,
+  junk mail, bar signs, the animal crates' contents, trash piles, hawaiian shirts, extraction points, kittens, eclectus parrots, kururak
+  instinct, the rare frog (a new `rare` var), gelatinous cubes (`R.saturated_colour()`), autocloners, crystals and greytide gear.
+- A generic arcade cabinet rolls its board before init and becomes that machine right after its init (`after_init()` + `replace_with()`),
+  instead of deleting itself from inside Initialize(); an adventure box that rolls `discarded` is spent right after its init.
+- Native input with an actor: the HUD's screen objects, alerts, radial slices, ability and spell buttons, the rig/mech air toggles, the
+  click catcher, the SDQL2 stat buttons, the changeling ID card, movable screen objects and action buttons (`drag_onto()`, new
+  `drag_over()`), IV drips, feeders, roller beds, hoist hooks, observer ghosts, overmap ships, mob holders (`drag_onto()`) and the palette
+  and environmental message tooltips (`tooltip()`) read their actor from the input. A drop handler that went on to the native parent now
+  runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
+  when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
+- A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- More native input reads its actor from the input: the vitals monitor, the backpack-style packs (defib, shield generator, bluespace
+  radio, proton pack, medigun), the cup on a cooler, a mob dragged onto its dragger (`drag_onto()`), the mob nametag tooltip (`hover()`),
+  the debug and ticket stat buttons and the rig stat buttons (`click_on()`). Admin rights checks with an actor in scope read its client
+  (`admin_require(client, rights, entry)`) instead of the deprecated usr-reading `check_rights()` (28 sites).
+- Constructor arguments are params (`param(pos =)`); the work an argument drove runs through the param's setter (`apply =`) at the root of
+  init, where the old override ran it after `..()`: before its parents' code after `..()` rather than after it. A value only built from is
+  `keep = FALSE` (a mob a holder takes in, the victim of a grab, the construct a bin is built from, a mob's predecessor). A construction the
+  setter refuses (a grab with no victim in reach, a shield wall between inactive generators, a field by a diffuser) is spent at init instead
+  of returning INITIALIZE_HINT_QDEL. Converted: mob holders, farmbots, protean buttons and rigs, overmap mob markers, jellyfish, spores,
+  commlinks, bluespace rifts, engine exhaust, pointers, magnetic bores, dominated brains and prey, grabs, NIFs, AR souls, ship landmarks
+  (a visiting landmark now lives_while() its master), paper and paper planes (their offsets rolled), graffiti (its scrawl rolled), magazines,
+  broken guns, projectile guns, blobs and their cores, chunks and overminds, samples, fake attackers, produce, slices, seeds, vines, vine
+  soil, circuit cameras, emissive blockers, stacks, alloys, shovels, resonance fields, battery modules, hoists, drop pod doors, conveyors,
+  disposal parts and bins (the construct is consumed), debris and dust, infomorphs, shields, boats and oars, quad bikes, digestion remains,
+  finds (rolled when not given) and strange rocks; silicons, AIs, humans, teppis, mice and slimes take their arguments as params and keep
+  an Initialize() for the rest.
+
 ## Atmospherics looks (rewrite/pipenet-full)
 
 - Every `APPEARANCE_TEMPLATE`, `DECLARE_APPEARANCE` and `DECLARE_APPEARANCE_PROC` in the pipe network and its devices is a `draw(look)` with
@@ -1745,6 +1788,8 @@ organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURA
   every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
   horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
   (`ORGAN_LEGACY_BURST`).
+* **Liver strain under heavy toxin load is 0.2 a cycle** (was 2.0 every tenth cycle): the pin's twenty cycles cost about 4 (old run 5.65, the
+  bursts landing with other random liver harm).
 * **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
   falls to below 8 within thirty cycles (old run 8 -> 6.6).
 * "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
@@ -1762,3 +1807,157 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
 * `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
+- Board games: UI_SUBACT rows are plain procs; each game routes its "game_action"/"setup_action" message with a `game_subaction()`/`setup_subaction()` dispatcher whose arguments go through schemas (`payload_args()` in code/engine/parts/inputs.dm). "Invite player" is an `asks()` step whose choices are the players the inviter sees. Pinned by interim_board_game_subactions.
+- Schemas: at the input boundary, `num()`/`int()` read numeric text ("3") as a number, as the legacy UI_ARG_NUM did. NaN is refused.
+- Preferences: the window is `interface(... forwards = nameof(middleware))`. Each preference editor routes its own actions with a `handle_action()` override whose arguments go through schemas (`payload_args()`), replacing the UI_ACT/UI_ACT_PREF_PROC table. "Reset slot" asks its two questions as `asks()` steps (the second only after a "Yes"). The colour pickers ("set_color_preference", the setup's "dq_pick_color") are `asks()` steps whose answer the handler writes. A preference the client may not write still refuses after the picker answers. The middleware's window data reads its window with `SStgui.get_open_ui()`. Pinned by interim_preference_editor_actions and the loadout tests.
+- **Silicon uses are `remote()` ops** (`INTERACT_SILICON`; `INTERACT_ROBOT` adds `when(req(/mob/living/silicon/robot, of = ON_ACTOR))`).
+  The curtain, the simple doors and the mirror: a cyborg beside it uses it (`needs(req_adjacent())`); the AI is not offered what it could
+  not do. The fire axe cabinet asks the actor's kind in its ops' `when()`, not in its handlers. The resin door replaces the base door's
+  hand and item with `without()`; its tear (combat mode) and its pull have disjoint stances.
+- The i7 interaction snapshots of the converted types are re-blessed (their legacy ids are ops now).
+
+## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
+
+Pinned by `code/modules/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
+form, robot and vore tests that run Life frames.
+
+* **A wake wakes the steps that read it, not the whole mob.** The pipeline's unpark woke every stage of a parked mob; the sequence clears the sleep
+  bits of the steps whose reads the change names (CHANGE_MOB_STAT, CHANGE_MOB_CLIENT and CHANGE_EXPLICIT still wake every step, LIFE_WAKE_ALL).
+  The rest stay asleep until their own reads or rewakes. Fewer steps run after a wake; none that has work is missed (the audit still runs).
+* **A woken step asks should_run() before it runs** (a rewake does not). The pipeline ran a woken stage once and then asked idle(). Steps whose
+  rule was "nothing to do until woken" (voice, fall, visible name, pulse, simple mob vitals, AFK, ambience, germs) are declared `once = TRUE`: a
+  wake by one of their reads runs them once, as before.
+* **Trait steps attached before the mob materialized now run.** `om_stage_add()` returned early for a mob whose Life pipeline was not attached yet,
+  so a trait state attached during Initialize never ticked; the mob's `on_materialize()` now adds every attached state's steps.
+* **The step profile is per step, not per mob type.** The mob service's two-minute report logs `MOB_STEP_PROFILE` lines (sampled cost per Life
+  step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
+* Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
+  Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.
+- Vore panel: the belly settings are sub-actions routed by `vore_nested()` (refused without a selected belly; the belly reschedules after), replacing UI_ACT_NESTED/UI_SUBACT. Each attribute's value goes through its schema, and a sub-action that asks in the window gets the window as `extra`. "Pick from inside/outside" keep their `rerun_ask()` questions in plain procs called by the ops. "Reload/load preferences" confirm with `asks()` steps. Pinned by interim_vore_panel_attributes.
+
+
+
+
+
+## Power plants: the tesla coils and grounding rods (rewrite/power-plants)
+
+- Pinned by `dq_pp/tesla_coil_curves` (loss, multipliers, relay 0.9, amplifier 1.075, prism split, ranges, cooldown); unchanged.
+- The energy ball steps on the singularity's `every(2 s)` (`singularity_frame()`), and bumps into it dust through the bumped notice.
+- The coil's multitool conversion and the coil board's reconfiguration are ops with `asks()`; part replacement is `part_replacement()`;
+  the looks are `draw()`. An empty hand on a coil or rod buckles whoever the actor is pulling (the legacy interaction asked for the grab
+  stance, which no longer exists as a mob state). Any held item no longer "touches" a coil for a fingerprint (that swallowed every tool click).
+
+## Power plants: fusion (rewrite/power-plants)
+
+Pinned by `dq_pp/fusion_*` (field size by strength, 1..1000 clamp at 5 W a unit, 100 energy per K, the 1% heat loss a step, instability
+tick * size / 10000, the reaction table, 30 fuel a step, the trap above 10000 K); unchanged.
+
+- **No machine pipeline.** The core steps its field on `every(MACHINE_SERVICE_INTERVAL, when = owned_field)` (`core_step()`, then the field's
+  `field_react()` a decisecond later), the injector on `every(..., when = injecting)` (`injecting` is a tracked var), the hydromagnetic trap on
+  `every()` while bolted (it used to sleep until a new field woke it; it now finds a field raised anywhere in its 7 tiles on its next step).
+- The trap no longer keeps its 7-tile scan in a var (the scan held the trap itself: a deleted trap leaked).
+- The core's unused `str` topic action is gone (nothing sent it; the console sets the strength through `set_strength()`).
+- Ops for every interaction: the cradle, part replacement and ident tag only with the field down; the injector's rod, its blitz confirmation
+  (`confirms()`), its ident tag; the three consoles' window and tag; the compressor's sheets, containers, dragged supermatter and its
+  "Eject Supermatter Sheet" menu entry. Hand ops answer an empty hand only, as the legacy hand interactions did.
+- Calm steps never bled a field's instability: `rand(0.01, 0.03)` rounds to 0 (pinned as it is; a balance change for later).
+
+## Power plants: portable generators and RTGs (rewrite/power-plants)
+
+Pinned by `dq_pp/pacman_*` and `rtg_output` (fuel per step, the supply, running dry, the heat band and overheating, cooling, the emag limit,
+RTG output per rating); unchanged.
+
+- **No machine pipeline.** A generator steps on `every(MACHINE_SERVICE_INTERVAL, when = has_work)`: while on, or while it still has heat to
+  lose (it used to sleep after cooling until a toggle woke it; the same condition now parks it). RTGs step while bolted down.
+- PACMAN ops: fuel sheets, the window (a hand on a bolted generator; a broken one refuses it), the wrench (`anchor()`, not while running,
+  joining and leaving its network), part replacement (not while running) and a repeatable `emag()` that lifts the output limit to 2.5x
+  (`is_emagged()`). The base generator's empty "Use" interaction (it did nothing) is gone.
+- The altevian reactor's fuel, toggle (a silicon's remote touch through `binds(remote())`) and fuel gauge (`draw()`); the void core's cell
+  (`owns_one(..., starts = starting_cell)` replaces the built subtypes' ownership tables); hits are `extend(/datum/act/hit/...)`.
+- Every look is `draw()`; the reactor's glow is `look.light()`.
+
+## Power plants: the gravity generator (rewrite/power-plants)
+
+Pinned by `dq_pp/gravgen_*` (2 charge a step, gravity at 100 and off at 0, the breaker's spin-up and spin-down); unchanged.
+
+- Its spin is `every(MACHINE_SERVICE_INTERVAL, when = spinning)` (`charging_state` and `broken_state` are tracked vars; the spin constants are
+  `GRAVGEN_IDLE/UP/DOWN` in `code/__defines/power.dm`).
+- The repair ladder (screwdriver, welder, 10 plasteel, wrench) is four ops on every part of the generator; a part's empty hand opens the
+  generator's window (`perform_op(..., "ui_open")`) instead of re-running the main part's legacy attack procs. The window opens to an empty hand
+  (the legacy "Use"); held tools no longer show a "Use" entry that did nothing.
+- The middle part draws the charge overlay from its main part (`draw()`); no raw overlays. Hits are `extend(/datum/act/hit/...)`.
+
+## Power plants: solars (rewrite/power-plants)
+
+Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscured or off the controller's network); unchanged.
+
+- **The controller steps for real.** Its legacy `machine_step()` returned PROCESS_KILL after one run and nothing woke it again, so a manual
+  rotation rate never advanced the target angle and an unlinked tracker or a panel moved to another network kept its link. It now steps on
+  `every(MACHINE_SERVICE_INTERVAL, when = operable)`: manual tracking turns a degree every 36000 / rate deciseconds, as the window says, and
+  stale links drop (its panel check clears once done, where the flag used to stay set).
+- Ops: the panel's and tracker's crowbar (2 s and 5 s), a hostile swing at a panel, the controller's screwdriver (2 s) and its window (an
+  empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
+  `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).
+
+## Power plants: the gas turbine (rewrite/power-plants)
+
+Pinned by `dq_pp/turbine_output_curve` and `compressor_spin_up` (((rpm / 100000) ^ 0.8) * 100000 * productivity W; a tenth of the way to the
+target a step less rpm^2 / (500000 * efficiency)); unchanged.
+
+- The compressor and the turbine step on `every(MACHINE_SERVICE_INTERVAL, when = running)` (the compressor's `starter` is tracked; the turbine
+  no longer needs the compressor to wake it). Their overlays are `draw()` from tracked stages (no raw overlays).
+- Ops: part replacement, the compressor's and the computer's ident tags (`asks()`); the turbine's window is an empty hand on a working turbine
+  (the legacy `ui_prepare()` check); the "touch for a fingerprint" interactions on any item are gone (they swallowed every tool's click).
+- The declared UI model is deleted: code/__defines/sys_ui.dm (DECLARE_UI, UI_ACT, UI_DATA, UI_SUBACT, UI_ACT_PREF_PROC and the rest), its runtime tables and dispatch in code/datums/sys/ui.dm (ui_decl_of, ui_dispatch, ui_parse_args, ui_declared_data, ui_act_allowed, ...), `act_ask`/`om_act_ask`, the `-DUI_TYPES_DUMP` boot with the `ui-types` build target (`analyze gen ui_types` writes the interface types), and dq_sys_ui_tests. Their names are hard-banned in `[lint.legacy_forms.lists] banned`. `tgui_act()` keeps "change_ui_state" (the layout toggle) as the one action every window answers.
+- EFTPOS: settings answers resume again. Since the EFTPOS window moved to ops, `eftpos_settings_resume()` looked for a legacy row that no longer existed and dropped every answer.
+- Email administration: its buttons need the network access again (`needs(req(PROC_REF(network_admin_access), silent = TRUE))`). The old `ui_act_allowed()` guard had stopped running when the window moved to ops.
+- Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
+- tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.
+
+## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+
+Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
+code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
+the step's state checks are its `when()`, steadiness its `needs()`, the organ choice and the drastic-step confirmation `asks()`, `claims()`, `wait()`, and
+the roll in `then()`. `do_surgery()`, the focus and step om tasks, `choose_surgical_step_for()`, `surgery_ask()`, `surgery_zones_in_progress` and the
+steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` and `confirm_text()`).
+
+* **One click runs the best step.** With a tool several steps take, the click performs the highest-priority step (then declaration order); the others
+  are the patient's menu entries. The old click asked which step every time.
+* **One surgery per surgeon, one claim per patient.** The per-zone lock is the op's claim: while a step waits on a patient, a second claiming op on them
+  is refused (two surgeons could work two zones at once before).
+* **The surgeon must stay conscious and adjacent with the tool in hand** (the op's keeps): an interruption abandons the step, as before.
+* **Self-surgery's three seconds of focus are part of the step's wait** (was a separate focus task before choosing).
+* Scanners and stethoscopes keep their patient use through `use_on_patient()` (was an override of `do_surgery()`).
+* Boot fix found on the way: atoms created during global init (a GLOBAL_DATUM_INIT statclick) no longer index the lifecycle tables before they exist.
+
+## Body migration, slice 6: loose organs (rewrite/body-full)
+
+Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
+from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
+`DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).
+
+
+## The machines still on machine_step(): started work (rewrite/power-plants)
+
+Every machine outside atmospherics that still had a `machine_step()` (90 types: medical, kitchen, mining, shields, xenoarchaeology, cargo,
+recycling, overmap consoles, the singularity beacon, ...) runs its step on `started_work()` (`code/library/machine/started_work.dm`): an
+`every(MACHINE_SERVICE_INTERVAL)` that runs while its STARTED_WORK_ACTIVE key holds. The step's PROCESS_KILL stops it; `MACHINE_WAKE()` /
+`MACHINE_SLEEP()` and `sleep_until_powered()` route to `work_start()` / `work_stop()` / `work_wait_for_power()`; a `DECLARE_PERIODIC_WHILE`
+gate became the work's `when` (tracked vars) or `gate` (computed procs, asked before each step), with `wakes_on` the vars the gate read; a
+`step_start_condition()` became `starts =`. The machines left the machine pipeline roster. Conversion pins were recorded for every type
+before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged: no interaction moved.
+
+- **Work no longer sleeps on change keys.** The disposal unit, the point defense turret and the shield capacitor slept on watched keys
+  (`sleep_until_keys()`) and were woken by the pipeline: the disposal unit now stops (PROCESS_KILL) and is started by what changes it (an
+  insertion, a flush, its gas watch, as before); the turret looks for meteors every step while it is active; the capacitor asks its grid
+  again every step while it is short of charge. Their `om_sleep_violation()` audits and the key-sleep tests are gone.
+- A machine whose gate is a computed proc (an occupied pod, a cooker keeping its heat, a powered drying rack) no longer parks while the gate
+  is false: its started work skips the step instead, so the gate is asked every 2 s. The cooker's and the drying rack's gates are virtual
+  (`needs_step()`, `step_gate()`) so the subtype's rule replaces its parent's.
+- `..()` calls into the base `machine_step()` (which only answered PROCESS_KILL) are gone; the nuclear bomb's step answers PROCESS_KILL itself.
+- The legacy tests that read the pipeline (`machine_stepping()`, `sys_periodic_allows()`) read the work (`test_work_allowed()`,
+  `test_machine_idle()`, `test_step_machine()` in `dq_sys_periodic_tests.dm`); `dq_started_work_waits_for_power` tests the library.
+- **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
+  to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
+  runs it through a thin `<verb>_op(A)` effect.

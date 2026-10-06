@@ -48,7 +48,7 @@
 
 /datum/km_stats_set/on_destroy(force)
 	for(var/datum/system_stats/S as anything in systems)
-		destroyed(S)
+		ended_with(S, src)
 	systems = null
 	QDEL_NULL(input)
 	rollup_base = null
@@ -200,7 +200,7 @@
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
-		destroyed(S)
+		ended_with(S, src)
 	sets = null
 	live = null
 	..()
