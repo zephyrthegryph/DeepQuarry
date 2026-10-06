@@ -29,10 +29,13 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/tvalve/appearance_overlays()
-	. = list()
-	icon_state = "tvalve[mirrored ? "m" : ""][state]"
+/obj/machinery/atmospherics/tvalve/draw(datum/look/look)
+	..()
+	look.state("tvalve[mirrored ? "m" : ""][state]")
+
+/obj/machinery/atmospherics/tvalve/derived()
+	. = ..()
+	. += drawn_from(nameof(state))
 
 /// The wheel-turning animation, played when the toggle starts (the state follows a second later).
 /obj/machinery/atmospherics/tvalve/proc/animate_toggle()
@@ -177,12 +180,10 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 	icon_state = "map_tvalve1"
 	state = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/tvalve/digital/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!powered())
-		icon_state = "tvalve[mirrored ? "m" : ""]nopower"
+/obj/machinery/atmospherics/tvalve/digital/draw(datum/look/look)
+	..()
+	if(has_stat(NOPOWER))
+		look.state("tvalve[mirrored ? "m" : ""]nopower")
 
 /// A digital three-way valve turns for someone its access lets in, while it has power.
 CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)

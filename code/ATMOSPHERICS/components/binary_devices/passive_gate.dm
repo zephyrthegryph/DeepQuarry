@@ -53,7 +53,7 @@
 /obj/machinery/atmospherics/binary/passive_gate/push_to_rust()
 	if(!unlocked)
 		rust_unregister_device()
-		flowing = FALSE
+		set_flowing(FALSE)
 		return
 	rust_set_device(1, 2)
 	switch(regulate_mode)
@@ -68,17 +68,15 @@
 	last_flow_rate = abs(moles)
 	var/new_flowing = (moles != 0)
 	if(new_flowing != flowing)
-		flowing = new_flowing
-		update_icon()
+		set_flowing(new_flowing)
 
 /obj/machinery/atmospherics/binary/passive_gate/disconnect(obj/machinery/atmospherics/reference)
 	rust_device_dirty()
 	return ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearance_flow?on:off}")
-
-/obj/machinery/atmospherics/binary/passive_gate/proc/appearance_flow()
-	return unlocked && flowing
+/obj/machinery/atmospherics/binary/passive_gate/draw(datum/look/look)
+	..()
+	look.state((unlocked && flowing) ? "on" : "off")
 
 /obj/machinery/atmospherics/binary/passive_gate/update_underlays()
 	..()
@@ -253,6 +251,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 
 
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, unlocked)
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate, flowing)
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure)
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate)
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode)
@@ -261,3 +260,4 @@ TRACKED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode)
 /obj/machinery/atmospherics/binary/passive_gate/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(unlocked), nameof(target_pressure), nameof(set_flow_rate), nameof(regulate_mode))
+	. += drawn_from(nameof(unlocked), nameof(flowing))

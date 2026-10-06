@@ -1719,6 +1719,16 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
   handled and goes on, as before.
 
+## Atmospherics looks (rewrite/pipenet-full)
+
+- Every `APPEARANCE_TEMPLATE`, `DECLARE_APPEARANCE` and `DECLARE_APPEARANCE_PROC` in the pipe network and its devices is a `draw(look)` with
+  `drawn_from()` reads: valves (`open` is tracked), three-way and shutoff valves, trinary and omni filters and mixers, the heater and freezer,
+  the heat exchanger, the injector, the pumps (the overclock overlay drawn from its icon), the regulator (`flowing` is tracked), the algae farm,
+  the tanks (a `tank_state` per gas), simple, manifold, four-way and universal pipes and the pipe vent. The looks read `operable()` / the NOPOWER
+  bit where they read the area's `powered()`.
+- A look has no underlays: manifolds and universal adapters build their pipe stubs in `update_underlays()` (also when a floor tile over them
+  changes, through `hide()`), and the omni devices set theirs when their port icons change. No appearance proc writes `icon_state`, `dir` or
+  `underlays` as a side effect any more.
 ## Body migration, slice 3: internal organs on the organ clock (rewrite/body-full)
 
 Pinned by `dq_body_rate_pins.dm` (`liver_toxin_overload`, `kidneys_clear_toxin`, `healthy_organs_idle`; green on the old code first).

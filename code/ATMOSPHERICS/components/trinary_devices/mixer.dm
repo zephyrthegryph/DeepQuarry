@@ -26,22 +26,14 @@
 
 	//node 3 is the outlet, nodes 1 & 2 are intakes
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/trinary/mixer/appearance_overlays()
-	. = list()
-	if(tee)
-		icon_state = "t"
-	else if(mirrored)
-		icon_state = "m"
-	else
-		icon_state = ""
+/obj/machinery/atmospherics/trinary/mixer/draw(datum/look/look)
+	..()
+	var/prefix = tee ? "t" : (mirrored ? "m" : "") // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
+	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
 
-	if(!powered())
-		icon_state += "off"
-	else if(node2 && node3 && node1)
-		icon_state += use_power ? "on" : "off"
-	else
-		icon_state += "off"
+/obj/machinery/atmospherics/trinary/mixer/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power))
 
 /obj/machinery/atmospherics/trinary/mixer/Initialize(mapload)
 	. = ..()
