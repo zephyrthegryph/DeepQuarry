@@ -137,19 +137,12 @@
 /proc/om_rate_linear(v0, per_second, lo, hi)
 	return vg_world_rate_linear(v0, om_world_per_tick(per_second), lo, hi)
 
-/// A quantity relaxing toward `target` with rate constant `k_per_second`.
-/proc/om_rate_relax(v0, target, k_per_second)
-	return vg_world_rate_relax(v0, target, om_world_per_tick(k_per_second))
-
 /// A store with named inflow/outflow terms (om_rate_set_term()).
 /proc/om_rate_sum(v0, lo, hi)
 	return vg_world_rate_sum(v0, lo, hi)
 
 /proc/om_rate_read(model)
 	return vg_world_rate_read(model)
-
-/proc/om_rate_set(model, value)
-	return vg_world_rate_set(model, value)
 
 /proc/om_rate_set_rate(model, per_second)
 	return vg_world_rate_set_rate(model, om_world_per_tick(per_second))

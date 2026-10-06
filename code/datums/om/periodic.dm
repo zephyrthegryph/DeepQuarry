@@ -253,10 +253,6 @@
 	W.perform(W, E, W.def.delta)
 	return TRUE
 
-/// TRUE while `E` is started on cadence `P`.
-/proc/periodic_running_on(datum/E, P)
-	return E.periodic_pipe == P
-
 /// Profiler counts: members on each periodic cadence.
 /proc/periodic_diagnostics()
 	. = list()
