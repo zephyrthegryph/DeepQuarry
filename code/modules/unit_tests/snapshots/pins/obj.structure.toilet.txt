@@ -1,50 +1,50 @@
-human|none menu: Flush
+human|none menu: Flush (refused: you need to open the lid before flushing it)
 human|none menu: Use
 human|none menu: Yank the flush lever (refused: combat mode is off)
 human|none click: nothing
-robot|none menu: Flush
+robot|none menu: Flush (refused: you need to open the lid before flushing it)
 robot|none menu: Use
 robot|none menu: Yank the flush lever (refused: combat mode is off)
 robot|none click: nothing
 ai|none menu: Use
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Flush
+human|/obj/item/tool/screwdriver menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Flush
+human|/obj/item/tool/crowbar menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/tool/crowbar click: Click: Use crowbar
-human|/obj/item/tool/wrench menu: Flush
+human|/obj/item/tool/wrench menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/tool/wrench click: Click: Use wrench
-human|/obj/item/tool/wirecutters menu: Flush
+human|/obj/item/tool/wirecutters menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Flush
+human|/obj/item/multitool menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Flush
+human|/obj/item/weldingtool menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Flush
+human|/obj/item/stack/cable_coil menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Flush
+human|/obj/item/stack/material/steel menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Flush
+human|/obj/item/card/id menu: Flush (refused: you need to open the lid before flushing it)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Yank the flush lever (refused: combat mode is off)
 human|/obj/item/card/id click: nothing

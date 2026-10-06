@@ -2130,3 +2130,12 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
   out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
   door's catch-all for held items.
+
+## Chemical dispenser refill and closets made in play (rewrite/watch-fixes)
+
+- **A chemical canister refills the dispenser's matching cartridge through the dispenser's `refill_cartridge` op.** It was the canister's
+  `afterattack()`, which the dispenser's ops (486461023f) now answer first, so the click set nothing; the pin gains the `refill_cartridge` key.
+- **A body bag unfolded in play leaves what lies on the floor alone** (`collects_in_play = FALSE`); every other closet made closed still takes
+  in the loose items on its turf, and a mapped bag still holds what was mapped into it.
+- **The toilet's conversion pin is recorded with a fixed random seed per type**, so its random lid (and its Flush row) no longer flips between
+  recordings; the pin's human is kept awake (godmode) for the same reason.

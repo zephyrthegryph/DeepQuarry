@@ -51,6 +51,10 @@
 		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
+	// The rows read the actor's state (the toilet's Flush is offered silently to a mob that is not awake): the human stays awake for the whole
+	// recording, however long it runs on the test floor's air.
+	var/mob/living/carbon/human/pin_human = actors["human"]
+	pin_human.enable_godmode()
 	var/list/actual_by_type = list()
 	for(var/type in expected_by_type)
 		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.

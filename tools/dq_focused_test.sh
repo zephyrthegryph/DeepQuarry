@@ -109,6 +109,12 @@ for arg in "$@"; do
 					exit 2
 				fi
 			else
+				# A name the build does not compile would reach the world as an unknown type and fail the run at boot: refuse it here.
+				[ -n "$all_types" ] || all_types="$(test_types)"
+				if ! grep -qxF -- "$name" <<<"$all_types"; then
+					echo "no compiled /datum/unit_test type named '$name' (is its file included in _unit_tests.dm?)" >&2
+					exit 2
+				fi
 				tests+=("$name")
 			fi
 			;;
