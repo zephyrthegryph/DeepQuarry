@@ -4,7 +4,7 @@
 //	on_change(nameof(target), ANY, coalesce(2 SECONDS), then(PROC_REF(retarget)))
 //
 // A part of an on_notice() or on_change() entry. Parts before it (when(), chance()) gate each trigger; the parts after it run once per window:
-// the first trigger of a quiet period arms one timer an interval long (om_after_unique(), keyed by the holder and the hook), every trigger inside
+// the first trigger of a quiet period arms one timer an interval long (after_unique(), keyed by the holder and the hook), every trigger inside
 // the window is absorbed by that timer, and when it fires the parts after coalesce() run once. A trigger after the run arms the next window, so
 // sustained triggers give one run per interval. Nothing is scheduled while nothing triggers.
 //
@@ -48,26 +48,18 @@ GLOBAL_VAR_INIT(coalesce_runs, 0)
 		forms_trace("coalesce", "trigger on [holder.type] absorbed by the open window of hook [H.serial]")
 		return
 	var/interval = every_interval(holder, part, H.activation)
-	om_after_unique(holder, interval, TYPE_PROC_REF(/datum, coalesce_window_fire), H)
+	after_unique(holder, interval, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H))
 	GLOB.coalesce_windows++
 	forms_trace("coalesce", "window opened on [holder.type] for hook [H.serial]: [interval] ds")
 
 /// TRUE while a window of hook H is open on holder.
 /proc/coalesce_pending(datum/holder, datum/hook/H)
-	var/datum/om/rec/rec = holder.om_rec
-	if(!rec)
-		return FALSE
-	return !!om_scheduler().timer_find(rec, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H))
+	return after_unique_pending(holder, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H))
 
 /// The window of hook H on holder is cancelled (its activation ended): the pending run never happens.
 /proc/coalesce_cancel(datum/holder, datum/hook/H)
 	H.detached = TRUE
-	var/datum/om/rec/rec = holder?.om_rec
-	if(!rec)
-		return
-	var/i = om_scheduler().timer_find(rec, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H))
-	if(i)
-		om_cancel_timer(holder, rec.timers[i])
+	if(holder && cancel_after_unique(holder, TYPE_PROC_REF(/datum, coalesce_window_fire), list(H)))
 		forms_trace("coalesce", "window of hook [H.serial] on [holder.type] cancelled with its activation")
 
 /// The parts of a hook's entry after its coalesce() part.

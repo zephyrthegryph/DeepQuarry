@@ -82,5 +82,5 @@ ACTION(mob_handle_hud_darksight, FIXED, notice = /datum/notice/mob_handle_hud_da
 ACTION(shuttle_schedule_change, FIXED, notice = /datum/notice/shuttle_schedule_changed)
 // modes() (code/engine/actions/modes.dm): the holder's mode capability changed. FIXED: nothing refuses a mode change; the var already holds the new one.
 ACTION(mode_change, old_mode, new_mode, mode_var, FIXED)
-// stance() (code/engine/stats/stances.dm): a stance row of the holder was placed, replaced or went; its cached standings are dropped. `subject_key` is the row's key.
-ACTION(stance_change, subject_key, FIXED)
+// standing() (code/engine/stats/standings.dm): a standing row of the holder was placed, replaced or went; its cached standings are dropped. `subject_key` is the row's key.
+ACTION(standing_change, subject_key, FIXED)

@@ -111,3 +111,28 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	if(!pending)
 		return 0
 	return om_timer_left(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1]) || 0
+
+// ---- unique calls: one pending timer per (owner, handler, arguments) ----
+
+/// after(), unless the same call (owner, handler, `with`) is already pending: then nothing, and the pending timer's id is returned. Keyed by the call itself, not
+/// by a name: for work that many triggers ask for and one run answers (coalesce()). `handler` is a PROC_REF on the owner or a TYPE_PROC_REF.
+/proc/after_unique(datum/owner, delay, handler, list/with = null)
+	var/datum/holder = owner || om_global_owner()
+	return om_scheduler().after_unique(arglist(list(holder, delay, handler) + (with || list())))
+
+/// TRUE while a call made by after_unique(owner, ..., handler, with) is pending.
+/proc/after_unique_pending(datum/owner, handler, list/with = null)
+	var/datum/holder = owner || om_global_owner()
+	var/datum/om/rec/rec = holder.om_rec
+	return !!rec && !!om_scheduler().timer_find(rec, handler, with || list())
+
+/// Cancels the pending call of after_unique(owner, ..., handler, with). TRUE when one was pending.
+/proc/cancel_after_unique(datum/owner, handler, list/with = null)
+	var/datum/holder = owner || om_global_owner()
+	var/datum/om/rec/rec = holder.om_rec
+	if(!rec)
+		return FALSE
+	var/i = om_scheduler().timer_find(rec, handler, with || list())
+	if(!i)
+		return FALSE
+	return om_cancel_timer(holder, rec.timers[i])

@@ -22,14 +22,15 @@ A TRACKED var holds a capability type. The engine grants that capability (with t
 
 Each state declares its own `every()`, `on_notice()`, `on_change()`, cadences and eligibility entries. It is reusable for machines (idle/working/broken), doors, reactor modes and so on.
 
-### A3. Keyed standings: `stance()` / `stance_toward()`
-- Shape: `stance(E, toward = subject, value, source = S, lasts = T, priority = P)`.
+### A3. Keyed standings: `standing()` / `standing_toward()`
+- Shape: `standing(E, toward = subject, value, source = S, lasts = T, priority = P)`.
 - Semantics are hold semantics: rows are source-attributed, released when the source dies, expire on their own, and are deduplicated per (source, subject).
 - Subject: a datum (mob), a faction key, `STANDING_PLAYERS`, or `STANDING_ANY`.
-- `stance_toward(E, subject)` composes the specific subject's rows, then the subject's faction, then players or any.
+- `standing_toward(E, subject)` composes the specific subject's rows, then the subject's faction, then players or any.
 - Composition: the highest-priority row wins; on a tie, the most hostile wins.
 - Results are cached per (E, subject) and invalidated by a notice when any row of E changes (or when a subject-wide row changes).
 - It is built on the existing hold rows (`H_KEY` column in `code/engine/stats/store.dm`); it is not a new store.
+- Holder: AI standing rows live on the `/datum/ai_brain` (`standing(brain, ...)`, `standing_toward(brain, subject)`), never on the mob. The rows are kept in the holder's own stat record, so the mob's hold list stays empty and its stats keep the no-holds fast path.
 - Players: the form supports player subjects and faction-toward-player rows. Player reputation content (players holding stances toward factions, disguises) is NOT built now; only AI uses it.
 
 ## Part B: AI
@@ -52,7 +53,7 @@ Each `/datum/ai_behavior` has a `tick_interval`, defaulting to the current rates
   - candidates come from the chunk index over the chunks covering the members' vision;
   - friendlies and neutrals are noted without a line-of-sight check;
   - for each possible hostile, line of sight is checked from the nearest member first (sentinels first for dark or invisible targets), stopping at the first that sees it;
-  - knowledge stores who was seen, not their classification. Members classify with their own cached `stance_toward()`;
+  - knowledge stores who was seen, not their classification. Members classify with their own cached `standing_toward()`;
   - the pack publishes only differences to its members.
 - **Alert delay:** members other than the spotter learn of a sighting after a per-faction delay (default 0.75 s), within a communication radius.
 - **Targeting:** done once per pack and published to members. Doctrine is per faction; the default is SPREAD with a cap of 2 members per target, and FOCUS is the alternative.
@@ -73,11 +74,11 @@ Each `/datum/ai_behavior` has a `tick_interval`, defaulting to the current rates
 - **Brains** may have their own states the same way (for example a stunned member while the pack is engaged).
 
 ### B5. Disposition via standings
-`disposition_to()`, the `personal` list and the per-call `faction_data` lookups are replaced by stance providers (capabilities):
+`disposition_to()`, the `personal` list and the per-call `faction_data` lookups are replaced by standing providers (capabilities):
 
 | Provider | Gives | Priority |
 |---|---|---|
-| `faction_relations()` (the existing faction tables as data) | base stance | 0 |
+| `faction_relations()` (the existing faction tables as data) | base standing | 0 |
 | `pack_member()` | ALLY toward packmates, source = pack | 50 |
 | `serves(lord)` | inherits the lord's rows, source = lord | 55 |
 | `grudges()` | HOSTILE toward the attacker, 5 min | 60 |
@@ -103,7 +104,7 @@ Each `/datum/ai_behavior` has a `tick_interval`, defaulting to the current rates
   - call for help and pack retreat become pack-level.
 
 ## Tests (focused only)
-- **Engine forms:** coalesce, modes, stances.
+- **Engine forms:** coalesce, modes, standings.
 - **Parity:** all 21 tactic tests with packs of one.
 - **Packs:**
   - formation, split hysteresis, merge, leader or lord death, empty-pack deletion;

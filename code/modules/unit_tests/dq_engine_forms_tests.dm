@@ -1,4 +1,4 @@
-// The engine forms of doc/rewrite/ai_packs.md part A: coalesce(), modes()/go()/after_in_state(), and keyed standings stance()/stance_toward().
+// The engine forms of doc/rewrite/ai_packs.md part A: coalesce(), modes()/go()/after_in_state(), and keyed standings standing()/standing_toward().
 
 // ---------------------------------------------------------------- fixtures
 
@@ -123,7 +123,7 @@ CAPABILITY_TYPE(forms_jammed, CAP_FORMS_JAMMED, /datum/capability/forms_jammed, 
 	var/changes = 0
 
 CAPABILITIES(/obj/forms_holder)
-	on_notice(/datum/notice/stance_changed, then(PROC_REF(heard_change)))
+	on_notice(/datum/notice/standing_changed, then(PROC_REF(heard_change)))
 
 /obj/forms_holder/proc/heard_change(datum/act/A)
 	changes++
@@ -342,126 +342,126 @@ CAPABILITIES(/obj/forms_holder)
 
 // ---------------------------------------------------------------- standings
 
-/datum/unit_test/dq_forms/stance_composition_order
+/datum/unit_test/dq_forms/standing_composition_order
 
-/datum/unit_test/dq_forms/stance_composition_order/run_forms()
+/datum/unit_test/dq_forms/standing_composition_order/run_forms()
 	var/obj/forms_holder/H = allocate(/obj/forms_holder)
 	var/obj/forms_subject/S = allocate(/obj/forms_subject)
 	var/datum/forms_source/src_a = allocate(/datum/forms_source)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_NEUTRAL, "no row: the default")
-	TEST_ASSERT_EQUAL(stance_toward(H, S, STANDING_WARY), STANDING_WARY, "or the one asked for")
-	stance(H, toward = STANDING_ANY, value = STANDING_FRIENDLY, source = src_a)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_FRIENDLY, "STANDING_ANY applies to everything")
-	stance(H, toward = "wolves", value = STANDING_WARY, source = src_a)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_WARY, "a faction row beats the any row at the same priority (more hostile)")
-	TEST_ASSERT_EQUAL(stance_toward(H, "wolves"), STANDING_WARY, "a faction key is a subject too")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_NEUTRAL, "no row: the default")
+	TEST_ASSERT_EQUAL(standing_toward(H, S, STANDING_WARY), STANDING_WARY, "or the one asked for")
+	standing(H, toward = STANDING_ANY, value = STANDING_FRIENDLY, source = src_a)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_FRIENDLY, "STANDING_ANY applies to everything")
+	standing(H, toward = "wolves", value = STANDING_WARY, source = src_a)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_WARY, "a faction row beats the any row at the same priority (more hostile)")
+	TEST_ASSERT_EQUAL(standing_toward(H, "wolves"), STANDING_WARY, "a faction key is a subject too")
 	var/datum/forms_source/src_b = allocate(/datum/forms_source)
-	stance(H, toward = S, value = STANDING_ALLY, source = src_b, priority = 50)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_ALLY, "a higher-priority row toward the subject wins whatever its value")
+	standing(H, toward = S, value = STANDING_ALLY, source = src_b, priority = 50)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_ALLY, "a higher-priority row toward the subject wins whatever its value")
 	var/obj/forms_subject/other = allocate(/obj/forms_subject)
 	other.faction = "bears"
-	TEST_ASSERT_EQUAL(stance_toward(H, other), STANDING_FRIENDLY, "another faction falls back to the any row")
+	TEST_ASSERT_EQUAL(standing_toward(H, other), STANDING_FRIENDLY, "another faction falls back to the any row")
 	other.faction = "wolves"
-	TEST_ASSERT_EQUAL(stance_toward(H, other), STANDING_WARY, "a subject that joins the faction gets its row (the cache follows the faction)")
+	TEST_ASSERT_EQUAL(standing_toward(H, other), STANDING_WARY, "a subject that joins the faction gets its row (the cache follows the faction)")
 
-/datum/unit_test/dq_forms/stance_priority_and_ties
+/datum/unit_test/dq_forms/standing_priority_and_ties
 
-/datum/unit_test/dq_forms/stance_priority_and_ties/run_forms()
+/datum/unit_test/dq_forms/standing_priority_and_ties/run_forms()
 	var/obj/forms_holder/H = allocate(/obj/forms_holder)
 	var/obj/forms_subject/S = allocate(/obj/forms_subject)
 	var/datum/forms_source/a = allocate(/datum/forms_source)
 	var/datum/forms_source/b = allocate(/datum/forms_source)
-	stance(H, toward = S, value = STANDING_HOSTILE, source = a, priority = 10)
-	stance(H, toward = S, value = STANDING_FRIENDLY, source = b, priority = 20)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_FRIENDLY, "the higher priority wins even when it is the friendlier")
-	stance(H, toward = S, value = STANDING_WARY, source = b, priority = 10)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_HOSTILE, "on a tie the most hostile wins")
-	TEST_ASSERT_EQUAL(stance_decided_by(H, S), a, "and says whose row decided")
+	standing(H, toward = S, value = STANDING_HOSTILE, source = a, priority = 10)
+	standing(H, toward = S, value = STANDING_FRIENDLY, source = b, priority = 20)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_FRIENDLY, "the higher priority wins even when it is the friendlier")
+	standing(H, toward = S, value = STANDING_WARY, source = b, priority = 10)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_HOSTILE, "on a tie the most hostile wins")
+	TEST_ASSERT_EQUAL(standing_decided_by(H, S), a, "and says whose row decided")
 	// A tie across tiers: a faction row against a row toward the subject itself.
-	stance(H, toward = "wolves", value = STANDING_ALLY, source = a, priority = 99)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_ALLY, "priority also decides across tiers")
+	standing(H, toward = "wolves", value = STANDING_ALLY, source = a, priority = 99)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_ALLY, "priority also decides across tiers")
 
-/datum/unit_test/dq_forms/stance_dedup_expiry_and_release
+/datum/unit_test/dq_forms/standing_dedup_expiry_and_release
 
-/datum/unit_test/dq_forms/stance_dedup_expiry_and_release/run_forms()
+/datum/unit_test/dq_forms/standing_dedup_expiry_and_release/run_forms()
 	var/obj/forms_holder/H = allocate(/obj/forms_holder)
 	var/obj/forms_subject/S = allocate(/obj/forms_subject)
 	var/datum/forms_source/a = allocate(/datum/forms_source)
-	stance(H, toward = S, value = STANDING_HOSTILE, source = a)
-	stance(H, toward = S, value = STANDING_WARY, source = a)
-	TEST_ASSERT_EQUAL(length(splittext(stance_explain(H), "\n")), 1, "one source holds one row per subject")
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_WARY, "and stancing again replaces the value")
-	TEST_ASSERT_EQUAL(unstance(H, S, a), 1, "unstance() releases it")
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_NEUTRAL, "and the answer is the default again")
+	standing(H, toward = S, value = STANDING_HOSTILE, source = a)
+	standing(H, toward = S, value = STANDING_WARY, source = a)
+	TEST_ASSERT_EQUAL(length(splittext(standing_explain(H), "\n")), 1, "one source holds one row per subject")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_WARY, "and stancing again replaces the value")
+	TEST_ASSERT_EQUAL(unstanding(H, S, a), 1, "unstanding() releases it")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_NEUTRAL, "and the answer is the default again")
 	// Expiry.
-	stance(H, toward = S, value = STANDING_HOSTILE, source = a, lasts = 10 SECONDS)
+	standing(H, toward = S, value = STANDING_HOSTILE, source = a, lasts = 10 SECONDS)
 	test_time(5 SECONDS)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_HOSTILE, "a timed stance holds inside its time")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_HOSTILE, "a timed stance holds inside its time")
 	test_time(6 SECONDS)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_NEUTRAL, "and expires on its own")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_NEUTRAL, "and expires on its own")
 	// A deleted source releases its rows, timed or not.
 	var/datum/forms_source/doomed = new
-	stance(H, toward = S, value = STANDING_HOSTILE, source = doomed, lasts = 5 MINUTES)
-	stance(H, toward = STANDING_ANY, value = STANDING_ALLY, source = doomed)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_HOSTILE, "placed")
+	standing(H, toward = S, value = STANDING_HOSTILE, source = doomed, lasts = 5 MINUTES)
+	standing(H, toward = STANDING_ANY, value = STANDING_ALLY, source = doomed)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_HOSTILE, "placed")
 	qdel(doomed)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_NEUTRAL, "a deleted source's rows are released, even a timed one")
-	TEST_ASSERT_EQUAL(stance_explain(H), "", "none left")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_NEUTRAL, "a deleted source's rows are released, even a timed one")
+	TEST_ASSERT_EQUAL(standing_explain(H), "", "none left")
 
-/datum/unit_test/dq_forms/stance_cache_invalidation
+/datum/unit_test/dq_forms/standing_cache_invalidation
 
-/datum/unit_test/dq_forms/stance_cache_invalidation/run_forms()
+/datum/unit_test/dq_forms/standing_cache_invalidation/run_forms()
 	var/obj/forms_holder/H = allocate(/obj/forms_holder)
 	var/obj/forms_subject/S = allocate(/obj/forms_subject)
 	var/datum/forms_source/a = allocate(/datum/forms_source)
 	GLOB.forms_trace = TRUE
-	stance(H, toward = "wolves", value = STANDING_WARY, source = a)
-	TEST_ASSERT_EQUAL(H.changes, 1, "placing a row publishes stance_changed")
-	var/misses = GLOB.stance_cache_misses
-	var/hits = GLOB.stance_cache_hits
-	stance_toward(H, S)
-	stance_toward(H, S)
-	stance_toward(H, S)
-	TEST_ASSERT_EQUAL(GLOB.stance_cache_misses, misses + 1, "the first read computes")
-	TEST_ASSERT_EQUAL(GLOB.stance_cache_hits, hits + 2, "the next two are cached")
-	var/drops = GLOB.stance_cache_drops
+	standing(H, toward = "wolves", value = STANDING_WARY, source = a)
+	TEST_ASSERT_EQUAL(H.changes, 1, "placing a row publishes standing_changed")
+	var/misses = GLOB.standing_cache_misses
+	var/hits = GLOB.standing_cache_hits
+	standing_toward(H, S)
+	standing_toward(H, S)
+	standing_toward(H, S)
+	TEST_ASSERT_EQUAL(GLOB.standing_cache_misses, misses + 1, "the first read computes")
+	TEST_ASSERT_EQUAL(GLOB.standing_cache_hits, hits + 2, "the next two are cached")
+	var/drops = GLOB.standing_cache_drops
 	var/datum/forms_source/b = allocate(/datum/forms_source)
-	stance(H, toward = "wolves", value = STANDING_HOSTILE, source = b)
-	TEST_ASSERT_EQUAL(GLOB.stance_cache_drops, drops + 1, "a row change drops the cache")
+	standing(H, toward = "wolves", value = STANDING_HOSTILE, source = b)
+	TEST_ASSERT_EQUAL(GLOB.standing_cache_drops, drops + 1, "a row change drops the cache")
 	TEST_ASSERT_EQUAL(H.changes, 2, "and publishes")
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_HOSTILE, "so the next read sees the new row")
-	unstance(H, "wolves", b)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_HOSTILE, "so the next read sees the new row")
+	unstanding(H, "wolves", b)
 	TEST_ASSERT_EQUAL(H.changes, 3, "a release publishes too")
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_WARY, "and the read follows it")
-	stance(H, toward = "wolves", value = STANDING_FRIENDLY, source = a, lasts = 2 SECONDS)
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_FRIENDLY, "a timed replacement")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_WARY, "and the read follows it")
+	standing(H, toward = "wolves", value = STANDING_FRIENDLY, source = a, lasts = 2 SECONDS)
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_FRIENDLY, "a timed replacement")
 	var/changes = H.changes
 	test_time(3 SECONDS)
 	TEST_ASSERT(H.changes > changes, "an expiry publishes")
-	TEST_ASSERT_EQUAL(stance_toward(H, S), STANDING_NEUTRAL, "and the cache did not keep the expired row")
+	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_NEUTRAL, "and the cache did not keep the expired row")
 	GLOB.forms_trace = FALSE
 
-/datum/unit_test/dq_forms/stance_players_and_any
+/datum/unit_test/dq_forms/standing_players_and_any
 
-/datum/unit_test/dq_forms/stance_players_and_any/run_forms()
+/datum/unit_test/dq_forms/standing_players_and_any/run_forms()
 	var/obj/forms_holder/H = allocate(/obj/forms_holder)
 	var/obj/forms_subject/npc = allocate(/obj/forms_subject)
 	var/obj/forms_subject/player = allocate(/obj/forms_subject)
 	player.is_player = TRUE
 	var/datum/forms_source/a = allocate(/datum/forms_source)
-	stance(H, toward = STANDING_PLAYERS, value = STANDING_HOSTILE, source = a)
-	TEST_ASSERT_EQUAL(stance_toward(H, player), STANDING_HOSTILE, "a STANDING_PLAYERS row applies to a player-controlled subject")
-	TEST_ASSERT_EQUAL(stance_toward(H, npc), STANDING_NEUTRAL, "and not to anyone else")
+	standing(H, toward = STANDING_PLAYERS, value = STANDING_HOSTILE, source = a)
+	TEST_ASSERT_EQUAL(standing_toward(H, player), STANDING_HOSTILE, "a STANDING_PLAYERS row applies to a player-controlled subject")
+	TEST_ASSERT_EQUAL(standing_toward(H, npc), STANDING_NEUTRAL, "and not to anyone else")
 	player.is_player = FALSE
-	TEST_ASSERT_EQUAL(stance_toward(H, player), STANDING_NEUTRAL, "the answer follows who controls the subject now")
+	TEST_ASSERT_EQUAL(standing_toward(H, player), STANDING_NEUTRAL, "the answer follows who controls the subject now")
 	player.is_player = TRUE
-	stance(H, toward = STANDING_ANY, value = STANDING_ALLY, source = a)
-	TEST_ASSERT_EQUAL(stance_toward(H, npc), STANDING_ALLY, "STANDING_ANY reaches the npc")
-	TEST_ASSERT_EQUAL(stance_toward(H, player), STANDING_HOSTILE, "and the player row is more hostile than the any row at the same priority")
+	standing(H, toward = STANDING_ANY, value = STANDING_ALLY, source = a)
+	TEST_ASSERT_EQUAL(standing_toward(H, npc), STANDING_ALLY, "STANDING_ANY reaches the npc")
+	TEST_ASSERT_EQUAL(standing_toward(H, player), STANDING_HOSTILE, "and the player row is more hostile than the any row at the same priority")
 	// Refusals are reported, not placed.
 	GLOB.declare_report_capture = list()
-	TEST_ASSERT(isnull(stance(H, toward = null, value = STANDING_ALLY, source = a)), "no subject")
-	TEST_ASSERT(isnull(stance(H, toward = npc, value = "friendly", source = a)), "no number")
-	TEST_ASSERT(isnull(stance(H, toward = npc, value = STANDING_ALLY, source = "text")), "no source")
+	TEST_ASSERT(isnull(standing(H, toward = null, value = STANDING_ALLY, source = a)), "no subject")
+	TEST_ASSERT(isnull(standing(H, toward = npc, value = "friendly", source = a)), "no number")
+	TEST_ASSERT(isnull(standing(H, toward = npc, value = STANDING_ALLY, source = "text")), "no source")
 	TEST_ASSERT_EQUAL(length(GLOB.declare_report_capture), 3, "reported: [json_encode(GLOB.declare_report_capture)]")
 	GLOB.declare_report_capture = list()

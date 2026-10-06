@@ -993,17 +993,17 @@ hold(M, STAT_SLOWDOWN, 0.5, source = src, lasts = 4 SECONDS)   <span class="c">/
     </ul>
   </div>
 
-  <h3 id="standings">Standings: stance() and stance_toward()</h3>
-  <pre><code>stance(E, toward = target, value = STANDING_HOSTILE, source = grudge, lasts = 5 MINUTES, priority = 60)
-stance_toward(E, target)                       <span class="c">// a number; lower is more hostile; STANDING_NEUTRAL when no row applies</span>
-unstance(E, target, source)</code></pre>
+  <h3 id="standings">Standings: standing() and standing_toward()</h3>
+  <pre><code>standing(E, toward = target, value = STANDING_HOSTILE, source = grudge, lasts = 5 MINUTES, priority = 60)
+standing_toward(E, target)                       <span class="c">// a number; lower is more hostile; STANDING_NEUTRAL when no row applies</span>
+unstanding(E, target, source)</code></pre>
   <div class="prose">
     <ul>
-      <li><strong>Hold semantics, on the hold rows.</strong> A standing is a row in the hold store of E (the <code>H_KEY</code> column carries the subject, <code>H_STAT</code> is the pseudo-stat <code>HOLD_STANCE</code>). It is source-attributed, bound to its source (released when the source is deleted, timed or not), expires after <code>lasts</code>, and one source holds one row per subject: stancing again replaces its value, priority and deadline. It uses the existing expiry timer and teardown, and the stat recompute never sees it.</li>
+      <li><strong>Hold semantics, on the hold rows.</strong> A standing is a row in the hold store of E (the <code>H_KEY</code> column carries the subject, <code>H_STAT</code> is the pseudo-stat <code>HOLD_STANDING</code>). It is source-attributed, bound to its source (released when the source is deleted, timed or not), expires after <code>lasts</code>, and one source holds one row per subject: stancing again replaces its value, priority and deadline. It uses the existing expiry timer and teardown, and the stat recompute never sees it.</li>
       <li><strong>Subjects.</strong> A datum, a faction key (text), <code>STANDING_PLAYERS</code> (any mob a player controls) or <code>STANDING_ANY</code>. The faction of a datum is <code>standing_faction()</code> (its <code>faction</code> var by default); whether a player controls it is <code>standing_player()</code> (the client of a mob). Player reputation content is not built; the form supports player subjects and faction-toward-player rows.</li>
       <li><strong>Composition.</strong> The rows that apply to a subject are the ones toward it, toward its faction, toward <code>STANDING_PLAYERS</code> when a player controls it, and toward <code>STANDING_ANY</code>, in that order of specificity. They compete in one pool: the highest priority wins; on equal priority the lowest value wins (the most hostile); on equal value the more specific row wins. Values: <code>STANDING_HOSTILE</code> -100, <code>STANDING_WARY</code> -50, <code>STANDING_NEUTRAL</code> 0, <code>STANDING_FRIENDLY</code> 50, <code>STANDING_ALLY</code> 100.</li>
-      <li><strong>Cache and notice.</strong> Answers are cached per (E, subject) and read back while the faction and player state of the subject are unchanged. Any change to a stance row of E (placed, replaced, released, expired, source deleted) drops the cache of E and publishes <code>/datum/notice/stance_changed</code> on E. <code>GLOB.forms_trace</code> logs the drops.</li>
-      <li><strong>Cost.</strong> An entity with a standing has a hold list, so its stats take the general recompute path rather than the no-holds fast path.</li>
+      <li><strong>Cache and notice.</strong> Answers are cached per (E, subject) and read back while the faction and player state of the subject are unchanged. Any change to a stance row of E (placed, replaced, released, expired, source deleted) drops the cache of E and publishes <code>/datum/notice/standing_changed</code> on E. <code>GLOB.forms_trace</code> logs the drops.</li>
+      <li><strong>Cost.</strong> An entity with a standing has a hold list, so its stats take the general recompute path rather than the no-holds fast path. Put standings on a holder that has no stats of its own: an AI keeps them on its <code>/datum/ai_brain</code>, never on the mob, so mobs keep the fast path.</li>
     </ul>
   </div>
   <h3>Statuses</h3>

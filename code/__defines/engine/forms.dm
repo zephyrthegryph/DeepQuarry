@@ -1,5 +1,5 @@
 // Engine forms for state-owned behaviour and keyed standings (doc/rewrite/final_api.html: coalesce() in section 10 "After hooks", modes() in section 11
-// "Modes", stance() in section 5 "Standings"; doc/rewrite/ai_packs.md part A).
+// "Modes", standing() in section 5 "Standings"; doc/rewrite/ai_packs.md part A).
 
 /// coalesce(interval): a part of an on_notice() / on_change() entry. Many triggers inside the window give one run of the parts after it.
 #define ENTRY_COALESCE "coalesce"
@@ -10,18 +10,18 @@
 /// after_in_state(delay, parts...): an entry of a state capability. A timer the activation owns; it ends with the state.
 #define ENTRY_AFTER_IN_STATE "after_in_state"
 
-/// Set to TRUE (VV, or a test) to log mode changes, coalesce windows and stance cache invalidations with log_world().
+/// Set to TRUE (VV, or a test) to log mode changes, coalesce windows and standing cache invalidations with log_world().
 GLOBAL_VAR_INIT(forms_trace, FALSE)
 
-// ---- standings (code/engine/stats/stances.dm) ----
+// ---- standings (code/engine/stats/standings.dm) ----
 
-/// A stance toward every mob a player controls.
+/// A standing toward every mob a player controls.
 #define STANDING_PLAYERS "standing:players"
-/// A stance toward everything: the last fallback of stance_toward().
+/// A standing toward everything: the last fallback of standing_toward().
 #define STANDING_ANY "standing:any"
 
-/// The H_STAT of a stance row in the hold store (a text, so it can never equal the id of a declared stat).
-#define HOLD_STANCE "stance"
+/// The H_STAT of a standing row in the hold store (a text, so it can never equal the id of a declared stat).
+#define HOLD_STANDING "standing"
 
 // Standing values: a number, LOWER is MORE HOSTILE. Between two rows of the same priority the lower value wins (ties go to the most hostile).
 #define STANDING_HOSTILE -100
