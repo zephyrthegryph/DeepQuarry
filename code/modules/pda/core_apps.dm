@@ -69,6 +69,9 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	op("Note10", ui_act(), then(PROC_REF(ui_act_note10)))
 	op("Note11", ui_act(), then(PROC_REF(ui_act_note11)))
 	op("Note12", ui_act(), then(PROC_REF(ui_act_note12)))
+	op("Edit", ui_act("Edit"), asks(/datum/prompt/text, fields = list("question" = "Please enter message", "title" = computed(PROC_REF(note_prompt_title)), "default" = computed(PROC_REF(note_edit_default)), "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT, "timeout" = 0), step = "k75"), then(PROC_REF(ui_act_edit)))
+	op("Titleset", ui_act("Titleset"), asks(/datum/prompt/text, fields = list("question" = "Please enter title", "title" = computed(PROC_REF(note_prompt_title)), "default" = computed(PROC_REF(note_title_default)), "timeout" = 0), step = "k84"), then(PROC_REF(ui_act_titleset)))
+	op("Print", ui_act("Print"), then(PROC_REF(ui_act_print)))
 
 /datum/data/pda/app/notekeeper/start()
 	. = ..()
@@ -83,36 +86,45 @@ CAPABILITIES(/datum/data/pda/app/notekeeper)
 	data["note"] = note									// current pda notes
 	data["notename"] = "Note [GLOB.alphabet_upper[currentnote]] : [notetitle]"
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Edit", ui_act_edit)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_edit)
-	var/n = act_ask(ui.user, action, params, ui, "k75", /datum/om/prompt/text, message = "Please enter message", title = name, default = notehtml, multiline = TRUE, max_length = MAX_TGUI_INPUT)
+/datum/data/pda/app/notekeeper/proc/ui_act_edit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/n = A.step_value("k75")
 	if(isnull(n))
 		return
-	if(pda().loc == ui.user)
+	if(pda().loc == user)
 		note = adminscrub(n)
 		notehtml = html_decode(note)
 		note = replacetext(note, "\n", "<br>")
 	else
-		pda().close(ui.user)
+		pda().close(user)
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Titleset", ui_act_titleset)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_titleset)
-	var/n = act_ask(ui.user, action, params, ui, "k84", /datum/om/prompt/text, message = "Please enter title", title = name, default = notetitle)
+/datum/data/pda/app/notekeeper/proc/ui_act_titleset(datum/act/op/A)
+	var/mob/user = A.actor
+	var/n = A.step_value("k84")
 	if(isnull(n))
 		return
-	if(pda().loc == ui.user)
+	if(pda().loc == user)
 		notetitle = adminscrub(n)
 	else
-		pda().close(ui.user)
+		pda().close(user)
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Print", ui_act_print)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_print)
-	if(pda().loc == ui.user)
-		printnote(ui.user)
+/datum/data/pda/app/notekeeper/proc/note_prompt_title(datum/act/op/A)
+	return name
+
+/datum/data/pda/app/notekeeper/proc/note_edit_default(datum/act/op/A)
+	return notehtml
+
+/datum/data/pda/app/notekeeper/proc/note_title_default(datum/act/op/A)
+	return notetitle
+
+/datum/data/pda/app/notekeeper/proc/ui_act_print(datum/act/op/A)
+	var/mob/user = A.actor
+	if(pda().loc == user)
+		printnote(user)
 	else
-		pda().close(ui.user)
+		pda().close(user)
 	return TRUE
 // dumb way to do this, but i don't know how to easily parse this without a lot of silly code outside the switch!
 

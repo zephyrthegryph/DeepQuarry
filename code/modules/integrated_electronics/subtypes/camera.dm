@@ -242,8 +242,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	return
 
 /// Switching cameras forgets the last turf first, then the module switches as usual.
-UI_ACT_OVERRIDE(/datum/tgui_module/camera/intcircuit, ui_act_switch_camera)
-	rel_clear(src, nameof(/datum/tgui_module/appearance_changer::last_camera_turf))
+/datum/tgui_module/camera/intcircuit/ui_act_switch_camera(datum/act/op/A, name)
+	rel_clear(src, nameof(last_camera_turf))
 	return ..()
 
 /// The owner_circuit this refers to (a relation view: null once that is deleted).
