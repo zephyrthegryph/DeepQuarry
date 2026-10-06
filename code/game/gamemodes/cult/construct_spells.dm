@@ -680,7 +680,7 @@
 		var/mob/living/L = hit_atom
 		act_message(user, L, others = span_danger("%U% [attack_message] %T%, sending them flying!"))
 		play_sfx(src, SFX_PUNCH)
-		L.status_at_least(EFFECT_WEAKENED, 2)
+		L.status_at_least(STAT_WEAKENED, 2)
 		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
 		var/throwdir = get_dir(src, L)
 		L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
@@ -754,14 +754,14 @@
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)
-		M.status_at_least(EFFECT_CONFUSED, 150)
+		M.status_at_least(STAT_CONFUSED, 150)
 	else if (ear_safety > 1)
-		M.status_at_least(EFFECT_CONFUSED, 30)
+		M.status_at_least(STAT_CONFUSED, 30)
 	else if (!ear_safety)
-		M.status_at_least(EFFECT_STUNNED, 10)
-		M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(STAT_STUNNED, 10)
+		M.status_at_least(STAT_WEAKENED, 2)
 		M.set_ear_damage(M.ear_damage + (rand(1, 10)))
-		M.status_at_least(EFFECT_DEAFENED, 15)
+		M.status_at_least(STAT_DEAFENED, 15)
 		// M.deaf_loop.start() // used Downstream
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))
@@ -812,8 +812,8 @@
 
 /obj/item/projectile/beam/banishment/proc/banish(mob/living/simple_mob/construct)
 	if(construct)
-		construct.status_at_least(EFFECT_STUNNED, 10)
-		construct.status_at_least(EFFECT_WEAKENED, 2)
+		construct.status_at_least(STAT_STUNNED, 10)
+		construct.status_at_least(STAT_WEAKENED, 2)
 	else
 		return
 
@@ -862,8 +862,8 @@
 	if(isliving(target))
 		var/mob/living/L = target
 		if(prob(40) && !blocked)
-			L.status_at_least(EFFECT_STUNNED, 1)
-			L.status_at_least(EFFECT_CONFUSED, 1)
+			L.status_at_least(STAT_STUNNED, 1)
+			L.status_at_least(STAT_CONFUSED, 1)
 
 
 ///Deacon Healing Sphere

@@ -486,7 +486,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 				if(ORION_TRAIL_RAIDERS)
 					if(prob(50))
 						to_chat(user, span_warning("You hear battle shouts. The tramping of boots on cold metal. Screams of agony. The rush of venting air. Are you going insane?"))
-						M.status_adjust(EFFECT_HALLUCINATING, 30)
+						M.status_adjust(STAT_HALLUCINATING, 30)
 					else
 						to_chat(user, span_danger("Something strikes you from behind! It hurts like hell and feel like a blunt weapon, but nothing is there..."))
 						M.injure(INJURY_BLUNT, 25, null, src)
@@ -496,14 +496,14 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 						to_chat(M, span_warning("You suddenly feel slightly nauseous.")) //got off lucky
 					if(severity == 2)
 						to_chat(user, span_warning("You suddenly feel extremely nauseous and hunch over until it passes."))
-						M.status_at_least(EFFECT_STUNNED, 3)
+						M.status_at_least(STAT_STUNNED, 3)
 					if(severity >= 3) //you didn't pray hard enough
 						to_chat(M, span_warning("An overpowering wave of nausea consumes over you. You hunch over, your stomach's contents preparing for a spectacular exit."))
 						if(ishuman(M))
 							after(M, 3 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, vomit))
 				if(ORION_TRAIL_FLUX)
 					if(prob(75))
-						M.status_at_least(EFFECT_WEAKENED, 3)
+						M.status_at_least(STAT_WEAKENED, 3)
 						src.visible_message("A sudden gust of powerful wind slams \the [M] into the floor!", "You hear a large fwooshing sound, followed by a bang.")
 						M.injure(INJURY_BLUNT, 15, null, src)
 					else

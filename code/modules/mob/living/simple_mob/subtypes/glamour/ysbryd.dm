@@ -151,7 +151,7 @@
 	chosen_target.fear = min((chosen_target.fear + 3),102)
 	if(COOLDOWN_FINISHED(src, effect_cooldown))
 		if(prob(5))
-			chosen_target.status_at_least(EFFECT_HALLUCINATING, 10)
+			chosen_target.status_at_least(STAT_HALLUCINATING, 10)
 			COOLDOWN_START(src, effect_cooldown, 30 SECONDS)
 		if(prob(5))
 			var/chosen_threat = pick(emote_threats)

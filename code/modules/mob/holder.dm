@@ -326,7 +326,7 @@
 	if(isliving(target))
 		var/mob/living/L = target
 		if(prob(10))
-			L.status_at_least(EFFECT_STUNNED, 2)
+			L.status_at_least(STAT_STUNNED, 2)
 
 DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_REF(interaction_item)), INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

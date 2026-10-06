@@ -392,7 +392,7 @@
 			to_chat(prey, span_danger("[src.name] passes over you."))
 			return FALSE
 		tmob.set_resting(1)
-		tmob.status_at_least(EFFECT_WEAKENED, 3) // do both regardless of stance, dummy
+		tmob.status_at_least(STAT_WEAKENED, 3) // do both regardless of stance, dummy
 		if(nofetish)
 			to_chat(pred, span_danger("You casually knock [tmob.name] over."))
 			to_chat(prey, span_danger("[src.name] casually knocks you over."))
@@ -461,7 +461,7 @@
 						message_pred = STEP_TEXT_OWNER(tail.msg_owner_disarm_walk)
 						message_prey = STEP_TEXT_PREY(tail.msg_prey_disarm_walk)
 					add_attack_logs(pred, prey, "Pinned underfoot (walk, about [damage] halloss)")
-					tmob.status_at_least(EFFECT_WEAKENED, 2) //Removed halloss because it was being abused
+					tmob.status_at_least(STAT_WEAKENED, 2) //Removed halloss because it was being abused
 				if(I_HURT)
 					message_pred = "You methodically place your foot down upon [prey]'s body, slowly applying pressure, crushing them against the floor below!"
 					message_prey = "[pred] methodically places their foot upon your body, slowly applying pressure, crushing you against the floor below!"

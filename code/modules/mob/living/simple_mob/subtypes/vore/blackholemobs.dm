@@ -101,7 +101,7 @@
 	if(!L)
 		return FALSE
 	if(Adjacent(L))
-		L.status_at_least(EFFECT_WEAKENED, 1)
+		L.status_at_least(STAT_WEAKENED, 1)
 	return TRUE
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -682,7 +682,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 				continue
 			if(src.Adjacent(H))
 				to_chat(H,span_danger("The overwhelming psychic influence from \the [src] makes your senses reel!"))
-				H.status_at_least(EFFECT_CONFUSED, scent_strength)
+				H.status_at_least(STAT_CONFUSED, scent_strength)
 				continue
 			else
 				to_chat(H,span_danger("[pick(obelisk_lure_messages)]"))

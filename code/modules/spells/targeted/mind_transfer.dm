@@ -69,8 +69,8 @@
 		//MIND TRANSFER END
 
 		//Target is handled in ..(), so we handle the caster here
-		caster.status_at_least(EFFECT_PARALYZED, amt_paralysis)
-		caster.status_at_least(EFFECT_SLEEPING, amt_paralysis)
+		caster.status_at_least(STAT_PARALYZED, amt_paralysis)
+		caster.status_at_least(STAT_SLEEPING, amt_paralysis)
 
 		//After a certain amount of time the victim gets a message about being in a different body.
 		after(caster, msg_wait, TYPE_PROC_REF(/datum, om_chat), with = list(span_danger("You feel woozy and lightheaded. Your body doesn't seem like your own.")))

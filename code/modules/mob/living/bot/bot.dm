@@ -72,9 +72,9 @@
 /mob/living/bot/proc/life_bot_core(datum/seq_frame/life/F)
 	if(src.stat == DEAD)
 		return
-	src.status_set(EFFECT_WEAKENED, 0)
-	src.status_set(EFFECT_STUNNED, 0)
-	src.status_set(EFFECT_PARALYZED, 0)
+	src.status_set(STAT_WEAKENED, 0)
+	src.status_set(STAT_STUNNED, 0)
+	src.status_set(STAT_PARALYZED, 0)
 
 	if(src.on && !src.client && !om_busy(src) && !src.paicard && !src.ai_running)
 		after(src, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)

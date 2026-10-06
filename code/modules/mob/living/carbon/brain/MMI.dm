@@ -169,7 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	return brain
 
 /obj/item/mmi/relaymove(mob/user, direction)
-	if(user.stat || user.has_status(EFFECT_STUNNED))
+	if(user.stat || user.has_status(STAT_STUNNED))
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(rig)
@@ -227,7 +227,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 //	view.add_language(LANGUAGE_ROBOT_TALK)//No binary without a binary communication device
 	view.add_language(LANGUAGE_GALCOM)
 	view.add_language(LANGUAGE_EAL)
-	view.status_set(EFFECT_MUTED, 0)
+	view.status_set(STAT_MUTED, 0)
 
 /obj/item/mmi/digital/update_occupied_state()
 	return

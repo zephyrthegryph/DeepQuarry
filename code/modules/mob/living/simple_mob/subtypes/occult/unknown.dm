@@ -319,7 +319,7 @@
 
 /// The glitch boss's confusion lands, five seconds after its warning.
 /mob/living/proc/glitch_confusion()
-	status_at_least(EFFECT_CONFUSED, 3)
+	status_at_least(STAT_CONFUSED, 3)
 	if(client)
 		to_chat(src, span_critical("You feel confused!"))
 	new /obj/effect/temp_visual/confuse(get_turf(src))

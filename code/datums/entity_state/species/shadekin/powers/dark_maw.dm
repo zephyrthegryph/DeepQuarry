@@ -150,7 +150,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	set_armed(FALSE)
 	icon_state = "dark_maw_used"
 	flick("dark_maw_tr", src)
-	L.status_adjust(EFFECT_STUNNED, 4)
+	L.status_adjust(STAT_STUNNED, 4)
 	visible_message(span_warning("A set of crystals spring out of the ground and shadowy tendrils start wrapping around [L]."))
 	if(owner() && !triggered_instantly)
 		to_chat(owner(), span_warning("A dark maw you deployed has triggered!"))

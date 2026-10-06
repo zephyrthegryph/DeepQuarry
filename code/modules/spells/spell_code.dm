@@ -152,11 +152,11 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		if("asphyxia")
 			spell_oxygen_debt(target, amount)
 		if("stunned")
-			target.status_adjust(EFFECT_STUNNED, amount)
+			target.status_adjust(STAT_STUNNED, amount)
 		if("weakened")
-			target.status_adjust(EFFECT_WEAKENED, amount)
+			target.status_adjust(STAT_WEAKENED, amount)
 		if("paralysis")
-			target.status_adjust(EFFECT_PARALYZED, amount)
+			target.status_adjust(STAT_PARALYZED, amount)
 		else
 			target.vars[type] += amount //I bear no responsibility for the runtimes that'll happen if you try to adjust non-numeric or even non-existant vars
 	return

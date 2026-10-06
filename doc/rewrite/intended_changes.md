@@ -1914,6 +1914,24 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
 - Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
 - tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.
 
+## Statuses, immunities and godmode on the stat layer (rewrite/om-life, L3)
+
+Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) and every focused test that applies a status.
+
+* **Statuses run on the mob's biology clock.** A status is a status stat (`code/library/mob/statuses.dm`) whose dose is a hold on
+  `HOLD_CLOCK_BIO`: stasis and suspension pause it (the OM statuses ran on the mob's timer clock). A stun taken into a stasis bed lasts until
+  the mob's biology has lived it out.
+* **An immunity zeroes a status instead of ending it.** Gaining the immunity (godmode, a mutation, a type's `immune_to()`) makes `has_status()`
+  FALSE at once, as before; if the immunity ends while the dose still has time left, the status is back for the rest of it (the OM ended the
+  dose when the immunity arrived).
+* **Type immunities are declarations.** The OM decls (`self_effects`) became `immune_to()` / `immune_to_incapacitation()` in each type's
+  CAPABILITIES block; godmode's implied immunities are `immune_to(..., when = STAT_GODMODE)` on /mob.
+* **`holds_status()` holds under the activation's source.** The OM keyed each activation's hold; the stat layer keeps one hold per source and
+  stat, so two activations with the same source share one hold (none exist today).
+* `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
+  path") is a separate step: it changes what ops refuse.
+* Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
+/^>>>>>>> origin/master$/d
 ## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
 
 Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
@@ -1958,6 +1976,10 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
 - `..()` calls into the base `machine_step()` (which only answered PROCESS_KILL) are gone; the nuclear bomb's step answers PROCESS_KILL itself.
 - The legacy tests that read the pipeline (`machine_stepping()`, `sys_periodic_allows()`) read the work (`test_work_allowed()`,
   `test_machine_idle()`, `test_step_machine()` in `dq_sys_periodic_tests.dm`); `dq_started_work_waits_for_power` tests the library.
+- **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
+  to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
+  runs it through a thin `<verb>_op(A)` effect.
+
 - **Registries are `registry()`** (the lifecycle form): radiation collectors and singularities (an energy ball's miniballs stay out through
   the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.

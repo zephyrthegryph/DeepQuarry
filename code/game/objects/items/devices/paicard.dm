@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/paicard)
 	op("activate_tool", ui_act("activate_tool"), then(PROC_REF(ui_act_activate_tool)))
 
 /obj/item/paicard/relaymove(mob/user, direction)
-	if(user.stat || user.has_status(EFFECT_STUNNED))
+	if(user.stat || user.has_status(STAT_STUNNED))
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(istype(rig))

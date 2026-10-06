@@ -319,7 +319,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -341,7 +341,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -361,7 +361,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		to_chat(src, span_warning("You miss!"))
 		return
 
-	T.status_at_least(EFFECT_WEAKENED, 3)
+	T.status_at_least(STAT_WEAKENED, 3)
 
 	var/use_hand = "left"
 	if(get_equipped_item(SLOT_ID_HAND_L))
@@ -390,7 +390,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying)
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying)
 		to_chat(src, span_danger("You cannot do that in your current state."))
 		return
 

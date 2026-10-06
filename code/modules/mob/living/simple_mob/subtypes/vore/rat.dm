@@ -174,7 +174,7 @@
 				visible_emote("appears to have had enough and prepares to strike!")
 				hunger += 5
 		else
-			food.status_at_least(EFFECT_WEAKENED, 5)
+			food.status_at_least(STAT_WEAKENED, 5)
 			food.visible_message(span_danger("\The [src] pounces on \the [food]!"))
 			target_mob = food
 			EatTarget()

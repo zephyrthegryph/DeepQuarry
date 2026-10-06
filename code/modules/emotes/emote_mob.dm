@@ -11,7 +11,7 @@
 
 #define EMOTE_REFRESH_SPAM_COOLDOWN (5 SECONDS)
 /mob/living/can_emote(emote_type)
-	return (..() && !(has_status(EFFECT_MUTED) && emote_type == AUDIBLE_MESSAGE))
+	return (..() && !(has_status(STAT_MUTED) && emote_type == AUDIBLE_MESSAGE))
 
 /mob/proc/emote(act, m_type, message)
 	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (custom emote tgui_input_text/tgui_alert)

@@ -35,9 +35,9 @@
 		C.species.create_organs(C)
 		C.restore_all_organs()
 		C.set_blinded(0)
-		C.status_set(EFFECT_BLINDED, 0)
-		C.status_set(EFFECT_BLURRY, 0)
-		C.status_set(EFFECT_DEAFENED, 0)
+		C.status_set(STAT_BLINDED, 0)
+		C.status_set(STAT_BLURRY, 0)
+		C.status_set(STAT_DEAFENED, 0)
 		C.set_ear_damage(0)
 
 		// make the icons look correct

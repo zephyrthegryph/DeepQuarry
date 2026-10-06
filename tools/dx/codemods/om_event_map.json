@@ -508,8 +508,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
   "notice_fields": [
@@ -1253,8 +1253,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1269,8 +1269,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1285,8 +1285,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1301,8 +1301,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"

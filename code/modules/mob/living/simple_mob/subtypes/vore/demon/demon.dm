@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 /mob/living/simple_mob/vore/demon/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(kind != INJURY_BURN)
 		return ..()
-	if(amount <= 0 || om_has(src, EFFECT_GODMODE))
+	if(amount <= 0 || in_godmode(src))
 		return 0
 	mend(TREAT_TISSUE_REPAIR, amount)
 	mend(TREAT_BURN_CARE, amount)

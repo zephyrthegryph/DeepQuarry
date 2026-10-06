@@ -398,7 +398,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.status_at_least(EFFECT_STUNNED, stun_duration)
+	M.status_at_least(STAT_STUNNED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/autostun/paralyse
@@ -408,7 +408,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.status_at_least(EFFECT_PARALYZED, stun_duration)
+	M.status_at_least(STAT_PARALYZED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/autostun/weaken
@@ -418,7 +418,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.status_at_least(EFFECT_WEAKENED, stun_duration)
+	M.status_at_least(STAT_WEAKENED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/chameleon/proc/paperwork_signature_answered(datum/act/request/A)

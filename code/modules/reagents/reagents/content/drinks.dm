@@ -54,9 +54,9 @@
 	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type))
 		var/bonus = M.food_preference(allergen_type)
 		M.adjust_nutrition((nutrition + bonus) * removed)
-	M.status_adjust(EFFECT_DIZZY, adj_dizzy)
-	M.status_adjust(EFFECT_DROWSY, adj_drowsy)
-	M.status_adjust(EFFECT_SLEEPING, adj_sleepy)
+	M.status_adjust(STAT_DIZZY, adj_dizzy)
+	M.status_adjust(STAT_DROWSY, adj_drowsy)
+	M.status_adjust(STAT_SLEEPING, adj_sleepy)
 	if(adj_temp)
 		drive_body_temperature(M, BODYTEMP_NORMAL, abs(adj_temp) * TEMPERATURE_DAMAGE_COEFFICIENT, removed, warm = adj_temp > 0, cool = adj_temp < 0)
 	if(issmall(M)) removed *= 2
@@ -328,7 +328,7 @@
 			if(dq_reagent_knit_fracture(O))
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
-				H.status_adjust(EFFECT_STUNNED, 1) // Crawling again, weakened to stunned
+				H.status_adjust(STAT_STUNNED, 1) // Crawling again, weakened to stunned
 				break // Only mend one bone, whichever comes first in the list
 
 /datum/reagent/drink/milk/cream
@@ -645,7 +645,7 @@
 /datum/reagent/drink/coffee/overdose(mob/living/carbon/M, alien)
 	if(inert_for(M))
 		return
-	M.status_adjust(EFFECT_JITTERY, 5)
+	M.status_adjust(STAT_JITTERY, 5)
 
 /datum/reagent/drink/coffee/handle_addiction(mob/living/carbon/M, alien)
 	// A copy of the base with withdrawl, but with much less effects, no vomiting and sometimes pain
@@ -1134,7 +1134,7 @@
 	allergen_type = ALLERGEN_DAIRY|ALLERGEN_COFFEE //Made with coffee and dairy products
 
 /datum/reagent/drink/milkshake/coffeeshake/overdose(mob/living/carbon/M, alien)
-	M.status_adjust(EFFECT_JITTERY, 5)
+	M.status_adjust(STAT_JITTERY, 5)
 
 /datum/reagent/drink/milkshake/peanutshake
 	name = REAGENT_PEANUTMILKSHAKE
@@ -1162,7 +1162,7 @@
 
 /datum/reagent/drink/rewriter/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.status_adjust(EFFECT_JITTERY, 5)
+	M.status_adjust(STAT_JITTERY, 5)
 
 /datum/reagent/drink/soda/nuka_cola
 	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
@@ -1182,10 +1182,10 @@
 
 /datum/reagent/drink/soda/nuka_cola/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.status_adjust(EFFECT_JITTERY, 20)
-	M.status_at_least(EFFECT_DRUGGED, 30)
-	M.status_adjust(EFFECT_DIZZY, 5)
-	M.status_set(EFFECT_DROWSY, 0)
+	M.status_adjust(STAT_JITTERY, 20)
+	M.status_at_least(STAT_DRUGGED, 30)
+	M.status_adjust(STAT_DIZZY, 5)
+	M.status_set(STAT_DROWSY, 0)
 
 /datum/reagent/drink/grenadine 	//Description implies that the grenadine we would be working with does not contain fruit, so no allergens.
 	name = REAGENT_GRENADINE
@@ -1501,9 +1501,9 @@
 	if(inert_for(M))
 		return
 	// Its healing is the treatment_tags profile.
-	M.status_adjust(EFFECT_DIZZY, -15)
-	if(M.has_status(EFFECT_CONFUSED))
-		M.status_at_least(EFFECT_CONFUSED, -5)
+	M.status_adjust(STAT_DIZZY, -15)
+	if(M.has_status(STAT_CONFUSED))
+		M.status_at_least(STAT_CONFUSED, -5)
 
 /datum/reagent/drink/dry_ramen
 	name = REAGENT_DRYRAMEN
@@ -1836,7 +1836,7 @@
 /datum/reagent/drink/syrup/overdose(mob/living/carbon/M, alien)
 	if(inert_for(M))
 		return
-	M.status_adjust(EFFECT_DIZZY, 1)
+	M.status_adjust(STAT_DIZZY, 1)
 
 /datum/reagent/drink/syrup/pumpkin
 	name = REAGENT_SYRUPPUMPKIN

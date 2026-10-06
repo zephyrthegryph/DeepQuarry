@@ -159,8 +159,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 			M.stop_pulling()
 			to_chat(M, span_notice("You slipped on the [name]!"))
 			play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
-			M.status_at_least(EFFECT_STUNNED, 8)
-			M.status_at_least(EFFECT_WEAKENED, 5)
+			M.status_at_least(STAT_STUNNED, 8)
+			M.status_at_least(STAT_WEAKENED, 5)
 			seed().thrown_at(src,M)
 			destroyed(src, M, BRUTE)
 			return

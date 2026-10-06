@@ -538,7 +538,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 		for(var/mob/M in viewers(1, get_location()))
 			if (prob (50 * amount))
 				to_chat(M, span_warning("The explosion knocks you down."))
-				M.status_at_least(EFFECT_WEAKENED, rand(1,5))
+				M.status_at_least(STAT_WEAKENED, rand(1,5))
 		return
 	else
 		var/devst = -1

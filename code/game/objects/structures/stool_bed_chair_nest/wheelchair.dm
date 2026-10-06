@@ -54,13 +54,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 	// is a live graph read, so this re-fetches it after every om_unlink() rather
 	// than trusting a cached local, matching the old field's always-live reads.
 	var/mob/living/pulling = src?.pulling_target()
-	if(user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_PARALYZED) || user.lying || user.restrained())
+	if(user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED) || user.has_status(STAT_PARALYZED) || user.lying || user.restrained())
 		if(user==pulling)
 			om_unlink(src, pulling, /datum/om/relation/pulling)
 			to_chat(user, span_warning("You lost your grip!"))
 		return
 	if(has_buckled_mobs() && pulling && (user in src?.buckled_mob_list()))
-		if(pulling.stat || pulling.has_status(EFFECT_STUNNED) || pulling.has_status(EFFECT_WEAKENED) || pulling.has_status(EFFECT_PARALYZED) || pulling.lying || pulling.restrained())
+		if(pulling.stat || pulling.has_status(STAT_STUNNED) || pulling.has_status(STAT_WEAKENED) || pulling.has_status(STAT_PARALYZED) || pulling.lying || pulling.restrained())
 			om_unlink(src, pulling, /datum/om/relation/pulling)
 			pulling = src?.pulling_target()
 	if(user?.pulling_target() && (user == pulling))

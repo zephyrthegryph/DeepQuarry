@@ -2405,7 +2405,7 @@ CAPABILITIES(/obj/item/toy/russian_revolver)
 		play_sfx(src, SFX_EFFECTS_SNAP)
 		user.visible_message(span_danger("[src] goes off!"))
 		shake_camera(user, 2, 1)
-		user.status_at_least(EFFECT_STUNNED, 1)
+		user.status_at_least(STAT_STUNNED, 1)
 		post_shot(user)
 		return TRUE
 	else
@@ -2523,7 +2523,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 		play_sfx(src, SFX_ITEMS_CONFETTI)
 		icon_state = "tastybread_popped"
 		popped = 1
-		user.status_at_least(EFFECT_STUNNED, 1)
+		user.status_at_least(STAT_STUNNED, 1)
 
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
@@ -2559,7 +2559,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 			play_sfx(src, SFX_ITEMS_CONFETTI)
 			icon_state = "tastybread_popped"
 			popped = 1
-			user.status_at_least(EFFECT_STUNNED, 1)
+			user.status_at_least(STAT_STUNNED, 1)
 
 			var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 			s.set_up(5, 1, src)

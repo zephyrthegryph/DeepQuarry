@@ -57,6 +57,6 @@
 		return
 	if(owner.client && (owner.client.prefs.muted & MUTE_IC))
 		return
-	if(owner.status_units(EFFECT_PARALYZED) <= 1 && (H.pulse <= PULSE_NORM ? (prob(1)) : (prob(50))))
-		owner.status_adjust(EFFECT_JITTERY, 30 + rand(10, 30))
+	if(owner.status_units(STAT_PARALYZED) <= 1 && (H.pulse <= PULSE_NORM ? (prob(1)) : (prob(50))))
+		owner.status_adjust(STAT_JITTERY, 30 + rand(10, 30))
 		owner.emote(DEFAULTPICK(owner.disability_motor_tics, null))

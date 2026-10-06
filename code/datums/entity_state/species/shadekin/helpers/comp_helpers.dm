@@ -182,7 +182,7 @@
 	owner.phase_in(T, src)
 	shadekin_adjust_energy(-20) // loss of energy for the interception
 	// apply a little extra stun for good measure
-	owner.status_at_least(EFFECT_WEAKENED, 3)
+	owner.status_at_least(STAT_WEAKENED, 3)
 
 /mob/living/carbon/human/is_incorporeal()
 	var/datum/shadekin/SK = get_shadekin_state()

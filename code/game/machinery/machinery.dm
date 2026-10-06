@@ -561,7 +561,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 			if(temp_apc && temp_apc.terminal && temp_apc.terminal.power_region)
 				power_warn(temp_apc.terminal.power_region)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return 1
 	return 0
 

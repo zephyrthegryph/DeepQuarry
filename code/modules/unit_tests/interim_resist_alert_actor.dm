@@ -36,6 +36,6 @@
 	TEST_ASSERT_EQUAL(actor.fire_stacks, actor_stacks, "an absent actor cannot resist the selected mob's fire")
 	km_synthetic_click(actor, alert)
 	TEST_ASSERT(abs(actor.fire_stacks - (actor_stacks - 1.2)) < 0.001, "the native alert invokes the actual selected carbon's fire resistance amount")
-	TEST_ASSERT(actor.has_status(EFFECT_WEAKENED), "the actual selected actor enters stop-drop-roll weakness")
+	TEST_ASSERT(actor.has_status(STAT_WEAKENED), "the actual selected actor enters stop-drop-roll weakness")
 	TEST_ASSERT_EQUAL(bystander.fire_stacks, other_stacks, "the unrelated mob's fire stacks are preserved")
-	TEST_ASSERT(!bystander.has_status(EFFECT_WEAKENED), "the unrelated mob never enters the actor's stop-drop-roll state")
+	TEST_ASSERT(!bystander.has_status(STAT_WEAKENED), "the unrelated mob never enters the actor's stop-drop-roll state")

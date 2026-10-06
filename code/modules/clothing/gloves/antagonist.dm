@@ -171,6 +171,6 @@ CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer)
 		return 0
 
 	H.emote("gasp")
-	H.status_at_least(EFFECT_WEAKENED, rand(10,25))
+	H.status_at_least(STAT_WEAKENED, rand(10,25))
 
 	battery.emp_act(1)

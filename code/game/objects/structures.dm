@@ -48,7 +48,7 @@
 	if (user.restrained() || user?.buckled_to())
 		to_chat(user, span_notice("You need your hands and legs free for this."))
 		return 0
-	if (user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING) || user.lying || user.has_status(EFFECT_WEAKENED))
+	if (user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED))
 		return 0
 	if (isAI(user))
 		to_chat(user, span_notice("You need hands for this."))

@@ -421,7 +421,7 @@ CAPABILITIES(/obj/singularity)
 	for(var/mob/living/carbon/M in oviewers(8, src))
 		if(istype(M, /mob/living/carbon/brain)) //Ignore brains
 			continue
-		if(om_has(M, EFFECT_GODMODE))
+		if(in_godmode(M))
 			return 0	// Cancelled by a component
 		if(M.stat == CONSCIOUS)
 			if (ishuman(M))

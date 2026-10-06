@@ -117,17 +117,17 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 5)
-		M.status_at_least(EFFECT_BLURRY, 10)
+		M.status_at_least(STAT_BLURRY, 10)
 	else if(effective_dose < 20)
 		if(prob(50))
-			M.status_at_least(EFFECT_WEAKENED, 2)
-		M.status_at_least(EFFECT_DROWSY, 20)
+			M.status_at_least(STAT_WEAKENED, 2)
+		M.status_at_least(STAT_DROWSY, 20)
 	else
 		if(deep_sleep)
-			M.status_at_least(EFFECT_SLEEPING, 20)
+			M.status_at_least(STAT_SLEEPING, 20)
 		else
-			M.status_at_least(EFFECT_WEAKENED, 10)
-		M.status_at_least(EFFECT_DROWSY, 60)
+			M.status_at_least(STAT_WEAKENED, 10)
+		M.status_at_least(STAT_DROWSY, 60)
 
 /// Deal `owner`'s species' entry in a `species_injuries_*` table for `amount` units.
 /datum/reagent/proc/apply_species_injuries(mob/living/owner, alist/table, amount)

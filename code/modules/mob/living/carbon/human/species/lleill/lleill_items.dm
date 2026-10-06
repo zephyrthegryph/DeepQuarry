@@ -215,9 +215,9 @@ CAPABILITIES(/obj/item/glamour_face)
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(STAT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(STAT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient
@@ -430,7 +430,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 			blink_mob(M)
 		if(2) //mob_tf, uses polymorph potion code
 			if(!M.allow_spontaneous_tf)
-				M.status_adjust(EFFECT_WEAKENED, 50)
+				M.status_adjust(STAT_WEAKENED, 50)
 			else
 				mob_tf(M)
 		if(3)

@@ -60,7 +60,7 @@
 		if(i <= busy_mice)
 			// A long sleep kept the old scheduler's status systems (and so its Life) running; on the
 			// object model it is a timed contribution nothing ticks (life_on_om_benchmark.md).
-			M.status_set(EFFECT_SLEEPING, 100000)
+			M.status_set(STAT_SLEEPING, 100000)
 		mobs += M
 		CHECK_TICK
 	living_count = length(mobs)

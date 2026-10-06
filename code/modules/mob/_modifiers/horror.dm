@@ -92,8 +92,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			"You can feel your [O] squirming inside of you, trying to get out...", "Your [O] is trying to escape...", \
 			"Your [O] itches.", "Your [O] is crawling around inside of you.")
 			to_chat(unfortunate_soul, span_cult(spooky_message))
-		unfortunate_soul.status_adjust(EFFECT_DIZZY, 5)
-		unfortunate_soul.status_set(EFFECT_STUTTERING, min(100, unfortunate_soul.status_units(EFFECT_STUTTERING) + 10)) //Stuttering is increased by 1, but never above 100. You're in a scary place.
+		unfortunate_soul.status_adjust(STAT_DIZZY, 5)
+		unfortunate_soul.status_set(STAT_STUTTERING, min(100, unfortunate_soul.status_units(STAT_STUTTERING) + 10)) //Stuttering is increased by 1, but never above 100. You're in a scary place.
 	return
 
 /datum/body_effect/redspace_drain/proc/choose_organs(mob/living/carbon/human/unfortunate_soul, organs_to_replace)
@@ -434,7 +434,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		handle_death(unfortunate_soul, state)
 		return
 
-	if(!state.armor_deployed && (unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
+	if(!state.armor_deployed && (unfortunate_soul.has_status(STAT_STUNNED) || unfortunate_soul.has_status(STAT_WEAKENED) || unfortunate_soul.has_status(STAT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
 		if(assume_battle_stance(unfortunate_soul, state))
 			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
@@ -452,7 +452,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(state.armor_deployed && COOLDOWN_FINISHED(state, armor_expire_cooldown)) //Time ran out.
 
 		//Are we still in panic mode?
-		if(unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
+		if(unfortunate_soul.has_status(STAT_STUNNED) || unfortunate_soul.has_status(STAT_WEAKENED) || unfortunate_soul.has_status(STAT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
 			return
 		else
 			equip_flesh_armor(unfortunate_soul, /obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
@@ -584,7 +584,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Awaken!
 	unfortunate_soul.emote("gasp")
-	unfortunate_soul.status_at_least(EFFECT_WEAKENED, rand(10,25))
+	unfortunate_soul.status_at_least(STAT_WEAKENED, rand(10,25))
 	COOLDOWN_START(state, revival_cooldown_until, revival_cooldown)
 
 //Returns TRUE If we succeeded. FALSE if we failed.

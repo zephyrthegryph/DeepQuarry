@@ -881,7 +881,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 		return 0
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_pounce(mob/living/carbon/human/M as mob)
-	M.status_at_least(EFFECT_WEAKENED, 5)
+	M.status_at_least(STAT_WEAKENED, 5)
 	animal_nom(M)
 	M.stop_pulling()
 

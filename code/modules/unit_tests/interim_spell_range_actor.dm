@@ -71,13 +71,13 @@
 	spell.charge_type = Sp_HOLDVAR
 	spell.holder_var_type = "stunned"
 	spell.holder_var_amount = 2 SECONDS
-	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "the supplied actor starts unstunned")
-	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "the bystander starts unstunned")
+	TEST_ASSERT(!target.has_status(STAT_STUNNED), "the supplied actor starts unstunned")
+	TEST_ASSERT(!bystander.has_status(STAT_STUNNED), "the bystander starts unstunned")
 	TEST_ASSERT(spell.take_charge(target, FALSE), "the real holder-var charge path succeeds")
-	TEST_ASSERT(target.has_status(EFFECT_STUNNED), "charging applies real stun to the supplied actor")
-	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "charging leaves the bystander unaffected")
+	TEST_ASSERT(target.has_status(STAT_STUNNED), "charging applies real stun to the supplied actor")
+	TEST_ASSERT(!bystander.has_status(STAT_STUNNED), "charging leaves the bystander unaffected")
 	spell.adjust_var(target, "stunned", -2 SECONDS)
-	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "signed adjustment removes the supplied actor's stun")
+	TEST_ASSERT(!target.has_status(STAT_STUNNED), "signed adjustment removes the supplied actor's stun")
 
 /// Record validation's actor while retaining all real spell checks and rune construction.
 /datum/spell/rune_write/interim_actor_probe

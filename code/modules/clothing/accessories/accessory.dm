@@ -826,7 +826,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 			return
 		to_chat(M,span_danger("You feel a sharp shock!"))
 		fx_sparks(M, 3)
-		M.status_at_least(EFFECT_WEAKENED, 10)
+		M.status_at_least(STAT_WEAKENED, 10)
 
 /obj/item/clothing/accessory/collar/spike
 	name = "Spiked collar"

@@ -267,7 +267,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		M.custom_pain("You [pick("feel numb!","feel dizzy and heavy.","feel strange!")]",60)
 	if(prob(2))
 		M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
-		M.status_adjust(EFFECT_PARALYZED, 1)
+		M.status_adjust(STAT_PARALYZED, 1)
 	M.apply_body_effect(/datum/body_effect/numbness, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/holo
@@ -285,7 +285,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		M.custom_pain("You feel no pain!",60)
 	if(prob(2))
 		M.custom_pain("You suddenly lose control over your body!",60)
-		M.status_adjust(EFFECT_PARALYZED, 1)
+		M.status_adjust(STAT_PARALYZED, 1)
 	M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/clown
@@ -315,7 +315,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 			M.custom_pain("You feel no pain despite the clear signs of damage to your body!",0)
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",0)
-			M.status_adjust(EFFECT_PARALYZED, 1)
+			M.status_adjust(STAT_PARALYZED, 1)
 		M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 		(legacy duplicate removed)
 		// ^ I have no idea what this might cause, my ideal plan is that once the pain killer wears off you suddenly collapse;
@@ -325,11 +325,11 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /datum/reagent/inaprovaline/synxchem/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	if(!inert_for(M))
-		M.status_adjust(EFFECT_DIZZY, 10)
+		M.status_adjust(STAT_DIZZY, 10)
 		if(prob(5))
-			M.status_adjust(EFFECT_STUNNED, 1)
+			M.status_adjust(STAT_STUNNED, 1)
 		if(prob(2))
-			M.status_adjust(EFFECT_PARALYZED, 1)
+			M.status_adjust(STAT_PARALYZED, 1)
 
 
 /datum/reagent/inaprovaline/synxchem/holo/overdose(mob/living/carbon/M, alien, removed)
@@ -364,7 +364,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		var/mob/living/L = A
 
 /*		if(prob(forcefeedchance) && !ckey)//Forcefeeding code //Only triggers if not player-controlled //This does not currently work
-			L.status_at_least(EFFECT_WEAKENED, 2)
+			L.status_at_least(STAT_WEAKENED, 2)
 			update_icon()
 			ai_busy_begin()
 			src.feed_self_to_grabbed(src,L)
@@ -433,7 +433,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
 	set category = VERB_CAT_ABILITIES_SYNX
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
 
 	if(status_flags & HIDING)
@@ -454,7 +454,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	set desc = "Switch between amorphous and humanoid forms."
 	set category = VERB_CAT_ABILITIES_SYNX
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
 
 	// If transform isn't true

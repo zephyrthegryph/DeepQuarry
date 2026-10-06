@@ -457,7 +457,7 @@
 
 /// Apply death / consciousness from the cached vitals.
 /datum/body/proc/evaluate_status()
-	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
+	if(owner.is_dead() || in_godmode(owner))
 		return
 	if(status_held())
 		if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
@@ -470,7 +470,7 @@
 
 /// Death only; no consciousness. Returns TRUE if the mob died.
 /datum/body/proc/check_death()
-	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
+	if(owner.is_dead() || in_godmode(owner))
 		return FALSE
 	if(!is_lethal())
 		return FALSE
@@ -497,8 +497,8 @@
 	if(is_unconscious())
 		if(!has_trait(owner, TRAIT_CRITICAL_CONDITION))
 			add_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
-		owner.status_at_least(EFFECT_PARALYZED, 3)
-		owner.status_at_least(EFFECT_SLEEPING, 3)
+		owner.status_at_least(STAT_PARALYZED, 3)
+		owner.status_at_least(STAT_SLEEPING, 3)
 		owner.set_stat(UNCONSCIOUS)
 	else if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
 		remove_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)

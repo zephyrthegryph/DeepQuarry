@@ -46,7 +46,7 @@
 
 /mob/living/carbon/alien/life_status_update_status()
 
-	if(om_has(src, EFFECT_GODMODE)) //I don't want to go in and do HUD stuff imediately, so... no.
+	if(in_godmode(src)) //I don't want to go in and do HUD stuff imediately, so... no.
 		return 0	// Cancelled by a component
 
 	// Death from injury is decided by the (simple) body.
@@ -55,17 +55,17 @@
 
 	if(src.stat == DEAD)
 		src.set_blinded(1)
-		src.status_set(EFFECT_MUTED, 0)
+		src.status_set(STAT_MUTED, 0)
 		src.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		if(src.has_status(EFFECT_PARALYZED))
+		if(src.has_status(STAT_PARALYZED))
 			src.set_blinded(1)
 			src.set_stat(UNCONSCIOUS)
 
-		if(src.has_status(EFFECT_SLEEPING))
+		if(src.has_status(STAT_SLEEPING))
 			// Sleep wears off only while a player is home; an empty body stays asleep.
 			if(!src.mind?.active || !src.client)
-				src.status_at_least(EFFECT_SLEEPING, 1)
+				src.status_at_least(STAT_SLEEPING, 1)
 			src.set_blinded(1)
 			src.set_stat(UNCONSCIOUS)
 		else if(!src.resting)
@@ -73,10 +73,10 @@
 
 		// Eyes and blindness. Temporary blindness and blur wear off on their own.
 		if(!src.has_eyes())
-			src.status_set(EFFECT_BLINDED, 1)
+			src.status_set(STAT_BLINDED, 1)
 			src.set_blinded(1)
-			src.status_set(EFFECT_BLURRY, 1)
-		else if(src.has_status(EFFECT_BLINDED))
+			src.status_set(STAT_BLURRY, 1)
+		else if(src.has_status(STAT_BLINDED))
 			src.set_blinded(1)
 
 		src.update_icons()
@@ -119,8 +119,8 @@
 		else
 			src.clear_fullscreen("blind")
 			src.set_fullscreen(src.is_nearsighted(), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-			src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+			src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+			src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
 /mob/living/carbon/alien/life_hud_health_icons()
 	. = ..()

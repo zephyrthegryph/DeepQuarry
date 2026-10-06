@@ -149,7 +149,7 @@
 /mob/living/simple_mob/animal/passive/cat/PunchTarget()
 	if(istype(target_mob,/mob/living/simple_mob/animal/passive/mouse))
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% pounces on \the [target_mob]!]")))
-		target_mob.status_at_least(EFFECT_STUNNED, 5)
+		target_mob.status_at_least(STAT_STUNNED, 5)
 		return EatTarget()
 	else ..()
 

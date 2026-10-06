@@ -162,7 +162,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 		to_chat(user, span_warning("The suit is not initialized."))
 		return 0
 
-	if(user.lying || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_WEAKENED))
+	if(user.lying || user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED) || user.has_status(STAT_WEAKENED))
 		to_chat(user, span_warning("You cannot use the suit in this state."))
 		return 0
 
