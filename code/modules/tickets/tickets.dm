@@ -243,6 +243,11 @@ CAPABILITIES(/obj/effect/statclick/ticket_list)
 
 CAPABILITIES(/datum/ticket)
 	owns_one(nameof(statclick), /obj/effect/statclick/ticket)
+	interface("Ticket", state = nameof(GLOB.tgui_mentor_state))
+	op("retitle", ui_act("retitle"), then(PROC_REF(ui_act_retitle)))
+	op("reopen", ui_act("reopen"), then(PROC_REF(ui_act_reopen)))
+	op("legacy", ui_act("legacy"), then(PROC_REF(ui_act_legacy)))
+	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096)), arg("ticket_ref", schema_ref(/datum/ticket))), then(PROC_REF(ui_act_send_msg)))
 
 /**
  * public

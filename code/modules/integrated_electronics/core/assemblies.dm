@@ -24,6 +24,16 @@
 
 CAPABILITIES(/obj/item/electronic_assembly)
 	owns_one(nameof(export_view), /datum/ic_export_view)
+	interface("ICAssembly", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
+	op("export_circuit", ui_act("export_circuit"), then(PROC_REF(ui_act_export_circuit)))
+	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
+	op("remove_cell", ui_act("remove_cell"), then(PROC_REF(ui_act_remove_cell)))
+	op("wire_internal", ui_act("wire_internal", arg("pin1", schema_ref(/datum/integrated_io)), arg("pin2", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire_internal)))
+	op("remove_all_wires", ui_act("remove_all_wires", arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_remove_all_wires)))
+	op("open_circuit", ui_act("open_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_open_circuit)))
+	op("remove_circuit", ui_act("remove_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_remove_circuit)))
+	op("update_component_position", ui_act("update_component_position", arg("ref", schema_ref(/obj/item/integrated_circuit)), arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_update_component_position)))
 
 /// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
@@ -100,19 +110,25 @@ DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_
 	return battery
 
 // TGUI
-DECLARE_UI_STATE(/obj/item/electronic_assembly, GLOB.tgui_physical_state)
-
-DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 
 /obj/item/electronic_assembly/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/simple/circuit_assets)
 	)
 
-UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "assembly_name=name:text", "merge:ui_data_obj_item_electronic_assembly{total_parts:num,total_complexity:num,battery_charge:num,battery_max:num,net_power:num,export_data:unknown,circuits:list,component_positions:bool}")
+/obj/item/electronic_assembly/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["max_components"] = max_components
+	data["max_complexity"] = max_complexity
+	data["assembly_name"] = name
+	var/list/merged_1 = ui_data_obj_item_electronic_assembly(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/electronic_assembly's window data (declared on its UI_DATA row).
-/obj/item/electronic_assembly/proc/ui_data_obj_item_electronic_assembly(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/electronic_assembly/proc/ui_data_obj_item_electronic_assembly(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 
 	var/total_parts = 0
@@ -133,7 +149,7 @@ UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "
 
 	var/list/circuits = list()
 	FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/circuit, src)
-		UNTYPED_LIST_ADD(circuits, circuit.tgui_data(user, ui, state))
+		UNTYPED_LIST_ADD(circuits, circuit.tgui_data(user))
 	data["circuits"] = circuits
 
 	// Include component positions for UI restoration
@@ -141,10 +157,10 @@ UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "
 
 	return data
 
-UI_ACT(/obj/item/electronic_assembly, "export_circuit", ui_act_export_circuit)
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
+/obj/item/electronic_assembly/proc/ui_act_export_circuit(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!LAZYLEN(contents))
-		to_chat(ui.user, span_warning("There's nothing in the [src] to export!"))
+		to_chat(user, span_warning("There's nothing in the [src] to export!"))
 		return TRUE
 	if(!export_view)
 		rel_set(src, nameof(/obj/item/electronic_assembly::export_view), new /datum/ic_export_view(src))
@@ -163,7 +179,9 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 /datum/ic_export_view/proc/assembly() as /obj/item/electronic_assembly
 	return host_assembly
 
-DECLARE_UI(/datum/ic_export_view, "ICExport", UI_TITLE("Circuit Export"))
+CAPABILITIES(/datum/ic_export_view)
+	interface("ICExport", title = "Circuit Export")
+	ui_shape(export_data = schema_text(), assembly_name = schema_text())
 
 /datum/ic_export_view/tgui_host(mob/user)
 	return assembly() || src
@@ -171,42 +189,40 @@ DECLARE_UI(/datum/ic_export_view, "ICExport", UI_TITLE("Circuit Export"))
 /datum/ic_export_view/tgui_state(mob/user)
 	return assembly()?.tgui_state(user) || ..()
 
-UI_DATA_REPLACE(/datum/ic_export_view, "merge:ui_data_datum_ic_export_view{}")
-
 /// The computed part of /datum/ic_export_view's window data (declared on its UI_DATA row).
-/datum/ic_export_view/proc/ui_data_datum_ic_export_view(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return assembly()?.tgui_data(user, ui, state) || list()
+/datum/ic_export_view/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	return assembly()?.tgui_data(user) || list()
 
 /datum/ic_export_view/tgui_static_data(mob/user)
 	return assembly()?.tgui_static_data(user) || list()
 
 // Actual assembly actions
 
-UI_ACT(/obj/item/electronic_assembly, "rename", ui_act_rename)
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_rename)
-	electronic_assembly_verb_rename(ui.user)
+/obj/item/electronic_assembly/proc/ui_act_rename(datum/act/op/A)
+	var/mob/user = A.actor
+	electronic_assembly_verb_rename(user)
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "remove_cell", ui_act_remove_cell)
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_cell)
+/obj/item/electronic_assembly/proc/ui_act_remove_cell(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!battery)
-		to_chat(ui.user, span_warning("There's no power cell to remove from \the [src]."))
+		to_chat(user, span_warning("There's no power cell to remove from \the [src]."))
 		return FALSE
 	var/turf/T = get_turf(src)
 	var/obj/item/cell/device/removed = own_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)
 	play_sfx(T, SFX_ITEMS_CROWBAR)
-	to_chat(ui.user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))
+	to_chat(user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))
 	return TRUE
 
 	// Circuit actions
 
-UI_ACT(/obj/item/electronic_assembly, "wire_internal", ui_act_wire_internal, UI_ARG_REF("pin1", null, /datum/integrated_io), UI_ARG_REF("pin2", null, /datum/integrated_io))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_wire_internal)
-	var/datum/integrated_io/pin1 = params["pin1"]
+/obj/item/electronic_assembly/proc/ui_act_wire_internal(datum/act/op/A, pin1_arg, pin2_arg)
+	var/datum/integrated_io/pin1 = pin1_arg
 	if(!istype(pin1))
 		return
-	var/datum/integrated_io/pin2 = params["pin2"]
+	var/datum/integrated_io/pin2 = pin2_arg
 	if(!istype(pin2))
 		return
 
@@ -228,9 +244,8 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_wire_internal)
 
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "remove_all_wires", ui_act_remove_all_wires, UI_ARG_REF("pin", null, /datum/integrated_io))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_all_wires)
-	var/datum/integrated_io/pin1 = params["pin"]
+/obj/item/electronic_assembly/proc/ui_act_remove_all_wires(datum/act/op/A, pin)
+	var/datum/integrated_io/pin1 = pin
 	if(!istype(pin1))
 		return
 
@@ -245,30 +260,36 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_all_wires)
 
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "open_circuit", ui_act_open_circuit, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_open_circuit)
-	var/obj/item/integrated_circuit/C = params["ref"]
+/obj/item/electronic_assembly/proc/ui_act_open_circuit(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/integrated_circuit/C = ref
 	if(!istype(C))
 		return
-	C.tgui_interact(ui.user, null, ui)
+	C.tgui_interact(user, null, ui)
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "remove_circuit", ui_act_remove_circuit, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_circuit)
-	var/obj/item/integrated_circuit/C = params["ref"]
+/obj/item/electronic_assembly/proc/ui_act_remove_circuit(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/integrated_circuit/C = ref
 	if(!istype(C))
 		return
-	C.remove(ui.user)
+	C.remove(user)
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "update_component_position", ui_act_update_component_position, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit), UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
-	var/obj/item/integrated_circuit/C = params["ref"]
+/obj/item/electronic_assembly/proc/ui_act_update_component_position(datum/act/op/A, ref, x, y)
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/integrated_circuit/C = ref
 	if(!istype(C))
 		return FALSE
 
-	var/new_x = params["x"]
-	var/new_y = params["y"]
+	var/new_x = x
+	var/new_y = y
 	if(!isnum(new_x) || !isnum(new_y))
 		return FALSE
 

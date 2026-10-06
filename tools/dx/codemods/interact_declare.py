@@ -394,6 +394,17 @@ def main():
         if t in EXCLUDED:
             residue[t] = "excluded"
             continue
+        extra_decls = []
+        # a DECLARE and an EXTEND on the same type: both lists reached the type (get_interactions and the declare chain), so the ops are both
+        # lists' specs; the DECLARE's replacement rule decides the conflicts
+        if len(rs) == 2 and sorted(r[0] for r in rs) == ["DECLARE_INTERACTIONS", "EXTEND_INTERACTIONS"]:
+            dec = next(r for r in rs if r[0] == "DECLARE_INTERACTIONS")
+            ext = next(r for r in rs if r[0] == "EXTEND_INTERACTIONS")
+            d_inner = dec[4][dec[4].index("(") + 1 : dec[4].rindex(")")]
+            e_parts = split_args(ext[4][ext[4].index("(") + 1 : ext[4].rindex(")")])
+            merged = d_inner.rstrip().rstrip(",") + ", " + ", ".join(x for x in e_parts[1:] if x)
+            rs = [(dec[0], dec[1], dec[2], dec[3], "DECLARE_INTERACTIONS(" + merged + ")")]
+            extra_decls = [ext]
         if len(rs) != 1:
             residue[t] = "interaction_forms"
             continue
@@ -470,9 +481,13 @@ def main():
                 bad = "interaction_forms"
                 break
             em = re.match(r"^(?:PROC_REF\((\w+)\)|TYPE_PROC_REF\(" + re.escape(t) + r",\s*(\w+)\))$", effect)
-            if not em:
+            # the shared "handled, the input not used up" effect (code/datums/interactions/shared_effects.dm): an op with passes() and no then()
+            passes_only = re.match(r"^TYPE_PROC_REF\(/atom,\s*interaction_pass\)$", effect)
+            if not em and not passes_only:
                 bad = "effect_expr"
                 break
+            if passes_only:
+                em = re.match(r"^(interaction_pass)$", "interaction_pass")
             if held_type is not None and not re.match(r"^/[\w/]+$", held_type):
                 bad = "interaction_forms"
                 break
@@ -489,6 +504,9 @@ def main():
         tre = re.escape(t)
         handlers = []
         for s in specs:
+            if s["proc"] == "interaction_pass":
+                handlers.append({"actor_type": "mob", "spec": s, "rel": None, "idx": None, "first": None, "last": None, "actor": None, "held": None, "held_type": "obj/item", "body": "", "asks": [], "pass": True})
+                continue
             hits = [(r, i, prm) for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty == t]
             others = [1 for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty != t and related(ty, t)]
             if len(hits) != 1:
@@ -537,6 +555,10 @@ def main():
             if words_in(body, n_inter) or "INTERACTION_HANDLED_PASS" in stray_pass or re.search(r"\.\.\(", body) or words_in(body, "A"):
                 bad = "body_uses"
                 break
+            # a question opened from the handler is an asks() step of the op (sys/dx_review request_in_effect): by hand
+            if "open_request(" in body:
+                bad = "request_in_effect"
+                break
             if s["kind"] == "VERB" and words_in(body, n_held):
                 bad = "body_uses"
                 break
@@ -575,6 +597,8 @@ def main():
         for h in handlers:
             proc = h["spec"]["proc"]
             key = re.sub(r"^interaction_", "", proc) or proc
+            if h.get("pass"):
+                key = "pass_%s" % h["spec"]["kind"].lower()
             if key in used or key_taken(key, t):
                 key = proc
             if key in used or key_taken(key, t):
@@ -654,7 +678,7 @@ def main():
         if bad:
             residue[t] = bad
             continue
-        plans[t] = {"type": t, "decl": rs[0], "handlers": handlers}
+        plans[t] = {"type": t, "decl": rs[0], "handlers": handlers, "extra": extra_decls}
     # Ops of related types accumulate down the tree: two types of one hierarchy that both convert an op for the same input would clash in the descendant's
     # table, so the descendant stays (an ancestor's converted op beside a descendant's legacy entry resolves together at run time).
     claimed = defaultdict(list)  # (binding, gesture) -> the converted types that hold it
@@ -704,9 +728,17 @@ def main():
                     if derived:
                         parts.append('label("%s")' % derived)
                 needs_parts = (["carried()"] if s.get("carried") else []) + s.get("req_parts", [])
+                if s["kind"] == "VERB" and not s.get("carried"):
+                    # the legacy verb entry's base requirements (code/datums/interactions/entries.dm entry_verb): reach and an actor who can act;
+                    # a menu() binding brings neither, so a ghost or an actor across the room would get the verb
+                    needs_parts = ["req_adjacent()", "req_capable()"] + needs_parts
                 if needs_parts:
                     parts.append("needs(%s)" % ", ".join(needs_parts))
                 parts += h["ask_parts"]
+                if h.get("pass"):
+                    parts.append("passes()")
+                    entries.append(", ".join(parts) + ")")
+                    continue
                 parts.append("then(PROC_REF(%s))" % s["proc"])
                 entries.append(", ".join(parts) + ")")
                 f = files[h["rel"]]
@@ -768,6 +800,10 @@ def main():
                         block_at = (r2, i2)
             for k in range(first, last + 1):
                 f.lines[k] = None
+            for (_k, xrel, xfirst, xlast, _x) in plan.get("extra", []):
+                for k in range(xfirst, xlast + 1):
+                    files[xrel].lines[k] = None
+                files[xrel].dirty = True
             if block_at:
                 br, bi = block_at
                 bf = files[br]

@@ -87,6 +87,15 @@ CAPABILITIES(/obj/item/modular_computer)
 	owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable)
 	owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link)
 	every(2 SECONDS, then(PROC_REF(modular_computer_step)), when = nameof(enabled))
+	interface("NtosMain", autoupdate = TRUE)
+	without("ui_open")
+	op("PC_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
+	op("PC_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))
+	op("PC_minimize", ui_act("PC_minimize"), then(PROC_REF(ui_act_pc_minimize)))
+	op("PC_killprogram", ui_act("PC_killprogram", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_killprogram)))
+	op("PC_runprogram", ui_act("PC_runprogram", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_runprogram)))
+	op("PC_setautorun", ui_act("PC_setautorun", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_setautorun)))
+	op("PC_Eject_Disk", ui_act("PC_Eject_Disk", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_eject_disk)))
 
 
 /// Whether the computer is turned on. periodic_step() runs its programs while it is (DECLARE_PERIODIC_WHILE).

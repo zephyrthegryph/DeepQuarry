@@ -264,19 +264,20 @@
 		/obj/item/storage/backpack/toxins,
 		/obj/item/storage/backpack/satchel/tox)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/wardrobe/science_white/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sci
-	else
-		starts_with += /obj/item/storage/backpack/satchel/tox
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sci
-	else
-		starts_with += /obj/item/storage/backpack/satchel/tox
+CAPABILITIES(/obj/structure/closet/wardrobe/science_white)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
-	return ..()
-
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/wardrobe/science_white/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sci
+	else
+		. += /obj/item/storage/backpack/satchel/tox
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sci
+	else
+		. += /obj/item/storage/backpack/satchel/tox
 
 /obj/structure/closet/wardrobe/robotics_black
 	name = "robotics wardrobe"
@@ -291,15 +292,16 @@
 		/obj/item/storage/backpack/toxins,
 		/obj/item/storage/backpack/satchel/tox)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/wardrobe/robotics_black/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/sci
+CAPABILITIES(/obj/structure/closet/wardrobe/robotics_black)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/wardrobe/robotics_black/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/dufflebag/sci
 	else
-		starts_with += /obj/item/storage/backpack/satchel/tox
-
-	return ..()
-
+		. += /obj/item/storage/backpack/satchel/tox
 
 /obj/structure/closet/wardrobe/chemistry_white
 	name = "chemistry wardrobe"
@@ -443,16 +445,18 @@
 		/obj/item/clothing/gloves/black,
 		/obj/item/clothing/under/pants/camo)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/wardrobe/tactical/Initialize(mapload)
-	if(prob(25))
-		starts_with += /obj/item/storage/belt/security/tactical/bandolier
-	else
-		starts_with += /obj/item/storage/belt/security/tactical
-	if(prob(10))
-		starts_with += /obj/item/clothing/mask/bandana/skull
+CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
-	return ..()
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/wardrobe/tactical/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(25))
+		. += /obj/item/storage/belt/security/tactical/bandolier
+	else
+		. += /obj/item/storage/belt/security/tactical
+	if(R.chance(10))
+		. += /obj/item/clothing/mask/bandana/skull
 
 /obj/structure/closet/wardrobe/ert
 	name = "emergency response team equipment"

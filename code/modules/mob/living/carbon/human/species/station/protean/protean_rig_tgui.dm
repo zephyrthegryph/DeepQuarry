@@ -5,9 +5,22 @@ merge conflicts down the line.
 So here it sits, snowflake code for a single item.
 */
 
-DECLARE_UI_STATE(/obj/item/rig/protean, GLOB.tgui_always_state)
-
-UI_DATA_REPLACE(/obj/item/rig/protean, "cooling=cooling_on:num", "sealing", "emagged=subverted:num", "coverlock=locked:num", "interfacelock=interface_locked:num", "aicontrol=control_overridden:num", "aioverride=ai_override_enabled:num", "securitycheck=security_check_enabled:num", "malf=malfunction_delay:num", "merge:ui_data_obj_item_rig_protean{primarysystem:text,ai:bool,sealed:bool,helmet:text,gauntlets:text,boots:text,chest:text,helmetDeployed:bool,gauntletsDeployed:bool,bootsDeployed:bool,chestDeployed:bool,charge:num,maxcharge:num,chargestatus:num,modules:list}")
+/obj/item/rig/protean/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["cooling"] = cooling_on
+	data["sealing"] = sealing
+	data["emagged"] = subverted
+	data["coverlock"] = locked
+	data["interfacelock"] = interface_locked
+	data["aicontrol"] = control_overridden
+	data["aioverride"] = ai_override_enabled
+	data["securitycheck"] = security_check_enabled
+	data["malf"] = malfunction_delay
+	var/list/merged_1 = ui_data_obj_item_rig_protean(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/rig/protean's window data (declared on its UI_DATA row).
 /obj/item/rig/protean/proc/ui_data_obj_item_rig_protean(mob/user, datum/tgui/ui, datum/tgui_state/state)

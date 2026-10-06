@@ -96,29 +96,8 @@ allow_matches_form	code/game/objects/structures/barricades.dm	// ALLOW(init/CTOR
 allow_matches_form	code/game/objects/structures/barsign.dm	// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 allow_matches_form	code/game/objects/structures/bonfire.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/structures/crate_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/misc.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/cargo.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/cargo.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/cargo.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/engineering.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/engineering.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/engineering.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/hydroponics.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/scientist.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	// ALLOW(init/CTOR_ARGS): mind_target and del_self are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/security.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/security.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/security.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/security.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/secure/security.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/closets/statue.dm	// ALLOW(init/CTOR_ARGS): L is a constructor argument from whoever builds it
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-allow_matches_form	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 allow_matches_form	code/game/objects/structures/crates_lockers/largecrate.dm	// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance

@@ -124,16 +124,26 @@ CAPABILITIES(/datum/prompt/text/electronics_rename)
 		return "gone"
 	return null
 
-DECLARE_UI_STATE(/obj/item/integrated_circuit, GLOB.tgui_physical_state)
-
 /obj/item/integrated_circuit/tgui_host(mob/user)
 	if(istype(loc, /obj/item/electronic_assembly))
 		return loc.tgui_host()
 	return ..()
 
-DECLARE_UI(/obj/item/integrated_circuit, "ICCircuit")
-
-UI_DATA(/obj/item/integrated_circuit, "name:text", "desc:text", "displayed_name:text", "removable", "complexity:num", "power_draw_idle:num", "power_draw_per_use:num", "extended_desc:text", "merge:ui_data_obj_item_integrated_circuit{ref:text,inputs:list,outputs:list,activators:list}")
+/obj/item/integrated_circuit/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["name"] = name
+	data["desc"] = desc
+	data["displayed_name"] = displayed_name
+	data["removable"] = removable
+	data["complexity"] = complexity
+	data["power_draw_idle"] = power_draw_idle
+	data["power_draw_per_use"] = power_draw_per_use
+	data["extended_desc"] = extended_desc
+	var/list/merged_1 = ui_data_obj_item_integrated_circuit(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/integrated_circuit's window data (declared on its UI_DATA row).
 /obj/item/integrated_circuit/proc/ui_data_obj_item_integrated_circuit(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -190,78 +200,81 @@ UI_DATA(/obj/item/integrated_circuit, "name:text", "desc:text", "displayed_name:
 	for(var/datum/integrated_io/pin as anything in all_pins())
 		. |= pin.linked
 
-UI_ACT(/obj/item/integrated_circuit, "rename", ui_act_rename)
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_rename)
+/obj/item/integrated_circuit/proc/ui_act_rename(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	integrated_circuit_verb_rename(ui.user)
+	integrated_circuit_verb_rename(user)
 	return
 
-UI_ACT(/obj/item/integrated_circuit, "wire", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT(/obj/item/integrated_circuit, "pin_name", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT(/obj/item/integrated_circuit, "pin_data", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT(/obj/item/integrated_circuit, "pin_unwire", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_wire)
+/obj/item/integrated_circuit/proc/ui_act_wire(datum/act/op/A, link, pin_arg)
+	var/mob/user = A.actor
+	var/action = A.window_action()
+	if(!isnull(link) && !(link in all_linked_pins()))
+		return FALSE
+	if(!isnull(pin_arg) && !(pin_arg in all_pins()))
+		return FALSE
 	. = TRUE
-	var/datum/integrated_io/pin = params["pin"]
-	var/datum/integrated_io/linked = params["link"]
-	var/obj/item/held_item = ui.user.get_active_hand()
+	var/datum/integrated_io/pin = pin_arg
+	var/datum/integrated_io/linked = link
+	var/obj/item/held_item = user.get_active_hand()
 	if(!pin || !(linked in pin.linked))
 		linked = null
 	var/obj/item/multitool/M = held_item?.get_multitool()
 	if(M && allow_multitool)
 		switch(action)
 			if("pin_name")
-				M.wire(pin, ui.user)
+				M.wire(pin, user)
 			if("pin_data")
 				var/datum/integrated_io/io = pin
-				io.ask_for_pin_data(ui.user, held_item) // The pins themselves will determine how to ask for data, and will validate the data.
+				io.ask_for_pin_data(user, held_item) // The pins themselves will determine how to ask for data, and will validate the data.
 			if("pin_unwire")
-				M.unwire(pin, linked, ui.user)
+				M.unwire(pin, linked, user)
 
 	else if(istype(held_item, /obj/item/integrated_electronics/wirer))
 		var/obj/item/integrated_electronics/wirer/wirer = held_item
 		if(linked)
-			wirer.wire(linked, ui.user)
+			wirer.wire(linked, user)
 		else if(pin)
-			wirer.wire(pin, ui.user)
+			wirer.wire(pin, user)
 
 	else if(istype(held_item, /obj/item/integrated_electronics/debugger))
 		var/obj/item/integrated_electronics/debugger/debugger = held_item
 		if(pin)
-			debugger.write_data(pin, ui.user)
+			debugger.write_data(pin, user)
 	else
-		to_chat(ui.user, span_warning("You can't do a whole lot without the proper tools."))
+		to_chat(user, span_warning("You can't do a whole lot without the proper tools."))
 	return
 
-UI_ACT(/obj/item/integrated_circuit, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_scan)
+/obj/item/integrated_circuit/proc/ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	var/obj/item/held_item = ui.user.get_active_hand()
+	var/obj/item/held_item = user.get_active_hand()
 	if(istype(held_item, /obj/item/integrated_electronics/debugger))
 		var/obj/item/integrated_electronics/debugger/D = held_item
 		if(D.accepting_refs)
-			D.afterattack(src, ui.user, TRUE)
+			D.afterattack(src, user, TRUE)
 		else
-			to_chat(ui.user, span_warning("The Debugger's 'ref scanner' needs to be on."))
+			to_chat(user, span_warning("The Debugger's 'ref scanner' needs to be on."))
 	else
-		to_chat(ui.user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
+		to_chat(user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
 	return
 
-UI_ACT(/obj/item/integrated_circuit, "examine", ui_act_examine, UI_ARG_REF("ref", null, /obj/item/integrated_circuit))
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_examine)
+/obj/item/integrated_circuit/proc/ui_act_examine(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	. = TRUE
-	var/obj/item/integrated_circuit/examined = params["ref"]
+	var/obj/item/integrated_circuit/examined = ref
 	if(istype(examined) && (examined.loc == loc))
 		if(ui.parent_ui())
-			examined.tgui_interact(ui.user, null, ui.parent_ui())
+			examined.tgui_interact(user, null, ui.parent_ui())
 		else
-			examined.tgui_interact(ui.user)
+			examined.tgui_interact(user)
 	return FALSE
 
-UI_ACT(/obj/item/integrated_circuit, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_remove)
+/obj/item/integrated_circuit/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	remove(ui.user)
+	remove(user)
 	return
 
 /obj/item/integrated_circuit/proc/remove(mob/user)
