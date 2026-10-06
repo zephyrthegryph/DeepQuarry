@@ -318,13 +318,6 @@
 		if(OM_EFFECT_CLOCK_MULT, OM_EFFECT_CLOCK_INHIBIT)
 			om_clock_changed(rec, eff.clock_idx)
 			om_timers_rate_changed(rec)
-		if(OM_EFFECT_RELEVANCE)
-			rec.relevance = new_value
-			om_sync_all(rec)
-			om_native_relevance(E, new_value)
-		if(OM_EFFECT_SUSPEND)
-			om_sync_all(rec)
-			om_timers_rate_changed(rec)
 	eff.on_changed(E, old, new_value)
 	var/bits = eff.channel | CHANGE_EFFECTS
 	var/list/keys = eff.publishes ? list(eff.publishes) : null
@@ -604,21 +597,23 @@
 // ---------------------------------------------------------------- relevance and suspension
 
 /// `observer` makes `E` at least `level` relevant until released or deleted.
-/proc/om_observe(datum/E, datum/observer, level)
-	return om_hold(E, EFFECT_RELEVANCE, observer, level)
+/// STAT_RELEVANCE of `E` moved to `level`: the OM record's behaviours pick their cadence by it (rec.relevance) and the Rust side mirrors
+/// it; CHANGE_RELEVANCE wakes the sequences sweeping E (seq_channels(), through the dispatch).
+/proc/relevance_changed(datum/E, level)
+	var/datum/om/rec/rec = E.om_rec
+	if(rec)
+		rec.relevance = level
+		om_sync_all(rec)
+	om_native_relevance(E, level)
+	changed(E, CHANGE_RELEVANCE) // ALLOW(sys_manual_push): the stat changed; its channel readers (the sequence sweep, OM cadences) still listen by channel
 
-/proc/om_unobserve(datum/E, datum/observer)
-	return om_release(E, EFFECT_RELEVANCE, observer)
-
-/proc/om_relevance(datum/E)
-	return E.om_rec ? E.om_rec.relevance : RELEVANCE_NONE
-
-/// Suspends every cadence and wake of `E` while `source` holds it.
-/proc/om_suspend(datum/E, datum/source)
-	return om_hold(E, EFFECT_SUSPENDED, source, TRUE)
-
-/proc/om_unsuspend(datum/E, datum/source)
-	return om_release(E, EFFECT_SUSPENDED, source)
+/// STAT_SUSPENDED of `E` flipped: the OM record's cadences and own-clock timers stop or resume with it.
+/proc/suspended_changed(datum/E)
+	var/datum/om/rec/rec = E.om_rec
+	if(!rec)
+		return
+	om_sync_all(rec)
+	om_timers_rate_changed(rec)
 
 #undef OM_C_EFFECT
 #undef OM_C_SOURCE

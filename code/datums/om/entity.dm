@@ -296,9 +296,9 @@
 	return TRUE
 
 /proc/om_suspended(datum/om/rec/rec)
-	if(!rec.contribs)
+	if(!rec.owner?.rx?.stats)
 		return FALSE
-	return om_value_of(rec.owner, EFFECT_SUSPENDED)
+	return stat_value(rec.owner, STAT_SUSPENDED)
 
 /// Re-syncs every attachment (relevance, suspension or clock rate changed).
 /proc/om_sync_all(datum/om/rec/rec, recheck = FALSE)

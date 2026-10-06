@@ -123,6 +123,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/watertank/high)
 
 
 CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
+	owns_one(nameof(rig), /obj/item/assembly_holder)
 	configure(reagents(add = list(REAGENT_ID_FUEL = 1000)))
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
@@ -210,7 +211,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
 	rig.forceMove(get_turf(user))
-	own_take(src, nameof(rig))
+	rel_take(src, nameof(rig))
 	overlays = new/list()
 
 /// Old attackby.
@@ -577,6 +578,3 @@ CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel)
 CAPABILITIES(/obj/structure/reagent_dispensers/space_cleaner)
 	configure(reagents(starts = list(REAGENT_ID_CLEANER = 1000)))
 
-/obj/structure/reagent_dispensers/fueltank/ownership()
-	. = ..()
-	. += owns(nameof(rig), policy = OWN_CONTAINED)

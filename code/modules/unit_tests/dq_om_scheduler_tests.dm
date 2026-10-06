@@ -144,10 +144,10 @@
 
 	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("suspended"))
 	scheduler_advance(1)
-	om_suspend(E, E)
+	hold(E, STAT_SUSPENDED, TRUE, E)
 	scheduler_advance(5)
 	TEST_ASSERT(!("suspended" in E.log), "suspension pauses the timer")
-	om_unsuspend(E, E)
+	release(E, STAT_SUSPENDED, E)
 	scheduler_advance(1.5)
 	TEST_ASSERT("suspended" in E.log, "the timer resumes with the time it had left")
 

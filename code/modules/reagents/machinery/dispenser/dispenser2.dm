@@ -31,6 +31,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	owns_one(nameof(container), /obj/item/reagent_containers)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), nameof(stat)))
 	interface("ChemDispenser")
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
@@ -52,6 +53,9 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	op("remove_recipe", ui_act("remove_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_remove_recipe)))
 	extend(TAG_UI, needs(req(PROC_REF(not_broken), silent = TRUE)))
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
+	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
+	op("set_container", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Set container"),
+		needs(req(PROC_REF(no_container), silent = TRUE), req(PROC_REF(can_take_container), because = PROC_REF(container_refusal))), then(PROC_REF(container_set)))
 
 /obj/machinery/chemical_dispenser/Initialize(mapload)
 	. = ..()
@@ -94,7 +98,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
-	. = own_take_member(src, nameof(cartridges), label)
+	. = rel_take(src, nameof(cartridges), key = label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/declare_interactions(list/into)
@@ -103,48 +107,44 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	)
 	for(var/actor_spec in actor_specs)
 		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/chemical_dispenser_add_cartridge,
-		/datum/interaction/machine_item/chemical_dispenser_set_container,
-		/datum/interaction/machine_hand/ungated/chemical_dispenser_use,
-	)
 	..()
 
-/datum/interaction/machine_item/chemical_dispenser_add_cartridge
-	id = "chemical_dispenser_add_cartridge"
-	name = "Insert cartridge"
-	held_type = /obj/item/reagent_containers/chem_disp_cartridge
-	effect = /obj/machinery/chemical_dispenser/proc/interaction_add_cartridge
+/// The old attackby: a cartridge goes into a free slot under its label.
+/obj/machinery/chemical_dispenser/proc/cartridge_added(datum/act/op/A)
+	add_cartridge(A.held, A.actor)
+	return OP_OK
 
-/obj/machinery/chemical_dispenser/proc/interaction_add_cartridge(mob/user, obj/item/W, datum/interaction/interaction)
-	add_cartridge(W, user)
-	return TRUE
+MSG_DEF_SELF(chemical_dispenser/beakers_only, "This machine only accepts beakers.")
+MSG_DEF_SELF(chemical_dispenser/not_open, "You don't see how it could dispense reagents into %I%.")
+MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it.")
 
-/datum/interaction/machine_item/chemical_dispenser_set_container
-	id = "chemical_dispenser_set_container"
-	name = "Set container"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
-	effect = /obj/machinery/chemical_dispenser/proc/interaction_set_container
-	also_requires = list(REQ_FIELD_NOT("container"), REQ_TARGET_STATE(/obj/machinery/chemical_dispenser/proc/can_take_container))
+/// No container is set on it.
+/obj/machinery/chemical_dispenser/proc/no_container(datum/act/op/A)
+	return !container
 
-/// Requirement: TRUE, or why this container can't be set on the dispenser.
-/obj/machinery/chemical_dispenser/proc/can_take_container(mob/user, atom/target, obj/item/held)
+/// The held container can be set on the dispenser.
+/obj/machinery/chemical_dispenser/proc/can_take_container(datum/act/op/A)
+	return isnull(container_refusal(A))
+
+/// Why the held container can't be set on the dispenser, or null.
+/obj/machinery/chemical_dispenser/proc/container_refusal(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(!accept_drinking && istype(held, /obj/item/reagent_containers/food))
-		return "this machine only accepts beakers"
+		return MSG(chemical_dispenser/beakers_only)
 	if(!held?.is_open_container())
-		return "you don't see how it could dispense reagents into [held]"
+		return MSG(chemical_dispenser/not_open)
 	if(istype(held, /obj/item/reagent_containers/glass/cooler_bottle))
-		return "you don't see how [held] could fit into it"
-	return TRUE
+		return MSG(chemical_dispenser/no_fit)
+	return null
 
-/obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
+/// The old attackby: the container is set on the dispenser.
+/obj/machinery/chemical_dispenser/proc/container_set(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/RC = A.held
 	if(!move_into(src, nameof(src.container), RC, user))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
-	return TRUE
-
-/obj/machinery/chemical_dispenser/wrench_act(mob/user, obj/item/tool)
-	return ..()
+	return OP_OK
 
 /obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
 	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Dispenser", choices = cartridges)
@@ -248,7 +248,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 		container.forceMove(get_turf(src))
 		if(Adjacent(user)) // So the AI doesn't get a beaker somehow.
 			user.put_in_hands(container)
-		own_take(src, nameof(/datum/cooking_item::container))
+		rel_take(src, nameof(container))
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_import_config(datum/act/op/A, config)
@@ -353,18 +353,4 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 		tgui_interact(user)
 	return TRUE
 
-/datum/interaction/machine_hand/ungated/chemical_dispenser_use
-	id = "chemical_dispenser_use"
-	name = "Use"
-	effect = /obj/machinery/chemical_dispenser/proc/interaction_use
-
-/obj/machinery/chemical_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_stat(BROKEN))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
-
-/obj/machinery/chemical_dispenser/ownership()
-	. = ..()
-	. += owns(nameof(container), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

@@ -533,6 +533,7 @@
 #include "dq_hc_computers_batch4.dm"
 #include "dq_hc_computers_batch5.dm"
 #include "dq_p2_reagent_behaviour.dm"
+#include "dq_reagent_machines_behaviour.dm"
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_lights_behaviour.dm"
 #include "dq_hc_items_behaviour.dm"

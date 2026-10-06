@@ -5,18 +5,18 @@
 #define OM_UI_THROTTLE (2)
 
 /// Binds a UI session to `target`: a watch edge on `mask` that raises the
-/// target to RELEVANCE_WATCHED while bound. Changes are coalesced and pushed
+/// target to RELEVANCE_WATCHED (STAT_RELEVANCE) while bound. Changes are coalesced and pushed
 /// at most once per OM_UI_THROTTLE per session via session.om_ui_push().
 /proc/om_ui_bind(datum/session, datum/target, mask)
 	var/datum/om/behaviour/B = om_registry().ui_behaviour
 	om_attach(session, B)
 	om_watch(session, target, mask, B)
-	om_observe(target, session, RELEVANCE_WATCHED)
+	hold(target, STAT_RELEVANCE, RELEVANCE_WATCHED, session)
 
 /proc/om_ui_unbind(datum/session, datum/target)
 	var/datum/om/behaviour/B = om_registry().ui_behaviour
 	om_unwatch(session, target, B)
-	om_unobserve(target, session)
+	release(target, STAT_RELEVANCE, session)
 	if(!length(session.om_rec?.watching))
 		om_detach(session, B)
 
