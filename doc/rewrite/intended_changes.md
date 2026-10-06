@@ -1450,3 +1450,7 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
+* **Ship consoles (helm, engines, sensors, disperser).** Their questions (navigation entry, coordinates, autopilot and thrust limits,
+  sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
+  stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
+  view over its link from anywhere it works the console (the distance check is a hand's).
