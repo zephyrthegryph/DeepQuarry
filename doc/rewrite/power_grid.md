@@ -265,3 +265,13 @@ Not done, and why:
   SRC_GRID); one that clears NOPOWER on a dark machine sets `power_forced`, which `area_gives_power()` honours. Both are for tests and the benchmark's old path.
 * **A machine created in a dark area is dark at once** (before, it kept power until some later area event). Tests that built machines in a dark area and
   relied on that now power the machine's area or force it with the shim.
+
+### 7a. After the machine-stats handoff (04d2663c7b)
+
+* `has_stat()` is deleted: every caller (power/**, the AI's APC checks, the drone fabricator and console) reads `broken_now()` / `power_lost()` /
+  `has_condition()`. `stat_bits_allow()` is deleted: STAT_OPERABLE's conditions are base-machine contributions with keys (`intact_operable`,
+  `maint_operable`, `power_operable`) and the APC, the SMES and the RCD turret drop the ones they do not take (`without(key)`, the APC and SMES through
+  `machine_basics(..., area_power = FALSE)`).
+* `set_grid_power()` (the old SRC_GRID writer) is the test/benchmark shim described above; `set_powered()` calls it.
+* **Kept, and why:** the derived `stat` var mirror and `stat_bits_now()` / `operable()`. Three watchers still `on_change(nameof(stat))` (the pipe turbine,
+  the air alarm, the cell charger) and `operable()` reads the bits; they are not grid files. They go when those three move to `STAT_OPERABLE`.

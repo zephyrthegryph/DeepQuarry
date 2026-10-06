@@ -1046,7 +1046,8 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 /// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power (neither the grid's reading nor the capacitors' delay applies).
 CAPABILITIES(/obj/machinery/porta_turret/rcd)
 	without("turret_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
-	configure(machine_basics(repair = NONE, powered = FALSE, area_power = FALSE))
+	configure(machine_basics(repair = NONE, powered = FALSE))
+	without("maint_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 
 /obj/machinery/porta_turret/rcd/power_change()
 	return

@@ -35,7 +35,7 @@
 	if(now == power_seen)
 		return FALSE
 	power_seen = now
-	stat_changed(NOPOWER) // the `stat` publish and the power channel: gates that wake on `stat` hear the flip, as they did from the bit's writer
+	condition_announce(CHANGE_MACHINE_POWER) // the `stat` publish and the power channel: gates that wake on `stat` hear the flip, as they did from the bit's writer
 	changed(src) // a power change is a dispatched call: the powered capability's layer follows
 	if(power_lost())
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
