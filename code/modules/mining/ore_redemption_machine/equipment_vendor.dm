@@ -175,7 +175,7 @@
 	if(panel_open)
 		look.overlay("[initial(icon_state)]-panel")
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.state("[initial(icon_state)]-broken")
 	else if(powered())
 		look.state(initial(icon_state))

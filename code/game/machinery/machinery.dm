@@ -181,10 +181,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 // ALLOW(init/INSTANCE_STATE): a machine faces the way it is built and, made after the map, checks its power
 /obj/machinery/Initialize(mapload)
 	. = ..()
-	var/initial_held = stat & MACHINE_STAT_HELD // ALLOW(sys_stat_bits): a type's default BROKEN or NOPOWER moves into the stat layer
-	if(initial_held)
-		stat &= ~initial_held // ALLOW(sys_stat_bits): moves the default bits into the stat layer, once
-		stat_add(initial_held)
+	if(starts_switched_off())
+		set_switched_on(FALSE)
+	if(starts_broken())
+		set_broken_condition(TRUE)
 	if(isnum(dir_at_make))
 		set_dir(dir_at_make)
 	// The board stays a type path (roadmap C6): it is only ever materialized
@@ -207,6 +207,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		H.reset_perspective()
 	..()
 
+/// TRUE for a type that is made with its own switch off (cookers).
+/obj/machinery/proc/starts_switched_off()
+	return FALSE
+
+/// TRUE for a type that is made broken (a wreck placed as a warning).
+/obj/machinery/proc/starts_broken()
+	return FALSE
+
 /// The declared start condition of a machine's started work (started_work(starts = PROC_REF(step_start_condition))): TRUE when it has work
 /// right away at initialization (mapped on, holding fuel, timing). Default FALSE.
 /obj/machinery/proc/step_start_condition()
@@ -218,7 +226,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(use_power && !has_stat(MACHINE_STAT_ANY))
+	if(use_power && !has_condition())
 		use_power(7500/severity)
 
 		var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
@@ -359,7 +367,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)
 
-	if(!operable(MAINT))
+	if(!operable())
 		return 1
 	if(user.lying || user.stat)
 		return 1
@@ -395,7 +403,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 /obj/machinery/proc/hand_refusal(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!operable(MAINT))
+	if(!operable())
 		return /datum/msg/machine/not_working
 	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
 		return /datum/msg/machine/cant_reach
@@ -545,7 +553,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	return !!circuit
 
 /obj/machinery/proc/display_disconnected(datum/act/op/A)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(A.actor, span_notice("The broken glass falls out."))
 		new /obj/item/material/shard(loc)
 	else
@@ -591,7 +599,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
 		A.state = FRAME_FASTENED
 	else if(A.frame_type.frame_class == FRAME_CLASS_COMPUTER || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
-		if(has_stat(BROKEN))
+		if(broken_now())
 			A.state = FRAME_WIRED
 		else
 			A.state = FRAME_PANELED
@@ -635,7 +643,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
  * flags is forbidden (tools/ci/check_breakpoints.sh).
  */
 /obj/machinery/atom_break(damage_flag)
-	var/flipped = stat_add(BROKEN) // raises CHANGE_MACHINE_BROKEN
+	var/flipped = set_broken_condition(TRUE) // raises CHANGE_MACHINE_BROKEN
 	..()
 	if(!flipped)
 		return FALSE
@@ -645,7 +653,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 
 /// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.
 /obj/machinery/atom_fix()
-	var/flipped = stat_remove(BROKEN) // raises CHANGE_MACHINE_BROKEN
+	var/flipped = set_broken_condition(FALSE) // raises CHANGE_MACHINE_BROKEN
 	..()
 	return flipped ? TRUE : FALSE
 

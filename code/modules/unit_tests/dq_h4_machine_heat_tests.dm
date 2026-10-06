@@ -12,25 +12,29 @@
 
 /datum/unit_test/dq_h4_machine_heat_regulator/Run()
 	var/obj/machinery/dq_h4_heater/heater = allocate(/obj/machinery/dq_h4_heater, test_floor())
-	heater.stat_remove(NOPOWER|BROKEN)
+	heater.set_grid_power(TRUE)
+	heater.set_broken_condition(FALSE)
 	heater.update_heat_output()
 	TEST_ASSERT_EQUAL(heater.heat_output_now, 1000, "a powered machine emits its declared heat_output")
 	TEST_ASSERT(!isnull(heater.heat_body), "emitting keeps a heat body")
 	var/list/properties = heater.thermal_properties()
 	TEST_ASSERT_EQUAL(properties[THERMAL_CONDUCTANCE], 100, "heat_dissipation sets the body's conductance")
 
-	heater.stat_add(NOPOWER)
+	heater.set_grid_power(FALSE)
 	heater.update_heat_output()
 	TEST_ASSERT_EQUAL(heater.heat_output_now, 0, "an unpowered machine emits nothing")
 
-	heater.stat_remove(NOPOWER)
-	heater.stat_add(BROKEN)
+	heater.set_grid_power(TRUE)
+	heater.set_broken_condition(TRUE)
 	heater.update_heat_output()
 	TEST_ASSERT_EQUAL(heater.heat_output_now, 0, "a broken machine emits nothing")
 
 	// The RD server declares heat and only emits while working.
 	var/obj/machinery/rnd/server/server = allocate(/obj/machinery/rnd/server, test_floor())
-	server.stat_remove(NOPOWER|BROKEN|EMPED)
+	server.set_grid_power(TRUE)
+	server.set_broken_condition(FALSE)
+	server.set_maintenance(FALSE)
+	release(server, STAT_OPERABLE, SRC_EMP)
 	server.research_disabled = FALSE
 	server.refresh_working()
 	TEST_ASSERT_EQUAL(server.current_heat_output(), server.heat_output, "a working RD server emits its declared heat")

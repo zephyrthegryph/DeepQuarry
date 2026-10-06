@@ -9,7 +9,7 @@ fundamental differences
 
 /obj/machinery/appliance/mixer
 	max_contents = 1
-	stat = POWEROFF
+	starts_off = TRUE
 	cooking_coeff = 0.75 // Original value 0.4
 	active_power_usage = 3000
 	idle_power_usage = 50
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 	return 0
 
 /obj/machinery/appliance/mixer/can_remove_items(mob/user, show_warning = TRUE)
-	if(has_stat(MACHINE_STAT_ANY))
+	if(has_condition())
 		return 1
 	else
 		if(show_warning)
@@ -107,14 +107,14 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 
-	if(has_stat(POWEROFF))//Its turned off
-		stat_remove(POWEROFF)
+	if(switched_off())//Its turned off
+		set_switched_on(TRUE)
 		if(user)
 			act_message(user, src, MSG_SELF(span_filter_notice("You turn on %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% on.")))
 			get_cooking_work(CI)
 			set_use_power(2)
 	else //Its on, turn it off
-		stat_add(POWEROFF)
+		set_switched_on(FALSE)
 		set_use_power(0)
 		if(user)
 			act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
@@ -122,7 +122,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 	update_icon()
 
 /obj/machinery/appliance/mixer/can_insert(obj/item/I, mob/user)
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		to_chat(user, span_warning(",You can't add items while \the [src] is running. Wait for it to finish or turn the power off to abort."))
 		return 0
 	else
@@ -130,7 +130,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 
 /obj/machinery/appliance/mixer/finish_cooking(datum/cooking_item/CI)
 	..()
-	stat_add(POWEROFF)
+	set_switched_on(FALSE)
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	set_use_power(0)
 	CI.reset()
@@ -140,7 +140,7 @@ APPEARANCE_NONE(/obj/machinery/appliance/mixer)
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/mixer/appearance_overlays()
 	. = list()
-	if (!has_stat(MACHINE_STAT_ANY))
+	if (!has_condition())
 		icon_state = on_icon
 		if(mixer_loop)
 			mixer_loop.start(src)
@@ -150,7 +150,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, app
 			mixer_loop.stop(src)
 
 /obj/machinery/appliance/mixer/work_step(datum/act/timer/A)
-	if(has_stat(MACHINE_STAT_ANY) || !cooking || !length(cooking_objs))
+	if(has_condition() || !cooking || !length(cooking_objs))
 		return PROCESS_KILL
 	for(var/i in cooking_objs)
 		do_cooking_tick(i)

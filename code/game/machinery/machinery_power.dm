@@ -53,7 +53,7 @@
  * it. Returns TRUE when the state changed.
  */
 /obj/machinery/proc/set_powered(powered)
-	if(!(powered ? stat_remove(NOPOWER) : stat_add(NOPOWER)))
+	if(!set_grid_power(powered))
 		return FALSE
 	PUBLISH_CHANGE(src, MACHINE_KEY_POWERED)
 	return TRUE

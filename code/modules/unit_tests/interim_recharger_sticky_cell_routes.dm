@@ -9,7 +9,7 @@
 	for(var/route in list("item", "drag"))
 		var/obj/machinery/recharger/charger = p2c_recharger(/obj/machinery/recharger, T)
 		var/obj/item/cell/cell = allocate(/obj/item/cell, T)
-		charger.set_stat(0)
+		dq_machine_clear(charger)
 		TEST_ASSERT(charger.powered(), "the actual recharger fixture has power for [route] insertion")
 		TEST_ASSERT(user.put_in_active_hand(cell), "the actual actor holds the cell for [route] insertion")
 		var/charge_before = cell.charge

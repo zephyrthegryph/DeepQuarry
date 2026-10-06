@@ -97,7 +97,7 @@
 			if(!T)
 				continue
 			var/obj/machinery/conveyor/C = locate_on(T, /obj/machinery/conveyor)
-			if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
+			if(C && !C.has_condition() && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
 				var/obj/item/I = pick(T.contents - list(C))
 				if(istype(I) && conveyor_load(I))
 					break
@@ -151,7 +151,7 @@
 		return TRUE
 	for(var/D in GLOB.cardinal)
 		var/obj/machinery/conveyor/C = locate_within(get_step(src, D), /obj/machinery/conveyor)
-		if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D])
+		if(C && !C.has_condition() && C.operating && C.dir == GLOB.reverse_dir[D])
 			return TRUE
 	return FALSE
 

@@ -97,11 +97,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		set_light(0)
 		return .
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "firex"
 		set_light(0)
 		return .
-	else if(has_stat(NOPOWER))
+	else if(power_lost())
 		icon_state = "firep"
 		set_light(0)
 		return .

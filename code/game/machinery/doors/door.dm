@@ -306,7 +306,7 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/proc/door_blobbed(datum/act/A)
 	if(!density)
 		return OP_OK
-	if(has_stat(BROKEN))
+	if(broken_now())
 		open(TRUE)
 		return OP_OK
 	return HOOK_DECLINE
@@ -332,7 +332,7 @@ CAPABILITIES(/obj/machinery/door)
 
 /// A door that has taken no damage (reinforcing it is allowed).
 /obj/machinery/door/proc/not_damaged(datum/act/A)
-	return !has_stat(BROKEN) && get_integrity() >= max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+	return !broken_now() && get_integrity() >= max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
 
 /// Fits sheets of plasteel on the door (up to two in all, over as many visits as it takes).
 /obj/machinery/door/proc/add_plasteel(datum/act/op/A)

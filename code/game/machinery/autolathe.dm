@@ -219,7 +219,7 @@ CAPABILITIES(/obj/machinery/autolathe)
 /obj/machinery/autolathe/draw(datum/look/look)
 	..()
 	look.hide(LOOK_PANEL_OPEN)
-	look.state(fabricator_printing(src) && !has_stat(NOPOWER) ? "autolathe_n" : initial(icon_state))
+	look.state(fabricator_printing(src) && !power_lost() ? "autolathe_n" : initial(icon_state))
 	look.overlay("autolathe_panel", when = panel_open(src))
 
 // ---- the wires ----

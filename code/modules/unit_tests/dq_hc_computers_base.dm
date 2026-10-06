@@ -63,7 +63,8 @@
 /// A console of `type` as a map places it.
 /datum/unit_test/dq_hc_computers/proc/hc_console(type, turf/T)
 	var/obj/machinery/computer/C = allocate(type, T || hc_spot())
-	C.stat_remove(NOPOWER | BROKEN)
+	C.set_grid_power(TRUE)
+	C.set_broken_condition(FALSE)
 	LAZYADD(hc_made, C)
 	return C
 

@@ -31,7 +31,7 @@
 
 /obj/machinery/computer/cryopod/draw(datum/look/look)
 	..()
-	if((has_stat(NOPOWER)) || (has_stat(BROKEN)))
+	if((power_lost()) || (broken_now()))
 		look.state("[initial(icon_state)]-p")
 	else
 		look.state(initial(icon_state))

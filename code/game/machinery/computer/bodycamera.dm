@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 		return
 	if(showing)
 		stop_showing()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 	if(!thing || !other_thing)
 		return
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 
 /obj/machinery/computer/security/telescreen/bodycamera/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		bradio?.on = FALSE
 		stop_showing()
 	else if(enabled)

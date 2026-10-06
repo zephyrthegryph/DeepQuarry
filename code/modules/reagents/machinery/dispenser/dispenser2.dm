@@ -196,7 +196,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 /// Requirement: a broken dispenser ignores its buttons (silently, as the old ui_act_allowed() did).
 /obj/machinery/chemical_dispenser/proc/not_broken(datum/act/op/A)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 /// The save question's second step: a recipe of that name exists already.
 /obj/machinery/chemical_dispenser/proc/recipe_name_taken(datum/act/op/A)
@@ -345,7 +345,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 /// Old attack_ghost: view the interface unless broken. Never fell through.
 /obj/machinery/chemical_dispenser/proc/chemical_dispenser_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!has_stat(BROKEN))
+	if(!broken_now())
 		tgui_interact(user)
 	return TRUE
 

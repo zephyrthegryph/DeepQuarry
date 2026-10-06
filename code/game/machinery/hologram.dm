@@ -120,7 +120,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
 	var/mob/observer/eye/eyeobj = user?.active_eye()
-	if(!has_stat(NOPOWER) && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
+	if(!power_lost() && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
 		if(user.holo)
 			to_chat(user, span_danger("ERROR:") + " Image feed in progress.")
 			return
@@ -205,7 +205,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/proc/work_step(datum/act/timer/A)
 	for (var/mob/living/silicon/ai/master in masters)
 		var/active_ai = (master && !master.stat && master.client && master?.active_eye())//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
-		if((has_stat(NOPOWER)) || !active_ai)
+		if((power_lost()) || !active_ai)
 			clear_holo(master)
 			continue
 

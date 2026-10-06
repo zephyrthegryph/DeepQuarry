@@ -177,10 +177,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 /obj/machinery/chemical_synthesizer/appearance_overlays()
 	. = list()
 	underlays.Cut()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "synth_broken"
 		return .
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		icon_state = "synth_off"
 		return .
 	if(!busy)

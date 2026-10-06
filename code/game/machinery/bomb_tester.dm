@@ -73,7 +73,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 		rel_clear(src, nameof(test_canister))
 
 /obj/machinery/bomb_tester/proc/appearance_suffix()
-	return has_stat(NOPOWER) ? "-p" : "[simulating]"
+	return power_lost() ? "-p" : "[simulating]"
 
 /obj/machinery/bomb_tester/proc/appearance_tank1()
 	return tank1 ? 1 : 0
@@ -92,7 +92,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 /obj/machinery/bomb_tester/power_change()
 	. = ..()
-	if(simulating && has_stat(NOPOWER))
+	if(simulating && power_lost())
 		simulation_finish(1)
 
 /obj/machinery/bomb_tester/RefreshParts()

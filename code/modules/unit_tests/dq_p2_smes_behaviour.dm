@@ -25,7 +25,7 @@
 
 /// The unit is broken (its overlays dark, its input and output off).
 /proc/p2_smes_broken(obj/machinery/power/smes/S)
-	return !!(S.has_stat(BROKEN) || S.unwired)
+	return !!(S.broken_now() || S.unwired)
 
 /// The charge held, in SMES units.
 /proc/p2_smes_charge(obj/machinery/power/smes/S)

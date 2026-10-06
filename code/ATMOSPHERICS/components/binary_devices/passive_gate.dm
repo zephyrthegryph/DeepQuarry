@@ -174,7 +174,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 
 /// It needs no power: its window opens unless it is broken.
 /obj/machinery/atmospherics/binary/passive_gate/device_works(datum/act/A)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 /// The window's data.
 /obj/machinery/atmospherics/binary/passive_gate/ui_data(datum/act/eval/A)

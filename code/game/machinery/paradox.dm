@@ -12,7 +12,7 @@
 /// Unpowered: the rift spills loot only while it has no power.
 OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, list("stat"))
 /obj/machinery/paradoxrift/proc/unpowered()
-	return has_stat(NOPOWER)
+	return power_lost()
 
 /obj/item/circuitboard/paradoxrift
 	name = "paradox rift generator circuit"
@@ -132,4 +132,4 @@ DECLARE_LOOT(/obj/random/mob/interspace, LOOT_TABLE(\
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/paradoxrift/step_start_condition()
-	return has_stat(NOPOWER)
+	return power_lost()

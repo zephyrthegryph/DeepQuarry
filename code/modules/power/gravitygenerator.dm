@@ -69,7 +69,7 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 /// A rung of the repair done.
 /obj/machinery/gravity_generator/proc/repair_stepped(datum/act/op/A)
 	var/obj/machinery/gravity_generator/main/M = grav_main()
-	M.set_broken_state(M.broken_state + 1)
+	M.set_broken_condition(M.broken_state + 1)
 	play_sfx(src, SFX_MACHINES_CLICK, 1.5)
 	return OP_OK
 
@@ -281,7 +281,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(M.has_stat(BROKEN))
 			M.atom_fix()
-	set_broken_state(FALSE)
+	set_broken_condition(FALSE)
 	set_power()
 	update_list()
 	update_areas()

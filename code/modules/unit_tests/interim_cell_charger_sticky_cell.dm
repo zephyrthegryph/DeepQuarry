@@ -10,7 +10,7 @@
 	var/mob/living/carbon/human/user = p2c_actor(T)
 	var/obj/machinery/cell_charger/charger = p2c_cell_charger(T)
 	var/obj/item/cell/cell = allocate(/obj/item/cell, T)
-	charger.set_stat(0)
+	dq_machine_clear(charger)
 	TEST_ASSERT(charger.operable() && charger.anchored, "the real cell charger is operable and anchored")
 	TEST_ASSERT_NULL(charger.charging, "the actual powered charger starts empty")
 	TEST_ASSERT(user.put_in_active_hand(cell), "the actor holds the actual cell")

@@ -255,7 +255,8 @@
 /// A powered air alarm of `type` on the room's tile (dx, dy), its area's main alarm when `main`.
 /datum/unit_test/dq_atmos_m/proc/alarm(type = /obj/machinery/alarm, dx = 1, dy = 1, main = TRUE)
 	var/obj/machinery/alarm/A = allocate(type, tile(dx, dy))
-	A.stat_remove(NOPOWER | BROKEN)
+	A.set_grid_power(TRUE)
+	A.set_broken_condition(FALSE)
 	if(main)
 		am_alarm_make_main(A)
 	return A
@@ -263,7 +264,8 @@
 /// A powered vent pump or scrubber of `type` on the room's tile (dx, dy), its radio up and registered with the area.
 /datum/unit_test/dq_atmos_m/proc/device(type, dx = 3, dy = 1)
 	var/obj/machinery/atmospherics/unary/D = allocate(type, tile(dx, dy))
-	D.stat_remove(NOPOWER | BROKEN)
+	D.set_grid_power(TRUE)
+	D.set_broken_condition(FALSE)
 	am_device_online(D)
 	am_settle()
 	return D
@@ -373,7 +375,7 @@
 	var/mob/living/carbon/human/wearer = person(list(ACCESS_ATMOSPHERICS), tile(2, 2))
 	am_click(wearer, A, null, GESTURE_ALT)
 	TEST_ASSERT(!am_alarm_locked(A), "an alt-click by someone wearing the access toggles it")
-	A.stat_add(BROKEN)
+	A.set_broken_condition(TRUE)
 	am_click(H, A, good)
 	TEST_ASSERT(!am_alarm_locked(A), "a broken alarm's lock does not move")
 
@@ -629,7 +631,7 @@
 	TEST_ASSERT((V.pressure_checks & 1) && V.pump_direction == 1, "stabilize: the external check, releasing")
 	am_radio(V, list("init" = "Renamed Vent"))
 	TEST_ASSERT_EQUAL(V.name, "Renamed Vent", "init names it")
-	V.stat_add(BROKEN)
+	V.set_broken_condition(TRUE)
 	am_radio(V, list("power" = "1"))
 	TEST_ASSERT(!V.use_power, "a broken vent ignores the radio")
 
@@ -1123,7 +1125,8 @@
 	V.atmos_init()
 	P.atmos_init()
 	dq_atmos_test_publish_rust_pipenets(list(V, P))
-	V.stat_remove(NOPOWER | BROKEN)
+	V.set_grid_power(TRUE)
+	V.set_broken_condition(FALSE)
 	V.air_contents.adjust_gas(/datum/gas/nitrogen, 3000 * V.air_contents.return_volume() / (R_IDEAL_GAS_EQUATION * T20C))
 	heat_set(V.air_contents, T20C, HEAT_SOURCE_OTHER)
 	V.push_to_rust()

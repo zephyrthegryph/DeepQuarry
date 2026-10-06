@@ -65,7 +65,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 /// charger cheat power where no APC serves).
 /obj/machinery/cell_charger/proc/insert_refusal(datum/act/op/A)
 	var/obj/item/held = A.held
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return /datum/msg/machine/inoperable
 	if(istype(held, /obj/item/cell/device))
 		return /datum/msg/charger/wrong_cell

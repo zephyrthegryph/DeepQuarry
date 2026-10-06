@@ -122,7 +122,7 @@
 
 /proc/dq_power_test_apc()
 	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if(candidate.terminal && candidate.cell && candidate.area?.requires_power && !candidate.has_stat(BROKEN | MAINT) && isturf(candidate.loc))
+		if(candidate.terminal && candidate.cell && candidate.area?.requires_power && !(candidate.broken_now() || candidate.under_maintenance()) && isturf(candidate.loc))
 			return candidate
 	return null
 
@@ -162,7 +162,7 @@
 			drained = TRUE
 			break
 	TEST_ASSERT(drained, "an empty isolated APC kept its area powered")
-	TEST_ASSERT(M.has_stat(NOPOWER), "a machine in the dark area still has power")
+	TEST_ASSERT(M.power_lost(), "a machine in the dark area still has power")
 	TEST_ASSERT(lost_signals, "the machine never heard machinery_power_lost")
 	TEST_ASSERT(A.charging == 0, "an isolated APC claims to charge")
 	var/low = A.cell.charge
@@ -177,7 +177,7 @@
 			restored = TRUE
 			break
 	TEST_ASSERT(restored, "the APC did not restore and charge once supply returned")
-	TEST_ASSERT(!M.has_stat(NOPOWER), "the machine did not get its power back")
+	TEST_ASSERT(!M.power_lost(), "the machine did not get its power back")
 	TEST_ASSERT(restored_signals, "the machine never heard machinery_power_restored")
 	dq_power_test_step()
 	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
@@ -223,7 +223,7 @@
 	refresh_flush()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		if(!candidate.has_stat(BROKEN))
+		if(!candidate.broken_now())
 			S = candidate
 			break
 	var/old_smes = S ? list(S.stored_charge(), S.input_attempt, S.output_attempt) : null

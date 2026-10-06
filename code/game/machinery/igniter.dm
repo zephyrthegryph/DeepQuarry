@@ -26,7 +26,7 @@ CAPABILITIES(/obj/machinery/igniter)
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/igniter/proc/work_step(datum/act/timer/A)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return work_wait_for_power(src)
 	var/turf/location = src.loc
 	if(isturf(location))
@@ -43,7 +43,7 @@ CAPABILITIES(/obj/machinery/igniter)
 
 /obj/machinery/igniter/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		icon_state = "igniter[on]"
 	else
 		icon_state = "igniter0"
@@ -67,7 +67,7 @@ CAPABILITIES(/obj/machinery/igniter)
 
 /obj/machinery/sparker/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER) && disable == 0)
+	if(!power_lost() && disable == 0)
 
 		icon_state = "[base_state]"
 	else

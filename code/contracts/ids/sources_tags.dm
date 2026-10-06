@@ -15,6 +15,10 @@ SOURCE_DEF(round_event)
 SOURCE_DEF(grid)
 /// The machine's damage (atom_break() holds it, atom_fix() releases it).
 SOURCE_DEF(damage)
+/// A machine's maintenance state (an open service hatch).
+SOURCE_DEF(maintenance)
+/// A machine's own on/off switch.
+SOURCE_DEF(switch)
 
 /// Tags and capability ids share the numbers a bare id can be, so tags start at TAG_BASE and extend() tells the two apart.
 #define TAG_BASE 1000

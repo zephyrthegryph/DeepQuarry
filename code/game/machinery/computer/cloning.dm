@@ -72,7 +72,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 	..()
 
 /obj/machinery/computer/cloning/proc/work_step(datum/act/timer/A)
-	if(!scanner() || !length(pods) || has_stat(NOPOWER))
+	if(!scanner() || !length(pods) || power_lost())
 		return
 
 	if(scanner().get_occupant() && can_autoprocess())
@@ -196,7 +196,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 			var/status = "idle"
 			if(pod.mess)
 				status = "mess"
-			else if(occupant && !pod.has_stat(NOPOWER))
+			else if(occupant && !pod.power_lost())
 				status = "cloning"
 			tempods.Add(list(list(
 				"pod" = "\ref[pod]",
@@ -419,9 +419,9 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
-	if(scanner().has_stat(NOPOWER|BROKEN))
+	if((scanner().power_lost() || scanner().broken_now()))
 		return
 	if(scan_brain && !can_brainscan())
 		return

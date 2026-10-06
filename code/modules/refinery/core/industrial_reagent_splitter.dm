@@ -23,7 +23,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 	if(!anchored)
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 
 	splitter_transfer()

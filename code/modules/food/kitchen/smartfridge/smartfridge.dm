@@ -112,7 +112,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		soundloop.stop()
 		playing_sound = FALSE
 		return PROCESS_KILL
-	if(!playing_sound && !has_stat(MACHINE_STAT_ANY))
+	if(!playing_sound && !has_condition())
 		soundloop.start()
 		playing_sound = TRUE
 	return PROCESS_KILL // its only timed work, throwing its stock, is an every() on STAT_SHOOT_INVENTORY
@@ -157,10 +157,10 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	if(panel_open)
 		look.overlay("[icon_base]-panel")
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.state("[icon_base]-broken")
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("[icon_base]-off")
 		switch(stored_count())
 			if(0)
@@ -195,7 +195,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 
 /// Requirement: the fridge has power.
 /obj/machinery/smartfridge/proc/is_powered_for_stocking(mob/user, atom/target, obj/item/held)
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 /// Old attackby.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_item(datum/act/op/A)

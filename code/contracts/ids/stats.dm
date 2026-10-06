@@ -6,6 +6,10 @@ STAT(/obj/machinery, operable, ALL, virtual = TRUE)
 STAT(/obj/machinery, power_draw, SUM, virtual = TRUE)
 /// The machine has power for its controls: false while any source holds it down (SRC_GRID: its area's channel is dark). The NOPOWER condition bit.
 STAT(/obj/machinery, has_power, ALL, base = TRUE, virtual = TRUE)
+/// The machine is under maintenance (the MAINT bit): true while any source holds it so (SRC_MAINTENANCE: an open service hatch).
+STAT(/obj/machinery, in_maintenance, ANY, virtual = TRUE)
+/// The machine's own switch is on: false while the switch holds it off (SRC_SWITCH; the POWEROFF bit). It does not stop the machine being operable.
+STAT(/obj/machinery, switched_on, ALL, base = TRUE, virtual = TRUE)
 /// The machine is whole: false while any source holds it broken (SRC_DAMAGE: atom_break() until atom_fix()). The BROKEN condition bit, inverted.
 STAT(/obj/machinery, intact, ALL, base = TRUE, virtual = TRUE)
 STAT(/mob/living, can_act, ALL)

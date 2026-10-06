@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 /obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	var/mob/living/occupant = get_occupant()
-	if((isnull(occupant)) || (has_stat(NOPOWER)))
+	if((isnull(occupant)) || (power_lost()))
 		return TRUE
 	if(occupant.stat != DEAD)
 		to_chat(user, "Current clone cycle is [round(get_completion())]% complete.")
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 //Grow clones to maturity then kick them out.  FREELOADERS
 /obj/machinery/clonepod/proc/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
-	if(has_stat(NOPOWER)) //Autoeject if power is lost
+	if(power_lost()) //Autoeject if power is lost
 		if(occupant)
 			set_locked(0)
 			go_out()
@@ -506,7 +506,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	return HOOK_DECLINE
 
 /obj/machinery/clonepod/proc/appearance_state()
-	if(get_occupant() && !has_stat(NOPOWER))
+	if(get_occupant() && !power_lost())
 		return "1"
 	if(mess)
 		return "g"

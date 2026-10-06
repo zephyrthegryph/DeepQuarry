@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	data["linkedServer"] = list()
 	if(linkedServer() && auth)
 		data["linkedServer"]["active"] = linkedServer().active
-		data["linkedServer"]["broke"] = linkedServer().has_stat(NOPOWER|BROKEN)
+		data["linkedServer"]["broke"] = (linkedServer().power_lost() || linkedServer().broken_now())
 
 		var/list/pda_msgs = list()
 		for(var/datum/data_pda_msg/pda in linkedServer().pda_msgs)
@@ -222,7 +222,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_active(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	linkedServer().active = !linkedServer().active
@@ -232,7 +232,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_del_pda(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	own_clear(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), OWN_DELETE)
@@ -243,7 +243,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_del_rc(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	own_clear(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), OWN_DELETE)
@@ -254,7 +254,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_pass(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	open_request(src, /datum/prompt/text, PROC_REF(current_key_entered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Please enter the current decryption key.", timeout = 0)
@@ -264,7 +264,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_delete(datum/act/op/A, id, kind)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	if(kind == "pda")
@@ -282,7 +282,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_set_sender(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	customsender = sanitize(val)
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_set_sender_job(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	customjob = sanitize(val)
@@ -300,7 +300,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_set_recipient(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	var/obj/item/pda/P = ui_ref(val, null, /obj/item/pda)
@@ -316,7 +316,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_set_message(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	custommessage = sanitize(val)
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_send_message(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	if(isnull(customsender) || customsender == "")
@@ -368,7 +368,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_addtoken(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	open_request(src, /datum/prompt/text, PROC_REF(token_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Token creation", question = "Enter text you want to be filtered out", timeout = 0)
@@ -377,7 +377,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_deltoken(datum/act/op/A, deltoken)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().has_stat(NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	var/tokennum = deltoken

@@ -461,7 +461,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 
 /// One cook-loop cycle (DECLARE_REPEAT while loop_running).
 /obj/machinery/microwave/proc/cook_loop()
-	if((has_stat(BROKEN)) && loop_type == MICROWAVE_PRE)
+	if((broken_now()) && loop_type == MICROWAVE_PRE)
 		set_loop_running(FALSE)
 		broke()
 		return REPEAT_STOP
@@ -484,7 +484,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 
 /obj/machinery/microwave/power_change()
 	. = ..()
-	if((has_stat(NOPOWER)) && operating)
+	if((power_lost()) && operating)
 		broke()
 		dispose(FALSE)
 

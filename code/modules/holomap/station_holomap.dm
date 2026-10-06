@@ -169,10 +169,10 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 
 /obj/machinery/station_map/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		stopWatching()
 	// TODO - Port use_auto_lights from /vg - For now implement it manually here
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)
@@ -183,9 +183,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appeara
 	if(!holomap_datum)
 		return .
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "station_mapb"
-	else if((has_stat(NOPOWER)) || !anchored)
+	else if((power_lost()) || !anchored)
 		icon_state = "station_map0"
 	else
 		icon_state = "station_map"

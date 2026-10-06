@@ -161,7 +161,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 		return
 	if(showing)
 		stop_showing()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 	rel_set(src, nameof(showing), thing)
 	if(pinboard)
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 
 /obj/machinery/computer/security/telescreen/entertainment/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		radio?.on = FALSE
 		stop_showing()
 	else if(enabled)

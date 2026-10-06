@@ -74,10 +74,10 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 /obj/machinery/vending/nifsoft_shop/power_change()
 	. = ..()
 	if(!entopic) return //Early APC init(), ignore
-	if(has_stat(BROKEN))
+	if(broken_now())
 		entopic.hide()
 	else
-		if(!has_stat(NOPOWER))
+		if(!power_lost())
 			cancel_after(src, "power_loss") // power came back before the projection went out
 			entopic.show()
 		else

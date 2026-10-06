@@ -353,7 +353,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 
 /// Appearance reader: projecting (active and powered).
 /obj/machinery/shieldgen/proc/appearance_projecting()
-	return active && !has_stat(NOPOWER)
+	return active && !power_lost()
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/shieldgen/draw(datum/look/look)

@@ -507,7 +507,7 @@
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for fire alarm pipeline test")
 	var/obj/machinery/firealarm/F = allocate(/obj/machinery/firealarm, T)
-	F.stat_remove(NOPOWER | BROKEN) // the countdown only runs on a powered alarm
+	dq_machine_clear(F) // the countdown only runs on a powered alarm
 	TEST_ASSERT(!machine_stepping(F), "an idle fire alarm has no work")
 	F.time = 1
 	F.set_timing(1)
