@@ -58,6 +58,9 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/autoregister = TRUE
 	/// TRUE when the sequence overrides admit(): the sweep asks it per member only then.
 	var/admit_guard = FALSE
+	/// TRUE when the sequence overrides run_step() and ask_step() (a typed dispatch for entities with big proc tables);
+	/// otherwise steps are called by name directly.
+	var/typed_dispatch = FALSE
 
 	// ---- built
 	/// Position in sequence_all(): the index of its state in an entity's seq_states.
@@ -362,9 +365,9 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 // ---------------------------------------------------------------- the frame loop
 
 /// A step's work. Locals of the frame loop: E, F, state.
-#define SEQ_PERFORM(S) (S.target_kind ? seq_call_contributed(S, E, F, state) : run_step(E, S.handler, F))
+#define SEQ_PERFORM(S) (S.target_kind ? seq_call_contributed(S, E, F, state) : (typed_dispatch ? run_step(E, S.handler, F) : call(E, S.handler)(F)))
 /// A step's should_run() (the step has one).
-#define SEQ_ASK(S) (S.target_kind ? seq_ask_contributed(S, E, state) : ask_step(E, S.should_run))
+#define SEQ_ASK(S) (S.target_kind ? seq_ask_contributed(S, E, state) : (typed_dispatch ? ask_step(E, S.should_run) : call(E, S.should_run)()))
 /// Step `S` at position _i (word _w, bit _bit) falls asleep this frame (tests also note what it read).
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 #define SEQ_SLEEP(_i, _w, _bit) bits[_w] |= _bit; asleep++; LAZYADD(slept, _i); seq_snapshot_note(E, state, S)

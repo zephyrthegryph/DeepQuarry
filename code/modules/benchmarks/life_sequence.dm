@@ -1,13 +1,18 @@
-// A Life-shaped kernel sequence against the object-model pipeline runner it replaces
-// (doc/rewrite/life_sequences.md, "Measured"). Both run the same 30 steps over five bands, gated like Life's
-// (placed; placed and alive; placed and the status step's result), with a frame begin() hook, a fixed 1 s step and
-// no parking (so every frame is paid for). Three shapes:
+// A Life-shaped kernel sequence against a fixed reference runner (doc/rewrite/life_sequences.md, "Measured";
+// doc/rewrite/om_retirement.md L2). The sequence runs 30 steps over five bands, gated like Life's (placed; placed and
+// alive; placed and the status step's result), with a frame begin() hook, a fixed 1 s step and no parking (so every frame
+// is paid for). Three shapes:
 //   awake   every step has work every frame (a human: the body never settles)
 //   mixed   one step in three has work; the rest sleep (the word walk)
 //   idle    every step sleeps (the frame is only its loop)
-// For each, the runner alone (one frame per mob, called directly) and the scheduled path (the pipeline's ring on a
-// test scheduler; the sequence's spread sweep on a test kernel), in ns per mob-frame, best of `rounds`. The gate is
-// sequence <= 1.05 x pipeline.
+// For each, the runner alone (one frame per mob, called directly) and the scheduled path (the sequence's spread sweep on
+// a test kernel), in ns per mob-frame, best of `rounds`.
+//
+// The gate. It was `sequence <= 1.05 x the object-model pipeline runner`, measured side by side. The pipeline is gone, so
+// the bench keeps a reference runner (the pipeline's shape with nothing around it) and the pipeline's cost relative to it,
+// measured on both while both existed (October 2026, two runs averaged): LB_PIPE_OVER_REF_*. The gate is
+// `sequence <= LB_GATE x pinned ratio x reference`, the same bound expressed without the pipeline. The idle shape
+// missed the old gate too (doc/rewrite/life_sequences.md: a member whose steps all sleep parks in service).
 //   tools/build/build.sh bench --scenario=life_sequence [--arg=mobs=2000] [--arg=rounds=7]
 
 #define LB_INPUT "LB_INPUT"
@@ -17,9 +22,10 @@
 #define LB_TAIL "LB_TAIL"
 #define LB_STEPS 30
 #define LB_GATE 1.05
-#define LB_RUN_IF_P FACT("placed")
-#define LB_RUN_IF_PA ALL_OF(FACT("placed"), FACT("alive"))
-#define LB_RUN_IF_PS ALL_OF(FACT("placed"), FACT("status_ok"))
+/// The pipeline runner's cost / the reference runner's, per shape (runner path), and the pipeline's scheduled ring / the
+/// reference runner (scheduled path), pinned from the last side-by-side runs.
+#define LB_PIPE_OVER_REF_RUNNER list("awake" = 2.99, "mixed" = 2.82, "idle" = 0.65)
+#define LB_PIPE_OVER_REF_SCHEDULED list("awake" = 3.30, "mixed" = 3.16, "idle" = 1.01)
 
 /// A mob-shaped entity: what the gates read, and which steps have work.
 /datum/life_bench_mob
@@ -34,200 +40,72 @@
 	..()
 	src.busy = busy
 
-// ---------------------------------------------------------------- the pipeline arm
+// ---------------------------------------------------------------- the reference arm
+// The pipeline runner's shape with nothing around it: one flyweight per step with a virtual perform() and idle(), the
+// frame's facts cached per frame, a sleep flag per step. The yardstick the gate is pinned against (see the top).
 
-/datum/om/pipeline/bench_life
-	name = "bench life pipeline"
-	every = 1 SECONDS
-	step_interval = 1
-	max_catchup = 2
-	stages = list(/datum/om/stage/bench_life)
-	frame_type = /datum/om/frame/bench_life
-	park_after = 0
-
-/datum/om/frame/bench_life
-	facts = list(
-		"placed" = list(/datum/om/frame/bench_life/proc/fact_placed, 0),
-		"alive" = list(/datum/om/frame/bench_life/proc/fact_alive, CHANGE_DATUM_A),
-		"status_ok" = list(/datum/om/frame/bench_life/proc/fact_alive, CHANGE_DATUM_A),
-	)
-	var/stasis = FALSE
-
-/datum/om/frame/bench_life/begin()
-	var/datum/life_bench_mob/M = entity
-	stasis = M.stasis
-
-/datum/om/frame/bench_life/reset()
-	stasis = FALSE
-
-/datum/om/frame/bench_life/proc/fact_placed()
-	var/datum/life_bench_mob/M = entity
-	return M.placed
-
-/datum/om/frame/bench_life/proc/fact_alive()
-	var/datum/life_bench_mob/M = entity
-	return M.alive
-
-/datum/om/stage/bench_life
-	category = /datum/om/stage/bench_life
-	pipeline = /datum/om/pipeline/bench_life
-	of = /datum/life_bench_mob
+/datum/life_bench_ref_step
 	var/idx = 0
+	/// 0: ungated. 1: placed. 2: placed and alive. 3: placed and the status step's result.
+	var/gate = 0
 
-/datum/om/stage/bench_life/perform(datum/life_bench_mob/E, datum/om/frame/F)
+/datum/life_bench_ref_step/proc/perform(datum/life_bench_mob/E, datum/life_bench_ref_frame/F)
 	E.counter++
 
-/datum/om/stage/bench_life/idle(datum/life_bench_mob/E)
+/datum/life_bench_ref_step/proc/idle(datum/life_bench_mob/E)
 	return !E.busy[idx]
 
-/// The status step: the steps gated on its result read it.
-/datum/om/stage/bench_life/s18/perform(datum/life_bench_mob/E, datum/om/frame/F)
-	F.set_fact("status_ok", TRUE)
-	F.forget("alive")
+/datum/life_bench_ref_step/status/perform(datum/life_bench_mob/E, datum/life_bench_ref_frame/F)
+	F.status_ok = TRUE
+	F.alive_known = FALSE
 	E.counter++
 
-/datum/om/stage/bench_life/s1
-	idx = 1
-	order = 1001
+/datum/life_bench_ref_frame
+	var/datum/life_bench_mob/entity
+	var/placed
+	var/alive
+	var/alive_known = FALSE
+	var/status_ok
 
-/datum/om/stage/bench_life/s2
-	idx = 2
-	order = 1002
+/// The reference runner's steps, in the same order and with the same gates as the sequence's table.
+/proc/life_bench_ref_steps()
+	var/static/list/steps
+	if(steps)
+		return steps
+	steps = list()
+	var/list/gates = list(0, 0, 0, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 2, 0, 2, 0, 2, 0, 2, 0)
+	for(var/i in 1 to LB_STEPS)
+		var/datum/life_bench_ref_step/S = i == 18 ? new /datum/life_bench_ref_step/status : new /datum/life_bench_ref_step
+		S.idx = i
+		S.gate = gates[i]
+		steps += S
+	return steps
 
-/datum/om/stage/bench_life/s3
-	idx = 3
-	order = 1003
-
-/datum/om/stage/bench_life/s4
-	idx = 4
-	order = 1004
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s5
-	idx = 5
-	order = 1005
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s6
-	idx = 6
-	order = 1006
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s7
-	idx = 7
-	order = 1007
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s8
-	idx = 8
-	order = 1008
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s9
-	idx = 9
-	order = 2009
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s10
-	idx = 10
-	order = 2010
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s11
-	idx = 11
-	order = 2011
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s12
-	idx = 12
-	order = 2012
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s13
-	idx = 13
-	order = 2013
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s14
-	idx = 14
-	order = 2014
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s15
-	idx = 15
-	order = 2015
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s16
-	idx = 16
-	order = 2016
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s17
-	idx = 17
-	order = 2017
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s18
-	idx = 18
-	order = 2018
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s19
-	idx = 19
-	order = 3019
-	run_if = LB_RUN_IF_PS
-
-/datum/om/stage/bench_life/s20
-	idx = 20
-	order = 3020
-	run_if = LB_RUN_IF_PS
-
-/datum/om/stage/bench_life/s21
-	idx = 21
-	order = 4021
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s22
-	idx = 22
-	order = 4022
-	run_if = LB_RUN_IF_P
-
-/datum/om/stage/bench_life/s23
-	idx = 23
-	order = 5023
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s24
-	idx = 24
-	order = 5024
-
-/datum/om/stage/bench_life/s25
-	idx = 25
-	order = 5025
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s26
-	idx = 26
-	order = 5026
-
-/datum/om/stage/bench_life/s27
-	idx = 27
-	order = 5027
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s28
-	idx = 28
-	order = 5028
-
-/datum/om/stage/bench_life/s29
-	idx = 29
-	order = 5029
-	run_if = LB_RUN_IF_PA
-
-/datum/om/stage/bench_life/s30
-	idx = 30
-	order = 5030
+/// One reference frame of `E`: every awake step, gated, put to sleep by its idle().
+/proc/life_bench_ref_frame(datum/life_bench_mob/E, list/asleep, datum/life_bench_ref_frame/F)
+	F.entity = E
+	F.placed = E.placed
+	F.alive_known = FALSE
+	F.status_ok = null
+	for(var/datum/life_bench_ref_step/S as anything in life_bench_ref_steps())
+		var/i = S.idx
+		if(asleep[i])
+			continue
+		switch(S.gate)
+			if(1)
+				if(!F.placed)
+					continue
+			if(2, 3)
+				if(!F.placed)
+					continue
+				if(!F.alive_known)
+					F.alive = E.alive
+					F.alive_known = TRUE
+				if(!(S.gate == 3 && !isnull(F.status_ok) ? F.status_ok : F.alive))
+					continue
+		S.perform(E, F)
+		if(S.idle(E))
+			asleep[i] = TRUE
 
 // ---------------------------------------------------------------- the sequence arm
 
@@ -361,22 +239,26 @@ LB_STEP(30)
 
 /datum/benchmark/life_sequence
 	id = "life_sequence"
-	description = "A Life-shaped kernel sequence vs the object-model pipeline runner: ns per mob-frame"
+	description = "A Life-shaped kernel sequence vs a pinned reference runner: ns per mob-frame"
 
 /datum/benchmark/life_sequence/Run()
 	var/n = param("mobs", 2000)
 	var/rounds = param("rounds", 7)
 	var/failures = 0
 	var/list/table = list()
+	var/list/pins = list("runner" = LB_PIPE_OVER_REF_RUNNER, "scheduled" = LB_PIPE_OVER_REF_SCHEDULED)
 	for(var/shape in list("awake", "mixed", "idle"))
 		var/list/result = measure(shape, n, rounds)
 		table[shape] = result
+		var/ref_ns = result["runner_reference_ns"]
+		metric("life_sequence_[shape]_runner_reference_ns", ref_ns, "ns")
 		for(var/path in list("runner", "scheduled"))
-			var/pipe_ns = result["[path]_pipeline_ns"]
 			var/seq_ns = result["[path]_sequence_ns"]
-			var/ratio = pipe_ns ? seq_ns / pipe_ns : 0
-			metric("life_sequence_[shape]_[path]_pipeline_ns", pipe_ns, "ns")
+			var/list/pin = pins[path]
+			var/bound_ns = ref_ns * pin[shape]
+			var/ratio = bound_ns ? seq_ns / bound_ns : 0
 			metric("life_sequence_[shape]_[path]_sequence_ns", seq_ns, "ns")
+			metric("life_sequence_[shape]_[path]_pipeline_equivalent_ns", bound_ns, "ns")
 			metric("life_sequence_[shape]_[path]_ratio", ratio, "x")
 			if(ratio > LB_GATE)
 				failures++
@@ -384,18 +266,17 @@ LB_STEP(30)
 	count_metric("life_sequence_gate_failures", failures, "ratios", "lower")
 	detail("life_sequence", table)
 
-/// One shape: `n` mobs on each engine, `rounds` timed rounds (runner, then scheduled), alternating the engines.
+/// One shape: `n` mobs on the sequence and on the reference runner, `rounds` timed rounds (runner, then scheduled).
 /datum/benchmark/life_sequence/proc/measure(shape, n, rounds)
-	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/bench_life)
 	var/datum/sequence/SQ = sequence_def(/datum/sequence/bench_life)
-	var/datum/om/scheduler/sched = om_test_begin()
-	var/list/pipe_mobs = list()
 	var/list/seq_mobs = list()
+	var/list/ref_mobs = list()
+	var/list/ref_sleep = list()
 	for(var/i in 1 to n)
-		pipe_mobs += new /datum/life_bench_mob(busy_list(shape))
 		seq_mobs += new /datum/life_bench_mob(busy_list(shape))
-	for(var/datum/life_bench_mob/E as anything in pipe_mobs)
-		om_attach(E, P)
+		ref_mobs += new /datum/life_bench_mob(busy_list(shape))
+		ref_sleep += list(new /list(LB_STEPS))
+	var/datum/life_bench_ref_frame/RF = new
 	for(var/datum/life_bench_mob/E as anything in seq_mobs)
 		seq_start(E, /datum/sequence/bench_life)
 	var/datum/controller/kernel/K = new
@@ -408,34 +289,29 @@ LB_STEP(30)
 	var/idx = SQ.idx
 	// Settle: the steps without work fall asleep.
 	for(var/warm in 1 to 2)
-		for(var/datum/life_bench_mob/E as anything in pipe_mobs)
-			P.run_frame(E, 1)
 		for(var/datum/life_bench_mob/E as anything in seq_mobs)
 			SQ.run_frame(E, SEQ_STATE_OF(E, idx), F, 1)
-	sched.advance(2)
+		for(var/i in 1 to n)
+			life_bench_ref_frame(ref_mobs[i], ref_sleep[i], RF)
 	var/lag = max(world.tick_lag, 0.1)
 	var/passes = max(round((1 SECONDS) / lag), 1)
 	var/now = 1000
 	for(var/k in 1 to passes)
 		K.run_item(W, WORK_TEST_LIMIT, now)
 		now += lag
-	var/best_runner_pipe = INFINITY
 	var/best_runner_seq = INFINITY
-	var/best_sched_pipe = INFINITY
+	var/best_runner_ref = INFINITY
 	var/best_sched_seq = INFINITY
 	var/seq_frames_before = seq_frames(seq_mobs, /datum/sequence/bench_life)
 	for(var/r in 1 to rounds)
 		var/start = TICK_USAGE
-		for(var/datum/life_bench_mob/E as anything in pipe_mobs)
-			P.run_frame(E, 1)
-		best_runner_pipe = min(best_runner_pipe, TICK_USAGE_TO_MS(start))
-		start = TICK_USAGE
 		for(var/datum/life_bench_mob/E as anything in seq_mobs)
 			SQ.run_frame(E, SEQ_STATE_OF(E, idx), F, 1)
 		best_runner_seq = min(best_runner_seq, TICK_USAGE_TO_MS(start))
 		start = TICK_USAGE
-		sched.advance(1)
-		best_sched_pipe = min(best_sched_pipe, TICK_USAGE_TO_MS(start))
+		for(var/i in 1 to n)
+			life_bench_ref_frame(ref_mobs[i], ref_sleep[i], RF)
+		best_runner_ref = min(best_runner_ref, TICK_USAGE_TO_MS(start))
 		start = TICK_USAGE
 		for(var/k in 1 to passes)
 			K.run_item(W, WORK_TEST_LIMIT, now)
@@ -444,19 +320,17 @@ LB_STEP(30)
 	var/sched_frames = seq_frames(seq_mobs, /datum/sequence/bench_life) - seq_frames_before - n * rounds
 	F.release()
 	. = list(
-		"runner_pipeline_ns" = best_runner_pipe * 1e6 / n,
 		"runner_sequence_ns" = best_runner_seq * 1e6 / n,
-		"scheduled_pipeline_ns" = best_sched_pipe * 1e6 / n,
+		"runner_reference_ns" = best_runner_ref * 1e6 / n,
 		"scheduled_sequence_ns" = best_sched_seq * 1e6 / n,
 		"frames_per_mob_round" = sched_frames / (n * rounds),
 	)
 	for(var/datum/life_bench_mob/E as anything in seq_mobs)
 		seq_stop(E, /datum/sequence/bench_life)
 		qdel(E)
-	for(var/datum/life_bench_mob/E as anything in pipe_mobs)
+	for(var/datum/life_bench_mob/E as anything in ref_mobs)
 		qdel(E)
 	SQ.work = null
-	om_test_end()
 
 /// Which steps have work in `shape`: all, one in three, none.
 /datum/benchmark/life_sequence/proc/busy_list(shape)
@@ -471,10 +345,9 @@ LB_STEP(30)
 			else
 				L[i] = FALSE
 
-#undef LB_RUN_IF_PS
-#undef LB_RUN_IF_PA
-#undef LB_RUN_IF_P
 #undef LB_GATE
+#undef LB_PIPE_OVER_REF_RUNNER
+#undef LB_PIPE_OVER_REF_SCHEDULED
 #undef LB_STEPS
 #undef LB_TAIL
 #undef LB_OUTPUT

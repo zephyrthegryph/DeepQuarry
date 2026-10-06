@@ -24,6 +24,8 @@
 	frame_type = /datum/seq_frame/life
 	profile_stride = LIFE_PROFILE_STRIDE
 	admit_guard = TRUE
+	// Steps are called through the generated switch in life_dispatch.dm, not by name.
+	typed_dispatch = TRUE
 
 /// A suspended mob (absorbed prey, a body kept for reforming) runs no frame until it is resumed.
 /datum/sequence/life/admit(mob/living/L)
