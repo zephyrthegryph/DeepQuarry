@@ -33,6 +33,10 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	extend("part_replacement.replace", needs(req(PROC_REF(idle), because = MSG(analyzer/busy))))
 	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
+	// An item goes in through the closed hatch while it is idle (not a cyborg's module item); a part replacer dragged onto it recycles its lowest parts.
+	op("load", item(/obj/item), label("Load"), priority(OP_PRIORITY_DEFAULT), when(req(PROC_REF(hatch_shut))), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))),
+		needs(req(PROC_REF(idle), because = MSG(analyzer/busy))), then(PROC_REF(interaction_load)))
+	op("recycle", item(/obj/item/storage/part_replacer), gesture(GESTURE_DRAG), label("Recycle parts"), then(PROC_REF(interaction_recycle)))
 	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
@@ -73,47 +77,30 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	else
 		look.state("d_analyzer")
 
-/obj/machinery/rnd/destructive_analyzer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/destructive_analyzer_load,
-		/datum/interaction/machine_drag/destructive_analyzer_recycle,
-	)
-	..()
-
-/obj/machinery/rnd/destructive_analyzer/proc/not_busy(mob/actor, atom/target, obj/item/held)
-	return !busy
-
 /// Not busy analysing (a requirement of the part replacer).
 /obj/machinery/rnd/destructive_analyzer/proc/idle(datum/act/A)
 	return !busy
 
-/datum/interaction/machine_item/destructive_analyzer_load
-	id = "destructive_analyzer_load"
-	name = "Load"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/panel_closed, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
-	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_load
-
-/obj/machinery/rnd/destructive_analyzer/proc/panel_closed(mob/actor, atom/target, obj/item/held)
+/// Its maintenance hatch is shut (an item goes in only then).
+/obj/machinery/rnd/destructive_analyzer/proc/hatch_shut(datum/act/op/A)
 	return !panel_open(src)
 
-/obj/machinery/rnd/destructive_analyzer/proc/interaction_load(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_load(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/current_item = loaded_item
 	if(current_item)
 		to_chat(user, span_notice("There is something already loaded into \the [src]."))
 	else
-		if(isrobot(user)) //Don't put your module items in there!
-			return TRUE
 		if(is_type_in_list(O, GLOB.item_deconstruction_blacklist))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
-			return TRUE
+			return
 		if((O.item_flags & DROPDEL) || (O.item_flags & NOSTRIP))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
-			return TRUE
+			return
 		if(O?.tether_host())
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
-			return TRUE
+			return
 		if(LAZYLEN(O.contents))
 			var/bad_item = FALSE
 			for(var/obj/item/thing in contents_of(O))
@@ -123,15 +110,14 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 				break
 			if(bad_item)
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
-				return TRUE
+				return
 		set_busy(TRUE)
 		if(!move_into(src, nameof(src.loaded_item), O, user))
-			return TRUE
+			return
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
 		flick("d_analyzer_la", src)
 		after(src, 1 SECONDS, PROC_REF(analyze_finish))
-	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/analyze_finish()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -142,18 +128,13 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // RPED recycling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/interaction/machine_drag/destructive_analyzer_recycle
-	id = "destructive_analyzer_recycle"
-	name = "Recycle parts"
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle
-
-/obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
-	var/obj/item/storage/part_replacer/replacer = dropping
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/storage/part_replacer/replacer = A.held
 	replacer.hide_from(user)
 	if(!rped_recycler_ready)
 		to_chat(user, span_notice("\The [src]'s stock parts recycler isn't ready yet."))
-		return TRUE
+		return
 
 	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
 	var/lowest_rating = INFINITY
@@ -163,11 +144,11 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 			lowest_rating = B.rped_rating()
 	if(lowest_rating == INFINITY)
 		atom_say("Mass part deconstruction attempt canceled - no valid parts for recycling detected.")
-		return TRUE
+		return
 	// Sending salvaged materials to the silo
 	var/datum/material_container/materials = get_silo_material_container_datum(TRUE)
 	if(!materials)
-		return TRUE
+		return
 	replacer.latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() > lowest_rating)
@@ -178,7 +159,6 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	rped_recycler_ready = FALSE
 	after(src, 5 SECONDS, PROC_REF(rped_ready))
 	to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
-	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/rped_ready()
 	PRIVATE_PROC(TRUE)

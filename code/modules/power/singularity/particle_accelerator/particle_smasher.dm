@@ -26,10 +26,6 @@
 	var/max_storage = 3	// How many items can be jammed into it?
 	var/list/recipes	// The list containing the Particle Smasher's recipes.
 
-CAPABILITIES(/obj/machinery/particle_smasher)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(energy), wakes_on = list(nameof(energy)))
-	owns_many(nameof(recipes))
-
 /obj/machinery/particle_smasher/Initialize(mapload)
 	. = ..()
 	update_icon()
@@ -50,92 +46,72 @@ OM_FIELD(/obj/machinery/particle_smasher, energy, 0, CHANGE_MACHINE_SETTINGS)
 /obj/machinery/particle_smasher/atmosanalyze(mob/user)
 	return list(span_notice("\The [src] reads an energy level of [energy]."))
 
-/obj/machinery/particle_smasher/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/particle_smasher_analyzer,
-		/datum/interaction/machine_item/particle_smasher_fill_target,
-		/datum/interaction/machine_item/particle_smasher_attach_beaker,
-		/datum/interaction/machine_item/particle_smasher_swipe_id,
-		/datum/interaction/machine_item/particle_smasher_store,
-		/datum/interaction/machine_verb/particle_smasher_eject_contents,
-	)
-	..()
+MSG_DEF_SELF(particle_smasher/has_target, "It already contains a target.")
+MSG_DEF_SELF(particle_smasher/synthesizer, "You cannot fill it with a synthesizer.")
+MSG_DEF_SELF(particle_smasher/has_container, "It already has a container attached.")
 
-/// Analyzers do nothing here; the old attackby swallowed the click without falling through.
-/datum/interaction/machine_item/particle_smasher_analyzer
-	id = "particle_smasher_analyzer"
-	name = "Use"
-	held_type = /obj/item/analyzer
-	effect = /atom/proc/interaction_swallow
+// An analyzer does nothing here (the old attackby swallowed it); a sheet fills the target, a beaker attaches, an ID swipes to no effect, and
+// anything else that can come out of the hand goes into its fabrication storage while there is room. A wrench secures it to the floor.
+CAPABILITIES(/obj/machinery/particle_smasher)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(energy), wakes_on = list(nameof(energy)))
+	owns_many(nameof(recipes))
+	op("analyzer_block", item(/obj/item/analyzer), label("Use"), then(PROC_REF(nothing_happens)))
+	op("fill_target", item(/obj/item/stack/material), label("Fill target"),
+		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req(PROC_REF(not_synthesized), because = MSG(particle_smasher/synthesizer))),
+		then(PROC_REF(interaction_fill_target)))
+	op("attach_beaker", item(/obj/item/reagent_containers/glass/beaker), label("Attach container"),
+		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
+	op("swipe_id", item(/obj/item/card/id), label("Swipe"), then(PROC_REF(interaction_swipe_id)))
+	op("store", item(/obj/item), label("Store"), when(req(PROC_REF(can_store_item))), then(PROC_REF(interaction_store)))
+	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req(/mob/living, of = ON_ACTOR)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
+	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
 
-/datum/interaction/machine_item/particle_smasher_fill_target
-	id = "particle_smasher_fill_target"
-	name = "Fill target"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	effect = /obj/machinery/particle_smasher/proc/interaction_fill_target
-	also_requires = list(REQ_FIELD_NOT("target", "it already contains a target"), REQ_TARGET_STATE(/obj/machinery/particle_smasher/proc/can_fill_with))
+MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 
-/// Requirement: synthesiser stock can't fill the target.
-/obj/machinery/particle_smasher/proc/can_fill_with(mob/user, atom/target, obj/item/stack/material/held)
-	return (istype(held) && held.uses_charge) ? "you cannot fill it with a synthesizer" : TRUE
+/obj/machinery/particle_smasher/proc/nothing_happens(datum/act/op/A)
+	return
 
-/obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
+/// Synthesiser stock can't fill the target.
+/obj/machinery/particle_smasher/proc/not_synthesized(datum/act/op/A)
+	var/obj/item/stack/material/held = A.held
+	return !(istype(held) && held.uses_charge) // ALLOW(reads): the held sheet's source is read when it is used, never from a cached menu
+
+/obj/machinery/particle_smasher/proc/interaction_fill_target(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
 	var/obj/item/stack/material/piece = M.split(1)
-	move_into(src, nameof(src.target), piece, user)
+	move_into(src, nameof(src.target), piece, A.actor)
 	update_icon()
-	return TRUE
 
-/datum/interaction/machine_item/particle_smasher_attach_beaker
-	id = "particle_smasher_attach_beaker"
-	name = "Attach container"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/reagent_containers/glass/beaker
-	effect = /obj/machinery/particle_smasher/proc/interaction_attach_beaker
-	also_requires = list(REQ_FIELD_NOT("reagent_container", "it already has a container attached"))
-
-/obj/machinery/particle_smasher/proc/interaction_attach_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!move_into(src, nameof(src.reagent_container), W, user))
-		return TRUE
-	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
+/obj/machinery/particle_smasher/proc/interaction_attach_beaker(datum/act/op/A)
+	if(!move_into(src, nameof(src.reagent_container), A.held, A.actor))
+		return
+	to_chat(A.actor, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
-	return TRUE
 
-/// Swiping an ID does nothing but the message; the old code fell through to ..() afterward.
-/datum/interaction/machine_item/particle_smasher_swipe_id
-	id = "particle_smasher_swipe_id"
-	name = "Swipe"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/particle_smasher/proc/interaction_swipe_id
+/obj/machinery/particle_smasher/proc/interaction_swipe_id(datum/act/op/A)
+	to_chat(A.actor, span_notice("Swiping \the [A.held] on \the [src] doesn't seem to do anything..."))
 
-/obj/machinery/particle_smasher/proc/interaction_swipe_id(mob/user, obj/item/W, datum/interaction/interaction)
-	to_chat(user, span_notice("Swiping \the [W] on \the [src] doesn't seem to do anything..."))
-	return TRUE
+/// The item can leave the hand (a cyborg's gripper lets go of what it holds; a module item stays) and there is room.
+/obj/machinery/particle_smasher/proc/can_store_item(datum/act/op/A)
+	var/obj/item/held = A.held
+	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage // ALLOW(reads): the hand and the storage are read when the item is used, never from a cached menu
 
-/// Jam an item into the smasher's fabrication storage.
-/datum/interaction/machine_item/particle_smasher_store
-	id = "particle_smasher_store"
-	name = "Store"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/particle_smasher/proc/can_store_item, null))
-	effect = /obj/machinery/particle_smasher/proc/interaction_store
+/obj/machinery/particle_smasher/proc/interaction_store(datum/act/op/A)
+	move_into(src, nameof(src.storage), A.held, A.actor)
 
-/obj/machinery/particle_smasher/proc/can_store_item(mob/actor, atom/target, obj/item/held)
-	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && length(storage) < max_storage
+/// The old verb's check: alive, conscious and free.
+/obj/machinery/particle_smasher/proc/actor_can_act(datum/act/op/A)
+	return dq_actor_can_act(A.actor, src, A.held)
 
-/obj/machinery/particle_smasher/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
-	move_into(src, nameof(src.storage), W, user)
-	return TRUE
-
-/obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
+/obj/machinery/particle_smasher/proc/secured(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	set_anchored(!anchored)
 	playsound(src, W.usesound, 75, 1)
 	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "unsecure"] the [src.name] to the floor."), \
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/particle_smasher/appearance_overlays()
@@ -305,15 +281,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 		new result(get_turf(src))
 	update_icon()
 
-/datum/interaction/machine_verb/particle_smasher_eject_contents
-	id = "particle_smasher_eject_contents"
-	name = "Eject Particle Focus Contents"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/particle_smasher/proc/interaction_eject_contents
-
-/obj/machinery/particle_smasher/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/particle_smasher/proc/interaction_eject_contents(datum/act/op/A)
 	DumpContents()
-	return TRUE
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	// Everything goes to the floor below: detach the owned slots first.
