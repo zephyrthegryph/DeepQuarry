@@ -45,6 +45,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/drone_fabricator)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
 /obj/machinery/drone_fabricator/proc/work_step(datum/act/timer/A)
 	// Readiness is a timestamp, not continuous simulation. The old implementation
 	// polled forever after reaching 100% and was the single most expensive idle

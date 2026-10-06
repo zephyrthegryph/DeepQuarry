@@ -34,6 +34,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/igniter)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+
 /obj/machinery/igniter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
 		return work_wait_for_power(src)

@@ -51,6 +51,7 @@ OM_FIELD_VIEW(/obj/machinery/mech_recharger, atom/movable, charging, CHANGE_MACH
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mech_recharger)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(charging), gate = PROC_REF(operable), wakes_on = list(nameof(charging), nameof(stat)))
+
 /obj/machinery/mech_recharger/proc/work_step(datum/act/timer/A)
 	if(!charging() || charging().loc != src.loc) // Could be qdel or teleport or something
 		rel_clear(src, nameof(charging))

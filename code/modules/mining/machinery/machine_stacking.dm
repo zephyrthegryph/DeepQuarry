@@ -121,6 +121,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/stacking_machine)
 	started_work(step = PROC_REF(work_step))
+
 /obj/machinery/mineral/stacking_machine/proc/work_step(datum/act/timer/A)
 	var/did_work = FALSE
 	if (src.output_marker() && src.input_marker())

@@ -188,6 +188,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/power/singularity_beacon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
+
 /obj/machinery/power/singularity_beacon/proc/work_step(datum/act/timer/A)
 	if(draw_power(1500) < 1500)
 		Deactivate()

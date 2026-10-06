@@ -56,6 +56,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/reagent_refinery)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), nameof(stat)))
+
 /obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
 	var/before = reagents ? reagents.total_volume : 0
 	refinery_step()

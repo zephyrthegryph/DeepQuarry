@@ -313,6 +313,7 @@ OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_A
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/cryopod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
+
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)

@@ -368,6 +368,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/ai_powersupply)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
 /obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)
 	if(!powered_ai || powered_ai.stat == DEAD)
 		spent(src)

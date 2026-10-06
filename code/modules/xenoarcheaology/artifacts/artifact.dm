@@ -23,6 +23,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/artifact)
 	started_work(step = PROC_REF(work_step))
+
 /obj/machinery/artifact/proc/work_step(datum/act/timer/A)
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T?.return_air()

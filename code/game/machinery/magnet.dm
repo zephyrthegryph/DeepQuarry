@@ -111,6 +111,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/magnetic_module)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(nameof(stat)))
+
 /obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
 		set_on(0)

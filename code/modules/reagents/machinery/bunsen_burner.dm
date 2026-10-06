@@ -123,6 +123,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/bunsen_burner)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
+
 /obj/machinery/bunsen_burner/proc/work_step(datum/act/timer/A)
 	if(held_container && !anchored)
 		drop_held_container()

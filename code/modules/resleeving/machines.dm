@@ -191,6 +191,7 @@ OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTING
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
+
 /obj/machinery/transhuman/synthprinter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
 		set_busy(0)

@@ -17,6 +17,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/recycling)
 	started_work(step = PROC_REF(work_step))
+
 /obj/machinery/recycling/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL // these are all stateful
 

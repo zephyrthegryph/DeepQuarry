@@ -34,6 +34,7 @@ OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
 
 	// create a conveyor
 CAPABILITIES(/obj/machinery/conveyor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
 
@@ -128,9 +129,6 @@ CAPABILITIES(/obj/machinery/conveyor)
 
 	// machine process
 	// move items to the target location
-// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
-CAPABILITIES(/obj/machinery/conveyor)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
 /obj/machinery/conveyor/proc/work_step(datum/act/timer/timer)
 	var/list/movable_contents = list()
 	for(var/atom/movable/A in contents_of(loc))

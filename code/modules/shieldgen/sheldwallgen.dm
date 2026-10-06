@@ -265,6 +265,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
 CAPABILITIES(/obj/machinery/shieldwall)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	param(nameof(gen_primary), pos = 1)
 	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
 
@@ -293,9 +294,6 @@ CAPABILITIES(/obj/machinery/shieldwall)
 	name = "Touch"
 	effect = /atom/proc/interaction_swallow
 
-// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
-CAPABILITIES(/obj/machinery/shieldwall)
-	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 /obj/machinery/shieldwall/proc/work_step(datum/act/timer/A)
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))

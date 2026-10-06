@@ -496,6 +496,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shuttle_sensor)
 	started_work(step = PROC_REF(work_step))
+
 /obj/machinery/shuttle_sensor/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL //nty
 

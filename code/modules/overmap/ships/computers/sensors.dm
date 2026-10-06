@@ -249,6 +249,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shipsensors)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
 /obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
 	if(use_power) //can't run in non-vacuum
 		if(!in_vacuum())

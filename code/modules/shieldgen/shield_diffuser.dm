@@ -39,6 +39,7 @@ OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield_diffuser)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))
+
 /obj/machinery/shield_diffuser/proc/work_step(datum/act/timer/A)
 	if(alarm)
 		set_alarm(alarm - 1)

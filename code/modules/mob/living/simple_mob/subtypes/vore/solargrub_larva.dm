@@ -200,6 +200,7 @@ OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTI
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/abstract_grub_machine)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(draining), wakes_on = list(nameof(draining)))
+
 /obj/machinery/abstract_grub_machine/proc/work_step(datum/act/timer/timer)
 	var/area/A = get_area(src)
 	if(!A)
