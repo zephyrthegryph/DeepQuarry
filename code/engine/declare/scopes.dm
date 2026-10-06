@@ -18,6 +18,8 @@
 		activations_relation_changed(holder, E.args["var"], TRUE)
 	if(T.hook_flags & ENGINE_HOOK_STATS)
 		stat_holder_init(holder, mapload)
+	if(T.hook_flags & ENGINE_HOOK_MODES)
+		modes_init(holder, T)
 	hooks_change_baseline(holder)
 	if(T.hook_flags & ENGINE_HOOK_COND_SCOPED)
 		activations_cond_init(holder, T)

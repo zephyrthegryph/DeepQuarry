@@ -338,8 +338,11 @@
 /proc/gesture(gesture_id)
 	return part_make(/datum/entry/part/select/gesture, list("value" = gesture_id))
 
-/// stance(S...): sugar for when(req_stance(S...)).
-/proc/stance(...)
+/// stance(S...): sugar for when(req_stance(S...)). With an entity first it is the standings form instead, stance(E, toward = subject, value, source = S,
+/// lasts = T, priority = P) (code/engine/stats/stances.dm).
+/proc/stance(E, toward, value, source, lasts, priority, reason, ...)
+	if(isdatum(E))
+		return stance_place(E, toward, value, source, lasts, priority, reason)
 	return part_make(/datum/entry/part/select/stance, list("value" = entry_flatten(args)))
 
 /// presents(T): the held item is a credential of type T, not "used" (intent INTENT_PRESENT).

@@ -297,6 +297,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 			rx_watch_adjust(holder, key, -1)
 		change_hop_register(E.args["cond"], -1)
 		holder.rx.change_last?.Remove("[H.serial]")
+		coalesce_cancel(holder, H)
 		H.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	if(!length(holder.rx.hooks))
 		holder.rx.hooks = null

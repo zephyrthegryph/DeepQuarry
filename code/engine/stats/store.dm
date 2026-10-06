@@ -310,6 +310,8 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 				src_rec.held_on -= E
 				if(!length(src_rec.held_on))
 					src_rec.held_on = null
+	if(row[H_STAT] == HOLD_STANCE)
+		stance_row_removed(E, row) // a stance row: the entity's cached standings are stale (stances.dm)
 
 /// The sources holding a stat: a fresh list, safe to hold while releasing.
 /proc/held_by(datum/E, stat)
