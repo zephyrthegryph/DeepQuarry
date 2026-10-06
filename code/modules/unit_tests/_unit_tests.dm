@@ -310,6 +310,7 @@
 #include "dq_b4_tracking_tests.dm"
 #include "dq_phase0_tests.dm"
 #include "dq_life_om_tests.dm"
+#include "dq_mob_every_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_medical_p0_tests.dm"
 #include "dq_medical_p1_tests.dm"

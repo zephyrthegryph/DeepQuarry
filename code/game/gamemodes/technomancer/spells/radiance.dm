@@ -21,7 +21,8 @@
 	var/power = 250
 	toggled = 1
 
-DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/spell/radiance)
+	every(2 SECONDS, then(PROC_REF(radiance_step)))
 
 /obj/item/spell/radiance/Initialize(mapload, coreless)
 	. = ..()
@@ -33,7 +34,7 @@ DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
 	log_and_message_admins("has stopped maintaining [src].")
 	..()
 
-/obj/item/spell/radiance/periodic_step()
+/obj/item/spell/radiance/proc/radiance_step(datum/act/timer/A)
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/removed = null
 	var/datum/gas_mixture/env = null

@@ -1979,3 +1979,16 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
 - **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
   to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
   runs it through a thin `<verb>_op(A)` effect.
+
+## Mob repeats on every() (rewrite/om-life)
+
+The mob DECLARE_REPEATs (dizzy and jittery shakes, dreaming, autofire, AI follow-camera, pAI door hack, robot transform
+sounds, the eclipse's volleys, the macrophage's deathwatch, the jellyfish's chained attacks) are type-level every()
+entries gated on a tracked var; the drift and stagger helpers are after() steps.
+
+- **Shakes end on death at the next shake.** The dizzy and jittery statuses ended on the OM death event; the shake now
+  ends its status when it finds its mob dead, within a decisecond. A status started on a dead mob ends the same way.
+- **Follow camera with no eye cancels tracking.** The AI's tracking loop used to stop silently and leave `cameraFollow`
+  set; it now cancels tracking ("Follow camera mode terminated"), so the next track starts clean.
+- **Polled gates for relation views.** The AI's and pAI's repeats are gated on relation views (`cameraFollow`,
+  `hackdoor`), which do not publish like tracked vars, so their every() polls (once a second) instead of parking.

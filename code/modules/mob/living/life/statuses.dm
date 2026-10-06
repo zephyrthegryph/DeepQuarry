@@ -42,16 +42,25 @@
 	deaf_loop.stop()
 
 /mob/proc/status_dizzy_started()
-	om_attach(src, /datum/om/behaviour/dizzy_shake)
+	dizzy_was_resting = resting
+	set_dizzy_shaking(TRUE)
 
 /mob/proc/status_dizzy_ended()
-	om_detach(src, /datum/om/behaviour/dizzy_shake)
+	set_dizzy_shaking(FALSE)
+	// The shaken client's view offset resets.
+	if(client)
+		client.pixel_x = 0
+		client.pixel_y = 0
 
 /mob/proc/status_jittery_started()
-	om_attach(src, /datum/om/behaviour/jittery_shake)
+	jittery_was_resting = resting
+	set_jittery_shaking(TRUE)
 
 /mob/proc/status_jittery_ended()
-	om_detach(src, /datum/om/behaviour/jittery_shake)
+	set_jittery_shaking(FALSE)
+	// The jittering mob's pixel offsets reset.
+	pixel_x = old_x
+	pixel_y = old_y
 
 // --- Presentation, rates and scaling ---------------------------------------------------------
 

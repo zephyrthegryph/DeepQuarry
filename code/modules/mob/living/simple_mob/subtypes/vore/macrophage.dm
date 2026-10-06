@@ -52,6 +52,7 @@
 	mob_size = MOB_TINY
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
+	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))
 	owns_one(nameof(base_disease), /datum/affliction/contagion)
 	owns_many(nameof(infections), /datum/affliction/contagion)
 
@@ -93,16 +94,15 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 
 /// Burst from a host: it dies within 3 minutes unless it is holding a human. A field: the check
 /// repeats while it is set.
-OM_FIELD(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, FALSE, CHANGE_MOB_CONDITIONS)
-DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, deathcheck, "deathwatch")
+/mob/living/simple_mob/vore/aggressive/macrophage/var/deathwatch = FALSE
+TRACKED_BRIDGED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, CHANGE_MOB_CONDITIONS)
 
-/// DECLARE_REPEAT every 3 minutes while deathwatch is set.
-/mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()
+/// Every 3 minutes while deathwatch is set (its every() in the type's CAPABILITIES).
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck(datum/act/A)
 	if(locate_in_list(vore_selected, /mob/living/carbon/human))
 		return
 	set_deathwatch(FALSE)
 	death()
-	return REPEAT_STOP
 
 /mob/living/simple_mob/vore/aggressive/macrophage/apply_melee_effects(atom/A)
 	if(ishuman(A) && prob(25))

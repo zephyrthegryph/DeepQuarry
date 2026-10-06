@@ -17,7 +17,7 @@
 	aspect = ASPECT_UNSTABLE
 	glow_color = "#CC00CC"
 
-/obj/item/spell/aura/unstable/periodic_step()
+/obj/item/spell/aura/unstable/aura_step(datum/act/timer/A)
 	if(!pay_energy(200))
 		spent(src)
 		return

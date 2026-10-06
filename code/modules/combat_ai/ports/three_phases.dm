@@ -122,4 +122,5 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse)
+	every(PROC_REF(volley_interval), then(PROC_REF(volley_step)), when = nameof(volley_shots_left))
 	immune_to_incapacitation()
