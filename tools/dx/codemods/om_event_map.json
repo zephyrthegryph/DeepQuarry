@@ -292,7 +292,7 @@
  },
  "/datum/om/event/atom_used_in_craft": {
   "emits": [
-   "code/datums/entity_state/crafting/crafting_external.dm"
+   "code/modules/crafting/crafting_external.dm"
   ],
   "fields": [
    "result_"
@@ -738,7 +738,7 @@
  },
  "/datum/om/event/disposal_receive": {
   "emits": [
-   "code/datums/entity_state/machinery/disposal_connection.dm"
+   "code/modules/recycling/disposal_connection.dm"
   ],
   "fields": [
    "items",
@@ -1297,7 +1297,7 @@
  },
  "/datum/om/event/matcontainer_item_consumed": {
   "emits": [
-   "code/datums/entity_state/materials/material_container.dm"
+   "code/modules/materials/containers/material_container.dm"
   ],
   "fields": [
    "item",
@@ -1307,8 +1307,8 @@
    "context"
   ],
   "listeners": [
-   "code/datums/entity_state/materials/material_container.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/modules/materials/containers/material_container.dm"
   ],
   "notice_fields": [
    "item",
@@ -1323,15 +1323,15 @@
  },
  "/datum/om/event/matcontainer_stack_retrieved": {
   "emits": [
-   "code/datums/entity_state/materials/material_container.dm"
+   "code/modules/materials/containers/material_container.dm"
   ],
   "fields": [
    "new_stack",
    "context"
   ],
   "listeners": [
-   "code/datums/entity_state/materials/material_container.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/modules/materials/containers/material_container.dm"
   ],
   "notice_fields": [
    "new_stack",
@@ -1950,8 +1950,8 @@
  },
  "/datum/om/event/remote_view_clear": {
   "emits": [
-   "code/datums/entity_state/remote_view.dm",
    "code/game/objects/items.dm",
+   "code/modules/mob/remote_view.dm",
    "code/modules/tgui/modules/ntos-only/uav.dm"
   ],
   "fields": [],

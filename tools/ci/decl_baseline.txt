@@ -127,9 +127,9 @@ init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	after(src,
 init_scheduling	code/modules/shieldgen/directional_shield.dm	after(src, 0, PROC_REF(create_shields))
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
-init_visuals	code/datums/entity_state/reactive_icon_update.dm	icon_state = "screwdriver"
-init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
-init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
+init_visuals	code/datums/reactive_icon_update.dm	icon_state = "screwdriver"
+init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
+init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/game/area/areas.dm	icon_state = ""
 init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
