@@ -10,13 +10,19 @@
 
 DECLARE_REAGENTS(/obj/item/grown, 50, null)
 
-// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
-/obj/item/grown/Initialize(mapload, planttype)
+CAPABILITIES(/obj/item/grown)
+	param(nameof(planttype_at_make), pos = 1)
+
+/// The plant an inedible harvest is made from (its constructor param).
+/obj/item/grown/var/planttype_at_make
+
+// ALLOW(init/INSTANCE_STATE): an inedible harvest made from a plant takes its potency and chemicals
+/obj/item/grown/Initialize(mapload)
 	. = ..()
 
 	//Handle some post-spawn var stuff.
-	if(planttype)
-		plantname = planttype
+	if(planttype_at_make)
+		plantname = planttype_at_make
 		var/datum/seed/S = SSplants.seeds[plantname]
 		if(!S || !S.chems)
 			return

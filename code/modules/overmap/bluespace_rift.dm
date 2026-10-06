@@ -9,14 +9,17 @@
 	var/obj/effect/overmap/bluespace_rift/partner
 	var/paused
 
-// ALLOW(init/CTOR_ARGS): new_partner is a constructor argument from whoever builds it
-/obj/effect/overmap/bluespace_rift/Initialize(mapload, new_partner)
-	. = ..()
+/// The rift this one is made paired with (its constructor param).
+/obj/effect/overmap/bluespace_rift/var/tmp/obj/effect/overmap/bluespace_rift/pair_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/overmap/bluespace_rift/proc/pair_made(obj/effect/overmap/bluespace_rift/new_partner)
 	if(new_partner)
 		pair(new_partner)
 
 CAPABILITIES(/obj/effect/overmap/bluespace_rift)
 	links(/obj/effect/overmap/bluespace_rift::partner, /obj/effect/overmap/bluespace_rift::partner)
+	param(nameof(pair_at_make), pos = 1, apply = PROC_REF(pair_made), keep = FALSE)
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))

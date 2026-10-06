@@ -297,12 +297,11 @@ CAPABILITIES(/datum/material/processed_alloy)
 CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	owns_one(nameof(batch_state), /datum/material_batch)
 	op("processed_alloy_item", item(/obj/item), then(PROC_REF(processed_alloy_item)))
+	param(nameof(default_type), pos = 2)
 
-// ALLOW(init/CTOR_ARGS): the material is a per-instance argument and the batch copy is sized to this stack
-/obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
-	if(_material_name)
-		default_type = _material_name
-	. = ..(mapload, _amount)
+// ALLOW(init/INSTANCE_STATE): a processed alloy stack takes its alloy's colour, value and batch
+/obj/item/stack/material/processed_alloy/Initialize(mapload)
+	. = ..()
 	if(istype(material, /datum/material/processed_alloy))
 		color = material.icon_colour
 		export_value_per_sheet = max(material.supply_conversion_value, 0)

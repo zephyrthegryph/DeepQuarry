@@ -29,6 +29,8 @@ CAPABILITIES(/obj/item/nif)
 	op("toggle_module", ui_act("toggle_module", arg("module", schema_ref(/datum/nifsoft))), then(PROC_REF(ui_act_toggle_module)))
 	op("uninstall", ui_act("uninstall", arg("module", schema_ref(/datum/nifsoft))), then(PROC_REF(ui_act_uninstall)))
 	op("dismissNotification", ui_act("dismissNotification"), then(PROC_REF(ui_act_dismissnotification)))
+	param(nameof(wear_at_make), pos = 1)
+	param(nameof(load_data_at_make), pos = 2)
 
 /**
  * Small helper datum to manage the HUD icon.
