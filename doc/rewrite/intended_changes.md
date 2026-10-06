@@ -1816,3 +1816,77 @@ form, robot and vore tests that run Life frames.
 * Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
   Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.
 - Vore panel: the belly settings are sub-actions routed by `vore_nested()` (refused without a selected belly; the belly reschedules after), replacing UI_ACT_NESTED/UI_SUBACT. Each attribute's value goes through its schema, and a sub-action that asks in the window gets the window as `extra`. "Pick from inside/outside" keep their `rerun_ask()` questions in plain procs called by the ops. "Reload/load preferences" confirm with `asks()` steps. Pinned by interim_vore_panel_attributes.
+
+
+
+
+
+## Power plants: the tesla coils and grounding rods (rewrite/power-plants)
+
+- Pinned by `dq_pp/tesla_coil_curves` (loss, multipliers, relay 0.9, amplifier 1.075, prism split, ranges, cooldown); unchanged.
+- The energy ball steps on the singularity's `every(2 s)` (`singularity_frame()`), and bumps into it dust through the bumped notice.
+- The coil's multitool conversion and the coil board's reconfiguration are ops with `asks()`; part replacement is `part_replacement()`;
+  the looks are `draw()`. An empty hand on a coil or rod buckles whoever the actor is pulling (the legacy interaction asked for the grab
+  stance, which no longer exists as a mob state). Any held item no longer "touches" a coil for a fingerprint (that swallowed every tool click).
+
+## Power plants: fusion (rewrite/power-plants)
+
+Pinned by `dq_pp/fusion_*` (field size by strength, 1..1000 clamp at 5 W a unit, 100 energy per K, the 1% heat loss a step, instability
+tick * size / 10000, the reaction table, 30 fuel a step, the trap above 10000 K); unchanged.
+
+- **No machine pipeline.** The core steps its field on `every(MACHINE_SERVICE_INTERVAL, when = owned_field)` (`core_step()`, then the field's
+  `field_react()` a decisecond later), the injector on `every(..., when = injecting)` (`injecting` is a tracked var), the hydromagnetic trap on
+  `every()` while bolted (it used to sleep until a new field woke it; it now finds a field raised anywhere in its 7 tiles on its next step).
+- The trap no longer keeps its 7-tile scan in a var (the scan held the trap itself: a deleted trap leaked).
+- The core's unused `str` topic action is gone (nothing sent it; the console sets the strength through `set_strength()`).
+- Ops for every interaction: the cradle, part replacement and ident tag only with the field down; the injector's rod, its blitz confirmation
+  (`confirms()`), its ident tag; the three consoles' window and tag; the compressor's sheets, containers, dragged supermatter and its
+  "Eject Supermatter Sheet" menu entry. Hand ops answer an empty hand only, as the legacy hand interactions did.
+- Calm steps never bled a field's instability: `rand(0.01, 0.03)` rounds to 0 (pinned as it is; a balance change for later).
+
+## Power plants: portable generators and RTGs (rewrite/power-plants)
+
+Pinned by `dq_pp/pacman_*` and `rtg_output` (fuel per step, the supply, running dry, the heat band and overheating, cooling, the emag limit,
+RTG output per rating); unchanged.
+
+- **No machine pipeline.** A generator steps on `every(MACHINE_SERVICE_INTERVAL, when = has_work)`: while on, or while it still has heat to
+  lose (it used to sleep after cooling until a toggle woke it; the same condition now parks it). RTGs step while bolted down.
+- PACMAN ops: fuel sheets, the window (a hand on a bolted generator; a broken one refuses it), the wrench (`anchor()`, not while running,
+  joining and leaving its network), part replacement (not while running) and a repeatable `emag()` that lifts the output limit to 2.5x
+  (`is_emagged()`). The base generator's empty "Use" interaction (it did nothing) is gone.
+- The altevian reactor's fuel, toggle (a silicon's remote touch through `binds(remote())`) and fuel gauge (`draw()`); the void core's cell
+  (`owns_one(..., starts = starting_cell)` replaces the built subtypes' ownership tables); hits are `extend(/datum/act/hit/...)`.
+- Every look is `draw()`; the reactor's glow is `look.light()`.
+
+## Power plants: the gravity generator (rewrite/power-plants)
+
+Pinned by `dq_pp/gravgen_*` (2 charge a step, gravity at 100 and off at 0, the breaker's spin-up and spin-down); unchanged.
+
+- Its spin is `every(MACHINE_SERVICE_INTERVAL, when = spinning)` (`charging_state` and `broken_state` are tracked vars; the spin constants are
+  `GRAVGEN_IDLE/UP/DOWN` in `code/__defines/power.dm`).
+- The repair ladder (screwdriver, welder, 10 plasteel, wrench) is four ops on every part of the generator; a part's empty hand opens the
+  generator's window (`perform_op(..., "ui_open")`) instead of re-running the main part's legacy attack procs. The window opens to an empty hand
+  (the legacy "Use"); held tools no longer show a "Use" entry that did nothing.
+- The middle part draws the charge overlay from its main part (`draw()`); no raw overlays. Hits are `extend(/datum/act/hit/...)`.
+
+## Power plants: solars (rewrite/power-plants)
+
+Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscured or off the controller's network); unchanged.
+
+- **The controller steps for real.** Its legacy `machine_step()` returned PROCESS_KILL after one run and nothing woke it again, so a manual
+  rotation rate never advanced the target angle and an unlinked tracker or a panel moved to another network kept its link. It now steps on
+  `every(MACHINE_SERVICE_INTERVAL, when = operable)`: manual tracking turns a degree every 36000 / rate deciseconds, as the window says, and
+  stale links drop (its panel check clears once done, where the flag used to stay set).
+- Ops: the panel's and tracker's crowbar (2 s and 5 s), a hostile swing at a panel, the controller's screwdriver (2 s) and its window (an
+  empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
+  `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).
+
+## Power plants: the gas turbine (rewrite/power-plants)
+
+Pinned by `dq_pp/turbine_output_curve` and `compressor_spin_up` (((rpm / 100000) ^ 0.8) * 100000 * productivity W; a tenth of the way to the
+target a step less rpm^2 / (500000 * efficiency)); unchanged.
+
+- The compressor and the turbine step on `every(MACHINE_SERVICE_INTERVAL, when = running)` (the compressor's `starter` is tracked; the turbine
+  no longer needs the compressor to wake it). Their overlays are `draw()` from tracked stages (no raw overlays).
+- Ops: part replacement, the compressor's and the computer's ident tags (`asks()`); the turbine's window is an empty hand on a working turbine
+  (the legacy `ui_prepare()` check); the "touch for a fingerprint" interactions on any item are gone (they swallowed every tool's click).

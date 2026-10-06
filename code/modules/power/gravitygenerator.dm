@@ -5,9 +5,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 // Gravity Generator
 //
 
-#define POWER_IDLE 0
-#define POWER_UP 1
-#define POWER_DOWN 2
 
 #define GRAV_NEEDS_SCREWDRIVER 0
 #define GRAV_NEEDS_WELDING 1
@@ -30,22 +27,74 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	pixel_y = 16
 
-DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_EXPLOSION, PROC_REF(gravgen_blast_break))
-DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_blob_break))
+MSG_DEF(gravgen/screwed, "You secure the screws of the framework.", "%U% secures the screws of %T%'s framework.")
+MSG_DEF(gravgen/mended, "You mend the damaged framework.", "%U% mends %T%'s damaged framework.")
+MSG_DEF(gravgen/plated, "You add the plating to the framework.", "%U% adds plating to %T%'s framework.")
+MSG_DEF(gravgen/secured, "You secure the plating to the framework.", "%U% secures the plating to %T%'s framework.")
+
+// The gravity generator (doc/rewrite/final_api.html section 16): a main part and the eight parts around it (one machine to a player: every part
+// answers for the main one). Hits barely touch it: a devastating blast or a blob may break it. A broken generator is repaired by a ladder on
+// any of its parts: screwdriver, welder, 10 plasteel, wrench.
+CAPABILITIES(/obj/machinery/gravity_generator)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(gravgen_blast_break))))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(gravgen_blob_break))))
+	op("repair_screws", tool(TOOL_SCREWDRIVER), label("Secure the screws"), wait(0), when(PROC_REF(needs_screws)), says(MSG(gravgen/screwed)), then(PROC_REF(repair_stepped)))
+	op("repair_weld", lit_welder(fuel = 0), label("Mend the framework"), wait(0), when(PROC_REF(needs_welding)), says(MSG(gravgen/mended)), then(PROC_REF(repair_stepped)))
+	op("repair_plate", stack(/obj/item/stack/material/plasteel, 10), label("Add plating"), wait(0), when(PROC_REF(needs_plasteel)), says(MSG(gravgen/plated)), then(PROC_REF(repair_stepped)))
+	op("repair_wrench", tool(TOOL_WRENCH), label("Secure the plating"), wait(0), when(PROC_REF(needs_wrench)), says(MSG(gravgen/secured)), then(PROC_REF(repair_finished)))
+
+/// The main part this part answers for (the main part answers for itself).
+/obj/machinery/gravity_generator/proc/grav_main()
+	return null
+
+/// The repair ladder's rung the generator is on, or null while it is whole.
+/obj/machinery/gravity_generator/proc/repair_rung()
+	var/obj/machinery/gravity_generator/main/M = grav_main()
+	if(!M || !M.has_stat(BROKEN))
+		return null
+	return M.broken_state
+
+/obj/machinery/gravity_generator/proc/needs_screws(datum/act/A)
+	return repair_rung() == GRAV_NEEDS_SCREWDRIVER
+
+/obj/machinery/gravity_generator/proc/needs_welding(datum/act/A)
+	return repair_rung() == GRAV_NEEDS_WELDING
+
+/obj/machinery/gravity_generator/proc/needs_plasteel(datum/act/A)
+	return repair_rung() == GRAV_NEEDS_PLASTEEL
+
+/obj/machinery/gravity_generator/proc/needs_wrench(datum/act/A)
+	return repair_rung() == GRAV_NEEDS_WRENCH
+
+/// A rung of the repair done.
+/obj/machinery/gravity_generator/proc/repair_stepped(datum/act/op/A)
+	var/obj/machinery/gravity_generator/main/M = grav_main()
+	M.set_broken_state(M.broken_state + 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 1.5)
+	M.update_icon()
+	return OP_OK
+
+/// The last rung: the generator is whole again.
+/obj/machinery/gravity_generator/proc/repair_finished(datum/act/op/A)
+	var/obj/machinery/gravity_generator/main/M = grav_main()
+	M.atom_fix()
+	return OP_OK
 
 /// Very sturdy: only a devastating blast breaks it, and nothing else of a blast lands.
-/obj/machinery/gravity_generator/proc/gravgen_blast_break(datum/damage_packet/packet)
-	if(packet.severity == 1)
+/obj/machinery/gravity_generator/proc/gravgen_blast_break(datum/act/hit/explosion/A)
+	if(A.packet.severity == 1)
 		atom_break()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// A blob sometimes breaks it, and does nothing else to it.
-/obj/machinery/gravity_generator/proc/gravgen_blob_break(datum/damage_packet/packet)
+/obj/machinery/gravity_generator/proc/gravgen_blob_break(datum/act/hit/blob/A)
 	if(prob(20))
 		atom_break()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
-APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_number}")
+/obj/machinery/gravity_generator/draw(datum/look/look)
+	..()
+	look.state("[get_status()]_[sprite_number]")
 
 /obj/machinery/gravity_generator/proc/get_status()
 	return "off"
@@ -57,8 +106,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 
 // a broken part takes the whole generator down.
 /obj/machinery/gravity_generator/part/on_destroy(force)
-	if(main_part())
-		destroyed(main_part())
+	if(main_part)
+		destroyed(main_part)
 	atom_break()
 	..()
 
@@ -69,41 +118,37 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 /obj/machinery/gravity_generator/part
 	var/tmp/obj/machinery/gravity_generator/main/main_part
 
-/obj/machinery/gravity_generator/part/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/gravity_part_forward,
-		/datum/interaction/machine_hand/ungated/gravity_part_forward,
-	)
+/obj/machinery/gravity_generator/part
+	/// The charge overlay the main part shows on this, its middle part.
+	var/shown_overlay
+
+TRACKED(/obj/machinery/gravity_generator/part, shown_overlay)
+
+CAPABILITIES(/obj/machinery/gravity_generator/part)
+	ref_one(nameof(main_part), /obj/machinery/gravity_generator/main)
+	op("use", hand(), label("Use"), wait(0), when(req_empty_hand()), then(PROC_REF(forward_hand)))
+
+/obj/machinery/gravity_generator/part/grav_main()
+	return main_part
+
+/// A hand on a part opens the generator's window.
+/obj/machinery/gravity_generator/part/proc/forward_hand(datum/act/op/A)
+	if(main_part)
+		perform_op(A.actor, main_part, "ui_open")
+	return OP_OK
+
+/// The middle part shows the generator's charge.
+/obj/machinery/gravity_generator/part/draw(datum/look/look)
 	..()
-
-/// Old attackby: forwarded straight to main_part's own attackby.
-/datum/interaction/machine_item/gravity_part_forward
-	id = "gravity_part_forward_item"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/gravity_generator/part/proc/interaction_forward_item
-
-/obj/machinery/gravity_generator/part/proc/interaction_forward_item(mob/user, obj/item/I, datum/interaction/interaction)
-	main_part()?.attackby(I, user)
-	return TRUE
-
-/// Old attack_hand: forwarded straight to main_part's own attack_hand, never called ..().
-/datum/interaction/machine_hand/ungated/gravity_part_forward
-	id = "gravity_part_forward_hand"
-	name = "Use"
-	effect = /obj/machinery/gravity_generator/part/proc/interaction_forward_hand
-
-/obj/machinery/gravity_generator/part/proc/interaction_forward_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	main_part()?.attack_hand(user)
-	return TRUE
+	look.overlay(shown_overlay, when = shown_overlay)
 
 /obj/machinery/gravity_generator/part/get_status()
-	return main_part()?.get_status()
+	return main_part?.get_status()
 
 /obj/machinery/gravity_generator/part/atom_break(damage_flag)
 	. = ..()
-	if(main_part() && !(main_part().stat & BROKEN))
-		main_part().atom_break(damage_flag)
+	if(main_part && !main_part.has_stat(BROKEN))
+		main_part.atom_break(damage_flag)
 
 //
 // Generator which spawns with the station.
@@ -115,7 +160,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 /obj/machinery/gravity_generator/main/station/Initialize(mapload)
 	. = ..()
 	setup_parts()
-	middle().add_overlay("activated")
+	var/obj/machinery/gravity_generator/part/M = middle
+	if(istype(M))
+		M.set_shown_overlay(current_overlay)
 
 //
 // Generator an admin can spawn
@@ -145,22 +192,39 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 	var/broken_state = 0
 	var/list/levels
 	var/list/areas
+	/// GRAVGEN_IDLE, GRAVGEN_UP or GRAVGEN_DOWN: spinning up or down (spin_step()) or settled.
+	var/charging_state = GRAVGEN_IDLE
 
+TRACKED(/obj/machinery/gravity_generator/main, charging_state)
+TRACKED(/obj/machinery/gravity_generator/main, broken_state)
+TRACKED(/obj/machinery/gravity_generator/main, current_overlay)
+
+// The main part: its window and breaker, its eight parts (owned), and its spin (spin_step(), every machine service interval while it spins
+// and is whole).
 CAPABILITIES(/obj/machinery/gravity_generator/main)
 	after_init(0, then(PROC_REF(find_levels)))
 	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
+	ref_one(nameof(middle), /obj)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(spin_step)), when = PROC_REF(spinning))
 	interface("GravityGenerator")
-	without("ui_open")
+	extend("ui_open", when(req_empty_hand()))
 	op("gentoggle", ui_act("gentoggle"), then(PROC_REF(ui_act_gentoggle)))
 
-/// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
-OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, POWER_IDLE, CHANGE_MACHINE_SETTINGS)
-/// Not BROKEN (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
-OM_DERIVE_FIELD(/obj/machinery/gravity_generator/main, unbroken, list("stat"))
-/obj/machinery/gravity_generator/main/proc/unbroken()
-	return !has_stat(BROKEN)
+/obj/machinery/gravity_generator/main/grav_main()
+	return src
 
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELINE, list("charging_state", "unbroken"))
+/// Spinning up or down, and whole (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
+/obj/machinery/gravity_generator/main/proc/spinning(datum/act/A)
+	return charging_state != GRAVGEN_IDLE && !has_stat(BROKEN)
+
+/// The charge overlay on the middle part.
+/obj/machinery/gravity_generator/main/proc/set_charge_overlay(overlay_state)
+	if(overlay_state == current_overlay)
+		return
+	set_current_overlay(overlay_state)
+	var/obj/machinery/gravity_generator/part/M = middle
+	if(istype(M))
+		M.set_shown_overlay(overlay_state)
 
 /// Finds its levels and areas, once the overmap sectors exist.
 /obj/machinery/gravity_generator/main/proc/find_levels(datum/act/A) //Needs to happen after overmap sectors are initialized so we can figure out where we are
@@ -207,7 +271,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(!M.has_stat(BROKEN))
 			M.atom_break(damage_flag)
-	middle().cut_overlays()
+	set_charge_overlay(null)
 	charge_count = 0
 	breaker = FALSE
 	set_power()
@@ -219,7 +283,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(M.has_stat(BROKEN))
 			M.atom_fix()
-	broken_state = FALSE
+	set_broken_state(FALSE)
 	set_power()
 	update_list()
 	update_areas()
@@ -227,83 +291,13 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 // Interaction
 
 // Fixing the gravity generator.
-/obj/machinery/gravity_generator/main/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/gravity_main_add_plasteel,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// Old attackby: only branch; anything else (wrong item, or wrong broken_state) fell through to ..().
-/datum/interaction/machine_item/gravity_main_add_plasteel
-	id = "gravity_main_add_plasteel"
-	name = "Add plating"
-	category = INTERACTION_CAT_REPAIR
-	held_type = /obj/item/stack/material/plasteel
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/gravity_generator/main/proc/wants_plasteel, null))
-	effect = /obj/machinery/gravity_generator/main/proc/interaction_add_plasteel
-
-/// No side effects.
-/obj/machinery/gravity_generator/main/proc/wants_plasteel(mob/actor, atom/target, obj/item/held)
-	return broken_state == GRAV_NEEDS_PLASTEEL
-
-/obj/machinery/gravity_generator/main/proc/interaction_add_plasteel(mob/user, obj/item/stack/material/plasteel/PS, datum/interaction/interaction)
-	if(PS.get_amount() >= 10)
-		PS.use(10)
-		to_chat(user, span_notice("You add the plating to the framework."))
-		play_sfx(src, SFX_MACHINES_CLICK, 1.5)
-		broken_state++
-		update_icon()
-	else
-		to_chat(user, span_warning("You need 10 sheets of plasteel!"))
-	return TRUE
-
-/obj/machinery/gravity_generator/main/screwdriver_act(mob/user, obj/item/I)
-	if(broken_state != GRAV_NEEDS_SCREWDRIVER)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You secure the screws of the framework."))
-	playsound(src, I.usesound, 75, 1)
-	broken_state++
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/gravity_generator/main/welder_act(mob/user, obj/item/I)
-	if(broken_state != GRAV_NEEDS_WELDING)
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/W = I.get_welder()
-	if(!W.remove_fuel(0,user))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You mend the damaged framework."))
-	broken_state++
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/gravity_generator/main/wrench_act(mob/user, obj/item/I)
-	if(broken_state != GRAV_NEEDS_WRENCH)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You secure the plating to the framework."))
-	playsound(src, I.usesound, 75, 1)
-	atom_fix()
-	return ITEM_INTERACT_SUCCESS
-
 /obj/machinery/gravity_generator/main/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["breaker"] = breaker
 	data["charge_count"] = charge_count
 	data["charging_state"] = charging_state
-	var/list/merged_1 = ui_data_obj_machinery_gravity_generator_main(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// The computed part of /obj/machinery/gravity_generator/main's window data (declared on its UI_DATA row).
-/obj/machinery/gravity_generator/main/proc/ui_data_obj_machinery_gravity_generator_main(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-
 	data["on"] = on
 	data["operational"] = (has_stat(BROKEN)) ? FALSE : TRUE
-
 	return data
 
 /obj/machinery/gravity_generator/main/proc/ui_act_gentoggle(datum/act/op/A)
@@ -323,7 +317,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 /obj/machinery/gravity_generator/main/get_status()
 	if(has_stat(BROKEN))
 		return "fix[min(broken_state, 3)]"
-	return on || charging_state != POWER_IDLE ? "on" : "off"
+	return on || charging_state != GRAVGEN_IDLE ? "on" : "off"
 
 // Set the charging state based on power/breaker.
 /obj/machinery/gravity_generator/main/proc/set_power()
@@ -335,24 +329,24 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 
 	// Charging state FSM
 	switch(charging_state)
-		if(POWER_UP)
+		if(GRAVGEN_UP)
 			if(!new_state) // Can start spin down during spin up
-				set_charging_state(POWER_DOWN)
-		if(POWER_DOWN)
+				set_charging_state(GRAVGEN_DOWN)
+		if(GRAVGEN_DOWN)
 			if(new_state) // Can start spin up during spin down
-				set_charging_state(POWER_UP)
-		if(POWER_IDLE)
+				set_charging_state(GRAVGEN_UP)
+		if(GRAVGEN_IDLE)
 			if(!new_state && use_power == USE_POWER_ACTIVE) // Can start spin down during running
-				set_charging_state(POWER_DOWN)
+				set_charging_state(GRAVGEN_DOWN)
 			else if(new_state && use_power == USE_POWER_IDLE) // Can start spin up during stopped
-				set_charging_state(POWER_UP)
+				set_charging_state(GRAVGEN_UP)
 
-	investigate_log("is now [charging_state == POWER_UP ? "charging" : "discharging"].", "gravity")
+	investigate_log("is now [charging_state == GRAVGEN_UP ? "charging" : "discharging"].", "gravity")
 	update_icon()
 
 // Set the state of the gravity.
 /obj/machinery/gravity_generator/main/proc/set_gravity_state(new_state)
-	set_charging_state(POWER_IDLE)
+	set_charging_state(GRAVGEN_IDLE)
 	set_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
 	// Sound the alert if gravity was just enabled or disabled.
@@ -378,18 +372,17 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 
 // Charge/Discharge and turn on/off gravity when you reach 0/100 percent.
 // Also emit radiation and handle the overlays.
-/// Spins up or down while charging; settled (or broken) it sleeps until set_power() starts a
-/// charge again.
-/obj/machinery/gravity_generator/main/machine_step()
-	if(charging_state != POWER_IDLE)
-		if(charging_state == POWER_UP && charge_count >= 100)
+/// Spins up or down while charging (its every(), gated on spinning()).
+/obj/machinery/gravity_generator/main/proc/spin_step(datum/act/timer/A)
+	if(charging_state != GRAVGEN_IDLE)
+		if(charging_state == GRAVGEN_UP && charge_count >= 100)
 			set_gravity_state(1)
-		else if(charging_state == POWER_DOWN && charge_count <= 0)
+		else if(charging_state == GRAVGEN_DOWN && charge_count <= 0)
 			set_gravity_state(0)
 		else
-			if(charging_state == POWER_UP)
+			if(charging_state == GRAVGEN_UP)
 				charge_count += 2
-			else if(charging_state == POWER_DOWN)
+			else if(charging_state == GRAVGEN_DOWN)
 				charge_count -= 2
 
 			if(charge_count % 4 == 0 && prob(75)) // Let them know it is charging/discharging.
@@ -411,12 +404,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 				if(81 to 100)
 					overlay_state = "activated"
 
-			if(overlay_state != current_overlay)
-				if(middle())
-					middle().cut_overlays()
-					if(overlay_state)
-						middle().add_overlay(overlay_state)
-					current_overlay = overlay_state
+			set_charge_overlay(overlay_state)
 
 /obj/machinery/gravity_generator/main/proc/pulse_radiation()
 	radiation_pulse(
@@ -497,19 +485,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 	<li>Add additional plasteel plating.</li>
 	<li>Secure the additional plating with a wrench.</li></ol>"}
 
-#undef POWER_IDLE
-#undef POWER_UP
-#undef POWER_DOWN
 
 #undef GRAV_NEEDS_SCREWDRIVER
 #undef GRAV_NEEDS_WELDING
 #undef GRAV_NEEDS_PLASTEEL
 #undef GRAV_NEEDS_WRENCH
 
-/// the main_part this refers to: a relation view, null once that is deleted.
-/obj/machinery/gravity_generator/part/proc/main_part() as /obj/machinery/gravity_generator/main
-	return main_part
 
-/// the middle this refers to: a relation view, null once that is deleted.
-/obj/machinery/gravity_generator/main/proc/middle() as /obj
-	return middle

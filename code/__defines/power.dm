@@ -7,3 +7,7 @@
 #define FLOOR_WELD_BOLTED 1
 #define FLOOR_WELD_WELDED 2
 #define MAXIMUM_TESLA_JUMPS 20
+/// The gravity generator's spin (its charging_state): settled, spinning up, spinning down.
+#define GRAVGEN_IDLE 0
+#define GRAVGEN_UP 1
+#define GRAVGEN_DOWN 2
