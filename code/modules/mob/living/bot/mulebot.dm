@@ -379,7 +379,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	if(dirn)
 		step(load, dirn)
 
-	own_take(src, nameof(load))
+	rel_take(src, nameof(load))
 
 	for(var/atom/movable/AM in contents_of(src))
 		if(AM == botcard || AM == access_scanner)

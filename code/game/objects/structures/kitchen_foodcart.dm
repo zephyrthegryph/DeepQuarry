@@ -12,7 +12,6 @@
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/reagent_containers/food))
 			I.forceMove(src)
-	update_icon()
 
 CAPABILITIES(/obj/structure/foodcart)
 	op("stock", item(/obj/item/reagent_containers/food), label("Use"), then(PROC_REF(interaction_item)))
@@ -24,7 +23,6 @@ CAPABILITIES(/obj/structure/foodcart)
 /obj/structure/foodcart/proc/interaction_item(datum/act/op/A)
 	if(!own_bring_in(src, nameof(contents), A.held, null, A.actor, TRUE, null, FALSE))
 		return OP_OK
-	update_icon()
 	return OP_OK
 
 /// What the cart holds, to pick from.
@@ -46,7 +44,6 @@ CAPABILITIES(/obj/structure/foodcart)
 				user.put_in_hands(choice)
 		else
 			choice.forceMove(get_turf(src))
-		update_icon()
 	return OP_OK
 
 /obj/structure/foodcart/draw(datum/look/look)

@@ -2,3 +2,4 @@
 /obj/machinery/power/rad_collector|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/rad_collector|ai|none => |
 /obj/machinery/power/rad_collector|ghost|none => |
+

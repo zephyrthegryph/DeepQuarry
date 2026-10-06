@@ -2,3 +2,4 @@
 /obj/machinery/computer/crew|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/crew|ai|none => |
 /obj/machinery/computer/crew|ghost|none => |
+

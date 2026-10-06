@@ -2,3 +2,4 @@
 /obj/machinery/power/supermatter|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/supermatter|ai|none => |
 /obj/machinery/power/supermatter|ghost|none => |
+

@@ -1,5 +1,5 @@
-/obj/machinery/reagent_refinery/waste_processor|human|none => reagent_refinery_set_transfer_amount|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,waste_processor_drain_trolley:needs a cargo train tanker,waste_processor_drain_container:needs a  , a glass, or a shaker,reagent_refinery_drain:needs a  , a glass, or a shaker
-/obj/machinery/reagent_refinery/waste_processor|robot|none => reagent_refinery_set_transfer_amount|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,waste_processor_drain_trolley:needs a cargo train tanker,waste_processor_drain_container:needs a  , a glass, or a shaker,reagent_refinery_drain:needs a  , a glass, or a shaker
+/obj/machinery/reagent_refinery/waste_processor|human|none => |
+/obj/machinery/reagent_refinery/waste_processor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/reagent_refinery/waste_processor|ai|none => |
 /obj/machinery/reagent_refinery/waste_processor|ghost|none => |
-/obj/machinery/reagent_refinery/waste_processor|human|/obj/item/reagent_containers/glass => reagent_refinery_set_transfer_amount|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,waste_processor_drain_trolley:needs a cargo train tanker,waste_processor_drain_container:not possible right now,reagent_refinery_drain:it's empty; there is nothing to drain
+

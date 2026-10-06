@@ -111,7 +111,7 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 		locked = 1
 		to_chat(owner(), span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))
-		update_icon()
+		changed(src)
 
 	var/cancel_aim = 1
 
@@ -180,10 +180,13 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 	rel_add(aiming_at, nameof(aiming_at.aimed), src)
 	toggle_active(1)
 	locked = 0
-	update_icon()
+	changed(src)
 	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
-APPEARANCE_TEMPLATE(/obj/aiming_overlay, "{locked?locked:locking}")
+/// The look (the draw sweep: from its template).
+/obj/aiming_overlay/draw(datum/look/look)
+	..()
+	look.state("[locked ? "locked" : "locking"]")
 
 /obj/aiming_overlay/proc/toggle_active(force_state = null)
 	if(!isnull(force_state))

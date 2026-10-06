@@ -51,5 +51,5 @@ human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Open filter hatch (refused: needs a crowbar)
 human|/obj/item/card/emag menu: Toggle
 human|/obj/item/card/emag click: nothing
-keys: drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, v_garbosystem_crowbar_open, v_garbosystem_toggle
+keys: drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, v_garbosystem_crowbar_open, v_garbosystem_toggle
 

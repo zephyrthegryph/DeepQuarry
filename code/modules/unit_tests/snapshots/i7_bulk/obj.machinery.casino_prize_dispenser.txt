@@ -2,3 +2,4 @@
 /obj/machinery/casino_prize_dispenser|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/casino_prize_dispenser|ai|none => |
 /obj/machinery/casino_prize_dispenser|ghost|none => |
+

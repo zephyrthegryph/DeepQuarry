@@ -174,7 +174,6 @@ TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate)
 		set_use_power(USE_POWER_OFF)
 	. = TRUE
 	wake_for_state_change()
-	update_icon()
 
 /obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_configure(datum/act/op/A)
 	wake_for_state_change()
@@ -183,7 +182,6 @@ TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate)
 		set_use_power(USE_POWER_OFF)
 	. = TRUE
 	wake_for_state_change()
-	update_icon()
 
 /obj/machinery/atmospherics/omni/atmos_filter/proc/set_flow_rate_question(datum/act/op/A)
 	return "Enter new flow rate limit (0-[max_flow_rate]L/s)"
@@ -194,14 +192,12 @@ TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate)
 	set_set_flow_rate(between(0, new_flow_rate, max_flow_rate))
 	. = TRUE
 	wake_for_state_change()
-	update_icon()
 
 /obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_switch_mode(datum/act/op/A, dir, mode)
 	wake_for_state_change()
 	switch_mode(dir_flag(dir), mode_return_switch(mode))
 	. = TRUE
 	wake_for_state_change()
-	update_icon()
 
 /obj/machinery/atmospherics/omni/atmos_filter/proc/ui_act_switch_filter(datum/act/op/A, dir)
 	wake_for_state_change()
@@ -211,7 +207,6 @@ TRACKED(/obj/machinery/atmospherics/omni/atmos_filter, set_flow_rate)
 	switch_filter(dir_flag(dir), mode_return_switch(new_filter))
 	. = TRUE
 	wake_for_state_change()
-	update_icon()
 
 /obj/machinery/atmospherics/omni/atmos_filter/proc/mode_return_switch(mode)
 	switch(mode)

@@ -25,7 +25,6 @@
 		user.hud_used.update_ammo_hud(user, src)
 	else
 		to_chat(user, span_warning("[src] is empty."))
-	update_icon()
 	user.hud_used.update_ammo_hud(user, src)
 
 /obj/item/ammo_casing/artifact

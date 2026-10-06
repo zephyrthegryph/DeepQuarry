@@ -68,6 +68,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
+TRACKED(/obj/structure/cable, d1)
+TRACKED(/obj/structure/cable, d2)
 
 /obj/structure/cable/proc/engineered_material() as /datum/material
 	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
@@ -209,9 +211,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	var/dash = findtext(icon_state, "-")
 
-	d1 = text2num( copytext( icon_state, 1, dash ) )
+	set_d1(text2num( copytext( icon_state, 1, dash ) ))
 
-	d2 = text2num( copytext( icon_state, dash+1 ) )
+	set_d2(text2num( copytext( icon_state, dash+1 ) ))
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level==1) hide(!T.is_plating())
@@ -243,18 +245,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(d1)
 		// Using turn will maintain the cable's shape
 		// Taking the difference between current orientation and new one
-		d1 = turn(d1, dir2angle(new_dir) - dir2angle(dir))
-	d2 = turn(d2, dir2angle(new_dir) - dir2angle(dir))
+		set_d1(turn(d1, dir2angle(new_dir) - dir2angle(dir)))
+	set_d2(turn(d2, dir2angle(new_dir) - dir2angle(dir)))
 
 	// Maintain d1 < d2
 	if(d1 > d2)
 		var/temp = d1
-		d1 = d2
-		d2 = temp
+		set_d1(d2)
+		set_d2(temp)
 
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
-	update_icon()
+	changed(src)
 	if(flags & ATOM_INITIALIZED)
 		power_register()
 
@@ -271,19 +273,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+	changed(src)
 
 /obj/structure/cable/hides_under_flooring()
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/structure/cable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/cable/appearance_overlays()
-	. = list()
+/obj/structure/cable/draw(datum/look/look)
+	..()
 	// We rely on the icon state for the wire Initialize(), prevent any updates to the icon before init passed
 	if(!(flags & ATOM_INITIALIZED))
-		return .
-	icon_state = "[d1]-[d2]"
-	alpha = invisibility ? 127 : 255
+		return
+	look.state("[d1]-[d2]")
+	look.set_alpha(invisibility ? 127 : 255)
 
 // Items usable on a cable :
 //   - Wirecutters : cut it duh !
@@ -476,7 +477,6 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	. = ..()
 	apply_blueprint_effects()
 	material_engineered_id_set(src, material_id)
-	update_icon()
 	update_wclass()
 	if(material_engineered_id(src))
 		var/datum/material/material = get_material_by_name(material_engineered_id(src))
@@ -610,12 +610,10 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 
 /obj/item/stack/cable_coil/use()
 	. = ..()
-	update_icon()
 	return
 
 /obj/item/stack/cable_coil/add()
 	. = ..()
-	update_icon()
 	return
 
 ///////////////////////////////////////////////
@@ -674,10 +672,10 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	C.set_engineered_material(material_engineered_id(src))
 	C.copy_material_construction_from(src)
 	C.cableColor(color)
-	C.d1 = d1
-	C.d2 = d2
+	C.set_d1(d1)
+	C.set_d2(d2)
 	C.add_fingerprint(user)
-	C.update_icon()
+	changed(C)
 	C.power_register()
 
 	use(1)
@@ -751,11 +749,11 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 		C.set_engineered_material(material_engineered_id(src))
 		C.copy_material_construction_from(src)
 
-		C.d1 = nd1
-		C.d2 = nd2
+		C.set_d1(nd1)
+		C.set_d2(nd2)
 
 		C.add_fingerprint()
-		C.update_icon()
+		changed(C)
 		C.power_register()
 
 		use(1)
@@ -779,7 +777,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	set_amount(rand(1,2), TRUE)
 	pixel_x = rand(-2,2)
 	pixel_y = rand(-2,2)
-	update_icon()
 	update_wclass()
 
 /obj/item/stack/cable_coil/yellow
@@ -906,7 +903,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 			embed_chance = force/w_class
 		else
 			embed_chance = force/(w_class*3)
-	update_icon()
 
 /// An alien spool always shows its own state.
 /obj/item/stack/cable_coil/alien/look_state()
@@ -952,7 +948,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/alien)
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)
 			CC.set_amount(N, TRUE)
-			CC.update_icon()
 			to_chat(user,span_blue("You take [N] units of wire from the [src]."))
 			if (CC)
 				user.put_in_hands(CC)

@@ -60,7 +60,6 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 		return
 	set_active(FALSE)
 	set_power_supply(0)
-	update_icon()
 	handleInactive()
 
 /obj/machinery/power/port_gen/draw(datum/look/look)
@@ -132,6 +131,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/sheet_left = 0		//How much is left of the current sheet
 	var/temperature = 0		//The current temperature
 	var/overheating = 0		//if this gets high enough the generator explodes
+TRACKED(/obj/machinery/power/port_gen/pacman, overheating)
 
 TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
 TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
@@ -228,8 +228,8 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 	if (temperature > max_temperature)
 		overheat()
 	else if (overheating > 0)
-		overheating--
-		update_icon() //Port RS PR #484
+		set_overheating(overheating - 1)
+		changed(src) //Port RS PR #484
 
 /// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
 /obj/machinery/power/port_gen/pacman/proc/cooling_temperature()
@@ -262,12 +262,12 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 		temperature = cooling_temperature
 
 	if(overheating)
-		overheating--
-		update_icon() //Port RS PR #484
+		set_overheating(overheating - 1)
+		changed(src) //Port RS PR #484
 	return temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
-	overheating++
+	set_overheating(overheating + 1)
 	if (overheating > 60)
 		explode()
 
@@ -346,8 +346,8 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("lower_power", ui_act("lower_power"), then(PROC_REF(ui_act_lower_power)))
 	op("higher_power", ui_act("higher_power"), then(PROC_REF(ui_act_higher_power)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -679,7 +679,7 @@ CAPABILITIES(/obj/machinery/power/rtg/fake_gen)
 		span_warningplain("You hear a loud electrical crack!"))
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, 5, power_gen * 0.05, current_jumps = 1)
-	after(null, 100, GLOBAL_PROC_REF(explosion), with = list(get_turf(src), 2, 3, 4, 8)) // Not a normal explosion.
+	after(null, 10 SECONDS, GLOBAL_PROC_REF(explosion), with = list(get_turf(src), 2, 3, 4, 8)) // Not a normal explosion.
 
 /obj/machinery/power/rtg/abductor/bullet_act(obj/item/projectile/Proj)
 	. = ..()
@@ -700,13 +700,11 @@ CAPABILITIES(/obj/machinery/power/rtg/abductor)
 	A.actor.put_in_active_hand(taken)
 	state_change = TRUE
 	RefreshParts()
-	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return OP_OK
 
 /obj/machinery/power/rtg/abductor/proc/cell_inserted(datum/act/op/A)
 	RefreshParts()
-	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
 	return OP_OK
 
@@ -857,7 +855,6 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 			runner_process(L)
 	else
 		power_gen = 0
-	update_icon()
 
 /obj/machinery/power/rtg/reg/proc/runner_process(mob/living/runner)
 	if(runner.stat != CONSCIOUS)

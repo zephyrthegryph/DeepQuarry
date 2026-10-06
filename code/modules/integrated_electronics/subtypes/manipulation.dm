@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		size = initial(size)
 		complexity = initial(complexity)
 		play_sfx(src, SFX_ITEMS_CROWBAR)
-		own_take(src, nameof(installed_gun))
+		rel_take(src, nameof(installed_gun))
 	else
 		to_chat(user, span_notice("There's no weapon to remove from the mechanism."))
 	return TRUE
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 	if(!attached_grenade)
 		return
 	unobserve(attached_grenade, /datum/notice/qdeleting, src)
-	own_take(src, nameof(attached_grenade))
+	rel_take(src, nameof(attached_grenade))
 	size = initial(size)
 	desc = initial(desc)
 

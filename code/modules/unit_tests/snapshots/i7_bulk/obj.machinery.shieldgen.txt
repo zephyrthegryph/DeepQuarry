@@ -1,8 +1,6 @@
-/obj/machinery/shieldgen|human|none => shieldgen_toggle|emag:needs a cryptographic sequencer,shieldgen_repair:needs a cable coil,shieldgen_toggle_lock:needs an identification card or a PDA,shieldgen_insert_cell:needs a power cell
-/obj/machinery/shieldgen|robot|none => shieldgen_toggle|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,shieldgen_repair:needs a cable coil,shieldgen_toggle_lock:needs an identification card or a PDA,shieldgen_insert_cell:needs a power cell
+/obj/machinery/shieldgen|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/shieldgen|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shieldgen|ai|none => |
 /obj/machinery/shieldgen|ghost|none => |
-/obj/machinery/shieldgen|human|/obj/item/stack/cable_coil => shieldgen_toggle|emag:needs a cryptographic sequencer,shieldgen_repair:not possible right now,shieldgen_toggle_lock:needs an identification card or a PDA,shieldgen_insert_cell:needs a power cell
-/obj/machinery/shieldgen|human|/obj/item/card/id => shieldgen_toggle_lock,shieldgen_toggle|emag:needs a cryptographic sequencer,shieldgen_repair:needs a cable coil,shieldgen_insert_cell:needs a power cell
-/obj/machinery/shieldgen|human|/obj/item/cell => shieldgen_insert_cell,shieldgen_toggle|emag:needs a cryptographic sequencer,shieldgen_repair:needs a cable coil,shieldgen_toggle_lock:needs an identification card or a PDA
-/obj/machinery/shieldgen|human|/obj/item/card/emag => emag,shieldgen_toggle|shieldgen_repair:needs a cable coil,shieldgen_toggle_lock:needs an identification card or a PDA,shieldgen_insert_cell:needs a power cell
+/obj/machinery/shieldgen|human|/obj/item/card/emag => emag|
+

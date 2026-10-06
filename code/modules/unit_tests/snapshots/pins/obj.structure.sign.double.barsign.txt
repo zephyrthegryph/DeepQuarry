@@ -15,5 +15,7 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use (refused: Access denied.)
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/pda menu: Use (refused: Access denied.)
+human|/obj/item/pda click: Click: Use
 keys: change_sign, drag_buckle, use_screwdriver
 

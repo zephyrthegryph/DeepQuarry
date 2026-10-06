@@ -85,6 +85,6 @@ CAPABILITIES(/datum/artifact_effect/gaia)
 
 	for(var/mob/living/L in my_glitterflies)
 		if(L.stat == DEAD)
-			own_take_member(src, nameof(my_glitterflies), L)
+			rel_take(src, nameof(my_glitterflies), L)
 
 		rel_set(L.ai_brain, nameof(/datum/ai_brain::home_turf), get_turf(holder))

@@ -71,7 +71,6 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 	var/obj/machinery/gravity_generator/main/M = grav_main()
 	M.set_broken_state(M.broken_state + 1)
 	play_sfx(src, SFX_MACHINES_CLICK, 1.5)
-	M.update_icon()
 	return OP_OK
 
 /// The last rung: the generator is whole again.
@@ -259,7 +258,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 		part.sprite_number = count
 		rel_set(part, nameof(part.main_part), src)
 		rel_add(src, nameof(parts), part)
-		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()
 	return length(parts) == 8
@@ -342,7 +340,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 				set_charging_state(GRAVGEN_UP)
 
 	investigate_log("is now [charging_state == GRAVGEN_UP ? "charging" : "discharging"].", "gravity")
-	update_icon()
 
 // Set the state of the gravity.
 /obj/machinery/gravity_generator/main/proc/set_gravity_state(new_state)
@@ -365,7 +362,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 
 	update_list()
 	update_gravity(new_state)
-	update_icon()
 
 	if(alert)
 		shake_everyone()

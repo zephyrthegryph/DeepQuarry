@@ -158,7 +158,7 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	start_download()
 
 /datum/computer_file/program/nttransfer/proc/start_download()
-	rel_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
+	rel_set(src, nameof(src.downloaded_file), remote().provided_file().clone())
 	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
 
 /datum/computer_file/program/nttransfer/proc/ui_act_prg_reset(datum/act/op/A)

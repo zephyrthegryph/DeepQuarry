@@ -63,5 +63,11 @@ human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, gravity, immersion, machine_anchor, machine_deconstruct, machine_panel, machine_repair, program, ui_open, use_gripper, use_item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, gravity, immersion, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, program, ui_open, use_gripper, use_item
 

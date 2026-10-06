@@ -1,4 +1,5 @@
-/obj/machinery/power/shield_generator|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
-/obj/machinery/power/shield_generator|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/power/shield_generator|human|none => |
+/obj/machinery/power/shield_generator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/shield_generator|ai|none => |
 /obj/machinery/power/shield_generator|ghost|none => |
+

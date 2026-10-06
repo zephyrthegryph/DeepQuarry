@@ -2,3 +2,4 @@
 /obj/machinery/giga_drill|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/giga_drill|ai|none => |
 /obj/machinery/giga_drill|ghost|none => |
+

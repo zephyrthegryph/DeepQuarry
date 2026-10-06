@@ -3,3 +3,4 @@
 /obj/machinery/hologram/holopad|ai|none => gen_silicon_holopad_silicon_use|
 /obj/machinery/hologram/holopad|ghost|none => |
 /obj/machinery/hologram/holopad|human|/obj/item => holopad_request_item,holopad_request_hand|
+

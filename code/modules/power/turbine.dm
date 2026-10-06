@@ -60,6 +60,8 @@ CAPABILITIES(/obj/machinery/compressor)
 	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Compressor", "question" = "Enter a new ident tag.", "default" = nameof(comp_id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
+	extend("machine_anchor", then(PROC_REF(rewrenched)))
+	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 
 /obj/machinery/power/turbine
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -149,19 +151,6 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 /obj/machinery/compressor/proc/running(datum/act/A)
 	return starter && !has_stat(BROKEN)
 
-/obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
-	if((. = ..()))
-		rel_clear(src, nameof(turbine))
-		if(anchored)
-			rel_set(src, nameof(inturf), get_step(src, dir))
-			locate_machinery()
-			if(turbine())
-				to_chat(user, span_notice("Turbine connected."))
-				atom_fix()
-			else
-				to_chat(user, span_warning("Turbine not connected."))
-				atom_break()
-
 /// One step while started: it spins toward its target and draws in gas.
 /obj/machinery/compressor/proc/compressor_step(datum/act/timer/A)
 	if(!turbine())
@@ -237,19 +226,6 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 	if(compressor())
 		compressor().locate_machinery()
 
-/obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
-	if((. = ..()))
-		rel_clear(src, nameof(compressor))
-		if(anchored)
-			rel_set(src, nameof(outturf), get_step(src, dir))
-			locate_machinery()
-			if(compressor())
-				to_chat(user, span_notice("Compressor connected."))
-				atom_fix()
-			else
-				to_chat(user, span_warning("Compressor not connected."))
-				atom_break()
-
 /// Its compressor is started and it is whole.
 /obj/machinery/power/turbine/proc/running(datum/act/A)
 	return compressor?.starter && !has_stat(BROKEN)
@@ -298,6 +274,8 @@ CAPABILITIES(/obj/machinery/power/turbine)
 	interface("Turbine")
 	extend("ui_open", when(req_empty_hand()), needs(req_operable()))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
+	extend("machine_anchor", then(PROC_REF(rewrenched)))
+	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 
 /// /obj/machinery/power/turbine's window data.
 /obj/machinery/power/turbine/ui_data(datum/act/eval/A)
@@ -428,3 +406,28 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 /obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
 	return turbine
 
+/// After the base wrench: a secured compressor finds its turbine (and works only with one).
+/obj/machinery/compressor/proc/rewrenched(datum/act/op/A)
+	rel_clear(src, nameof(turbine))
+	if(anchored)
+		rel_set(src, nameof(inturf), get_step(src, dir))
+		locate_machinery()
+		if(turbine())
+			to_chat(A.actor, span_notice("Turbine connected."))
+			atom_fix()
+		else
+			to_chat(A.actor, span_warning("Turbine not connected."))
+			atom_break()
+
+/// After the base wrench: a secured turbine finds its compressor (and works only with one).
+/obj/machinery/power/turbine/proc/rewrenched(datum/act/op/A)
+	rel_clear(src, nameof(compressor))
+	if(anchored)
+		rel_set(src, nameof(outturf), get_step(src, dir))
+		locate_machinery()
+		if(compressor())
+			to_chat(A.actor, span_notice("Compressor connected."))
+			atom_fix()
+		else
+			to_chat(A.actor, span_warning("Compressor not connected."))
+			atom_break()

@@ -23,6 +23,7 @@
 	/// `/obj/machinery/power` is a `Producer` (verdigris/domains/power);
 	/// most never set a nonzero supply, which costs nothing.
 	var/power_supply_rate = 0
+TRACKED(/obj/machinery/power, power_region)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
@@ -200,7 +201,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 			power_grid_move_node(src, 0, region_id)
 		return
 	var/old = power_region
-	power_region = region_id
+	set_power_region(region_id)
 	power_grid_move_node(src, old, region_id)
 	power_network_changed(old, region_id)
 
@@ -212,6 +213,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 //almost never called, overwritten by all power machines but terminal and generator
 CAPABILITIES(/obj/machinery/power)
 	op("cable_place", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Lay cable"), then(PROC_REF(interaction_cable_place)))
+	extend("machine_anchor", then(PROC_REF(rewired)))
+	extend("machine_unanchor", then(PROC_REF(rewired)))
 
 /obj/machinery/power/proc/interaction_cable_place(datum/act/op/A)
 	var/mob/user = A.actor
@@ -228,12 +231,6 @@ CAPABILITIES(/obj/machinery/power)
 	return TRUE
 
 // Power machinery should also connect/disconnect from the network.
-/obj/machinery/power/wrench_act(mob/user, obj/item/W)
-	if((. = ..()))
-		if(anchored)
-			connect_to_network()
-		else
-			disconnect_from_network()
 
 // Used for power spikes by the engine, has specific effects on different machines.
 /obj/machinery/power/proc/overload(obj/machinery/power/source)
@@ -317,3 +314,10 @@ CAPABILITIES(/obj/machinery/power)
 	else if (cell)
 		cell.use(drained_energy)
 	return drained_energy
+
+/// After the base wrench: a secured power machine joins the cable under it, an unsecured one leaves it.
+/obj/machinery/power/proc/rewired(datum/act/op/A)
+	if(anchored)
+		connect_to_network()
+	else
+		disconnect_from_network()

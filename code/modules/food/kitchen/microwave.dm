@@ -50,9 +50,13 @@ CAPABILITIES(/obj/machinery/microwave)
 	without("ui_open")
 	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
 	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("microwave_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(microwave_interaction_item)))
+	op("microwave_interaction_eject_pai", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Eject pAI"), then(PROC_REF(microwave_interaction_eject_pai)))
+	op("microwave_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(microwave_interaction_hand)))
+	op("microwave_verb_eject", menu(), label("Eject content"), needs(req_adjacent(), req_capable()), then(PROC_REF(microwave_verb_eject)))
 
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
@@ -86,7 +90,7 @@ CAPABILITIES(/obj/machinery/microwave)
 	item_capacity = (advanced_microwave ? 40 : 10) * mbrating
 	reagents.maximum_volume = (advanced_microwave ? 200 : 40) * mbrating
 	efficiency = mlrating
-	active_power_usage = max(100, 2000 / caprating)
+	set_active_power_usage(max(100, 2000 / caprating))
 
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
@@ -97,8 +101,6 @@ CAPABILITIES(/obj/machinery/microwave)
 	default_apply_parts()
 
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
-	update_icon()
-
 
 // its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/on_destroy(force)
@@ -119,16 +121,19 @@ CAPABILITIES(/obj/machinery/microwave)
 		return "bloody"
 	return "clean"
 
-APPEARANCE_TEMPLATE(/obj/machinery/microwave, "mw{operating?1:}")
-DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_condition", list(
-	"b" = list(APPEARANCE_ICON_STATE = "mwb"),
-	"bloody" = list(APPEARANCE_ICON_STATE = "mwbloody0"),
-))
-DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_bloody_operating", list(
-	"1" = list(APPEARANCE_ICON_STATE = "mwbloody1"),
-))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/microwave/draw(datum/look/look)
+	..()
+	look.state("mw[operating ? "1" : ""]")
+	switch("[appearance_mw_condition()]")
+		if("b")
+			look.state("mwb")
+		if("bloody")
+			look.state("mwbloody0")
+	if(appearance_mw_bloody_operating() == 1)
+		look.state("mwbloody1")
+
 // The cooking pot keeps its own procedural icon override (fantasy_items.dm) that never calls the parent.
-APPEARANCE_NONE(/obj/machinery/microwave/cookingpot)
 
 /// Appearance reader: bloody (not broken) and running.
 /obj/machinery/microwave/proc/appearance_mw_bloody_operating()
@@ -136,38 +141,33 @@ APPEARANCE_NONE(/obj/machinery/microwave/cookingpot)
 
 /obj/machinery/microwave/proc/post_state_change()
 	update_static_data_for_all_viewers()
-	update_icon()
+	changed(src)
 	SStgui.update_uis(src)
 
-EXTEND_INTERACTIONS(/obj/machinery/microwave, \
-	INTERACT_ITEM(null, PROC_REF(microwave_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Eject pAI", PROC_REF(microwave_interaction_eject_pai)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(microwave_interaction_hand)), \
-	INTERACT_VERB("Eject content", PROC_REF(microwave_verb_eject)), \
-)
-
 /// Old attackby.
-/obj/machinery/microwave/proc/microwave_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(handle_broken(O, user)) return TRUE
-	if(handle_dirty(O, user)) return TRUE
-	if(default_part_replacement(user, O)) return TRUE
-	if(try_insert_item(O, user)) return TRUE
-	if(try_insert_reagent(O, user)) return INTERACTION_HANDLED_PASS // the container's afterattack pours
+/obj/machinery/microwave/proc/microwave_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(handle_broken(O, user)) return OP_OK
+	if(handle_dirty(O, user)) return OP_OK
+	if(default_part_replacement(user, O)) return OP_OK
+	if(try_insert_item(O, user)) return OP_OK
+	if(try_insert_reagent(O, user)) return OP_PASS // the container's afterattack pours
 	if(istype(O,/obj/item/grab))
 		var/obj/item/grab/G = O
 		to_chat(user, span_warning("Unfortunately, the laws of physics prevent you from inserting \the [G?.grab_target()] into \the [src]."))
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/paicard))
 		if(!paicard)
 			insertpai(user, O)
-			return TRUE
+			return OP_OK
 		to_chat(user, span_warning("There is already a pAI inserted, and you don't feel like cooking \the [O]."))
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/gripper)) //Grippers count as 'attacking' before the thing they're holding. Don't send a message.
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_warning("You have no idea what you can cook with \the [O]."))
 	post_state_change()
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/microwave/proc/handle_broken(obj/item/O, mob/user)
 	if(src.broken <= NOT_BROKEN)
@@ -304,16 +304,18 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	. = ..()
 
 /// Old attack_hand with Grab held: pull the pAI out. Without one, the ordinary touch.
-/obj/machinery/microwave/proc/microwave_interaction_eject_pai(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_interaction_eject_pai(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!paicard)
-		return FALSE
+		return OP_DECLINE
 	ejectpai(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand.
-/obj/machinery/microwave/proc/microwave_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /*******************
 *   Microwave Menu
@@ -604,7 +606,8 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	return ffuu
 
 /// Old Eject content verb.
-/obj/machinery/microwave/proc/microwave_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_verb_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You try to open %T% and remove its contents.")), \
 		MSG_OTHERS(span_notice("%U% tries to open %T% and remove its contents.")))
 

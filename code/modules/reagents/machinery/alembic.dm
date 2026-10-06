@@ -17,6 +17,8 @@
 	var/base_reagent = 0
 	var/product_potion = 0
 	var/expected_base = 0
+TRACKED(/obj/machinery/alembic, bubbling)
+TRACKED(/obj/machinery/alembic, potion_reagent)
 
 /// The icon_state suffix for the alembic's fill/bubbling stage.
 /obj/machinery/alembic/proc/appearance_stage()
@@ -33,17 +35,16 @@
 	look.state("alembic[appearance_stage()]")
 
 /obj/machinery/alembic/proc/alembic_no_reagent(datum/act/op/A)
-	return !potion_reagent // ALLOW(reads): the slot is read when a material is offered to it, never from a cached menu
+	return !potion_reagent
 
 /obj/machinery/alembic/proc/interaction_load_reagent(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/potion_material/O = A.held
-	src.potion_reagent = O
+	set_potion_reagent(O)
 	src.expected_base = O.base_reagent
 	src.product_potion = O.product_potion
 	user.drop_item()
 	O.forceMove(src)
-	update_icon()
 	to_chat(user, span_notice("You place the [O] in the alembic."))
 	return TRUE
 
@@ -56,7 +57,6 @@
 	src.base_reagent = O
 	user.drop_item()
 	O.forceMove(src)
-	update_icon()
 	to_chat(user, span_notice("You place the [O] in the alembic."))
 	return TRUE
 
@@ -66,12 +66,12 @@
 	return TRUE
 
 /obj/machinery/alembic/proc/brew_done(mob/user)
-	bubbling = 0
+	set_bubbling(0)
 	to_chat(user, span_notice("The alembic finishes brewing the potion!"))
 	spawn_potion()
-	potion_reagent = 0
+	set_potion_reagent(0)
 	base_reagent = 0
-	update_icon()
+	changed(src)
 
 /obj/machinery/alembic/proc/interaction_brew(datum/act/op/A)
 	var/mob/user = A.actor
@@ -79,8 +79,7 @@
 		to_chat(user, span_warning("The alembic is not yet full!"))
 		return TRUE
 	else if(potion_reagent != 0 && base_reagent != 0 && !bubbling) //if there is something in there and it's not bubbling yet
-		bubbling = 1
-		update_icon()
+		set_bubbling(1)
 		to_chat(user, span_notice("The alembic begins boiling the [potion_reagent] in the [base_reagent]."))
 		after(src, 3 SECONDS, PROC_REF(brew_done), with = list(user))
 		return TRUE
@@ -97,8 +96,7 @@
 	else if(potion_reagent != 0 && !bubbling) //if there is something in there and it's not bubbling yet
 		if(!user.incapacitated() && Adjacent(user))
 			user.put_in_hands(potion_reagent)
-			potion_reagent = 0
-			update_icon()
+			set_potion_reagent(0)
 		else
 			return TRUE
 	else if(bubbling)

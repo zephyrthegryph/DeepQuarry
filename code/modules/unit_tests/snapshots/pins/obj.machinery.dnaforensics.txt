@@ -1,62 +1,30 @@
-human|none menu: Deconstruct (refused: needs a crowbar)
-human|none menu: Insert swab
-human|none menu: Open maintenance panel (refused: needs a screwdriver)
-human|none menu: Use
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Deconstruct (refused: needs a crowbar)
-robot|none menu: Insert swab
-robot|none menu: Open maintenance panel (refused: needs a screwdriver)
-robot|none menu: Use
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Insert swab
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Insert swab
-human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/crowbar click: Click: Deconstruct
 human|/obj/item/tool/wrench menu: Insert swab
-human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wrench click: Click: Insert swab
 human|/obj/item/tool/wirecutters menu: Insert swab
-human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wirecutters click: Click: Insert swab
 human|/obj/item/multitool menu: Insert swab
-human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/multitool click: Click: Insert swab
 human|/obj/item/weldingtool menu: Insert swab
-human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/weldingtool click: Click: Insert swab
 human|/obj/item/stack/cable_coil menu: Insert swab
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/cable_coil click: Click: Insert swab
 human|/obj/item/stack/material/steel menu: Insert swab
-human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/material/steel click: Click: Insert swab
 human|/obj/item/card/id menu: Insert swab
-human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-keys: drag_buckle, ejectItem, gen_hand_ungated_interaction_open_ui, gen_item_interaction_insert_swab, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, scanItem
+human|/obj/item/card/id click: Click: Insert swab
+human|/obj/item menu: Insert swab
+human|/obj/item click: Click: Insert swab
+keys: drag_buckle, ejectItem, gen_robot_interaction_swallow, insert_swab, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, scanItem
 

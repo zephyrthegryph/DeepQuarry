@@ -219,7 +219,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 				toxvol ++
 
 		if(icon_needs_update)
-			update_icon()
+			changed(src)
 
 	if(scapacitor.get_rating() >= 5)
 		if(apc_charge())
@@ -236,7 +236,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	if(missing > 0)
 		if(ccell && ccell.checked_use(missing))
 			bcell.give(missing)
-			update_icon()
+			changed(src)
 			return
 
 		if(ismob(loc))
@@ -246,29 +246,27 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/medigun_backpack/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/medigun_backpack/draw(datum/look/look)
+	..()
 	if((bcell.percent() <= 5 ))
-		. += image('icons/obj/borkmedigun.dmi', "no_battery")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "no_battery"))
 	else if((bcell.percent() <= 25 && bcell.percent() > 5))
-		. += image('icons/obj/borkmedigun.dmi', "low_battery")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "low_battery"))
 
 	if(brutevol <= 0 && brutecharge > 0)
-		. += image('icons/obj/borkmedigun.dmi', "red")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "red"))
 	else if(brutecharge <= 0 && brutevol <= 0)
-		. += image('icons/obj/borkmedigun.dmi', "redstrike-blink")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "redstrike-blink"))
 
 	if(toxvol <= 0 && toxcharge > 0)
-		. += image('icons/obj/borkmedigun.dmi', "green")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "green"))
 	else if(toxcharge <= 0 && toxvol <= 0)
-		. += image('icons/obj/borkmedigun.dmi', "greenstrike-blink")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "greenstrike-blink"))
 
 	if(burnvol <= 0 && burncharge > 0)
-		. += image('icons/obj/borkmedigun.dmi', "orange")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "orange"))
 	else if(burncharge <= 0 && burnvol <= 0)
-		. += image('icons/obj/borkmedigun.dmi', "orangestrike-blink")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "orangestrike-blink"))
 
 /obj/item/medigun_backpack/proc/replace_icon(inhand)
 	var/obj/item/bork_medigun/medigun = get_medigun()
@@ -279,12 +277,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appeara
 			medigun.icon_state = "medblaster"
 			medigun.base_icon_state = "medblaster"
 			medigun.wielded_item_state = "medblaster-wielded"
-			medigun.update_icon()
 		else
 			medigun.icon_state = "medblaster_cmo"
 			medigun.base_icon_state = "medblaster_cmo"
 			medigun.wielded_item_state = ""
-			medigun.update_icon()
 	else if(is_twohanded())
 		icon_state = "mg-backpack"
 		item_state = "mg-backpack-onmob"
@@ -296,7 +292,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appeara
 		medigun.icon_state = "medblaster_cmo"
 		medigun.base_icon_state = "medblaster_cmo"
 
-	update_icon()
+	changed(src)
 
 /obj/item/medigun_backpack/Initialize(mapload)
 	make_tethered(medigun_path)
@@ -310,10 +306,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appeara
 		medigun.icon_state = "medblaster_cmo"
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
-		medigun.update_icon()
 	if(bcell) // declared default: starts empty
 		bcell.charge = 0
-	update_icon()
 
 OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, sbin, CHANGE_EXPLICIT)
 OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, smanipulator, CHANGE_EXPLICIT)
@@ -366,28 +360,27 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
-			own_take(src, nameof(smodule))
+			rel_take(src, nameof(smodule))
 
 		if(smanipulator)
 			smanipulator.forceMove(get_turf(loc))
-			own_take(src, nameof(smanipulator))
+			rel_take(src, nameof(smanipulator))
 			smaniptier = 0
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
-			own_take(src, nameof(slaser))
+			rel_take(src, nameof(slaser))
 
 		if(scapacitor)
 			scapacitor.forceMove(get_turf(loc))
-			own_take(src, nameof(scapacitor))
+			rel_take(src, nameof(scapacitor))
 
 		if(sbin)
 			sbin.forceMove(get_turf(loc))
-			own_take(src, nameof(sbin))
+			rel_take(src, nameof(sbin))
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))
-		update_icon()
 		return TRUE
 
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
@@ -418,7 +411,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 					return OP_PASS
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
-				update_icon()
 				return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/manipulator))
@@ -429,7 +421,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 				return OP_PASS
 			smaniptier = smanipulator.get_rating()
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
 			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/micro_laser))
@@ -439,7 +430,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 			if(!move_into(src, nameof(src.slaser), W, user))
 				return OP_PASS
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
 			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/capacitor))
@@ -476,7 +466,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 					bcell.charge = chargecap
 
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
 			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/matter_bin))
@@ -505,7 +494,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 			if(toxcharge > tankmax)
 				toxcharge = tankmax
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
 			return OP_PASS
 
 	return OP_DECLINE
@@ -562,7 +550,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("sman
 						to_chat(user, span_notice("You add [totransfer / modifier] units of [R.name] to the [src]. \n The [src] stores [round(totransfer)] U of [name]."))
 					container.reagents.remove_reagent(R.id, totransfer / modifier)
 					play_sfx(src, SFX_WEAPONS_EMPTY)
-				update_icon()
+				changed(src)
 				. = TRUE
 	return
 

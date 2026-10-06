@@ -12,10 +12,6 @@
 	var/tmp/obj/item/toppaper	//The topmost piece of paper.
 	slot_flags = SLOT_BELT
 
-/obj/item/clipboard/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/clipboard/proc/mousedrop_input(datum/act/input/A)
 	if(!handle_hand_drop(A.actor, A.over))
@@ -39,16 +35,14 @@
 			add_fingerprint(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clipboard/appearance_overlays()
-	. = list()
+/obj/item/clipboard/draw(datum/look/look)
+	..()
 	if(toppaper())
-		. += toppaper().icon_state
-		. += toppaper().overlays
+		look.overlay(toppaper().icon_state)
+		look.overlay(toppaper().overlays)
 	if(haspen())
-		. += "clipboard_pen"
-	. += "clipboard_over"
-	return .
+		look.overlay("clipboard_pen")
+	look.overlay("clipboard_over")
 
 /// Old attackby.
 /obj/item/clipboard/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -59,11 +53,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_ove
 		if(istype(W, /obj/item/paper))
 			rel_set(src, nameof(toppaper), W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
-		update_icon()
 
 	else if(istype(toppaper(), /obj/item) && istype(W, /obj/item/pen))
 		toppaper().attackby(W, user)
-		update_icon()
 
 	return INTERACTION_HANDLED_PASS
 
@@ -71,7 +63,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_ove
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
 		P.forceMove(src)
 		rel_set(src, nameof(toppaper), P)
-		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
 
 // TGUI migration. attack_self opens Clipboard.tsx; the
@@ -146,7 +137,6 @@ CAPABILITIES(/obj/item/clipboard)
 		haspen().forceMove(user.loc)
 		user.put_in_hands(haspen())
 		rel_clear(src, nameof(/obj/item/clipboard::haspen))
-		update_icon()
 	return TRUE
 
 /obj/item/clipboard/proc/ui_act_add_pen(datum/act/op/A)
@@ -160,7 +150,6 @@ CAPABILITIES(/obj/item/clipboard)
 				return TRUE
 			rel_set(src, nameof(/obj/item/clipboard::haspen), W)
 			to_chat(user, span_notice("You slot the pen into \the [src]."))
-			update_icon()
 	return TRUE
 
 /obj/item/clipboard/proc/ui_act_write(datum/act/op/A, ref)
@@ -188,7 +177,6 @@ CAPABILITIES(/obj/item/clipboard)
 		user.put_in_hands(O)
 		if(O == toppaper())
 			rel_set(src, nameof(/obj/item/clipboard::toppaper), locate_within(src, /obj/item/paper))
-		update_icon()
 	return TRUE
 
 /obj/item/clipboard/proc/ui_act_rename(datum/act/op/A, ref)

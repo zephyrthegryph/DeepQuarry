@@ -110,14 +110,12 @@ GLOBAL_VAR(bomb_set)
 		flick("nuclearbombc", src)
 	return OP_OK
 
-/obj/machinery/nuclearbomb/wirecutter_act(mob/user, obj/item/tool)
-	add_fingerprint(user)
+/// The wirecutters or a multitool: behind the open cover, the wiring window.
+/obj/machinery/nuclearbomb/proc/wire_tool_used(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(opened == 1)
-		nukehack_win(user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/nuclearbomb/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
+		nukehack_win(A.actor)
+	return OP_OK
 
 /obj/machinery/nuclearbomb/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -228,13 +226,14 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
 	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended_holds))), then(PROC_REF(interaction_insert_disk)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal)), req(PROC_REF(can_make_deployable_holds), because = PROC_REF(can_make_deployable_refusal))), then(PROC_REF(interaction_make_deployable)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 
@@ -546,7 +545,7 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 
 			if(GLOB.blackbox)
 				GLOB.blackbox.save_all_data_to_sql()
-			after(null, 30 SECONDS, /proc/nuke_reboot)
+			after(null, 30 SECONDS, GLOBAL_PROC_REF(nuke_reboot))
 
 /proc/nuke_reboot()
 	log_game("Rebooting due to nuclear detonation")

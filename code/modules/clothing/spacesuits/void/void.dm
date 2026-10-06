@@ -146,7 +146,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 	hood.forceMove(get_turf(src))
 	hood.set_light_flags(hood.light_flags & ~LIGHT_ATTACHED)
-	own_take(src, nameof(hood))
+	rel_take(src, nameof(hood))
 
 /obj/item/clothing/suit/space/void/ui_action_click(mob/living/user, action_name)
 	if(..())
@@ -238,10 +238,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	var/obj/item/removing = null
 	if(tank)
 		removing = tank
-		own_take(src, nameof(tank))
+		rel_take(src, nameof(tank))
 	else
 		removing = cooler
-		own_take(src, nameof(cooler))
+		rel_take(src, nameof(cooler))
 	to_chat(H, span_danger("You press the emergency release, ejecting \the [removing] from your suit."))
 	play_sfx(src.loc, SFX_MACHINES_CLICK, 1.5)
 	removing.canremove = TRUE
@@ -410,12 +410,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
 			tank.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(tank))
+			rel_take(src, nameof(tank))
 		else if(choice == cooler)
 			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
 			cooler.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(cooler))
+			rel_take(src, nameof(cooler))
 		else if(choice == hood)
 			to_chat(user, "You detach \the [hood] from \the [src]'s helmet mount.")
 			remove_helmet()
@@ -424,7 +424,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
 			boots.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(boots))
+			rel_take(src, nameof(boots))
 	else
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
@@ -448,17 +448,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
 			tank.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(tank))
+			rel_take(src, nameof(tank))
 		else if(choice == cooler)
 			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
 			cooler.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(cooler))
+			rel_take(src, nameof(cooler))
 		else if(choice == boots)
 			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
 			boots.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(boots))
+			rel_take(src, nameof(boots))
 	else
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS

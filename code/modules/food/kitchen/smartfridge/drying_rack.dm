@@ -26,16 +26,13 @@ CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
 	..()
 	if(stored_count())
 		dry()
-		update_icon()
 		return
 	return PROCESS_KILL
 
 /obj/machinery/smartfridge/drying_rack/has_pending_work()
 	return ..() || stored_count()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/smartfridge/drying_rack/appearance_overlays()
-	. = list()
+/obj/machinery/smartfridge/drying_rack/look_parts(datum/look/look)
 	var/not_working = !operable()
 	var/hasItems
 	for(var/datum/stored_item/I in item_records)
@@ -44,14 +41,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 			break
 	if(hasItems)
 		if(not_working)
-			icon_state = "[icon_base]-plant-off"
+			look.state("[icon_base]-plant-off")
 		else
-			icon_state = "[icon_base]-plant"
+			look.state("[icon_base]-plant")
 	else
 		if(not_working)
-			icon_state = "[icon_base]-off"
+			look.state("[icon_base]-off")
 		else
-			icon_state = "[icon_base]"
+			look.state("[icon_base]")
 
 /obj/machinery/smartfridge/drying_rack/proc/dry()
 	for(var/datum/stored_item/I in item_records)

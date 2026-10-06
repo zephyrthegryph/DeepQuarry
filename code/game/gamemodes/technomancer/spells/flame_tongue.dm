@@ -58,6 +58,6 @@ CAPABILITIES(/obj/item/spell/flame_tongue)
 		if(welder && user && (welder.loc == user))
 			welder.forceMove(src)
 		else
-			own_take(src, nameof(welder))
+			rel_take(src, nameof(welder))
 			consume(src, user)
 			return

@@ -2,3 +2,4 @@
 /obj/machinery/gear_dispenser/suit_fancy|robot|none => gen_hand_ungated_interaction_use|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/gear_dispenser/suit_fancy|ai|none => |
 /obj/machinery/gear_dispenser/suit_fancy|ghost|none => |
+

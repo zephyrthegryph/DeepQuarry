@@ -59,7 +59,7 @@ CAPABILITIES(/datum/tgs_api/v5)
 	access_identifier = world.params[DMAPI5_PARAM_ACCESS_IDENTIFIER]
 
 	var/datum/tgs_version/api_version = ApiVersion()
-	own_clear(src, nameof(version), OWN_DELETE) // we want this to be the TGS version, not the interop version
+	rel_clear(src, nameof(version)) // we want this to be the TGS version, not the interop version
 
 	// sleep once to prevent an issue where world.Export on the first tick can hang indefinitely
 	TGS_DEBUG_LOG("Starting Export bug prevention sleep tick. time:[world.time] sleep_offline:[world.sleep_offline]")

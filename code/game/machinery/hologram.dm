@@ -50,6 +50,7 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(masters))
 	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
+	display_disconnect_op()
 
 /obj/machinery/hologram/holopad/declare_interactions(list/into)
 	into += list(
@@ -69,9 +70,6 @@ CAPABILITIES(/obj/machinery/hologram/holopad)
 	id = "holopad_request_hand"
 	name = "Request AI presence"
 	effect = /obj/machinery/hologram/holopad/proc/interaction_request
-
-/obj/machinery/hologram/holopad/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
 
 /obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
 	if(!istype(user))
@@ -197,7 +195,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		rel_clear(user, nameof(user.holo))
 	var/obj/effect/overlay/aiholo/old_holo = hologram_of(user)
 	if(old_holo)
-		own_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
+		rel_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
 	rel_remove(src, nameof(masters), user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
 		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)

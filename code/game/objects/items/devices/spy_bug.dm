@@ -48,7 +48,7 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
-	own_clear(src, nameof(camera), OWN_DELETE)
+	rel_clear(src, nameof(camera))
 	rel_set(src, nameof(camera), new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 

@@ -238,14 +238,14 @@
 	visible_message(span_warning("\The [src] spits out \the [disk()]."))
 	rel_clear(src, nameof(current_br))
 	disk().forceMove(get_turf(src))
-	own_take(src, nameof(disk))
+	rel_take(src, nameof(disk))
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_view_b_rec(datum/act/op/A, ref)
 	view_b_rec(ref)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_clear_b_rec(datum/act/op/A)
-	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
+	rel_clear(src, nameof(src.current_br))
 	return OP_OK
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_view_m_rec(datum/act/op/A, ref)
@@ -263,10 +263,10 @@
 		. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_ejectdisk(datum/act/op/A)
-	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
+	rel_clear(src, nameof(src.current_br))
 	if(disk())
 		disk().forceMove(get_turf(src))
-		own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
+		rel_take(src, nameof(disk))
 	return OP_OK
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_create(datum/act/op/A)
@@ -690,4 +690,4 @@ CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
 	op("selectsleever", ui_act("selectsleever", arg("ref", schema_ref(/obj/machinery/transhuman/resleever))), then(PROC_REF(ui_act_selectsleever)))
 	op("menu", ui_act("menu", arg("num", num(1, 3))), then(PROC_REF(ui_act_menu)))
 	op("sleeve", ui_act("sleeve", arg("mode", num())), then(PROC_REF(act_sleeve)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))

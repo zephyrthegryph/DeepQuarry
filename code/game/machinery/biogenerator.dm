@@ -150,8 +150,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 /obj/machinery/biogenerator/proc/ui_act_detach(datum/act/op/A)
 	if(beaker)
 		beaker.forceMove(loc)
-		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
-		update_icon()
+		rel_take(src, nameof(/obj/machinery/biogenerator::beaker))
 	return TRUE
 
 /obj/machinery/biogenerator/proc/ui_act_purchase(datum/act/op/A, raw_amount, cat, raw_name)
@@ -208,14 +207,17 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	return TRUE
 
 /obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
-	update_icon()
+	changed(src)
 
 /obj/machinery/biogenerator/proc/appearance_state()
 	if(!beaker)
 		return "empty"
 	return processing ? "work" : "stand"
 
-APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/biogenerator/draw(datum/look/look)
+	..()
+	look.state("biogen-[appearance_state()]")
 
 /obj/machinery/biogenerator/proc/interaction_insert(datum/act/op/A)
 	var/mob/user = A.actor
@@ -259,7 +261,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 			if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
 				return TRUE
 			to_chat(user, span_notice("You put \the [O] in \the [src]"))
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/biogenerator/proc/interaction_use(datum/act/op/A)
@@ -290,7 +292,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 		return
 
 	processing = 1
-	update_icon()
+	changed(src)
 	play_sfx(src, SFX_MACHINES_BLENDER, 0.8)
 	use_power(S * 30)
 	after(src, (S * (0.1 SECONDS) + 1.5 SECONDS) / eat_eff, PROC_REF(finish_processing))
@@ -299,7 +301,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 	processing = 0
 	SStgui.update_uis(src)
 	play_sfx(src, SFX_MACHINES_BIOGENERATOR_END)
-	update_icon()
+	changed(src)
 
 /obj/machinery/biogenerator/RefreshParts()
 	..()

@@ -59,5 +59,11 @@ human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-keys: adjust_power, adjust_time, climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, start_stop, test_alarm, test_drive, toggle_door, ui_open, use_gripper, use_item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+keys: adjust_power, adjust_time, climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_impl, start_stop, test_alarm, test_drive, toggle_door, ui_open, use_gripper, use_item
 

@@ -2,3 +2,4 @@
 /obj/machinery/porta_turret_construct|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/porta_turret_construct|ai|none => |
 /obj/machinery/porta_turret_construct|ghost|none => |
+

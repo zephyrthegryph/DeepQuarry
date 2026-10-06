@@ -5,7 +5,7 @@
 
 /datum/event/ianstorm/announce()
 	GLOB.command_announcement.Announce("It has come to our attention that the [using_map.facility_type] passed through an ion storm.  Please monitor all electronic equipment for malfunctions.", "Anomaly Alert", ANNOUNCER_MSG_IANSTORM)
-	after(src, 7 SECONDS, /proc/delayed_command_announcement, with = list("Wait. No, that's wrong. The [using_map.facility_type] passed through an IAN storm!.", "Ian Alert"))
+	after(src, 7 SECONDS, GLOBAL_PROC_REF(delayed_command_announcement), with = list("Wait. No, that's wrong. The [using_map.facility_type] passed through an IAN storm!.", "Ian Alert"))
 
 /datum/event/ianstorm/start()
 	for(var/mob/living/carbon/human/C in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))

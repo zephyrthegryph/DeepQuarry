@@ -1,5 +1,5 @@
-/obj/machinery/mineral/mint|human|none => |gen_insert_interaction_press:needs an item
-/obj/machinery/mineral/mint|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_press:needs an item
+/obj/machinery/mineral/mint|human|none => |
+/obj/machinery/mineral/mint|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/mineral/mint|ai|none => |
 /obj/machinery/mineral/mint|ghost|none => |
-/obj/machinery/mineral/mint|human|/obj/item/stack/material => gen_insert_interaction_press|
+

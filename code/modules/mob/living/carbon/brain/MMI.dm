@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 /// organ keeps its lesions, so damage and treatment carry on.
 /obj/item/mmi/proc/eject_brain(atom/destination, reason = "ejected")
 	// Detached before it leaves our contents; set_brain(null) below then only drops the tissue.
-	var/obj/item/organ/internal/brain/brain = brainobj ? own_take(src, nameof(brainobj)) : null
+	var/obj/item/organ/internal/brain/brain = brainobj ? rel_take(src, nameof(brainobj)) : null
 	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
 		brain = new(destination)
 	brain.preserved = FALSE
@@ -289,7 +289,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	else
 		reset_search()
 	unobserve(Q, /datum/notice/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	rel_clear(src, nameof(Q)) //get rid of the query
 
 /obj/item/mmi/digital/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	if(get_occupant()?.key)
@@ -388,7 +388,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 
 /obj/item/mmi/inert/Initialize(mapload)
 	. = ..()
-	own_clear(src, nameof(mind_host), OWN_DELETE)
+	rel_clear(src, nameof(mind_host))
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.

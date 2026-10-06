@@ -1,0 +1,19 @@
+/obj/machinery/computer/timeclock icon: icons/obj/machines/timeclock_vr.dmi
+/obj/machinery/computer/timeclock state: timeclock
+/obj/machinery/computer/timeclock dir: 2
+/obj/machinery/computer/timeclock/premade icon: icons/obj/machines/timeclock_vr.dmi
+/obj/machinery/computer/timeclock/premade state: timeclock
+/obj/machinery/computer/timeclock/premade dir: 2
+/obj/machinery/computer/timeclock/premade/north icon: icons/obj/machines/timeclock_vr.dmi
+/obj/machinery/computer/timeclock/premade/north state: timeclock
+/obj/machinery/computer/timeclock/premade/north dir: 2
+/obj/machinery/computer/timeclock/premade/south icon: icons/obj/machines/timeclock_vr.dmi
+/obj/machinery/computer/timeclock/premade/south state: timeclock
+/obj/machinery/computer/timeclock/premade/south dir: 1
+/obj/machinery/computer/timeclock/premade/east icon: icons/obj/machines/timeclock_vr.dmi
+/obj/machinery/computer/timeclock/premade/east state: timeclock
+/obj/machinery/computer/timeclock/premade/east dir: 8
+/obj/machinery/computer/timeclock/premade/west icon: icons/obj/machines/timeclock_vr.dmi
+/obj/machinery/computer/timeclock/premade/west state: timeclock
+/obj/machinery/computer/timeclock/premade/west dir: 4
+

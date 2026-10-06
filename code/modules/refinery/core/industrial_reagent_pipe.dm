@@ -11,6 +11,7 @@
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
+	without("reagent_refinery_set_transfer_amount")
 	climb()
 
 /obj/machinery/reagent_refinery/pipe/Initialize(mapload)
@@ -18,7 +19,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/pipe/refinery_step()
 	if(!anchored)
@@ -29,11 +29,10 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/pipe/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/pipe/draw(datum/look/look)
+	..()
 	if(anchored)
-		. += update_input_connection_overlays("pipe_intakes")
+		look.overlay(update_input_connection_overlays("pipe_intakes"))
 
 /obj/machinery/reagent_refinery/pipe/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!
@@ -46,6 +45,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/ato
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SINGLEOUTPUT|REFINERY_TUTORIAL_NOPOWER, .)
 
-/obj/machinery/reagent_refinery/pipe/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

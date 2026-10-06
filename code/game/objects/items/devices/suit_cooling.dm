@@ -116,12 +116,12 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 		return
 
 	set_on(1)
-	update_icon()
+	changed(src)
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
 	set_on(0)
-	update_icon()
+	changed(src)
 
 /obj/item/suit_cooling_unit/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -135,8 +135,7 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 		cell.update_icon()
 
 		to_chat(user, "You remove \the [src.cell].")
-		own_take(src, nameof(cell))
-		update_icon()
+		rel_take(src, nameof(cell))
 		return
 
 	toggle(user)
@@ -158,7 +157,6 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 			if(!move_into(src, nameof(src.cell), W, user))
 				return TRUE
 			to_chat(user, "You insert the [cell].")
-	update_icon()
 	return TRUE
 
 /obj/item/suit_cooling_unit/proc/screwdriver_used(datum/act/op/A)
@@ -167,37 +165,35 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 	cover_open = !cover_open
 	to_chat(user, "You [cover_open ? "unscrew" : "screw"] the panel [cover_open ? "open" : "into place"].")
 	playsound(src, tool.usesound, 50, 1)
-	update_icon()
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/suit_cooling_unit/appearance_overlays()
-	. = list()
+/obj/item/suit_cooling_unit/draw(datum/look/look)
+	..()
 	if(cover_open)
 		if(cell)
-			icon_state = "suitcooler1"
+			look.state("suitcooler1")
 		else
-			icon_state = "suitcooler2"
-		return .
+			look.state("suitcooler2")
+		return
 
-	icon_state = "suitcooler0"
+	look.state("suitcooler0")
 
 	if(!cell || !on)
-		return .
+		return
 
 	switch(round(cell.percent()))
 		if(86 to INFINITY)
-			. += "battery-0"
+			look.overlay("battery-0")
 		if(69 to 85)
-			. += "battery-1"
+			look.overlay("battery-1")
 		if(52 to 68)
-			. += "battery-2"
+			look.overlay("battery-2")
 		if(35 to 51)
-			. += "battery-3"
+			look.overlay("battery-3")
 		if(18 to 34)
-			. += "battery-4"
+			look.overlay("battery-4")
 		if(-INFINITY to 17)
-			. += "battery-5"
+			look.overlay("battery-5")
 
 /obj/item/suit_cooling_unit/examine(mob/user)
 	. = ..()
@@ -228,7 +224,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, TYPE_PROC_REF(/atom, appear
 	cell = /obj/item/cell
 	w_class = ITEMSIZE_NORMAL
 
-APPEARANCE_NONE(/obj/item/suit_cooling_unit/emergency)
+/// The look (the draw sweep: from APPEARANCE_NONE).
+/obj/item/suit_cooling_unit/emergency/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
+	look.hide("battery-0")
+	look.hide("battery-1")
+	look.hide("battery-2")
+	look.hide("battery-3")
+	look.hide("battery-4")
+	look.hide("battery-5")
 
 /obj/item/suit_cooling_unit/emergency/get_cell()
 	if(on)

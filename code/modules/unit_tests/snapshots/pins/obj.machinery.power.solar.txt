@@ -37,5 +37,8 @@ human|/obj/item/card/id menu: Climb (refused: There's a material processor in th
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id click: nothing
-keys: cable_place, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remove_glass, strike
+human|/obj/item menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item menu: Strike
+human|/obj/item click: nothing
+keys: cable_place, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, remove_glass, strike
 

@@ -43,7 +43,7 @@
 	client.images = null				//remove the images such as AIs being unable to see runes
 	client.screen = list()				//remove hud items just in case
 	if(hud_used)
-		own_clear(src, nameof(hud_used), OWN_DELETE) // remove the owned HUD objects
+		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
 
 	next_move = 1

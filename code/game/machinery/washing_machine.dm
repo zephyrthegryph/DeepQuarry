@@ -33,6 +33,11 @@
 CAPABILITIES(/obj/machinery/washing_machine)
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
+	extend("machine_panel", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_anchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_unanchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/washing_machine/Initialize(mapload)
@@ -84,7 +89,6 @@ CAPABILITIES(/obj/machinery/washing_machine)
 		set_state(BLOODY_RUNNING)
 	else
 		set_state(RUNNING)
-	update_icon()
 	visible_message("The washing machine starts a cycle.")
 	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
@@ -118,7 +122,6 @@ CAPABILITIES(/obj/machinery/washing_machine)
 		gibs_ready = TRUE
 	else
 		set_state(FULL_CLOSED)
-	update_icon()
 
 /datum/interaction/machine_verb/washing_machine_climb_out
 	id = "washing_machine_climb_out"
@@ -156,8 +159,12 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
 
-APPEARANCE_TEMPLATE(/obj/machinery/washing_machine, "wm_{state}")
-DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/washing_machine/draw(datum/look/look)
+	..()
+	look.state("wm_[state]")
+	if(panel_open == 1)
+		look.overlay("panel")
 
 /datum/interaction/machine_item/washing_machine_use_item
 	id = "washing_machine_use_item"
@@ -202,7 +209,6 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 		else
 			to_chat(user, span_notice("The washing machine is full."))
 	//else: old fell through to a bare ..() (approximated as a no-op)
-	update_icon()
 	return TRUE
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
@@ -215,14 +221,9 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	else
 		to_chat(user, "You can't shove [G?.grab_target()] in unless the washer is empty and open!")
 
-/obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/washing_machine/crowbar_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/washing_machine/wrench_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
+/// Maintenance only on an empty, shut machine (otherwise the tool's click is taken and nothing happens).
+/obj/machinery/washing_machine/proc/idle_and_empty(datum/act/op/A)
+	return state == EMPTY_CLOSED && !LAZYLEN(washing)
 
 /datum/interaction/machine_hand/ungated/washing_machine_use
 	id = "washing_machine_use"
@@ -240,14 +241,14 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 			eject_dye()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			own_take_all(src, nameof(washing))
+			rel_take(src, nameof(washing))
 		if(FULL_OPEN)
 			set_state(FULL_CLOSED)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			eject_dye()
-			own_take_all(src, nameof(washing))
+			rel_take(src, nameof(washing))
 			set_state(EMPTY_OPEN)
 		if(RUNNING)
 			if(user)
@@ -265,9 +266,8 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 				O.forceMove(get_turf(src))
 			eject_dye()
 			set_state(EMPTY_OPEN)
-			own_take_all(src, nameof(washing))
+			rel_take(src, nameof(washing))
 
-	update_icon()
 	return TRUE
 
 #undef EMPTY_OPEN

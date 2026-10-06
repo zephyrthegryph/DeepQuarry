@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
 	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds), because = PROC_REF(has_crystal_slot_refusal))), then(PROC_REF(interaction_insert_crystal)))
 	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
 
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		return FALSE
 	if(inserted_gps)
 		inserted_gps.forceMove(loc)
-		own_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
+		rel_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/ui_act_setmemory(datum/act/op/A)
@@ -330,7 +330,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
-	for(var/obj/item/I as anything in own_take_all(src, nameof(crystals)))
+	for(var/obj/item/I as anything in rel_take(src, nameof(crystals)))
 		I.forceMove(src.loc)
 	distance = 0
 

@@ -83,5 +83,24 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item menu: Collect (refused: needs a storage)
+human|/obj/item menu: Customise (refused: needs an item)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pick up
+human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item click: nothing
+human|/obj/item/reagent_containers menu: Collect (refused: needs a storage)
+human|/obj/item/reagent_containers menu: Customise (refused: needs an item)
+human|/obj/item/reagent_containers menu: Move To Top
+human|/obj/item/reagent_containers menu: Pick up
+human|/obj/item/reagent_containers menu: Revive
+human|/obj/item/reagent_containers menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/reagent_containers click: Click: Revive
+human|/obj/item/assembly/signaler/anomaly menu: Collect (refused: needs a storage)
+human|/obj/item/assembly/signaler/anomaly menu: Customise (refused: needs an item)
+human|/obj/item/assembly/signaler/anomaly menu: Move To Top
+human|/obj/item/assembly/signaler/anomaly menu: Pick up
+human|/obj/item/assembly/signaler/anomaly menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/assembly/signaler/anomaly click: nothing
 keys: bite, butcher, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, install_core, remove_core, revive
 

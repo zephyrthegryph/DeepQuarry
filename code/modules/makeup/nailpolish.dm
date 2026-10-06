@@ -135,10 +135,12 @@ CAPABILITIES(/obj/item/nailpolish_remover)
 	var/mob/user = A.actor
 	open = !open
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
-	update_icon()
 	return TRUE
 
-APPEARANCE_TEMPLATE(/obj/item/nailpolish_remover, "{initial(icon_state)}{open?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/item/nailpolish_remover/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][open ? "-open" : ""]")
 
 /obj/item/nailpolish_remover/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(!open)

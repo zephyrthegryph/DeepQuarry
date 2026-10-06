@@ -202,7 +202,7 @@ TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
-		update_icon()
+		changed(src)
 	..()
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/close(mob/user as mob)
@@ -210,7 +210,7 @@ TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
-		update_icon()
+		changed(src)
 	..()
 
 /obj/item/clothing/mask/chewable/candy

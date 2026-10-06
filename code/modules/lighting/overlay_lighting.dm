@@ -168,17 +168,17 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_holder(null)
 	clean_old_turfs()
 	if(owner?.overlay_light == src)
-		own_take(owner, nameof(owner.overlay_light))
+		rel_take(owner, nameof(owner.overlay_light))
 	rel_clear(src, nameof(owner))
 	// The mask, cone and directional atom refuse any delete that isn't
 	// forced (only we may delete them). Phase 4's owned-var sweep qdels
 	// without force, so release them here, forced, before it runs.
 	spent(visible_mask, force = TRUE)
-	own_take(src, nameof(visible_mask))
+	rel_take(src, nameof(visible_mask))
 	spent(directional_atom, force = TRUE)
-	own_take(src, nameof(directional_atom))
+	rel_take(src, nameof(directional_atom))
 	spent(cone, force = TRUE)
-	own_take(src, nameof(cone))
+	rel_take(src, nameof(cone))
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()

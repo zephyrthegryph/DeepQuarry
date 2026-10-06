@@ -120,7 +120,6 @@
 	move_direction = SOUTH
 	docking_controller_tag = "escape_shuttle"
 
-
 /obj/machinery/computer/shuttle_control/emergency
 	shuttle_tag = "Escape"
 	var/debug = 0
@@ -185,13 +184,14 @@
 		set_emagged(1)
 		return 1
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/emergency, \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_scan_id), "Scan ID"), \
-)
+CAPABILITIES(/obj/machinery/computer/shuttle_control/emergency)
+	op("scan_id", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Scan ID"), then(PROC_REF(interaction_scan_id)))
 
-/obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	read_authorization(W, user)
-	return FALSE
+	return OP_DECLINE
 
 /// Accessor for the radio_connection var.
 /datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency

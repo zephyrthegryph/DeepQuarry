@@ -140,11 +140,29 @@ Class Procs:
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
+TRACKED(/obj/machinery, active_power_usage)
+TRACKED(/obj/machinery, power_channel)
 
 CAPABILITIES(/obj/machinery)
 	owns_one(nameof(circuit), /obj/item/circuitboard)
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
+	section(maintenance, "The panel, deconstruct, secure and weld repair that the type's maintenance_flags offer (machinery_maintenance.dm)")
+	op("machine_panel", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Open maintenance panel"),
+		when(req(PROC_REF(maint_offers_panel))), when(cond_not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
+	op("machine_panel_close", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Close maintenance panel"),
+		// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
+		when(req(PROC_REF(maint_offers_panel))), when(nameof(panel_open)), says(MSG(interaction/maintenance_panel/close)), then(PROC_REF(toggle_maintenance_panel)))
+	op("machine_deconstruct", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Deconstruct"), when(req(PROC_REF(maint_offers_frame))),
+		needs(req(PROC_REF(maintenance_panel_open), because = MSG(interaction/maintenance_panel/closed))), then(PROC_REF(maintenance_deconstruct)))
+	op("machine_anchor", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_wrench_wait)), label("Secure"),
+		when(req(PROC_REF(maint_offers_wrench))), when(cond_not(nameof(anchored))), needs(req(PROC_REF(maintenance_panel_shut), because = MSG(interaction/maintenance_panel/opened))),
+		begins(MSG(start/interaction/machine_anchor/secure)), says(MSG(interaction/machine_anchor/secure)), then(PROC_REF(toggle_maintenance_anchor)))
+	op("machine_unanchor", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_wrench_wait)), label("Unsecure"),
+		when(req(PROC_REF(maint_offers_wrench))), when(nameof(anchored)), needs(req(PROC_REF(maintenance_panel_shut), because = MSG(interaction/maintenance_panel/opened))),
+		begins(MSG(start/interaction/machine_anchor/unsecure)), says(MSG(interaction/machine_anchor/unsecure)), then(PROC_REF(toggle_maintenance_anchor)))
+	op("machine_repair", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_weld_wait)), label("Repair"), when(req(PROC_REF(maint_offers_repair))),
+		needs(req(PROC_REF(maintenance_is_damaged), because = MSG(interaction/machine_repair/intact))), says(MSG(interaction/machine_repair)), then(PROC_REF(maintenance_repair)))
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
@@ -420,7 +438,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 	if(component_parts)
 		return
 	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
-	own_take_all(src, nameof(component_parts))
+	rel_take(src, nameof(component_parts))
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
 			continue
@@ -571,7 +589,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 /// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
 /// RefreshParts() call included) asks the ledger an exact question.
 /obj/machinery/proc/default_apply_parts()
-	own_take_all(src, nameof(component_parts))
+	rel_take(src, nameof(component_parts))
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
@@ -629,19 +647,24 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 /// Focused-hook implementation for monitor-style machines that dismantle directly
 /// rather than exposing a maintenance panel.
-/obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
-	if(!circuit)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start disconnecting the monitor.", receiver = src, on_done = PROC_REF(deconstruct_display_tool_done), done_args = list(user))
-	return TRUE
+MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor.")
 
-/obj/machinery/proc/deconstruct_display_tool_done(mob/user)
+/// A wall display's screwdriver (status displays, holopads, newscasters, account terminals): after 2 s the monitor comes off its board.
+/// With no board the click is taken and nothing happens. Declared by each display: op("disconnect_display", ...) below.
+/proc/display_disconnect_op()
+	return op("disconnect_display", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(2 SECONDS), label("Disconnect monitor"),
+		needs(req(TYPE_PROC_REF(/obj/machinery, has_board), silent = TRUE)), begins(MSG(machine/display_disconnecting)), then(TYPE_PROC_REF(/obj/machinery, display_disconnected)))
+
+/obj/machinery/proc/has_board(datum/act/op/A)
+	return !!circuit
+
+/obj/machinery/proc/display_disconnected(datum/act/op/A)
 	if(has_stat(BROKEN))
-		to_chat(user, span_notice("The broken glass falls out."))
+		to_chat(A.actor, span_notice("The broken glass falls out."))
 		new /obj/item/material/shard(loc)
 	else
-		to_chat(user, span_notice("You disconnect the monitor."))
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+		to_chat(A.actor, span_notice("You disconnect the monitor."))
+	return dismantle() ? OP_OK : OP_DECLINE
 
 /obj/machinery/proc/dismantle()
 	PUBLISH_LEGACY(src, /datum/notice/obj_deconstruct, FALSE)
@@ -673,10 +696,10 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		for(var/obj/D in component_parts)
 			D.forceMove(src.loc)
 		if(A.components)
-			own_take_all(A, nameof(A.components))
+			rel_take(A, nameof(A.components))
 		else
-			own_take_all(A, nameof(A.components))
-		own_take_all(src, nameof(component_parts))
+			rel_take(A, nameof(A.components))
+		rel_take(src, nameof(component_parts))
 		A.check_components()
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
@@ -709,8 +732,8 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	// generic contents-to-turf pass, so materialize before letting go of them.
 	materialize_circuit()
 	materialize_parts()
-	own_take_all(src, nameof(component_parts))
-	own_take(src, nameof(circuit))
+	rel_take(src, nameof(component_parts))
+	rel_take(src, nameof(circuit))
 	return ..()
 
 /obj/machinery/atom_destruction(damage_flag)
@@ -815,3 +838,19 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 /// The maintenance panel is open.
 OM_FIELD(/obj/machinery, panel_open, FALSE, CHANGE_MACHINE_PANEL)
+
+/// Who is in the machine's sealed occupant slot `slot_id` (a /datum/om/relation/slot/occupant), or null. The accessor requirements read: the slot
+/// publishes OCCUPANT_KEY when someone gets in or out (code/datums/containment/occupant_slot.dm), so a cached menu follows it.
+/obj/machinery/proc/slot_occupant(slot_id)
+	return slot_item(slot_id)
+
+READS_AS(/obj/machinery/proc/slot_occupant, OCCUPANT_KEY)
+
+/// The machine's maintenance panel is shut (a legacy machine panel, maintenance_flags; not a capability door): the requirement of an op
+/// that must not reach into an open machine.
+/obj/machinery/proc/maintenance_panel_shut(datum/act/op/A)
+	return !panel_open
+
+/// The machine's maintenance panel is open (a legacy machine panel): an op that works on what is behind it.
+/obj/machinery/proc/maintenance_panel_open(datum/act/op/A)
+	return panel_open

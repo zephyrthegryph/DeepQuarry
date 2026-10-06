@@ -245,11 +245,15 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 
 		alert = (pressure < ONE_ATMOSPHERE*0.8)
 
-		update_icon()
+		changed(src)
 	register_gas_dependencies()
 
-APPEARANCE_TEMPLATE(/obj/machinery/airlock_sensor, "airlock_sensor_{on?@appearance_mode:off}")
-DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "airlock_sensor_open")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/airlock_sensor/draw(datum/look/look)
+	..()
+	look.state("airlock_sensor_[on ? appearance_mode() : "off"]")
+	if(panel_open == 1)
+		look.state("airlock_sensor_open")
 
 /obj/machinery/airlock_sensor/proc/appearance_mode()
 	return alert ? "alert" : "standby"
@@ -345,8 +349,12 @@ CAPABILITIES(/obj/machinery/access_button)
 	flick("access_button_cycle", src)
 	return OP_OK
 
-APPEARANCE_TEMPLATE(/obj/machinery/access_button, "access_button_{on?standby:off}")
-DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "access_button_open")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/access_button/draw(datum/look/look)
+	..()
+	look.state("access_button_[on ? "standby" : "off"]")
+	if(panel_open == 1)
+		look.state("access_button_open")
 
 /obj/machinery/access_button/examine(mob/user, infix, suffix)
 	. = ..()

@@ -1,0 +1,9 @@
+/obj/structure/picnic_blanket_deployed icon: icons/obj/picnic_vr.dmi
+/obj/structure/picnic_blanket_deployed state: picnic_central
+/obj/structure/picnic_blanket_deployed dir: 2
+/obj/structure/picnic_blanket_deployed overlay: icons/obj/picnic_vr.dmi:picnic_central:8:#000000
+/obj/structure/picnic_blanket_deployed/for_mapping_use icon: icons/obj/picnic_vr.dmi
+/obj/structure/picnic_blanket_deployed/for_mapping_use state: picnic_central
+/obj/structure/picnic_blanket_deployed/for_mapping_use dir: 2
+/obj/structure/picnic_blanket_deployed/for_mapping_use overlay: icons/obj/picnic_vr.dmi:picnic_central:8:#000000
+

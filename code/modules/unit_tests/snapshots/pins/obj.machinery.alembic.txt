@@ -45,5 +45,19 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Take reagent
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-keys: brew, drag_buckle, gen_robot_interaction_swallow, load_base, load_reagent, machine_anchor, machine_deconstruct, machine_panel, machine_repair, no_use, take_reagent
+human|/obj/item/potion_material menu: Boil
+human|/obj/item/potion_material menu: Place reagent
+human|/obj/item/potion_material menu: Take reagent
+human|/obj/item/potion_material menu: Use
+human|/obj/item/potion_material click: Click: Place reagent
+human|/obj/item/potion_base menu: Boil
+human|/obj/item/potion_base menu: Place base
+human|/obj/item/potion_base menu: Take reagent
+human|/obj/item/potion_base menu: Use
+human|/obj/item/potion_base click: Click: Place base
+human|/obj/item menu: Boil
+human|/obj/item menu: Take reagent
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+keys: brew, drag_buckle, gen_robot_interaction_swallow, load_base, load_reagent, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, no_use, take_reagent
 

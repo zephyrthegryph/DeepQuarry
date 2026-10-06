@@ -1,5 +1,6 @@
-/obj/machinery/recharge_station|human|none => recharge_station_eject,recharge_station_enter|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,recharge_station_part_replacement:needs a rapid part exchange device,recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
-/obj/machinery/recharge_station|robot|none => recharge_station_eject,recharge_station_enter|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,recharge_station_part_replacement:needs a rapid part exchange device,recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
+/obj/machinery/recharge_station|human|none => recharge_station_eject,recharge_station_enter|recharge_station_part_replacement:needs a rapid part exchange device,recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
+/obj/machinery/recharge_station|robot|none => recharge_station_eject,recharge_station_enter|gen_robot_interaction_swallow:not possible right now,recharge_station_part_replacement:needs a rapid part exchange device,recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
 /obj/machinery/recharge_station|ai|none => |
 /obj/machinery/recharge_station|ghost|none => |
-/obj/machinery/recharge_station|human|/obj/item/storage/part_replacer => recharge_station_part_replacement,recharge_station_eject,recharge_station_enter|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
+/obj/machinery/recharge_station|human|/obj/item/storage/part_replacer => recharge_station_part_replacement,recharge_station_eject,recharge_station_enter|recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
+

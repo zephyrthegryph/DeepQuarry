@@ -37,6 +37,8 @@ CAPABILITIES(/obj/machinery/station_map)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(watching_mob), wakes_on = list(nameof(watching_mob)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	owns_one(nameof(holomap_datum), starts = /datum/station_holomap)
+	op("watch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Watch"), needs(req_is(nameof(watching_mob), FALSE, because = MSG(station_map/watched)), req_on_holder_turf(because = MSG(station_map/stand_in_front))), then(PROC_REF(interaction_watch)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
 OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETTINGS)
@@ -72,24 +74,16 @@ OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETT
 
 	after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 
-EXTEND_INTERACTIONS(/obj/machinery/station_map, \
-	INTERACT_HAND_UNGATED("Watch", PROC_REF(interaction_watch), REQ_TARGET_STATE(/obj/machinery/station_map/proc/can_watch)), \
-	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_fingerprint), "Touch"), \
-)
+MSG_DEF_SELF(station_map/watched, "someone else is currently watching the holomap")
+MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 
-/// Requirement: TRUE, or why the user can't watch the holomap.
-/obj/machinery/station_map/proc/can_watch(mob/user, atom/target, obj/item/held)
-	if(watching_mob() && (watching_mob() != user))
-		return "someone else is currently watching the holomap"
-	if(user.loc != loc)
-		return "you need to stand in front of \the [src]"
-	return TRUE
 
-/obj/machinery/station_map/proc/interaction_watch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/station_map/proc/interaction_watch(datum/act/op/A)
+	var/mob/user = A.actor
 	if(watching_mob())
-		return TRUE
+		return OP_OK
 	startWatching(user)
-	return TRUE
+	return OP_OK
 
 // Let people bump up against it to watch
 /// Something walked into it (the bump action's notice).
@@ -167,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/machinery/station_map, \
 			if(QDELETED(watcher))
 				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
 			else
-				after(watcher, 0.5 SECONDS, /proc/remove_client_image, with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
+				after(watcher, 0.5 SECONDS, GLOBAL_PROC_REF(remove_client_image), with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
 		unobserve(watcher, /datum/notice/movable_attempted_move, src)
 		unobserve(watcher, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(watching_mob))
@@ -245,7 +239,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appeara
 	var/id // used for icon_state of the marker on maps
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
-
 
 /// The watching_mob this refers to (a relation view: null once that is deleted).
 /obj/machinery/station_map/proc/watching_mob() as /mob

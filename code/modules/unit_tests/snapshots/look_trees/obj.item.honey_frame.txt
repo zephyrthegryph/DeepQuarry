@@ -1,0 +1,10 @@
+/obj/item/honey_frame icon: icons/obj/beekeeping.dmi
+/obj/item/honey_frame state: honeyframe
+/obj/item/honey_frame dir: 2
+/obj/item/honey_frame overlay: icons/obj/beekeeping.dmi:honeyframe:8:#000000
+/obj/item/honey_frame/filled icon: icons/obj/beekeeping.dmi
+/obj/item/honey_frame/filled state: honeyframe
+/obj/item/honey_frame/filled dir: 2
+/obj/item/honey_frame/filled overlay: icons/obj/beekeeping.dmi:honeycomb:-32767
+/obj/item/honey_frame/filled overlay: icons/obj/beekeeping.dmi:honeyframe:8:#000000 x2
+

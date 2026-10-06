@@ -1,0 +1,5 @@
+/obj/item/chainsaw icon: icons/obj/weapons.dmi
+/obj/item/chainsaw state: chainsaw0
+/obj/item/chainsaw dir: 2
+/obj/item/chainsaw overlay: icons/obj/weapons.dmi:chainsaw0:8:#000000
+

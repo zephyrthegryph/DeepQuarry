@@ -748,7 +748,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 		act_message(user, src, others = span_notice("After a few attempts, %U% manages to light %T%."))
 
 		set_light(2, 0.5, "#FF9933")
-		update_icon()
 	else
 		set_lit(FALSE)
 		icon_state = "lighter"
@@ -756,7 +755,6 @@ CAPABILITIES(/obj/item/flame/lighter)
 		act_message(user, src, others = span_notice("%U% quietly shuts off %T%."))
 
 		set_light(0)
-		update_icon()
 	return OP_OK
 
 /obj/item/flame/lighter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

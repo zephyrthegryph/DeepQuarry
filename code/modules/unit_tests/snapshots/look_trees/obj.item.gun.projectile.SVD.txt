@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/SVD icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/SVD state: SVD
+/obj/item/gun/projectile/SVD dir: 2
+/obj/item/gun/projectile/SVD overlay: icons/obj/gun.dmi:SVD:8:#000000
+

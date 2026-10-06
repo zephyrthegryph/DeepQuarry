@@ -82,7 +82,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	if(!downloaded_file)
 		return
 	generate_network_log("Aborted download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
-	own_clear(src, nameof(downloaded_file), OWN_DELETE) // null already when store_file() took it
+	rel_clear(src, nameof(downloaded_file)) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -93,7 +93,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
 		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
-	own_clear(src, nameof(downloaded_file), OWN_DELETE) // null already when store_file() took it
+	rel_clear(src, nameof(downloaded_file)) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -133,7 +133,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	if(downloaderror)
 		download_completion = 0
 		download_netspeed = 0
-		own_clear(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), OWN_DELETE) // null already when store_file() took it
+		rel_clear(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file)) // null already when store_file() took it
 		downloaderror = ""
 	return OP_OK
 

@@ -25,6 +25,11 @@
 	var/flick_state
 	/// list(range, power, color) from look.light(), or null for no light from the look.
 	var/list/light_spec
+	/// look.held_state(): the item_state hands draw this item with, or null (unchanged).
+	var/held_state
+	/// look.identity(): the name and description shown, or null (unchanged).
+	var/identity_name
+	var/identity_desc
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -46,13 +51,23 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	filters = null
 	vis = null
 	flick_state = null
+	held_state = null
+	identity_name = null
+	identity_desc = null
 	touched = FALSE
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
-/// that draws its own broken state after ..()).
+/// that draws its own broken state after ..()). Returns `name`, so a draw that builds on the state it
+/// chose can keep it: `state = look.state("[base]-open")`.
 /datum/look/proc/state(name)
 	icon_state = name
 	touched = TRUE
+	return name
+
+/// The base icon_state this draw has chosen so far (a parent's draw, a capability), else the one `A` shows now.
+/// A draw that refines the state ("[state]-busy") starts from it.
+/datum/look/proc/state_so_far(atom/A)
+	return isnull(icon_state) ? A.icon_state : icon_state
 
 /// An overlay icon_state (or an image / mutable_appearance), added only `when` is true. `icon`
 /// draws the state from another icon file than the holder's (one shared image per icon and state).
@@ -280,14 +295,32 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		return
 	light_spec = list(range, power, color)
 
+/// The holder's light is off while this look shows (set_light(0)), even when its type starts lit.
+/datum/look/proc/light_off()
+	touched = TRUE
+	light_spec = list(0, 0, null)
+
 /// A one-shot animation state, played when this look is applied.
+/// The state hands draw this item with (its item_state). The holder's hands are redrawn when it changes. A draw that does
+/// not call it leaves the item_state as it is (a reskin or a script may have set it).
+/datum/look/proc/held_state(state)
+	held_state = state
+	touched = TRUE
+
+/// What the thing is called and how it is described. Null leaves either as it is; a draw that does not call it changes
+/// neither (a player's rename stays).
+/datum/look/proc/identity(name = null, desc = null)
+	identity_name = name
+	identity_desc = desc
+	touched = TRUE
+
 /datum/look/proc/play_flick(name)
 	flick_state = name
 	touched = TRUE
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state, light_spec ? jointext(light_spec, ",") : null)
+	var/list/parts = list(icon_state, "[icon]", color, alpha, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
@@ -340,6 +373,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /datum/look/proc/apply_to(atom/A)
 	var/was = A.look_set_bits
 	var/now = 0
+	var/old_icon = A.icon
+	var/old_state = A.icon_state
 	if(!isnull(icon))
 		A.icon = icon
 		now |= LOOK_SET_ICON
@@ -359,6 +394,11 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_ICON_STATE
 	else if(was & LOOK_SET_ICON_STATE)
 		A.icon_state = initial(A.icon_state)
+	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
+		look_resync_emissive_blocker(A, old_icon, old_state)
+		if(isitem(A))
+			var/obj/item/I = A
+			I.update_held_icon() // a hand that holds it draws the new sprite
 	if(!isnull(color))
 		A.color = color
 		now |= LOOK_SET_COLOR
@@ -390,7 +430,9 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_LAYER)
 		A.layer = initial(A.layer)
 	if(light_spec)
-		if(light_spec[3])
+		if(!light_spec[1])
+			A.set_light(0) // light_off(): the range only, so the power and colour stay for the next light
+		else if(light_spec[3])
 			A.set_light(light_spec[1], light_spec[2], light_spec[3])
 		else
 			A.set_light(light_spec[1], light_spec[2])
@@ -398,6 +440,15 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_LIGHT)
 		A.set_light(0)
 	A.look_set_bits = now
+	if(!isnull(identity_name))
+		A.name = identity_name
+	if(!isnull(identity_desc))
+		A.desc = identity_desc
+	if(!isnull(held_state) && isitem(A))
+		var/obj/item/held_item = A
+		if(held_item.item_state != held_state)
+			held_item.item_state = held_state
+			held_item.update_held_icon()
 	if(A.look_overlays)
 		A.cut_overlay(A.look_overlays)
 		A.look_overlays = null
@@ -484,3 +535,29 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 	else
 		LAZYREMOVE(engine.look_flashes, state)
 	changed(A)
+
+/// A layer built in one call: a draw writes nothing, not even the members of an image it made, so a tinted, faded or re-planed
+/// layer is made here and handed to look.overlay(). (mutable_appearance() takes the layer, plane, alpha and flags; this adds the colour.)
+/proc/look_appearance(icon, icon_state = "", color = null, alpha = 255, layer = FLOAT_LAYER, plane = FLOAT_PLANE, appearance_flags = NONE)
+	var/mutable_appearance/MA = mutable_appearance(icon, icon_state, layer, plane, alpha, appearance_flags)
+	if(!isnull(color))
+		MA.color = color
+	return MA
+
+/// A movable's generic emissive blocker is a copy of its sprite taken at init (/atom/movable/Initialize()). When a look
+/// changes the sprite, the copy follows it, so the blocker keeps the shape of what is drawn rather than of the state the
+/// type started in.
+/proc/look_resync_emissive_blocker(atom/movable/AM, old_icon, old_state)
+	if(AM.blocks_emissive != EMISSIVE_BLOCK_GENERIC || !AM.priority_overlays)
+		return
+	var/list/entries = islist(AM.priority_overlays) ? AM.priority_overlays : list(AM.priority_overlays)
+	for(var/mutable_appearance/old in entries)
+		if(old.plane != PLANE_EMISSIVE || old.icon != old_icon || old.icon_state != old_state)
+			continue
+		var/mutable_appearance/blocker = mutable_appearance(AM.icon, AM.icon_state, plane = PLANE_EMISSIVE, alpha = AM.alpha)
+		blocker.color = GLOB.em_block_color
+		blocker.dir = AM.dir
+		blocker.appearance_flags |= AM.appearance_flags
+		AM.cut_overlay(list(old), TRUE)
+		AM.add_overlay(list(blocker), TRUE)
+		return

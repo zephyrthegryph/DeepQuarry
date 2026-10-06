@@ -37,5 +37,23 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Store
 human|/obj/item/card/id menu: Swipe
 human|/obj/item/card/id click: Click: Swipe
-keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, secure, store, swipe_id
+human|/obj/item/analyzer menu: Eject Particle Focus Contents
+human|/obj/item/analyzer menu: Store
+human|/obj/item/analyzer menu: Use
+human|/obj/item/analyzer click: Click: Use
+human|/obj/item/stack/material menu: Eject Particle Focus Contents
+human|/obj/item/stack/material menu: Fill target
+human|/obj/item/stack/material menu: Store
+human|/obj/item/stack/material click: Click: Fill target
+human|/obj/item/reagent_containers/glass/beaker menu: Attach container
+human|/obj/item/reagent_containers/glass/beaker menu: Eject Particle Focus Contents
+human|/obj/item/reagent_containers/glass/beaker menu: Open or close the lid
+human|/obj/item/reagent_containers/glass/beaker menu: Set transfer amount
+human|/obj/item/reagent_containers/glass/beaker menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass/beaker menu: Store
+human|/obj/item/reagent_containers/glass/beaker click: Click: Attach container
+human|/obj/item menu: Eject Particle Focus Contents
+human|/obj/item menu: Store
+human|/obj/item click: Click: Store
+keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, secure, store, swipe_id
 

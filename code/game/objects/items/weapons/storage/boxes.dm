@@ -475,7 +475,6 @@ CAPABILITIES(/obj/item/storage/box/matches)
 			act_message(A.actor, null, others = span_notice("%U% manages to light the match on the matchbox."))
 		else
 			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_HIT)
-	W.update_icon()
 	return OP_OK
 
 /obj/item/storage/box/autoinjectors

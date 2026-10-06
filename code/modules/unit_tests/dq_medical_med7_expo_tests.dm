@@ -23,7 +23,7 @@
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
 	TEST_ASSERT(H.body.treatment_levels()?[TREAT_TISSUE_REPAIR] > 0, "setup: bicaridine repairs tissue")
 	var/old_allergens = H.species.medallergens
-	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
+	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.medallergens |= proto.medallergen_type
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
 	var/allergic_level = H.body.treatment_levels()?[TREAT_TISSUE_REPAIR] || 0

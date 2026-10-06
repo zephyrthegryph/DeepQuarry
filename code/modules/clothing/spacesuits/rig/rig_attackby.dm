@@ -134,7 +134,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/tank/removed_tank = air_supply
 	user.put_in_hands(removed_tank)
-	own_take(src, nameof(air_supply))
+	rel_take(src, nameof(air_supply))
 	to_chat(user, "You detach and remove \the [removed_tank].")
 	return ITEM_INTERACT_SUCCESS
 
@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		for(var/obj/item/rig_module/module in installed_modules)
 			module.deactivate(FALSE, user)
 		user.put_in_hands(cell)
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		return ITEM_INTERACT_SUCCESS
 	var/list/possible_removals = list()
 	for(var/obj/item/rig_module/module in installed_modules)

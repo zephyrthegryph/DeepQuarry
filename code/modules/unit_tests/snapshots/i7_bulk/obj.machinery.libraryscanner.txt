@@ -2,3 +2,4 @@
 /obj/machinery/libraryscanner|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/libraryscanner|ai|none => |
 /obj/machinery/libraryscanner|ghost|none => |
+

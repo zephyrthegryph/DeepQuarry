@@ -29,7 +29,6 @@
 /obj/item/stack/rods/Initialize(mapload)
 	. = ..()
 	recipes = GLOB.rods_recipes
-	update_icon()
 
 /// A few rods show their count; a pile shows the plain state.
 /obj/item/stack/rods/look_state()

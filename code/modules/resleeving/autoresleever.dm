@@ -16,7 +16,10 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/autoresleever, "autoresleever{appearance_faulty?-o:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/transhuman/autoresleever/draw(datum/look/look)
+	..()
+	look.state("autoresleever[appearance_faulty() ? "-o" : ""]")
 
 /obj/machinery/transhuman/autoresleever/proc/appearance_faulty()
 	return has_stat(BROKEN | MAINT | EMPED)
@@ -29,7 +32,6 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 /// Old attack_ghost.
 /obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	update_icon()
 	if(spawn_slots == 0)
 		to_chat(user, span_warning("There are no more respawn slots."))
 		return
@@ -62,7 +64,6 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 
 /// Old attackby: let's not let people mess with this.
 /obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(mob/user, obj/item/held, datum/interaction/interaction)
-	update_icon()
 	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)
@@ -265,7 +266,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		if(ELAPSED(record, last_notification, CLOCK_WORLD) < 30 MINUTES)
 			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", HAS_SYNTHETIC_BIOLOGY(new_character) ? "Science" : "Medical")
 		if(record.nif_path)
-			after(new_character, 0, /proc/resleeve_restore_nif, with = list(new_character, record)) //Wait a moment for nif to do its thing if there is one
+			after(new_character, 0, GLOBAL_PROC_REF(resleeve_restore_nif), with = list(new_character, record)) //Wait a moment for nif to do its thing if there is one
 
 	if(!new_character.dna)
 		CRASH("[new_character] just came out of an autosleever and has no DNA! Species: [new_character.species] as mob: [new_character.type]. NIF Status: [new_character.nif]")
@@ -275,7 +276,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	var/obj/item/nif/nif = new_character.nif
 	if(!nif)
 		nif = new record.nif_path(new_character,null,record.nif_savedata)
-	after(nif, 0, /proc/install_nif_software, with = list(nif, record.nif_software, record.nif_durability))
+	after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, record.nif_software, record.nif_durability))
 
 /// Installs `software` (NIFsoft types) in the NIF, then restores its durability if given.
 /proc/install_nif_software(obj/item/nif/nif, list/software, durability)

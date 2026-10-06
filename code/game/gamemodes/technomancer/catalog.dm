@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 /obj/item/technomancer_catalog/apprentice/set_up()
 	..()
 	for(var/datum/technomancer/assistance/apprentice/A in assistance_instances)
-		own_remove(src, nameof(assistance_instances), A)
+		rel_remove(src, nameof(assistance_instances), A)
 
 // Proc: show_categories()
 // Parameters: 1 (category - the category link to display)

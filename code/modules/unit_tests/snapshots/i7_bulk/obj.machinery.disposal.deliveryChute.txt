@@ -1,4 +1,5 @@
-/obj/machinery/disposal/deliveryChute|human|none => gen_alt_interaction_swallow,disposal_insert,disposal_drag_insert,disposal_use,disposal_flush,disposal_force_eject|
-/obj/machinery/disposal/deliveryChute|robot|none => gen_alt_interaction_swallow,disposal_insert,disposal_drag_insert,disposal_use,disposal_flush,disposal_force_eject|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/disposal/deliveryChute|human|none => disposal_insert,disposal_drag_insert,disposal_use,disposal_flush,disposal_force_eject|
+/obj/machinery/disposal/deliveryChute|robot|none => disposal_insert,disposal_drag_insert,disposal_use,disposal_flush,disposal_force_eject|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/disposal/deliveryChute|ai|none => |
 /obj/machinery/disposal/deliveryChute|ghost|none => |
+

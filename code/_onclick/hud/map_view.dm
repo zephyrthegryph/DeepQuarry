@@ -33,7 +33,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg)
 	assigned_map = map_key
 	set_position(1, 1)
 
-	own_clear(src, nameof(popup_plane_masters), OWN_DELETE)
+	rel_clear(src, nameof(popup_plane_masters))
 	for(var/atom/movable/screen/fresh as anything in get_tgui_plane_masters())
 		rel_add(src, nameof(popup_plane_masters), fresh)
 

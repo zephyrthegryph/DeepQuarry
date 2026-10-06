@@ -1,0 +1,5 @@
+/obj/machinery/transhuman/autoresleever icon: icons/obj/machines/autoresleever.dmi
+/obj/machinery/transhuman/autoresleever state: autoresleever
+/obj/machinery/transhuman/autoresleever dir: 2
+/obj/machinery/transhuman/autoresleever overlay: icons/obj/machines/autoresleever.dmi:autoresleever:8:#000000
+

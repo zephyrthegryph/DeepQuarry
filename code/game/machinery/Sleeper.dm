@@ -133,7 +133,6 @@ CAPABILITIES(/obj/machinery/sleeper)
 /obj/machinery/sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0

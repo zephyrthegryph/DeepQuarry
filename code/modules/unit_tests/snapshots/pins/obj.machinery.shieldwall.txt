@@ -1,29 +1,28 @@
 human|none menu: Touch
-human|none click: nothing
+human|none click: Click: Touch
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Touch
-robot|none click: nothing
+robot|none click: Click: Touch
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Touch
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Touch
 human|/obj/item/tool/crowbar menu: Touch
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Touch
 human|/obj/item/tool/wrench menu: Touch
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Touch
 human|/obj/item/tool/wirecutters menu: Touch
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Touch
 human|/obj/item/multitool menu: Touch
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Touch
 human|/obj/item/weldingtool menu: Touch
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Touch
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Touch
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Touch
 human|/obj/item/stack/material/steel menu: Touch
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Touch
 human|/obj/item/card/id menu: Touch
-human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_hand_ungated_interaction_swallow, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+human|/obj/item/card/id click: Click: Touch
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, swallow
 

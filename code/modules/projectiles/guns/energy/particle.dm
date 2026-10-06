@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/gun/energy/particle)
 	if(!attached_safety)
 		return
 	to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
-	user.put_in_hands(own_take(src, nameof(attached_safety)))
+	user.put_in_hands(rel_take(src, nameof(attached_safety)))
 	safetycatch = 0
 
 /// Old attackby.

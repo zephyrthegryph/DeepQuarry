@@ -108,7 +108,7 @@
 	if(halitem_client && halitem)
 		halitem_client.screen -= halitem
 	rel_clear(src, nameof(halitem_client))
-	own_clear(src, nameof(halitem), OWN_DELETE)
+	rel_clear(src, nameof(halitem))
 
 /datum/hallucinations/proc/event_strange_sound()
 	PROTECTED_PROC(TRUE)

@@ -361,7 +361,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	new_stack.set_processed_material(material.name)
 	own_clear(new_stack, nameof(new_stack.batch_state), OWN_DELETE)
 	rel_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
-	own_clear(src, nameof(batch_state), OWN_DELETE)
+	rel_clear(src, nameof(batch_state))
 	rel_set(src, nameof(batch_state), original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
 	spent(original)
 	return new_stack
@@ -403,7 +403,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	processed_target.update_thermal_processing()
 	if(!QDELETED(src))
 		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
-		own_clear(src, nameof(batch_state), OWN_DELETE)
+		rel_clear(src, nameof(batch_state))
 		rel_set(src, nameof(batch_state), new_source)
 		update_thermal_processing()
 	consumed(source_portion, src)

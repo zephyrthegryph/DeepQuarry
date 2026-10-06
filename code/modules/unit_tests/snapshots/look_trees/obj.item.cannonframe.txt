@@ -1,0 +1,5 @@
+/obj/item/cannonframe icon: icons/obj/weapons.dmi
+/obj/item/cannonframe state: pneumatic0
+/obj/item/cannonframe dir: 2
+/obj/item/cannonframe overlay: icons/obj/weapons.dmi:pneumatic0:8:#000000
+

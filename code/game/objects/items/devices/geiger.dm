@@ -96,9 +96,8 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		if(!geiger_sound)
 			rel_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
 	else
-		own_clear(src, nameof(geiger_sound), OWN_DELETE)
+		rel_clear(src, nameof(geiger_sound))
 
-	update_icon()
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
 	return OP_OK
 
@@ -142,15 +141,11 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		insulation_deficit = null
 	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "geiger_perceived_danger_reset")
 
-	if (scanning)
-		update_icon()
 
 /obj/item/geiger/proc/reset_perceived_danger()
 	set_last_perceived_radiation_danger(null)
 	last_radiation_strength = null
 	insulation_deficit = null
-	if (scanning)
-		update_icon()
 
 /obj/item/geiger/proc/scan(atom/target, mob/user)
 	var/datum/act/geiger_scan/scan = ACT_TRY(target, geiger_scan, user, src)
@@ -174,7 +169,6 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 /obj/item/geiger/proc/reset_counts(datum/act/op/A)
 	to_chat(A.actor, span_notice("You flush [src]'s radiation counts, resetting it to normal."))
 	set_last_perceived_radiation_danger(null)
-	update_icon()
 	return OP_OK
 
 /obj/item/geiger/wall

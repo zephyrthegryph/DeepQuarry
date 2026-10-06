@@ -99,7 +99,7 @@
 		for(var/datum/data/pda/P in notifying_programs)
 			if(P in C.programs)
 				P.unnotify()
-		own_take(src, nameof(/obj/item/pda::cartridge))
+		rel_take(src, nameof(/obj/item/pda::cartridge))
 		update_shortcuts()
 
 /obj/item/pda/proc/ui_act_authenticate(datum/act/op/A)

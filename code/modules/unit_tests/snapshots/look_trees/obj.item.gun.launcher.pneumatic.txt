@@ -1,0 +1,5 @@
+/obj/item/gun/launcher/pneumatic icon: icons/obj/gun.dmi
+/obj/item/gun/launcher/pneumatic state: pneumatic
+/obj/item/gun/launcher/pneumatic dir: 2
+/obj/item/gun/launcher/pneumatic overlay: icons/obj/gun.dmi:pneumatic:8:#000000
+

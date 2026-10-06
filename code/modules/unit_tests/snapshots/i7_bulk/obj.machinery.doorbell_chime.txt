@@ -1,6 +1,5 @@
-/obj/machinery/doorbell_chime|human|none => |machine_panel:needs a screwdriver,gen_insert_interaction_fingerprint:needs an item,gen_insert_interaction_part_replacement:needs a rapid part exchange device
-/obj/machinery/doorbell_chime|robot|none => |machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_fingerprint:needs an item,gen_insert_interaction_part_replacement:needs a rapid part exchange device
+/obj/machinery/doorbell_chime|human|none => |
+/obj/machinery/doorbell_chime|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/doorbell_chime|ai|none => |
 /obj/machinery/doorbell_chime|ghost|none => |
-/obj/machinery/doorbell_chime|human|/obj/item => gen_insert_interaction_fingerprint|machine_panel:needs a screwdriver,gen_insert_interaction_part_replacement:needs a rapid part exchange device
-/obj/machinery/doorbell_chime|human|/obj/item/storage/part_replacer => gen_insert_interaction_fingerprint,gen_insert_interaction_part_replacement|machine_panel:needs a screwdriver
+

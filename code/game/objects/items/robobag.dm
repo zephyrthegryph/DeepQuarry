@@ -60,7 +60,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 	var/obj/item/clothing/accessory/badge/old_tag = corptag
 	old_tag.forceMove(get_turf(A.actor))
 	to_chat(A.actor, span_notice("You remove \the [old_tag] from \the [src]."))
-	own_take(src, nameof(corptag))
+	rel_take(src, nameof(corptag))
 	update_icon()
 	return OP_OK
 
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 	var/turf/T = get_turf(src)
 	if(corptag && T)
 		corptag.forceMove(T)
-		own_take(src, nameof(corptag))
+		rel_take(src, nameof(corptag))
 	..()
 
 /obj/structure/closet/body_bag/cryobag/robobag/Entered(atom/movable/AM)
@@ -99,7 +99,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 	if(corptag)
 		var/old_tag = corptag
 		corptag.forceMove(get_turf(src))
-		own_take(src, nameof(src.corptag))
+		rel_take(src, nameof(src.corptag))
 		if(!user.unEquip(W))
 			return OP_REFUSED
 		W.moveToNullspace()

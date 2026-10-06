@@ -2,3 +2,4 @@
 /obj/machinery/computer/fusion_core_control|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/fusion_core_control|ai|none => |
 /obj/machinery/computer/fusion_core_control|ghost|none => |
+

@@ -98,5 +98,13 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item/stack/material menu: Collect (refused: needs a storage)
+human|/obj/item/stack/material menu: Customise (refused: needs an item)
+human|/obj/item/stack/material menu: Flip Pipe
+human|/obj/item/stack/material menu: Form material (refused: It already has a material liner and shell.)
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Pick up
+human|/obj/item/stack/material menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/material click: Click: Form material
 keys: drag_buckle, fasten, flip, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, line, rotate
 

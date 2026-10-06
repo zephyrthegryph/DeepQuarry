@@ -38,7 +38,11 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("vr_sleeper_scan", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_scan)))
+	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant_holds))), then(PROC_REF(interaction_enter)))
+	op("vr_sleeper_eject", menu(), label("Eject VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_climb_in)))
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -60,7 +64,6 @@ OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADD
 	. = ..()
 	default_apply_parts()
 	rel_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
-	update_icon()
 
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
 /obj/machinery/vr_sleeper/lifecycle_dematerialize()
@@ -81,7 +84,10 @@ OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADD
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		occupant.exit_vr(FALSE)
 
-APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/vr_sleeper/draw(datum/look/look)
+	..()
+	look.state("[base_state][appearance_occupied()]")
 
 /// 1 while the pod holds an occupant, else 0.
 /obj/machinery/vr_sleeper/proc/appearance_occupied()
@@ -93,30 +99,21 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	if(occupant)
 		. += span_notice("[occupant] is inside.")
 
+/// Requirement (was REQ_* drag_meant): the legacy check answers TRUE to pass.
+/obj/machinery/vr_sleeper/proc/drag_meant_holds(datum/act/op/A)
+	var/mob/typed_held = A.held
+	var/answer = drag_meant(A.actor, src, typed_held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/vr_sleeper/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/vr_sleeper_scan,
-		/datum/interaction/machine_drag/vr_sleeper_enter,
-		/datum/interaction/machine_verb/vr_sleeper_eject,
-		/datum/interaction/machine_verb/vr_sleeper_climb_in,
-	)
-	..()
-
-/// Old attackby: always fingerprints, then lets a medical scanner analyze the occupant.
-/datum/interaction/machine_item/vr_sleeper_scan
-	id = "vr_sleeper_scan"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/vr_sleeper/proc/interaction_scan
-
-/obj/machinery/vr_sleeper/proc/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/proc/interaction_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
 		I.attack(occupant, user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/vr_sleeper/proc/crowbar_used(datum/act/op/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
@@ -128,23 +125,18 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 		perform_exit()
 	return OP_DECLINE
 
-/datum/interaction/machine_drag/vr_sleeper_enter
-	id = "vr_sleeper_enter"
-	name = "Insert"
-	held_type = /mob
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vr_sleeper/proc/drag_meant, null))
-	effect = /obj/machinery/vr_sleeper/proc/interaction_enter
-
 /// The old MouseDrop_T guard for the dragged mob.
 /obj/machinery/vr_sleeper/proc/drag_meant(mob/actor, atom/target, mob/dropping)
 	return isliving(dropping)
 
-/obj/machinery/vr_sleeper/proc/interaction_enter(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/proc/interaction_enter(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	var/mob/target = dropping
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !isliving(target))
-		return TRUE
+		return OP_OK
 	go_in(target, user)
-	return TRUE
+	return OP_OK
 
 /// An EMP throws the occupant out of VR, maybe frying their brain on the way.
 /obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/act/hit/emp/A)
@@ -166,14 +158,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 		perform_exit()
 	return HOOK_DECLINE
 
-/datum/interaction/machine_verb/vr_sleeper_eject
-	id = "vr_sleeper_eject"
-	name = "Eject VR Capsule"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/vr_sleeper/proc/interaction_eject
-
-/obj/machinery/vr_sleeper/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable() || occupant && occupant.stat == DEAD)
 		perform_exit()
@@ -182,14 +168,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	add_fingerprint(user)
 	return TRUE
 
-/datum/interaction/machine_verb/vr_sleeper_climb_in
-	id = "vr_sleeper_climb_in"
-	name = "Enter VR Capsule"
-	category = INTERACTION_CAT_INSERT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/vr_sleeper/proc/interaction_climb_in
-
-/obj/machinery/vr_sleeper/proc/interaction_climb_in(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/proc/interaction_climb_in(datum/act/op/A)
+	var/mob/user = A.actor
 	go_in(user, user)
 	add_fingerprint(user)
 	return TRUE
@@ -230,7 +210,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	if(!move_into(src, OCCUPANT_SLOT_VR_POD, M))
 		return
 
-	update_icon()
 
 	if(M.has_brain_worms())
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
@@ -421,7 +400,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 		if(istype(M)) // Sanity check, though shouldn't be needed since this is already checked by the proc.
 			M.revert_mob_tf()
 	occupant.enter_vr(avatar())
-
 
 /// avatar (a relation view: it reads null once the target is deleted).
 /obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human

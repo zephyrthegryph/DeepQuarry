@@ -125,11 +125,12 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	op("recycle", ui_act("recycle"), then(PROC_REF(ui_act_recycle)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_is(nameof(door_open), TRUE, because = MSG(maint_recycler/door_open)), req_is(nameof(inserted_item), FALSE, because = /datum/msg/req_failed)), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
-
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
@@ -157,7 +158,6 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	rel_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
 	item_overlay.layer = src.layer-0.1
 	src.vis_contents |= item_overlay
-
 
 	//ditto for the monitor and door. sure, these COULD be overlays, but that is way more effort
 
@@ -190,20 +190,19 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.04, vary = FALSE)
 	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/machinery/maint_recycler, \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Insert", REQ_FIELD("door_open", "its door isn't open"), REQ_FIELD_NOT("inserted_item")), \
-	INTERACT_HAND("Use", PROC_REF(interaction_use)), \
-)
+MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 
-/obj/machinery/maint_recycler/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/maint_recycler/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	switch(get_item_whitelist(O))
 		if(RECYCLER_FORBIDDEN) //the usual stuff.
 			deny_act(O,user)
-			return TRUE
+			return OP_OK
 
 		if(RECYCLER_EVIL)
 			evil_act(O,user)
-			return TRUE
+			return OP_OK
 
 	if(istype(O,/obj/item/holder))
 		var/obj/item/holder/h = O
@@ -212,14 +211,14 @@ EXTEND_INTERACTIONS(/obj/machinery/maint_recycler, \
 		var/consent = mob_consent_check(m, PROC_REF(interaction_attackby), args)
 		if(isnull(consent))
 			to_chat(user, span_notice("You hold \the [O] over \the [src]'s processing compartment..."))
-			return TRUE
+			return OP_OK
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		if(consent)
 			if(user in range(1,src))
 				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
 				move_into(src, nameof(src.inserted_item), m, user)
 			else
-				return TRUE //too far away, dumbass.
+				return OP_OK //too far away, dumbass.
 		else
 			deny_act(O,user)
 	else
@@ -227,7 +226,7 @@ EXTEND_INTERACTIONS(/obj/machinery/maint_recycler, \
 		move_into(src, nameof(src.inserted_item), O, user)
 
 	update_icon()
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/maint_recycler/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
@@ -324,7 +323,7 @@ EXTEND_INTERACTIONS(/obj/machinery/maint_recycler, \
 			eject_item_act(user)
 
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
-	var/atom/movable/ejected = own_take(src, nameof(inserted_item))
+	var/atom/movable/ejected = rel_take(src, nameof(inserted_item))
 	if(!ejected)
 		return
 	ejected.forceMove(get_turf(src))
@@ -352,7 +351,7 @@ EXTEND_INTERACTIONS(/obj/machinery/maint_recycler, \
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
-	var/recycled = own_take(src, nameof(inserted_item))
+	var/recycled = rel_take(src, nameof(inserted_item))
 	if(istype(recycled,/mob))
 		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?
@@ -391,12 +390,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appe
 
 	. += ..()
 
-/obj/machinery/maint_recycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/maint_recycler/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	if(!is_on)
 		set_on_state(TRUE)
-	return TRUE
+	return OP_OK
 
 /*
 TGUI PROCS

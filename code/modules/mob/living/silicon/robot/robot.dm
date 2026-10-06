@@ -962,7 +962,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	rel_set(C, nameof(C.r_leg), new/obj/item/robot_parts/r_leg(C))
 	rel_set(C, nameof(C.l_arm), new/obj/item/robot_parts/l_arm(C))
 	rel_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
-	C.update_icon()
 	new/obj/item/robot_parts/chest(loc)
 	spent(src, user)
 	return TRUE

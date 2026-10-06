@@ -570,7 +570,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(coin.string_attached)
 		to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
 	consume(coin, user)
-	own_take(src, nameof(coin))
+	rel_take(src, nameof(coin))
 
 /obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
 	if(R && R.get_product(get_turf(src)))

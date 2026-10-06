@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/clothing/gloves/telekinetic)
 		if(cell)
 			cell.update_icon()
 			user.put_in_hands(cell)
-			own_take(src, nameof(cell))
+			rel_take(src, nameof(cell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			play_sfx(src, SFX_MACHINES_BUTTON)
 			return TRUE

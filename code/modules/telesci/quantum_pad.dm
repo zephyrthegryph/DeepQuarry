@@ -25,7 +25,6 @@
 /obj/machinery/power/quantumpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 // Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
 // whichever of the two materializes first (replaces the static id map).
@@ -87,7 +86,9 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	extend("machine_panel", then(PROC_REF(panel_worked)))
+	extend("machine_panel_close", then(PROC_REF(panel_worked)))
 
 /obj/machinery/power/quantumpad/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -104,35 +105,22 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 		return OP_OK
 	rel_set(src, nameof(linked_pad), multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
-	update_icon()
 	return OP_OK
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/quantumpad/appearance_overlays()
-	. = list()
-	. += ..()
+
+/obj/machinery/power/quantumpad/draw(datum/look/look)
+	..()
 
 	if(panel_open)
-		. += "qpad-panel"
+		look.overlay("qpad-panel")
 
 	if(!operable() || panel_open || !power_region)
-		icon_state = "[initial(icon_state)]-o"
+		look.state("[initial(icon_state)]-o")
 	else if (!linked_pad())
-		icon_state = "[initial(icon_state)]-b"
+		look.state("[initial(icon_state)]-b")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 // Panel flips retry power cable connections so you don't have to decon the whole thing.
-/obj/machinery/power/quantumpad/screwdriver_act(mob/user, obj/item/tool)
-	var/result = ..()
-	if(!ITEM_INTERACT_CONSUMED(result))
-		return result
-	var/original_powernet = power_region
-	if(power_region)
-		disconnect_from_network()
-	connect_to_network()
-	if(power_region != original_powernet)
-		update_icon()
-	return result
 
 /// Old attack_hand: standard gated pattern (`. = ..(); if(.) return`).
 /datum/interaction/machine_hand/quantumpad_use
@@ -189,7 +177,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 		ghost.forceMove(get_turf(linked_pad()))
 
 /obj/machinery/power/quantumpad/proc/doteleport(mob/user)
-	update_icon()
 	if(!linked_pad())
 		return
 	// ition Start
@@ -206,7 +193,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 	. = FALSE
 	// The keyed relation links mapped pads when they materialize; this only reports it.
 	if(linked_pad())
-		update_icon()
 		. = TRUE
 
 /obj/machinery/power/quantumpad/proc/use_teleport_power()
@@ -302,3 +288,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 /// the linked_pad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/power/quantumpad/proc/linked_pad() as /obj/machinery/power/quantumpad
 	return linked_pad
+
+/// After the base screwdriver: the pad re-joins the power region under it.
+/obj/machinery/power/quantumpad/proc/panel_worked(datum/act/op/A)
+	var/original_powernet = power_region
+	if(power_region)
+		disconnect_from_network()
+	connect_to_network()
+	if(power_region != original_powernet)
+		changed(src)

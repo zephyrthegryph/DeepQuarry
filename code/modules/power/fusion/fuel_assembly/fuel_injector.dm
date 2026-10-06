@@ -50,9 +50,9 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 	op("take", hand(), when(req_empty_hand()), label("Take fuel rod"), ungated(), wait(0),
 		needs(req_is(nameof(injecting), FALSE, because = MSG(fuel_injector/running)), req_is(nameof(cur_assembly), TRUE, because = MSG(fuel_injector/no_rod))),
 		then(PROC_REF(rod_taken)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/fusion_fuel_injector/Initialize(mapload)
 	. = ..()

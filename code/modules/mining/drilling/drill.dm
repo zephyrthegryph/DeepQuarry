@@ -92,15 +92,18 @@
 	//Flags
 	var/need_update_field = 0
 	var/need_player_check = 0
+TRACKED(/obj/machinery/mining/drill, need_player_check)
+TRACKED(/obj/machinery/mining/drill, supported)
 
 CAPABILITIES(/obj/machinery/mining/drill)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
-	op("label", tool(TOOL_MULTITOOL), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), then(PROC_REF(label_tool_used)))
+	op("label", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)),
+		asks(/datum/prompt/text/drill_label), then(PROC_REF(label_entered)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_unload)))
@@ -132,7 +135,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
 		cell.forceMove(loc)
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 	return ..()
 
 /obj/machinery/mining/drill/get_cell()
@@ -156,8 +159,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	if(need_update_field)
 		get_resource_field()
 
-	if(world.time % 10 == 0)
-		update_icon()
 
 	if(!active)
 		return
@@ -203,8 +204,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 			if(current_capacity >= capacity)
 				system_error("Insufficient storage space.")
 				set_active(0)
-				need_player_check = 1
-				update_icon()
+				set_need_player_check(1)
 				return
 
 			if(current_capacity + total_harvest >= capacity)
@@ -236,8 +236,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		set_active(0)
-		need_player_check = 1
-		update_icon()
+		set_need_player_check(1)
 		system_error("Resources depleted.")
 
 /obj/machinery/mining/drill/proc/interaction_attackby(datum/act/op/A)
@@ -261,54 +260,23 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		return TRUE
 	return OP_DECLINE
 
-/obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
-	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return label_request_open(user, tool)
-
 /obj/machinery/mining/drill/proc/label_available(datum/act/op/A)
 	return !active
 
-/obj/machinery/mining/drill/proc/label_tool_used(datum/act/op/A)
-	label_request_open(A.actor, A.held)
-	return OP_OK
-
-/obj/machinery/mining/drill/proc/label_request_open(mob/user, obj/item/tool)
-	var/original_client_ckey
-	if(istype(user, /client))
-		var/client/C = user
-		original_client_ckey = C.ckey
-		user = C.mob
-	if(!ismob(user) || QDELETED(user))
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/text/drill_label, PROC_REF(label_entered), answerer = user, captured_tool = tool, tool_expected = !isnull(tool), original_client_ckey = original_client_ckey)
-	return ITEM_INTERACT_BLOCKING
-
-/obj/machinery/mining/drill/proc/label_entered(datum/act/request/A)
-	var/datum/prompt/text/drill_label/request = A.request
-	if(request.captures_gone())
-		return
-	if(!A.answer)
-		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
-			SStgui.update_uis(src)
-		return
-	apply_label(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/mining/drill/proc/apply_label(datum/act/request/A)
-	if(active)
-		return ITEM_INTERACT_BLOCKING
-	var/datum/prompt/text/drill_label/request = A.request
-	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/_answer_k279 = A.answer.value
-	var/newtag = text2num(sanitizeSafe(_answer_k279, 4))
+/// The multitool's answer: the drill's new id number, or no number at all (an active drill keeps its name).
+/obj/machinery/mining/drill/proc/label_entered(datum/act/op/A)
+	if(active || isnull(A.answer))
+		SStgui.update_uis(src)
+		return OP_OK
+	var/newtag = text2num(sanitizeSafe(A.answer.value, 4))
 	if(newtag)
 		name = "[initial(name)] #[newtag]"
-		to_chat(user, span_notice("You changed the drill ID to: [newtag]"))
+		to_chat(A.actor, span_notice("You changed the drill ID to: [newtag]"))
 	else
 		name = initial(name)
-		to_chat(user, span_notice("You removed the drill's ID and any extraneous labels."))
-	return ITEM_INTERACT_SUCCESS
+		to_chat(A.actor, span_notice("You removed the drill's ID and any extraneous labels."))
+	SStgui.update_uis(src)
+	return OP_OK
 
 /datum/prompt/text/drill_label
 	question = "Enter new ID number or leave empty to cancel."
@@ -318,30 +286,13 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	name_text = TRUE
 	encode = FALSE
 	multiline = FALSE
-	var/obj/item/captured_tool
-	var/tool_expected = FALSE
-	var/original_client_ckey
-
-CAPABILITIES(/datum/prompt/text/drill_label)
-	ref_one(nameof(captured_tool), /obj/item)
-
-/datum/prompt/text/drill_label/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/tool = captured_tool
-	rel_clear(src, nameof(captured_tool))
-	rel_set(src, nameof(captured_tool), tool)
-
-/datum/prompt/text/drill_label/proc/captures_gone()
-	return QDELETED(answerer) || (tool_expected && QDELETED(captured_tool)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
 
 /datum/prompt/text/drill_label/recheck_extra()
 	. = ..()
 	if(.)
 		return
-	if(captures_gone())
-		return "gone"
 	var/obj/machinery/mining/drill/drill = owner
-	if(drill.active)
+	if(istype(drill) && drill.active)
 		return "the drill is active"
 	return null
 
@@ -362,15 +313,14 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 
 	if (panel_open && cell && user.Adjacent(src))
 		balloon_alert(user, "you take out \the [cell]")
-		var/obj/item/cell/removed = own_take(src, nameof(cell))
+		var/obj/item/cell/removed = rel_take(src, nameof(cell))
 		user.put_in_hands(removed)
 		return TRUE
 	else if(need_player_check)
 		balloon_alert(user, "manual override hit, the drill's error checking resets.")
-		need_player_check = 0
+		set_need_player_check(0)
 		if(anchored)
 			get_resource_field()
-		update_icon()
 		return TRUE
 	else if(supported && !panel_open)
 		if(use_cell_power())
@@ -387,7 +337,6 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 	else
 		to_chat(user, span_notice("Turning on a piece of industrial machinery without sufficient bracing or wires exposed is a bad idea."))
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/mining/drill/proc/appearance_state()
@@ -399,7 +348,10 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 		return "mining_drill_braced"
 	return "mining_drill"
 
-APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/mining/drill/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
 
 /obj/machinery/mining/drill/RefreshParts()
 	..()
@@ -439,7 +391,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 /obj/machinery/mining/drill/proc/check_supports()
 
-	supported = 0
+	set_supported(0)
 	total_brace_tier = 0
 
 	var/list/braces = supports
@@ -452,21 +404,20 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 	if(length(braces))
 		if(length(braces) >= braces_needed)
-			supported = 1
+			set_supported(1)
 		else for(var/obj/machinery/mining/brace/check in braces)
 			if(check.brace_tier >= 3)
-				supported = 1
+				set_supported(1)
 		for(var/obj/machinery/mining/brace/check in braces)
 			total_brace_tier += check.brace_tier
 
-	update_icon()
 
 /obj/machinery/mining/drill/proc/system_error(error)
 
 	if(error)
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " flashes a '[error]' warning."))
 		faultreporter.autosay(error, src.name, "Supply", using_map.get_map_levels(z))
-	need_player_check = 1
+	set_need_player_check(1)
 	set_active(0)
 
 /obj/machinery/mining/drill/proc/get_resource_field()
@@ -545,9 +496,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 CAPABILITIES(/obj/machinery/mining/brace)
 	links(/obj/machinery/mining/brace::connected, /obj/machinery/mining/drill::supports, b_many = TRUE)
 	climb()
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_work_on_holds), because = PROC_REF(can_work_on_refusal))), then(PROC_REF(interaction_attackby)))
 
 /obj/machinery/mining/brace/Initialize(mapload)

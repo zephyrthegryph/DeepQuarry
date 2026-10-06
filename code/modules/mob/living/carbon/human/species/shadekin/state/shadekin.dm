@@ -133,7 +133,7 @@
 
 /// Removes this mob's shadekin state, if any.
 /mob/living/proc/remove_shadekin()
-	own_clear(src, nameof(shadekin), OWN_DELETE)
+	rel_clear(src, nameof(shadekin))
 
 // revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
 /datum/shadekin/lifecycle_prerelease()

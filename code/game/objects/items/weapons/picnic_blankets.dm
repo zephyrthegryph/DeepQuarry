@@ -59,7 +59,7 @@ MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 /obj/structure/picnic_blanket_deployed/proc/picnic_blanket_deployed_fold_up_effect(datum/act/op/A)
 	var/mob/user = A.actor
 
-	own_clear(src, nameof(attached_blankets), OWN_DELETE)
+	rel_clear(src, nameof(attached_blankets))
 	var/obj/item/picnic_blankets_carried/P = new /obj/item/picnic_blankets_carried(user.loc)
 	P.name = name
 	P.desc = folded_desc
@@ -110,13 +110,16 @@ MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 			side.set_dir(dir)
 			if(isTableTop)
 				side.layer = TABLE_LAYER + 0.01 //We should be just above tables.
-			side.update_icon()
 
 // Keys are blanket_type: "1" is CENTER, "2" is SIDE (8 directional icon).
-DECLARE_APPEARANCE(/obj/structure/picnic_blanket_deployed, "blanket_type", list( \
-	"1" = list(APPEARANCE_ICON_STATE = "picnic_central"), \
-	"2" = list(APPEARANCE_ICON_STATE = "picnic_sides") \
-))
+/// The look (the draw sweep: from its layers).
+/obj/structure/picnic_blanket_deployed/draw(datum/look/look)
+	..()
+	switch("[blanket_type]")
+		if("1")
+			look.state("picnic_central")
+		if("2")
+			look.state("picnic_sides")
 
 /obj/structure/picnic_blanket_deployed/examine(mob/user)
 	. = ..()

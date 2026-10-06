@@ -16,8 +16,8 @@
 CAPABILITIES(/obj/machinery/floodlight)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), then(PROC_REF(interaction_item)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("floodlight_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(floodlight_silicon_use)))
@@ -29,7 +29,10 @@ CAPABILITIES(/obj/machinery/floodlight)
 /obj/machinery/floodlight/proc/appearance_battery()
 	return (open && cell) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_battery?b:}0{on}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/floodlight/draw(datum/look/look)
+	..()
+	look.state("flood[open ? "o" : ""][appearance_battery() ? "b" : ""]0[on]")
 
 /obj/machinery/floodlight/proc/work_step(datum/act/timer/A)
 	if(!cell || (cell.charge < (use * CELLRATE)))
@@ -42,7 +45,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	if((cell.percent() < 10) && prob(5))
 		set_light_range(brightness_on/2)
 		set_light_power(brightness_on/4)
-		after(src, 20, PROC_REF(flicker_restore))
+		after(src, 2 SECONDS, PROC_REF(flicker_restore))
 
 /obj/machinery/floodlight/proc/flicker_restore()
 	if(on)
@@ -61,7 +64,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
 	set_light_on(TRUE)
-	update_icon()
+	changed(src)
 	if(loud)
 		visible_message("\The [src] turns on.")
 	return 1
@@ -69,7 +72,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 /obj/machinery/floodlight/proc/turn_off(loud = 0)
 	set_on(0)
 	set_light_on(FALSE)
-	update_icon()
+	changed(src)
 	if(loud)
 		visible_message("\The [src] shuts down.")
 
@@ -100,11 +103,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 		cell.add_fingerprint(user)
 		cell.update_icon()
 
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		set_on(0)
 		set_light(0)
 		to_chat(user, "You remove the power cell")
-		update_icon()
+		changed(src)
 		return TRUE
 
 	if(on)
@@ -113,7 +116,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 		if(!turn_on(1))
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
 
-	update_icon()
+	changed(src)
 	return TRUE
 
 /**
@@ -131,7 +134,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 				if(!move_into(src, nameof(src.cell), W, user))
 					return TRUE
 				to_chat(user, "You insert the power cell.")
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/floodlight/proc/screwdriver_used(datum/act/op/A)
@@ -140,7 +143,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 		return OP_OK
 	unlocked = !unlocked
 	to_chat(user, "You [unlocked ? "unscrew" : "screw"] the battery panel [unlocked ? "" : "in place"].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/floodlight/proc/crowbar_used(datum/act/op/A)
@@ -151,7 +153,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	if(!open)
 		overlays = null
 	to_chat(user, "You [open ? "remove" : "crowbar"] the battery panel[open ? "" : " in place"].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/floodlight/starts_on

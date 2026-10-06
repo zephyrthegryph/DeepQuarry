@@ -33,10 +33,6 @@ CAPABILITIES(/obj/item/melee/baton)
 	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
 	op("baton_item", item(/obj/item), then(PROC_REF(interaction_item)))
 
-/obj/item/melee/baton/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/melee/baton/get_cell()
 	return bcell
 
@@ -92,29 +88,33 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 	if(bcell)
 		if(bcell.charge < hitcost)
 			status = 0
-			update_icon()
+			changed(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/baton/appearance_overlays()
-	. = list()
+/obj/item/melee/baton/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/melee/baton/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
 	if(status)
-		icon_state = "[initial(name)]_active"
+		drawn_state = look.state("[initial(name)]_active")
 	else if(!bcell)
-		icon_state = "[initial(name)]_nocell"
+		drawn_state = look.state("[initial(name)]_nocell")
 	else
-		icon_state = "[initial(name)]"
+		drawn_state = look.state("[initial(name)]")
 
-	if(icon_state == "[initial(name)]_active")
-		set_light(2, 1, lightcolor)
+	if(drawn_state == "[initial(name)]_active")
+		look.light(2, 1, lightcolor)
 	else
-		set_light(0)
+		look.light_off()
 
 /obj/item/melee/baton/dropped(mob/user, equipping, slot)
 	..()
 	if(status && grip_safety && !taped_safety)
 		status = 0
 		visible_message(span_warning("\The [src]'s grip safety engages!"))
-	update_icon()
+	changed(src)
 
 /obj/item/melee/baton/examine(mob/user)
 	. = ..()
@@ -137,7 +137,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 				if(!move_into(src, nameof(src.bcell), W, user))
 					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
+				changed(src)
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
@@ -162,10 +162,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
-			update_icon()
 			return OP_OK
 		return OP_DECLINE
 	else
@@ -177,7 +176,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-		update_icon()
 	else
 		status = 0
 		if(!bcell)
@@ -263,7 +261,6 @@ CAPABILITIES(/obj/item/melee/baton/cattleprod)
 				if(!move_into(src, nameof(src.bcell), W, user))
 					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else

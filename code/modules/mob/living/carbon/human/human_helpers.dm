@@ -413,7 +413,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 	copy_physique_from(character)
 	if(species)
-		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species?.blood_color = character.species?.blood_color
 
 	dna?.base_species = bodytype
@@ -536,7 +536,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	offset_override	= character.offset_override
 	voice_freq		= character.voice_freq
 	if (species && character.species)
-		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.micro_size_mod = character.species.micro_size_mod
 		species.icon_scale_x = character.species.icon_scale_x
 		species.icon_scale_y = character.species.icon_scale_y

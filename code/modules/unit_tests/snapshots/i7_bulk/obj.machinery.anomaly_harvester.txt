@@ -1,6 +1,7 @@
-/obj/machinery/anomaly_harvester|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device,gen_insert_interaction_attach_scanner:needs an anomaly scanner
-/obj/machinery/anomaly_harvester|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device,gen_insert_interaction_attach_scanner:needs an anomaly scanner
+/obj/machinery/anomaly_harvester|human|none => |gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device,gen_insert_interaction_attach_scanner:needs an anomaly scanner
+/obj/machinery/anomaly_harvester|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device,gen_insert_interaction_attach_scanner:needs an anomaly scanner
 /obj/machinery/anomaly_harvester|ai|none => |
 /obj/machinery/anomaly_harvester|ghost|none => |
-/obj/machinery/anomaly_harvester|human|/obj/item/storage/part_replacer => gen_insert_interaction_part_replacement_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_insert_interaction_attach_scanner:needs an anomaly scanner
-/obj/machinery/anomaly_harvester|human|/obj/item/anomaly_scanner => gen_insert_interaction_attach_scanner|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device
+/obj/machinery/anomaly_harvester|human|/obj/item/storage/part_replacer => gen_insert_interaction_part_replacement_impl|gen_insert_interaction_attach_scanner:needs an anomaly scanner
+/obj/machinery/anomaly_harvester|human|/obj/item/anomaly_scanner => gen_insert_interaction_attach_scanner|gen_insert_interaction_part_replacement_impl:needs a rapid part exchange device
+

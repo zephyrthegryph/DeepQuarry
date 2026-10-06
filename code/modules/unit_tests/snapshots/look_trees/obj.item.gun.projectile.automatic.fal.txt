@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/fal icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/automatic/fal state: fal
+/obj/item/gun/projectile/automatic/fal dir: 2
+/obj/item/gun/projectile/automatic/fal overlay: icons/obj/gun.dmi:fal:8:#000000
+

@@ -40,7 +40,10 @@ CAPABILITIES(/obj/machinery/rnd/server)
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 
-APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/rnd/server/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state]-[appearance_suffix()]")
 
 /// "off" without power; otherwise "on" while working ("halt" covers EMP-ed, disabled or broken).
 /obj/machinery/rnd/server/proc/appearance_suffix()
@@ -61,7 +64,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 
 	// update_current_power_usage()
 	update_heat_output()
-	update_icon()
+	changed(src)
 
 /// Only a working server runs hot; halted or EMP'd it emits nothing.
 /obj/machinery/rnd/server/current_heat_output()

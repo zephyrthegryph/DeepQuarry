@@ -29,7 +29,7 @@
 		log_game("REACTIVE_ICON: invalid arguments for [src] ([type]); not added.")
 		return null
 	if(reactive_icon)
-		own_clear(src, nameof(reactive_icon), OWN_DELETE)
+		rel_clear(src, nameof(reactive_icon))
 	rel_set(src, nameof(reactive_icon), new type(src, icon_prefix, directions, range, triggering_mobs))
 	return reactive_icon
 

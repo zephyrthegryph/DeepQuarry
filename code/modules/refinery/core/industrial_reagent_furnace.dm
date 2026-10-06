@@ -19,6 +19,7 @@
 	icon_state = "furnace_r"
 
 CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
+	without("reagent_refinery_set_transfer_amount")
 	climb()
 	owns_one(nameof(beaker), starts = /obj/item/reagent_containers/glass/beaker/bluespace)
 
@@ -210,6 +211,3 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/furnace, \
 	. += "The sintering mold is [ (beaker.reagents.total_volume / REAGENTS_PER_SHEET) * 100 ]% full."
 	tutorial(REFINERY_TUTORIAL_INPUT, .)
 
-/obj/machinery/reagent_refinery/furnace/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

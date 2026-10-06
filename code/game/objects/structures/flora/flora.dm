@@ -343,7 +343,7 @@ MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be som
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"
@@ -648,14 +648,16 @@ TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 /obj/structure/flora/sif/frostbelle/Initialize(mapload)
 	. = ..()
 	variantnum = rand(1,3)
-	update_icon()
 
 /obj/structure/flora/sif/frostbelle/proc/appearance_variant()
 	if(max_harvests > 0 && harvest_count < max_harvests)
 		return variantnum
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{appearance_variant}")
+/// The look (the draw sweep: from its template).
+/obj/structure/flora/sif/frostbelle/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_variant()]")
 
 /obj/structure/flora/sif/frostbelle/get_harvestable_desc()
 	return span_notice("\The [src] seems to be budding.")

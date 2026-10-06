@@ -10,6 +10,7 @@
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
+	without("reagent_refinery_set_transfer_amount")
 	climb()
 
 /obj/machinery/reagent_refinery/splitter/Initialize(mapload)
@@ -17,7 +18,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)
@@ -70,6 +70,3 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SPLITTEROUTPUT|REFINERY_TUTORIAL_INPUT, .)
 
-/obj/machinery/reagent_refinery/splitter/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

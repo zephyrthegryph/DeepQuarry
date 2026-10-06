@@ -16,10 +16,6 @@
 	/// The axe it starts with (a declared default child), or null for an empty cabinet.
 	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
 
-/obj/structure/fireaxecabinet/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
 CAPABILITIES(/obj/structure/fireaxecabinet)
@@ -52,7 +48,6 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 			if(!move_into(src, nameof(src.fireaxe), O, user))
 				return OP_OK
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
-			update_icon()
 		else
 			if(smashed)
 				return OP_OK
@@ -64,8 +59,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 		if(O.has_tool_quality(TOOL_MULTITOOL))
 			if(open)
 				open = 0
-				update_icon()
-				flick("[icon_state]closing", src)
+				flick("[cabinet_state()]closing", src)
 				return OP_OK
 			else
 				to_chat(user, span_warning("Resetting circuitry..."))
@@ -103,14 +97,13 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 				smashed = 1
 				locked = 0
 				open= 1
-		update_icon()
 
 	return OP_OK
 
 /obj/structure/fireaxecabinet/proc/attackby_tool_done(mob/user)
 	locked = 0
 	to_chat(user, span_warning("You disable the locking modules."))
-	update_icon()
+	changed(src)
 /obj/structure/fireaxecabinet/proc/attackby_tool_done2(mob/user)
 	locked = 1
 	to_chat(user, span_warning("You re-enable the locking modules."))
@@ -121,10 +114,9 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 	if(open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			own_take(src, nameof(fireaxe))
+			rel_take(src, nameof(fireaxe))
 			to_chat (user, span_notice("You take the fire axe from the [name]."))
 			add_fingerprint(user)
-			update_icon()
 		else
 			if(smashed)
 				return OP_OK
@@ -141,8 +133,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 	if(open && fireaxe)
 		fireaxe.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove the fire axe."))
-		own_take(src, nameof(fireaxe))
-		update_icon()
+		rel_take(src, nameof(fireaxe))
 		return OP_OK
 	attack_hand(user)
 	return OP_OK
@@ -150,11 +141,11 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 /obj/structure/fireaxecabinet/proc/toggle_close_open()
 	open = !open
 	if(open)
-		update_icon()
-		flick("[icon_state]opening", src)
+		changed(src)
+		flick("[cabinet_state()]opening", src)
 	else
-		update_icon()
-		flick("[icon_state]closing", src)
+		changed(src)
+		flick("[cabinet_state()]closing", src)
 
 /obj/structure/fireaxecabinet/proc/toggle_openness_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -167,7 +158,6 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 		return
 
 	toggle_close_open()
-	update_icon()
 
 /obj/structure/fireaxecabinet/proc/remove_fire_axe_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -175,13 +165,12 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 	if (open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			own_take(src, nameof(fireaxe))
+			rel_take(src, nameof(fireaxe))
 			to_chat(user, span_notice("You take the Fire axe from the [name]."))
 		else
 			to_chat(user, span_notice("The [name] is empty."))
 	else
 		to_chat(user, span_notice("The [name] is closed."))
-	update_icon()
 
 /// Old attack_ai: lock or unlock it remotely.
 /obj/structure/fireaxecabinet/proc/fireaxecabinet_silicon_lock(datum/act/op/A)
@@ -200,7 +189,14 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 /obj/structure/fireaxecabinet/proc/appearance_hasaxe()
 	return fireaxe ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe{appearance_hasaxe}{open}{hitstaken}{smashed}")
+/// The look (the draw sweep: from its template).
+/obj/structure/fireaxecabinet/draw(datum/look/look)
+	..()
+	look.state(cabinet_state())
+
+/// The cabinet's sprite for its state: the draw shows it, and the door animations are named after it ("<state>opening").
+/obj/structure/fireaxecabinet/proc/cabinet_state()
+	return "fireaxe[appearance_hasaxe()][open][hitstaken][smashed]"
 
 /obj/structure/fireaxecabinet/empty
 	fireaxe_type = null

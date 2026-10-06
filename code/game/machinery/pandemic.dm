@@ -25,17 +25,12 @@
 	. = ..()
 	make_sellable(/datum/sellable/vaccine)
 
-/obj/machinery/computer/pandemic/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/pandemic/appearance_overlays()
-	. = list()
+/obj/machinery/computer/pandemic/draw(datum/look/look)
+	..()
 	if(has_stat(BROKEN))
-		icon_state = (beaker ? "pandemic1_b" : "pandemic0_b")
-		return .
-	icon_state = "pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]"
+		look.state((beaker ? "pandemic1_b" : "pandemic0_b"))
+		return
+	look.state("pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]")
 
 
 /obj/machinery/computer/pandemic/proc/ui_act_create_culture_bottle(datum/act/op/A, index)
@@ -150,7 +145,7 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	if(!beaker)
 		return
 	beaker.forceMove(loc)
-	own_take(src, nameof(beaker))
+	rel_take(src, nameof(beaker))
 	icon_state = "pandemic0"
 
 /obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)

@@ -42,10 +42,13 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+	changed(src)
 
 // update the icon_state
-APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisibility?-f:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/magnetic_module/draw(datum/look/look)
+	..()
+	look.state("floor_magnet[on ? "" : "0"][invisibility ? "-f" : ""]")
 
 /obj/machinery/magnetic_module/receive_signal(datum/signal/signal)
 	var/command = signal.data["command"]
@@ -139,7 +142,6 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	else
 		set_use_power(USE_POWER_OFF)
 
-	update_icon()
 	return PROCESS_KILL
 
 /// The pull's period: stronger fields pull faster.

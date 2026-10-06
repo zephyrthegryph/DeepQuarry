@@ -472,7 +472,7 @@ CAPABILITIES(/datum/preferences)
 									/datum/trait/neutral/micro_size_up)
 	if(character.species)
 		// species is PROTO: mutate the mob's private copy, never the shared prototype
-		var/datum/species/own_species = proto_private(character, nameof(character.species))
+		var/datum/species/own_species = rel_private(character, nameof(character.species))
 		own_species.micro_size_mod = 0
 		own_species.icon_scale_x = 1
 		own_species.icon_scale_y = 1
@@ -497,7 +497,7 @@ CAPABILITIES(/datum/preferences)
 	else
 		bodytype_selected = selected_species.get_bodytype(character)
 	character.dna.base_species = bodytype_selected
-	var/datum/species/private_species = proto_private(character, nameof(character.species)) // PROTO: private copy
+	var/datum/species/private_species = rel_private(character, nameof(character.species)) // PROTO: private copy
 	private_species.base_species = bodytype_selected
 	private_species.icobase = private_species.get_icobase()
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)

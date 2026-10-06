@@ -51,13 +51,8 @@
 		"criminal" = list("*Arrest*", "Incarcerated", "Parolled", "Released", "None"),
 	)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/secure_data, \
-	INTERACT_VERB("Eject ID Card", PROC_REF(interaction_secure_data_eject_id), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-	INTERACT_INSERT(/obj/item/card/id, PROC_REF(interaction_secure_data_insert_id), "Insert ID", OFFERED_WHEN(REQ_ON(PRED_TARGET, /obj/machinery/computer/secure_data/proc/has_free_slot, null))), \
-	INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint)), \
-)
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(datum/act/op/A)
+	var/mob/user = A.actor
 	if(scan)
 		to_chat(user, "You remove \the [scan] from \the [src].")
 		scan.forceMove(get_turf(src))
@@ -68,15 +63,14 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/secure_data, \
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
 
-/obj/machinery/computer/secure_data/proc/has_free_slot(mob/actor, atom/target, obj/item/held)
-	return !scan
-
-/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!move_into(src, nameof(src.scan), held, user))
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
@@ -105,6 +99,9 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
+	op("secure_data_eject_id", menu(), label("Eject ID Card"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_secure_data_eject_id)))
+	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
+	op("open_ui_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui_fingerprint)))
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -210,7 +207,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		scan.forceMove(loc)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		rel_take(src, nameof(src.scan))
 	else
 		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
@@ -231,8 +228,8 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		var/mob/living/silicon/robot/R = A.actor
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
-		rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
+		rel_clear(src, nameof(src.active1))
+		rel_clear(src, nameof(src.active2))
 		screen = SEC_DATA_R_LIST
 
 /obj/machinery/computer/secure_data/proc/ui_act_logout(datum/act/op/A)
@@ -244,11 +241,11 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		scan.forceMove(loc)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
-		own_take(src, nameof(/obj/item/extrapolator::scan))
+		rel_take(src, nameof(src.scan))
 	authenticated = null
 	screen = null
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
+	rel_clear(src, nameof(src.active1))
+	rel_clear(src, nameof(src.active2))
 
 /obj/machinery/computer/secure_data/proc/ui_act_screen(datum/act/op/A, screen_arg)
 	. = TRUE
@@ -256,8 +253,8 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		return FALSE
 	. = TRUE
 	screen = clamp(screen_arg || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
+	rel_clear(src, nameof(src.active1))
+	rel_clear(src, nameof(src.active2))
 
 /obj/machinery/computer/secure_data/proc/ui_act_del_all(datum/act/op/A)
 	. = TRUE
@@ -335,8 +332,8 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 			security_record = M
 			break
 
-	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
-	rel_set(src, nameof(/obj/machinery/computer/med_data::active2), security_record)
+	rel_set(src, nameof(src.active1), general_record)
+	rel_set(src, nameof(src.active2), security_record)
 	screen = SEC_DATA_RECORD
 
 /obj/machinery/computer/secure_data/proc/ui_act_new(datum/act/op/A)
@@ -358,7 +355,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		R.fields["notes"]		= "No notes."
 		R.fields["notes"]		= "No notes."
 		rel_add(GLOB.data_core, nameof(/datum/datacore::security), R)
-		rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
+		rel_set(src, nameof(src.active2), R)
 		screen = SEC_DATA_RECORD
 		set_temp("Security record created.", "success")
 
@@ -381,22 +378,22 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
-	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
+	rel_clear(src, nameof(src.active1))
+	rel_clear(src, nameof(src.active2))
 	var/t1 = lowertext(t1_arg || "")
 	if(!length(t1))
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.general)
 		if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
-			rel_set(src, nameof(/obj/machinery/computer/med_data::active1), R)
+			rel_set(src, nameof(src.active1), R)
 			break
 	if(!active1())
 		set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
 		return
 	for(var/datum/data/record/E in GLOB.data_core.security)
 		if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
-			rel_set(src, nameof(/obj/machinery/computer/med_data::active2), E)
+			rel_set(src, nameof(src.active2), E)
 			break
 	screen = SEC_DATA_RECORD
 

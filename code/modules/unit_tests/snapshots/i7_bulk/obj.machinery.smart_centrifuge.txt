@@ -1,5 +1,5 @@
-/obj/machinery/smart_centrifuge|human|none => centrifuge_use,centrifuge_isolate_reagents,centrifuge_isolate_reagents_bottle,centrifuge_isolate_reagents_canisters|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,centrifuge_attackby:needs an item,centrifuge_drain_tank:needs a cargo train tanker
-/obj/machinery/smart_centrifuge|robot|none => centrifuge_use,centrifuge_isolate_reagents,centrifuge_isolate_reagents_bottle,centrifuge_isolate_reagents_canisters|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,centrifuge_attackby:needs an item,centrifuge_drain_tank:needs a cargo train tanker
+/obj/machinery/smart_centrifuge|human|none => |
+/obj/machinery/smart_centrifuge|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/smart_centrifuge|ai|none => |
 /obj/machinery/smart_centrifuge|ghost|none => |
-/obj/machinery/smart_centrifuge|human|/obj/item => centrifuge_use,centrifuge_isolate_reagents,centrifuge_isolate_reagents_bottle,centrifuge_isolate_reagents_canisters|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,centrifuge_attackby:not possible right now,centrifuge_drain_tank:needs a cargo train tanker
+

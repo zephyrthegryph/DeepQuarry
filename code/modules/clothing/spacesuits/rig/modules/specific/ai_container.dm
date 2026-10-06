@@ -164,7 +164,7 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 			user.put_in_hands(ai_card)
 		else
 			ai_card.forceMove(get_turf(src))
-	own_take(src, nameof(ai_card))
+	rel_take(src, nameof(ai_card))
 	rel_clear(src, nameof(integrated_ai))
 	update_verb_holder()
 

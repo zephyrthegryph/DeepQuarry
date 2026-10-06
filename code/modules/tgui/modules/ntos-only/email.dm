@@ -90,7 +90,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 
 /datum/tgui_module/email_client/proc/log_out()
 	rel_clear(src, nameof(current_account))
-	own_take(src, nameof(downloading))
+	rel_take(src, nameof(downloading))
 	download_progress = 0
 	last_message_count = 0
 	read_message_count = 0
@@ -231,7 +231,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	msg_title = ""
 	msg_body = ""
 	msg_recipient = ""
-	own_take(src, nameof(msg_attachment))
+	rel_take(src, nameof(msg_attachment))
 	rel_clear(src, nameof(current_message))
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
@@ -243,7 +243,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 		var/obj/item/modular_computer/MC = tgui_host()
 		if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 			error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
-			own_take(src, nameof(downloading))
+			rel_take(src, nameof(downloading))
 			download_progress = 0
 			return 1
 
@@ -251,7 +251,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 			error = "File successfully downloaded to local device."
 		else
 			error = "Error saving file: I/O Error: The hard drive may be full or nonfunctional."
-		own_take(src, nameof(downloading))
+		rel_take(src, nameof(downloading))
 		download_progress = 0
 	return 1
 
@@ -468,7 +468,7 @@ CAPABILITIES(/datum/tgui_module/email_client)
 
 /datum/tgui_module/email_client/proc/ui_act_addattachment(datum/act/op/A)
 	var/obj/item/modular_computer/MC = tgui_host()
-	own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
+	rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 
 	if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 		error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
@@ -490,13 +490,13 @@ CAPABILITIES(/datum/tgui_module/email_client)
 			rel_set(src, nameof(/datum/tgui_module/email_client::msg_attachment), CF.clone())
 			break
 	if(!istype(msg_attachment))
-		own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
+		rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 		error = "Unknown error when uploading attachment."
 		return 1
 
 	if(msg_attachment.size > 32)
 		error = "Error uploading attachment: File exceeds maximal permitted file size of 32GQ."
-		own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
+		rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 	else
 		error = "File [msg_attachment.filename].[msg_attachment.filetype] has been successfully uploaded."
 	return 1
@@ -515,13 +515,13 @@ CAPABILITIES(/datum/tgui_module/email_client)
 
 /datum/tgui_module/email_client/proc/ui_act_canceldownload(datum/act/op/A)
 	check_for_new_messages(1)
-	own_take(src, nameof(/datum/tgui_module/email_client::downloading))
+	rel_take(src, nameof(/datum/tgui_module/email_client::downloading))
 	download_progress = 0
 	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_remove_attachment(datum/act/op/A)
 	check_for_new_messages(1)
-	own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
+	rel_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
 	return OP_OK
 
 /// The current_account this refers to (a relation view: null once that is deleted).

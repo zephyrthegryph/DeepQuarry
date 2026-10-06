@@ -81,7 +81,7 @@ CAPABILITIES(/obj/structure/morgue)
 		if (!( A.anchored ))
 			A.forceMove(src)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	own_clear(src, nameof(connected), OWN_DELETE)
+	rel_clear(src, nameof(connected))
 
 /obj/structure/morgue/proc/open()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/structure/morgue)
 		src.connected.icon_state = "morguet"
 		src.connected.set_dir(src.dir)
 	else
-		own_clear(src, nameof(connected), OWN_DELETE)
+		rel_clear(src, nameof(connected))
 
 
 /// Old attackby: a held thing leaves a print and does nothing else (a pen relabels it: the "label" op).
@@ -224,7 +224,7 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 			if (!( AM.anchored ))
 				AM.forceMove(src)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		own_clear(src, nameof(connected), OWN_DELETE)
+		rel_clear(src, nameof(connected))
 	else if (src.locked == 0)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
@@ -238,7 +238,7 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 				AM.forceMove(src.connected.loc)
 			src.connected.icon_state = "cremat"
 		else
-			own_clear(src, nameof(connected), OWN_DELETE)
+			rel_clear(src, nameof(connected))
 	src.add_fingerprint(user)
 	update()
 	return OP_OK
@@ -269,7 +269,7 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "cremat"
 	else
-		own_clear(src, nameof(connected), OWN_DELETE)
+		rel_clear(src, nameof(connected))
 	return
 
 /obj/structure/morgue/crematorium/proc/cremation_done()

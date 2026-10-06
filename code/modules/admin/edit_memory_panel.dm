@@ -157,7 +157,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 		return FALSE
 	var/datum/objective/O = ref
 	if(istype(O))
-		own_remove(target_mind, nameof(target_mind.objectives), O)
+		rel_remove(target_mind, nameof(target_mind.objectives), O)
 	SStgui.update_uis(src)
 	return TRUE
 

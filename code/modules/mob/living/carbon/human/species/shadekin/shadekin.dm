@@ -238,7 +238,7 @@
 			eye_health = 125
 
 	if(H.species.total_health != eye_health)
-		var/datum/species/private_species = proto_private(H, nameof(H.species))
+		var/datum/species/private_species = rel_private(H, nameof(H.species))
 		private_species.total_health = eye_health
 	H.endurance = eye_health
 

@@ -29,6 +29,7 @@
 
 	var/datum/gas_mixture/faketank
 	var/faketank_integrity
+TRACKED(/obj/machinery/bomb_tester, simulating)
 
 CAPABILITIES(/obj/machinery/bomb_tester)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
@@ -49,7 +50,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 /// A simulation that is running takes no new settings.
 /obj/machinery/bomb_tester/proc/not_simulating(datum/act/op/A)
-	return !simulating // ALLOW(reads): the run is read when a button is pressed, never from a cached menu
+	return !simulating
 
 /obj/machinery/bomb_tester/Initialize(mapload)
 	. = ..()
@@ -60,10 +61,10 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))
-		own_take(src, nameof(tank1))
+		rel_take(src, nameof(tank1))
 	if(tank2)
 		tank2.forceMove(get_turf(src))
-		own_take(src, nameof(tank2))
+		rel_take(src, nameof(tank2))
 	simulation_finish(1)
 	return ..()
 
@@ -80,9 +81,14 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 /obj/machinery/bomb_tester/proc/appearance_tank2()
 	return tank2 ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/bomb_tester, "{icon_name}{appearance_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank1", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank1"))))
-DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank2"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/bomb_tester/draw(datum/look/look)
+	..()
+	look.state("[icon_name][appearance_suffix()]")
+	if(appearance_tank1() == 1)
+		look.overlay("generic-tank1")
+	if(appearance_tank2() == 1)
+		look.overlay("generic-tank2")
 
 /obj/machinery/bomb_tester/power_change()
 	. = ..()
@@ -95,7 +101,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
 /obj/machinery/bomb_tester/proc/has_free_tank_slot(mob/actor, atom/target, obj/item/held)
-	return !tank1 || !tank2 // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return !tank1 || !tank2
 
 /// Requirement (was REQ_* has_free_tank_slot): the legacy check answers TRUE to pass.
 /obj/machinery/bomb_tester/proc/has_free_tank_slot_holds(datum/act/op/A)
@@ -108,7 +114,6 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	var/adopted = tank1 ? move_into(src, nameof(src.tank2), I, user) : move_into(src, nameof(src.tank1), I, user)
 	if(!adopted)
 		return TRUE
-	update_icon()
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
 	return TRUE
@@ -175,11 +180,10 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	var/obj/item/tank/T = ui_ref(raw_ref, tank_slots(), /obj/item/tank)
 	if(istype(T))
 		if(T == tank1)
-			own_take(src, nameof(/obj/machinery/bomb_tester::tank1))
+			rel_take(src, nameof(/obj/machinery/bomb_tester::tank1))
 		if(T == tank2)
-			own_take(src, nameof(/obj/machinery/bomb_tester::tank2))
+			rel_take(src, nameof(/obj/machinery/bomb_tester::tank2))
 		T.forceMove(get_turf(src))
-		update_icon()
 	return TRUE
 
 /obj/machinery/bomb_tester/proc/ui_act_canister_scan(datum/act/op/A)
@@ -210,11 +214,10 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 		simulation_results = "Unstable"
 		simulation_finish()
 		return
-	simulating = 1
+	set_simulating(1)
 	set_use_power(USE_POWER_ACTIVE)
 	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
 	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
-	update_icon()
 	switch(sim_mode)
 		if(BOMB_TESTER_MODE_SINGLE)
 			single_tank_sim()
@@ -344,7 +347,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 
 /obj/machinery/bomb_tester/proc/simulation_finish(cancelled = 0)
 	cancel_after(src, "simulation")
-	simulating = 0
+	set_simulating(0)
 	set_use_power(USE_POWER_IDLE)
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE

@@ -48,7 +48,7 @@ OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTI
 		new_occupant.control_disabled = TRUE
 		rel_set(src, nameof(occupier), new_occupant)
 		card.clear()
-		update_icon()
+		changed(src)
 	else
 		to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [card]. What exactly are you trying to do here?"))
 	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.

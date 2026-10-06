@@ -49,7 +49,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("cloning_console_interaction_item", item(/obj/item), then(PROC_REF(cloning_console_interaction_item)))
 	op("cloning_console_interaction_hand", hand(), then(PROC_REF(cloning_console_interaction_hand)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()
@@ -300,7 +300,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 	if(check_access(C))
 		var/datum/transhuman/body_record/doomed = active_BR()
 		if(doomed in records)
-			own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
+			rel_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
 		else
 			spent(doomed)
 		set_temp("Record deleted.", "success")
@@ -336,7 +336,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 		if("eject")
 			if(!isnull(diskette))
 				diskette.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/machinery/computer/cloning::diskette))
+				rel_take(src, nameof(/obj/machinery/computer/cloning::diskette))
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/ui_act_refresh(datum/act/op/A)

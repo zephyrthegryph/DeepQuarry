@@ -214,10 +214,10 @@ CAPABILITIES(/obj/item/depth_scanner)
 		if(index <= LAZYLEN(positive_locations))
 			var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
 			rel_clear(src, nameof(current))
-			own_remove(src, nameof(/obj/item/depth_scanner::positive_locations), D) // deletes the scan
+			rel_remove(src, nameof(/obj/item/depth_scanner::positive_locations), D) // deletes the scan
 	else
 		rel_clear(src, nameof(current))
-		own_clear(src, nameof(/obj/item/depth_scanner::positive_locations), OWN_DELETE)
+		rel_clear(src, nameof(/obj/item/depth_scanner::positive_locations))
 	return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))

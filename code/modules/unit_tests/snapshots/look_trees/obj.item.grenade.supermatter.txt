@@ -1,0 +1,5 @@
+/obj/item/grenade/supermatter icon: icons/obj/grenade.dmi
+/obj/item/grenade/supermatter state: banana
+/obj/item/grenade/supermatter dir: 2
+/obj/item/grenade/supermatter overlay: icons/obj/grenade.dmi:banana:8:#000000
+

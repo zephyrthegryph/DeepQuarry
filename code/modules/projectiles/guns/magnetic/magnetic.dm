@@ -160,7 +160,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
-	own_take(src, nameof(capacitor))
+	rel_take(src, nameof(capacitor))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -221,10 +221,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 
 		if(loaded)
 			removing = loaded
-			own_take(src, nameof(loaded))
+			rel_take(src, nameof(loaded))
 		else if(cell && removable_components)
 			removing = cell
-			own_take(src, nameof(cell))
+			rel_take(src, nameof(cell))
 
 		if(removing)
 			removing.forceMove(get_turf(src))
@@ -239,7 +239,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 	return loaded
 
 /obj/item/gun/magnetic/proc/use_ammo()
-	own_clear(src, nameof(loaded), OWN_DELETE)
+	rel_clear(src, nameof(loaded))
 
 /obj/item/gun/magnetic/consume_next_projectile()
 

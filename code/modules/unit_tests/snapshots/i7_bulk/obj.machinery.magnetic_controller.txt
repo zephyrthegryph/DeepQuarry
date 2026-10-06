@@ -2,3 +2,4 @@
 /obj/machinery/magnetic_controller|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/magnetic_controller|ai|none => |
 /obj/machinery/magnetic_controller|ghost|none => |
+

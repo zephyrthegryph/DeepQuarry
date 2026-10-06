@@ -71,7 +71,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 /mob/living/carbon/human/proc/reconcile_medical_side_effects()
 	for(var/datum/medical_effect/active in side_effects)
 		if(active.cure(src))
-			own_remove(src, nameof(side_effects), active)
+			rel_remove(src, nameof(side_effects), active)
 	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
 	for(var/effect_name in registry)
 		var/datum/medical_effect/prototype = registry[effect_name]

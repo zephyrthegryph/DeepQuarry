@@ -2,3 +2,4 @@
 /obj/structure/inflatable|robot|none => |
 /obj/structure/inflatable|ai|none => |
 /obj/structure/inflatable|ghost|none => |
+

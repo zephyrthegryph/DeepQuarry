@@ -60,11 +60,9 @@ CAPABILITIES(/obj/item/multitool)
 	if(selected_io())
 		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
-		update_icon()
 		return OP_OK
 	var/datum/prompt/R = A.answer
 	if(!R)
-		update_icon()
 		return OP_OK
 	switch(R.value)
 		if("Clear Buffers")
@@ -82,7 +80,6 @@ CAPABILITIES(/obj/item/multitool)
 			to_chat(user,span_notice("You lower \the [src]."))
 			return OP_OK
 
-	update_icon()
 	return OP_OK
 
 /obj/item/multitool/proc/mode_switch(mob/living/user)
@@ -119,13 +116,11 @@ CAPABILITIES(/obj/item/multitool)
 	toolspeed = 0.1
 
 // Alien multitool only has those icon states
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/alien/appearance_overlays()
-	. = list()
+/obj/item/multitool/alien/look_parts(datum/look/look)
 	if(accepting_refs)
-		icon_state = "multitool_ref_scan"
-		return .
-	icon_state = "multitool"
+		look.state("multitool_ref_scan")
+		return
+	look.state("multitool")
 
 /// Recalibrating a synthetic body part: actuator misalignment responds to
 /// TREAT_CALIBRATION, and a pass over the head also runs a system restore

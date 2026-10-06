@@ -168,20 +168,19 @@
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
-		own_take(src, nameof(inserted_id))
+		rel_take(src, nameof(inserted_id))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/mineral/equipment_vendor/appearance_overlays()
-	. = list()
+/obj/machinery/mineral/equipment_vendor/draw(datum/look/look)
+	..()
 	if(panel_open)
-		. += "[initial(icon_state)]-panel"
+		look.overlay("[initial(icon_state)]-panel")
 
 	if(has_stat(BROKEN))
-		icon_state = "[initial(icon_state)]-broken"
+		look.state("[initial(icon_state)]-broken")
 	else if(powered())
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 	else
-		icon_state = "[initial(icon_state)]-off"
+		look.state("[initial(icon_state)]-off")
 
 /// /obj/machinery/mineral/equipment_vendor's window data.
 /obj/machinery/mineral/equipment_vendor/ui_data(datum/act/eval/A)
@@ -233,8 +232,8 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	without("ui_open")
 	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"), then(PROC_REF(interaction_voucher)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
@@ -252,7 +251,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	if(!inserted_id)
 		return
 	user.put_in_hands(inserted_id)
-	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
+	rel_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	add_fingerprint()
 
 /obj/machinery/mineral/equipment_vendor/proc/ui_act_purchase(datum/act/op/A, cat, name_arg)
@@ -308,7 +307,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)
 		inserted_id.forceMove(loc) //Prevents deconstructing the ORM from deleting whatever ID was inside it.
-		own_take(src, nameof(inserted_id))
+		rel_take(src, nameof(inserted_id))
 	. = ..()
 
 /**

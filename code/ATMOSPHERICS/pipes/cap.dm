@@ -30,7 +30,6 @@
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node))
 
-	update_icon()
 
 	..()
 
@@ -54,7 +53,6 @@
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level == 1 && !T.is_plating()) hide(1)
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/cap/can_unwrench()
 	return 1

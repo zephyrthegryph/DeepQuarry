@@ -250,7 +250,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 			var/obj/item/reagent_containers/food/snacks/S = slice
 			for(var/mob/living/F in food_inserted_micros)
 				F.forceMove(S)
-				own_transfer(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
+				rel_move(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
 	on_slice_extra()
 	consume(src, user)
 	return OP_OK
@@ -334,7 +334,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
-	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
+	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -3850,6 +3850,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
+TRACKED(/obj/item/pizzabox, ismessy)
 
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
@@ -3929,7 +3930,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/pizzabox/proc/toggled(datum/act/op/A)
 	open = !open
 	if( open && pizza )
-		ismessy = 1
+		set_ismessy(1)
 	update_icon()
 	return OP_OK
 
@@ -3946,7 +3947,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	var/mob/user = A.actor
 	user.put_in_hands( pizza )
 	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-	own_take(src, nameof(pizza))
+	rel_take(src, nameof(pizza))
 	update_icon()
 	return OP_OK
 
@@ -7538,11 +7539,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/reishicup)
 
 CAPABILITIES(/obj/item/storage/box/wings)
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing)))
-
-/obj/item/storage/box/wings/Initialize(mapload)
-	. = ..()
-	update_icon()
-	return
 
 /obj/item/storage/box/wings/draw(datum/look/look)
 	. = ..()

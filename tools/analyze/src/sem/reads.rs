@@ -192,14 +192,17 @@ impl Annotations {
                 a.accessors.insert(name.clone(), (sys.clone(), var));
             }
         }
+        // relations() declares rel_one/rel_many vars; ownership() declares owns(nameof(v), ...) vars. Both are written only through the
+        // ownership accessors (rel_set/rel_add/own_take/move_into), whose own_field_changed() publishes the var's name to its readers.
+        for (proc_name, calls) in [("relations", &["rel_one", "rel_many"][..]), ("ownership", &["owns", "rel_one", "rel_many"][..])] {
         for ty in sem.objtree.iter_types() {
-            let Some(tp) = ty.get().procs.get("relations") else { continue };
+            let Some(tp) = ty.get().procs.get(proc_name) else { continue };
             let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
             for value in &tp.value {
                 let Some(code) = &value.code else { continue };
                 super::ast::walk_block(code, &mut |e, _| {
                     if let Some((n, args)) = super::ast::as_call(e) {
-                        if matches!(n, "rel_one" | "rel_many") {
+                        if calls.contains(&n) {
                             if let Some(Expression::Base { term, .. }) = args.first() {
                                 if let Term::Call(f, inner) = &term.elem {
                                     if f.as_str() == "nameof" {
@@ -213,6 +216,7 @@ impl Annotations {
                     }
                 });
             }
+        }
         }
         for m in decls.markers_named("READS_FROM") {
             if let Some((owner, name)) = sem.def_at(&m.rel, m.line) {
@@ -344,7 +348,8 @@ impl<'a> ReadsEngine<'a> {
         if self.is_stat(owner, var) || self.is_derived(owner, var) {
             return VarClass::Reactive;
         }
-        if !written.is_written(var) {
+        // a `var/const` never changes, whatever other types name a var the same
+        if !written.is_written(var) || self.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
             return VarClass::Constant;
         }
         VarClass::Unknown

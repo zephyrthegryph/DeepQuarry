@@ -15,7 +15,6 @@
 		if(I.density || I.anchored || I == src || !I.simulated)
 			continue
 		I.forceMove(src)
-	update_icon()
 
 /obj/structure/largecrate/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor

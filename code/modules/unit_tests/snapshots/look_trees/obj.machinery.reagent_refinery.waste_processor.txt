@@ -1,0 +1,5 @@
+/obj/machinery/reagent_refinery/waste_processor icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/waste_processor state: waste
+/obj/machinery/reagent_refinery/waste_processor dir: 2
+/obj/machinery/reagent_refinery/waste_processor overlay: icons/obj/machines/refinery_machines.dmi:waste:8:#000000
+

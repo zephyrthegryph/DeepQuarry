@@ -20,7 +20,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 #define ASTAR_TRACE_COLOR_REDIRECTED "#7777ff"
 
 /proc/astar_wipe_colors_after(list/turf/turfs, time)
-	after(null, time, /proc/astar_wipe_colors_now, with = list(turfs))
+	after(null, time, GLOBAL_PROC_REF(astar_wipe_colors_now), with = list(turfs))
 
 /proc/astar_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)

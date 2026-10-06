@@ -100,8 +100,8 @@ CAPABILITIES(/datum/guard_test_holder)
 				proto_set(H, nameof(H.species), registered)
 				done = H.species == registered
 			if("proto_private")
-				proto_private(H, nameof(H.species))
-				done = proto_is_private(H, nameof(H.species))
+				rel_private(H, nameof(H.species))
+				done = rel_is_private(H, nameof(H.species))
 			if("shared_set")
 				shared_set(H, nameof(H.shared_species), registered)
 				done = H.shared_species == registered

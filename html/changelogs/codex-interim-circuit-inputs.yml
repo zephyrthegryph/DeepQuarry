@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Subtraction, multiplication and division circuits refresh their first operand from connected circuits before computing."

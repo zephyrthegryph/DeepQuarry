@@ -8,22 +8,9 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_hooded_hoodie, list(
 	"yellowtrim" = list("name" = "yellow-trimmed hoodie", "icon_state" = "hoodie_yellowtrim", "desc" = "A warm jacket, now featuring a hood and an eye-catching yellow trim!"),
 ))
 
-// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
-/obj/item/clothing/suit/storage/hooded/hoodie/Initialize(mapload)
-	apply_variant()
-	. = ..()
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/hoodie)
+	variants(nameof(variant), PROC_REF(variant_table))
 
-/obj/item/clothing/suit/storage/hooded/hoodie/apply_variant()
-	if(!variant)
-		return
-	var/list/v = GLOB.dq_variants_suit_storage_hooded_hoodie[variant]
-	if(!v)
-		return
-	if(v["name"])
-		name = v["name"]
-	if(v["icon_state"])
-		icon_state = v["icon_state"]
-	if(v["desc"])
-		desc = v["desc"]
-	if(v["item_state"])
-		item_state = v["item_state"]
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/suit/storage/hooded/hoodie/proc/variant_table()
+	return GLOB.dq_variants_suit_storage_hooded_hoodie

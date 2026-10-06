@@ -1,0 +1,16 @@
+/obj/structure/atmospheric_retention_field icon: icons/obj/atm_fieldgen.dmi
+/obj/structure/atmospheric_retention_field state: 
+/obj/structure/atmospheric_retention_field dir: 2
+/obj/structure/atmospheric_retention_field overlay: icons/obj/atm_fieldgen.dmi::8:#000000 x2
+/obj/structure/atmospheric_retention_field overlay: icons/obj/atm_fieldgen.dmi:arfg_field0:-32767 x4
+/obj/structure/atmospheric_retention_field/impassable icon: icons/obj/atm_fieldgen.dmi
+/obj/structure/atmospheric_retention_field/impassable state: 
+/obj/structure/atmospheric_retention_field/impassable dir: 2
+/obj/structure/atmospheric_retention_field/impassable overlay: icons/obj/atm_fieldgen.dmi::8:#000000 x2
+/obj/structure/atmospheric_retention_field/impassable overlay: icons/obj/atm_fieldgen.dmi:arfg_field0:-32767 x4
+/obj/structure/atmospheric_retention_field/underdoors icon: icons/obj/atm_fieldgen.dmi
+/obj/structure/atmospheric_retention_field/underdoors state: 
+/obj/structure/atmospheric_retention_field/underdoors dir: 2
+/obj/structure/atmospheric_retention_field/underdoors overlay: icons/obj/atm_fieldgen.dmi::8:#000000 x2
+/obj/structure/atmospheric_retention_field/underdoors overlay: icons/obj/atm_fieldgen.dmi:arfg_field0:-32767 x4
+

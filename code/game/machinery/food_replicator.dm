@@ -44,7 +44,7 @@
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, nameof(container))
+			rel_take(src, nameof(container))
 	QDEL_NULL_LIST(products)
 	return ..()
 
@@ -99,7 +99,6 @@
 
 		set_use_power(USE_POWER_ACTIVE)
 		printing = TRUE
-		update_icon()
 
 		if(product_path)
 			foodItem = new product_path(src)
@@ -160,11 +159,18 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 /obj/machinery/food_replicator/proc/appearance_nopower()
 	return has_stat(NOPOWER | EMPED) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/food_replicator, "{initial(icon_state)}")
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_broken", list("1" = list(APPEARANCE_ICON_STATE = "destroyed")))
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_nopower", list("1" = list(APPEARANCE_OVERLAYS = list("poweroff"))))
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("printing"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/food_replicator/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)]")
+	if(appearance_broken() == 1)
+		look.state("destroyed")
+	if(panel_open == 1)
+		look.overlay("panel_open")
+	if(appearance_nopower() == 1)
+		look.overlay("poweroff")
+	if(printing == 1)
+		look.overlay("printing")
 
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
@@ -216,7 +222,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	ping()
 	set_use_power(USE_POWER_IDLE)
 	printing = FALSE
-	update_icon()
+	changed(src)
 
 	if(!operable())
 		return
@@ -227,7 +233,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, nameof(container))
+		rel_take(src, nameof(container))
 		return TRUE
 	return FALSE
 

@@ -167,7 +167,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	if(!inserted_id)
 		return
 	user.put_in_hands(inserted_id)
-	own_take(src, nameof(inserted_id))
+	rel_take(src, nameof(inserted_id))
 	return TRUE
 
 /obj/machinery/mineral/processing_unit_console/proc/ui_act_claim(datum/act/op/A)

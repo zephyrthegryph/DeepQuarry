@@ -2,3 +2,4 @@
 /obj/machinery/field_generator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/field_generator|ai|none => |
 /obj/machinery/field_generator|ghost|none => |
+

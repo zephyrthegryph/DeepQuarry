@@ -26,7 +26,10 @@
 /obj/item/ghost_catcher/proc/appearance_busy()
 	return om_busy(src) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_busy?_active:}")
+/// The look (the draw sweep: from its template).
+/obj/item/ghost_catcher/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_busy() ? "_active" : ""]")
 
 /obj/item/ghost_catcher/update_held_icon()
 	var/mob/living/M = loc
@@ -123,7 +126,6 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	if(istext(started))
 		grab_ended(target, user, effects)
 		return
-	update_icon()
 
 /// Holding a ghost in the beam, up to a minute; the catcher is busy until it ends.
 /datum/om/task/timed/ghost_grab
@@ -139,7 +141,6 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 
 /// The grab is over (broken or done): clean up the effects and start the cooldown.
 /obj/item/ghost_catcher/proc/grab_ended(atom/target, mob/user, list/effects)
-	update_icon()
 	var/datum/beam/scan_beam = effects[1]
 	if(!QDELETED(scan_beam))
 		scan_beam.End()

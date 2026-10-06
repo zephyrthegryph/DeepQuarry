@@ -1,0 +1,7 @@
+/obj/item/fusion_coil icon: icons/obj/power_cells.dmi
+/obj/item/fusion_coil state: fc_spent
+/obj/item/fusion_coil dir: 2
+/obj/item/fusion_coil overlay: icons/obj/power_cells.dmi:fc_charged:-32767
+/obj/item/fusion_coil overlay: icons/obj/power_cells.dmi:fc_charged:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+/obj/item/fusion_coil overlay: icons/obj/power_cells.dmi:fc_spent:8:#000000 x2
+

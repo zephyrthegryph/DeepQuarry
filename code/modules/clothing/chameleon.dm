@@ -226,7 +226,6 @@ DAMAGE_REACTION(/obj/item/storage/backpack/chameleon, DAMAGE_EMP, PROC_REF(chame
 	name = "backpack"
 	desc = "You wear this on your back and put items into it."
 	icon_state = "backpack"
-	update_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
 		M.update_inv_back()
@@ -411,7 +410,6 @@ DAMAGE_REACTION(/obj/item/storage/belt/chameleon, DAMAGE_EMP, PROC_REF(chameleon
 	name = "belt"
 	desc = "Can hold various things."
 	icon_state = "utilitybelt"
-	update_icon()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
 		M.update_inv_belt()

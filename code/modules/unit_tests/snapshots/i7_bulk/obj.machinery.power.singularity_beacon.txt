@@ -2,3 +2,4 @@
 /obj/machinery/power/singularity_beacon|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/singularity_beacon|ai|none => |
 /obj/machinery/power/singularity_beacon|ghost|none => |
+

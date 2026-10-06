@@ -21,8 +21,8 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	without("ui_open")
 	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert power cell"), then(PROC_REF(interaction_insert_cell)))
 	op("swipe_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe card"), then(PROC_REF(interaction_swipe_card)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		cell.update_icon()
 
 		icon_state = "suspension"
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
@@ -224,7 +224,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 			anom.move_chance = initial(anom.move_chance)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
-	own_clear(src, nameof(suspension_field), OWN_DELETE)
+	rel_clear(src, nameof(suspension_field))
 	icon_state = "suspension_wrenched"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()

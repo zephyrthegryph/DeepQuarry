@@ -15,6 +15,8 @@ TRACKED(/obj/machinery/computer/station_alert, alerting)
 
 CAPABILITIES(/obj/machinery/computer/station_alert)
 	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor)
+	op("station_alert_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	op("open_ui_impl", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/station_alert/security
 	monitor_type = /datum/tgui_module/alarm_monitor/security
@@ -29,31 +31,18 @@ CAPABILITIES(/obj/machinery/computer/station_alert)
 	alarm_monitor.register_alarm(src, "update_console_icon")
 	. = ..()
 
-
 /// Phase 2: leaves its alarm monitor's listeners.
 /obj/machinery/computer/station_alert/lifecycle_dematerialize()
 	. = ..()
 	alarm_monitor?.unregister_alarm(src)
 
-/obj/machinery/computer/station_alert/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/station_alert_open_ui,
-	)
-	// Old attack_ai: the same body as the hand's.
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(interaction_open_ui_impl)))
-	..()
-
-/datum/interaction/machine_hand/ungated/station_alert_open_ui
-	id = "station_alert_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/station_alert/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/station_alert/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/station_alert/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/computer/station_alert/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

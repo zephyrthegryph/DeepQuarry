@@ -113,7 +113,6 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	screenstate = 0
 	return OP_OK
 
-
 /obj/machinery/librarypubliccomp/proc/sql_rows_arrived(list/result, error, key)
 	var/list/rows = om_sql_view_rows(result, error, key, src)
 	last_results = list()
@@ -426,7 +425,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 /obj/machinery/librarycomp/proc/ui_act_checkin(datum/act/op/A, ref)
 	var/datum/borrowbook/b = ref
 	if(b)
-		own_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
+		rel_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
 /obj/machinery/librarycomp/proc/ui_act_delbook(datum/act/op/A, ref)
@@ -621,13 +620,13 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	var/mob/user = A.actor
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		rel_set(src, nameof(/datum/om/edge::cache), B)
+		rel_set(src, nameof(src.cache), B)
 		break
 	add_fingerprint(user)
 	return TRUE
 
 /obj/machinery/libraryscanner/proc/ui_act_clear(datum/act/op/A)
-	rel_clear(src, nameof(/datum/om/edge::cache))
+	rel_clear(src, nameof(src.cache))
 	return TRUE
 
 /obj/machinery/libraryscanner/proc/ui_act_eject(datum/act/op/A)
@@ -635,7 +634,6 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		B.forceMove(src.loc)
 	return TRUE
-
 
 /*
  * Book binder
@@ -650,12 +648,11 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 
 CAPABILITIES(/obj/machinery/bookbinder)
 	climb()
+	op("bind", inputs(item(/obj/item/paper), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Bind"), then(PROC_REF(interaction_bind)))
 
-EXTEND_INTERACTIONS(/obj/machinery/bookbinder, \
-	INTERACT_INSERT(list(/obj/item/paper, /obj/item/paper_bundle), PROC_REF(interaction_bind), "Bind"), \
-)
-
-/obj/machinery/bookbinder/proc/interaction_bind(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bookbinder/proc/interaction_bind(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(istype(held, /obj/item/paper))
 		user.drop_item()
 		held.forceMove(src)
@@ -668,7 +665,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bookbinder, \
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
 		after(src, rand(30 SECONDS, 50 SECONDS), PROC_REF(bind_bundle), with = list(held))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)
 	src.visible_message("[src] whirs as it prints and binds a new book.")
@@ -764,4 +761,3 @@ EXTEND_INTERACTIONS(/obj/machinery/bookbinder, \
 /datum/prompt/number/library_order_id
 	question = "Enter your order:"
 	timeout = 0
-

@@ -1,5 +1,5 @@
-/obj/machinery/bookbinder|human|none => |gen_insert_interaction_bind:needs a sheet of paper or a paper bundle
-/obj/machinery/bookbinder|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_bind:needs a sheet of paper or a paper bundle
+/obj/machinery/bookbinder|human|none => |
+/obj/machinery/bookbinder|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/bookbinder|ai|none => |
 /obj/machinery/bookbinder|ghost|none => |
-/obj/machinery/bookbinder|human|/obj/item/paper => gen_insert_interaction_bind|
+

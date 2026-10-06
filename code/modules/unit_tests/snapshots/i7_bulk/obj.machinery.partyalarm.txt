@@ -1,4 +1,5 @@
-/obj/machinery/partyalarm|human|none => partyalarm_use|
-/obj/machinery/partyalarm|robot|none => partyalarm_use|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/partyalarm|human|none => |
+/obj/machinery/partyalarm|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/partyalarm|ai|none => |
 /obj/machinery/partyalarm|ghost|none => |
+

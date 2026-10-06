@@ -526,7 +526,7 @@ CAPABILITIES(/datum/remote_view)
 /datum/remote_view/mob_holding_item/proc/decouple_view_to_turf(mob/cache_mob, turf/release_turf)
 	if(needs_to_decouple)
 		// Yes this spawn is needed, yes I wish it wasn't.
-		after(cache_mob, 0, /proc/remote_view_decouple, with = list(cache_mob, release_turf)) // Yes this deferral is needed: the view deletes itself below
+		after(cache_mob, 0, GLOBAL_PROC_REF(remote_view_decouple), with = list(cache_mob, release_turf)) // Yes this deferral is needed: the view deletes itself below
 		// Because nested vore bellies do NOT get handled correctly for recursive prey. We need to tell the belly's occupants to decouple too... Then their own belly's occupants...
 		// Yes, two loops is faster. Because we skip typechecking byondcode side and instead do it engine side when getting the contents of the mob,
 		// we also skip typechecking every /obj in the mob on the byondcode side... Evil wizard knowledge.

@@ -153,7 +153,6 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	if(!on)
 		change_mode(MODE_IDLE)
 		set_pumping(FALSE)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/power/thermoregulator/proc/anchor_message(datum/act/A)
@@ -236,7 +235,6 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	set_on(FALSE)
 	set_pumping(FALSE)
 	change_mode(MODE_IDLE)
-	update_icon()
 
 /// The room is a degree or more off its target.
 /obj/machinery/power/thermoregulator/proc/gas_wake_condition()

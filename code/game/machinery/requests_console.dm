@@ -58,13 +58,22 @@ CAPABILITIES(/obj/machinery/requests_console)
 	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
 	owns_one(nameof(announcement), /datum/announcement)
 	interface("RequestConsole")
-	op("write", ui_act("write", arg("priority", num()), arg("write", schema_text(4096))), then(PROC_REF(ui_act_write)))
-	op("writeAnnouncement", ui_act("writeAnnouncement"), then(PROC_REF(ui_act_writeannouncement)))
+	op("write", ui_act("write", arg("priority", num()), arg("write", schema_text(4096))),
+		asks(/datum/prompt/text, fields = list("title" = "Awaiting Input", "question" = "Write your message:", "default" = "", "timeout" = 0), when = PROC_REF(write_target_ok)),
+		then(PROC_REF(ui_act_write)))
+	op("writeAnnouncement", ui_act("writeAnnouncement"),
+		asks(/datum/prompt/text, fields = list("title" = "Awaiting Input", "question" = "Write your message:", "default" = "", "timeout" = 0)),
+		then(PROC_REF(ui_act_writeannouncement)))
 	op("sendAnnouncement", ui_act("sendAnnouncement"), then(PROC_REF(ui_act_sendannouncement)))
 	op("department", ui_act("department", arg("department", schema_text(4096))), then(PROC_REF(ui_act_department)))
 	op("print", ui_act("print", arg("print", num())), then(PROC_REF(ui_act_print)))
 	op("setScreen", ui_act("setScreen", arg("setScreen", num())), then(PROC_REF(ui_act_setscreen)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	op("requests_console_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id)))
+	op("requests_console_stamp", item(/obj/item/stamp), priority(OP_PRIORITY_DEFAULT - 1), label("Stamp"), then(PROC_REF(interaction_stamp)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set department"),
+		asks(/datum/prompt/text, fields = list("title" = "Multitool-Request Console Interface", "question" = "What Department ID would you like to give this request console?", "default" = nameof(department), "timeout" = 0)),
+		then(PROC_REF(department_entered)))
 
 /// Whoever presses a button leaves their prints on the console.
 /obj/machinery/requests_console/proc/ui_fingerprint(datum/act/op/A)
@@ -120,26 +129,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 		set_light(2)
 		set_light_on(TRUE)
 
-/obj/machinery/requests_console/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/requests_console_id,
-		/datum/interaction/machine_item/requests_console_stamp,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/requests_console_id
-	id = "requests_console_id"
-	name = "Swipe ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/requests_console/proc/interaction_id
-
-/datum/interaction/machine_item/requests_console_stamp
-	id = "requests_console_stamp"
-	name = "Stamp"
-	held_type = /obj/item/stamp
-	effect = /obj/machinery/requests_console/proc/interaction_stamp
-
 /obj/machinery/requests_console/ui_title(mob/user)
 	return "[department] Request Console"
 
@@ -164,18 +153,39 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	data["announceAuth"] = announceAuth
 	return data
 
+/// The write button's question opens only for a department name that reads as text.
+/obj/machinery/requests_console/proc/write_target_ok(datum/act/op/A)
+	return !!reject_bad_text(A.args?["write"])
 
+/// The write button: the message to that department, at the window's priority (an empty one starts over).
 /obj/machinery/requests_console/proc/ui_act_write(datum/act/op/A, raw_priority, raw_write)
-	var/mob/user = A.actor
-	if(reject_bad_text(raw_write))
-		recipient = raw_write //write contains the string of the receiving department's name
+	if(!reject_bad_text(raw_write))
+		return FALSE
+	recipient = raw_write //write contains the string of the receiving department's name
+	var/new_message = A.answer?.value
+	SStgui.update_uis(src)
+	if(new_message)
+		message = new_message
+		screen = RCS_MESSAUTH
+		switch(raw_priority)
+			if(1)
+				priority = 1
+			if(2)
+				priority = 2
+			else
+				priority = 0
+	else
+		reset_message(1)
+	. = TRUE
 
-		open_request(src, /datum/prompt/text/request_message, PROC_REF(message_written), valid = PROC_REF(request_usable), answerer = user, title = "Awaiting Input", question = "Write your message:", default = "", priority = raw_priority, timeout = 0)
-		. = TRUE
-
+/// The announcement button: the announcement's text (an empty one starts over).
 /obj/machinery/requests_console/proc/ui_act_writeannouncement(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/text/request_message, PROC_REF(announcement_written), valid = PROC_REF(request_usable), answerer = user, title = "Awaiting Input", question = "Write your message:", default = "", timeout = 0)
+	var/new_message = A.answer?.value
+	SStgui.update_uis(src)
+	if(new_message)
+		message = new_message
+	else
+		reset_message(1)
 	. = TRUE
 
 /obj/machinery/requests_console/proc/ui_act_sendannouncement(datum/act/op/A)
@@ -244,48 +254,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 
 			//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
 
-/// The question a message or an announcement is written in; the priority comes from the window (messages only).
-/datum/prompt/text/request_message
-	var/priority
-
-/// A question the console asked is still worth answering: the console stands and the person is next to it (a silicon works from anywhere).
-/obj/machinery/requests_console/proc/request_usable(datum/request/R)
-	var/mob/M = R.answerer
-	return istype(M) && !QDELETED(src) && (issilicon(M) || in_range(src, M))
-
-/obj/machinery/requests_console/proc/message_written(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/request_message/R = A.request
-	var/new_message = A.answer.value
-	SStgui.update_uis(src)
-	if(new_message)
-		message = new_message
-		screen = RCS_MESSAUTH
-		switch(R.priority)
-			if(1)
-				priority = 1
-			if(2)
-				priority = 2
-			else
-				priority = 0
-	else
-		reset_message(1)
-	. = TRUE
-
-/obj/machinery/requests_console/proc/announcement_written(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/new_message = A.answer.value
-	SStgui.update_uis(src)
-	if(new_message)
-		message = new_message
-	else
-		reset_message(1)
-	. = TRUE
-/obj/machinery/requests_console/proc/interaction_id(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/requests_console/proc/interaction_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(!operable(MAINT))
-		return TRUE
+		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/card/id/T = held
 		msgVerified = span_green(span_bold("Verified by [T.registered_name] ([T.assignment])"))
@@ -299,30 +272,24 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 			reset_message()
 			to_chat(user, span_warning("You are not authorized to send announcements."))
 		SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/requests_console/proc/interaction_stamp(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/requests_console/proc/interaction_stamp(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(!operable(MAINT))
-		return TRUE
+		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/stamp/T = held
 		msgStamped = span_blue(span_bold("Stamped with the [T.name]"))
 		SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/requests_console/multitool_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/text, PROC_REF(department_entered), answerer = user, title = "Multitool-Request Console Interface", question = "What Department ID would you like to give this request console?", default = department, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/requests_console/proc/department_entered(datum/act/request/A)
-	var/mob/user = A.request.answerer
-	if(!A.answer)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return
-	var/input = A.answer.value
+/// The multitool's answer: the console's department, and the lists it joins.
+/obj/machinery/requests_console/proc/department_entered(datum/act/op/A)
+	var/input = A.answer?.value
 	if(!input)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
+		to_chat(A.actor, "No input found. Please hang up and try your call again.")
+		return OP_OK
 	department = input
 	announcement.title = "[department] announcement"
 	announcement.newscast = TRUE
@@ -333,7 +300,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 		GLOB.req_console_supplies |= department
 	if(departmentType & RC_INFO)
 		GLOB.req_console_information |= department
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/requests_console/proc/reset_message(mainmenu = 0)
 	message = ""
@@ -454,4 +421,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	department = "Head of Personnel's Desk"
 	departmentType = RC_ASSIST|RC_INFO
 	announcementConsole = 1
-

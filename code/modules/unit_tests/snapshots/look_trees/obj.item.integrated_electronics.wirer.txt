@@ -1,0 +1,5 @@
+/obj/item/integrated_electronics/wirer icon: icons/obj/integrated_electronics/electronic_tools.dmi
+/obj/item/integrated_electronics/wirer state: wirer-wire
+/obj/item/integrated_electronics/wirer dir: 2
+/obj/item/integrated_electronics/wirer overlay: icons/obj/integrated_electronics/electronic_tools.dmi:wirer-wire:8:#000000
+

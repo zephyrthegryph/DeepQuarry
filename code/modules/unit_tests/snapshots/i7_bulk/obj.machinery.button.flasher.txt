@@ -3,3 +3,4 @@
 /obj/machinery/button/flasher|ai|none => |
 /obj/machinery/button/flasher|ghost|none => |
 /obj/machinery/button/flasher|human|/obj/item => button_press,button_press_item|
+

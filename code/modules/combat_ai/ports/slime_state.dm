@@ -144,7 +144,7 @@
 		if(!can_command(speaker))
 			dq_delayed_say(holder(), "No...", speaker)
 			return
-		after(holder(), rand(1 SECOND, 2 SECONDS), /proc/slime_obeys_squish, with = list(holder()))
+		after(holder(), rand(1 SECOND, 2 SECONDS), GLOBAL_PROC_REF(slime_obeys_squish), with = list(holder()))
 
 	if(findtext(message, "stop") || findtext(message, "halt") || findtext(message, "cease"))
 		if(holder().victim)

@@ -19,7 +19,7 @@
 	for(var/obj/belly/B as anything in M.vore_organs)
 		B.forceMove(src)
 		rel_set(B, nameof(B.owner), src)
-		own_transfer(M, nameof(M.vore_organs), src, nameof(vore_organs), B)
+		rel_move(M, nameof(M.vore_organs), src, nameof(vore_organs), B)
 
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
 	own_clear(new_mob, nameof(new_mob.vore_organs), OWN_DELETE)

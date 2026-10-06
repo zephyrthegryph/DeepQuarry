@@ -2,3 +2,4 @@
 /obj/machinery/computer/power_monitor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/power_monitor|ai|none => |
 /obj/machinery/computer/power_monitor|ghost|none => |
+

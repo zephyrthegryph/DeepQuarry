@@ -173,8 +173,8 @@
 	if(!target)
 		if(!spare_stamp)
 			return 1
-		var/obj/item/mounted = own_take(src, nameof(device))
-		var/obj/item/spare = own_take(src, nameof(spare_stamp))
+		var/obj/item/mounted = rel_take(src, nameof(device))
+		var/obj/item/spare = rel_take(src, nameof(spare_stamp))
 		rel_set(src, nameof(device), spare)
 		rel_set(src, nameof(spare_stamp), mounted)
 		if(istype(device, /obj/item/stamp/denied))

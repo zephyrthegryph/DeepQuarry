@@ -91,8 +91,13 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 /obj/machinery/organ_printer/proc/organ_printer_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	return default_part_replacement(user, O) ? TRUE : FALSE
 
-DECLARE_APPEARANCE(/obj/machinery/organ_printer, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_panel_open"))))
-DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_working"))))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/organ_printer/draw(datum/look/look)
+	..()
+	if(panel_open == 1)
+		look.overlay("bioprinter_panel_open")
+	if(printing == 1)
+		look.overlay("bioprinter_working")
 
 CAPABILITIES(/obj/machinery/organ_printer)
 	climb()
@@ -200,7 +205,6 @@ CAPABILITIES(/obj/machinery/organ_printer)
 
 	set_use_power(USE_POWER_ACTIVE)
 	printing = 1
-	update_icon()
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins churning."))
 
@@ -210,7 +214,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 /obj/machinery/organ_printer/proc/printing_done(organ_path)
 	set_use_power(USE_POWER_IDLE)
 	printing = 0
-	update_icon()
+	changed(src)
 
 	if(!operable())
 		return
@@ -230,7 +234,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 /obj/machinery/organ_printer/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, nameof(container))
+		rel_take(src, nameof(container))
 		return 1
 	return 0
 
@@ -314,7 +318,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, nameof(container))
+			rel_take(src, nameof(container))
 	return ..()
 
 /obj/machinery/organ_printer/flesh/print_organ(choice)

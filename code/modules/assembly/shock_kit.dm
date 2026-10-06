@@ -24,8 +24,8 @@ CAPABILITIES(/obj/item/assembly/shock_kit)
 		part2.forceMove(T)
 		rel_clear(part1, nameof(part1.master))
 		rel_clear(part2, nameof(part2.master))
-		own_take(src, nameof(part1))
-		own_take(src, nameof(part2))
+		rel_take(src, nameof(part1))
+		rel_take(src, nameof(part2))
 		consume(src, user)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING

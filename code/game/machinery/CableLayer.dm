@@ -16,94 +16,68 @@
 	. = ..()
 	layCable(loc,direction)
 
-/obj/machinery/cablelayer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/cablelayer_load,
-		/datum/interaction/machine_item/cablelayer_swallow,
-		/datum/interaction/machine_hand/ungated/cablelayer_toggle,
-	)
-	..()
+CAPABILITIES(/obj/machinery/cablelayer)
+	op("cablelayer_load", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Load cable"), then(PROC_REF(interaction_load)))
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut cable"), needs(req_full(nameof(cable), because = MSG(cablelayer/no_cable))),
+		asks(/datum/prompt/number/cablelayer_cut, fields = list("default" = computed(PROC_REF(cut_default)))),
+		then(PROC_REF(cable_length_entered)))
+	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(has_cable_or_on_holds), because = PROC_REF(has_cable_or_on_refusal))), then(PROC_REF(interaction_toggle)))
 
-/// Load a coil into the reel.
-/datum/interaction/machine_item/cablelayer_load
-	id = "cablelayer_load"
-	name = "Load cable"
-	held_type = /obj/item/stack/cable_coil
-	effect = /obj/machinery/cablelayer/proc/interaction_load
+/// Requirement (was REQ_* has_cable_or_on): the legacy check answers TRUE to pass.
+/obj/machinery/cablelayer/proc/has_cable_or_on_holds(datum/act/op/A)
+	var/answer = has_cable_or_on(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/cablelayer/proc/interaction_load(mob/user, obj/item/stack/cable_coil/O, datum/interaction/interaction)
+/// Why has_cable_or_on_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/cablelayer/proc/has_cable_or_on_refusal(datum/act/op/A)
+	var/answer = has_cable_or_on(A.actor, src, A.held)
+	return istext(answer) ? answer : "doesn't have any cable loaded"
+
+/obj/machinery/cablelayer/proc/interaction_load(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/cable_coil/O = A.held
 	var/result = load_cable(O)
 	if(!result)
 		to_chat(user, span_warning("\The [src]'s cable reel is full."))
 	else
 		to_chat(user, "You load [result] lengths of cable into [src].")
-	return TRUE
-
-/// Old attackby: any other item did nothing and the base attackby was never reached.
-/datum/interaction/machine_item/cablelayer_swallow
-	id = "cablelayer_swallow"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
-
-/// Old attack_hand (never called ..()): toggle the layer on/off.
-/datum/interaction/machine_hand/ungated/cablelayer_toggle
-	id = "cablelayer_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/cablelayer/proc/has_cable_or_on, "doesn't have any cable loaded"))
-	effect = /obj/machinery/cablelayer/proc/interaction_toggle
+	return OP_OK
 
 /obj/machinery/cablelayer/proc/has_cable_or_on(mob/actor, atom/target, obj/item/held)
 	return cable || on
 
-/obj/machinery/cablelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cablelayer/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	set_on(!on)
 	act_message(user, src, MSG_SELF("You switch %T% [on? "on" : "off"]"), MSG_OTHERS("%U% [!on?"dea":"a"]ctivates %T%."))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/cablelayer/wirecutter_act(mob/user, obj/item/tool)
-	if(!cable || !cable.get_amount())
-		to_chat(user, span_warning("There's no more cable on the reel."))
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/number/cablelayer_cut, PROC_REF(cable_length_entered), answerer = user, default = min(cable.get_amount(), 30), tool = tool)
-	return ITEM_INTERACT_SUCCESS
-
-/// How much cable to cut off the layer's reel. Re-checked: next to the layer and able.
+/// How much cable to cut off the layer's reel. Asked by the wirecutter op (an asks() step: the hand and the place are kept while it is open).
 /datum/prompt/number/cablelayer_cut
 	title = "Cut cable"
 	question = "Please specify the length of cable to cut"
-	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 	timeout = 0
 	step = 1
-	var/obj/item/tool
 
-CAPABILITIES(/datum/prompt/number/cablelayer_cut)
-	ref_one(nameof(tool), /obj/item)
+MSG_DEF_SELF(cablelayer/no_cable, "There's no more cable on the reel.")
 
-/datum/prompt/number/cablelayer_cut/prepare(datum/act/A)
-	..()
-	var/obj/item/captured_tool = tool
-	rel_clear(src, nameof(tool))
-	rel_set(src, nameof(tool), captured_tool)
+/// The question's starting value: up to 30 lengths.
+/obj/machinery/cablelayer/proc/cut_default(datum/act/A)
+	return min(cable?.get_amount(), 30)
 
-/datum/prompt/number/cablelayer_cut/recheck_extra()
-	return QDELETED(tool) ? "gone" : null
-
-/obj/machinery/cablelayer/proc/cable_length_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/number/cablelayer_cut/ask = A.answer
-	var/obj/item/tool = ask.tool
-	if(!cable)
-		return
-	var/amount = min(ask.value, cable.get_amount(), 30)
-	if(amount)
+/// The wirecutter's answer: that much cable comes off the reel.
+/obj/machinery/cablelayer/proc/cable_length_entered(datum/act/op/A)
+	var/obj/item/tool = A.held
+	if(!cable || !isnum(A.answer?.value))
+		return OP_OK
+	var/amount = min(A.answer.value, cable.get_amount(), 30)
+	if(amount > 0)
 		playsound(src, tool.usesound, 50, TRUE)
 		use_cable(amount)
 		var/obj/item/stack/cable_coil/cut_cable = new(get_turf(src))
 		cut_cable.set_amount(amount)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/cablelayer/examine(mob/user)
 	. = ..()
@@ -131,7 +105,7 @@ CAPABILITIES(/datum/prompt/number/cablelayer_cut)
 		return
 	cable.use(amount)
 	if(QDELETED(cable))
-		own_take(src, nameof(cable))
+		rel_take(src, nameof(cable))
 	return 1
 
 /obj/machinery/cablelayer/proc/reset()
@@ -159,14 +133,14 @@ CAPABILITIES(/datum/prompt/number/cablelayer_cut)
 		return reset()
 	var/obj/structure/cable/NC = new(new_turf)
 	NC.cableColor("red")
-	NC.d1 = 0
-	NC.d2 = fdirn
-	NC.update_icon()
+	NC.set_d1(0)
+	NC.set_d2(fdirn)
+	changed(NC)
 
 	if(last_piece() && last_piece().d2 != M_Dir)
-		last_piece().d1 = min(last_piece().d2, M_Dir)
-		last_piece().d2 = max(last_piece().d2, M_Dir)
-		last_piece().update_icon()
+		last_piece().set_d1(min(last_piece().d2, M_Dir))
+		last_piece().set_d2(max(last_piece().d2, M_Dir))
+		changed(last_piece())
 		last_piece().power_register()
 	NC.power_register()
 	rel_set(src, nameof(last_piece), NC)

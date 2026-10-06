@@ -19,16 +19,15 @@
 		else
 			LAZYSET(crossed_dirs, mdir, 1)
 
-		update_icon()
+		changed(src)
 
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/snow/appearance_overlays()
-	. = list()
+/turf/snow/draw(datum/look/look)
+	..()
 	for(var/d in crossed_dirs)
 		var/amt = LAZYACCESS(crossed_dirs, d)
 
 		for(var/i in 1 to amt)
-			. += image(icon, "footprint[i]", text2num(d))
+			look.overlay(image(icon, "footprint[i]", text2num(d)))
 

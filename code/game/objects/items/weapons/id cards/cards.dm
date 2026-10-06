@@ -190,26 +190,25 @@ TRACKED(/obj/item/card_fluff, sprite_stack)
 
 /obj/item/card_fluff/proc/reset_icon()
 	set_sprite_stack(list(""))
-	update_icon()
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
 /// blended /icon per card; the layers draw the same without generating an icon).
-DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/card_fluff/appearance_overlays()
-	. = list()
-	icon = base_icon
+/obj/item/card_fluff/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	look.set_icon(base_icon)
 	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
-		icon_state = initial(icon_state)
-		return .
+		drawn_state = look.state(initial(icon_state))
+		return
 	var/first = TRUE
 	for(var/iconstate in sprite_stack)
 		if(!iconstate)
-			iconstate = icon_state
+			iconstate = drawn_state
 		if(first)
-			icon_state = iconstate
+			drawn_state = look.state(iconstate)
 			first = FALSE
 		else
-			. += image(base_icon, iconstate)
+			look.overlay(image(base_icon, iconstate))
 
 CAPABILITIES(/obj/item/card_fluff)
 	op("customize", in_hand(), label("Customize card"), needs(carried(), req_capable()),
@@ -267,7 +266,6 @@ CAPABILITIES(/obj/item/card_fluff)
 		changed_stack.Add("bar-black")
 
 	set_sprite_stack(changed_stack)
-	update_icon()
 
 /obj/item/card_fluff/proc/stamp_chosen(datum/act/op/A)
 	var/datum/prompt/choice/R = A.step_answer("stamp")
@@ -295,7 +293,6 @@ CAPABILITIES(/obj/item/card_fluff)
 		changed_stack.Add("stamp-exclaim")
 
 	set_sprite_stack(changed_stack)
-	update_icon()
 
 /obj/item/card/id/synthetic/borg
 	var/mob/living/silicon/robot/robot_owner

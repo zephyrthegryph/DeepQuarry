@@ -124,7 +124,9 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	op("change_bottle_style", ui_act("modal:change_bottle_style", arg("arguments")),
 		asks(/datum/prompt/choice, fields = list("question" = "Please select the new style for bottles:", "choices" = computed(PROC_REF(bottle_style_choices)), "default" = computed(PROC_REF(bottle_style_current)), "bento" = "spritesheet", "inline" = TRUE, "timeout" = 0), step = "style"),
 		then(PROC_REF(modal_change_bottle_style)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
+	op("remove_cartridge", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), when(nameof(panel_open)), label("Remove cartridge"), asks(/datum/prompt/choice, fields = list("question" = "Which cartridge would you like to remove?", "title" = "Chemical Synthesizer", "choices" = computed(PROC_REF(cartridge_choices)), "timeout" = 0)), then(PROC_REF(cartridge_chosen)))
 
 /obj/machinery/chemical_synthesizer/Initialize(mapload)
 	. = ..()
@@ -280,20 +282,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 	if(busy)
 		return OP_OK
 	return OP_DECLINE
-
-/obj/machinery/chemical_synthesizer/screwdriver_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ..()
-	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Synthesizer", choices = cartridges)
-	if(!label)
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
-	if(!cartridge)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You remove \the [cartridge] from \the [src]."))
-	cartridge.forceMove(loc)
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
 
 // More stolen chemical_dispenser code.
 /// Refills its cartridges every 15 frames while any is short; full (or not recharging) it sleeps
@@ -846,7 +834,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				reagents.trans_to_obj(P, min(reagents.total_volume, MAX_UNITS_PER_PILL))
 				if(P.icon_state in list("pill1", "pill2", "pill3", "pill4")) // if using greyscale, take colour from reagent
 					P.color = P.reagents.get_color()
-				P.update_icon()
 
 		if(3) // Patches
 			while(reagents.total_volume)
@@ -858,7 +845,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				reagents.trans_to_obj(P, min(reagents.total_volume, MAX_UNITS_PER_PATCH))
 				if(P.icon_state in list("patch1", "patch2", "patch3", "patch4")) // if using greyscale, take colour from reagent
 					P.color = P.reagents.get_color()
-				P.update_icon()
 
 		else // Bottles. Official value is 1, but this works as a sanity check.
 			while(reagents.total_volume)
@@ -868,7 +854,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				B.pixel_y = rand(-7, 7)
 				B.icon_state = "bottle-[bottle_icon]"
 				reagents.trans_to_obj(B, min(reagents.total_volume, MAX_UNITS_PER_BOTTLE))
-				B.update_icon()
+				changed(B)
 
 	// Sanity check when manual bottling is triggered.
 	if(queue.len)
@@ -964,3 +950,21 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 
 #undef SYNTH_REQUEST_GUIDED
 #undef SYNTH_REQUEST_IMPORT
+
+/// The cartridges the screwdriver's question offers, by label.
+/obj/machinery/chemical_synthesizer/proc/cartridge_choices(datum/act/A)
+	return cartridges
+
+/// The screwdriver's answer: that cartridge comes out.
+/obj/machinery/chemical_synthesizer/proc/cartridge_chosen(datum/act/op/A)
+	var/obj/item/tool = A.held
+	var/label = A.answer?.value
+	if(!label)
+		return OP_OK
+	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
+	if(!cartridge)
+		return OP_OK
+	to_chat(A.actor, span_notice("You remove \the [cartridge] from \the [src]."))
+	cartridge.forceMove(loc)
+	playsound(src, tool.usesound, 50, TRUE)
+	return OP_OK

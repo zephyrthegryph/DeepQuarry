@@ -69,7 +69,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 		direction_out = !direction_out
 
 	target_pressure = rand(0,1300)
-	update_icon()
 	return HOOK_DECLINE
 
 /// One service interval of pumping while it is on (its every()): toward its target, between its tank or the room and its own gas.
@@ -125,7 +124,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 		//ran out of charge
 		if (!cell.charge)
 			power_change()
-			update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/return_air()
 	return air_contents
@@ -161,14 +159,12 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_direction(datum/act/op/A)
 	direction_out = !direction_out
 	. = 1
-	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, nameof(/datum/rule_binding::holding))
+		rel_take(src, nameof(src.holding))
 	. = 1
-	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
 	var/pressure = raw_pressure
@@ -185,7 +181,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 		. = TRUE
 	if(.)
 		target_pressure = clamp(round(pressure), pressuremin, pressuremax)
-	update_icon()
 
 
 /obj/machinery/portable_atmospherics/powered/pump/huge
@@ -247,7 +242,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
-		update_icon()
 		return
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)

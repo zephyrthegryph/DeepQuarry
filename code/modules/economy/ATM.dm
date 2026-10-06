@@ -146,9 +146,6 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	src.attack_hand(user)
 	return TRUE
 
-/obj/machinery/atm/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
-
 /obj/machinery/atm/tgui_status(mob/user)
 	. = ..()
 	if(issilicon(user))
@@ -221,6 +218,7 @@ CAPABILITIES(/obj/machinery/atm)
 	op("transfer", ui_act("transfer", arg("funds_amount", num()), arg("purpose"), arg("target_acc_number", num())), then(PROC_REF(ui_act_transfer)))
 	op("e_withdrawal", ui_act("e_withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_e_withdrawal)))
 	op("withdrawal", ui_act("withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_withdrawal)))
+	display_disconnect_op()
 
 /obj/machinery/atm/proc/ui_act_insert_card(datum/act/op/A)
 	if(held_card())
@@ -232,7 +230,7 @@ CAPABILITIES(/obj/machinery/atm)
 			var/obj/item/I = A.actor.get_active_hand()
 			if(istype(I, /obj/item/card/id))
 				A.actor.drop_item(src)
-				rel_set(src, nameof(/obj/machinery/account_database::held_card), I)
+				rel_set(src, nameof(src.held_card), I)
 	. = OP_OK
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)

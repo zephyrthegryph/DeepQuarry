@@ -178,13 +178,13 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 			continue
 		rel_remove(src, nameof(cameras_telegraphed), C)
 		C.in_use_lights--
-		C.update_icon()
+		changed(C)
 	for(var/obj/machinery/camera/C as anything in add)
 		if(QDELETED(C))
 			continue
 		rel_add(src, nameof(cameras_telegraphed), C)
 		C.in_use_lights++
-		C.update_icon()
+		changed(C)
 
 /mob/observer/eye/aiEye/pic_in_pic/proc/disable_camera_telegraphing()
 	telegraph_cameras = FALSE
@@ -192,7 +192,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		if(QDELETED(C))
 			continue
 		C.in_use_lights--
-		C.update_icon()
+		changed(C)
 	rel_clear(src, nameof(cameras_telegraphed))
 
 // The screen owns its eye (implicit OWN aiEye); `screen` is only the way back (a relation),

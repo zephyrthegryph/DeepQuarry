@@ -27,7 +27,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump), because = MSG(oxygen_pump/no_tank))), then(PROC_REF(oxygen_pump_interaction_hand)))
 	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
 	op("oxygen_pump_settings", menu(), label("Show Tank Settings"), then(PROC_REF(oxygen_pump_settings)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
@@ -79,7 +79,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
-		own_take(src, nameof(tank))
+		rel_take(src, nameof(tank))
 		return TRUE
 	if(!tank)
 		return TRUE

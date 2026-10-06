@@ -80,6 +80,7 @@
 	TEST_ASSERT(!rc_open(A), "and it is shut now")
 	var/text = jointext(A.examine(H), " ")
 	TEST_ASSERT(findtext(text, "spent"), "it says it is spent: [text]")
+	appearance_flush() // the look is redrawn at the end of the frame
 	TEST_ASSERT_EQUAL(A.icon_state, "blue0", "and looks spent")
 
 /// A loaded autoinjector says so and looks loaded.
@@ -88,7 +89,7 @@
 /datum/unit_test/dq_p2_reagents/autoinjector_loaded_look_and_examine/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/hypospray/autoinjector/A = rc_hypo(/obj/item/reagent_containers/hypospray/autoinjector, -1)
-	A.update_icon()
+	appearance_flush()
 	var/text = jointext(A.examine(H), " ")
 	TEST_ASSERT(findtext(text, "loaded"), "it says it is loaded: [text]")
 	TEST_ASSERT_EQUAL(A.icon_state, "blue1", "and looks loaded")

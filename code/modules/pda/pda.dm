@@ -338,7 +338,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		own_take(src, nameof(id))
+		rel_take(src, nameof(id))
 
 /obj/item/pda/proc/remove_pen(mob/user)
 	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
@@ -412,7 +412,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		rel_clear(cartridge.radio, nameof(/obj/item/radio/integrated::hostpda))
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
-	own_take(src, nameof(cartridge))
+	rel_take(src, nameof(cartridge))
 	update_programs()
 	update_shortcuts()
 	start_program(find_program(/datum/data/pda/app/main_menu))
@@ -430,7 +430,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
-			var/obj/old_id = own_take(src, nameof(src.id)) // handed back below, not disposed of
+			var/obj/old_id = rel_take(src, nameof(src.id)) // handed back below, not disposed of
 			if(!move_into(src, nameof(src.id), I, user))
 				rel_set(src, nameof(src.id), old_id)
 				return 0

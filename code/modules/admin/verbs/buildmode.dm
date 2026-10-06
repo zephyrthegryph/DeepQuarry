@@ -504,7 +504,6 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				A.update_icon()
-				B.update_icon()
 				log_admin("BUILDMODE: [key_name(user)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))

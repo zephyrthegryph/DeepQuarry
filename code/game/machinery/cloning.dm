@@ -59,12 +59,12 @@
 
 	var/speed_coeff
 	var/efficiency
+TRACKED(/obj/machinery/clonepod, mess)
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/clonepod/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 // its containers drop out and the growing clone is ejected.
 
@@ -130,10 +130,10 @@ CAPABILITIES(/obj/machinery/clonepod)
 	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(clonepod_emp))))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)
@@ -183,12 +183,11 @@ CAPABILITIES(/obj/machinery/clonepod)
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
 	var/mob/living/carbon/human/H = BR?.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
-	own_clear(src, nameof(growing_record), OWN_DELETE)
+	rel_clear(src, nameof(growing_record))
 	// An after() callback: the record (or the mind) may have been deleted during the wait and
 	// arrives as null. Without a body there is nothing to finish; the pod resets either way.
 	if(!H)
 		attempting = 0
-		update_icon()
 		return
 	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
@@ -224,7 +223,6 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// right one now. set_occupant() itself now happens through the slot's
 	// own on_link() (OM relations step 3).
 	move_into(src, OCCUPANT_SLOT_CLONEPOD, H)
-	update_icon()
 	attempting = 0
 
 	return 1
@@ -353,7 +351,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.connecting), src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
-	multitool.update_icon()
+	changed(multitool)
 	return OP_OK
 
 /// A sequencer forces an emergency ejection.
@@ -418,9 +416,8 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return
 
 	if(mess) //Clean that mess and dump those gibs!
-		mess = 0
+		set_mess(0)
 		gibs(src.loc)
-		update_icon()
 		return
 
 	var/mob/living/occupant = get_occupant()
@@ -435,7 +432,6 @@ CAPABILITIES(/obj/machinery/clonepod)
 			occupant.UpdateAppearance()
 	slot_remove(occupant, get_turf(src))
 
-	update_icon()
 	return
 
 // Returns the total amount of biomass reagent in all of the pod's stored containers
@@ -496,8 +492,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	var/mob/living/occupant = get_occupant()
 	if(occupant)
 		connected_message("Critical Error!")
-		mess = 1
-		update_icon()
+		set_mess(1)
 		occupant.ghostize()
 		occupant.expire(0.5 SECONDS)
 
@@ -521,7 +516,10 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return "g"
 	return "0"
 
-APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/clonepod/draw(datum/look/look)
+	..()
+	look.state("pod_[appearance_state()]")
 
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()

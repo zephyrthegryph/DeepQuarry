@@ -51,9 +51,9 @@
 			C.forceMove(A)
 			continue
 		C.forceMove(loc)
-	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
+	rel_move(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
 	A.state = FRAME_WIRED
-	A.update_icon()
+	changed(A)
 	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
 	var/list/data = list()

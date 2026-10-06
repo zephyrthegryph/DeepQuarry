@@ -27,5 +27,5 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Insert (refused: you cannot put the item into the machine)
 human|/obj/item click: nothing
-keys: construct, drag_buckle, gen_insert_interaction_insert, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: construct, drag_buckle, gen_insert_interaction_insert, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor
 

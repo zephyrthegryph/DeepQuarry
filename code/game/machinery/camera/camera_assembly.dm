@@ -55,7 +55,6 @@ CAPABILITIES(/obj/item/camera_assembly)
 		to_chat(user, span_notice("You wrench the assembly into place."))
 		set_anchored(TRUE)
 		state = 1
-		update_icon()
 		auto_turn()
 		return TRUE
 	if(state == 1)
@@ -63,7 +62,6 @@ CAPABILITIES(/obj/item/camera_assembly)
 		to_chat(user, span_notice("You unattach the assembly from its place."))
 		set_anchored(FALSE)
 		state = 0
-		update_icon()
 		return TRUE
 	return FALSE
 
@@ -99,7 +97,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
-		own_take_member(src, nameof(upgrades), upgrade)
+		rel_take(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
 	return TRUE
 
@@ -180,7 +178,14 @@ CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
 		return
 	ask_camera_direction(R.answerer, R.camera, R.chances - 1)
 
-DECLARE_APPEARANCE(/obj/item/camera_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "camera1"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "cameracase")))
+/// The look (the draw sweep: from its layers).
+/obj/item/camera_assembly/draw(datum/look/look)
+	..()
+	switch("[anchored]")
+		if("1")
+			look.state("camera1")
+		else
+			look.state("cameracase")
 
 DECLARE_INTERACTIONS(/obj/item/camera_assembly, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \

@@ -231,7 +231,6 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 	if(!move_into(src, nameof(src.helmet), IH, user))
 		return TRUE
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
@@ -243,21 +242,15 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 	if(!move_into(src, nameof(src.suit), IS, user))
 		return TRUE
 
-	update_icon()
 	return TRUE
 
-/obj/machinery/suit_cycler/proc/hacking_tool_act(mob/user)
-	if(shock_live(src) && shock(user, 100))
-		return ITEM_INTERACT_BLOCKING
+/// The multitool or wirecutters: a live cycler shocks; behind the open panel its window opens.
+/obj/machinery/suit_cycler/proc/hacking_tool_used(datum/act/op/A)
+	if(shock_live(src) && shock(A.actor, 100))
+		return OP_OK
 	if(panel_open)
-		attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/suit_cycler/multitool_act(mob/user, obj/item/tool)
-	return hacking_tool_act(user)
-
-/obj/machinery/suit_cycler/wirecutter_act(mob/user, obj/item/tool)
-	return hacking_tool_act(user)
+		attack_hand(A.actor)
+	return OP_OK
 
 /obj/machinery/suit_cycler/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -314,7 +307,8 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	op("eject_guy", ui_act("eject_guy"), then(PROC_REF(ui_act_eject_guy)))
 	op("uv", ui_act("uv"), then(PROC_REF(ui_act_uv)))
 	emag(then(PROC_REF(on_emag)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_hacking_tools", any_of_tools(TOOL_MULTITOOL, TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(hacking_tool_used)))
 
 /obj/machinery/suit_cycler/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -376,11 +370,11 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		if("helmet")
 			if(helmet)
 				helmet.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/item/rig::helmet))
+				rel_take(src, nameof(helmet))
 		if("suit")
 			if(suit)
 				suit.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/machinery/suit_cycler::suit))
+				rel_take(src, nameof(/obj/machinery/suit_cycler::suit))
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_department(datum/act/op/A, department)
@@ -522,7 +516,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	slot_remove(occupant, get_turf(src))
 
 	add_fingerprint(user)
-	update_icon()
 
 	return
 

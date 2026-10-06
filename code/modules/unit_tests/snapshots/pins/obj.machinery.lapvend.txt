@@ -23,5 +23,7 @@ human|/obj/item/stack/material/steel click: Click: Pay
 human|/obj/item/card/id menu: Pay
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Pay
-keys: clean_order, confirm_order, drag_buckle, gen_robot_interaction_swallow, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_repair, pay, pick_device
+human|/obj/item menu: Pay
+human|/obj/item click: Click: Pay
+keys: clean_order, confirm_order, drag_buckle, gen_robot_interaction_swallow, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, pay, pick_device
 

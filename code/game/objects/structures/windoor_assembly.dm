@@ -146,7 +146,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	to_chat(A.actor, span_notice("You've removed the airlock electronics!"))
 	if(electronics)
 		var/obj/item/airlock_electronics/ae = electronics
-		own_take(src, nameof(electronics))
+		rel_take(src, nameof(electronics))
 		ae.forceMove(loc)
 	update_state()
 	return OP_OK
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	else
 		windoor.req_access = electronics.conf_access
 	electronics.forceMove(windoor)
-	own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
+	rel_move(src, nameof(electronics), windoor, nameof(windoor.electronics))
 	replace_with(src, windoor)
 	return OP_OK
 

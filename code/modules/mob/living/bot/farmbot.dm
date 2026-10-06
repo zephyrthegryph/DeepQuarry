@@ -301,7 +301,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 
 	if(tank)
 		tank.forceMove(Tsec)
-		own_take(src, nameof(tank))
+		rel_take(src, nameof(tank))
 
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)

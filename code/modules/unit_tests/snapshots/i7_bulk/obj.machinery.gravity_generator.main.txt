@@ -2,3 +2,4 @@
 /obj/machinery/gravity_generator/main|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/gravity_generator/main|ai|none => |
 /obj/machinery/gravity_generator/main|ghost|none => |
+

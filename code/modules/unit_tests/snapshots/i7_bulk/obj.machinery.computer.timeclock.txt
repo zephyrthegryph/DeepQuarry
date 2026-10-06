@@ -2,3 +2,4 @@
 /obj/machinery/computer/timeclock|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/timeclock|ai|none => |
 /obj/machinery/computer/timeclock|ghost|none => |
+

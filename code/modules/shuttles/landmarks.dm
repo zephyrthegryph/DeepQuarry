@@ -189,15 +189,13 @@ CAPABILITIES(/obj/item/spaceflare)
 	var/obj/effect/shuttle_landmark/automatic/mark = new(T)
 	mark.name = ("Beacon signal ([T.x],[T.y])")
 	T.hotspot_expose(1500, 5)
-	update_icon()
+	changed(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/spaceflare, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spaceflare/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/spaceflare/draw(datum/look/look)
+	..()
 	if(active)
-		icon_state = "bluflare_on"
-		set_light(0.3, 0.1, 6, 2, "85d1ff")
+		look.state("bluflare_on")
+		look.light(0.3, 0.1, 6)
 
 /// Accessor for the docking_controller var.
 /obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking

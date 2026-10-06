@@ -1,4 +1,5 @@
-/obj/machinery/conveyor_switch|human|none => conveyor_switch_toggle|machine_panel:needs a screwdriver
-/obj/machinery/conveyor_switch|robot|none => conveyor_switch_toggle|machine_panel:needs a screwdriver,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/conveyor_switch|human|none => |
+/obj/machinery/conveyor_switch|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/conveyor_switch|ai|none => |
 /obj/machinery/conveyor_switch|ghost|none => |
+

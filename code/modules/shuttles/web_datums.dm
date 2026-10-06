@@ -242,7 +242,7 @@ CAPABILITIES(/datum/shuttle_web_master)
 				break
 		if(!valid)
 			log_mapping("Web shuttle autopath [P.type] pruned: references a destination with no landmark on this map.")
-			own_remove(src, nameof(autopaths), P)
+			rel_remove(src, nameof(autopaths), P)
 
 /datum/shuttle_web_master/proc/choose_path()
 	if(!length(autopaths) || !current_destination())

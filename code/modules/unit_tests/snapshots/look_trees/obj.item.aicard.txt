@@ -1,0 +1,5 @@
+/obj/item/aicard icon: icons/obj/pda.dmi
+/obj/item/aicard state: aicard
+/obj/item/aicard dir: 2
+/obj/item/aicard overlay: icons/obj/pda.dmi:aicard:8:#000000
+

@@ -54,7 +54,8 @@
 		launch_force = initial(launch_force)
 		weaken_force = initial(weaken_force)
 		name = "[initial(name)] (wielded)"
-		update_icon()
+		changed(src)
+		changed(src)
 	else
 		wielded = 0
 		if(status)
@@ -66,7 +67,8 @@
 		launch_force = launch_force_unwielded
 		weaken_force = weaken_force_unwielded
 		name = "[initial(name)]"
-	update_icon()
+	changed(src)
+	changed(src)
 	..()
 
 /obj/item/melee/shock_maul/Initialize(mapload)
@@ -116,10 +118,7 @@
 	. = ..()
 	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
-/obj/item/melee/shock_maul/loaded/Initialize(mapload) //this one starts with a cell pre-installed.
-	. = ..()
-	update_icon()
-
+	changed(src)
 /obj/item/melee/shock_maul/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on
 		if(bcell)
@@ -135,23 +134,23 @@
 			status = 0
 			update_held_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/shock_maul/appearance_overlays()
-	. = list()
+/obj/item/melee/shock_maul/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(status)
-		icon_state = "[initial(icon_state)]_active[wielded]"
-		item_state = icon_state
+		drawn_state = look.state("[initial(icon_state)]_active[wielded]")
+		look.held_state(drawn_state)
 	else if(!bcell)
-		icon_state = "[initial(icon_state)]_nocell[wielded]"
-		item_state = icon_state
+		drawn_state = look.state("[initial(icon_state)]_nocell[wielded]")
+		look.held_state(drawn_state)
 	else
-		icon_state = "[initial(icon_state)][wielded]"
-		item_state = icon_state
+		drawn_state = look.state("[initial(icon_state)][wielded]")
+		look.held_state(drawn_state)
 
-	if(icon_state == "[initial(icon_state)]_active[wielded]")
-		set_light(2, 1, lightcolor)
+	if(drawn_state == "[initial(icon_state)]_active[wielded]")
+		look.light(2, 1, lightcolor)
 	else
-		set_light(0)
+		look.light_off()
 
 /obj/item/melee/shock_maul/dropped(mob/user, equipping, slot)
 	..()
@@ -204,7 +203,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 		else if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_held_icon()

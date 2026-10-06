@@ -1,0 +1,9 @@
+/obj/machinery/mining/drill icon: icons/obj/mining_drill.dmi
+/obj/machinery/mining/drill state: mining_drill
+/obj/machinery/mining/drill dir: 2
+/obj/machinery/mining/drill overlay: icons/obj/mining_drill.dmi:mining_drill:8:#000000
+/obj/machinery/mining/drill/loaded icon: icons/obj/mining_drill.dmi
+/obj/machinery/mining/drill/loaded state: mining_drill
+/obj/machinery/mining/drill/loaded dir: 2
+/obj/machinery/mining/drill/loaded overlay: icons/obj/mining_drill.dmi:mining_drill:8:#000000
+

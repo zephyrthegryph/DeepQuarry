@@ -1,0 +1,9 @@
+/obj/machinery/neonsign icon: icons/obj/neonsigns.dmi
+/obj/machinery/neonsign state: sign_off
+/obj/machinery/neonsign dir: 2
+/obj/machinery/neonsign overlay: icons/obj/neonsigns.dmi:sign_off:8:#000000
+/obj/machinery/neonsign/cafe icon: icons/obj/neonsigns.dmi
+/obj/machinery/neonsign/cafe state: cafesign_off
+/obj/machinery/neonsign/cafe dir: 2
+/obj/machinery/neonsign/cafe overlay: icons/obj/neonsigns.dmi:cafesign_off:8:#000000
+

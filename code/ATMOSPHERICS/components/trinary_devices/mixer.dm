@@ -103,7 +103,6 @@ CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer)
 
 /obj/machinery/atmospherics/trinary/mixer/proc/ui_power_switched(datum/act/op/A)
 	toggle_power()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/trinary/mixer/proc/ui_flow_rate_set(datum/act/op/A, pressure)
@@ -112,19 +111,16 @@ CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer)
 		pressure = most
 	if(isnum(pressure))
 		set_set_flow_rate(clamp(pressure, 0, most))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/trinary/mixer/proc/ui_node1(datum/act/op/A, concentration)
 	set_node1_concentration(max(0, min(1, concentration / 100)))
 	set_node2_concentration(1.0 - node1_concentration)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/trinary/mixer/proc/ui_node2(datum/act/op/A, concentration)
 	set_node2_concentration(max(0, min(1, concentration / 100)))
 	set_node1_concentration(1.0 - node2_concentration)
-	update_icon()
 	return OP_OK
 
 //

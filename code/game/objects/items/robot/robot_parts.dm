@@ -65,10 +65,6 @@
 	var/obj/item/robot_parts/head/head = null
 	var/created_name = ""
 
-/obj/item/robot_parts/robot_suit/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/robot_parts/robot_suit/draw(datum/look/look)
 	..()
 	if(src.l_arm)

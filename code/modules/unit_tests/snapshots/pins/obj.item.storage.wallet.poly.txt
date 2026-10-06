@@ -120,5 +120,23 @@ human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Put in
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Put in
+human|/obj/item menu: Change wallet color (refused: You can't do that.)
+human|/obj/item menu: Collect (refused: needs a storage)
+human|/obj/item menu: Customise (refused: needs an item)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Open
+human|/obj/item menu: Pick up
+human|/obj/item menu: Put in
+human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item click: Click: Put in
+human|/obj/item/lightreplacer menu: Change wallet color (refused: You can't do that.)
+human|/obj/item/lightreplacer menu: Collect (refused: needs a storage)
+human|/obj/item/lightreplacer menu: Customise (refused: needs an item)
+human|/obj/item/lightreplacer menu: Move To Top
+human|/obj/item/lightreplacer menu: Open
+human|/obj/item/lightreplacer menu: Pick up
+human|/obj/item/lightreplacer menu: Put in
+human|/obj/item/lightreplacer menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/lightreplacer click: Click: Put in
 keys: drag_buckle, feed_replacer, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, recolor, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open
 

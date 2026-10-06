@@ -2,3 +2,4 @@
 /obj/structure/bed/chair/wheelchair|robot|none => |
 /obj/structure/bed/chair/wheelchair|ai|none => |
 /obj/structure/bed/chair/wheelchair|ghost|none => |
+

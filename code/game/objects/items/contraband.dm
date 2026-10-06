@@ -42,7 +42,6 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 		names += R.name
 
 	desc = "Contains [english_list(names)]."
-	update_icon()
 
 //
 // Drug Powder

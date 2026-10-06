@@ -17,6 +17,7 @@
 
 	/// The artifact master type created at Initialize (the instance lives in /atom/var/artifact_master).
 	var/artifact_master_type = /datum/artifact_master
+TRACKED(/obj/machinery/artifact, icon_num)
 
 /// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
 /// ARTIFACT_HEAT_BREAK (and re-arms when moved).
@@ -56,9 +57,9 @@ CAPABILITIES(/obj/machinery/artifact)
 	var/datum/artifact_effect/my_effect = artifact_master.get_primary() //Gets the primary effect of the artifact.
 
 	if(!isnull(predefined_icon_num))
-		icon_num = predefined_icon_num
+		set_icon_num(predefined_icon_num)
 	else
-		icon_num = rand(0, 15)
+		set_icon_num(rand(0, 15))
 
 	icon_state = "ano[icon_num]0"
 	if(icon_num == 7 || icon_num == 8 || icon_num == 15)
@@ -86,11 +87,13 @@ CAPABILITIES(/obj/machinery/artifact)
 		my_effect.trigger = pick(TRIGGER_TOUCH, TRIGGER_HEAT, TRIGGER_COLD)
 	artifact_master.do_large_randomization()
 	. = ..()
-	update_icon()
 /obj/machinery/artifact/proc/appearance_active()
 	return LAZYLEN(artifact_master?.get_active_effects()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/artifact, "ano{icon_num}{appearance_active}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/artifact/draw(datum/look/look)
+	..()
+	look.state("ano[icon_num][appearance_active()]")
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

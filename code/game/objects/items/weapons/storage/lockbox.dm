@@ -40,7 +40,6 @@ CAPABILITIES(/obj/item/storage/lockbox)
 /obj/item/storage/lockbox/proc/lock_changed(datum/act/A)
 	if(lock_locked(src))
 		close_all()
-	update_icon()
 
 /obj/item/storage/lockbox/proc/blade_can_slice(datum/act/op/A)
 	return !broken

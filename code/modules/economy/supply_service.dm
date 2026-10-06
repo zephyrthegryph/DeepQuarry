@@ -96,7 +96,7 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 	log_world("System [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/system/supply/proc/reset_shift_economy_tracking()
-	own_clear(src, nameof(service_invoices), OWN_DELETE)
+	rel_clear(src, nameof(service_invoices))
 	service_invoice_counter = 0
 	service_accounting_period = 1
 	currency_created = 0

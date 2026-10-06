@@ -39,7 +39,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 CAPABILITIES(/obj/machinery/feeder)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
 	drag_onto(PROC_REF(drop_input))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_beaker", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(beaker), FALSE, because = MSG(feeder/beaker))), then(PROC_REF(interaction_insert_beaker)))
 	op("reject", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_reject)))
 	op("take_beaker", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Take out container"), then(PROC_REF(interaction_take_beaker)))
@@ -95,7 +95,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, nameof(beaker))
+		rel_take(src, nameof(beaker))
 	destroyed(src, user, "deconstructed")
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
@@ -116,7 +116,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 	if(!beaker)
 		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
-	own_take(src, nameof(beaker))
+	rel_take(src, nameof(beaker))
 	update_icon()
 	return TRUE
 

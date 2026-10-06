@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/detach()
 	if(chassis)
-		own_clear(src, nameof(shields), OWN_DELETE)
+		rel_clear(src, nameof(shields))
 	. = ..()
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/handle_movement_action()

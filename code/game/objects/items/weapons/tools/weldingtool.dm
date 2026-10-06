@@ -238,6 +238,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 	else
 		set_light(0)
 
+
 //	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
 	var/mob/M = loc
 	if(istype(M))
@@ -554,10 +555,6 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 /obj/item/weldingtool/electric/unloaded
 	cell_type = null
 
-/obj/item/weldingtool/electric/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/weldingtool/electric/get_cell()
 	return power_supply
 
@@ -618,7 +615,7 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 		if(power_supply)
 			power_supply.update_icon()
 			user.put_in_hands(power_supply)
-			own_take(src, nameof(power_supply))
+			rel_take(src, nameof(power_supply))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
 			update_icon()

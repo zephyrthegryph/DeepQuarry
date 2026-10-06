@@ -29,10 +29,12 @@ human|/obj/item/tool/wrench click: Click: Ui open
 human|/obj/item/tool/wirecutters menu: Make Deployable
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Wires
 human|/obj/item/tool/wirecutters click: Click: Ui open
 human|/obj/item/multitool menu: Make Deployable
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Wires
 human|/obj/item/multitool click: Click: Ui open
 human|/obj/item/weldingtool menu: Make Deployable
 human|/obj/item/weldingtool menu: Ui open
@@ -53,5 +55,9 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-keys: anchor, auth, drag_buckle, gen_robot_interaction_swallow, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_repair, make_deployable, pulse, safety, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wrench, wire
+human|/obj/item/disk/nuclear menu: Make Deployable
+human|/obj/item/disk/nuclear menu: Ui open
+human|/obj/item/disk/nuclear menu: Use
+human|/obj/item/disk/nuclear click: Click: Ui open
+keys: anchor, auth, drag_buckle, gen_robot_interaction_swallow, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, pulse, safety, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wire_tools, use_wrench, wire
 

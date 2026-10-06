@@ -51,7 +51,6 @@
 /obj/machinery/partslathe/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 	update_recipe_list()
 
 /obj/machinery/partslathe/RefreshParts()
@@ -67,19 +66,19 @@
 		eject_materials(f, -1)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/partslathe/appearance_overlays()
-	. = list()
+/obj/machinery/partslathe/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(panel_open)
-		icon_state = "partslathe-open"
+		drawn_state = look.state("partslathe-open")
 	else if(!operable())
-		icon_state = "partslathe-off"
+		drawn_state = look.state("partslathe-off")
 	else if(busy)
-		icon_state = "partslathe-lidclose"
+		drawn_state = look.state("partslathe-lidclose")
 	else
-		if(icon_state == "partslathe-lidclose")
-			flick("partslathe-lidopen", src)
-		icon_state = "partslathe-idle"
+		if(drawn_state == "partslathe-lidclose")
+			look.play_flick("partslathe-lidopen")
+		drawn_state = look.state("partslathe-idle")
 
 /// Requirement: TRUE, or why an item can't be used on the lathe right now.
 /obj/machinery/partslathe/proc/can_load_item(mob/user, atom/target, obj/item/O)
@@ -145,13 +144,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 
 /obj/machinery/partslathe/proc/work_step(datum/act/timer/A)
 	if(has_stat(MACHINE_STAT_ANY))
-		update_icon()
 		return
 	if(queue.len == 0)
 		if (busy)
 			ping() // Job's done!
 		busy = 0
-		update_icon()
 		return
 	var/datum/category_item/partslathe/D = queue[1]
 	if(canBuild(D))
@@ -162,7 +159,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 			build(D, queue_producer_accounts[1])
 			progress = 0
 			removeFromQueue(1)
-		update_icon()
 	else if(busy)
 		visible_message(span_notice("[icon2html(src,viewers(src))] flashes: insufficient materials: [getLackingMaterials(D)]."))
 		busy = 0
@@ -343,7 +339,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 	if(copy_board)
 		visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
 		copy_board.forceMove(src.loc)
-		own_take(src, nameof(/obj/machinery/partslathe::copy_board))
+		rel_take(src, nameof(/obj/machinery/partslathe::copy_board))
 	return TRUE
 
 /obj/machinery/partslathe/proc/ui_act_remove_mat(datum/act/op/A, raw_amount, id)

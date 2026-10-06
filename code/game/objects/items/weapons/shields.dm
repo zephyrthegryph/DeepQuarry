@@ -354,11 +354,14 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 	else if(!on && light_applied)
 		set_light(0)
 		light_applied = 0
-	update_icon()
+	changed(src)
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 
-APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted:}")
+/// The look (the draw sweep: from its template).
+/obj/item/shield/riot/explorer/draw(datum/look/look)
+	..()
+	look.state("explorer_shield[on ? "_lighted" : ""]")
 
 /obj/item/shield/riot/explorer/purple
 	name = "purple explorer shield"
@@ -376,7 +379,10 @@ CAPABILITIES(/obj/item/shield/riot/explorer)
 		COOLDOWN_START(src, cooldown, 2.5 SECONDS)
 	return OP_OK
 
-APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P{on?_lighted:}")
+/// The look (the draw sweep: from its template).
+/obj/item/shield/riot/explorer/purple/draw(datum/look/look)
+	..()
+	look.state("explorer_shield_P[on ? "_lighted" : ""]")
 
 /obj/item/shield/primitive
 	name = "primitive shield"

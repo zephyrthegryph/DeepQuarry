@@ -29,12 +29,6 @@
 	if(Adjacent(user))
 		. += "The screen shows there's [toner ? "[toner]" : "no"] toner left in the printer."
 
-EXTEND_INTERACTIONS(/obj/machinery/photocopier, \
-	INTERACT_INSERT(list(/obj/item/paper, /obj/item/photo, /obj/item/paper_bundle), PROC_REF(interaction_insert), "Insert"), \
-	INTERACT_INSERT(/obj/item/toner, PROC_REF(interaction_insert_toner), "Insert toner"), \
-	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_swallow), "Use"), \
-)
-
 // The copier's window. An AI's photo print asks which of its pictures (asks()), when it has one to print.
 CAPABILITIES(/obj/machinery/photocopier)
 	interface("Photocopier")
@@ -44,9 +38,12 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("set_copies", ui_act("set_copies", arg("num_copies", num())), then(PROC_REF(ui_act_set_copies)))
 	op("ai_photo", ui_act("ai_photo"), asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(album_names)), "timeout" = 0), step = "picture", when = PROC_REF(album_ready)),
 		then(PROC_REF(ui_act_ai_photo)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert", inputs(item(/obj/item/paper), item(/obj/item/photo), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
+	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /// The window data.
 /obj/machinery/photocopier/ui_data(datum/act/eval/A)
@@ -81,7 +78,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 		copyitem.forceMove(user.loc)
 		user.put_in_hands(copyitem)
 		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, nameof(copyitem))
+		rel_take(src, nameof(copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
 	return TRUE
@@ -184,22 +181,26 @@ CAPABILITIES(/obj/machinery/photocopier)
 	use_power(active_power_usage)
 	copy_next(user, left - 1)
 
-/obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/photocopier/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!copyitem)
 		if(!move_into(src, nameof(src.copyitem), O, user))
-			return TRUE
+			return OP_OK
 		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
 		playsound(src, "sound/machines/click.ogg", 100, 1)
 		flick(insert_anim, src)
 	else
 		to_chat(user, span_notice("There is already something in \the [src]."))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/photocopier/proc/interaction_insert_toner(mob/user, obj/item/toner/O, datum/interaction/interaction)
+/obj/machinery/photocopier/proc/interaction_insert_toner(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/toner/O = A.held
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
 		var/refill_amount = O.toner_amount
 		if(!consume(O, user))
-			return TRUE
+			return OP_OK
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		flick("photocopier_toner", src)
 		play_sfx(loc, SFX_MACHINES_CLICK)
@@ -208,7 +209,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)
 		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/photocopier/proc/screwdriver_used(datum/act/op/A)
 	return OP_DECLINE

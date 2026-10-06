@@ -1,51 +1,50 @@
 human|none menu: Eject Processor
-human|none menu: Insert
 human|none menu: Start
-human|none click: nothing
+human|none click: Click: Start
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Processor
-robot|none menu: Insert
 robot|none menu: Start
-robot|none click: nothing
+robot|none click: Click: Start
 ai|none click: nothing
+ghost|none menu: Eject Processor (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Processor
 human|/obj/item/tool/screwdriver menu: Insert
 human|/obj/item/tool/screwdriver menu: Start
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Start
 human|/obj/item/tool/crowbar menu: Eject Processor
 human|/obj/item/tool/crowbar menu: Insert
 human|/obj/item/tool/crowbar menu: Start
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Start
 human|/obj/item/tool/wrench menu: Eject Processor
 human|/obj/item/tool/wrench menu: Insert
 human|/obj/item/tool/wrench menu: Start
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Start
 human|/obj/item/tool/wirecutters menu: Eject Processor
 human|/obj/item/tool/wirecutters menu: Insert
 human|/obj/item/tool/wirecutters menu: Start
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Start
 human|/obj/item/multitool menu: Eject Processor
 human|/obj/item/multitool menu: Insert
 human|/obj/item/multitool menu: Start
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Start
 human|/obj/item/weldingtool menu: Eject Processor
 human|/obj/item/weldingtool menu: Insert
 human|/obj/item/weldingtool menu: Start
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Start
 human|/obj/item/stack/cable_coil menu: Eject Processor
 human|/obj/item/stack/cable_coil menu: Insert
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Start
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Start
 human|/obj/item/stack/material/steel menu: Eject Processor
 human|/obj/item/stack/material/steel menu: Insert
 human|/obj/item/stack/material/steel menu: Start
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Start
 human|/obj/item/card/id menu: Eject Processor
 human|/obj/item/card/id menu: Insert
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Start
-human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_drag_interaction_insert, gen_hand_ungated_interaction_start, gen_robot_interaction_swallow, gen_verb_interaction_eject, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+human|/obj/item/card/id click: Click: Start
+keys: drag_buckle, eject, gen_robot_interaction_swallow, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, start
 

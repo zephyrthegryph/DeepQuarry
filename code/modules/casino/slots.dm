@@ -33,7 +33,8 @@
 
 CAPABILITIES(/obj/machinery/slot_machine)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert chip"), needs(req(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/slot_machine/appearance_overlays()
@@ -67,24 +68,34 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 		return OP_OK
 	return OP_DECLINE
 
-EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Insert chip", REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/slot_machine/proc/not_running), "the slot machine is currently running"), REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured")), \
-)
+/// Requirement (was REQ_* not_running): the legacy check answers TRUE to pass.
+/obj/machinery/slot_machine/proc/not_running_holds(datum/act/op/A)
+	var/answer = not_running(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why not_running_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/slot_machine/proc/not_running_refusal(datum/act/op/A)
+	var/answer = not_running(A.actor, src, A.held)
+	return istext(answer) ? answer : "the slot machine is currently running"
+
+MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
 	return !om_busy(src)
 
-/obj/machinery/slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/slot_machine/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(istype(held, /obj/item/spacecasinocash))
 		var/obj/item/spacecasinocash/C = held
 		var/paid = insert_chip(C, user)
 		if(paid)
-			return TRUE
+			return OP_OK
 		SStgui.update_uis(src)
-		return TRUE // don't smack that machine with your 2 chips
+		return OP_OK // don't smack that machine with your 2 chips
 
-	return TRUE
+	return OP_OK
 
 /obj/machinery/slot_machine/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
 	if (ispowered == 0)
@@ -101,6 +112,7 @@ EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
 	to_chat(user,span_notice("You puts 5 credits in the slot machine and presses start."))
 	cashmoney.worth -= 5
 	cashmoney.update_icon()
+	changed(cashmoney)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)
@@ -172,7 +184,8 @@ EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
 
 CAPABILITIES(/obj/machinery/station_slot_machine)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cash"), needs(req(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(station_slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/station_slot_machine/appearance_overlays()
@@ -206,24 +219,34 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 		return OP_OK
 	return OP_DECLINE
 
-EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Insert cash", REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/station_slot_machine/proc/not_running), "the slot machine is currently running"), REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured")), \
-)
+/// Requirement (was REQ_* not_running): the legacy check answers TRUE to pass.
+/obj/machinery/station_slot_machine/proc/not_running_holds(datum/act/op/A)
+	var/answer = not_running(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why not_running_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/station_slot_machine/proc/not_running_refusal(datum/act/op/A)
+	var/answer = not_running(A.actor, src, A.held)
+	return istext(answer) ? answer : "the slot machine is currently running"
+
+MSG_DEF_SELF(station_slot_machine/unanchored, "the slot machine isn't secured")
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/station_slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
 	return !om_busy(src)
 
-/obj/machinery/station_slot_machine/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/station_slot_machine/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(istype(held, /obj/item/spacecash))
 		var/obj/item/spacecash/C = held
 		var/paid = insert_cash(C, user)
 		if(paid)
-			return TRUE
+			return OP_OK
 		SStgui.update_uis(src)
-		return TRUE // don't smack that machine with your 2 chips
+		return OP_OK // don't smack that machine with your 2 chips
 
-	return TRUE
+	return OP_OK
 
 /obj/machinery/station_slot_machine/proc/insert_cash(obj/item/spacecash/cashmoney, mob/user)
 	if (ispowered == 0)
@@ -341,7 +364,6 @@ EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
-
 /obj/machinery/slot_machine/proc/pay_out(winnings)
 	spawn_casinochips(winnings, src.loc)
 	icon_state = "slotmachine"
@@ -412,7 +434,6 @@ EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
-
 /obj/machinery/station_slot_machine/proc/pay_out(winnings)
 	spawn_money(winnings, src.loc)
 	icon_state = "ntslotmachine"
@@ -424,5 +445,3 @@ EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
 /obj/machinery/station_slot_machine/proc/lose_power()
 	ispowered = 0
 	update_icon()
-
-

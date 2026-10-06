@@ -1,0 +1,9 @@
+/obj/item/rectape icon: icons/obj/device.dmi
+/obj/item/rectape state: tape_white
+/obj/item/rectape dir: 2
+/obj/item/rectape overlay: icons/obj/device.dmi:tape_white:8:#000000
+/obj/item/rectape/random icon: icons/obj/device.dmi
+/obj/item/rectape/random state: tape_yellow
+/obj/item/rectape/random dir: 2
+/obj/item/rectape/random overlay: icons/obj/device.dmi:tape_yellow:8:#000000
+

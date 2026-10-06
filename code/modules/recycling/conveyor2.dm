@@ -38,6 +38,14 @@ CAPABILITIES(/obj/machinery/conveyor)
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
 	adjacency(ADJ_KIND_CONVEYOR, dirs = ADJ_ALL_AROUND)
+	// a cyborg's module never drops onto the belt: its item click is taken and nothing happens
+	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+		asks(/datum/prompt/text/conveyor_id, fields = list("question" = "What id would you like to give this conveyor?", "title" = "Multitool-Conveyor interface", "default" = nameof(id))),
+		then(PROC_REF(conveyor_id_answered)))
+	op("conveyor_robot_swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("conveyor_drop_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Drop on belt"), then(PROC_REF(interaction_drop_item)))
+	op("conveyor_push_pulled", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Push pulled object"), then(PROC_REF(interaction_push_pulled)))
 
 /// A conveyor that starts running (its constructor param).
 /obj/machinery/conveyor/var/starts_on = FALSE
@@ -141,47 +149,27 @@ CAPABILITIES(/obj/machinery/conveyor)
 	affecting = movable_contents
 	after(src, 0.1 SECONDS, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 
-/obj/machinery/conveyor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/conveyor_drop_item,
-		/datum/interaction/machine_hand/ungated/conveyor_push_pulled,
-	)
-	..()
-
 // attack with item, place item on conveyor. Old attackby never called ..(), so the whole thing stays in the effect.
-/datum/interaction/machine_item/conveyor_drop_item
-	id = "conveyor_drop_item"
-	name = "Drop on belt"
-	held_type = /obj/item
-	effect = /obj/machinery/conveyor/proc/interaction_drop_item
 
-/obj/machinery/conveyor/proc/interaction_drop_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(isrobot(user))	return TRUE //Carn: fix for borgs dropping their modules on conveyor belts
-	if(I.loc != user)	return TRUE // This should stop mounted modules ending up outside the module.
+/obj/machinery/conveyor/proc/interaction_drop_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(I.loc != user)	return OP_OK // This should stop mounted modules ending up outside the module.
 
 	user.drop_item(get_turf(src))
-	return TRUE
-
-/obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/text/conveyor_id, PROC_REF(conveyor_id_answered), answerer = user, subject = I, tool_expected = !isnull(I), question = "What id would you like to give this conveyor?", title = "Multitool-Conveyor interface", default = id)
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 // attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/conveyor_push_pulled
-	id = "conveyor_push_pulled"
-	name = "Push pulled object"
-	effect = /obj/machinery/conveyor/proc/interaction_push_pulled
 
-/obj/machinery/conveyor/proc/interaction_push_pulled(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/conveyor/proc/interaction_push_pulled(datum/act/op/A)
+	var/mob/user = A.actor
 	var/atom/movable/pulling = user?.pulling_target()
 	if ((!( user.canmove ) || user.restrained() || !pulling))
-		return TRUE
+		return OP_OK
 	if (pulling.anchored)
-		return TRUE
+		return OP_OK
 	if ((pulling.loc != user.loc && get_dist(user, pulling) > 1))
-		return TRUE
+		return OP_OK
 	if (ismob(pulling))
 		var/mob/M = pulling
 		M.stop_pulling()
@@ -190,7 +178,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	else
 		step(pulling, get_dir(pulling.loc, src))
 		user.stop_pulling()
-	return TRUE
+	return OP_OK
 
 // make the conveyor broken
 // also propagate inoperability to any connected conveyor with the same ID
@@ -258,6 +246,14 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
 	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
+	op("conveyor_switch_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_toggle)))
+	// the panel's tools: with the panel shut the welder, multitool and wirecutters take the click and do nothing
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), wait(2 SECONDS), label("Deconstruct"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(welded_apart)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+		asks(/datum/prompt/text/conveyor_id, fields = list("question" = "What id would you like to give this conveyor switch?", "title" = "Multitool-Conveyor interface", "default" = nameof(id))),
+		then(PROC_REF(conveyor_switch_id_answered)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set one-way"), then(PROC_REF(wrench_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Adjust speed"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wirecutter_used)))
 
 /obj/machinery/conveyor_switch/Initialize(mapload)
 	. = ..()
@@ -292,23 +288,22 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 		C.set_operating(position)
 	return PROCESS_KILL
 
-/obj/machinery/conveyor_switch/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/conveyor_switch_toggle,
-	)
-	..()
+/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/obj/machinery/conveyor_switch/proc/lets_in_holds(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/conveyor_switch/proc/lets_in_refusal(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return istext(answer) ? answer : "access denied"
 
 // attack with hand, switch position. Old attack_hand never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/conveyor_switch_toggle
-	id = "conveyor_switch_toggle"
-	name = "Toggle"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/conveyor_switch/proc/lets_in, "access denied"))
-	effect = /obj/machinery/conveyor_switch/proc/interaction_toggle
 
 /obj/machinery/conveyor_switch/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/conveyor_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/conveyor_switch/proc/interaction_toggle(datum/act/op/A)
 	if(position == 0)
 		if(last_pos < 0 || oneway == 1)
 			position = 1
@@ -327,38 +322,27 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	for(var/obj/machinery/conveyor_switch/S as anything in linked_switches)
 		S.position = position
 		S.update()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/conveyor_switch/proc/welder_act_tool_done(mob/user)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You deconstruct the frame."))
+/// The welder's work, after its wait behind the open panel: the switch comes apart into steel.
+/obj/machinery/conveyor_switch/proc/welded_apart(datum/act/op/A)
+	to_chat(A.actor, span_notice("You deconstruct the frame."))
 	replace_with(src, /obj/item/stack/material/steel, 2)
+	return OP_OK
 
-/obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/text/conveyor_switch_id, PROC_REF(conveyor_switch_id_answered), answerer = user, subject = I, tool_expected = !isnull(I), question = "What id would you like to give this conveyor switch?", title = "Multitool-Conveyor interface", default = id)
-	return ITEM_INTERACT_BLOCKING
-
-/obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)
+/// The wrench: one-way or two-way operation.
+/obj/machinery/conveyor_switch/proc/wrench_used(datum/act/op/A)
+	var/obj/item/tool = A.held
 	oneway = !oneway
-	to_chat(user, "You set the switch to [oneway ? "one" : "two"] way operation.")
-	playsound(src, I.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, "You set the switch to [oneway ? "one" : "two"] way operation.")
+	playsound(src, tool.usesound, 50, 1)
+	return OP_OK
 
-/obj/machinery/conveyor_switch/wirecutter_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+/// The wirecutters, behind the open panel: the conveyors' speed.
+/obj/machinery/conveyor_switch/proc/wirecutter_used(datum/act/op/A)
 	toggle_speed()
-	to_chat(user, "You adjust the speed of the conveyor switch")
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, "You adjust the speed of the conveyor switch")
+	return OP_OK
 
 /obj/machinery/conveyor_switch/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -385,51 +369,31 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 		if(items_moved >= 10)
 			break
 
-
+/// A conveyor's or switch's id, asked by the multitool op behind the open panel: the panel is still open when the answer comes.
 /datum/prompt/text/conveyor_id
 	timeout = 0
 	recheck_on_open = TRUE
-	var/tool_expected = FALSE
 
 /datum/prompt/text/conveyor_id/recheck_extra()
-	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && QDELETED(subject)))
-		return "gone"
-	var/obj/machinery/conveyor/device = owner
-	if(!isnull(value) && !device.panel_open)
+	var/obj/machinery/device = owner
+	if(!isnull(value) && istype(device) && !device.panel_open)
 		return "panel closed"
-	if(!isnull(value) && !value)
-		return "no input"
 	return null
 
-/datum/prompt/text/conveyor_switch_id
-	timeout = 0
-	recheck_on_open = TRUE
-	var/tool_expected = FALSE
-
-/datum/prompt/text/conveyor_switch_id/recheck_extra()
-	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && QDELETED(subject)))
-		return "gone"
-	var/obj/machinery/conveyor_switch/device = owner
-	if(!isnull(value) && !device.panel_open)
-		return "panel closed"
-	if(!isnull(value) && !value)
-		return "no input"
-	return null
-
-/obj/machinery/conveyor/proc/conveyor_id_answered(datum/act/request/A)
-	if(isnull(A.request.value) || A.request.last_error == "gone")
-		return
-	if(A.answer)
+/// The multitool's answer: the conveyor's id (the keyed switches follow it).
+/obj/machinery/conveyor/proc/conveyor_id_answered(datum/act/op/A)
+	if(A.answer?.value)
 		keyed_set_id(src, nameof(id), A.answer.value)
-	else if(A.request.last_error == "no input")
-		to_chat(A.request.answerer, "No input found. Please hang up and try your call again.")
+	else
+		to_chat(A.actor, "No input found. Please hang up and try your call again.")
 	SStgui.update_uis(src)
+	return OP_OK
 
-/obj/machinery/conveyor_switch/proc/conveyor_switch_id_answered(datum/act/request/A)
-	if(isnull(A.request.value) || A.request.last_error == "gone")
-		return
-	if(A.answer)
+/// The multitool's answer: the switch's id (its conveyors and the other switches follow it).
+/obj/machinery/conveyor_switch/proc/conveyor_switch_id_answered(datum/act/op/A)
+	if(A.answer?.value)
 		keyed_set_id(src, nameof(id), A.answer.value)
-	else if(A.request.last_error == "no input")
-		to_chat(A.request.answerer, "No input found. Please hang up and try your call again.")
+	else
+		to_chat(A.actor, "No input found. Please hang up and try your call again.")
 	SStgui.update_uis(src)
+	return OP_OK

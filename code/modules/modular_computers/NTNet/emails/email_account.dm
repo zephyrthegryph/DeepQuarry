@@ -98,7 +98,7 @@ CAPABILITIES(/datum/computer_file/data/email_account/service/broadcaster)
 		var/datum/computer_file/data/email_message/new_message = received_message.clone()
 		rel_add(src, nameof(pending_messages), new_message)
 		if(!after(src, delay, PROC_REF(deliver_broadcast), with = list(email_account.login, new_message, user)))
-			own_remove(src, nameof(pending_messages), new_message)
+			rel_remove(src, nameof(pending_messages), new_message)
 		delay += 0.2 SECONDS
 
 	return TRUE
@@ -111,7 +111,7 @@ CAPABILITIES(/datum/computer_file/data/email_account/service/broadcaster)
 	if(sent)
 		own_take_member(src, nameof(pending_messages), message)
 	else
-		own_remove(src, nameof(pending_messages), message)
+		rel_remove(src, nameof(pending_messages), message)
 	return sent
 
 /datum/computer_file/data/email_account/service/document

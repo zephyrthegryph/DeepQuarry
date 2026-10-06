@@ -17,10 +17,6 @@
 	var/fire_resist = 1
 	var/expandType = /obj/effect/blob
 
-/obj/effect/blob/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/effect/blob/CanPass(atom/movable/mover, turf/target)
 	return FALSE
 
@@ -40,11 +36,13 @@ DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
 /obj/effect/blob/proc/appearance_state()
 	return get_integrity() > max_integrity / 2 ? "blob" : "blob_damaged"
 
-APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/effect/blob/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
 
 /obj/effect/blob/on_update_integrity(old_value, new_value)
 	. = ..()
-	update_icon()
 
 /obj/effect/blob/atom_destruction(damage_flag)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
@@ -168,7 +166,11 @@ CAPABILITIES(/obj/effect/blob)
 
 	expandType = /obj/effect/blob/shield
 
-APPEARANCE_NONE(/obj/effect/blob/core)
+/// The look (the draw sweep: from APPEARANCE_NONE).
+/obj/effect/blob/core/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
 

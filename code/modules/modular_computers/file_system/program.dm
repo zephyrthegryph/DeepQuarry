@@ -162,7 +162,7 @@ CAPABILITIES(/datum/computer_file/program)
 		generate_network_log("Connection to [network_destination] closed.")
 	if(TM)
 		SStgui.close_uis(TM)
-	own_clear(src, nameof(TM), OWN_DELETE)
+	rel_clear(src, nameof(TM))
 	return 1
 
 /datum/computer_file/program/ui_assets(mob/user)

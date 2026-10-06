@@ -4,3 +4,4 @@
 /obj/item/assembly/mousetrap|ghost|none => |
 /obj/item/assembly/mousetrap|human|/obj/item/kit => gen_insert_interaction_kit_customize,mousetrap_hand,gen_verb_mousetrap_hide_under_effect,gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
 /obj/item/assembly/mousetrap|human|/obj/item/storage => mousetrap_hand,gen_verb_mousetrap_hide_under_effect,gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up,gen_insert_interaction_collected|gen_insert_interaction_kit_customize:needs an item,gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it
+

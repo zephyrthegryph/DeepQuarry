@@ -125,7 +125,7 @@ CAPABILITIES(/datum/body)
 
 /datum/body/proc/drop_support(datum/body_support/S, reason)
 	log_runtime("PHYSIOLOGY: [key_name(owner)] lost the [S.source_name] support on factor [S.factor_id] ([reason])")
-	own_remove(src, nameof(supports), S)
+	rel_remove(src, nameof(supports), S)
 	invalidate(BODY_DIRTY_PHYSIOLOGY)
 
 /// Drop lapsed supports.

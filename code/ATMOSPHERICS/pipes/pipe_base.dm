@@ -167,7 +167,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		spent(old_parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
-		own_clear(src, nameof(air_temporary), OWN_DELETE)
+		rel_clear(src, nameof(air_temporary))
 
 /// A stable leak sleeps: it watches both mixtures either side of it (Rust reports their changes) and wakes only once they no longer match,
 /// which is when the network's leak transaction has something to move.
@@ -284,7 +284,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		return
 
 	set_pipe_color(new_color)
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/color_cache_name(obj/machinery/atmospherics/node)
 	if(istype(src, /obj/machinery/atmospherics/pipe/tank))
@@ -303,4 +302,3 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/hide(i)
 	if(istype(loc, /turf/simulated))
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()

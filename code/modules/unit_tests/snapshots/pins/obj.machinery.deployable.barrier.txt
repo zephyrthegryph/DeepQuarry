@@ -25,5 +25,10 @@ human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Swipe ID
 human|/obj/item/card/id click: Click: Swipe ID
-keys: drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, hit, machine_anchor, machine_deconstruct, machine_panel, machine_repair, swipe_id, use_wrench
+human|/obj/item/card/emag menu: Hit
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item menu: Hit
+human|/obj/item click: Click: Hit
+keys: drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, hit, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, swipe_id, use_wrench
 

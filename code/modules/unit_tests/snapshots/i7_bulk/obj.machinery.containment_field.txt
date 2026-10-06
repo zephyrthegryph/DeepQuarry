@@ -2,3 +2,4 @@
 /obj/machinery/containment_field|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/containment_field|ai|none => |
 /obj/machinery/containment_field|ghost|none => |
+

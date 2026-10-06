@@ -317,7 +317,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 		return TRUE
 	if(reagent_glass)
 		reagent_glass.forceMove(get_turf(src))
-		own_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
+		rel_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
@@ -362,7 +362,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 	if(reagent_glass)
 		reagent_glass.forceMove(Tsec)
-		own_take(src, nameof(reagent_glass))
+		rel_take(src, nameof(reagent_glass))
 
 	if(emagged && prob(25))
 		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)
@@ -527,7 +527,16 @@ CAPABILITIES(/obj/item/storage/firstaid)
 	var/skin = null //Same as medbot, set to tox or ointment for the respective kits.
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_APPEARANCE(/obj/item/firstaid_arm_assembly, "skin", list("ointment" = list(APPEARANCE_OVERLAYS = list("kit_skin_ointment")), "tox" = list(APPEARANCE_OVERLAYS = list("kit_skin_tox")), "o2" = list(APPEARANCE_OVERLAYS = list("kit_skin_o2"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/firstaid_arm_assembly/draw(datum/look/look)
+	..()
+	switch("[skin]")
+		if("ointment")
+			look.overlay("kit_skin_ointment")
+		if("tox")
+			look.overlay("kit_skin_tox")
+		if("o2")
+			look.overlay("kit_skin_o2")
 
 DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

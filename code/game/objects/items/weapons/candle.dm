@@ -70,7 +70,6 @@ CAPABILITIES(/obj/item/flame/candle)
 	if(wax <= 0) // never below zero: a candle set to 0 wax burns out on its next step instead of counting into negatives
 		burn_out()
 		return
-	update_icon()
 	if(istype(loc, /turf)) //start a fire if possible
 		var/turf/T = loc
 		T.hotspot_expose(700, 5)
@@ -124,7 +123,6 @@ CAPABILITIES(/obj/item/flame/candle)
 /obj/item/flame/candle/candelabra/burn_out()
 	set_lit(FALSE)
 	set_light(0)
-	update_icon()
 
 /obj/item/flame/candle/candelabra/proc/appearance_candelabra_suffix()
 	if(wax <= 0)

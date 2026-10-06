@@ -5,3 +5,4 @@
 /obj/machinery/casinosentientprize_handler|human|/obj/item/spacecasinocash => |gen_hand_ungated_interaction_use:the SPASM is disabled,gen_insert_interaction_cash:not possible right now,gen_insert_interaction_collar:needs a disabled Sentient Prize Collar,gen_insert_interaction_id:needs an identification card or a PDA
 /obj/machinery/casinosentientprize_handler|human|/obj/item/clothing/accessory/collar/casinosentientprize => |gen_hand_ungated_interaction_use:the SPASM is disabled,gen_insert_interaction_cash:needs a broken casino chip,gen_insert_interaction_collar:not possible right now,gen_insert_interaction_id:needs an identification card or a PDA
 /obj/machinery/casinosentientprize_handler|human|/obj/item/card/id => |gen_hand_ungated_interaction_use:the SPASM is disabled,gen_insert_interaction_cash:needs a broken casino chip,gen_insert_interaction_collar:needs a disabled Sentient Prize Collar,gen_insert_interaction_id:not possible right now
+

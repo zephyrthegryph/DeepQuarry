@@ -27,5 +27,12 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
-keys: anchor, dispense_pipe, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, put_back, put_back_meter, p_layer, ui_open
+human|/obj/item/pipe menu: Flip Pipe
+human|/obj/item/pipe menu: Put back
+human|/obj/item/pipe menu: Ui open
+human|/obj/item/pipe click: Click: Put back
+human|/obj/item/pipe_meter menu: Put back
+human|/obj/item/pipe_meter menu: Ui open
+human|/obj/item/pipe_meter click: Click: Put back
+keys: anchor, dispense_pipe, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, put_back, put_back_meter, p_layer, ui_open
 

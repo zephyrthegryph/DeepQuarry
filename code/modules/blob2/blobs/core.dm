@@ -204,7 +204,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		C = D.client
 		overmind_creation(C)
 	unobserve(Q, /datum/notice/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	rel_clear(src, nameof(Q)) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)
 	if(new_overmind)

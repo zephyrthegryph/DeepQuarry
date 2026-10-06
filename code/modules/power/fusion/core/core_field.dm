@@ -248,7 +248,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 					var/lost_plasma = (plasma_temperature*percent_unstable)
 					radiation += lost_plasma
 					if(flare)
-						after(src, 1, PROC_REF(emflare))
+						after(src, 0.1 SECONDS, PROC_REF(emflare))
 					if(fuel_loss)
 						for(var/particle in dormant_reactant_quantities)
 							var/lost_fuel = dormant_reactant_quantities[particle]*percent_unstable
@@ -515,7 +515,6 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 
 /obj/effect/fusion_em_field/bullet_act(obj/item/projectile/Proj)
 	AddEnergy(Proj.damage)
-	update_icon()
 	return 0
 //All procs below this point are called in _core.dm, starting at line 41.
 //Stability monitoring. Gives radio annoucements if field stability is below 80%
@@ -601,7 +600,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 	empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	// Six more blasts over ten seconds, on the core's clock: the field is gone by then.
 	for(var/delay in list(25, 50, 75, 85, 95, 105))
-		after(owned_core, delay, /proc/fusion_rupture_blast, with = list(things_in_range))
+		after(owned_core, delay, GLOBAL_PROC_REF(fusion_rupture_blast), with = list(things_in_range))
 	return
 
 /obj/effect/fusion_em_field/proc/MRC() //spews electromagnetic pulses in an area around the core.
@@ -613,7 +612,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 	for (var/turf/T in things_in_range)
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
-		after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, with = list(things_in_range)) // the core's clock: the field is gone by then
+		after(owned_core, 20 SECONDS, GLOBAL_PROC_REF(fusion_cascade_pulse), with = list(things_in_range)) // the core's clock: the field is gone by then
 	spent(src)
 	return
 

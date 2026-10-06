@@ -56,5 +56,10 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Unscrew it from the floor (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Bang on
+human|/obj/item menu: Knock
+human|/obj/item menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: bang, drag_buckle, item, knock, tk_knock, weld_repair
 

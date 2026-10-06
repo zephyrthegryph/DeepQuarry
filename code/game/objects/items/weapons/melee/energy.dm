@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/melee/energy)
 		return OP_DECLINE
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
-	own_take(src, nameof(bcell))
+	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
 	update_icon()

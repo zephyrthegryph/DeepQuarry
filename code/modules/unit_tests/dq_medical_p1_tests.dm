@@ -97,7 +97,7 @@
 /datum/unit_test/dq_p1_b16_malish_qualem_zero_strength/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/old_heal = H.species.chem_strength_heal
-	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
+	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.chem_strength_heal = 0
 	H.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 5)
 	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)

@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/mg42 icon: icons/obj/gun_yw.dmi
+/obj/item/gun/projectile/automatic/mg42 state: mg42closed
+/obj/item/gun/projectile/automatic/mg42 dir: 2
+/obj/item/gun/projectile/automatic/mg42 overlay: icons/obj/gun_yw.dmi:mg42closed:8:#000000
+

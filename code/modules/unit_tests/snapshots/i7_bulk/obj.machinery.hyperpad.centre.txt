@@ -2,3 +2,4 @@
 /obj/machinery/hyperpad/centre|robot|none => hyperpad_centre_teleport,hyperpad_delegate|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/hyperpad/centre|ai|none => |
 /obj/machinery/hyperpad/centre|ghost|none => gen_observer_hyperpad_centre_ghost_travel,gen_observer_hyperpad_ghost_use|
+

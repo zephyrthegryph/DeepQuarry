@@ -40,6 +40,12 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
+TRACKED(/obj/machinery/power/shield_generator, mode_changes_locked)
+
+TRACKED(/obj/machinery/power/shield_generator, offline_for)
+
+TRACKED(/obj/machinery/power/shield_generator, running)
+
 /// The power wire cut cuts the input (power_wires()).
 STAT(/obj/machinery/power/shield_generator, input_cut, ANY)
 /// The AI control wire cut locks the AI out (ai_control()).
@@ -74,12 +80,14 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		then(PROC_REF(ui_act_set_input_cap)))
 	op("toggle_mode", ui_act("toggle_mode", arg("toggle_mode", num())), then(PROC_REF(ui_act_toggle_mode)))
 	op("switch_idle", ui_act("switch_idle", arg("switch_idle", num())), then(PROC_REF(ui_act_switch_idle)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), needs(req(PROC_REF(can_replace_parts_holds), because = PROC_REF(can_replace_parts_refusal))), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	extend("machine_anchor", needs(req_is(nameof(offline_for), FALSE, because = MSG(shield_generator/cooling)), req_is(nameof(running), FALSE, because = MSG(shield_generator/running))))
+	extend("machine_unanchor", needs(req_is(nameof(offline_for), FALSE, because = MSG(shield_generator/cooling)), req_is(nameof(running), FALSE, because = MSG(shield_generator/running))))
 
 /obj/machinery/power/shield_generator/proc/wire_lights()
 	return list(
@@ -104,17 +112,16 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 
 /obj/machinery/power/shield_generator/proc/control_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	mode_changes_locked = !N.mended
+	set_mode_changes_locked(!N.mended)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/shield_generator/appearance_overlays()
-	. = list()
+/obj/machinery/power/shield_generator/draw(datum/look/look)
+	..()
 	if(running)
-		icon_state = "generator1"
-		set_light(1, 2, "#66FFFF")
+		look.state("generator1")
+		look.light(1, 2, "#66FFFF")
 	else
-		icon_state = "generator0"
-		set_light(0)
+		look.state("generator0")
+		look.light_off()
 
 /obj/machinery/power/shield_generator/Initialize(mapload)
 	. = ..()
@@ -150,18 +157,18 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 // Shuts down the shield, removing all shield segments and unlocking generator settings.
 /obj/machinery/power/shield_generator/proc/shutdown_field()
-	own_clear(src, nameof(field_segments), OWN_DELETE)
+	rel_clear(src, nameof(field_segments))
 
-	running = SHIELD_OFF
+	set_running(SHIELD_OFF)
 	current_energy = 0
 	mitigation_em = 0
 	mitigation_physical = 0
 	mitigation_heat = 0
-	update_icon()
+	changed(src)
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
-	own_clear(src, nameof(field_segments), OWN_DELETE)
+	rel_clear(src, nameof(field_segments))
 	var/list/shielded_turfs
 
 	if(check_flag(MODEFLAG_HULL))
@@ -304,7 +311,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		SE.update_visuals()
 
 	//Phew, update our own icon
-	update_icon()
+	changed(src)
 
 /obj/machinery/power/shield_generator/proc/do_corner_shield(obj/effect/shield/S, new_dir, force_outside)
 	S.enabled_icon_state = "blank"
@@ -354,7 +361,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	power_usage = 0
 
 	if(offline_for)
-		offline_for = max(0, offline_for - 1)
+		set_offline_for(max(0, offline_for - 1))
 	// We're turned off: nothing left to do once any shutdown cooldown has run out. Starting it
 	// (its UI, set_idle()) wakes it.
 	if(running == SHIELD_OFF)
@@ -371,7 +378,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	else if(running == SHIELD_SPINNING_UP)
 		spinup_counter--
 		if(spinup_counter <= 0)
-			running = SHIELD_RUNNING
+			set_running(SHIELD_RUNNING)
 			regenerate_field()
 
 	mitigation_em = between(0, mitigation_em - MITIGATION_LOSS_PASSIVE, mitigation_max)
@@ -423,9 +430,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/machinery/power/shield_generator/proc/can_replace_parts(mob/actor, atom/target, obj/item/held)
-	if(offline_for) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	if(offline_for)
 		return "wait until it cools down from emergency shutdown first"
-	if(running) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	if(running)
 		return "turn it off first"
 	return TRUE
 
@@ -456,14 +463,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		return OP_OK
 	return OP_DECLINE
 
-/obj/machinery/power/shield_generator/wrench_act(mob/user, obj/item/O)
-	if(offline_for)
-		to_chat(user, span_warning("Wait until \the [src] cools down from emergency shutdown first!"))
-		return ITEM_INTERACT_BLOCKING
-	if(running)
-		to_chat(user, span_notice("Turn off \the [src] first!"))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+MSG_DEF_SELF(shield_generator/cooling, "Wait until %T% cools down from emergency shutdown first!")
+MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 
 /obj/machinery/power/shield_generator/proc/energy_failure()
 	if(running == SHIELD_DISCHARGING)
@@ -478,15 +479,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	if(new_state)
 		if(running == SHIELD_IDLE)
 			return
-		running = SHIELD_IDLE
-		own_clear(src, nameof(field_segments), OWN_DELETE)
+		set_running(SHIELD_IDLE)
+		rel_clear(src, nameof(field_segments))
 	else
 		if(running != SHIELD_IDLE)
 			return
-		running = SHIELD_SPINNING_UP
+		set_running(SHIELD_SPINNING_UP)
 		spinup_counter = round(spinup_delay / idle_multiplier)
 	work_start(src)
-	update_icon()
+	changed(src)
 
 /// The window's data.
 /obj/machinery/power/shield_generator/ui_data(datum/act/eval/A)
@@ -542,14 +543,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 /// The shutdown question is asked only of a running generator.
 /obj/machinery/power/shield_generator/proc/is_running(datum/act/op/A)
-	return running >= SHIELD_RUNNING // ALLOW(reads): asked when the button is pressed and again when it is answered, never cached
+	return running >= SHIELD_RUNNING
 
 /obj/machinery/power/shield_generator/proc/is_on(datum/act/op/A)
-	return !!running // ALLOW(reads): asked when the button is pressed and again when it is answered, never cached
+	return !!running
 
 /// The range and input-cap questions are asked only while the modes are not locked.
 /obj/machinery/power/shield_generator/proc/modes_unlocked(datum/act/op/A)
-	return !mode_changes_locked // ALLOW(reads): asked when the button is pressed and again when it is answered, never cached
+	return !mode_changes_locked
 
 /obj/machinery/power/shield_generator/proc/range_question(datum/act/op/A)
 	return "Enter new field range (1-[world.maxx]). Leave blank to cancel."
@@ -569,7 +570,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		return
 	if(alert == "Yes")
 		set_idle(TRUE) // do this first to clear the field
-		running = SHIELD_DISCHARGING
+		set_running(SHIELD_DISCHARGING)
 	return TRUE
 
 /obj/machinery/power/shield_generator/proc/ui_act_start_generator(datum/act/op/A)
@@ -596,7 +597,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		return TRUE
 
 	// If the shield would take 5 minutes to disperse and shut down using regular methods, it will take x1.5 (7 minutes and 30 seconds) of this time to cool down after emergency shutdown
-	offline_for = round(current_energy / (SHIELD_SHUTDOWN_DISPERSION_RATE / 1.5))
+	set_offline_for(round(current_energy / (SHIELD_SHUTDOWN_DISPERSION_RATE / 1.5)))
 	var/old_energy = current_energy
 	shutdown_field()
 	log_and_message_admins("has triggered \the [src]'s emergency shutdown!", user)

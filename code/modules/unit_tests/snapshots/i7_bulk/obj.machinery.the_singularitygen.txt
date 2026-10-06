@@ -2,3 +2,4 @@
 /obj/machinery/the_singularitygen|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/the_singularitygen|ai|none => |
 /obj/machinery/the_singularitygen|ghost|none => |
+

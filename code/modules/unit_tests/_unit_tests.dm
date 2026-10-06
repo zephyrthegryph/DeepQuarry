@@ -204,8 +204,11 @@
 #include "dq_lifeform_lifetimes_tests.dm"
 #include "dq_lifeform_params_tests.dm"
 #include "dq_lifeform_per_type_tests.dm"
+#include "dq_lifeform_variants_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"
+#include "dq_machine_maintenance_tests.dm"
+#include "dq_machine_reqs_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"
 #include "dq_gas_arena_leak_tests.dm"
@@ -375,6 +378,7 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_look_pins.dm"
 #include "dq_interaction_entry_tests.dm"
 #include "dx_cap_anchor_tests.dm"
 #include "dx_cap_assembly_tests.dm"
@@ -1137,6 +1141,17 @@
 
 #include "interim_permit_reregistration.dm"
 #include "round2_temperature_projectile_bounded_delta.dm"
+
+#include "interim_holobadge_credentials.dm"
+#include "interim_nanotech_permit_reregistration.dm"
+
+#include "interim_teleport_incantation.dm"
+
+#include "round2_circuit_jointext_empty_delimiter.dm"
+
+#include "round2_circuit_arithmetic_first_input_pull.dm"
+
+#include "round2_telescience_crystal_ejection.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

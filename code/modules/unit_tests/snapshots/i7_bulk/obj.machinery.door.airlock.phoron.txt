@@ -2,3 +2,4 @@
 /obj/machinery/door/airlock/phoron|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/door/airlock/phoron|ai|none => |
 /obj/machinery/door/airlock/phoron|ghost|none => |
+

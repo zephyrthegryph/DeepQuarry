@@ -1,4 +1,5 @@
-/obj/machinery/cryopod|human|none => cryopod_eject,cryopod_enter|cryopod_insert_grab:needs a grab,cryopod_drag_in:needs a mob
-/obj/machinery/cryopod|robot|none => cryopod_eject,cryopod_enter|gen_robot_interaction_swallow:not possible right now,cryopod_insert_grab:needs a grab,cryopod_drag_in:needs a mob
+/obj/machinery/cryopod|human|none => |
+/obj/machinery/cryopod|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/cryopod|ai|none => |
 /obj/machinery/cryopod|ghost|none => |
+

@@ -1,0 +1,9 @@
+/obj/machinery/power/grid_checker icon: icons/obj/power.dmi
+/obj/machinery/power/grid_checker state: gridchecker_on
+/obj/machinery/power/grid_checker dir: 2
+/obj/machinery/power/grid_checker overlay: icons/obj/power.dmi:gridchecker_on:8:#000000
+/obj/machinery/power/grid_checker/interim_actor_probe icon: icons/obj/power.dmi
+/obj/machinery/power/grid_checker/interim_actor_probe state: gridchecker_on
+/obj/machinery/power/grid_checker/interim_actor_probe dir: 2
+/obj/machinery/power/grid_checker/interim_actor_probe overlay: icons/obj/power.dmi:gridchecker_on:8:#000000
+

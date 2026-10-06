@@ -17,7 +17,6 @@ CAPABILITIES(/obj/structure/coatrack)
 	if(!user.put_in_active_hand(coat()))
 		coat().forceMove(get_turf(user))
 	rel_clear(src, nameof(coat))
-	update_icon()
 	return OP_OK
 
 /// Anything held: a coat or a labcoat hangs on the rack; anything else is refused with a word.
@@ -33,7 +32,6 @@ CAPABILITIES(/obj/structure/coatrack)
 			return OP_OK
 		act_message(user, src, MSG_SELF("You hang [W] on %T%"), MSG_OTHERS("%U% hangs [W] on %T%."))
 		rel_set(src, nameof(coat), W)
-		update_icon()
 	else
 		to_chat(user, span_notice("You cannot hang [W] on [src]"))
 	return OP_OK
@@ -48,20 +46,18 @@ CAPABILITIES(/obj/structure/coatrack)
 		src.visible_message("[mover] lands on \the [src].")
 		rel_set(src, nameof(coat), mover)
 		coat().forceMove(src)
-		update_icon()
 		return 0
 	else
 		return 1
 
-DECLARE_APPEARANCE_PROC(/obj/structure/coatrack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/coatrack/appearance_overlays()
-	. = list()
+/obj/structure/coatrack/draw(datum/look/look)
+	..()
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat))
-		. += "coat_lab"
+		look.overlay("coat_lab")
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat/cmo))
-		. += "coat_cmo"
+		look.overlay("coat_cmo")
 	if (istype(coat(), /obj/item/clothing/suit/storage/det_trench))
-		. += "coat_det"
+		look.overlay("coat_det")
 
 /// Relation view: coat (reads null once it is gone).
 /obj/structure/coatrack/proc/coat() as /obj/item/clothing/suit

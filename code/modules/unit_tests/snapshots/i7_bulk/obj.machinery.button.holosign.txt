@@ -3,3 +3,4 @@
 /obj/machinery/button/holosign|ai|none => |
 /obj/machinery/button/holosign|ghost|none => |
 /obj/machinery/button/holosign|human|/obj/item => button_press,button_press_item|
+

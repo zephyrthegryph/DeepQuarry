@@ -120,7 +120,6 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 	STANDARD_ATMOS_CHOOSE_NODE(2, node_connects[2])
 	STANDARD_ATMOS_CHOOSE_NODE(3, node_connects[3])
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/tvalve/return_network(obj/machinery/atmospherics/reference)

@@ -1,0 +1,9 @@
+/obj/machinery/computer/pandemic icon: icons/obj/pandemic.dmi
+/obj/machinery/computer/pandemic state: pandemic0
+/obj/machinery/computer/pandemic dir: 2
+/obj/machinery/computer/pandemic overlay: icons/obj/pandemic.dmi:generic_key:-32767
+/obj/machinery/computer/pandemic/dq_cleanup_probe icon: icons/obj/pandemic.dmi
+/obj/machinery/computer/pandemic/dq_cleanup_probe state: pandemic0
+/obj/machinery/computer/pandemic/dq_cleanup_probe dir: 2
+/obj/machinery/computer/pandemic/dq_cleanup_probe overlay: icons/obj/pandemic.dmi:generic_key:-32767
+

@@ -59,5 +59,10 @@ human|/obj/item/card/id menu: Wooden item
 human|/obj/item/card/id menu: Wooden touch
 human|/obj/item/card/id menu: Yank the flush lever
 human|/obj/item/card/id click: Click: Wooden item
+human|/obj/item menu: Flush
+human|/obj/item menu: Wooden item
+human|/obj/item menu: Wooden touch
+human|/obj/item menu: Yank the flush lever
+human|/obj/item click: Click: Wooden item
 keys: drag_buckle, flush, flush_yank, silicon_use, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_touch
 

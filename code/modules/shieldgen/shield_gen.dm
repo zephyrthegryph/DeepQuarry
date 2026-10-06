@@ -39,7 +39,9 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	op("strengthen_rate", ui_act("strengthen_rate", arg("val", num())), then(PROC_REF(ui_act_strengthen_rate)))
 	op("target_field_strength", ui_act("target_field_strength", arg("val", num())), then(PROC_REF(ui_act_target_field_strength)))
 	op("z_range", ui_act("z_range", arg("val", num(0, 10))), then(PROC_REF(ui_act_z_range)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("shield_gen_swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
+	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(shield_gen_not_broken_holds), because = PROC_REF(shield_gen_not_broken_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -64,7 +66,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	rel_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 
-
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
 DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 /obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -74,21 +75,15 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 		. = 1
 	fx_sparks(src, 5)
 
-/// Old attackby: swipe an ID to lock/unlock the controls.
-/datum/interaction/machine_item/shield_gen_swipe_id
-	id = "shield_gen_swipe_id"
-	name = "Swipe ID"
-	category = INTERACTION_CAT_LOCK
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/shield_gen/proc/interaction_swipe_id
-
-/obj/machinery/shield_gen/proc/interaction_swipe_id(mob/user, obj/item/card/id/C, datum/interaction/interaction)
+/obj/machinery/shield_gen/proc/interaction_swipe_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/C = A.held
 	if((ACCESS_CAPTAIN in C.GetAccess()) || (ACCESS_SECURITY in C.GetAccess()) || (ACCESS_ENGINE in C.GetAccess()))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/shield_gen/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -109,26 +104,23 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 		rel_clear(src, nameof(capacitors))
 	return OP_OK
 
-/obj/machinery/shield_gen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_gen_swipe_id,
-		/datum/interaction/machine_hand/ungated/shield_gen_open_ui,
-	)
-	..()
+/// Requirement (was REQ_* shield_gen_not_broken): the legacy check answers TRUE to pass.
+/obj/machinery/shield_gen/proc/shield_gen_not_broken_holds(datum/act/op/A)
+	var/answer = shield_gen_not_broken(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/// Old attack_hand (never called ..()): open the interface unless broken.
-/datum/interaction/machine_hand/ungated/shield_gen_open_ui
-	id = "shield_gen_open_ui"
-	name = "Use"
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/shield_gen/proc/shield_gen_not_broken, null))
-	effect = /obj/machinery/shield_gen/proc/interaction_open_ui_impl
+/// Why shield_gen_not_broken_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/shield_gen/proc/shield_gen_not_broken_refusal(datum/act/op/A)
+	var/answer = shield_gen_not_broken(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
 	return !has_stat(BROKEN)
 
-/obj/machinery/shield_gen/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_gen/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/shield_gen/tgui_status(mob/user)
 	if(has_stat(BROKEN))
@@ -275,7 +267,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 			E.update_icon()
 		shield_hum.start()
 	else
-		own_clear(src, nameof(field), OWN_DELETE)
+		rel_clear(src, nameof(field))
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning fade out.")

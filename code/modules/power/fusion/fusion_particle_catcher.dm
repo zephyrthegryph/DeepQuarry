@@ -33,7 +33,6 @@ CAPABILITIES(/obj/effect/fusion_particle_catcher)
 
 /obj/effect/fusion_particle_catcher/bullet_act(obj/item/projectile/Proj)
 	parent.AddEnergy(Proj.damage)
-	update_icon()
 	return 0
 
 /obj/effect/fusion_particle_catcher/CanPass(atom/movable/mover, turf/target)

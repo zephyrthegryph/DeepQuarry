@@ -436,7 +436,10 @@
 	TEST_ASSERT_EQUAL(R.screen, 1, "the screen button shows a screen")
 	press(H, R, "write", list("priority" = 1, "write" = "Cargo"))
 	TEST_ASSERT(asked(H), "writing a message asks for its text")
+	hci_answer(H, "Crates, please")
+	settle()
 	TEST_ASSERT_EQUAL(R.recipient, "Cargo", "for the chosen recipient")
+	TEST_ASSERT_EQUAL(R.message, "Crates, please", "the answer is the message")
 
 /datum/unit_test/dq_hc_struct/suit_cycler_is_emagged_and_dials_its_radiation
 /datum/unit_test/dq_hc_struct/suit_cycler_is_emagged_and_dials_its_radiation/run_gate()
@@ -557,7 +560,7 @@
 	var/obj/machinery/pointdefense/P = mach(/obj/machinery/pointdefense, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
 	H.put_in_active_hand(M)
-	P.multitool_act(H, M)
+	hci_click(H, P, M)
 	TEST_ASSERT(asked(H), "the multitool asks for the new tag")
 	hci_answer(H, "northern_net")
 	settle()
@@ -739,10 +742,10 @@
 	var/obj/machinery/mass_driver/D = mach(/obj/machinery/mass_driver, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, H)
 	H.put_in_active_hand(M)
-	D.multitool_act(H, M)
+	hci_click(H, D, M)
 	TEST_ASSERT_EQUAL(asked(H), FALSE, "a closed driver asks nothing")
-	D.panel_open = TRUE // ALLOW(api): the test opens the maintenance panel as a screwdriver would, and the machine has no setter for it
-	D.multitool_act(H, M)
+	D.set_panel_open(TRUE) // the maintenance panel, opened as a screwdriver would
+	hci_click(H, D, M)
 	TEST_ASSERT(asked(H), "an open driver asks for an id")
 	hci_answer(H, 42)
 	settle()

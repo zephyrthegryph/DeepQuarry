@@ -225,15 +225,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, a
 	. = ..()
 	pixel_x = rand(-10, 10)
 	pixel_y = rand(-10, 10)
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_casing/microbattery/appearance_overlays()
-	. = list()
+/obj/item/ammo_casing/microbattery/look_parts(datum/look/look)
 
-	var/image/ends = image(icon, icon_state = "[initial(icon_state)]_ends")
-	ends.color = type_color
-	. += ends
+	look.overlay(look_appearance(icon, "[initial(icon_state)]_ends", color = type_color))
 
 /obj/item/ammo_casing/microbattery/expend()
 	shots_left--

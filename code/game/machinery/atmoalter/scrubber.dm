@@ -96,7 +96,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 		//ran out of charge
 		if (!cell.charge)
 			power_change()
-			update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/return_air()
 	return air_contents
@@ -130,14 +129,12 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, nameof(/datum/rule_binding::holding))
+		rel_take(src, nameof(src.holding))
 	. = TRUE
-	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_volume_adj(datum/act/op/A, vol)
 	volume_rate = CLAMP(vol, minrate, maxrate)
 	. = TRUE
-	update_icon()
 
 
 //Huge scrubber
@@ -189,7 +186,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
-		update_icon()
 		return
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)

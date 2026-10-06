@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/gift)
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
-		own_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
+		rel_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
 		user.put_in_active_hand(present)
 		present.add_fingerprint(user)
 	else
@@ -382,7 +382,6 @@ CAPABILITIES(/obj/item/a_gift/advanced)
 		/obj/item/storage/box/casino/costume_sexymime,
 		/obj/item/storage/box/casino/costume_sexyclown,
 		/obj/item/storage/box/casino/costume_nyangirl) // Enable End
-	return OP_OK
 
 	var/gift_type_chaos = pick(
 		/obj/item/dnainjector/set_trait/hulk,
@@ -407,4 +406,4 @@ CAPABILITIES(/obj/item/a_gift/advanced)
 	I.add_fingerprint(M)
 
 	consume(src, M)
-	return
+	return OP_OK

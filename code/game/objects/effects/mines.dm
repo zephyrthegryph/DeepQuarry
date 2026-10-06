@@ -73,7 +73,10 @@ CAPABILITIES(/obj/effect/mine)
 /obj/effect/mine/proc/ping_wire_pulsed(datum/act/A)
 	wire_beep("*ping*")
 
-DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
+/// The look (the draw sweep: from its layers).
+/obj/effect/mine/draw(datum/look/look)
+	..()
+	look.state("landmine_armed")
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()
@@ -108,7 +111,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
 		var/obj/item/grenade/G = trap
-		own_take(src, nameof(trap))
+		rel_take(src, nameof(trap))
 		G.forceMove(get_turf(src))
 		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
@@ -116,7 +119,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 
 	if(istype(trap, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TV = trap
-		own_take(src, nameof(trap))
+		rel_take(src, nameof(trap))
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
@@ -416,7 +419,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		own_transfer(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
+		rel_move(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
 	if(explode_now)
 		R.explode(user)
 	consume(src)
@@ -501,7 +504,7 @@ CAPABILITIES(/obj/item/mine)
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
 	trap.forceMove(get_turf(src))
-	own_take(src, nameof(trap))
+	rel_take(src, nameof(trap))
 
 //Lasertag mines
 

@@ -367,7 +367,7 @@
 	if(istype(A,/turf/simulated/shuttle/wall) || istype(A,/turf/simulated/wall) || (ismineralturf(A) && A.density) || istype(A,/obj/mecha) || istype(A,/obj/machinery/door))
 		var/blast_dir = src.dir
 		A.visible_message(span_danger("\The [A] begins to glow!"))
-		after(A, 2 SECONDS, /proc/delayed_blast_beyond, with = list(A, blast_dir))
+		after(A, 2 SECONDS, GLOBAL_PROC_REF(delayed_blast_beyond), with = list(A, blast_dir))
 	..()
 
 /obj/item/projectile/beam/tungsten/Bump(atom/A, forced=0)

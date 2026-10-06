@@ -121,7 +121,7 @@
 			var/obj/item/gun/projectile/NN = N
 			var/obj/item/gun/projectile/OO = O
 			NN.magazine_type = OO.magazine_type
-			own_transfer(OO, nameof(OO.ammo_magazine), NN, nameof(NN.ammo_magazine))
+			rel_move(OO, nameof(OO.ammo_magazine), NN, nameof(NN.ammo_magazine))
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NE = N
 			var/obj/item/gun/energy/OE = O
@@ -943,7 +943,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 			if(!consume(src, user))
 				return ITEM_INTERACT_FAILURE
 			var/mob/living/carbon/human/H = user
-			var/datum/species/own_species = proto_private(H, nameof(H.species))
+			var/datum/species/own_species = rel_private(H, nameof(H.species))
 			own_species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
@@ -986,22 +986,18 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
 
-/obj/item/melee/baton/fluff/stunstaff/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/melee/baton/fluff/stunstaff/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		wielded = 1
 		force = 15
 		name = "[base_name] (wielded)"
-		update_icon()
+		changed(src)
 	else
 		wielded = 0
 		force = 8
 		name = "[base_name]"
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -1011,15 +1007,14 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/baton/fluff/stunstaff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/baton/fluff/stunstaff/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded][status]"
-	item_state = icon_state
+/obj/item/melee/baton/fluff/stunstaff/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded][status]")
+	look.held_state(drawn_state)
 	if(status==1)
-		set_light(2, 2, lightcolor)
+		look.light(2, 2, lightcolor)
 	else
-		set_light(0)
+		look.light_off()
 
 /obj/item/melee/baton/fluff/stunstaff/dropped(mob/user, equipping, slot)
 	..()
@@ -1388,12 +1383,12 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 	if(open)
 		return
 	set_open(TRUE)
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/storage/fancy/fluff/charlotte/close(mob/user as mob)
 	set_open(FALSE)
-	update_icon()
+	changed(src)
 	..()
 
 //Ashling - Antoinette deKaultieste
@@ -1540,7 +1535,7 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 		return
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(I_HELP, "Hug", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_DISARM, "Poke", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_GRAB, "Strangle", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_HURT, "Punch", PROC_REF(mofuorb_squeeze_self)))

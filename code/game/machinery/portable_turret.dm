@@ -104,6 +104,8 @@
 	/// How many machine frames the cover stays up after the turret last had a target.
 	var/timeout = 10
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
+TRACKED(/obj/machinery/porta_turret, icon_color)
+TRACKED(/obj/machinery/porta_turret, lethal_icon_color)
 
 TRACKED(/obj/machinery/porta_turret, enabled)
 TRACKED(/obj/machinery/porta_turret, lethal)
@@ -657,50 +659,50 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 		lethal_shot_sound = shot_sound
 
 	if(istype(P, /obj/item/projectile/energy))
-		icon_color = "orange"
+		set_icon_color("orange")
 
 	else if(istype(P, /obj/item/projectile/beam/stun))
-		icon_color = "blue"
+		set_icon_color("blue")
 
 	else if(istype(P, /obj/item/projectile/beam/lasertag))
-		icon_color = "blue"
+		set_icon_color("blue")
 
 	else if(istype(P, /obj/item/projectile/beam))
-		icon_color = "red"
+		set_icon_color("red")
 
 	else
-		icon_color = "blue"
+		set_icon_color("blue")
 
-	lethal_icon_color = icon_color
+	set_lethal_icon_color(icon_color)
 
 	weapon_setup(installation)
 
 /obj/machinery/porta_turret/proc/weapon_setup(guntype)
 	switch(guntype)
 		if(/obj/item/gun/energy/gun/burst)
-			lethal_icon_color = "red"
+			set_lethal_icon_color("red")
 			lethal_projectile = /obj/item/projectile/beam/burstlaser
 			lethal_shot_sound = SFX_WEAPONS_LASER
 			shot_delay = 1 SECOND
 
 		if(/obj/item/gun/energy/locked/phasegun/unlocked)
-			icon_color = "orange"
-			lethal_icon_color = "orange"
+			set_icon_color("orange")
+			set_lethal_icon_color("orange")
 			lethal_projectile = /obj/item/projectile/energy/phase/heavy
 			shot_delay = 1 SECOND
 
 		if(/obj/item/gun/energy/gun)
-			lethal_icon_color = "red"
+			set_lethal_icon_color("red")
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
 			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/gun/nuclear)
-			lethal_icon_color = "red"
+			set_lethal_icon_color("red")
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
 			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/xray)
-			lethal_icon_color = "green"
+			set_lethal_icon_color("green")
 			lethal_projectile = /obj/item/projectile/beam/xray
 			projectile = /obj/item/projectile/beam/stun // Otherwise we fire xrays on both modes.
 			lethal_shot_sound = SFX_WEAPONS_ELUGER

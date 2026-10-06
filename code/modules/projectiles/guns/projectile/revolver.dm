@@ -205,7 +205,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 /// TRUE while any rounds are loaded.
 /obj/item/gun/projectile/revolver/deckard/proc/appearance_loaded()
 	return length(loaded) > 0
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appearance_loaded?loaded:empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/revolver/deckard/draw(datum/look/look)
+	..()
+	look.state("deckard-[appearance_loaded() ? "loaded" : "empty"]")
 
 /obj/item/gun/projectile/revolver/deckard/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine))

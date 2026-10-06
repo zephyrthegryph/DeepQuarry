@@ -52,8 +52,9 @@ CAPABILITIES(/obj/machinery/camera)
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
 	on_wire(WIRE_CAM_LIGHT, cut = PROC_REF(light_wire_cut), pulse = PROC_REF(light_wire_pulsed))
 	on_wire(WIRE_CAM_ALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
@@ -144,7 +145,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if(has_stat(EMPED) && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 		stat_remove(EMPED)
 		cancelCameraAlarm()
-		update_icon()
+		changed(src)
 		update_coverage()
 	check_motion_alarm()
 	schedule_camera_timer()
@@ -176,7 +177,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		stat_add(EMPED)
 		set_light(0)
 		triggerCameraAlarm()
-		update_icon()
+		changed(src)
 		update_coverage()
 		schedule_camera_timer()
 
@@ -299,15 +300,12 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	playsound(src, tool.usesound, 50, TRUE)
 	return OP_OK
 
-/obj/machinery/camera/wirecutter_act(mob/user, obj/item/tool)
+/// The wirecutters or a multitool: the coverage is refreshed, and behind the open panel the wires' window opens.
+/obj/machinery/camera/proc/wire_tool_used(datum/act/op/A)
 	update_coverage()
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	interact(user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/camera/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
+	if(panel_open)
+		interact(A.actor)
+	return OP_OK
 
 /obj/machinery/camera/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -334,7 +332,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 			assembly.state = 1
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
-		own_take(src, nameof(assembly))
+		rel_take(src, nameof(assembly))
 	spent(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -448,7 +446,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		status = newstatus
 		update_coverage()
 
-APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/camera/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_suffix()]")
 
 /// "1" when off or broken, "emp" while EMP-ed, else nothing.
 /obj/machinery/camera/proc/appearance_suffix()
@@ -618,7 +619,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 		return
 	atom_fix() // Fix the camera
 	wires_repair(src)
-	update_icon()
+	changed(src)
 	update_coverage()
 
 // ---- the wires ----

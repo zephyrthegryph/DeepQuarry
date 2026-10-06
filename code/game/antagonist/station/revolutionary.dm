@@ -40,7 +40,7 @@ GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
 /datum/antagonist/revolutionary/create_global_objectives()
 	if(!..())
 		return
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
+	rel_clear(src, nameof(global_objectives))
 	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!player.mind || player.stat==2 || !(SSjob.is_job_in_department(player.mind.assigned_role, DEPARTMENT_COMMAND)))
 			continue

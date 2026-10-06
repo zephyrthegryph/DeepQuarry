@@ -37,11 +37,6 @@ CAPABILITIES(/obj/item/taperecorder)
 	op("playback", menu(), label("Playback Tape"), needs(carried(), req(PROC_REF(playback_ok), because = PROC_REF(playback_refusal))), then(PROC_REF(verb_playback)))
 	op("print", menu(), label("Print Transcript"), needs(carried(), req(PROC_REF(print_ok), because = PROC_REF(print_refusal))), then(PROC_REF(verb_print)))
 
-/obj/item/taperecorder/Initialize(mapload)
-	. = ..()
-	if(mytape)
-		update_icon()
-
 /obj/item/taperecorder/empty
 	mytape = null
 
@@ -240,8 +235,8 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 		taperecorder_stop_effect(user)
 	to_chat(user, span_notice("You remove [mytape] from [src]."))
 	user.put_in_hands(mytape)
-	own_take(src, nameof(mytape))
-	update_icon()
+	rel_take(src, nameof(mytape))
+	changed(src)
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE, with_capitalization = TRUE)
@@ -281,7 +276,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 		set_emagged(1)
 		set_recording(0)
 		to_chat(user, span_warning("PZZTTPFFFT"))
-		update_icon()
 		return OP_OK
 	else
 		to_chat(user, span_warning("It is already emagged!"))
@@ -306,7 +300,7 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	if(mytape.used_capacity < mytape.max_capacity)
 		to_chat(user, span_notice("Recording started."))
 		set_recording(1)
-		update_icon()
+		changed(src)
 
 		mytape.record_speech("Recording started.")
 		return
@@ -316,7 +310,7 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 /// One second of recording: the tape fills up.
 /obj/item/taperecorder/proc/record_tick()
 	if(!mytape || mytape.used_capacity >= mytape.max_capacity)
-		update_icon()
+		changed(src)
 		return REPEAT_STOP
 	mytape.used_capacity++
 	if(mytape.used_capacity >= mytape.max_capacity)
@@ -324,13 +318,13 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 			var/mob/M = loc
 			to_chat(M, span_notice("The tape is full."))
 		stop_recording()
-		update_icon()
+		changed(src)
 		return REPEAT_STOP
 
 /obj/item/taperecorder/proc/stop_recording()
 	//Sanity checks skipped, should not be called unless actually recording
 	set_recording(0)
-	update_icon()
+	changed(src)
 	mytape.record_speech("Recording stopped.")
 	if(ismob(loc))
 		var/mob/M = loc
@@ -462,7 +456,10 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 		return "playing"
 	return "idle"
 
-APPEARANCE_TEMPLATE(/obj/item/taperecorder, "taperecorder_{appearance_tape_state}")
+/// The look (the draw sweep: from its template).
+/obj/item/taperecorder/draw(datum/look/look)
+	..()
+	look.state("taperecorder_[appearance_tape_state()]")
 
 MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 /obj/item/rectape
@@ -480,9 +477,11 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 	var/list/timestamp = new/list() // ALLOW(instance_list): d: index-parallel with storedinfo
 	var/ruined = 0
 
-DECLARE_APPEARANCE(/obj/item/rectape, "ruined", list( \
-	"1" = list(APPEARANCE_OVERLAYS = list("ribbonoverlay")) \
-))
+/// The look (the draw sweep: from its layers).
+/obj/item/rectape/draw(datum/look/look)
+	..()
+	if(ruined == 1)
+		look.overlay("ribbonoverlay")
 
 
 CAPABILITIES(/obj/item/rectape)

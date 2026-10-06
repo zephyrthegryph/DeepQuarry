@@ -1,0 +1,9 @@
+/obj/item/shield/riot/explorer icon: icons/obj/weapons_vr.dmi
+/obj/item/shield/riot/explorer state: explorer_shield
+/obj/item/shield/riot/explorer dir: 2
+/obj/item/shield/riot/explorer overlay: icons/obj/weapons_vr.dmi:explorer_shield:8:#000000
+/obj/item/shield/riot/explorer/purple icon: icons/obj/weapons_vr.dmi
+/obj/item/shield/riot/explorer/purple state: explorer_shield_P
+/obj/item/shield/riot/explorer/purple dir: 2
+/obj/item/shield/riot/explorer/purple overlay: icons/obj/weapons_vr.dmi:explorer_shield_P:8:#000000
+

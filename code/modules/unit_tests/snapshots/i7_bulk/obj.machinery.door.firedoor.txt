@@ -2,3 +2,4 @@
 /obj/machinery/door/firedoor|robot|none => gen_silicon_silicon_use|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/door/firedoor|ai|none => gen_silicon_silicon_use|
 /obj/machinery/door/firedoor|ghost|none => |
+

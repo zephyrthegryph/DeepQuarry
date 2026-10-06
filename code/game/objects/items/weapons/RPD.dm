@@ -329,7 +329,6 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	activate()
 
 	C.add_fingerprint(user)
-	C.update_icon()
 	if(mode & WRENCH_MODE)
 		do_wrench(C, user)
 	else
@@ -340,7 +339,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	animate(P.filters[P.filters.len], size = 0, time = time)
 	var/outline = filter(type = "outline", size = 1, color = "#22AAFF")
 	P.filters += outline
-	after(P, time, /proc/rpd_build_effect_end, with = list(P, outline))
+	after(P, time, GLOBAL_PROC_REF(rpd_build_effect_end), with = list(P, outline))
 
 /proc/rpd_build_effect_end(obj/P, outline)
 	P.filters -= outline
@@ -349,7 +348,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 /obj/item/pipe_dispenser/proc/animate_deletion(obj/P, time = 1.5)
 	P.filters += filter(type = "angular_blur", size = 0)
 	animate(P.filters[P.filters.len], size = 30, time = time)
-	after(P, time, /proc/rpd_deletion_end, with = list(P))
+	after(P, time, GLOBAL_PROC_REF(rpd_deletion_end), with = list(P))
 
 /proc/rpd_deletion_end(obj/P)
 	P.filters -= filter(type = "angular_blur", size = 30)
