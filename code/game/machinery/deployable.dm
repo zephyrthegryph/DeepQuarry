@@ -162,7 +162,6 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	var/human_name = TRUE
 
 	var/static/list/cutout_types
-	var/static/list/painters = list(/obj/item/reagent_containers/glass/paint, /obj/item/floor_painter)///obj/item/closet_painter)
 	resistance_flags = FLAMMABLE
 
 /obj/structure/barricade/cutout/Initialize(mapload)
@@ -219,18 +218,16 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 
 CAPABILITIES(/obj/structure/barricade/cutout)
 	op("cutout_interaction_hand", hand(), label("Stand up"), then(PROC_REF(cutout_interaction_hand)))
-	op("cutout_interaction_item", item(/obj/item), then(PROC_REF(cutout_interaction_item)))
+	// a painter paints it (anything else is the barricade's repair or hit)
+	op("cutout_interaction_item", item(/obj/item/reagent_containers/glass/paint), label("Paint"), then(PROC_REF(cutout_interaction_item)))
+	op("cutout_paint_painter", item(/obj/item/floor_painter), label("Paint"), then(PROC_REF(cutout_interaction_item)))
 
 /// Old attackby.
 /obj/structure/barricade/cutout/proc/cutout_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/I = A.held
-	if(is_type_in_list(I, painters))
-		open_request(src, /datum/prompt/choice, PROC_REF(cutout_type_chosen), answerer = user, question = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-		return TRUE
-
-	else
-		return OP_DECLINE
+	open_request(src, /datum/prompt/choice, PROC_REF(cutout_type_chosen), answerer = user, question = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
+	return TRUE
 
 /obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/act/request/A)
 	if(!A.answer)

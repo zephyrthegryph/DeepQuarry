@@ -95,5 +95,5 @@ human|/obj/item/clothing/suit/space/void menu: Ui open
 human|/obj/item/clothing/suit/space/void menu: Use
 human|/obj/item/clothing/suit/space/void click: Click: Ui open
 wires: Electrification, ID Scan, Safety
-keys: apply_paintjob, department, dispense, eject_guy, emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, radlevel, repair_suit, species, suit_cycler_insert_grab, suit_cycler_insert_helmet, suit_cycler_insert_suit, suit_cycler_leave, suit_cycler_use, ui_open, uv
+keys: apply_paintjob, department, dispense, drag_buckle, eject_guy, emag.subvert, emag.use, gen_robot_interaction_swallow, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, radlevel, repair_suit, species, suit_cycler_insert_grab, suit_cycler_insert_helmet, suit_cycler_insert_suit, suit_cycler_leave, suit_cycler_use, ui_open, uv
 

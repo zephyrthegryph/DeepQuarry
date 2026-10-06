@@ -1,5 +1,5 @@
-/obj/structure/railing|human|none => railing_item,gen_verb_railing_flip_effect|railing_item_harm:combat mode is off
-/obj/structure/railing|robot|none => railing_item,gen_verb_railing_flip_effect|railing_item_harm:combat mode is off
+/obj/structure/railing|human|none => |
+/obj/structure/railing|robot|none => |
 /obj/structure/railing|ai|none => |
 /obj/structure/railing|ghost|none => |
 

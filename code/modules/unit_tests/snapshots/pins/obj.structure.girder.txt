@@ -1,71 +1,58 @@
 human|none menu: Disassemble the girder (refused: needs a wrench)
 human|none menu: Dislodge the girder (refused: needs a crowbar)
 human|none menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|none menu: Smash (refused: not possible right now)
-human|none menu: Use
 human|none click: nothing
 robot|none menu: Disassemble the girder (refused: needs a wrench)
 robot|none menu: Dislodge the girder (refused: needs a crowbar)
 robot|none menu: Prepare for reinforcing (refused: needs a screwdriver)
-robot|none menu: Smash (refused: not possible right now)
-robot|none menu: Use
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/tool/screwdriver menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Prepare for reinforcing
-human|/obj/item/tool/screwdriver menu: Smash (refused: not possible right now)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/tool/crowbar menu: Dislodge the girder
 human|/obj/item/tool/crowbar menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/tool/crowbar menu: Smash (refused: not possible right now)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Disassemble the girder
 human|/obj/item/tool/wrench menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/tool/wrench menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/tool/wrench menu: Smash (refused: not possible right now)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/tool/wirecutters menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/tool/wirecutters menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/tool/wirecutters menu: Smash (refused: not possible right now)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/multitool menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/multitool menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/multitool menu: Smash (refused: not possible right now)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/weldingtool menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/weldingtool menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/weldingtool menu: Smash (refused: not possible right now)
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/stack/cable_coil menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/stack/cable_coil menu: Smash (refused: not possible right now)
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/stack/material/steel menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/stack/material/steel menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/stack/material/steel menu: Smash (refused: not possible right now)
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Disassemble the girder (refused: needs a wrench)
 human|/obj/item/card/id menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/card/id menu: Prepare for reinforcing (refused: needs a screwdriver)
-human|/obj/item/card/id menu: Smash (refused: not possible right now)
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, girder_hulk_smash, girder_item
+human|/obj/item/card/id click: Click: Use
+keys: drag_buckle, hulk_smash, item
 

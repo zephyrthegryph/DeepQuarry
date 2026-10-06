@@ -2156,3 +2156,34 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
   shuts a full cabinet and unwrenches an empty one after 1.5 s. **The holoplant** goes out when its anchoring changes (`on_change`),
   where its wrench proc switched it off after the machine's anchor.
+
+## Items and structures, second pass: interactions are ops (rewrite/items-structures-2)
+
+- **A ghost's click is `observer()`** (the old `INTERACT_OBSERVER`): an op binding that needs `AFF_OBSERVE`, which only `/mob/observer/dead`
+  provides (`provides(AFF_OBSERVE)`), reach `REACH_ANY`. A living actor never reaches such an op (the reach gate now checks the provider of a
+  `REACH_ANY` op whose binding names an affordance). Trash piles (become a mouse) and ghost pods (inhabit) use it; their refusals are
+  requirements with the old texts, and the yes/no that followed is the op's `asks()` step (a ghost keeps only `TARGET_PRESENT`).
+- **A manual ghost pod no longer goes busy while a ghost is asked**: several ghosts may be asked at once; the first yes takes it and the
+  rest are told another spirit got there first (re-checked on the answer).
+- **Every movable's default drag buckle is the op `drag_buckle`** on `/atom/movable` (default tier, offered while `can_buckle` and
+  `drag_buckle`, both `TRACKED` now). The legacy entry showed as a greyed "Buckle" in the menu of everything; a drag is no menu entry. A
+  type whose old interactions replaced every inherited one (the nest, the pillow piles) says `without("drag_buckle")`.
+- **A stance op is picked from the menu whatever the stance** (the engine's rule for `stance()`): the snowman's Crush, the alien resin's
+  and nest's Melt, the railing's Slam, the toilet's Yank no longer show "combat mode is off" in the menu.
+- **The prism's and the dial's rotation are op steps**: yes/no, then the bearing or the compass point (and the dial's last yes); the
+  prop's message no longer shows before the question. A locked or externally controlled prism refuses with its reason.
+- **The puzzle door answers only to its locks**: its own touch and item use replace the blast door's open, close, pry and swallow (a
+  click with an item now runs the old attackby: pry against the locks, a plastique turns to ash).
+- **The cutout's painting takes a paint can or a floor painter** (its own ops); anything else is the barricade's repair or hit, as the
+  decline used to fall through to.
+- **Toilets roll their lid at init** (`rolls(nameof(open), range_of(0, 1))`, was `rand` in `Initialize()`). Taking the teleplumbing crystal
+  is the hand op's question step, asked only when the cistern is open, empty and the actor is a person. A cyborg's module never goes in a
+  cistern (a cyborg's own item op). The shower's temperature valve asks as an op step and the alt-click still goes on (`passes()`).
+- **The sink**: a silicon is not offered the wash (it did nothing); emptying a container is a drag of a reagent container (an empty one
+  says so instead of greying the entry out).
+- **The low wall**: a cyborg is not offered placing or dragging things onto it (it did nothing), and so no longer hoists windows up.
+- **The potted plant** refuses with the slot's size message ("That is too large to fit.") instead of naming the item.
+- **The window tint button's multitool** asks for an id as an op step when it has none and stores it otherwise (the button's `id` is
+  `TRACKED`). **The crematorium button** needs crematorium access through `req_access()`.
+- **`req_mutation(M, of = ON_ACTOR)`**: an engine requirement on the actor's mutations (reads `MOB_KEY_CONDITIONS`); the girder's hulk
+  smash is `when(req_mutation(HULK))`.

@@ -24,5 +24,5 @@ human|/obj/item/stack/material/steel menu: Lift
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Lift
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, use_wrench, weightlifter_hand
+keys: drag_buckle, use_wrench, weightlifter_hand
 

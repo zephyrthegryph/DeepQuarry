@@ -1,5 +1,0 @@
-/obj/structure/snowman|human|none => |snowman_crush:combat mode is off
-/obj/structure/snowman|robot|none => |snowman_crush:combat mode is off
-/obj/structure/snowman|ai|none => |
-/obj/structure/snowman|ghost|none => |
-

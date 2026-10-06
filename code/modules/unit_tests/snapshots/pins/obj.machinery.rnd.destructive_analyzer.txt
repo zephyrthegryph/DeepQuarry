@@ -37,5 +37,5 @@ human|/obj/item/card/id menu: Load
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
 wires: Disable, Hack, High Voltage Ground
-keys: anchor.toggle, construction.dismantle, deconstruct, eject_item, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, panel.open, part_replacement.replace, recycle, ui_open, wires.cut, wires.open, wires.pulse
+keys: anchor.toggle, construction.dismantle, deconstruct, drag_buckle, eject_item, gen_robot_interaction_swallow, load, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, panel.open, part_replacement.replace, recycle, ui_open, wires.cut, wires.open, wires.pulse
 

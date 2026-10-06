@@ -96,5 +96,5 @@ human|/obj/item/tank menu: Replace parts (refused: needs a rapid part exchange d
 human|/obj/item/tank menu: Ui open
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Ui open
-keys: add_tank, bomb_tester_load_tank, bomb_tester_open, canister_scan, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_part_replacement, machine_repair, remove_tank, set_can_pressure, set_mode, start_sim, ui_open
+keys: add_tank, bomb_tester_load_tank, bomb_tester_open, canister_scan, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_part_replacement, machine_repair, remove_tank, set_can_pressure, set_mode, start_sim, ui_open
 

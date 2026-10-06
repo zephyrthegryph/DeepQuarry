@@ -30,28 +30,20 @@
 
 DECLARE_PERIODIC(/obj/structure/prop/nest, PERIODIC_SLOW)
 
-// The original attack_hand called ..() (prop's message) unconditionally, then always
-// continued below, so interaction_disturb() shows the message itself instead of also
-// offering prop_hand (which would tie with it and open the Menu).
-/obj/structure/prop/nest/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/nest_disturb,
-	)
-	..()
-	into -= /datum/interaction/entry_hand/prop_hand
+CAPABILITIES(/obj/structure/prop/nest)
+	without("message")   // the disturbance shows the message itself
+	op("disturb", hand(), label("Use"), then(PROC_REF(interaction_disturb)))
 
+// The original attack_hand called ..() (prop's message) unconditionally, then always continued below, so interaction_disturb() shows the message
+// itself and the nest drops the prop's own message op.
 /// Old attack_hand: disturbing the nest may spawn a creature.
-/datum/interaction/entry_hand/nest_disturb
-	id = "nest_disturb"
-	name = "Use"
-	effect = /obj/structure/prop/nest/proc/interaction_disturb
-
-/obj/structure/prop/nest/proc/interaction_disturb(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/prop/nest/proc/interaction_disturb(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(interaction_message)
 		to_chat(user, interaction_message)
 	if(user && prob(disturbance_spawn_chance))
 		spawn_creature(get_turf(src))
-	return TRUE
+	return OP_OK
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/prop/nest/periodic_step()

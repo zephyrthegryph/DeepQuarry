@@ -451,8 +451,9 @@
 		if(!isnull(pinned) && pinned != gesture)
 			C.dropped_by = GATE_MATCH
 			return
-	// providers and the reach gate (not for the game acting for itself)
-	if(R.origin != ORIGIN_SYSTEM && op_reach_policy(P, B) != REACH_ANY)
+	// providers and the reach gate (not for the game acting for itself). A REACH_ANY op still needs its provider when its binding names an affordance
+	// (observer(): only a ghost provides AFF_OBSERVE); the gate then runs no spatial step.
+	if(R.origin != ORIGIN_SYSTEM && (op_reach_policy(P, B) != REACH_ANY || op_affordance(P, B, R.held)))
 		var/atom/aim = (C.side == CAND_ACTOR && B.bind_kind != BIND_CLICKS) ? R.actor : R.target
 		var/list/chosen = list()
 		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen)

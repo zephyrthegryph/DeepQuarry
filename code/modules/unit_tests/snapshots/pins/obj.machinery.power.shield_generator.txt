@@ -102,5 +102,5 @@ human|/obj/item/storage/part_replacer menu: Unsecure (refused: needs a wrench)
 human|/obj/item/storage/part_replacer menu: Use
 human|/obj/item/storage/part_replacer click: Click: Ui open
 wires: AI Control, Contraband, Primary Power, Shield Controls
-keys: begin_shutdown, emergency_shutdown, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, set_input_cap, set_range, shield_generator_part_replacement, shield_generator_use, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open
+keys: begin_shutdown, drag_buckle, emergency_shutdown, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, set_input_cap, set_range, shield_generator_part_replacement, shield_generator_use, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open
 

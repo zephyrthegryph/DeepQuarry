@@ -1,5 +1,5 @@
-/obj/structure/trash_pile|human|none => trash_pile_item,trash_pile_search|
-/obj/structure/trash_pile|robot|none => trash_pile_item,trash_pile_search|
+/obj/structure/trash_pile|human|none => |
+/obj/structure/trash_pile|robot|none => |
 /obj/structure/trash_pile|ai|none => |
-/obj/structure/trash_pile|ghost|none => gen_observer_trash_pile_ghost_mouse|
+/obj/structure/trash_pile|ghost|none => |
 

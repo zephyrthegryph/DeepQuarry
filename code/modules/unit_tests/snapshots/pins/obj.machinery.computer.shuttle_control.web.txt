@@ -80,5 +80,5 @@ human|/obj/item/card/emag menu: Register helmet (refused: needs a pilot helmet)
 human|/obj/item/card/emag menu: Use (refused: access denied)
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use item
-keys: cancel, climb.climb, climb.climb_menu, disconnect, dock_command, emag, force, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, move, rename_command, set_codes, shuttle_control_open_ui, shuttle_control_web_register_helmet, toggle_autopilot, toggle_cloaking, traverse, undock_command, use_gripper, use_item
+keys: cancel, climb.climb, climb.climb_menu, disconnect, dock_command, drag_buckle, emag, force, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, move, rename_command, set_codes, shuttle_control_open_ui, shuttle_control_web_register_helmet, toggle_autopilot, toggle_cloaking, traverse, undock_command, use_gripper, use_item
 

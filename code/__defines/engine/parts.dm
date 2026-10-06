@@ -34,6 +34,8 @@
 #define BIND_CLICKS "clicks"
 /// Telekinesis: the hand's touch of a target out of every hand's reach, done by the telekinesis provider (an old INTERACT_TK).
 #define BIND_TK "tk"
+/// An observer's click or menu pick (the old INTERACT_OBSERVER): only an actor that provides AFF_OBSERVE (a ghost, observer.dm) reaches it, anywhere.
+#define BIND_OBSERVE "observe"
 
 /// The op tiers (section 8), highest first. OP_PRIORITY_* master values are kept; ATTACK is the one master lacks.
 #ifndef OP_PRIORITY_ATTACK

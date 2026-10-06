@@ -73,7 +73,6 @@ CAPABILITIES(/obj/structure/bed/bath)
 	reagents(300)
 	op("bath_interaction_item", item(/obj/item), then(PROC_REF(bath_interaction_item)))
 
-/// Old attackby.
 /obj/structure/bed/bath/proc/bath_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
@@ -154,13 +153,30 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, TYPE_PRO
 	icon_state = "toilet3"
 	open = 1
 
-EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ITEM(null, PROC_REF(wooden_interaction_item)), \
-)
+// a hole in a box: a touch does nothing (no lid, no cistern to loot), and its own item use replaces the toilet's
+CAPABILITIES(/obj/structure/toilet/wooden)
+	without("use")
+	without("item")
+	without("item_cyborg")
+	op("wooden_touch", hand(), ungated(), then(PROC_REF(wooden_touched)))
+	op("wooden_item", item(/obj/item), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(wooden_interaction_item)))
+	op("wooden_item_cyborg", item(/obj/item), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(wooden_interaction_item_cyborg)))
 
-/// Old attackby.
-/obj/structure/toilet/wooden/proc/wooden_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/// A touch takes the click and does nothing.
+/obj/structure/toilet/wooden/proc/wooden_touched(datum/act/op/A)
+	return OP_OK
+
+/// Old attackby: a swirlie for a grabbed mob, or an item into the cistern.
+/obj/structure/toilet/wooden/proc/wooden_interaction_item(datum/act/op/A)
+	return wooden_item_used(A, FALSE)
+
+/// A cyborg's module never goes in the cistern.
+/obj/structure/toilet/wooden/proc/wooden_interaction_item_cyborg(datum/act/op/A)
+	return wooden_item_used(A, TRUE)
+
+/obj/structure/toilet/wooden/proc/wooden_item_used(datum/act/op/A, cyborg)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/grab))
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
@@ -171,7 +187,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 			if(G.state>1)
 				if(!GM.loc == get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				var/mob/living/swirlie = swirlie_mob
 				if(open && !swirlie)
 					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
@@ -184,19 +200,19 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 			else
 				to_chat(user, span_notice("You need a tighter grip."))
 
-	if(cistern && !istype(user,/mob/living/silicon/robot)) //STOP PUTTING YOUR MODULES IN THE TOILET.
+	if(cistern && !cyborg) //STOP PUTTING YOUR MODULES IN THE TOILET.
 		if(I.w_class > 3)
 			to_chat(user, span_notice("\The [I] does not fit."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(w_items + I.w_class > 5)
 			to_chat(user, span_notice("The cistern is full."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		I.forceMove(src)
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /datum/om/task/timed/wooden_wooden_swirlie
 	duration = 3 SECONDS

@@ -121,5 +121,5 @@ human|/obj/item/storage menu: Scan ID
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Use (refused: not in your hand)
 human|/obj/item/storage click: nothing
-keys: add_hex, copy, copy_name, decline, dial, disconnect, edit, gen_alt_interaction_alt, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_observer_communicator_observer_use, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, Light, message, newsfeed, rename, set_ringer_tone, startvideo, switch_tab, write_target_address
+keys: add_hex, copy, copy_name, decline, dial, disconnect, drag_buckle, edit, gen_alt_interaction_alt, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_observer_communicator_observer_use, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, Light, message, newsfeed, rename, set_ringer_tone, startvideo, switch_tab, write_target_address
 

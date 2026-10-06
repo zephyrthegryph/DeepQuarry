@@ -75,5 +75,5 @@ human|/obj/item/aicard menu: Use
 human|/obj/item/aicard menu: Use AI card
 human|/obj/item/aicard menu: Use item
 human|/obj/item/aicard click: Click: Use item
-keys: aifixer_card, aifixer_use, climb.climb, climb.climb_menu, disconnect, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, PRG_beginReconstruction, ui_open, use_gripper, use_item
+keys: aifixer_card, aifixer_use, climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, PRG_beginReconstruction, ui_open, use_gripper, use_item
 

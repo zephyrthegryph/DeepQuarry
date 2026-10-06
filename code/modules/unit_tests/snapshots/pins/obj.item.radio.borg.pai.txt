@@ -25,5 +25,5 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 wires: Receiver, Signal, Transmitter
-keys: broadcast, channel, controls, gen_item_interaction_item, listen, setFrequency, specFreq, subspace, toggleLoudspeaker, use_screwdriver
+keys: broadcast, channel, controls, drag_buckle, gen_item_interaction_item, listen, setFrequency, specFreq, subspace, toggleLoudspeaker, use_screwdriver
 

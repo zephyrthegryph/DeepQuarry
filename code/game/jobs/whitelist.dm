@@ -148,6 +148,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	if(!GLOB.whitelist.len)	GLOB.whitelist = null
 
 /proc/check_whitelist(mob/M /*rank*/)
+	READS_FROM() // the whitelist is an admin record, not round state
 	if(!CONFIG_GET(flag/usewhitelist)) //I guess this is an override for the blanket whitelist system.
 		return 1
 	if(!GLOB.whitelist)

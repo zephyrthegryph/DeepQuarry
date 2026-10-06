@@ -172,5 +172,5 @@ human|/obj/item/storage menu: Reset PDA (refused: you need to be carrying it)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: nothing
-keys: Authenticate, Eject, gen_alt_interaction_alt, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_self_pda_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_pda_verb_remove_cartridge, gen_verb_pda_verb_remove_id, gen_verb_pda_verb_remove_pen, gen_verb_pda_verb_reset, gen_verb_toggle_digestable_effect, Home, Retro, Ringtone, StartProgram, TouchSounds
+keys: Authenticate, drag_buckle, Eject, gen_alt_interaction_alt, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_self_pda_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_pda_verb_remove_cartridge, gen_verb_pda_verb_remove_id, gen_verb_pda_verb_remove_pen, gen_verb_pda_verb_reset, gen_verb_toggle_digestable_effect, Home, Retro, Ringtone, StartProgram, TouchSounds
 

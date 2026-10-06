@@ -86,5 +86,5 @@ human|/obj/item/card/emag menu: Open maintenance panel (refused: needs a screwdr
 human|/obj/item/card/emag menu: Swipe card
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: nothing
-keys: emag, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, suspension_gen_insert_cell, suspension_gen_swipe_card, suspension_gen_use, toggle_field
+keys: drag_buckle, emag, gen_robot_interaction_swallow, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, suspension_gen_insert_cell, suspension_gen_swipe_card, suspension_gen_use, toggle_field
 

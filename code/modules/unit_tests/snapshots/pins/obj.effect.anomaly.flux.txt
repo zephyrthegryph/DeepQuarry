@@ -32,5 +32,5 @@ human|/obj/item/stack/material/steel click: Click: Scan anomaly
 human|/obj/item/card/id menu: Interaction flux shock
 human|/obj/item/card/id menu: Scan anomaly
 human|/obj/item/card/id click: Click: Scan anomaly
-keys: flux_shock, flux_shock_item, gen_drag_interaction_drag_buckle, pass_insert, pass_insert_2, scan_anomaly
+keys: drag_buckle, flux_shock, flux_shock_item, pass_insert, pass_insert_2, scan_anomaly
 

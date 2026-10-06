@@ -1,5 +1,5 @@
-/obj/structure/barricade|human|none => gen_item_interaction_item|
-/obj/structure/barricade|robot|none => gen_item_interaction_item|
+/obj/structure/barricade|human|none => |
+/obj/structure/barricade|robot|none => |
 /obj/structure/barricade|ai|none => |
 /obj/structure/barricade|ghost|none => |
 

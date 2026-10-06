@@ -24,5 +24,5 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
-keys: back, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, librarypubliccomp_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_repair, search, setauthor, setcategory, settitle
+keys: back, drag_buckle, gen_robot_interaction_swallow, librarypubliccomp_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_repair, search, setauthor, setcategory, settitle
 

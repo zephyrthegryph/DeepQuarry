@@ -87,10 +87,11 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	sticks = FALSE
 
 /// Old attack_hand: search for loose sticks (tree_hand, trees.dm).
-/obj/structure/flora/tree/proc/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/flora/tree/proc/interaction_search_sticks(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sticks)
 		act_message(user, src, MSG_SELF("You search %T% for loose sticks..."), MSG_OTHERS("%U% searches %T% for loose sticks..."))
 		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
 	else
 		to_chat(user, span_notice("You don't see any loose sticks..."))
-	return TRUE
+	return OP_OK

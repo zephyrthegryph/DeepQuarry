@@ -95,5 +95,5 @@ human|/obj/item/anomaly_scanner menu: Replace parts (refused: needs a rapid part
 human|/obj/item/anomaly_scanner menu: Secure (refused: needs a wrench)
 human|/obj/item/anomaly_scanner menu: Use
 human|/obj/item/anomaly_scanner click: nothing
-keys: anomaly_harvester_attach_scanner, anomaly_harvester_part_replacement, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, release_all, release_sample
+keys: anomaly_harvester_attach_scanner, anomaly_harvester_part_replacement, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, release_all, release_sample
 

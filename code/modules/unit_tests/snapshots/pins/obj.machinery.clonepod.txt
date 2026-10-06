@@ -79,5 +79,5 @@ human|/obj/item/card/id menu: Eject Beakers
 human|/obj/item/card/id menu: Eject Cloner
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id click: Click: Clonepod interaction item
-keys: clonepod_eject, clonepod_empty_beakers, clonepod_interaction_hand, clonepod_interaction_item, emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: clonepod_eject, clonepod_empty_beakers, clonepod_interaction_hand, clonepod_interaction_item, drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

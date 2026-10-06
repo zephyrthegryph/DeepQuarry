@@ -63,5 +63,5 @@ human|/obj/item/disk/nuclear menu: Make Deployable
 human|/obj/item/disk/nuclear menu: Ui open
 human|/obj/item/disk/nuclear menu: Use
 human|/obj/item/disk/nuclear click: Click: Ui open
-keys: anchor, auth, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, nuclearbomb_insert_disk, nuclearbomb_make_deployable, nuclearbomb_use, pulse, safety, time, timer, type, ui_open, wire
+keys: anchor, auth, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, nuclearbomb_insert_disk, nuclearbomb_make_deployable, nuclearbomb_use, pulse, safety, time, timer, type, ui_open, wire
 

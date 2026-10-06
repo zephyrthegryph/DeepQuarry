@@ -57,5 +57,5 @@ human|/obj/item/card/id menu: Enter Pod
 human|/obj/item/card/id menu: Put grabbed victim in (refused: needs a grab)
 human|/obj/item/card/id menu: Put in pod (refused: needs a mob)
 human|/obj/item/card/id click: nothing
-keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

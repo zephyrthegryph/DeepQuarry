@@ -35,5 +35,5 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place
 

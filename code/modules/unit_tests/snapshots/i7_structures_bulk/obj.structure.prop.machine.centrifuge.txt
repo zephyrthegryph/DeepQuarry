@@ -1,5 +1,5 @@
-/obj/structure/prop/machine/centrifuge|human|none => |prop_hand:not possible right now
-/obj/structure/prop/machine/centrifuge|robot|none => |prop_hand:not possible right now
+/obj/structure/prop/machine/centrifuge|human|none => |
+/obj/structure/prop/machine/centrifuge|robot|none => |
 /obj/structure/prop/machine/centrifuge|ai|none => |
 /obj/structure/prop/machine/centrifuge|ghost|none => |
 

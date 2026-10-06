@@ -38,5 +38,5 @@ human|/obj/item/card/id menu: Climb (refused: There's a material processor in th
 human|/obj/item/card/id menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id click: Click: Toggle
-keys: anchor.toggle, climb.climb, climb.climb_menu, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, toggle
+keys: anchor.toggle, climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, toggle
 

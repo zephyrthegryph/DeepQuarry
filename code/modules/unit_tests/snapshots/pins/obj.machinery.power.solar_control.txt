@@ -28,5 +28,5 @@ human|/obj/item/stack/material/steel menu: Lay cable (refused: needs a cable coi
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/card/id click: nothing
-keys: azimuth, azimuth_rate, disassemble, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, refresh, tracking, ui_open
+keys: azimuth, azimuth_rate, disassemble, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place, refresh, tracking, ui_open
 

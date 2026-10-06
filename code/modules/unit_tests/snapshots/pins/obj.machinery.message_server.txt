@@ -62,5 +62,5 @@ human|/obj/item/circuitboard/message_monitor menu: Install memory upgrade
 human|/obj/item/circuitboard/message_monitor menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/circuitboard/message_monitor menu: Toggle PDA relay
 human|/obj/item/circuitboard/message_monitor click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, message_server_toggle, message_server_upgrade
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, message_server_toggle, message_server_upgrade
 

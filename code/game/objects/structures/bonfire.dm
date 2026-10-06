@@ -95,7 +95,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	switch(A.answer.value)
 		if("Stake")
 			R.use(1)
-			can_buckle = TRUE
+			set_can_buckle(TRUE)
 			buckle_require_restraints = TRUE
 			to_chat(user, span_notice("You add a rod to \the [src]."))
 			var/mutable_appearance/rod_underlay = mutable_appearance('icons/obj/structures.dmi', "bonfire_rod")

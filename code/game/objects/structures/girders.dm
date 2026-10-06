@@ -138,6 +138,8 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 CAPABILITIES(/obj/structure/girder)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hulk_smash", hand(), label("Smash"), when(req_mutation(HULK)), then(PROC_REF(interaction_hulk_smash)))
 
 /// A blob pulls the girder apart.
 /obj/structure/girder/proc/girder_blob(datum/act/hit/blob/A)
@@ -159,20 +161,10 @@ CAPABILITIES(/obj/structure/girder)
 
 // Tool steps (secure, dislodge, disassemble, struts): girder_construction.dm.
 
-/obj/structure/girder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/girder_item,
-		/datum/interaction/entry_hand/girder_hulk_smash,
-	)
-	..()
-
 /// Old attackby: cut/drill apart, reinforce, or build up into a wall.
-/datum/interaction/entry_item/girder_item
-	id = "girder_item"
-	name = "Use"
-	effect = /obj/structure/girder/proc/interaction_item
-
-/obj/structure/girder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/girder/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
 		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
@@ -186,14 +178,14 @@ CAPABILITIES(/obj/structure/girder)
 			reinforce_with_material(W, user)
 		else
 			if(upgrading)
-				return TRUE
+				return OP_OK
 			upgrading = TRUE
 			if(!construct_wall(W, user))
 				upgrading = FALSE
-				return TRUE
+				return OP_OK
 			upgrading = FALSE
 
-	return TRUE
+	return OP_OK
 
 /obj/structure/girder/proc/attackby_timed_done(mob/user)
 	if(!src) return
@@ -320,19 +312,11 @@ CAPABILITIES(/obj/structure/girder)
 	consume(src)
 
 /// Old attack_hand: a Hulk smashes the girder apart.
-/datum/interaction/entry_hand/girder_hulk_smash
-	id = "girder_hulk_smash"
-	name = "Smash"
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/structure/girder/proc/girder_actor_is_hulk, null))
-	effect = /obj/structure/girder/proc/interaction_hulk_smash
-
-/obj/structure/girder/proc/girder_actor_is_hulk(mob/actor, atom/target, obj/item/held)
-	return (HULK in actor.mutations)
-
-/obj/structure/girder/proc/interaction_hulk_smash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/girder/proc/interaction_hulk_smash(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% smashes %T% apart!"))
 	dismantle()
-	return TRUE
+	return OP_OK
 
 /obj/structure/girder/cult
 	name = "column"
@@ -354,7 +338,9 @@ CAPABILITIES(/obj/structure/girder)
 	replace_with(src, /obj/effect/decal/remains/human)
 
 /// Overrides girder's interaction_item(): a cult girder just slices/drills apart, no reinforcing.
-/obj/structure/girder/cult/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/girder/cult/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
 		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
@@ -362,7 +348,7 @@ CAPABILITIES(/obj/structure/girder)
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))
 		dismantle()
-	return TRUE
+	return OP_OK
 
 /obj/structure/girder/cult/proc/attackby_timed_done2(mob/user)
 	to_chat(user, span_notice("You slice apart the girder!"))

@@ -172,5 +172,5 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Accessory attached hand
-keys: accessory_attached_hand, bluespace_collar_wire_signaler, code, controls, freq, gen_alt_clothing_remove_accessory_alt, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_hand_ungated_clothing_accessory_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_clothing_accessory_item, gen_item_collar_tag_item, gen_self_clothing_circuit_self, gen_self_collar_tag_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, power, size, tag
+keys: accessory_attached_hand, bluespace_collar_wire_signaler, code, controls, drag_buckle, freq, gen_alt_clothing_remove_accessory_alt, gen_hand_interaction_pick_up, gen_hand_ungated_clothing_accessory_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_clothing_accessory_item, gen_item_collar_tag_item, gen_self_clothing_circuit_self, gen_self_collar_tag_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, power, size, tag
 
