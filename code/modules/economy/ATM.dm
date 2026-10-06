@@ -43,12 +43,10 @@ log transactions
 
 /// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
 OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/atm, MACHINE_PIPELINE, "has_mains_power")
-
 /obj/machinery/atm/proc/has_mains_power()
 	return !has_stat(NOPOWER)
 
-/obj/machinery/atm/machine_step()
+/obj/machinery/atm/proc/work_step(datum/act/timer/A)
 	if(ticks_left_timeout > 0)
 		ticks_left_timeout--
 		if(ticks_left_timeout <= 0)
@@ -209,6 +207,7 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	return data
 
 CAPABILITIES(/obj/machinery/atm)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(nameof(stat)))
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	op("logout", ui_act(), then(PROC_REF(ui_act_logout)))
 	interface("AutomatedTellerMachine")
@@ -237,7 +236,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = OP_OK
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_logout(datum/act/op/A)
@@ -249,7 +248,7 @@ CAPABILITIES(/obj/machinery/atm)
 	// Balance statement
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_balance_statement(datum/act/op/A)
@@ -283,7 +282,7 @@ CAPABILITIES(/obj/machinery/atm)
 	// Transaction logs
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_print_transaction(datum/act/op/A)
@@ -333,7 +332,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /// The PIN is asked when the level goes down and the account's own card is not in the machine.
@@ -371,7 +370,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_attempt_auth(datum/act/op/A, account_num, account_pin)
@@ -432,7 +431,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_transfer(datum/act/op/A, funds_amount, purpose, target_acc_number)
@@ -457,7 +456,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_e_withdrawal(datum/act/op/A, funds_amount)
@@ -479,7 +478,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /obj/machinery/atm/proc/ui_act_withdrawal(datum/act/op/A, funds_amount)
@@ -501,7 +500,7 @@ CAPABILITIES(/obj/machinery/atm)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
-			MACHINE_WAKE(src)
+			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
 /datum/interaction/machine_hand/ungated/atm_use

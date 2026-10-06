@@ -6,8 +6,6 @@
 /// A cooker steps while cooking, while on (its thermostat; it hibernates at temperature on a heat
 /// watch), and while off until its heat body has cooled back to the room and been released.
 OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, list("cooking", "stat", "heat_body"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooker_needs_step")
-
 /obj/machinery/appliance/cooker/proc/cooker_needs_step()
 	return cooking || !has_stat(MACHINE_STAT_ANY) || !isnull(heat_body)
 
@@ -32,6 +30,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooke
 	tgui_id = "CookingAppliance"
 
 CAPABILITIES(/obj/machinery/appliance/cooker)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cooker_needs_step), wakes_on = list(nameof(cooking), nameof(stat), nameof(heat_body)))
 	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
 
 /obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)
@@ -108,7 +107,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 	light.pixel_y = light_y
 	. += light
 
-/obj/machinery/appliance/cooker/machine_step()
+/obj/machinery/appliance/cooker/work_step(datum/act/timer/A)
 	if (!has_stat(MACHINE_STAT_ANY))
 		heat_up()
 	else
@@ -129,7 +128,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 /obj/machinery/appliance/cooker/power_change()
 	. = ..()
 	if(.)
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/appliance/cooker/proc/update_cooking_power()
 	var/temp_scale = 0
@@ -197,7 +196,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 /// Cooled below the thermostat band (thermostat_watch): heat again.
 /obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
 	own_clear(src, nameof(thermostat_watch), OWN_DELETE)
-	MACHINE_WAKE(src)
+	work_start(src)
 
 
 /// Heat capacity from `resistance` (the old per-process heating step is

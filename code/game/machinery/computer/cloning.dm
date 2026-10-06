@@ -27,6 +27,7 @@
 	light_color = "#315ab4"
 
 CAPABILITIES(/obj/machinery/computer/cloning)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(autoprocess), wakes_on = list(nameof(autoprocess)))
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
 	owns_many(nameof(records))
 	interface("CloningConsole", title = "Cloning Console")
@@ -64,14 +65,12 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	updatemodules()
 
 OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autoprocess")
-
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
 	releasecloner()
 	..()
 
-/obj/machinery/computer/cloning/machine_step()
+/obj/machinery/computer/cloning/proc/work_step(datum/act/timer/A)
 	if(!scanner() || !length(pods) || has_stat(NOPOWER))
 		return
 
@@ -536,7 +535,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 	loading = FALSE
 	SStgui.update_uis(src)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/computer/cloning/step_start_condition()
 	return autoprocess
 

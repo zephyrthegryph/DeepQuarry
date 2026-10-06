@@ -23,6 +23,7 @@
 									)
 
 CAPABILITIES(/obj/machinery/artifact_analyser)
+	started_work(step = PROC_REF(work_step))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(scanned_object), /obj)
 	interface("XenoarchArtifactAnalyzer")
@@ -131,7 +132,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	if(scan_in_progress)
 		finish_scan()
 
-/obj/machinery/artifact_analyser/machine_step()
+/obj/machinery/artifact_analyser/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL
 
 /obj/machinery/artifact_analyser/proc/finish_scan()

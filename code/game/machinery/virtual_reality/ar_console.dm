@@ -24,7 +24,10 @@
 	if(possible_species && possible_species.len)
 		produce_species = pick(possible_species)
 
-/obj/machinery/vr_sleeper/alien/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/vr_sleeper/alien)
+	started_work(step = PROC_REF(work_step))
+/obj/machinery/vr_sleeper/alien/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(has_stat(BROKEN))
 		if(occupant)

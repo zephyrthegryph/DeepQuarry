@@ -11,6 +11,7 @@
 	var/obj/item/radio/beacon/Beacon
 
 CAPABILITIES(/obj/machinery/bluespace_beacon)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(Beacon), /obj/item/radio/beacon)
 
 /obj/machinery/bluespace_beacon/Initialize(mapload)
@@ -32,7 +33,7 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 
 APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?f:}")
 
-/obj/machinery/bluespace_beacon/machine_step()
+/obj/machinery/bluespace_beacon/proc/work_step(datum/act/timer/A)
 	if(!Beacon)
 		var/turf/T = src.loc
 		rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
@@ -49,15 +50,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?
 
 /obj/machinery/bluespace_beacon/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /obj/machinery/bluespace_beacon/proc/beacon_changed(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	if(source == Beacon && QDELETED(source))
 		own_take(src, nameof(Beacon))
-	MACHINE_WAKE(src)
+	work_start(src)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/bluespace_beacon/step_start_condition()
 	return TRUE // places its beacon

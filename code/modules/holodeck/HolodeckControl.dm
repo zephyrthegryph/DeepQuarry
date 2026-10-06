@@ -192,6 +192,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
 CAPABILITIES(/obj/machinery/computer/HolodeckControl)
+	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(holographic_objs))
 	ref_many(nameof(holographic_mobs))
 	interface("Holodeck")
@@ -217,7 +218,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;
 /// otherwise it sleeps until a program loads (its UI).
-/obj/machinery/computer/HolodeckControl/machine_step()
+/obj/machinery/computer/HolodeckControl/proc/work_step(datum/act/timer/A)
 	if(!active && !length(holographic_objs) && !length(holographic_mobs))
 		return PROCESS_KILL
 	for(var/item in holographic_objs) // do this first, to make sure people don't take items out when power is down.

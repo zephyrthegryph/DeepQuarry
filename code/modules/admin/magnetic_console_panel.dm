@@ -10,6 +10,7 @@
 // directly instead of the legacy HTML body.
 
 CAPABILITIES(/obj/machinery/magnetic_controller)
+	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
 	interface("MagneticConsole", title = "Magnetic Control Console", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("set_frequency", ui_act("set_frequency"), then(PROC_REF(ui_act_set_frequency)))

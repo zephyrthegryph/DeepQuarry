@@ -16,8 +16,6 @@
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
 OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("timing", "operable"))
-
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()
@@ -67,6 +65,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/pod)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), nameof(stat)))
 	interface("PodComputer")
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
@@ -119,7 +118,7 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	time = CLAMP(round(value), 0, 120)
 	return TRUE
 
-/obj/machinery/computer/pod/machine_step()
+/obj/machinery/computer/pod/proc/work_step(datum/act/timer/A)
 	if(time > 0)
 		time = round(time) - 1
 	else

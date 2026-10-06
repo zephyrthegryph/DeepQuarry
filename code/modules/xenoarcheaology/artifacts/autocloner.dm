@@ -16,6 +16,7 @@
 	idle_power_usage = 1000
 
 CAPABILITIES(/obj/machinery/auto_cloner)
+	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
 	rolls(nameof(time_per_spawn), range_of(1200, 3600))
 	rolls(nameof(spawn_type), PROC_REF(roll_spawn_type))
 
@@ -32,7 +33,7 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 //todo: how the hell is the asteroid permanently powered?
 /// Grows its mob while powered; unpowered, the half-grown mob breaks down and, once gone, the
 /// cloner sleeps until power returns (a power change runs a step).
-/obj/machinery/auto_cloner/machine_step()
+/obj/machinery/auto_cloner/proc/work_step(datum/act/timer/A)
 	if(!last_process)
 		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(powered(power_channel))

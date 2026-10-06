@@ -38,6 +38,7 @@
 	flags = REMOTEVIEW_ON_ENTER
 
 CAPABILITIES(/obj/machinery/disposal)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	interface("DisposalBin")
 	without("ui_open")
@@ -113,7 +114,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
 	changed(src, CHANGE_MACHINE_SETTINGS)
-	MACHINE_WAKE(src)
+	work_start(src)
 
 // The intake subscription is keyed by the mixture of the turf we sit on; after a
 // move it is stale. (A ChangeTurf() underneath us also swaps the mixture with no
@@ -126,8 +127,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
-	// Callers park it themselves: machine_step() returns PROCESS_KILL right after, and arm_wakes()
-	// runs at setup while it is still asleep.
+	// Callers stop it themselves: work_step() returns PROCESS_KILL right after.
 	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/disposal/proc/gas_wake_condition()
@@ -141,7 +141,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/wake_from_gas()
 	clear_gas_dependency()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /obj/machinery/disposal/proc/can_pressurize_from(datum/gas_mixture/environment)
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
@@ -602,7 +602,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 
 // timed process
 // charge the gas reservoir and perform flush if ready
-/obj/machinery/disposal/machine_step()
+/obj/machinery/disposal/proc/work_step(datum/act/timer/A)
 	if(!air_contents || (has_stat(BROKEN)))			// nothing can happen if broken
 		set_use_power(USE_POWER_OFF)
 		if(has_stat(BROKEN)) // a broken bin stops pumping and won't flush (the redraw used to do this)
@@ -613,8 +613,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		set_use_power(USE_POWER_IDLE)
 		flush_count = 0
-		sleep_until_keys()
-		return
+		return PROCESS_KILL // idle and empty: an insertion or a flush starts it again
 
 	flush_count++
 	if( flush_count >= flush_every_ticks )
@@ -632,8 +631,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
 		set_mode(DISPOSALMODE_CHARGED) //if full enough, switch to ready mode
 		if(!flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
-			sleep_until_keys()
-			return
+			return PROCESS_KILL // charged and empty: an insertion or a flush starts it again
 	else
 		if(!pressurize()) //otherwise charge
 			hibernate_until_intake_changes()
@@ -849,21 +847,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal/wall, TYPE_PROC_REF(/atom, appea
 /obj/mecha/CanEnterDisposals()
 	return FALSE
 
-/// Audit: a unit sleeping on its own key must be idle and empty.
-/obj/machinery/disposal/om_sleep_violation()
-	if(!asleep_on_keys() || (has_stat(BROKEN)))
-		return null
-	if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
-		return "asleep with [flush ? "a flush pending" : "contents"]"
-	return null
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/disposal/arm_wakes()
-	..()
-	hibernate_until_intake_changes()
-	sleep_until_keys()
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/disposal/step_start_condition()
 	return mode == 1 || flush || contents_count(src) || has_latent() // ALLOW(latent): latent entries checked
 

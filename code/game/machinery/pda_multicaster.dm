@@ -17,6 +17,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/pda_multicaster)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	emp_disable(300 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
@@ -111,7 +112,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 		noisy = FALSE
 	update_icon()
 
-/obj/machinery/pda_multicaster/machine_step()
+/obj/machinery/pda_multicaster/proc/work_step(datum/act/timer/A)
 	update_power()
 	return PROCESS_KILL
 
@@ -123,6 +124,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 /obj/machinery/pda_multicaster/proc/emp_state_changed(datum/act/A)
 	update_power()
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/pda_multicaster/step_start_condition()
 	return TRUE // sets its power draw

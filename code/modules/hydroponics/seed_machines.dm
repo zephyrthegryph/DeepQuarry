@@ -73,14 +73,14 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 */
 
 CAPABILITIES(/obj/machinery/botany)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL)
 	op("eject_packet", ui_act("eject_packet"), then(PROC_REF(ui_act_eject_packet)))
 	op("eject_disk", ui_act("eject_disk"), then(PROC_REF(ui_act_eject_disk)))
 
-/obj/machinery/botany/machine_step()
+/obj/machinery/botany/proc/work_step(datum/act/timer/A)
 
-	..()
 	if(!active) return
 
 	if(COOLDOWN_FINISHED(src, action_cooldown))
@@ -402,7 +402,7 @@ CAPABILITIES(/obj/machinery/botany/editor)
 		seed.modified += rand(5,10)
 	return TRUE
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/botany/step_start_condition()
 	return active
 

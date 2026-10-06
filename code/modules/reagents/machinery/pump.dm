@@ -21,9 +21,8 @@
 
 DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /// Pumps every machine frame while on (set_pump_on()).
-DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
-
 CAPABILITIES(/obj/machinery/pump)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
 
 /obj/machinery/pump/Initialize(mapload)
@@ -74,7 +73,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
 /// Pumps every machine frame; runs while on (declared).
-/obj/machinery/pump/machine_step()
+/obj/machinery/pump/proc/work_step(datum/act/timer/A)
 	if(!anchored || !(cell?.use(active_power_usage)))
 		set_pump_on(FALSE)
 		return

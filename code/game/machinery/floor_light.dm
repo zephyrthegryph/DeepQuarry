@@ -138,8 +138,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	update_brightness()
 	return TRUE
 
-/obj/machinery/floor_light/machine_step()
-	..()
+/obj/machinery/floor_light/proc/work_step(datum/act/timer/A)
 	var/need_update
 	if((!anchored || broken()) && on)
 		set_use_power(USE_POWER_OFF)
@@ -179,6 +178,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appeara
 	return (!operable())
 
 CAPABILITIES(/obj/machinery/floor_light)
+	started_work(step = PROC_REF(work_step))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
 
 /// A lighter blast marks the light as (lightly) damaged.

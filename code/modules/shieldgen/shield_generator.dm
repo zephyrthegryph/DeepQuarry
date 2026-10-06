@@ -47,6 +47,7 @@ STAT(/obj/machinery/power/shield_generator, ai_control_disabled, ANY)
 
 // Segments currently down and regenerating (they leave the list when they die).
 CAPABILITIES(/obj/machinery/power/shield_generator)
+	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(damaged_segments))
 	owns_many(nameof(field_segments))
 	owns_many(nameof(mode_list))
@@ -342,7 +343,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 
 	upkeep_multiplier = new_upkeep * power_coefficient
 
-/obj/machinery/power/shield_generator/machine_step()
+/obj/machinery/power/shield_generator/proc/work_step(datum/act/timer/A)
 	upkeep_power_usage = 0
 	power_usage = 0
 
@@ -481,7 +482,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 			return
 		running = SHIELD_SPINNING_UP
 		spinup_counter = round(spinup_delay / idle_multiplier)
-	MACHINE_WAKE(src)
+	work_start(src)
 	update_icon()
 
 /// The window's data.

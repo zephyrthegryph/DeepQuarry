@@ -106,14 +106,14 @@
 		[pick("front","side","top","bottom","rear","inside")] of [src]. A [pick("slot","funnel","chute","tube")] opens up in the \
 		[pick("front","side","top","bottom","rear","inside")].")
 
-/obj/machinery/replicator/machine_step()
+/obj/machinery/replicator/proc/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -154,6 +154,7 @@
 	..()
 
 CAPABILITIES(/obj/machinery/replicator)
+	started_work(step = PROC_REF(work_step))
 	interface("XenoarchReplicator")
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
@@ -274,14 +275,14 @@ CAPABILITIES(/obj/machinery/replicator)
 			"foreground" = colors[color],
 		)))
 
-/obj/machinery/replicator/vore/machine_step()
+/obj/machinery/replicator/vore/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -461,6 +462,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	return data
 
 CAPABILITIES(/obj/machinery/replicator/vore)
+	started_work(step = PROC_REF(work_step))
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 /obj/machinery/replicator/vore/ui_act_construct(datum/act/op/A, key_arg)
 	. = ..()
@@ -566,14 +568,14 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 			"foreground" = colors[color],
 		)))
 
-/obj/machinery/replicator/clothing/machine_step()
+/obj/machinery/replicator/clothing/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -731,6 +733,7 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 
 
 CAPABILITIES(/obj/machinery/replicator/clothing)
+	started_work(step = PROC_REF(work_step))
 	interface("XenoarchReplicatorClothing")
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))

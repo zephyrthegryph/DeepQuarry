@@ -9,6 +9,7 @@
 	on = 1
 
 CAPABILITIES(/obj/machinery/embedded_controller)
+	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(program), /datum/embedded_program)
 	interface("EmbeddedController")
 	// the window's buttons are its program's commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
@@ -35,7 +36,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	if(program)
 		program.receive_signal(signal, receive_method, receive_param)
 		if(program.signal_requires_processing(signal, receive_method, receive_param))
-			MACHINE_WAKE(src)
+			work_start(src)
 
 
 /// The controller's actions are its program's commands, listed per type in valid_actions.
@@ -45,11 +46,11 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 /// A program command from the window.
 /obj/machinery/embedded_controller/proc/ui_act_program_command(datum/act/op/A)
 	add_fingerprint(A.actor)
-	MACHINE_WAKE(src)
+	work_start(src)
 	program.receive_user_command(A.window_action())
 	return TRUE
 
-/obj/machinery/embedded_controller/machine_step()
+/obj/machinery/embedded_controller/proc/work_step(datum/act/timer/A)
 	if(program)
 		program.periodic_step()
 
@@ -59,7 +60,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 
 /obj/machinery/embedded_controller/power_change()
 	. = ..()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /obj/machinery/embedded_controller
 	silicon_use = SILICON_USE_UI

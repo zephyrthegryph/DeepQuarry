@@ -518,6 +518,7 @@ CAPABILITIES(/obj/structure/urinal)
 	var/reaction_volume = 200
 
 CAPABILITIES(/obj/machinery/shower)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	owns_one(nameof(soundloop), /datum/looping_sound/showering)
 
 /obj/machinery/shower/Initialize(mapload)
@@ -527,8 +528,6 @@ CAPABILITIES(/obj/machinery/shower)
 DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
 /// Washes its tile every machine step while running.
-DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
-
 /obj/structure/toilet/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
@@ -580,7 +579,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
 	handle_mist()
 	add_fingerprint(user)
 	if(on)
-		machine_step()
+		work_step(null)
 		soundloop.start()
 	else
 		soundloop.stop()
@@ -701,7 +700,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_o
 		var/remove_amount = C.touching.maximum_volume * C.reagent_permeability() //take off your suit first
 		C.touching.remove_any(remove_amount)
 
-/obj/machinery/shower/machine_step()
+/obj/machinery/shower/proc/work_step(datum/act/timer/A)
 	if(isturf(loc)) //Wash the turf.
 		wash_atom(loc)
 	for(var/AM in turf_contents_of_type(loc, /atom/movable)) //Wash everything in the same loc (technically doesnt need to be a turf.)

@@ -76,6 +76,7 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), nameof(stat)))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
@@ -112,9 +113,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	return newKey
 
 /// Settles its hum while it is on (set_active() starts the step; it sleeps again once settled).
-DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active")
-
-/obj/machinery/message_server/machine_step()
+/obj/machinery/message_server/proc/work_step(datum/act/timer/A)
 	if(active && (!operable()))
 		set_active(0)
 		soundloop.stop()

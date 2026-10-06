@@ -16,12 +16,11 @@ OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
 OM_FIELD(/obj/machinery/beehive, smoked, 0, CHANGE_MACHINE_SETTINGS)
 /// Bees inside or smoke still clearing: the hive has something to tick.
 OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, list("bee_count", "smoked"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/beehive, MACHINE_PIPELINE, "hive_active")
-
 /obj/machinery/beehive/proc/hive_active()
 	return bee_count || smoked
 
 CAPABILITIES(/obj/machinery/beehive)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(hive_active), wakes_on = list(nameof(bee_count), nameof(smoked)))
 	climb()
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -217,7 +216,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 		harvest_next(user)
 		return TRUE
 
-/obj/machinery/beehive/machine_step()
+/obj/machinery/beehive/proc/work_step(datum/act/timer/A)
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
 		update_icon()

@@ -31,6 +31,7 @@
 	var/faketank_integrity
 
 CAPABILITIES(/obj/machinery/bomb_tester)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(faketank), /datum/gas_mixture)
 	interface("BombTester")
 	op("set_mode", ui_act("set_mode", arg("mode", num(BOMB_TESTER_MODE_SINGLE, BOMB_TESTER_MODE_CANISTER))), then(PROC_REF(ui_act_set_mode)))
@@ -63,8 +64,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	simulation_finish(1)
 	return ..()
 
-/obj/machinery/bomb_tester/machine_step()
-	..()
+/obj/machinery/bomb_tester/proc/work_step(datum/act/timer/A)
 	if(test_canister() && !Adjacent(test_canister()))
 		rel_clear(src, nameof(test_canister))
 
@@ -387,7 +387,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	return results
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 

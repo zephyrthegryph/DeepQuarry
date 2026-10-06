@@ -22,9 +22,8 @@ OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, atom, show
 OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, obj/item/clothing/accessory/bodycam, the_camera, CHANGE_MACHINE_SETTINGS)
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/security/telescreen/bodycamera, MACHINE_PIPELINE, "showing")
-
 CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
 	owns_one(nameof(bradio), starts = /obj/item/radio)
 	click_on(PROC_REF(click_input))
 
@@ -81,7 +80,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 
 APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
-/obj/machinery/computer/security/telescreen/bodycamera/machine_step()
+/obj/machinery/computer/security/telescreen/bodycamera/proc/work_step(datum/act/timer/A)
 	var/atom/them = showing
 	var/obj/item/clothing/accessory/bodycam/bo_cam = the_camera
 	if(!bo_cam || get_turf(them) != get_turf(bo_cam))

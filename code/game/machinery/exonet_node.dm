@@ -24,6 +24,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(nameof(stat)))
 	emp_disable(300 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
@@ -88,7 +89,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}
 // Parameters: None
 // Description: Calls the procs below every tick.
 /// Reconciles on/off with power and damage: every power or break change runs one step.
-/obj/machinery/exonet_node/machine_step()
+/obj/machinery/exonet_node/proc/work_step(datum/act/timer/A)
 	update_power()
 	return PROCESS_KILL
 
@@ -185,6 +186,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}
 	var/msg = "[timestamp] | FROM [origin_address] TO [target_address] | TYPE: [data_type] | CONTENT: [content]"
 	LAZYADD(logs, msg)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/exonet_node/step_start_condition()
 	return TRUE // reconciles on/off with power

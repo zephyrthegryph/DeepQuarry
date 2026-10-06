@@ -17,6 +17,7 @@ fundamental differences
 	tgui_id = "KitchenMixer"
 
 CAPABILITIES(/obj/machinery/appliance/mixer)
+	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer)
 
 /obj/machinery/appliance/mixer/examine(mob/user)
@@ -149,7 +150,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, app
 		if(mixer_loop)
 			mixer_loop.stop(src)
 
-/obj/machinery/appliance/mixer/machine_step()
+/obj/machinery/appliance/mixer/work_step(datum/act/timer/A)
 	if(has_stat(MACHINE_STAT_ANY) || !cooking || !length(cooking_objs))
 		return PROCESS_KILL
 	for(var/i in cooking_objs)

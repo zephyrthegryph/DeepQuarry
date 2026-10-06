@@ -94,6 +94,7 @@
 	var/need_player_check = 0
 
 CAPABILITIES(/obj/machinery/mining/drill)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
 	op("label", tool(TOOL_MULTITOOL), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), then(PROC_REF(label_tool_used)))
@@ -137,8 +138,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 /// Drills every machine frame while active (declared; a fault clears active, and need_player_check
 /// is only ever set together with that, so the drill sleeps until a player switches it back on).
-DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
-/obj/machinery/mining/drill/machine_step()
+/obj/machinery/mining/drill/proc/work_step(datum/act/timer/A)
 
 	check_supports()
 	if(!active) // check_supports() just lost the bracing and stopped the drill

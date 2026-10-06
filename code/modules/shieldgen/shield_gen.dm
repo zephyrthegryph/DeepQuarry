@@ -28,6 +28,7 @@
 	var/datum/looping_sound/shield_generator/shield_hum
 
 CAPABILITIES(/obj/machinery/shield_gen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator)
 	owns_many(nameof(field))
 	climb()
@@ -64,8 +65,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
-DECLARE_PERIODIC_WHILE(/obj/machinery/shield_gen, MACHINE_PIPELINE, "active")
-
 DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 /obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(prob(75))
@@ -165,7 +164,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 
 	return list("locked" = locked, "lockedData" = lockedData)
 
-/obj/machinery/shield_gen/machine_step()
+/obj/machinery/shield_gen/proc/work_step(datum/act/timer/A)
 	if (!anchored)
 		toggle()
 		return

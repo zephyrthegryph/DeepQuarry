@@ -8,9 +8,8 @@
 	// dry() works on each real item in turn.
 	collapse_stock = FALSE
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/smartfridge/drying_rack, MACHINE_PIPELINE, "operable")
-
 CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(operable), wakes_on = list(nameof(stat)))
 	climb()
 
 /obj/machinery/smartfridge/drying_rack/accept_check(obj/item/O as obj)
@@ -24,7 +23,7 @@ CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
 
 	return 0
 
-/obj/machinery/smartfridge/drying_rack/machine_step()
+/obj/machinery/smartfridge/drying_rack/work_step(datum/act/timer/A)
 	..()
 	if(stored_count())
 		dry()
