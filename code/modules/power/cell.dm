@@ -52,12 +52,22 @@
 	/// gradual_charge(): the user who must stay in reach (a relation view; cleared if they die).
 	var/tmp/mob/living/gradual_user
 
-/// If true, the cell will recharge itself (periodic_step()).
-OM_FIELD(/obj/item/cell, self_recharge, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/cell, PERIODIC_SLOW, "self_recharge")
-/// gradual_charge(): one-second charge steps still to run.
-OM_FIELD_TYPED(/obj/item/cell, tmp, gradual_charge_left, 0, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/cell, 1 SECOND, gradual_charge_step, "gradual_charge_left")
+/obj/item/cell
+	/// If true, the cell recharges itself (recharge_step()).
+	var/self_recharge = FALSE
+	/// TRUE while a self-charging cell is below full: use() raises it, a step that finds the cell full drops it.
+	var/tmp/recharging = TRUE
+	/// gradual_charge(): one-second charge steps still to run.
+	var/tmp/gradual_charge_left = 0
+
+TRACKED(/obj/item/cell, self_recharge)
+TRACKED(/obj/item/cell, recharging)
+TRACKED(/obj/item/cell, gradual_charge_left)
+
+// A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
+CAPABILITIES(/obj/item/cell)
+	every(2 SECONDS, then(PROC_REF(recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
+	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
 
 /obj/item/cell/Initialize(mapload)
 	. = ..()
@@ -72,10 +82,11 @@ DECLARE_REPEAT(/obj/item/cell, 1 SECOND, gradual_charge_step, "gradual_charge_le
 /obj/item/cell/get_cell()
 	return src
 
-/// Self-recharge (declared on self_recharge). Full, it parks; use() wakes it after a discharge.
-/obj/item/cell/periodic_step()
+/// Self-recharge (while self_recharge holds). Full, it parks; use() starts it again after a discharge.
+/obj/item/cell/proc/recharge_step(datum/act/timer/A)
 	if(charge >= maxcharge)
-		return PROCESS_KILL
+		set_recharging(FALSE)
+		return
 	if(COOLDOWN_FINISHED(src, charge_cooldown))
 		give(charge_amount)
 		// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
@@ -293,8 +304,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	update_superconducting_state(amount / span)
 	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
-		// ALLOW(sys_periodic_toggle): wake, not a toggle: the declared state (self_recharge) already holds; the self-recharge body parks itself once full (work of its own that ran out) and this restarts it after a discharge. `charge` has 200+ writers across the tree, so it is not a field.
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_recharging(TRUE) // the self-charge parks itself once full; a discharge starts it again
 	if(update_appearance)
 		update_icon()
 	return used
@@ -335,22 +345,26 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	set_gradual_charge_left(iterations)
 	gradual_charge_step()
 
+/// The gradual charge's clock: one step a second while steps are left.
+/obj/item/cell/proc/gradual_charge_tick(datum/act/timer/A)
+	gradual_charge_step()
+
 /// One gradual_charge() step; ends when the steps run out or the user wanders off.
 /obj/item/cell/proc/gradual_charge_step()
 	if(gradual_charge_left <= 0)
-		return REPEAT_STOP
+		return
 	var/charged_object = src
 	if(gradual_needs_user) //If we have a user, time to check to make sure they're adjacent/holding us!
 		var/mob/living/user = gradual_user
 		if(!user)
 			set_gradual_charge_left(0)
-			return REPEAT_STOP
+			return
 		if(istype(loc, /obj/machinery/power/apc)) //We're in an APC!
 			charged_object = loc
 		if(loc != user && !(user in orange(1,charged_object))) //If we have a user fed to us, they need to hold us or be in range of us.
 			if(loc.loc && loc.loc != user) //Are we inside of something the user is holding?
 				set_gradual_charge_left(0)
-				return REPEAT_STOP
+				return
 	charge += 100 * gradual_multiplier
 	if(charge > maxcharge)
 		charge = maxcharge

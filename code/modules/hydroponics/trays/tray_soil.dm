@@ -7,62 +7,35 @@
 	tray_light = 0
 	frozen = -1
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/soil_tank_block,
-		/datum/interaction/machine_item/soil_fill,
-		/datum/interaction/machine_item/soil_shovel,
-	)
-	..()
+MSG_DEF(soil/fill_begin, null, span_notice("%U% begins filling in %T%."))
+MSG_DEF(soil/disperse_begin, null, "%U% starts dispersing %T%...")
+MSG_DEF_SELF(soil/growing, "There is something growing here.")
 
-/// Old attackby: a tank silently did nothing (never fell through to ..()).
-/datum/interaction/machine_item/soil_tank_block
-	id = "soil_tank_block"
-	name = "Use"
-	held_type = /obj/item/tank
-	effect = /atom/proc/interaction_swallow
+// A tank does nothing here (the old attackby swallowed it); a shovel in combat mode fills the plot in, otherwise it digs it up when nothing grows.
+CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil)
+	without(CAP_TANK_BAY) // a plot takes no tank: the tank does nothing here
+	op("tank_block", item(/obj/item/tank), label("Use"), then(PROC_REF(nothing_happens)))
+	op("fill_in", item(/obj/item/shovel), stance(I_HURT), label("Fill in"), begins(MSG(soil/fill_begin)), wait(3 SECONDS), then(PROC_REF(fill_in_done)))
+	op("dig", item(/obj/item/shovel), label("Dig"), stance(I_HELP, I_DISARM, I_GRAB), needs(req(PROC_REF(nothing_growing), because = MSG(soil/growing))),
+		soil_destroy_confirms(), begins(MSG(soil/disperse_begin)), wait(5 SECONDS), then(PROC_REF(dispersed)))
 
-/// Combat mode: fill the growplot in with the shovel.
-/datum/interaction/machine_item/soil_fill
-	id = "soil_fill"
-	name = "Fill in"
-	held_type = /obj/item/shovel
-	stance = I_HURT
-	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in
+/// "Do you want to destroy the growplot?": a yes/no whose "no" ends the op before the work starts.
+/proc/soil_destroy_confirms()
+	return part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = "Do you want to destroy the growplot?", "title" = "Destroy growplot?", "timeout" = 0),
+		"step" = "destroy", "resume" = CAPTURE, "keeps" = WAIT_KEEPS_DEFAULT, "confirms" = TRUE))
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in(mob/user, obj/item/O, datum/interaction/interaction)
-	act_message(user, src, others = span_notice("%U% begins filling in %T%."))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/nothing_happens(datum/act/op/A)
+	return
 
-/datum/interaction/machine_item/soil_shovel
-	id = "soil_shovel"
-	name = "Dig"
-	held_type = /obj/item/shovel
-	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% fills in %T%."))
+	consume(src, A.actor)
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(mob/user)
-	act_message(user, src, others = span_notice("%U% fills in %T%."))
-	consume(src, user)
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/nothing_growing(datum/act/op/A)
+	return !seed
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
-	return botany_soil_destroy_stage(user, O, interaction)
-
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_stage(mob/user, obj/item/O, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
-	if(!seed)
-		if(!botany_answer_ready)
-			open_request(src, /datum/prompt/choice/botany_soil_destroy, PROC_REF(botany_soil_destroy_answered), answerer = user, botany_operator = user, botany_held = O, botany_interaction = interaction, question = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"), buttons = TRUE)
-			return
-		var/choice = botany_answer
-		if(isnull(choice))
-			return
-		if(!choice||choice=="No")
-			return TRUE
-		act_message(user, src, others = "%U% starts dispersing %T%...", runemessage = "disperses the [src]")
-		om_task_timed(user, 5 SECONDS, src, src, TYPE_PROC_REF(/datum, om_qdel_self))
-	else
-		to_chat(user, span_notice("There is something growing here."))
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/dispersed(datum/act/op/A)
+	dissolved(src, A.actor)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/CanPass()
 	return 1
@@ -106,7 +79,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/die()
 	consume(src)
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/machine_step()
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/work_step(datum/act/timer/A)
 	if(!seed)
 		consume(src)
 		return PROCESS_KILL
@@ -122,48 +95,3 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 			plant.invisibility = initial(plant.invisibility)
 	..()
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = botany_soil_destroy_apply(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/botany_soil_destroy_apply(datum/act/request/A)
-	var/datum/prompt/choice/botany_soil_destroy/ask = A.answer
-	return botany_soil_destroy_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
-
-/datum/prompt/choice/botany_soil_destroy
-	timeout = 0
-	var/mob/botany_operator
-	var/obj/item/botany_held
-	var/datum/interaction/botany_interaction
-	var/botany_operator_expected = FALSE
-	var/botany_held_expected = FALSE
-	var/botany_interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/botany_soil_destroy)
-	ref_one(nameof(botany_operator), /mob)
-	ref_one(nameof(botany_held), /obj/item)
-	ref_one(nameof(botany_interaction), /datum/interaction)
-
-/datum/prompt/choice/botany_soil_destroy/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_operator = botany_operator
-	var/obj/item/captured_held = botany_held
-	var/datum/interaction/captured_interaction = botany_interaction
-	botany_operator_expected = !isnull(captured_operator)
-	botany_held_expected = !isnull(captured_held)
-	botany_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(botany_operator))
-	rel_clear(src, nameof(botany_held))
-	rel_clear(src, nameof(botany_interaction))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(botany_operator), captured_operator)
-	if(captured_held && !QDELETED(captured_held))
-		rel_set(src, nameof(botany_held), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(botany_interaction), captured_interaction)
-
-/datum/prompt/choice/botany_soil_destroy/recheck_extra()
-	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
-		return "gone"

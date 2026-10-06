@@ -18,7 +18,6 @@
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
 		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
-		/obj/machinery/portable_atmospherics/hydroponics,
 		/obj/machinery/portable_atmospherics/powered/reagent_distillery,
 		// Every other machine with machine_step() work (roadmap S5: the old SSmachines roster).
 		// Each joins asleep: one frame at Initialize to find out whether it has work, then it
@@ -288,12 +287,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// with work and no armed watch is a lost wake, which the OM audit reports.
 /datum/om/stage/machine/power/step/idle(obj/machinery/M)
 	return om_watch_armed(M) || !M.step_has_work()
-
-/// Hydroponics trays: a frame per growth cycle while something is growing or soaking in; between
-/// cycles the tray parks on its growth timer (schedule_growth_wake()), and reagent or seed changes
-/// wake it through MACHINE_WAKE().
-/datum/om/stage/machine/power/step/hydroponics
-	of = /obj/machinery/portable_atmospherics/hydroponics
 
 /// The distillery: every frame while on (heating, pumping beakers); off, it parks until toggled.
 /datum/om/stage/machine/power/step/reagent_distillery

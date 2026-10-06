@@ -1,6 +1,5 @@
-/obj/machinery/portable_atmospherics/hydroponics|human|none => hydroponics_interact,hydroponics_close_lid,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|hydroponics_attackby:needs an item
-/obj/machinery/portable_atmospherics/hydroponics|robot|none => hydroponics_interact,hydroponics_close_lid,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|gen_robot_interaction_swallow:not possible right now,hydroponics_attackby:needs an item
+/obj/machinery/portable_atmospherics/hydroponics|human|none => |
+/obj/machinery/portable_atmospherics/hydroponics|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/portable_atmospherics/hydroponics|ai|none => |
 /obj/machinery/portable_atmospherics/hydroponics|ghost|none => gen_observer_hydroponics_ghost_harvest|
-/obj/machinery/portable_atmospherics/hydroponics|human|/obj/item => hydroponics_attackby,hydroponics_interact,hydroponics_close_lid,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|
 

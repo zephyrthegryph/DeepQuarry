@@ -1,6 +1,7 @@
-/obj/machinery/portable_atmospherics/hydroponics/machine_step()
-	if(om_timer_slot_pending(src, "growth_timer"))
-		om_cancel_timer_slot(src, "growth_timer")
+/// One step of the tray's work (started_work(), tray.dm): a growth cycle when one is due; PROCESS_KILL parks it on its growth timer.
+/obj/machinery/portable_atmospherics/hydroponics/proc/work_step(datum/act/timer/A)
+	if(after_pending(src, "growth_timer"))
+		cancel_after(src, "growth_timer")
 
 	// Handle nearby smoke if any.
 	var/nearby_chemical_smoke = FALSE
@@ -157,7 +158,3 @@
 		return PROCESS_KILL
 	return
 
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/portable_atmospherics/hydroponics/step_start_condition()
-	return !!seed

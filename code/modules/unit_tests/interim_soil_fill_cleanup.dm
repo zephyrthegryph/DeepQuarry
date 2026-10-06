@@ -13,10 +13,9 @@
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = allocate(/obj/machinery/portable_atmospherics/hydroponics/soil, T)
 	TEST_ASSERT(!QDELETED(soil), "actual soil growplot initializes alive")
 	TEST_ASSERT(user.put_in_active_hand(shovel), "real actor holds the actual filling shovel")
-	var/datum/interaction/fill = INTERACTION(/datum/interaction/machine_item/soil_fill)
-	TEST_ASSERT(fill, "actual soil filling interaction is registered")
-	TEST_ASSERT_EQUAL(fill.stance, I_HURT, "actual registered entry uses the filling stance")
-	TEST_ASSERT_EQUAL(soil.interaction_fill_in(user, shovel, fill), TRUE, "actual shovel filling starts its real timed task")
+	user.set_use_stance(I_HURT)
+	user.next_click = 0
+	test_click(user, soil, shovel)
 	TEST_ASSERT(!QDELETED(soil), "starting the real fill task preserves the growplot immediately")
 	if(interrupted)
 		var/turf/away = get_step(get_step(T, EAST), EAST)
