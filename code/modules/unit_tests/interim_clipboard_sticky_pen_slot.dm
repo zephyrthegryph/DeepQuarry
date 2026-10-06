@@ -4,6 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clipboard/board = allocate(/obj/item/clipboard, T)
 	user.put_in_inactive_hand(board) // the window works in the hand that holds it
+	user.put_in_inactive_hand(board) // the window works in the hand that holds it
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	TEST_ASSERT_NULL(board.haspen(), "actual initialized clipboard starts without a slotted pen")
 	TEST_ASSERT(user.put_in_active_hand(pen), "the actor holds exact original pen")

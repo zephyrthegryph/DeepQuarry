@@ -53,52 +53,61 @@
 
 ///// MAIN TGUI SCREEN /////
 
-/obj/machinery/computer/stockexchange/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/computer/stockexchange, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_logout)
+/obj/machinery/computer/stockexchange/proc/ui_act_logout(datum/act/op/A)
+	add_fingerprint(A.actor)
 	logged_in = null
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_buy", ui_act_stocks_buy, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_buy)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_buy(datum/act/op/A, share)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+		return FALSE
+	if(isnull(share))
+		return FALSE
+	var/datum/stock/S = share
 	if (S)
-		buy_some_shares(S, ui.user)
+		buy_some_shares(S, user)
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_sell", ui_act_stocks_sell, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_sell)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_sell(datum/act/op/A, share)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+		return FALSE
+	if(isnull(share))
+		return FALSE
+	var/datum/stock/S = share
 	if (S)
-		sell_some_shares(S, ui.user)
+		sell_some_shares(S, user)
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_check", ui_act_stocks_check)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_check)
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_check(datum/act/op/A)
+	add_fingerprint(A.actor)
 	screen = "logs"
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_archive", ui_act_stocks_archive, UI_ARG_REF("share", null, /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_archive)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_archive(datum/act/op/A, share)
+	add_fingerprint(A.actor)
+	var/datum/stock/S = share
 	if(S)
 		rel_set(src, nameof(/obj/machinery/computer/stockexchange::current_stock), S)
 		screen = "archive"
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_history", ui_act_stocks_history, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_history)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_history(datum/act/op/A, share)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+		return FALSE
+	if(isnull(share))
+		return FALSE
+	var/datum/stock/S = share
 	if (S)
-		S.displayValues(ui.user)
+		S.displayValues(user)
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_backbutton", ui_act_stocks_backbutton)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_backbutton)
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_backbutton(datum/act/op/A)
+	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/stockexchange::current_stock))
 	screen = "stocks"
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_cycle_view", ui_act_stocks_cycle_view)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_cycle_view)
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_cycle_view(datum/act/op/A)
+	add_fingerprint(A.actor)
 	vmode++
 	if (vmode > 1)
 		vmode = 0
@@ -107,7 +116,14 @@ UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_cycle_view)
 /obj/machinery/computer/stockexchange/proc/ui_source_glob_stockexchange_stocks()
 	return GLOB.stockExchange.stocks
 
-UI_DATA_REPLACE(/obj/machinery/computer/stockexchange, "screen:num", "merge:ui_data_obj_machinery_computer_stockexchange{stationName:text,balance:unknown,viewMode:text,stocks:list,logs:list,name:text,events:list,articles:list,maxValue:num,values:list}")
+/obj/machinery/computer/stockexchange/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screen"] = screen
+	var/list/merged_1 = ui_data_obj_machinery_computer_stockexchange(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/computer/stockexchange's window data (declared on its UI_DATA row).
 /obj/machinery/computer/stockexchange/proc/ui_data_obj_machinery_computer_stockexchange(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -270,7 +286,17 @@ UI_DATA_REPLACE(/obj/machinery/computer/stockexchange, "screen:num", "merge:ui_d
 
 	return data
 
-DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
+CAPABILITIES(/obj/machinery/computer/stockexchange)
+	interface("StockExchange")
+	without("ui_open")
+	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
+	op("stocks_buy", ui_act("stocks_buy", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_buy)))
+	op("stocks_sell", ui_act("stocks_sell", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_sell)))
+	op("stocks_check", ui_act("stocks_check"), then(PROC_REF(ui_act_stocks_check)))
+	op("stocks_archive", ui_act("stocks_archive", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_archive)))
+	op("stocks_history", ui_act("stocks_history", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_history)))
+	op("stocks_backbutton", ui_act("stocks_backbutton"), then(PROC_REF(ui_act_stocks_backbutton)))
+	op("stocks_cycle_view", ui_act("stocks_cycle_view"), then(PROC_REF(ui_act_stocks_cycle_view)))
 
 ///// PROCS /////
 

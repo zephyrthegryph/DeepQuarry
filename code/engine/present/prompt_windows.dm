@@ -159,7 +159,7 @@ CAPABILITIES(/datum/tgui_checkbox_input/prompt)
 CAPABILITIES(/datum/tgui_bitfield_input/prompt)
 	ref_one(nameof(prompt), /datum/prompt)
 
-UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/prompt, ui_act_submit)
+/datum/tgui_bitfield_input/prompt/ui_act_submit(datum/act/op/A)
 	// Answer before the window closes: closing it means cancel.
 	if(!prompt)
 		return ..()

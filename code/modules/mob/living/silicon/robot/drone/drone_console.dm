@@ -26,6 +26,7 @@
 
 CAPABILITIES(/obj/machinery/computer/drone_control)
 	interface("DroneConsole")
+	without("ui_open")
 	op("set_dcall_area", ui_act("set_dcall_area", arg("area")), then(PROC_REF(ui_act_set_dcall_area)))
 	op("ping", ui_act("ping"), then(PROC_REF(ui_act_ping)))
 	op("resync", ui_act("resync", arg("ref", schema_ref(/mob/living/silicon/robot/drone))), then(PROC_REF(ui_act_resync)))

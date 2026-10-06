@@ -15,20 +15,20 @@
 /obj/thing/proc/mode_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	return A.answer.answer_value
+	return A.answer.value
 
 /obj/thing/proc/named(datum/act/request/A)
 	if(!A.answer)
 		return
-	return A.answer.answer_value
+	return A.answer.value
 
 /obj/thing/proc/odd(datum/om/prompt/text/ask)
 	return ask.text
 
 /obj/thing/proc/sure(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	return A.answer.answer_value
+	return A.answer.value
 
 /datum/thing/proc/plain_mode(datum/om/prompt/choice/radial/ask)
 	return ask.choice

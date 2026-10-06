@@ -76,6 +76,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning"
 
 CAPABILITIES(/obj/machinery/dnaforensics)
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
+	without("ui_open")
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
 

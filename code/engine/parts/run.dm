@@ -49,6 +49,11 @@
 
 /// The datum whose window forwarded the button that reached the op (interface(forwards =): a remote console's panel), or null when the button
 /// was the holder's own window's.
+/// The tgui window the button was pressed in, or null (a driver-built press, any other input).
+/datum/act/op/proc/window_ui()
+	RETURN_TYPE(/datum/tgui)
+	return LAZYACCESS(src.args, OP_UI_TGUI)
+
 /datum/act/op/proc/window_forwarder()
 	return LAZYACCESS(src.args, OP_UI_FORWARDED_BY)
 

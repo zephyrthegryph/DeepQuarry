@@ -25,7 +25,8 @@
 CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
-	interface("Radio", input = in_hand(), state = nameof(GLOB.tgui_inventory_state))
+	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()

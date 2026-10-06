@@ -112,7 +112,17 @@
 		if(demand.len > record_size)
 			demand.Cut(1, 2)
 
-UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=record_size:num", "history:list", "merge:ui_data_obj_machinery_power_sensor{interval:num,attached:bool,areas:list}")
+/// The sensor's reading as the power monitor's window shows it (its focus): the sensor has no window of its own.
+/obj/machinery/power/sensor/proc/monitor_data(mob/user)
+	var/list/data = list()
+	data["name"] = name_tag
+	data["stored"] = record_size
+	data["history"] = history
+	var/list/computed = ui_data_obj_machinery_power_sensor(user, null, null)
+	if(islist(computed))
+		for(var/key in computed)
+			data[key] = computed[key]
+	return data
 
 /// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).
 /obj/machinery/power/sensor/proc/ui_data_obj_machinery_power_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)

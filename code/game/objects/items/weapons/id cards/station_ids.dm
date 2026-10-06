@@ -40,7 +40,8 @@
 	return 0
 
 CAPABILITIES(/obj/item/card/id)
-	interface("IDCard", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	interface("IDCard", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
 	ui_shape(registered_name = schema_text(), sex = schema_text(), species = schema_text(), age = num(), assignment = schema_text(), fingerprint_hash = schema_text(), blood_type = schema_text(), dna_hash = schema_text(), photo_front = any)
 
 /obj/item/card/id/proc/update_name()

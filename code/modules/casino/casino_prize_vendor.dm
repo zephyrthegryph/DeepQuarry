@@ -312,6 +312,7 @@
 
 CAPABILITIES(/obj/machinery/casino_prize_dispenser)
 	interface("CasinoPrizeDispenser")
+	without("ui_open")
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
 
 /obj/machinery/casino_prize_dispenser/proc/ui_gate(datum/act/op/A)

@@ -1,6 +1,7 @@
 CAPABILITIES(/obj/item/book/manual/wiki)
 	op("open_wiki", ui_act(), then(PROC_REF(ui_act_open_wiki)))
-	interface("WikiBook", state = nameof(GLOB.tgui_default_state), input = in_hand())
+	interface("WikiBook", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	ui_shape(title = bool(), intro = schema_text(), url = any)
 
 // Wiki books that are linked to the configured wiki link.

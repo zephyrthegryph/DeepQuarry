@@ -375,6 +375,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 
 CAPABILITIES(/obj/machinery/transhuman/resleever)
 	interface("ResleevingPod", title = "Resleever")
+	without("ui_open")
 	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())
 
 /obj/machinery/transhuman/resleever/ui_prepare(mob/user, datum/tgui/ui)

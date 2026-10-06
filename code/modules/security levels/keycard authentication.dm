@@ -119,6 +119,7 @@
 
 CAPABILITIES(/obj/machinery/keycard_auth)
 	interface("KeycardAuth", title = "Keycard Authentication")
+	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 

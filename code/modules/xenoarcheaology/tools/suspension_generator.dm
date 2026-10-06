@@ -17,6 +17,7 @@ OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspen
 CAPABILITIES(/obj/machinery/suspension_gen)
 	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
 	interface("XenoarchSuspension")
+	without("ui_open")
 	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 /// Holds its field (draining its cell) while it has one.

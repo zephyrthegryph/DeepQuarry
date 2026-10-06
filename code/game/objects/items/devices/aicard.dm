@@ -24,7 +24,8 @@
 
 CAPABILITIES(/obj/item/aicard)
 	op("view_ai", in_hand(), opens_ui())
-	interface("AICard", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	interface("AICard", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
 	op("wipe", ui_act("wipe"), then(PROC_REF(ui_act_wipe)))
 	op("radio", ui_act("radio"), then(PROC_REF(ui_act_radio)))
 	op("wireless", ui_act("wireless"), then(PROC_REF(ui_act_wireless)))

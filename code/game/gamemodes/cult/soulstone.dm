@@ -42,6 +42,9 @@
 // "Summon" handler moves to tgui_act.
 CAPABILITIES(/obj/item/soulstone)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("Soulstone", title = "Soul Stone")
+	without("ui_open")
+	op("summon", ui_act("summon"), then(PROC_REF(ui_act_summon)))
 
 /// Old attack_self.
 /obj/item/soulstone/proc/interaction_self(datum/act/op/A)
@@ -51,9 +54,13 @@ CAPABILITIES(/obj/item/soulstone)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/soulstone, "Soulstone", UI_TITLE("Soul Stone"))
-
-UI_DATA_REPLACE(/obj/item/soulstone, "merge:ui_data_obj_item_soulstone{has_shade:bool,shade_name:text}")
+/obj/item/soulstone/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	var/list/merged_1 = ui_data_obj_item_soulstone(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/soulstone's window data (declared on its UI_DATA row).
 /obj/item/soulstone/proc/ui_data_obj_item_soulstone(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -63,22 +70,23 @@ UI_DATA_REPLACE(/obj/item/soulstone, "merge:ui_data_obj_item_soulstone{has_shade
 	data["shade_name"] = A ? A.name : ""
 	return data
 
-/obj/item/soulstone/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/soulstone/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!in_range(src, user))
 		return FALSE
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/item/soulstone, "summon", ui_act_summon)
-UI_ACT_PROC(/obj/item/soulstone, ui_act_summon)
-	for(var/mob/living/simple_mob/construct/shade/A in contents_of(src))
-		A.disable_godmode()
-		A.canmove = 1
-		to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [user.name]'s will. Help them suceed in their goals at all costs.")))
-		A.forceMove(user.loc)
-		A.cancel_camera()
+/obj/item/soulstone/proc/ui_act_summon(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	for(var/mob/living/simple_mob/construct/shade/A2 in contents_of(src))
+		A2.disable_godmode()
+		A2.canmove = 1
+		to_chat(A2, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [user.name]'s will. Help them suceed in their goals at all costs.")))
+		A2.forceMove(user.loc)
+		A2.cancel_camera()
 		icon_state = "soulstone"
 	return TRUE
 

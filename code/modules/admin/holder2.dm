@@ -305,13 +305,20 @@ CAPABILITIES(/datum/admins)
 	var/tok = GLOB.href_token
 	if(!forceGlobal && usr)
 		var/client/C = usr.client
-		if(!C)
-			log_runtime("Attempted to retrieve a HrefToken of an entity with no client.")
-			return 0
-		var/datum/admins/holder = C.holder
-		if(holder)
-			tok = holder.href_token
+		return RawHrefTokenFor(C)
 	return tok
+
+/// Resolve the same admin token for an explicitly supplied current client.
+/proc/RawHrefTokenFor(client/C)
+	if(!C)
+		log_runtime("Attempted to retrieve a HrefToken of an entity with no client.")
+		return 0
+	var/datum/admins/holder = C.holder
+	return holder ? holder.href_token : GLOB.href_token
+
+/// An ordinary synchronous caller supplies its actual actor instead of ambient usr.
+/proc/HrefTokenFor(mob/actor)
+	return "admin_token=[RawHrefTokenFor(actor?.client)]"
 
 /proc/HrefToken(forceGlobal = FALSE)
 	return "admin_token=[RawHrefToken(forceGlobal)]"

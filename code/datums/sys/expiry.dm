@@ -3,6 +3,7 @@
 /// D's OM timer clock in deciseconds (the clock om_after() timers on D run on). Falls back to
 /// world.time for a null or deleted datum so a read on a dead holder never runtimes.
 /proc/expiry_clock_now(datum/D)
+	READS_FROM() // a clock, asked when a choice is made, never cached
 	if(!D || QDELETED(D))
 		return world.time
 	var/datum/om/rec/rec = om_rec_of(D)

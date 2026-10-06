@@ -1,7 +1,8 @@
 // Holowarrant viewer — structured TGUI panel for arrest/search warrants.
 
 CAPABILITIES(/obj/item/holowarrant)
-	interface("Holowarrant", title = "Holographic Warrant", state = nameof(GLOB.tgui_default_state), input = in_hand())
+	interface("Holowarrant", title = "Holographic Warrant", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	ui_shape(loaded = bool(), kind = schema_text(), name = schema_text(), charges = schema_text(), auth = schema_text(), jurisdiction = schema_text(), station = schema_text())
 
 /// The computed part of /obj/item/holowarrant's window data (declared on its UI_DATA row).

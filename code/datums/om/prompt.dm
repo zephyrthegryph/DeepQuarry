@@ -322,7 +322,7 @@
 	. = ..()
 	. += rel_one(nameof(om_prompt), back = nameof(/datum/om/prompt::ui))
 
-UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/om, ui_act_submit)
+/datum/tgui_bitfield_input/om/ui_act_submit(datum/act/op/A)
 	// Answer before the window closes: closing it means cancel.
 	if(!om_prompt)
 		return ..()

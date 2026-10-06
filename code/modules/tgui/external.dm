@@ -108,7 +108,7 @@
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		return TRUE
 	// A window button is an op with a ui_act() binding: it runs first (code/engine/present/outputs.dm, present_ui_act()).
-	var/datum/op_result/button = present_ui_act(src, ui.user, action, params)
+	var/datum/op_result/button = present_ui_act(src, ui.user, action, params, ui)
 	if(button)
 		return TRUE
 	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).

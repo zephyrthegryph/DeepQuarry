@@ -6,6 +6,7 @@ MSG_DEF_SELF(gizmo/done, "Done.")
 
 CAPABILITIES(/obj/machinery/gizmo)
 	interface("Gizmo", title = "Gizmo Control")
+	without("ui_open")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("set-level", ui_act("set-level", arg("level", num(0, 10)), arg("target")), then(PROC_REF(ui_act_level)))
 	op("name", ui_act("name", arg("label", schema_text(4096)), arg("count", int())), then(PROC_REF(ui_act_name)))

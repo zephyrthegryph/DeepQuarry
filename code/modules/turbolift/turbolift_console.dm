@@ -173,6 +173,7 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 CAPABILITIES(/obj/structure/lift/panel)
 	interface("Turbolift")
+	without("ui_open")
 	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_ref())), then(PROC_REF(ui_act_move_to_floor)))
 	op("toggle_doors", ui_act("toggle_doors"), then(PROC_REF(ui_act_toggle_doors)))
 	op("emergency_stop", ui_act("emergency_stop"), then(PROC_REF(ui_act_emergency_stop)))

@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/machinery/magnetic_controller)
 	interface("MagneticConsole", title = "Magnetic Control Console", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	op("set_frequency", ui_act("set_frequency"), then(PROC_REF(ui_act_set_frequency)))
 	op("set_code", ui_act("set_code"), then(PROC_REF(ui_act_set_code)))
 	op("probe", ui_act("probe"), then(PROC_REF(ui_act_probe)))

@@ -149,6 +149,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 CAPABILITIES(/obj/machinery/gravity_generator/main)
 	after_init(0, then(PROC_REF(find_levels)))
 	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
+	interface("GravityGenerator")
+	without("ui_open")
+	op("gentoggle", ui_act("gentoggle"), then(PROC_REF(ui_act_gentoggle)))
 
 /// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
 OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, POWER_IDLE, CHANGE_MACHINE_SETTINGS)
@@ -283,9 +286,16 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 	atom_fix()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_UI(/obj/machinery/gravity_generator/main, "GravityGenerator")
-
-UI_DATA_REPLACE(/obj/machinery/gravity_generator/main, "breaker:num", "charge_count:num", "charging_state", "merge:ui_data_obj_machinery_gravity_generator_main{on:num,operational:bool}")
+/obj/machinery/gravity_generator/main/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["breaker"] = breaker
+	data["charge_count"] = charge_count
+	data["charging_state"] = charging_state
+	var/list/merged_1 = ui_data_obj_machinery_gravity_generator_main(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/gravity_generator/main's window data (declared on its UI_DATA row).
 /obj/machinery/gravity_generator/main/proc/ui_data_obj_machinery_gravity_generator_main(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -296,10 +306,10 @@ UI_DATA_REPLACE(/obj/machinery/gravity_generator/main, "breaker:num", "charge_co
 
 	return data
 
-UI_ACT(/obj/machinery/gravity_generator/main, "gentoggle", ui_act_gentoggle)
-UI_ACT_PROC(/obj/machinery/gravity_generator/main, ui_act_gentoggle)
+/obj/machinery/gravity_generator/main/proc/ui_act_gentoggle(datum/act/op/A)
+	var/mob/user = A.actor
 	breaker = !breaker
-	investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(ui.user)].", "gravity")
+	investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(user)].", "gravity")
 	set_power()
 	return TOPIC_REFRESH
 

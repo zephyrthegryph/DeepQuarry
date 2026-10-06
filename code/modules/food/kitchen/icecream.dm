@@ -59,6 +59,7 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 
 CAPABILITIES(/obj/machinery/icecream_vat)
 	interface("IcecreamVat")
+	without("ui_open")
 	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
 	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
 	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))

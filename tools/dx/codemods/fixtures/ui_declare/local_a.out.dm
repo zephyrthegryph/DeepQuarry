@@ -3,6 +3,7 @@
 
 CAPABILITIES(/obj/machinery/lamp)
 	interface("Lamp")
+	without("ui_open")
 	op("pick", ui_act("pick"), then(PROC_REF(ui_act_pick)))
 
 /obj/machinery/lamp/proc/ui_act_pick(datum/act/op/A)

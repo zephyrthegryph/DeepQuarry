@@ -1423,8 +1423,10 @@ focused tests of the touched windows (the tests that called a handler with its o
   `schema_path()`, `UI_ARG_REF` is `schema_ref()` plus a check at the head of the handler that the ref is in its source (`contents` reads
   `contents_of()`); a ref the handler never null-checks is required (a button without it does nothing; before, the handler ran with null).
   `UI_ARG_CHOICE`/`UI_ARG_LIST` pass the raw value, checked in the handler (a choice no longer converts between number and text).
-* **The open op's input.** An item's window opens from the hand holding it (`input = in_hand()`): a `hand()` open op would win over picking
-  it up. A mob's from its menu. A machine or structure keeps its own hand interaction, which outranks the interface's open op.
+* **No new way to open a window.** An atom's converted window says `without("ui_open")`: it still opens from the type's own
+  interactions (with their access, power and hand checks), not from a fallback click or a silicon's remote open. Pinned by the conversion
+  pins (`code/modules/unit_tests/snapshots/pins/`, recorded before the conversion; only `keys:` changed).
+* **The power sensor's data** is `monitor_data(user)`, the power monitor's focus (the sensor has no window), not an output of the sensor.
 * **State rows.** A subtype's `DECLARE_UI_STATE` declares the inherited window again with `state =`; a parent's state goes to every window
   below it; `tgui_state()` falls back to the interface's state. The security console's state row was never read (its window is its camera
   module's, through `ui_redirect()`) and is gone.

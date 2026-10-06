@@ -37,7 +37,7 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 
 	data["all_sensors"] = sensors
 	if(focus)
-		data["focus"] = focus.tgui_data(user)
+		data["focus"] = focus.monitor_data(user)
 	else
 		data["focus"] = null
 

@@ -554,43 +554,50 @@ CAPABILITIES(/datum/dq_vending_log_panel)
 	books = book_rows || list()
 	error_msg = error || ""
 
-DECLARE_UI_STATE(/datum/dq_delete_book_panel, ADMIN_STATE(R_ADMIN))
-
-DECLARE_UI(/datum/dq_delete_book_panel, "DeleteBookPanel", UI_TITLE("Delete Book"))
-
-UI_DATA_REPLACE(/datum/dq_delete_book_panel, "merge:ui_data_datum_dq_delete_book_panel{books:list,error:text,sort_by:text}")
+CAPABILITIES(/datum/dq_delete_book_panel)
+	interface("DeleteBookPanel", title = "Delete Book", rights = R_ADMIN)
+	op("sort", ui_act("sort", arg("by", schema_text(4096))), then(PROC_REF(ui_act_sort)))
+	op("order_by_id", ui_act("order_by_id"), then(PROC_REF(ui_act_order_by_id)))
+	op("delete", ui_act("delete", arg("id", schema_text(4096))), then(PROC_REF(ui_act_delete)))
 
 /// The computed part of /datum/dq_delete_book_panel's window data (declared on its UI_DATA row).
-/datum/dq_delete_book_panel/proc/ui_data_datum_dq_delete_book_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/dq_delete_book_panel/ui_data(datum/act/eval/A)
 	return list(
 		"books" = books,
 		"error" = error_msg,
 		"sort_by" = our_comp() ? our_comp().sortby : "",
 	)
 
-/datum/dq_delete_book_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/dq_delete_book_panel/proc/ui_gate(datum/act/op/A)
 	if(!our_comp())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/dq_delete_book_panel, "sort", ui_act_sort, UI_ARG_TEXT("by"))
-UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_sort)
-	var/by = "[params["by"]]"
+/datum/dq_delete_book_panel/proc/ui_act_sort(datum/act/op/A, by_arg)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
+	var/by = "[by_arg]"
 	our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/dq_delete_book_panel, "order_by_id", ui_act_order_by_id)
-UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_order_by_id)
+/datum/dq_delete_book_panel/proc/ui_act_order_by_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	our_comp().tgui_act("orderbyid", list(), ui, ui.state())
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/dq_delete_book_panel, "delete", ui_act_delete, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_delete)
-	var/id = "[params["id"]]"
+/datum/dq_delete_book_panel/proc/ui_act_delete(datum/act/op/A, id_arg)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
+	var/id = "[id_arg]"
 	our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
 	SStgui.update_uis(src)
 	return TRUE
@@ -599,6 +606,7 @@ UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_delete)
 
 CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	interface("SyndicateBeacon", title = "Ominous Beacon", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	op("transfer_supplies", ui_act("transfer_supplies", arg("mob_ref", schema_ref(/mob))), then(PROC_REF(ui_act_transfer_supplies)))
 
 /obj/machinery/syndicate_beacon/virgo/ui_data(datum/act/eval/A)

@@ -94,7 +94,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	request_roles(user)
 	return TRUE
 
-/obj/machinery/photocopier/faxmachine/proc/request_roles(mob/living/L)
+/obj/machinery/photocopier/faxmachine/proc/request_roles(mob/living/L, list/answers)
+	if(!answers)
+		answers = list()
 
 	if(!L || !isturf(L.loc) || !isliving(L))
 		return
@@ -106,7 +108,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 		to_chat(L, span_warning("The global automated relays are still recalibrating. Try again later or relay your request in written form for processing."))
 		return
 
-	var/confirmation = rerun_ask(L, "k109", PROC_REF(request_roles), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to send automated crew request?", title = "Confirmation", choices = list("Yes", "No", "Cancel"))
+	if(!("k109" in answers))
+		open_request(src, /datum/prompt/choice/fax_role_request, PROC_REF(fax_role_request_answered), answerer = L, question = "Are you sure you want to send automated crew request?", title = "Confirmation", choices = list("Yes", "No", "Cancel"), buttons = TRUE, captured = list("answers" = answers.Copy(), "key" = "k109"))
+		return
+	var/confirmation = answers["k109"]
 	if(isnull(confirmation))
 		return
 	if(confirmation != "Yes")
@@ -127,7 +132,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 				if(J.offmap_spawn)
 					jobs |= job
 
-	var/role = rerun_ask(L, "k128", PROC_REF(request_roles), args, /datum/om/prompt/choice, message = "Pick the job to request.", title = "Job Request", choices = jobs)
+	if(!("k128" in answers))
+		open_request(src, /datum/prompt/choice/fax_role_request, PROC_REF(fax_role_request_answered), answerer = L, question = "Pick the job to request.", title = "Job Request", choices = jobs, buttons = FALSE, captured = list("answers" = answers.Copy(), "key" = "k128"))
+		return
+	var/role = answers["k128"]
 	if(isnull(role))
 		return
 	if(!role)
@@ -137,12 +145,18 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	var/reason = "Unspecified"
 	var/list/possible_reasons = list("Unspecified", "General duties", "Emergency situation")
 	possible_reasons += TYPE_TABLE_GET(job_to_request, get_request_reasons)
-	var/_answer_k136 = rerun_ask(L, "k136", PROC_REF(request_roles), args, /datum/om/prompt/choice, message = "Pick request reason.", title = "Request reason", choices = possible_reasons)
+	if(!("k136" in answers))
+		open_request(src, /datum/prompt/choice/fax_role_request, PROC_REF(fax_role_request_answered), answerer = L, question = "Pick request reason.", title = "Request reason", choices = possible_reasons, buttons = FALSE, captured = list("answers" = answers.Copy(), "key" = "k136"))
+		return
+	var/_answer_k136 = answers["k136"]
 	if(isnull(_answer_k136))
 		return
 	reason = _answer_k136
 
-	var/final_conf = rerun_ask(L, "k138", PROC_REF(request_roles), args, /datum/om/prompt/choice/alert, message = "You are about to request [role]. Are you sure?", title = "Confirmation", choices = list("Yes", "No", "Cancel"))
+	if(!("k138" in answers))
+		open_request(src, /datum/prompt/choice/fax_role_request, PROC_REF(fax_role_request_answered), answerer = L, question = "You are about to request [role]. Are you sure?", title = "Confirmation", choices = list("Yes", "No", "Cancel"), buttons = TRUE, captured = list("answers" = answers.Copy(), "key" = "k138"))
+		return
+	var/final_conf = answers["k138"]
 	if(isnull(final_conf))
 		return
 	if(final_conf != "Yes")
@@ -187,6 +201,31 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 DECLARE_UI(/obj/machinery/photocopier/faxmachine, "Fax")
 
 UI_DATA(/obj/machinery/photocopier/faxmachine, "authenticated", "rank", "copyItem=copyitem", "cooldown=sendcooldown:num", "destination", "merge:ui_data_obj_machinery_photocopier_faxmachine{scan:text,isAI:num,isRobot:num,adminDepartments:unknown,bossName:text}")
+
+/obj/machinery/photocopier/faxmachine/proc/fax_role_request_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	// The old datum-proc replay queues this refresh even when its next stage refuses or faults.
+	SStgui.update_uis(src)
+	var/list/captured_answers = A.answer.captured["answers"]
+	var/list/answers = captured_answers.Copy()
+	answers[A.answer.captured["key"]] = A.answer.value
+	request_roles(A.answer.answerer, answers)
+
+/datum/prompt/choice/fax_role_request
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/fax_role_request/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/fax_role_request/refusal(given)
+	return null
+
+/datum/prompt/choice/fax_role_request/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	return null
 
 /// The computed part of /obj/machinery/photocopier/faxmachine's window data (declared on its UI_DATA row).
 /obj/machinery/photocopier/faxmachine/proc/ui_data_obj_machinery_photocopier_faxmachine(mob/user, datum/tgui/ui, datum/tgui_state/state)

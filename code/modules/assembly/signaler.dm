@@ -36,7 +36,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, TYPE_PROC_REF(/atom, appear
 		holder().update_icon()
 
 CAPABILITIES(/obj/item/assembly/signaler)
-	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
 	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
 	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))

@@ -4,7 +4,8 @@
 // Topic handler since the coin-removal logic is fine where it is.
 
 CAPABILITIES(/obj/item/moneybag)
-	interface("Moneybag", title = "Moneybag", state = nameof(GLOB.tgui_default_state), input = in_hand())
+	interface("Moneybag", title = "Moneybag", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	op("remove", ui_act("remove", arg("coin", schema_text(4096))), then(PROC_REF(ui_act_remove)))
 
 /// The computed part of /obj/item/moneybag's window data (declared on its UI_DATA row).

@@ -35,6 +35,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator)
 	interface("TEGenerator")
+	without("ui_open")
 	ui_shape(totalOutput = num(), maxTotalOutput = num(), thermalOutput = num(), primary = list_of(), secondary = list_of())
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)

@@ -53,7 +53,8 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 CAPABILITIES(/obj/item/tank)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
-	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 

@@ -15,6 +15,10 @@
 
 CAPABILITIES(/datum/controller/kernel)
 	owns_one(nameof(stack_end_detector), /datum/stack_end_detector)
+	interface("ControllerOverview")
+	op("toggle_fast_update", ui_act("toggle_fast_update"), then(PROC_REF(ui_act_toggle_fast_update)))
+	op("set_rolling_length", ui_act("set_rolling_length", arg("rolling_length", num())), then(PROC_REF(ui_act_set_rolling_length)))
+	op("view_variables", ui_act("view_variables", arg("ref", schema_ref(/datum/system))), then(PROC_REF(ui_act_view_variables)))
 
 /// Starts the loop after `delay`, and sticks around to restart it if it ever ends: it runs once per init stage (a later
 /// stage completing ends a loop with KERNEL_LOOP_RTN_NEWSTAGES and the next one takes up the new stage's hosts).
