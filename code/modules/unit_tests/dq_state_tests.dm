@@ -420,3 +420,28 @@ CAPABILITIES(/datum/dq_state_probe)
 	own_take(paper, nameof(paper.contract_document))
 	qdel(document)
 	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")
+
+// A hard-deleted refresh entry must not prevent the surviving entries from deriving.
+/datum/dq_refresh_deleted_entry_probe
+	var/refresh_calls = 0
+	var/last_bits = 0
+
+/datum/dq_refresh_deleted_entry_probe/on_state_changed(bits)
+	..()
+	refresh_calls++
+	last_bits = bits
+
+/datum/unit_test/ownership_retirement_refresh_skips_deleted_queue_entry
+
+/datum/unit_test/ownership_retirement_refresh_skips_deleted_queue_entry/Run()
+	var/datum/dq_refresh_deleted_entry_probe/survivor = allocate(/datum/dq_refresh_deleted_entry_probe)
+	// BYOND replaces a hard-deleted reference in a queued list with null. Reproduce that exact drain boundary without forcing the garbage collector.
+	set_global("refresh_queue", list(null))
+	refresh_mark(survivor, DEP_LEGACY, CHANGE_EXPLICIT)
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), 2, "a vanished entry precedes the surviving queued datum")
+	TEST_ASSERT_EQUAL(survivor.refresh_calls, 0, "queued output has not run before draining")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(survivor.refresh_calls, 1, "the surviving output executes exactly once past a vanished entry")
+	TEST_ASSERT_EQUAL(survivor.last_bits, CHANGE_EXPLICIT, "the surviving output receives its original change channel")
+	TEST_ASSERT_EQUAL(survivor.refresh_queued, 0, "the surviving queued mark is consumed")
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), 0, "the drain removes both stale and completed queue entries")
