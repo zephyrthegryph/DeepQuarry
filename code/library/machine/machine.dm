@@ -129,7 +129,7 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 
 // ---- machine basics ----
 
-CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE)
+CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE)
 
 /// The machine core's own: breakable with welder repair (`repair` = NONE: none), powered (`powered` = FALSE: a machine whose look says its own),
 /// the build ladder `frame` (a construction(...) capability, NONE for none), the claws' slash, STAT_OPERABLE's bridge, and the rule that every
@@ -143,15 +143,18 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 		extend(TAG_CONTROL, needs(req_operable())))
 	if(powered)
 		entries += powered()
+	if(!area_power)
+		entries += without("area_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		entries += without("power_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op // a machine that says its own power (the APC, the SMES, a self-powered turret) is not darkened by its area's channel
 	if(frame && frame != NONE)
 		entries += frame
 	return entries
 
-CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, offset = 26, offset_ns = null)
+CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE, offset = 26, offset_ns = null)
 
 /// machine_basics() without anchoring (it hangs on the wall), plus the wall mount.
 /datum/capability/def/wall_machine/entries()
-	return list(machine_basics(board, repair, frame, powered), wall_mount(offset, offset_ns))
+	return list(machine_basics(board, repair, frame, powered, area_power), wall_mount(offset, offset_ns))
 
 /// The actor has claws that tear machines open (a species that can_shred() at `force`: a windoor asks 15).
 /proc/req_can_shred(force = 14)

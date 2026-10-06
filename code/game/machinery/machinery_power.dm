@@ -31,8 +31,11 @@
 // Returns TRUE if NOPOWER stat flag changed.
 // can override if needed
 /obj/machinery/proc/power_change()
-	if(!set_powered(powered(power_channel)))
+	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (area_gives_power()), current: the area settled it before telling us
+	if(now == power_seen)
 		return FALSE
+	power_seen = now
+	stat_changed(NOPOWER) // the `stat` publish and the power channel: gates that wake on `stat` hear the flip, as they did from the bit's writer
 	changed(src) // a power change is a dispatched call: the powered capability's layer follows
 	if(has_stat(NOPOWER))
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
@@ -41,8 +44,18 @@
 	update_heat_output()
 	return TRUE
 
+/// STAT_HAS_POWER's reading of the grid: the machine's area has its channel energized. A machine with no area has power (nothing darkens it).
+/obj/machinery/proc/area_gives_power(datum/act/A)
+	if(power_forced)
+		return TRUE
+	var/area/served = power_area
+	return !served || served.powered(power_channel)
+
 /**
- * The power capability's "powered" state (G8): the one writer of NOPOWER. A change raises CHANGE_MACHINE_POWER (the
+ * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
+ * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
+ * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
+ * The power capability's "powered" state (G8): NOPOWER. A change raises CHANGE_MACHINE_POWER (the
  * stat bit's bridge channel) and publishes MACHINE_KEY_POWERED to its readers. has_stat(NOPOWER) and operable() read
  * it. Returns TRUE when the state changed.
  */

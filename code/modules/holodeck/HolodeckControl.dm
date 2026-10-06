@@ -342,9 +342,9 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	linkedholodeck().sound_env = A.sound_env
 
 	if(prog == powerdown_program)
-		linkedholodeck().requires_power = TRUE
+		linkedholodeck().set_requires_power(TRUE)
 	else
-		linkedholodeck().requires_power = FALSE
+		linkedholodeck().set_requires_power(FALSE)
 	linkedholodeck().power_change()
 
 	for(var/obj/effect/landmark/L in linkedholodeck())

@@ -29,6 +29,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
 	interface("Jukebox", title = "RetroBox - Space Style")
@@ -146,8 +147,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	return OP_OK
 
 /obj/machinery/media/jukebox/power_change()
-	set_powered(powered(power_channel) && anchored)
-
+	. = ..()
 	if(!operable() && playing)
 		StopPlaying()
 	update_icon()

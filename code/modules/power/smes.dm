@@ -115,7 +115,7 @@ STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
 	after_init(0, then(PROC_REF(mapped_after_init)))
-	machine_basics(repair = NONE, powered = FALSE)
+	machine_basics(repair = NONE, powered = FALSE, area_power = FALSE)
 	membership(joins = REGISTRY_SMES)
 	contributes(STAT_OPERABLE, cond_not(nameof(unwired)), reason = MSG(smes/unwired))
 	contributes(STAT_WORKING, STAT_OPERABLE)

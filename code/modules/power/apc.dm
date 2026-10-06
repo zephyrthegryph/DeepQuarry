@@ -165,7 +165,7 @@ MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC wit
 CAPABILITIES(/obj/machinery/power/apc)
 	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))
-	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE)
+	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE, area_power = FALSE)
 	configure(construction_graph(start = STAGE_APC_SECURED))
 	maintenance_hatch(
 		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),

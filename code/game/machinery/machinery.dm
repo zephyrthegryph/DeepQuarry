@@ -107,6 +107,10 @@ Class Procs:
 	/// handling (rel_set() in Initialize and area_changed()).
 	var/tmp/area/power_area // ALLOW(base_vars): the relation to the area every machine contributes its draw to and reads its channels from, a link not a flag
 	var/tmp/power_init_complete = FALSE
+	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
+	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on, one bit of per-machine memory for flip detection
+	/// A caller forced the machine's power on by hand (stat_remove(NOPOWER) while its area is dark): area_gives_power() says yes. The shim's, not the grid's.
+	var/power_forced = FALSE // ALLOW(base_vars): the manual override of the grid's reading that the stat_remove(NOPOWER) shim writes
 	/// Re-checks power (power_change()) when its area's channels change.
 	/// Lights listen on the reactor key instead.
 	var/power_subscriber = TRUE
@@ -139,10 +143,16 @@ Class Procs:
 TRACKED(/obj/machinery, active_power_usage)
 TRACKED(/obj/machinery, idle_power_usage)
 TRACKED(/obj/machinery, power_channel)
+TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
 CAPABILITIES(/obj/machinery)
 	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reason = MSG(machine/inoperable), reads = list("stat"))
+	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
+	// The area's channel flip reaches every machine through this read, settled by area.power_change() before the machines are told. A type that
+	// runs on its own supply, or delays its loss, drops this entry by its key and says its own.
+	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", "power_channel", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
+	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
 	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
 	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)
 	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))

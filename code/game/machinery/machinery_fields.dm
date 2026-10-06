@@ -46,6 +46,8 @@ READS_AS(/obj/machinery/proc/has_stat, MACHINE_KEY_STAT)
 	if(!flipped)
 		return FALSE
 	if(flipped & NOPOWER)
+		set_power_forced(FALSE) // a forced-on override gives way to the forced-off hold
+		release(src, STAT_HAS_POWER, SRC_GRID)
 		hold(src, STAT_HAS_POWER, FALSE, SRC_GRID)
 	if(flipped & BROKEN)
 		hold(src, STAT_INTACT, FALSE, SRC_DAMAGE)
@@ -62,6 +64,10 @@ READS_AS(/obj/machinery/proc/has_stat, MACHINE_KEY_STAT)
 		return FALSE
 	if(flipped & NOPOWER)
 		release(src, STAT_HAS_POWER, SRC_GRID)
+		// The grid's reading (area_gives_power()) still says dark: a caller that clears NOPOWER by hand forces the machine on (a manual override of the
+		// reading, released by the next stat_add(NOPOWER); it is the shim's, not the grid's).
+		if(!stat_value(src, STAT_HAS_POWER))
+			set_power_forced(TRUE)
 	if(flipped & BROKEN)
 		release(src, STAT_INTACT, SRC_DAMAGE)
 	var/bits_left = flipped & ~MACHINE_STAT_HELD

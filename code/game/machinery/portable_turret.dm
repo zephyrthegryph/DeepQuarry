@@ -91,6 +91,8 @@
 
 	var/attacked = FALSE		//if set to TRUE, the turret gets pissed off and shoots at people nearby (unless they have sec access!)
 
+	/// The turret's capacitors hold its power: TRUE while its area gives power, until a moment after it stops (power_change()).
+	var/power_held = TRUE
 	var/enabled = TRUE			//determines if the turret is on (the setting someone chose)
 	var/lethal = FALSE			//whether in lethal or stun mode
 	var/lethal_is_configurable = TRUE // if false, its lethal setting cannot be changed
@@ -108,6 +110,7 @@ TRACKED(/obj/machinery/porta_turret, icon_color)
 TRACKED(/obj/machinery/porta_turret, lethal_icon_color)
 
 TRACKED(/obj/machinery/porta_turret, enabled)
+TRACKED(/obj/machinery/porta_turret, power_held)
 TRACKED(/obj/machinery/porta_turret, lethal)
 TRACKED(/obj/machinery/porta_turret, check_arrest)
 TRACKED(/obj/machinery/porta_turret, check_records)
@@ -138,6 +141,8 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	membership(joins = REGISTRY_TURRETS)
 	lock(starts_locked = nameof(lock_at_start), alt = FALSE, guarded = FALSE)
 	contributes(STAT_ARMED, nameof(enabled))
+	// Power loss reaches a turret a moment late (its capacitors): its own reading replaces the area's, and power_change() moves it after the delay.
+	contributes(STAT_HAS_POWER, nameof(power_held), key = "turret_power")
 	contributes(STAT_ARMED, STAT_OPERABLE)
 	emp_disable(list(6 SECONDS, 60 SECONDS))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(scramble_settings)))
@@ -213,16 +218,20 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 // ---- power, pulses, the emag ----
 
-/// Power loss reaches a turret a moment late (its capacitors); power that comes back first cancels the loss.
+/// Power loss reaches a turret a moment late (its capacitors); power that comes back first cancels the loss. The turret's STAT_HAS_POWER reads
+/// `power_held`, which this moves: at once on restore, after the delay on loss (a declared delay on the turret's side, not a second writer of the grid's state).
 /obj/machinery/porta_turret/power_change()
 	if(powered())
 		cancel_after(src, "power_loss")
-		set_powered(TRUE)
+		set_power_held(TRUE)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(power_off_delayed), key = "power_loss")
 
+/obj/machinery/porta_turret/area_gives_power(datum/act/A)
+	return TRUE // the capacitors' reading (power_held) is the turret's own
+
 /obj/machinery/porta_turret/proc/power_off_delayed()
-	set_powered(FALSE)
+	set_power_held(FALSE)
 
 /// A pulse on a running turret scrambles its targets, with a slight chance of an emag's effect (the outage itself is emp_disable()'s).
 /obj/machinery/porta_turret/proc/scramble_settings(datum/act/A)
@@ -1032,9 +1041,13 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 	. = ..()
 	update_integrity(5)
 
-/// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power.
+/// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power (neither the grid's reading nor the capacitors' delay applies).
 CAPABILITIES(/obj/machinery/porta_turret/rcd)
+	without("turret_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 	configure(machine_basics(repair = NONE, powered = FALSE))
+
+/obj/machinery/porta_turret/rcd/power_change()
+	return
 
 /obj/machinery/porta_turret/rcd/stat_bits_allow(datum/act/A)
 	return !has_stat(BROKEN | EMPED)

@@ -2438,4 +2438,13 @@ Design and migration: `doc/rewrite/power_grid.md`.
 * `NOPOWER` is the `has_power` stat held false by `SRC_GRID` (set_powered() is the one writer); `BROKEN` is the `intact` stat held false by `SRC_DAMAGE`.
   `has_stat()`, `stat_add()`, `stat_remove()`, `set_stat()` and `stat_bits_now()` are shims over them (and over the `stat` bits POWEROFF, MAINT and EMPED, which
   are still bits), so every existing caller keeps its behaviour. A type's default `stat = BROKEN` or `NOPOWER` moves into the stat layer at Initialize.
-* The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it; it does today (not changed here). Left to the grid work.
+* The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it. Fixed in rewrite/power-grid: its power is its own, BROKEN and EMPED still stop it.
+
+## The power grid: a machine's power is a read of its area (rewrite/power-grid, stage 2)
+
+* **Power is a stat, not a push.** A machine has power while its area's channel for its `power_channel` is energized; there is no per-machine write when a channel
+  flips (`doc/rewrite/power_grid.md` section 7). A machine created or moved into a dark area is dark at once; a moved machine takes the new area's reading in the
+  same step. A machine with no area has power.
+* **Self-powered machines are not darkened by their area**: the APC and the SMES (as before, now declared), and the RCD turret (a fix: it was stopped by area power
+  though declared self-powered).
+* **A turret's power loss is still a moment late** (its capacitors, 0 to 1.5 s); restoration is immediate. A jukebox that is not bolted down has no power.

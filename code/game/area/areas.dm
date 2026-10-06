@@ -254,6 +254,8 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 TRACKED(/area, power_equip)
 TRACKED(/area, power_light)
 TRACKED(/area, power_environ)
+TRACKED(/area, requires_power)
+TRACKED(/area, always_unpowered)
 
 /// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
 /// machines in the area learn of a flip through power_change() (unless `notify` is FALSE: the caller runs it itself); the vars are tracked, so
@@ -296,6 +298,12 @@ TRACKED(/area, power_environ)
 // machinery_power_restored when it flips.
 /area/proc/power_change()
 	changed(src, CHANGE_AREA_POWER)
+	// The machines' has_power is a read of this area's channels (area_gives_power()): settle it now, whatever wrote the channel vars (the tracked
+	// writer marks the same stat for a later drain, which then finds it unchanged), so power_change() below acts on a current reading.
+	var/datum/stat_def/power_def = stat_def_of(STAT_HAS_POWER)
+	for(var/obj/machinery/M as anything in power_machines)
+		if(M.power_subscriber)
+			stat_settle_def(M, power_def)
 	for(var/obj/machinery/M as anything in power_machines)
 		if(M.power_subscriber)
 			M.power_change()
@@ -617,7 +625,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 /area/proc/setup(a_name)
 	name = a_name
 	set_channels(FALSE, FALSE, FALSE, notify = FALSE)
-	always_unpowered = FALSE
+	set_always_unpowered(FALSE)
 	update_areasize()
 
 /area/proc/update_areasize()
