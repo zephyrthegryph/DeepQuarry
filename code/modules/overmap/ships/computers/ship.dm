@@ -113,14 +113,22 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 		interface_interact(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship, "sync", ui_act_sync)
-UI_ACT_PROC(/obj/machinery/computer/ship, ui_act_sync)
-	sync_linked(ui.user)
+// The buttons every ship console's window has (declared in its CAPABILITIES, code/modules/flight_operations/flight_console.dm).
+/// The guard every button of a ship console asks first (a console type overrides it).
+/obj/machinery/computer/ship/proc/ui_gate(datum/act/op/A)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship, "close", ui_act_close)
-UI_ACT_PROC(/obj/machinery/computer/ship, ui_act_close)
-	ui.user.reset_perspective()
+/obj/machinery/computer/ship/proc/ui_act_sync(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	sync_linked(A.actor)
+	return TRUE
+
+/obj/machinery/computer/ship/proc/ui_act_close(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/user = A.actor
+	user.reset_perspective()
 	return TRUE
 
 // Management of mob view displacement. look to shift view to the ship on the overmap; unlook to shift back.

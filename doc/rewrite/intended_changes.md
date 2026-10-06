@@ -1432,6 +1432,14 @@ focused tests of the touched windows (the tests that called a handler with its o
   module's, through `ui_redirect()`) and is gone.
 * **Messages.** The ice cream vat's flavour and cone messages are `act_message()` (the actor reads "You ...").
 * **The holodeck's AI override** is asked by how the press came (`A.authority & AUTH_REMOTE_ACCESS`), not `issilicon()`.
+* **Ship consoles (helm, engines, sensors, disperser).** Their questions (navigation entry, coordinates, autopilot and thrust limits,
+  sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
+  stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
+  view over its link from anywhere it works the console (the distance check is a hand's).
+* **Copier, fax, ore console, exosuit console, paper.** Their window questions are `asks()` steps: the AI's photo pick, the fax title,
+  department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
+  admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
+  1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
