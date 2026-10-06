@@ -120,7 +120,8 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	return TRUE
 
 CAPABILITIES(/obj/item/paper_bundle)
-	interface("PaperBundle", input = in_hand())
+	interface("PaperBundle")
+	without("ui_open")
 	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
 	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
 	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))

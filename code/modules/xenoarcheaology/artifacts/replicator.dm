@@ -155,6 +155,7 @@
 
 CAPABILITIES(/obj/machinery/replicator)
 	interface("XenoarchReplicator")
+	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
 /// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
@@ -729,6 +730,7 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 
 CAPABILITIES(/obj/machinery/replicator/clothing)
 	interface("XenoarchReplicatorClothing")
+	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
 /obj/machinery/replicator/clothing/ui_data(datum/act/eval/A)

@@ -175,6 +175,7 @@
 
 CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	interface("ShuttleControl")
+	without("ui_open")
 	op("move", ui_act("move"), then(PROC_REF(ui_act_move)))
 	op("force", ui_act("force"), then(PROC_REF(ui_act_force)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))

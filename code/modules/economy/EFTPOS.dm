@@ -87,7 +87,8 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 	return TRUE
 
 CAPABILITIES(/obj/item/eftpos)
-	interface("Eftpos", title = "EFTPOS scanner", input = in_hand())
+	interface("Eftpos", title = "EFTPOS scanner")
+	without("ui_open")
 	op("change_code", ui_act("change_code"), then(PROC_REF(ui_act_change_code)))
 	op("change_id", ui_act("change_id"), then(PROC_REF(ui_act_change_id)))
 	op("link_account", ui_act("link_account"), then(PROC_REF(ui_act_link_account)))

@@ -95,7 +95,8 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 	return TRUE
 
 CAPABILITIES(/obj/item/radio/electropack)
-	interface("Electropack", input = in_hand())
+	interface("Electropack")
+	without("ui_open")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("delta", num())), then(PROC_REF(ui_act_code)))

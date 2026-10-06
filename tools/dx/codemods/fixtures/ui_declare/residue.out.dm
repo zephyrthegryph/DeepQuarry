@@ -1,11 +1,13 @@
 CAPABILITIES(/obj/machinery/stately)
 	interface("Stately", state = nameof(GLOB.tgui_always_state))
+	without("ui_open")
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 /obj/machinery/stately/proc/ui_act_go(datum/act/op/A)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/greedy)
 	interface("Greedy")
+	without("ui_open")
 	op("go", ui_act("go"), then(PROC_REF(greedy_go)))
 /obj/machinery/greedy/proc/greedy_go(datum/act/op/A)
 	var/mob/user = A.actor
@@ -15,6 +17,7 @@ CAPABILITIES(/obj/machinery/greedy)
 
 CAPABILITIES(/obj/machinery/choosy)
 	interface("Choosy")
+	without("ui_open")
 	op("go", ui_act("go", arg("c")), then(PROC_REF(choosy_go)))
 /obj/machinery/choosy/proc/choosy_go(datum/act/op/A, c)
 	if(!isnull(c) && !(c in list("a")))
@@ -23,6 +26,7 @@ CAPABILITIES(/obj/machinery/choosy)
 
 CAPABILITIES(/obj/machinery/guarded)
 	interface("Guarded")
+	without("ui_open")
 	op("go", ui_act("go"), then(PROC_REF(guarded_go)))
 /obj/machinery/guarded/proc/guarded_go(datum/act/op/A)
 	if(!ui_gate(A))

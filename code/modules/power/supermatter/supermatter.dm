@@ -126,6 +126,7 @@
 CAPABILITIES(/obj/machinery/power/supermatter)
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter)
 	interface("AiSupermatter")
+	without("ui_open")
 	ui_shape(detonating = num(), integrity_percentage = num(), ambient_temp = num(), ambient_pressure = num())
 
 /obj/machinery/power/supermatter/Initialize(mapload)

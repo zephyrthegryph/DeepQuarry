@@ -279,6 +279,7 @@
 
 CAPABILITIES(/obj/machinery/department_storefront)
 	interface("DepartmentStorefront")
+	without("ui_open")
 	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_buy)))
 	op("withdraw", ui_act("withdraw", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_withdraw)))
 	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))

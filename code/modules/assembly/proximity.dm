@@ -100,7 +100,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, app
 	sense()
 
 CAPABILITIES(/obj/item/assembly/prox_sensor)
-	interface("AssemblyProx", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	interface("AssemblyProx", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
 	op("scanning", ui_act("scanning"), then(PROC_REF(ui_act_scanning)))
 	op("timing", ui_act("timing"), then(PROC_REF(ui_act_timing)))
 	op("set_time", ui_act("set_time", arg("time", num())), then(PROC_REF(ui_act_set_time)))

@@ -17,7 +17,8 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
-	interface("MechaSyringeGun", input = in_hand())
+	interface("MechaSyringeGun")
+	without("ui_open")
 	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
 	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))

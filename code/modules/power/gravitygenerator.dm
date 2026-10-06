@@ -150,6 +150,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	after_init(0, then(PROC_REF(find_levels)))
 	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
 	interface("GravityGenerator")
+	without("ui_open")
 	op("gentoggle", ui_act("gentoggle"), then(PROC_REF(ui_act_gentoggle)))
 
 /// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).

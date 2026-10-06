@@ -32,7 +32,8 @@
 // frequency/refresh/clear actions move to tgui_act.
 CAPABILITIES(/obj/item/locator)
 	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
-	interface("Locator", title = "Persistent Signal Locator", input = in_hand())
+	interface("Locator", title = "Persistent Signal Locator")
+	without("ui_open")
 	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))

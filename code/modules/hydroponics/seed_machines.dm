@@ -343,6 +343,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 CAPABILITIES(/obj/machinery/botany/editor)
 	interface("BotanyEditor")
+	without("ui_open")
 	op("apply_gene", ui_act("apply_gene"), then(PROC_REF(ui_act_apply_gene)))
 
 /// The computed part of /obj/machinery/botany/editor's window data (declared on its UI_DATA row).
@@ -415,6 +416,7 @@ CAPABILITIES(/obj/machinery/botany/editor)
 CAPABILITIES(/obj/machinery/botany/extractor)
 	owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	interface("BotanyIsolator")
+	without("ui_open")
 	op("scan_genome", ui_act("scan_genome"), then(PROC_REF(ui_act_scan_genome)))
 	op("get_gene", ui_act("get_gene", arg("get_gene", schema_text(4096))), then(PROC_REF(ui_act_get_gene)))
 	op("clear_buffer", ui_act("clear_buffer"), then(PROC_REF(ui_act_clear_buffer)))

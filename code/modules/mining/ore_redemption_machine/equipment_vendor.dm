@@ -239,6 +239,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/
 
 CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	interface("MiningVendor")
+	without("ui_open")
 	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
 

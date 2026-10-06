@@ -103,6 +103,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
 	op("killcrew", ui_act(), then(PROC_REF(native_orion_ui_killcrew)))
 	op("close", ui_act(), then(PROC_REF(native_orion_ui_close)))
 	interface("OrionTrail", title = "The Orion Trail", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	ui_shape(screen = schema_text(), reasons = list_of(), event_html = any, turn = num(), stop_name = any, stop_blurb = any, crew = list_of(), food = num(), fuel = num(), engine = num(), hull = num(), electronics = num(), at_blackhole = bool())
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_menu(datum/act/op/A)

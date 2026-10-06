@@ -15,7 +15,8 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 CAPABILITIES(/obj/item/assembly/infra)
 	owns_many(nameof(i_beams))
-	interface("AssemblyInfrared", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	interface("AssemblyInfrared", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
 	op("state", ui_act("state"), then(PROC_REF(ui_act_state)))
 	op("visible", ui_act("visible"), then(PROC_REF(ui_act_visible)))
 

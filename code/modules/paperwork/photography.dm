@@ -85,7 +85,8 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/photo)
-	interface("Photo", input = in_hand())
+	interface("Photo")
+	without("ui_open")
 	ui_shape(title = schema_text(), size = num(), scribble = bool(), image_html = schema_text())
 
 /obj/item/photo/ui_data(datum/act/eval/A)

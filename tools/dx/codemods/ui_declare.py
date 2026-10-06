@@ -750,12 +750,6 @@ def main():
         plan["interface_args"] = None
         if window:
             plan["interface_args"] = ['"%s"' % window] + (['title = "%s"' % title] if title is not None else []) + ([plan["state"][0]] if plan["state"] else []) + (["forwards = nameof(%s)" % forward["var"]] if forward else [])
-            # The open op's input. An item's window opens from the hand that holds it: a hand() open op would tie with picking it up, and
-            # win (code/engine/parts/inputs.dm, op_legacy_candidates()). A mob's from its menu, beside what a hand does to it.
-            if t.startswith("/obj/item/") or t == "/obj/item":
-                plan["interface_args"].append("input = in_hand()")
-            elif t.startswith("/mob/"):
-                plan["interface_args"].append("input = menu()")
         elif (plan["state"] and not plan.get("state_down") and not plan.get("state_proc")) or forward:
             keep = [a for a in inherited["args"] if not re.match(r"^(state|rights)\s*=", a) and not (forward and re.match(r"^forwards\s*=", a))]
             plan["redeclared"] = keep + ([plan["state"][0]] if plan["state"] else []) + (["forwards = nameof(%s)" % forward["var"]] if forward else [])
@@ -998,6 +992,11 @@ def main():
         if iargs:
             # its own window, or the inherited one declared again with this type's state or forward
             entries.append("interface(%s)" % ", ".join(iargs))
+            if not t.startswith("/datum"):
+                # The legacy window had no click of its own: the type opens it from its own interactions (tgui_interact()), with their
+                # checks (access, power, the hand that holds it). interface()'s open op would add a click and a silicon's remote open
+                # that skip them, so it goes; the conversion pins show the menus and clicks unchanged.
+                entries.append('without("ui_open")')
         if plan.get("state_down"):
             # the state of a parent of windows: every window below it without a nearer legacy state row takes it
             for u in sorted(caps_idx):

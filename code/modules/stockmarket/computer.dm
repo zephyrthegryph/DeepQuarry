@@ -288,6 +288,7 @@
 
 CAPABILITIES(/obj/machinery/computer/stockexchange)
 	interface("StockExchange")
+	without("ui_open")
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
 	op("stocks_buy", ui_act("stocks_buy", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_buy)))
 	op("stocks_sell", ui_act("stocks_sell", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_sell)))

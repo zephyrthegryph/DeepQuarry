@@ -3,6 +3,7 @@
 
 CAPABILITIES(/obj/machinery/namer)
 	interface("Namer")
+	without("ui_open")
 	op("rename", ui_act("rename", arg("name")), then(PROC_REF(ui_act_rename)))
 
 /obj/machinery/namer/proc/ui_act_rename(datum/act/op/A, name_arg)

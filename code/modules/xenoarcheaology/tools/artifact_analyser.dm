@@ -26,6 +26,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(scanned_object), /obj)
 	interface("XenoarchArtifactAnalyzer")
+	without("ui_open")
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 
 /obj/machinery/artifact_analyser/Initialize(mapload)

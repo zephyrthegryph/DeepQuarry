@@ -88,7 +88,8 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 
 CAPABILITIES(/obj/item/anomaly_scanner)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	interface("AnomalyScanner", input = in_hand())
+	interface("AnomalyScanner")
+	without("ui_open")
 	ui_shape(anomaly_name = schema_text(), severity = num(), stability = num(), point_output = any, danger_type = any, unstable_type = any, containment_type = any, transformation_type = any, modifier = any, countdown = any)
 
 /// Old attack_self.

@@ -1,6 +1,7 @@
 CAPABILITIES(/obj/machinery/anomaly_harvester)
 	op("release_all", ui_act(), then(PROC_REF(ui_act_release_all)))
 	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	op("release_sample", ui_act("release_sample", arg("ref", schema_ref(/obj/item/research_sample))), then(PROC_REF(ui_act_release_sample)))
 
 /obj/machinery/anomaly_harvester

@@ -32,7 +32,8 @@
 
 CAPABILITIES(/obj/item/book/dq_medical_reference)
 	op("read_reference", in_hand(), label("Read"), opens_ui())
-	interface("DQMedicalBook", state = nameof(GLOB.tgui_physical_state), input = in_hand())
+	interface("DQMedicalBook", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
 	ui_shape(conditions = any, symptoms = any, reagents = any, causes = any, surgeries = any)
 
 /// The computed part of /obj/item/book/dq_medical_reference's window data (declared on its UI_DATA row).

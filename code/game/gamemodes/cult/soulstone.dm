@@ -42,7 +42,8 @@
 // "Summon" handler moves to tgui_act.
 CAPABILITIES(/obj/item/soulstone)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	interface("Soulstone", title = "Soul Stone", input = in_hand())
+	interface("Soulstone", title = "Soul Stone")
+	without("ui_open")
 	op("summon", ui_act("summon"), then(PROC_REF(ui_act_summon)))
 
 /// Old attack_self.

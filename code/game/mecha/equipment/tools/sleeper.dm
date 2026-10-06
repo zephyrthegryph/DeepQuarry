@@ -122,7 +122,8 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_
 	inject_reagent(R, SG)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
-	interface("MechaSleeper", title = "Mounted Sleeper", input = in_hand())
+	interface("MechaSleeper", title = "Mounted Sleeper")
+	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("inject", ui_act("inject", arg("ref", schema_ref(/datum/reagent)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))), then(PROC_REF(ui_act_inject)))
 

@@ -67,7 +67,8 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 
 CAPABILITIES(/obj/item/retail_scanner)
 	op("controls", in_hand(), label("Open retail scanner"), then(PROC_REF(retail_scanner_controls_opened)))
-	interface("RetailScanner", input = in_hand())
+	interface("RetailScanner")
+	without("ui_open")
 	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
 	op("refund_transaction", ui_act("refund_transaction", arg("invoice_id", num()), arg("log_id", num())), then(PROC_REF(ui_act_refund_transaction)))
 	op("link_account", ui_act("link_account", arg("name", num()), arg("pin", num())), then(PROC_REF(ui_act_link_account)))

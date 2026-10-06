@@ -233,7 +233,8 @@ Book Cart End
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/book)
-	interface("Book", input = in_hand())
+	interface("Book")
+	without("ui_open")
 	ui_shape(title = bool(), author = bool(), content = bool())
 
 /// The guard every window button of the family asks first (a subtype overrides it).
@@ -391,7 +392,8 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 
 CAPABILITIES(/obj/item/book/bundle)
 	op("read_bundle", in_hand(), label("Read"), then(PROC_REF(interaction_read_bundle)))
-	interface("BookBundle", input = in_hand())
+	interface("BookBundle")
+	without("ui_open")
 	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
 	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
 

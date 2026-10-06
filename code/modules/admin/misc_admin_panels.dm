@@ -606,6 +606,7 @@ CAPABILITIES(/datum/dq_delete_book_panel)
 
 CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	interface("SyndicateBeacon", title = "Ominous Beacon", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	op("transfer_supplies", ui_act("transfer_supplies", arg("mob_ref", schema_ref(/mob))), then(PROC_REF(ui_act_transfer_supplies)))
 
 /obj/machinery/syndicate_beacon/virgo/ui_data(datum/act/eval/A)

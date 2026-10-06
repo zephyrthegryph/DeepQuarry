@@ -134,6 +134,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 CAPABILITIES(/obj/machinery/cash_register)
 	interface("RetailScanner")
+	without("ui_open")
 	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
 	op("refund_transaction", ui_act("refund_transaction", arg("invoice_id", num()), arg("log_id", num())), then(PROC_REF(ui_act_refund_transaction)))
 	op("toggle_cash_lock", ui_act("toggle_cash_lock"), then(PROC_REF(ui_act_toggle_cash_lock)))

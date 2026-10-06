@@ -112,15 +112,16 @@
 		if(demand.len > record_size)
 			demand.Cut(1, 2)
 
-/obj/machinery/power/sensor/ui_data(datum/act/eval/A)
+/// The sensor's reading as the power monitor's window shows it (its focus): the sensor has no window of its own.
+/obj/machinery/power/sensor/proc/monitor_data(mob/user)
 	var/list/data = list()
 	data["name"] = name_tag
 	data["stored"] = record_size
 	data["history"] = history
-	var/list/merged_1 = ui_data_obj_machinery_power_sensor(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
+	var/list/computed = ui_data_obj_machinery_power_sensor(user, null, null)
+	if(islist(computed))
+		for(var/key in computed)
+			data[key] = computed[key]
 	return data
 
 /// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).

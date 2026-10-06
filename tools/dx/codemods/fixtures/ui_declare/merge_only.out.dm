@@ -7,6 +7,7 @@
 CAPABILITIES(/obj/machinery/plain)
 	examine_line("It is plain.")
 	interface("Plain")
+	without("ui_open")
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 
 /obj/machinery/plain/proc/ui_act_go(datum/act/op/A)
