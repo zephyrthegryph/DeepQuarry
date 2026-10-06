@@ -201,6 +201,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
 	hackguard = 5
 	codelen = 3
 
+// ALLOW(init/INSTANCE_STATE): rolls its code and its loot per safe
 /obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
 	. = ..()
 	make_code()
@@ -230,6 +231,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock)
 	item_state = "gold_id"
 	access = list(150)
 
+// ALLOW(init/INSTANCE_STATE): rolls its code and its loot per safe
 /obj/structure/closet/crate/secure/lootsafe/devillock/Initialize(mapload)
 	. = ..()
 	make_code()

@@ -41,6 +41,7 @@
 		MACHINE_WAKE(src)
 
 
+// ALLOW(init/INSTANCE_STATE): rolls its look and the trigger of its effect
 /obj/machinery/artifact/Initialize(mapload)
 
 	if(artifact_master_type)

@@ -24,6 +24,7 @@ OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CH
 /// Tracks its patient while connected to someone.
 DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim")
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/vitals_monitor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

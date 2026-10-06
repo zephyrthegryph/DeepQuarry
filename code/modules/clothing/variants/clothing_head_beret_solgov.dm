@@ -16,6 +16,7 @@ GLOBAL_LIST_INIT(dq_variants_head_beret_solgov, list(
 	"inspector" = list("name" = "\improper Solar Inspection Group beret", "icon_state" = "beret_graysilver", "desc" = "A grey beret with a silver insignia, denoting service in the Solar Inspection Group. For Almach-inspection personnel who are more inclined towards style than safety."),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/head/beret/solgov/Initialize(mapload)
 	apply_variant()
 	. = ..()

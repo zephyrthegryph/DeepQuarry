@@ -9,6 +9,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_altevian_badge_aquila, list(
 	"hydrogen" = list("icon_state" = "altevian_aquila_hydrogen"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/altevian_badge/aquila/Initialize(mapload)
 	apply_variant()
 	. = ..()

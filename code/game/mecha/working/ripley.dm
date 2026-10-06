@@ -86,6 +86,7 @@ TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 	desc = "An old, dusty mining ripley."
 	name = "APLU \"Miner\""
 
+// ALLOW(init/INSTANCE_STATE): rolls a diamond drill one time in four and drops the tracking beacon
 /obj/mecha/working/ripley/mining/Initialize(mapload)
 	. = ..()
 	//Attach drill
@@ -133,6 +134,7 @@ EXTEND_INTERACTIONS(/obj/mecha/working/ripley, \
 /obj/mecha/working/ripley/mining/old
 	desc = "An old, dusty mining ripley."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/working/ripley/mining/old/Initialize(mapload)
 	. = ..()
 	max_integrity = 190	//Just slightly worse.

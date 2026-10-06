@@ -82,6 +82,7 @@
 CAPABILITIES(/obj/structure/meteorite)
 	climb()
 
+// ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
 /obj/structure/meteorite/Initialize(mapload)
 	. = ..()
 	icon = turn(icon, 90)

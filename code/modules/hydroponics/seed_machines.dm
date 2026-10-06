@@ -67,6 +67,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/failed_task = 0
 	var/disk_needs_genes = 0
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/botany/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

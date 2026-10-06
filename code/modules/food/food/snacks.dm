@@ -693,6 +693,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly, nul
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/chaos, null, list(REAGENT_ID_SPRINKLES = 1))
 
+// ALLOW(init/INSTANCE_STATE): rolls which filling this donut gets
 /obj/item/reagent_containers/food/snacks/donut/chaos/Initialize(mapload)
 	. = ..()
 	switch(rand(1,10))
@@ -825,6 +826,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledegg, null, list(
 	center_of_mass_y = 16
 	bitesize = 3
 
+// ALLOW(init/INSTANCE_STATE): rolls its protein and toxin content
 /obj/item/reagent_containers/food/snacks/organ/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, rand(3,5))
@@ -1427,6 +1429,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanita_pie, null, lis
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plump_pie, null, list(REAGENT_ID_FUNGI = 2))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether it came out exceptional
 /obj/item/reagent_containers/food/snacks/plump_pie/Initialize(mapload)
 	. = ..()
 	if(prob(10))
@@ -2265,6 +2268,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledslimecore, null,
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit, null, list(REAGENT_ID_FUNGI = 1))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether it came out exceptional
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/Initialize(mapload)
 	. = ..()
 	if(prob(10))
@@ -2419,6 +2423,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
+// ALLOW(init/INSTANCE_STATE): rolls which mystery recipe the soup is
 /obj/item/reagent_containers/food/snacks/mysterysoup/Initialize(mapload)
 	. = ..()
 	var/mysteryselect = pick(1,2,3,4,5,6,7,8,9,10)
@@ -2471,6 +2476,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wishsoup, null, list(REAGENT_ID_WATER = 10))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether the wish came true
 /obj/item/reagent_containers/food/snacks/wishsoup/Initialize(mapload)
 	. = ..()
 	if(prob(25))
@@ -4870,6 +4876,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/truffle, null, list(RE
 	name = "mystery chocolate truffle"
 	desc = "Rich bite-sized chocolate with a mystery filling!"
 
+// ALLOW(init/INSTANCE_STATE): rolls the truffle's filling
 /obj/item/reagent_containers/food/snacks/truffle/random/Initialize(mapload)
 	. = ..()
 	var/reagent_string = pick(list(REAGENT_ID_CREAM,REAGENT_ID_CHERRYJELLY,REAGENT_ID_MINT,REAGENT_ID_FROSTOIL,REAGENT_ID_CAPSAICIN,REAGENT_ID_CREAM,REAGENT_ID_COFFEE,REAGENT_ID_MILKSHAKE))
@@ -5047,6 +5054,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesymash, null, list
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nugget, null, list(REAGENT_ID_PROTEIN = 4))
 
+// ALLOW(init/INSTANCE_STATE): rolls the nugget's shape
 /obj/item/reagent_containers/food/snacks/nugget/Initialize(mapload)
 	. = ..()
 	var/shape = pick("lump", "star", "lizard", "corgi")
@@ -6516,6 +6524,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocobanana, null, lis
 	nutriment_amt = 10
 	bitesize = 3
 	filling_color = "#336b42"
+// ALLOW(init/INSTANCE_STATE): rolls which bad reagent the old food carries
 /obj/item/reagent_containers/food/snacks/old/Initialize(mapload)
 	.=..()
 	reagents.add_reagent(pick(list(
@@ -7123,6 +7132,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greentealeaf, null, li
 	nutriment_desc = list("bread" = 4, "sweetness" = 6)
 	bitesize = 4
 
+// ALLOW(init/INSTANCE_STATE): a one in a hundred roll swaps it for the sequel
 /obj/item/reagent_containers/food/snacks/tastybread/Initialize(mapload)
 	. = ..()
 	if(prob(1))
@@ -7954,6 +7964,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 										"ace" = 3)
 	var/randomize_bowl_color = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls its bowl colour when its type says to
 /obj/item/reagent_containers/food/snacks/ratpackramen/Initialize(mapload)
 	. = ..()
 	if(randomize_bowl_color)

@@ -306,6 +306,7 @@
 	item_icons = null
 	w_class = ITEMSIZE_SMALL
 
+// ALLOW(init/INSTANCE_STATE): lays down the bird it holds
 /obj/item/holder/bird/Initialize(mapload)
 	. = ..()
 	held_mob?.lay_down()

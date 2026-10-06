@@ -8,6 +8,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_hooded_hoodie, list(
 	"yellowtrim" = list("name" = "yellow-trimmed hoodie", "icon_state" = "hoodie_yellowtrim", "desc" = "A warm jacket, now featuring a hood and an eye-catching yellow trim!"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/suit/storage/hooded/hoodie/Initialize(mapload)
 	apply_variant()
 	. = ..()

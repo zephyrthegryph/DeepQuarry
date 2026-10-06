@@ -163,6 +163,7 @@ CAPABILITIES(/obj/item/projectile)
 	owns_one(nameof(trajectory), /datum/point/vector)
 	owns_many(nameof(beam_segments))
 
+// ALLOW(init/INSTANCE_STATE): binds to the casing it is made inside
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/ammo_casing))

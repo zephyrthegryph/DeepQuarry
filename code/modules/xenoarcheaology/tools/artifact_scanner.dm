@@ -14,6 +14,7 @@
 	)
 	..()
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/artifact_scanpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

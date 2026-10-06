@@ -48,6 +48,7 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 	else
 		. = ..()
 
+// ALLOW(init/INSTANCE_STATE): names and numbers itself from its overmap coordinates
 /turf/unsimulated/map/Initialize(mapload)
 	. = ..()
 	name = "[x]-[y]"

@@ -384,6 +384,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 
 	var/body_color
 
+// ALLOW(init/INSTANCE_STATE): rolls its body colour
 /mob/living/simple_mob/animal/space/carp/station/Initialize(mapload)
 	.=..()
 

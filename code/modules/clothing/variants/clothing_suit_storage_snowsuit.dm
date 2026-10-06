@@ -9,6 +9,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_snowsuit, list(
 	"science" = list("name" = "science snowsuit", "icon_state" = "snowsuit_science"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/suit/storage/snowsuit/Initialize(mapload)
 	apply_variant()
 	. = ..()

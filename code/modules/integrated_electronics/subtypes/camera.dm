@@ -30,6 +30,7 @@
 CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 	owns_one(nameof(camera), /obj/machinery/camera/intcircuit)
 
+// ALLOW(init/INSTANCE_STATE): gets its own camera network id and the camera that uses it
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"

@@ -6,6 +6,7 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
+// ALLOW(init/INSTANCE_STATE): an exosuit made on a player level carries a tracking beacon
 /obj/mecha/working/Initialize(mapload)
 	. = ..()
 	var/turf/T = get_turf(src)

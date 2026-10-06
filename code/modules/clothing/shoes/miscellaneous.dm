@@ -220,6 +220,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 	icon = 'icons/obj/clothing/ranger.dmi'
 	icon_state = "ranger_boots"
 
+// ALLOW(init/INSTANCE_STATE): its name and sprite follow the boot colour it was given
 /obj/item/clothing/shoes/boots/ranger/Initialize(mapload)
 	. = ..()
 	if(icon_state == "ranger_boots")

@@ -64,6 +64,7 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
 
+// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
 /mob/living/simple_mob/vore/raptor/Initialize(mapload)
 	. = ..()
 	if(random_skin)

@@ -7,6 +7,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_replika, list(
 	"star" = list("name" = "security-technician replikant chestplate", "icon_state" = "star", "desc" = "A sloped titanium-composite chest plate with a matte black finish, fitted for use by 2nd generation biosynthetics. Comes with red adjustable straps."),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/replika/Initialize(mapload)
 	apply_variant()
 	. = ..()

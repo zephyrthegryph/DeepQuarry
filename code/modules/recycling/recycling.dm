@@ -9,6 +9,7 @@
 	var/negative_dir = null // ition
 	var/hand_fed = TRUE
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/recycling/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

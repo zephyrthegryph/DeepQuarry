@@ -346,6 +346,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
+// ALLOW(init/INSTANCE_STATE): binds to the AI it is made inside and stands where that AI is
 /obj/machinery/ai_powersupply/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(powered_ai), loc)

@@ -111,6 +111,7 @@ CAPABILITIES(/obj/mecha/medical/odysseus)
 /obj/mecha/medical/odysseus/old
 	desc = "An aging combat exosuit utilized by many corporations. Originally developed to combat hostile alien lifeforms. This one is particularly worn looking and likely isn't as sturdy."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/medical/odysseus/old/Initialize(mapload)
 	. = ..()
 	max_integrity = 50	//Just slightly worse.

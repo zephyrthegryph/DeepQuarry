@@ -47,6 +47,7 @@
 	// type -> /datum/category_item/partslathe/
 	var/static/list/partslathe_recipies
 
+// ALLOW(init/INSTANCE_STATE): takes its built parts and lists what they can make
 /obj/machinery/partslathe/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

@@ -31,6 +31,7 @@ GLOBAL_VAR(bomb_set)
 	var/wire_view = FALSE
 	use_power = USE_POWER_OFF
 
+// ALLOW(init/INSTANCE_STATE): rolls its code and its wire layout for each bomb
 /obj/machinery/nuclearbomb/Initialize(mapload)
 	. = ..()
 	r_code = "[rand(10000, 99999.0)]"//Creates a random code upon object spawn.

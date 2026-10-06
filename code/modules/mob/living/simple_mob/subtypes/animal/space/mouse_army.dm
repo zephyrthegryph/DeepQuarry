@@ -59,6 +59,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
+// ALLOW(init/INSTANCE_STATE): rolls its number and its rank
 /mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
 	. = ..()
 

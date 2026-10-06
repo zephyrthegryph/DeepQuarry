@@ -9,6 +9,7 @@
 	var/image/turf_image
 	var/list/decals
 
+// ALLOW(init/INSTANCE_STATE): remembers the turf it was placed on and waits in nullspace
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
@@ -227,6 +228,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 	light_on = TRUE
 	block_tele = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls its alien pod tile and lights it
 /turf/simulated/shuttle/floor/alien/Initialize(mapload)
 	. = ..()
 	icon_state = "alienpod[rand(1, 9)]"

@@ -34,6 +34,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	without("ui_open")
 	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
 
+// ALLOW(init/INSTANCE_STATE): gathers the papers the map placed on its tile
 /obj/structure/filingcabinet/Initialize(mapload)
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))

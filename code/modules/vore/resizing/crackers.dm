@@ -24,6 +24,7 @@
 	var/prize //What prize we have loaded
 	var/joke //What joke we have loaded
 
+// ALLOW(init/INSTANCE_STATE): rolls its wrapper, its prize and its joke
 /obj/item/cracker/Initialize(mapload)
 	. = ..()
 	var/style = pick("blue","green","yellow","red","heart","hazard")
@@ -166,6 +167,7 @@
 	body_parts_covered = 0
 	armor_spec = ""
 
+// ALLOW(init/INSTANCE_STATE): rolls its crown colour
 /obj/item/clothing/head/paper_crown/Initialize(mapload)
 	var/list/styles = list("paper_crown_blue","paper_crown_green","paper_crown_yellow","paper_crown_red","paper_crown_pink")
 	var/style = pick(styles)

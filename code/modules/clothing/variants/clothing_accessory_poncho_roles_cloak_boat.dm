@@ -13,6 +13,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_poncho_roles_cloak_boat, list(
 	"science" = list("name" = "research boat cloak", "icon_state" = "sciboatcloak", "item_state" = "sciboatcloak"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/poncho/roles/cloak/boat/Initialize(mapload)
 	apply_variant()
 	. = ..()

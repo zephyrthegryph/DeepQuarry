@@ -78,6 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/random
 	seed_type = null
 
+// ALLOW(init/INSTANCE_STATE): creates a random seed for this packet
 /obj/item/seeds/random/Initialize(mapload)
 	proto_set(src, nameof(seed_static), SSplants.create_random_seed())
 	seed_type = seed().name

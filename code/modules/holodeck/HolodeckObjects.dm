@@ -111,6 +111,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 	base_icon = 'icons/turf/flooring/asteroid.dmi'
 	initial_flooring = null
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this tile shows rocks
 /turf/simulated/floor/holofloor/desert/Initialize(mapload)
 	. = ..()
 	if(prob(10))

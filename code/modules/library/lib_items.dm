@@ -31,6 +31,7 @@ CAPABILITIES(/obj/structure/bookcase)
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
 		then(PROC_REF(title_shelf)))
 
+// ALLOW(init/INSTANCE_STATE): gathers the books the map placed on its tile
 /obj/structure/bookcase/Initialize(mapload)
 	. = ..()
 	for(var/obj/item/I in contents_of(loc))

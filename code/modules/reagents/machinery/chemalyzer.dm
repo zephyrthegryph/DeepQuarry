@@ -15,6 +15,7 @@
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/list/found_reagents
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/chemical_analyzer/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
