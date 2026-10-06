@@ -269,11 +269,11 @@
 /datum/unit_test/dq_body_pin/hurt_limb_pain/pin(mob/living/carbon/human/H)
 	H.injure(INJURY_BLUNT, 15, BP_L_LEG, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.set_stat(CONSCIOUS)
-	H.last_pain_message = ""
-	H.next_pain_time = 0
-	H.multilimb_pain_time = 0
+	H.body.last_pain_message = ""
+	H.body.next_pain_time = 0
+	H.body.multilimb_pain_time = 0
 	body_pin_pain_step(H)
-	TEST_ASSERT(findtext(H.last_pain_message, "leg"), "a hurt leg sends a pain message (got '[H.last_pain_message]')")
+	TEST_ASSERT(findtext(H.body.last_pain_message, "leg"), "a hurt leg sends a pain message (got '[H.body.last_pain_message]')")
 
 /// Runs the pain messaging once.
 /proc/body_pin_pain_step(mob/living/carbon/human/H)

@@ -1,15 +1,21 @@
 /mob/proc/flash_pain()
 	flick("pain",pain)
 
-/mob/var/last_pain_message = ""
-/mob/var/next_pain_time = 0
-/mob/var/multilimb_pain_time = 0 // Global pain cooldown exists to prevent spam for multi-limb damage
+/datum/body
+	/// The last pain message the person was shown (a repeat waits for its cooldown).
+	var/last_pain_message = ""
+	/// COOLDOWN: the next pain message.
+	var/next_pain_time = 0
+	/// COOLDOWN: the next message about a hurt limb, so several hurt limbs don't spam.
+	var/multilimb_pain_time = 0
 
 
 // message is the custom message to be displayed
 // power decides how much painkillers will stop the message
 // force means it ignores anti-spam timer
 /mob/living/carbon/proc/custom_pain(message, power, force)
+	if(!body)
+		return 0
 	if((!message || stat || !can_feel_pain() || factor(BF_ANALGESIA) > power) && !synth_cosmetic_pain)
 		return 0
 	message = span_danger("[message]")
@@ -24,28 +30,28 @@
 				force = 0
 			if(6 to 20)
 				force = prob(1)
-		if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
+		if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
 			switch(power)
 				if(0 to 5)
-					COOLDOWN_START(src, next_pain_time, 300 SECONDS)
-					COOLDOWN_START(src, multilimb_pain_time, 1 MINUTE)
+					COOLDOWN_START(body, next_pain_time, 300 SECONDS)
+					COOLDOWN_START(body, multilimb_pain_time, 1 MINUTE)
 				if(6 to 20)
-					COOLDOWN_START(src, next_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
-					COOLDOWN_START(src, multilimb_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
+					COOLDOWN_START(body, next_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
+					COOLDOWN_START(body, multilimb_pain_time, clamp((100 - power) SECONDS, 80 SECONDS, 95 SECONDS))
 				if(21 to INFINITY)
-					COOLDOWN_START(src, next_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
-					COOLDOWN_START(src, multilimb_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
-			last_pain_message = message
+					COOLDOWN_START(body, next_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
+					COOLDOWN_START(body, multilimb_pain_time, clamp((200 - power) SECONDS, 100 SECONDS, 3 MINUTES))
+			body.last_pain_message = message
 			to_chat(src,message)
 			// Emote in pain for custom pain, too
 			if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 				emote("pain")
 
-	else if(force || (message != last_pain_message) || (COOLDOWN_FINISHED(src, next_pain_time)))
-		last_pain_message = message
+	else if(force || (message != body.last_pain_message) || (COOLDOWN_FINISHED(body, next_pain_time)))
+		body.last_pain_message = message
 		to_chat(src,message)
-		COOLDOWN_START(src, next_pain_time, (10 SECONDS - power))
-		COOLDOWN_START(src, multilimb_pain_time, (10 SECONDS - power))
+		COOLDOWN_START(body, next_pain_time, (10 SECONDS - power))
+		COOLDOWN_START(body, multilimb_pain_time, (10 SECONDS - power))
 		// Emote in pain for custom pain, too
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
@@ -78,7 +84,7 @@ STAT(/mob/living/carbon/human, pain_felt, ANY)
 	if(!self.can_feel_pain() && !self.synth_cosmetic_pain)
 		return
 
-	if(!COOLDOWN_FINISHED(self, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
+	if(!COOLDOWN_FINISHED(self.body, multilimb_pain_time)) //prevents spam in case of multi-limb injuries.
 		return
 	var/maxdam = 0
 	var/obj/item/organ/external/damaged_organ = null
