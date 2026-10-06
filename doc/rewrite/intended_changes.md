@@ -2400,3 +2400,5 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   power region, the grid checker's flag, the firework launcher's redraw, the anomaly harvester lets go). The six wall displays share
   `display_disconnect_op()` (2 s, needs a board). The chemical dispenser's and synthesizer's cartridge removal ask on the op. The drill's
   label op asks instead of opening its prompt from the effect.
+
+* **Open prompts are pinned, not changed.** An op paused at a prompt was already cancelled on losing its actor, target, held item, reach (adjacent bindings, the window) or what its requirements read, and re-ran its requirements on the answer; `dq_prompt_interrupt/*` now pins it (walk away, drop, delete, power loss, answer after a requirement changed, `keeps = 0`, chains). No behaviour changed.

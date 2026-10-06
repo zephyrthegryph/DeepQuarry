@@ -2134,6 +2134,16 @@ op("rename", label("Rename"), in_hand(), asks(/datum/prompt/text/rename), then(P
       <li><strong><code>shares_effects(key)</code></strong> runs another op's Require and effects in this op's act, with no Match, no Wait and none of its costs, and the other op may not <code>asks()</code>. A <code>shares_effects</code> cycle is a build error. It is the explicit, rare form of sharing; to give an existing op a second input, add a binding (<code>extend(key, binds(ui_act()))</code>), which runs the whole op.</li>
     </ul>
   </div>
+  <h3>Interruption and flows</h3>
+  <div class="prose">
+    <ul>
+      <li><strong>An op paused at an <code>asks()</code> or <code>confirms()</code> holds what it holds while it waits</strong> (actor, target, held item, reach, and what its requirements read: a machine's power or operability). If any of it is lost while the prompt is open, the op is cancelled, the prompt closes, and the actor gets the same feedback a cancelled <code>wait()</code> gives (<code>on_interrupt()</code> runs as for a wait). A deleted actor, target or held item cancels it whatever the keeps say.</li>
+      <li><strong>An answer re-runs the requirements before the op goes on.</strong> A requirement that now refuses ends the op with that requirement's reason; nothing is spent (costs are reserved after the last answer).</li>
+      <li><strong>A multi-step flow is a chain of <code>asks()</code> steps in one op</strong>, each step's answer kept in the op (<code>A.step_value("name")</code>, <code>when =</code> skips a step). There is no flow type. The same cancellation applies between steps.</li>
+      <li><strong><code>keeps =</code> on <code>asks()</code> is the opt-in</strong> for the rare prompt that outlives the actor-side keeps (<code>keeps = 0</code>: the actor may walk away or drop the item and still answer). Requirements are re-run on the answer regardless. The default also drops <code>STAY</code>: an open question outlives a step the actor takes unless the binding has a spatial reach.</li>
+      <li>Pinned by <code>dq_prompt_interrupt/*</code>.</li>
+    </ul>
+  </div>
   <h3>A new kind of part</h3>
   <pre><code><span class="c">// A part type declares how it combines and implements any of the stage hooks:
 //   match(A)        Match: TRUE if the op matches (silent on failure)
