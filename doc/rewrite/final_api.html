@@ -1195,12 +1195,12 @@ starts_args = list(...)                    <span class="c">// constructor argume
   <div class="tbl"><table>
     <thead><tr><th>Moment</th><th>Form</th></tr></thead>
     <tbody>
-      <tr><td>Per-instance setup</td><td><code>Initialize(mapload, ...)</code> returning <code>..()</code>, for per-instance state only. Starting contents come from <code>starts =</code>; capability setup from <code>on_holder_init(A)</code></td></tr>
+      <tr><td>Per-instance setup</td><td>Declared, not written: <code>rolls()</code> for randomness, <code>param()</code>/<code>make()</code> for constructor arguments, <code>contains()</code> and <code>starts =</code> for contents, <code>starts_as()</code> for a starting state, <code>derives()</code>, <code>registry()</code>, <code>radio_listen()</code>, <code>adjacency()</code>, <code>per_type()</code>, <code>knows()</code> (<a href="#lifeforms">Lifecycle forms</a>); capability setup from <code>on_holder_init(A)</code>. An <code>Initialize(mapload, ...)</code> override that remains sets per-instance state no form says and carries <code>ALLOW(init/CODE)</code></td></tr>
       <tr><td>Placed in the world / removed</td><td><code>on_materialize()</code> / <code>on_dematerialize()</code></td></tr>
       <tr><td>After init, timed</td><td><code>after_init(delay, parts...)</code> (an <code>after()</code> armed when the instance initializes, <a href="#time">section 3</a>)</td></tr>
       <tr><td>Map-load-only atoms</td><td><code>map_resolver(PROC_REF(x))</code>. Resolved atoms are never initialized</td></tr>
       <tr><td>Random spawns</td><td><code>DECLARE_LOOT</code> tables, <code>loot_spawn()</code>, <code>loot_search()</code> (kept; already declarative)</td></tr>
-      <tr><td>Deleting</td><td>A verb when one fits: <code>consume(item, actor)</code>, <code>replace_with(new_type, args...)</code>, <code>expire(N)</code>, <code>slot_clear(slot)</code>, <code>ledger_empty()</code>. Otherwise <code>qdel()</code>. Never <code>del()</code>. <code>replace_with</code> creates a <code>new_type</code> where the holder is, passes <code>args</code> to its <code>Initialize</code>, then deletes the holder; it works across kinds, so an obj can become a turf (a girder raising a wall, <a href="#ex-girder">16.10</a>)</td></tr>
+      <tr><td>Deleting</td><td>A verb that says why: <code>spent(thing, by)</code>, <code>consumed(thing, by)</code>, <code>destroyed(thing, by, cause)</code>, <code>dissolved(thing, by)</code>, <code>consume(item, actor)</code>, <code>replace_with(new_type, args...)</code>, <code>expire(N)</code>, <code>slot_clear(slot)</code>, <code>ledger_empty()</code>, or a scope that ends it (<code>lives_while()</code>). <code>qdel()</code> is the engine's (<a href="#lifeforms">Lifecycle forms</a>). Never <code>del()</code>. <code>replace_with</code> creates a <code>new_type</code> where the holder is, passes <code>args</code> to its <code>Initialize</code>, then deletes the holder; it works across kinds, so an obj can become a turf (a girder raising a wall, <a href="#ex-girder">16.10</a>)</td></tr>
       <tr><td>Consequences of deletion</td><td><code>on_destroy(force)</code> calling <code>..()</code>; <code>lifecycle_prerelease()</code> for teardown that must read declared vars; <code>lifecycle_keep(force)</code> to refuse. The destroy transaction clears relations, deletes owned values, cancels timers and holds, closes UIs and tears down every activation the entity held or sourced (X1)</td></tr>
       <tr><td>Short-lived records</td><td><code>/datum/pooled</code> with <code>take(type)</code> / <code>release()</code>; fields reset to their initial values</td></tr>
       <tr><td>Per-type constant data</td><td><code>TYPE_TABLE</code>, shared caches (<code>DECLARE_SHARED_CACHE</code>, <code>CACHED_*</code>), variants (kept; caching tools, not state)</td></tr>
@@ -1231,6 +1231,107 @@ starts_args = list(...)                    <span class="c">// constructor argume
       <li>Slots: <code>/datum/slot_def</code>, <code>SLOT_DROP_HOLDER</code>, the third requirement language for slots (<code>hold_spec</code>, <code>HOLD_ONLY</code>, <code>REQ_*</code> predicates).</li>
       <li>Pools: <code>POOL_DECLARE</code>/<code>POOL_RESET</code>. Entity handles in data: <code>om_handle</code> and <code>om_resolve</code> (now <code>ref_token</code> and <code>resolve_token</code>).</li>
       <li>Behaviours attached to a type with <code>om_attach</code> (now entries) or at runtime (now <code>grant</code>).</li>
+    </ul>
+  </div>
+  <h3 id="lifeforms">Lifecycle forms</h3>
+  <div class="prose">
+    <p>Nine forms take what an <code>Initialize()</code> override, a <code>qdel(src)</code> or a read of <code>usr</code> did by hand. Each is an entry of a <code>CAPABILITIES</code> block or an engine verb (<code>code/engine/lifeforms/</code>; one test file per form, <code>dq_lifeform_*_tests.dm</code>). Where an entry follows a var (a registry key, a radio frequency, a <code>derives()</code> input, a scope), the var publishes its writes: it is <code>TRACKED</code> or written through a setter that calls <code>tracked_changed()</code>.</p>
+    <p><strong>Names.</strong> Two generator names of the approved design clash with BYOND and are renamed: <code>range</code> is BYOND's own proc and <code>between</code> is a clamp macro here, so the number generator is <code>range_of(lo, hi, step)</code>. <code>chance(p)</code> is the existing op part, read as a generator inside <code>rolls()</code>. A roller's draws are <code>R.number()</code>, <code>R.choose()</code>, <code>R.chance()</code>, <code>R.weighted()</code>, <code>R.unit()</code> (BYOND's <code>rand</code>, <code>pick</code>, <code>prob</code> cannot be proc names).</p>
+  </div>
+
+  <h4>1. rolls(): per-instance randomness</h4>
+  <div class="sig">rolls(target, generator, when = null, from = null)
+<span class="c">// generators</span>
+pick_one(list) · pick_weighted(list(a = 3, b = 1)) · range_of(lo, hi, step = 1) · PIXEL_JITTER(n) · chance(p) · PROC_REF(x)   <span class="c">// x(datum/roller/R)</span>
+rolls_fix_seed(seed)                                                       <span class="c">// tests: the same seed and position roll the same</span></div>
+  <div class="prose">
+    <ul>
+      <li><strong>When.</strong> At the root of the <code>Initialize()</code> chain (a plain datum: <code>New()</code>), before the type's code after <code>..()</code> reads the value. <code>ROLL_PIXEL</code> with <code>PIXEL_JITTER(n)</code> sets both pixel offsets.</li>
+      <li><strong>Seeded.</strong> Each instance draws from its own stream: the round seed with its map position (turf and index among the same type there) for a map-loaded instance, its creator's stream for an instance created while another initializes (<code>contains()</code>, starts, <code>make(..., by =)</code>), otherwise the round seed and a creation serial. A draw is <code>md5</code> of the stream and a counter: native, stable across builds.</li>
+      <li><strong>Suppressed</strong> when the target already differs from its compiled default: a map edit, a <code>param()</code> or a <code>make()</code> argument wins.</li>
+      <li><strong>Gated and ordered.</strong> <code>when =</code> is a condition read after the rolls before it; <code>from = list(nameof(a))</code> makes the engine roll <code>a</code> first, and a cycle is a declaration error.</li>
+    </ul>
+  </div>
+
+  <h4>2. param() and make(): named, typed constructor arguments</h4>
+  <div class="sig">param(nameof(var), schema = null, default = null, required = FALSE, pos = null)   <span class="c">// schema: int(), num(), schema_text(), schema_ref(T), enum(), or a type path</span>
+built_from(nameof(var))                                                         <span class="c">// the parts a make(..., parts =) hands over</span>
+make(type, at = null, by = null, parts = null, name = value...)                 <span class="c">// generated: its named params are every name a param() declares</span>
+make_args(name = value...)                                                      <span class="c">// the same, as a starts_args value</span></div>
+  <div class="prose">
+    <ul>
+      <li>A param is set before init: <code>make()</code> passes a record that <code>/atom/New()</code> (a datum's <code>New()</code>) applies before anything of the type runs. A given value is checked against its schema; a refused one is reported and falls back. <code>default =</code> (a constant or <code>PROC_REF</code>) fills one nothing gave; <code>required = TRUE</code> reports an instance made without one.</li>
+      <li><code>pos = N</code> maps the N-th constructor argument after the location to the param, so a caller still writing <code>new /T(loc, a)</code> keeps working while the codemod moves the callers it can see to <code>make()</code>.</li>
+      <li><strong>Checked.</strong> DM checks each <code>make()</code> name against the union; the <code>lifeforms</code> lint checks it against the made type (<code>make_unknown_param</code>, <code>make_missing_required</code>, <code>make_parts_without_built_from</code>).</li>
+    </ul>
+  </div>
+
+  <h4>3. registry() and radio_listen(): membership that follows the instance</h4>
+  <div class="sig">registry(REGISTRY_X, key = nameof(var), by = REG_GLOBAL | REG_Z | REG_AREA, when = null)
+registry_get(REGISTRY_X, key, z = null, area = null) · registry_all(REGISTRY_X, key = null, z = null, area = null)
+radio_listen(freq = nameof(var), filter = RADIO_X | PROC_REF(x))</div>
+  <div class="prose">
+    <ul>
+      <li>A generalised <code>membership()</code>: in the registry from init to destruction, filed under its key and, with <code>by =</code>, its z-level and area. A write of the key re-files it; a move re-files it under its new place; its destruction removes it. The plain member list (<code>REGISTRY_MEMBERS(id)</code>) holds it too.</li>
+      <li><code>radio_listen()</code> is the area air device's listener (<code>code/domains/atmos/area_air_device.dm</code>) as a form: it listens on the frequency its var holds from init, retunes when the var is written and stops when the instance ends.</li>
+    </ul>
+  </div>
+
+  <h4>4. adjacency(): a tracked neighbour relation</h4>
+  <div class="sig">adjacency(KIND, dirs = ADJ_CARDINAL | ADJ_DIAGONALS | ADJ_VERTICAL, connects = PROC_REF(x), into = nameof(var), when = cond, changed = PROC_REF(y))
+adjacency_seen(holder, KIND)                                    <span class="c">// list(member = junction bit)</span></div>
+  <div class="prose">
+    <ul>
+      <li>Members of one KIND see each other. The engine places a member when it initializes on a turf, re-places it when it moves, takes it out while <code>when =</code> is false and when it ends. Every change asks the index which members' neighbour sets changed and recomputes exactly those: <code>connects</code> is <code>x(other, junction_bit)</code>, <code>into</code> receives the junction mask (faces as BYOND writes them, corners at <code>ADJ_JUNCTION_NE</code>..<code>SW</code>) as a tracked write, <code>changed</code> runs after the mask changed.</li>
+      <li>The spatial index and its change events are Rust (<code>verdigris/core/src/adjacency.rs</code>, binds <code>vg_adjacency_*</code> in <code>verdigris/ffi/src/adjacency.rs</code>), keyed by kind and cell beside the grid; DM keeps one handle per member.</li>
+      <li>It replaces <code>update_neighbours()</code> in <code>Initialize()</code> and <code>on_destroy()</code>: placing, moving, anchoring and a neighbour's creation or destruction all reach the members concerned.</li>
+    </ul>
+  </div>
+
+  <h4>5. per_type(): a lazily built read-only table</h4>
+  <div class="sig">per_type(nameof(var), PROC_REF(build))</div>
+  <div class="prose"><p>The first instance of the type calls <code>build()</code>; every instance's var names that one table before its init code runs. A subtype re-declaring it gets its own. The table is read-only: the <code>lifeforms</code> lint rejects a write to the var outside its build proc (<code>per_type_write</code>).</p></div>
+
+  <h4>6. OWNER, contains(), owns_many(count =) and knows()</h4>
+  <div class="sig">contains(type, slot = null, count = 1, when = null, args = list(OWNER, ...))
+owns_many(nameof(var), type, count = N, starts = T)
+starts_args = list(OWNER) · make_args(owner = OWNER)          <span class="c">// OWNER: the holder (in make(): by =)</span>
+knows(LANGUAGE_X, when = null)</div>
+  <div class="prose"><p><code>contains()</code> replaces an <code>Initialize()</code> that only did <code>new /T(src)</code>: the contents are made with the capabilities' init, in nullspace, then moved into the slot or the holder, rolling from the holder's stream. <code>knows()</code> gives a mob a language at init.</p></div>
+
+  <h4>7. starts_as() and derives()</h4>
+  <div class="sig">starts_as("cap.op_key" | STATE_KEY)
+derives(nameof(target), PROC_REF(compute), from = list(nameof(a), nameof(b)))</div>
+  <div class="prose">
+    <ul>
+      <li><code>starts_as()</code> runs an op's effects at creation, after the capabilities initialized: no actor, no requirements, no costs, no messages (<code>GLOB.starts_as_running</code> is set while it runs). A state key runs the op that sets it, or sets the key when no op does.</li>
+      <li><code>derives()</code> keeps the target equal to <code>compute()</code>: at init, then whenever an input in <code>from</code> is written. The target is published, so another <code>derives()</code> or an <code>on_change()</code> can read it.</li>
+    </ul>
+  </div>
+
+  <h4>8. Declared lifetimes</h4>
+  <div class="sig">owns_one / owns_many(on_destroy =)                        <span class="c">// on a plain datum too: run from New()</span>
+lives_while(nameof(scope_var) | condition, watches = list(nameof(v)))
+on_ending(PROC_REF(x))                                         <span class="c">// x(cause, by)</span>
+spent(thing, by) · consumed(thing, by) · destroyed(thing, by, cause) · dissolved(thing, by)
+expire(after) · replace_with(path, ...) · consume(item, actor) · slot_clear(slot)        <span class="c">// kept</span></div>
+  <div class="prose">
+    <ul>
+      <li><strong>Owned.</strong> A plain datum's <code>owns_one</code>/<code>owns_many</code> and their <code>starts =</code> run from <code>New()</code>; its owned values go with it.</li>
+      <li><strong>Scoped.</strong> <code>lives_while(nameof(host))</code> ends the holder when the datum the var names ends (cause <code>END_OWNER</code>); <code>lives_while(nameof(flag))</code> or a condition ends it when that turns false (<code>END_SCOPE</code>). Windows, requests, conditions and slots use it instead of a host's <code>on_destroy()</code> deleting them.</li>
+      <li><strong>Caused endings.</strong> Every ending publishes <code>/datum/notice/ended</code> with <code>cause</code> and <code>by</code> (when anything listens) and runs the thing's <code>on_ending()</code> hooks, first in the destroy transaction. An ending no verb named is <code>END_ENGINE</code>.</li>
+      <li><strong>qdel() is the engine's.</strong> Content ends things through the verbs; the <code>escape_hatches</code> lint counts the content <code>qdel(</code> sites and the <code>ALLOW(lifecycle)</code> keeps against ceilings that only fall, and a kind at 0 is banned.</li>
+    </ul>
+  </div>
+
+  <h4>9. Input with an actor</h4>
+  <div class="sig">click_on(PROC_REF(x) | "op.key") · drag_onto(PROC_REF(x) | "op.key", onto = /T) · hover(PROC_REF(x))     <span class="c">// x(datum/act/input/A): A.actor, A.over, A.entered</span>
+tooltip(PROC_REF(x), theme = null)                                                          <span class="c">// x(mob/user) answers list(title, content)</span>
+with_actor(actor, CALLBACK(...))</div>
+  <div class="prose">
+    <ul>
+      <li>BYOND hands DM the acting mob only in the client's native hooks, as <code>usr</code>. For a type that declares one of these entries, <code>analyze gen declare</code> writes the native override (<code>Click()</code>, <code>MouseDrop()</code>, <code>MouseEntered()</code>/<code>MouseExited()</code>) into the generated engine code: it reads <code>usr</code> once and hands the engine the actor. An op key runs through <code>perform_op()</code> with that actor.</li>
+      <li><code>with_actor()</code> is the engine's one writer of <code>usr</code>: admin and callback code that calls BYOND procs that still read it runs under it. <code>usr</code> outside the engine and verb bodies is counted by <code>escape_hatches</code> and banned at 0.</li>
     </ul>
   </div>
 </section>

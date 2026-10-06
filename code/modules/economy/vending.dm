@@ -499,7 +499,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// The price of the chosen product (RES_CREDITS: what the customer pays at the commit).
 /obj/machinery/vending/proc/vend_price(datum/act/op/A)
-	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"]) // ALLOW(handlers): a costs() amount is asked in the op's own context (its arguments), which the engine passes
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
 	return R ? max(R.price, 0) : 0
 
 /// needs: a product that costs money can be paid for here: no law-bound unit buys, the vendor account is up, and the customer has cash or a card.

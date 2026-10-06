@@ -6,6 +6,7 @@
 //! generated: see `tools/build/lib/verdigris_bindings.ts`.
 
 mod abi;
+mod adjacency;
 pub mod allocator;
 mod bulk;
 pub mod entity;

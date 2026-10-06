@@ -29,6 +29,7 @@
 			holder.drop_from_inventory(item)
 			if(item.loc == holder)
 				return FALSE
+	ending_cause(item, END_CONSUMED, actor)
 	qdel(item)
 	return TRUE
 
@@ -65,6 +66,7 @@
 			return null
 		original.lifecycle_successor = built
 		om_handle_forward(original, built)
+		ending_cause(original, END_REPLACED, built)
 		qdel(original)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built))
 			move_into(holder, slot_id, built)
@@ -77,6 +79,7 @@
 		return null
 	original.lifecycle_successor = successor
 	om_handle_forward(original, successor)
+	ending_cause(original, END_REPLACED, successor)
 	qdel(original)
 	// Into the slot only once the original has left it: a one-item slot (a
 	// hand) would refuse the successor while the original still filled it.
@@ -115,6 +118,7 @@
 
 /atom/movable/proc/lifecycle_expire_now()
 	PRIVATE_PROC(TRUE)
+	ending_cause(src, END_EXPIRED)
 	qdel(src)
 
 /atom/movable/proc/lifecycle_arm_lifetime()

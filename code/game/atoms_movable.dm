@@ -342,6 +342,8 @@
 		heat_recouple()
 	if(GLOB.heat_followers_of[src])
 		heat_followers_moved(src)
+	if(lifeform_moves)
+		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
