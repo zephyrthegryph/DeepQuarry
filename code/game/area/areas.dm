@@ -258,16 +258,13 @@ TRACKED(/area, power_environ)
 /// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
 /// machines in the area learn of a flip through power_change() (unless `notify` is FALSE: the caller runs it itself); the vars are tracked, so
 /// what reads them as a stat input hears the write. Returns TRUE when a channel flipped.
-/area/proc/set_channels(equip, light, environ, notify = TRUE)
-	equip = !!equip
-	light = !!light
-	environ = !!environ
+/area/proc/set_channels(equip_on, light_on, environ_on, notify = TRUE)
 	var/flipped = FALSE
-	if(set_power_equip(equip))
+	if(set_power_equip(!!equip_on))
 		flipped = TRUE
-	if(set_power_light(light))
+	if(set_power_light(!!light_on))
 		flipped = TRUE
-	if(set_power_environ(environ))
+	if(set_power_environ(!!environ_on))
 		flipped = TRUE
 	if(flipped && notify)
 		power_change()

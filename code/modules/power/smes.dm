@@ -134,6 +134,11 @@ CAPABILITIES(/obj/machinery/power/smes)
 	op("input", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_input)))
 	op("output", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_output)))
 
+	// the hatch's tools answer before the window does (the window answers any click of the hand, a held tool included)
+	extend("machine_panel", priority(OP_PRIORITY_DEFAULT + 1))
+	extend("machine_panel_close", priority(OP_PRIORITY_DEFAULT + 1))
+	extend("machine_deconstruct", priority(OP_PRIORITY_DEFAULT + 1))
+
 	section(hatch, "What the tools do behind the open hatch")
 	op("add_cable", stack(/obj/item/stack/cable_coil, 10), at(SPACE_PANEL),
 		needs(req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))),

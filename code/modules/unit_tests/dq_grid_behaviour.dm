@@ -95,6 +95,29 @@ GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a
 	TEST_ASSERT_EQUAL(dq_grid_demand(A, ENVIRON) - environ, 0, "a deleted machine asks nothing")
 	TEST_ASSERT_EQUAL(dq_grid_demand(A, EQUIP) - equip, 0, "or of any other channel")
 
+/// Nothing can drift: every area's demand is exactly what a recount over the machines standing in it says (the tallies this replaced needed
+/// retally_power() for this to hold).
+/datum/unit_test/dq_grid_demand_equals_a_recount
+
+/datum/unit_test/dq_grid_demand_equals_a_recount/Run()
+	var/list/expected = list()
+	var/counted = 0
+	for(var/obj/machinery/M in world)
+		var/area/A = get_area(M)
+		if(!A || QDELETED(M))
+			continue
+		counted++
+		var/key = "[REF(A)]:[M.power_channel]"
+		expected[key] = (expected[key] || 0) + M.get_power_usage()
+	TEST_ASSERT(counted > 0, "no machines on the test map to recount")
+	var/checked = 0
+	for(var/area/A in world)
+		for(var/chan in list(EQUIP, LIGHT, ENVIRON))
+			var/want = expected["[REF(A)]:[chan]"] || 0
+			TEST_ASSERT_EQUAL(A.demand(chan), want, "[A] ([A.type]) channel [chan]: the demand is the recount")
+			checked++
+	TEST_ASSERT(checked > 0, "no areas checked")
+
 /// A machine carried to another area takes its draw with it.
 /datum/unit_test/dq_grid_demand_follows_the_area
 
@@ -356,21 +379,5 @@ GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a
 	dq_area_load(p2_load_spot(), -20000, EQUIP)
 	load_area.requires_power = requires
 	qdel(A)
-
-/datum/unit_test/dq_p2_smes/grid_debug_hatch
-
-/datum/unit_test/dq_p2_smes/grid_debug_hatch/run_gate()
-	var/obj/machinery/power/smes/S = p2_smes()
-	var/mob/living/carbon/human/H = p2_actor()
-	var/obj/item/tool/screwdriver/driver = tool(/obj/item/tool/screwdriver)
-	H.drop_item()
-	H.put_in_active_hand(driver)
-	var/list/opts = action_options(H, S, driver)
-	var/datum/op_result/R = test_click(H, S, driver)
-	p2_settle()
-	var/rows = ""
-	for(var/list/row as anything in opts)
-		rows += " [row["key"]]:[row["enabled"]]:[row["reason"]]"
-	Fail("result key=[R?.key] outcome=[R?.outcome] reason=[R?.reason] panel=[S.panel_open] flags=[S.maintenance_flags] held=[H.get_active_hand()] rows:[rows]")
 
 #endif

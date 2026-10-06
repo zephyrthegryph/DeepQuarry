@@ -1,6 +1,6 @@
 # The power grid, redone (rewrite/power-grid)
 
-Status: design plus staged implementation. Owner: the power-grid worker. Companion to `final_api.html` section 3 (`every`), section 5
+Status: stage 1 landed (area demand from contributions, area channel single writer, tests, SMES fixes); stage 2 (machines read the channel as a stat) waits on the NOPOWER conversion. See section 6. Owner: the power-grid worker. Companion to `final_api.html` section 3 (`every`), section 5
 (stats, `contributes`, `hold`), section 11 (capabilities, `powered`, `powered_by`) and the Machines note; `framework_gaps.md` F7;
 `intended_changes.md` (Machines, Power grid); `rust_architecture.md` step 3 and `verdigris/README.md` "M3 notes".
 
@@ -204,3 +204,37 @@ Nothing intended, with these exceptions (recorded in `intended_changes.md`):
   needed for this stage. A Rust change would require `cargo test --package verdigris`.
 * **The other worker.** `set_powered()` and the machine stat bits are being converted on the same branch; the powered contribution
   calls `set_powered()` until that lands, then reads the converted stat. Merge `origin/rewrite/machine-stats` often.
+
+## 6. Status and what was decided while building it
+
+Landed (all tests under `dq_grid_*`, `dq_p2_smes/*`, `dq_p2_apc/*`, `dq_power_*`, `dq_p2_chargers/*`, `dq_p2_lights/*` pass):
+
+* **Demand.** `STAT(/area, demand_equip|light|environ, SUM)`; every machine `links` `power_area` to `/area::power_machines` and contributes
+  through three `when(draws_<channel>, contributes_to(nameof(power_area), ...))` entries, so a machine holds one contribution row (its own
+  channel's). `contributes_to` settles the target's stat inline, so `area.demand(chan)` is current the moment a machine's `use_power`,
+  idle or active draw, channel or area changes (no marked-drain latency, which section 5 predicted). `use_power` / `idle_power_usage` /
+  `active_power_usage` / `power_channel` are the tracked inputs. Deleted: `static_*`, `power_use_change`, `use_power_static`,
+  `retally_power`, `check_static_power`, `REPORT_POWER_CONSUMPTION_CHANGE`, `power_subscribe`, `area.lights` (now `lights_here()`).
+  `dq_grid_demand_equals_a_recount` proves every area on the test map equals a recount over its machines.
+* **The push to Rust is level-triggered.** The first draft marked dirty areas from an `on_change` hook. Map load evaluates contributions
+  silently (no change event), so an APC would have started with no standing load until some machine next changed. `power_flush_areas()`
+  now compares each APC's area demand with what it last sent (`pushed_demand`) every step and writes the difference, logging
+  `POWER_DEMAND`. One-offs still use the dirty set (they are pulses).
+* **Channel state.** `power_equip/light/environ` are tracked and written only by `area.set_channels()` (the APC, the event that darkens an
+  area, the area's own setup, the chilling-wind secret); machines still hear a flip through `area.power_change()`.
+* **APC cells.** Everything that drained or charged an APC's cell with a bare `cell.use()` (power sink, solar grub, shocks sourced at an APC,
+  the APC's lighting overload) had its change handed back by the next poll, because Rust's charge is authoritative. They go through
+  `set_cell_charge()`.
+* **SMES / battery rack.** Their screwdriver and crowbar lost to the window's `ui_open` (a hand input answers a held tool); the hatch ops
+  now outrank it. The 20 `dq_p2_smes/*` failures on master were this one cause (16 on the branch base; 20 counting the rack and the
+  coil and cable ones behind the hatch).
+
+Not done, and why:
+
+* **Machines read the channel as a stat instead of `power_change()` pushing `set_powered()`.** The machine worker is converting the NOPOWER
+  bit to stats behind `set_powered()` on the same branch; the read would be a contribution to `STAT_OPERABLE` from
+  `power_area.power_<channel>`, one hop through the collection edge, and it replaces `power_change()`'s per-machine loop. Doing it
+  before their conversion lands would put two writers on the same state. Everything it needs is in place: the relation, the tracked channel
+  vars and their single writer.
+* **The one hold per channel.** See the deviation in 2.2: the read form replaces it.
+* **`power_grids` change channels** (`CHANGE_POWER_GRID_*`) and the DM region cache stay; they are the monitor's, not the area's.

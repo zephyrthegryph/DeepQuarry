@@ -104,8 +104,8 @@ Class Procs:
 	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
 	/// The area the machine draws its power through, as a relation (the other end of the area's power_machines): the machine contributes
 	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
-	/// handling (power_area_set()).
-	var/tmp/area/power_area
+	/// handling (rel_set() in Initialize and area_changed()).
+	var/tmp/area/power_area // ALLOW(base_vars): the relation to the area every machine contributes its draw to and reads its channels from, a link not a flag
 	var/tmp/power_init_complete = FALSE
 	/// Re-checks power (power_change()) when its area's channels change.
 	/// Lights listen on the reactor key instead.

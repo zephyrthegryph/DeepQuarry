@@ -98,6 +98,9 @@
 	var/power_event_count = 0
 	/// The reference text of the cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
 	var/tmp/pushed_cell_ref
+	/// The standing load (equipment, lighting, environment watts) Rust was last sent for this APC's area, or null when it must be sent again (a new
+	/// node, a rebind): power_flush_areas() compares it with the area's demand every step.
+	var/tmp/list/pushed_demand
 
 	// ── channel state ────────────────────────────────────────────────────────
 	// Rust reports these after every power step; push_to_rust() sends edits.
@@ -440,7 +443,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 				power_bind_now()
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 	seat_cell_charge(TRUE)
-	area?.power_loads_changed() // the new node takes the area's static loads
+	pushed_demand = null // the new node takes the area's standing load at the next power step
 	return !!power_region
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
@@ -873,7 +876,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!operating || shorted || grid_check)
 		return
 	if(cell && cell.charge >= 20)
-		cell.use(20)
+		set_cell_charge(cell.charge - 20) // the cell and the power domain's charge together
 		// One light a tick, each on its own clock.
 		var/delay = 0
 		for(var/obj/machinery/light/L as anything in area_lights())
