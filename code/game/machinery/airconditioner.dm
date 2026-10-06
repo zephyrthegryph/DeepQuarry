@@ -125,11 +125,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	op("set_target", tool(TOOL_MULTITOOL), label("Set target temperature"), wait(0),
 		asks(/datum/prompt/number, fields = list("title" = "Target Temperature", "question" = "Input a new target temperature, in degrees C.", "default" = computed(PROC_REF(target_celsius)), "min_value" = computed(PROC_REF(lowest_celsius)), "max_value" = MAX_ATMOS_TEMPERATURE, "timeout" = 0)),
 		then(PROC_REF(target_set)))
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/power/thermoregulator/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 /obj/machinery/power/thermoregulator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

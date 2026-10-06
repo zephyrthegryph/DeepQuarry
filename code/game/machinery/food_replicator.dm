@@ -33,12 +33,6 @@
 		/obj/item/stack/cable_coil = 5,
 	)
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/food_replicator/Initialize(mapload)
-	. = ..()
-
-	default_apply_parts()
-
 /obj/machinery/food_replicator/dismantle()
 	var/turf/T = get_turf(src)
 	if(T)
@@ -182,6 +176,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_beaker)))
+	default_parts()
 
 /obj/machinery/food_replicator/proc/work_step(datum/act/timer/A)
 	if(!operable())

@@ -20,11 +20,6 @@ OM_FIELD_VIEW(/obj/machinery/mech_recharger, atom/movable, charging, CHANGE_MACH
 /obj/machinery/mech_recharger/alien
 	icon = 'icons/turf/shuttle_alien_blue.dmi'
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/mech_recharger/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/mech_recharger/Crossed(atom/movable/M)
 	. = ..()
 	if(charging() == M)
@@ -52,6 +47,7 @@ OM_FIELD_VIEW(/obj/machinery/mech_recharger, atom/movable, charging, CHANGE_MACH
 CAPABILITIES(/obj/machinery/mech_recharger)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(charging), gate = PROC_REF(operable), wakes_on = list(nameof(charging), nameof(stat)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	default_parts()
 
 /obj/machinery/mech_recharger/proc/work_step(datum/act/timer/A)
 	if(!charging() || charging().loc != src.loc) // Could be qdel or teleport or something

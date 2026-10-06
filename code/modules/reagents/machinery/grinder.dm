@@ -30,11 +30,7 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 	op("interact", hand(), ungated(), label("Use"), needs(req(PROC_REF(menu_available), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(radial_choices)), "radial" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "choice"),
 		then(PROC_REF(radial_chosen)))
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/reagentgrinder/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 /obj/machinery/reagentgrinder/examine(mob/user)
 	. = ..()

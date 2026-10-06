@@ -61,11 +61,6 @@
 	var/efficiency
 TRACKED(/obj/machinery/clonepod, mess)
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/clonepod/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 // its containers drop out and the growing clone is ejected.
 
 /obj/machinery/clonepod/relations()
@@ -134,6 +129,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	default_parts()
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)

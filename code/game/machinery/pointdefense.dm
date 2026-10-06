@@ -130,10 +130,6 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /// Steps (watches for and shoots meteors) while switched on and working.
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/pointdefense/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/pointdefense/get_description_interaction()
 	. = ..()
@@ -212,6 +208,7 @@ CAPABILITIES(/obj/machinery/pointdefense)
 		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "timeout" = 0)),
 		then(PROC_REF(ident_entered)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	default_parts()
 
 /obj/machinery/pointdefense/proc/work_step(datum/act/timer/A)
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH

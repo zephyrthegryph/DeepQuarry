@@ -34,11 +34,7 @@ CAPABILITIES(/obj/machinery/papershredder)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("shred", inputs(item(/obj/item/photo), item(/obj/item/shreddedp), item(/obj/item/paper), item(/obj/item/newspaper), item(/obj/item/card/id), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Shred"), then(PROC_REF(interaction_shred)))
 	op("empty", menu(), label("Empty bin"), needs(req_adjacent(), req_capable(), req_is(nameof(paperamount), TRUE, because = MSG(papershredder/empty))), then(PROC_REF(interaction_empty)))
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/papershredder/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 MSG_DEF_SELF(papershredder/empty, "it is empty")
 

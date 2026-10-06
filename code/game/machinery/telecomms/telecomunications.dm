@@ -86,6 +86,7 @@ CAPABILITIES(/obj/machinery/telecomms)
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("range", ui_act("range", arg("range", num())), when(nameof(ranged)), then(PROC_REF(ui_act_range)))
 	op("repair", stack(/obj/item/stack/nanopaste, 1), needs(req(PROC_REF(damaged), because = MSG(tcomms/whole))), says(MSG(tcomms/repaired)), then(PROC_REF(nanopaste_repair)))
+	default_parts()
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
@@ -165,11 +166,6 @@ CAPABILITIES(/obj/machinery/telecomms)
 		return 0
 
 REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/telecomms/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /// Sets its listening level and links the machines it names, once they all exist.
 /obj/machinery/telecomms/proc/autolink(datum/act/timer/A)

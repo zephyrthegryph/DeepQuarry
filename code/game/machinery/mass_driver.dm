@@ -22,11 +22,6 @@
 	. = ..()
 	. += rel_key(nameof(id))
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/mass_driver/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/mass_driver/proc/id_title(datum/act/A)
 	return "[src] ID]"
 
@@ -66,6 +61,7 @@ CAPABILITIES(/obj/machinery/mass_driver)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(id_title)), "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_value" = 9999, "timeout" = 0)),
 		then(PROC_REF(driver_id_entered)))
+	default_parts()
 
 /// An EMP fires the driver.
 /obj/machinery/mass_driver/proc/mass_driver_emp(datum/act/hit/emp/A)

@@ -205,6 +205,7 @@
 #include "dq_lifeform_params_tests.dm"
 #include "dq_lifeform_per_type_tests.dm"
 #include "dq_lifeform_variants_tests.dm"
+#include "dq_default_parts_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"
 #include "dq_machine_maintenance_tests.dm"

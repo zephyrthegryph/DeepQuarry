@@ -9,11 +9,6 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/botany_seedextractor
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/seed_extractor/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /* Currently part upgrades do nothing
 /obj/machinery/seed_extractor/RefreshParts()
 	..()
@@ -25,6 +20,7 @@ CAPABILITIES(/obj/machinery/seed_extractor)
 	op("pulverize_fossil", item(/obj/item/fossil/plant), priority(OP_PRIORITY_DEFAULT - 1), label("Pulverize"), then(PROC_REF(interaction_pulverize_fossil)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	default_parts()
 
 /obj/machinery/seed_extractor/proc/interaction_extract_grown(datum/act/op/A)
 	var/mob/user = A.actor

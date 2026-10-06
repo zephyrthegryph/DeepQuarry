@@ -9,15 +9,11 @@
 	var/negative_dir = null // ition
 	var/hand_fed = TRUE
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/recycling/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/recycling)
 	started_work(step = PROC_REF(work_step))
 	op("feed", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Feed"), needs(req_is(nameof(working), FALSE, because = MSG(recycling/working))), then(PROC_REF(interaction_feed)))
+	default_parts()
 
 /obj/machinery/recycling/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL // these are all stateful

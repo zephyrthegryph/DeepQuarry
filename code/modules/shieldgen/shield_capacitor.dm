@@ -33,10 +33,7 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("id_swipe", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-
-/obj/machinery/shield_capacitor/Initialize(mapload)
-	. = ..()
-	make_rotatable()
+	rotatable()
 
 /obj/machinery/shield_capacitor/advanced
 	name = "advanced shield capacitor"

@@ -19,13 +19,10 @@ CAPABILITIES(/obj/item/assembly/infra)
 	without("ui_open")
 	op("state", ui_act("state"), then(PROC_REF(ui_act_state)))
 	op("visible", ui_act("visible"), then(PROC_REF(ui_act_visible)))
+	rotatable()
 
 OM_FIELD(/obj/item/assembly/infra, on, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/assembly/infra, PERIODIC_SLOW, list("secured", "on"))
-
-/obj/item/assembly/infra/Initialize(mapload)
-	. = ..()
-	make_rotatable()
 
 /obj/item/assembly/infra/activate()
 	if(!..())

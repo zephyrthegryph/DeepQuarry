@@ -38,11 +38,8 @@ CAPABILITIES(/obj/machinery/washing_machine)
 	extend("machine_deconstruct", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 	extend("machine_anchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 	extend("machine_unanchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	default_parts()
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/washing_machine/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 
 /obj/machinery/washing_machine/declare_interactions(list/into)

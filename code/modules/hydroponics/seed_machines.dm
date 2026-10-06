@@ -62,11 +62,6 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/failed_task = 0
 	var/disk_needs_genes = 0
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/botany/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /* Currently part upgrades do nothing
 /obj/machinery/botany/RefreshParts()
 	..()
@@ -81,6 +76,7 @@ CAPABILITIES(/obj/machinery/botany)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	default_parts()
 
 /obj/machinery/botany/proc/work_step(datum/act/timer/A)
 

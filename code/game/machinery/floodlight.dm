@@ -21,10 +21,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), then(PROC_REF(interaction_item)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("floodlight_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(floodlight_silicon_use)))
-
-/obj/machinery/floodlight/Initialize(mapload)
-	. = ..()
-	make_rotatable()
+	rotatable()
 
 /obj/machinery/floodlight/proc/appearance_battery()
 	return (open && cell) ? 1 : 0

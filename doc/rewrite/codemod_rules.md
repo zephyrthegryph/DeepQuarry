@@ -393,6 +393,38 @@ The target (doc section 13): a type's look is `draw(datum/look/look)`, the one o
 Residue codes, with the reason in the report. The proc stays as it is when: `reads_icon_state` (it reads `icon_state` other than `initial(icon_state)`: the new draw cannot see the previous state), `side_effect` (a call that is not a look call: a sound, a light, a flick: it moves to the handler that changes the state), `writes_state` (it writes `name`, `desc`, `pixel_x` or any var of the holder), `dot_use` (`.` used as a value), `returns_value`, `super_late` (`..()` not first), `overlay_expr` (`. += x` of an expression whose kind is unknown), `appearance_other` (the type or an ancestor also has `APPEARANCE_TEMPLATE`, `APPEARANCE_LEVEL`, `APPEARANCE_EMISSIVE`, `APPEARANCE_SLOT`, `APPEARANCE_NONE` or `DECLARE_APPEARANCE`), `related_def` (a related type defines `appearance_overlays` too: a chain converts whole or not at all), `derived_declared` (a type in the chain has a `derived()`: it declares the draw's reads with `drawn_from`, by hand), `hop_read` (it reads through a var, `paddles.combat`: the far var must be tracked by hand), `handler_shape`, `non_atom`, and `var:<code>:<name>` when a var it reads cannot be tracked: `shared_name` (its name is declared on unrelated types, so a write `O.name = x` cannot be assigned to this one), `write_form` (a write inside a larger statement or a macro), `builtin_var`, `decl_shape`, `field_shared` (another legacy macro names the OM_FIELD).
 Evidence: the cell charger (`7bce9a692a`), which also dropped its `add_overlay()` call in Initialize. The tracked var's setter publishes the change; the draw is the output the refresh engine re-runs. Tests: `dq_gap/converted_draw_follows_its_tracked_var`.
 
+## The draw sweep: every legacy appearance form -> draw(look)
+
+`python tools/dx/codemods/look_sweep.py <mode> [--apply] [--sites] ...` (modes below; modules `look_convert.py`, `look_track.py`). It extends the
+`DECLARE_APPEARANCE_PROC -> draw(look)` rule above to every legacy form and to the `update_icon()` calls around them.
+
+| Mode | What it does |
+|---|---|
+| `convert [--types T...] [--report R] [--show]` | A **component** (a set of drawing types joined by ancestry) converts whole or not at all. Per type, in the legacy order: `..()`, the template as `look.state("...")` (`{x}` is `[x]`, `[x()]` for a reader proc, `{x?A:B}` is `[x ? "A" : "B"]`), each `DECLARE_APPEARANCE` layer as `if(x == 1)` or `switch("[x]")` of `look.state()` / `look.overlay()` / `look.set_icon()` / `look.set_color()`, `APPEARANCE_NONE` as `look.state(null)` plus `look.hide()` of what the ancestors draw, then the provider body (`. += x` is `look.overlay(x)`, `icon_state = x` is `look.state(x)`, `item_state` is `look.held_state()`, `name`/`desc` are `look.identity()`, `set_light()` is `look.light()` / `look.light_off()`, `flick(x, src)` is `look.play_flick(x)`). A provider that reads its own `icon_state` keeps it in `var/drawn_state = look.state_so_far(src)`. A chain whose subtype provider replaced its parent's (no `..()`) keeps that dispatch: the top type's draw calls `look_parts(look)`, which each type overrides. |
+| `calls --report R` | The `update_icon()` calls on a converted component's types: gone where the draw reads only tracked state, in `Initialize()` (the first refresh draws every atom after its init) and in a dispatched handler (a proc taking a `datum/act`); `changed(src)` (`changed(X)`) where it reads state nothing publishes. `--all`: the same for every call whose receiver's chain has no legacy declaration, judged by the chain's `draw()` procs. |
+| `dead` | Deletes the `update_icon()` calls whose receiver's chain has no legacy declaration and no `update_icon()` override (the base proc only re-applies a declaration, so they did nothing). |
+| `track` | Each var a `draw()` reads that nothing publishes becomes `TRACKED(U, var)` on its one declaring type, every write in the tree the setter (`v = x` -> `set_v(x)`, `v += x` -> `set_v(v + (x))`, `X.v = x` -> `X.set_v(x)`, also as a one-line `if(c)` tail). Left as they are: shared names, writes inside expressions or macros, a hand-written `set_<var>()` in the chain, writes in folders another session owns (`--owned-ok` takes them). |
+| `prune [--base ref]` | The `changed()` requests added since `ref` whose receiver's draws now read only tracked state go. |
+| `audit` | The `draw()` chains that still read state nothing publishes, with what they read. |
+
+**What does not convert** (the component stays legacy; `--sites` lists them by code): a draw that would read through another object
+(`hop_read`: `beaker.reagents.total_volume`, `ammo_magazine.stored_ammo`) or write any object's member (`member_write`: building an image by
+`I.color = ...`; use `look_appearance(icon, state, color =, ...)`), a provider that calls something with effects (`side_effect:<proc>`), writes
+other state (`writes_state:<var>`), reads `overlays`/`underlays` (`reads_layers`), calls `..()` late (`super_late`), an `update_icon()` override,
+`APPEARANCE_LEVEL` / `_EMISSIVE` / `_SLOT` (by hand). A `draw()` and its `look_parts()` read only tracked state and write nothing
+(`sys/dx_reactive`); they change no atom either (`sys/dx_review` `output_side_effect`).
+
+**The look's additions** (`code/datums/capabilities/look.dm`): `look.state()` returns the state; `look.state_so_far(A)`; `look.light_off()` (an
+explicit `set_light(0)`); `look.held_state(state)` and `look.identity(name =, desc =)` (left as they are when a draw does not set them);
+`look_appearance()`; when a look changes an atom's sprite its generic emissive blocker follows (`look_resync_emissive_blocker()`) and the
+slot that holds or wears an item redraws (`look_redraw_worn()`).
+
+**Pins.** Before a batch, `bash tools/dq_pin.sh --look-tree /root/type ...` records every subtype's look under the converted roots; after it,
+`bash tools/dq_focused_test.sh dq_look_tree_pin` lists each row that changed (snapshot_pins.md, "Look pins").
+
+**Ratchet.** `look_converted` (`tools/analyze/src/lints/look_converted.rs`): a hard ban on `update_icon()` and the legacy declarations under the
+folders of `[lint.look_converted.lists] folders`; a folder joins once the sweep cleared it.
+
 ## reagents: DECLARE_REAGENTS family -> reagents() entries
 
 `python tools/dx/codemods/reagents_decl.py [--check]` (a text codemod; design: `reagents.md`).

@@ -645,9 +645,13 @@ TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 
 	var/variantnum = null
 
-/obj/structure/flora/sif/frostbelle/Initialize(mapload)
-	. = ..()
-	variantnum = rand(1,3)
+CAPABILITIES(/obj/structure/flora/sif/frostbelle)
+	rolls(nameof(variantnum), PROC_REF(roll_variantnum))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/sif/frostbelle/proc/roll_variantnum(datum/roller/R)
+	. = islist(variantnum) ? list() + variantnum : variantnum
+	. = R.number(1, 3)
 
 /obj/structure/flora/sif/frostbelle/proc/appearance_variant()
 	if(max_harvests > 0 && harvest_count < max_harvests)

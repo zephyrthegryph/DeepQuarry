@@ -26,11 +26,6 @@
 	flags = OPENCONTAINER
 	clicksound = SFX_BUTTON
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/chem_master/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/chem_master/draw(datum/look/look)
 	..()
 	look.state(beaker ? "mixer1" : "mixer0")
@@ -134,6 +129,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	op("change_bottle_style", ui_act("modal:change_bottle_style", arg("arguments")),
 		asks(/datum/prompt/choice, fields = list("question" = "Please select the new style for bottles:", "choices" = computed(PROC_REF(bottle_style_choices)), "default" = computed(PROC_REF(bottle_style_current)), "bento" = "spritesheet", "inline" = TRUE, "timeout" = 0), step = "style"),
 		then(PROC_REF(modal_change_bottle_style)))
+	default_parts()
 
 /// The window's data.
 /obj/machinery/chem_master/ui_data(datum/act/eval/A)

@@ -19,11 +19,6 @@
 	var/maxcopies = 10	//how many copies can be copied at once- idea shamelessly stolen from bs12's copier!
 	var/copying = FALSE // Is the printer busy with something? Sanity check variable.
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/photocopier/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/photocopier/examine(mob/user as mob)
 	. = ..()
 	if(Adjacent(user))
@@ -44,6 +39,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("insert", inputs(item(/obj/item/paper), item(/obj/item/photo), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
 	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
 	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	default_parts()
 
 /// The window data.
 /obj/machinery/photocopier/ui_data(datum/act/eval/A)

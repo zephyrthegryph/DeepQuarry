@@ -59,14 +59,10 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds), because = PROC_REF(can_take_item_refusal))), then(PROC_REF(appliance_interaction_item)))
 	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
 	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds), because = PROC_REF(can_toggle_power_verb_refusal))), then(PROC_REF(appliance_toggle_power_effect)))
+	default_parts()
 
 /// Whether or not the machine is currently operating (cooking its contents).
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/appliance/Initialize(mapload)
-	. = ..()
-
-	default_apply_parts()
 
 // cooking food and its containers go with the machine.
 /obj/machinery/appliance/on_destroy(force)

@@ -75,3 +75,12 @@ the type owns (not the library's) and for each row of the table above that appli
 (`code/modules/unit_tests/snapshots/<name>/`), with id-keyed rows from the legacy resolver. Re-record after an
 intended change with `bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`; add a type by
 adding an empty file for it. On a mismatch the current rows are written to `data/test-snapshots/<name>/`.
+
+## Look pins
+
+A pin of how a type looks once it exists, for appearance conversions (`code/modules/unit_tests/dq_look_pins.dm`). `bash tools/dq_pin.sh --look /T`
+records one type (`snapshots/looks/`, test `dq_look_pin`); `bash tools/dq_pin.sh --look-tree /T` records every creatable subtype of `/T` in one
+file (`snapshots/look_trees/`, test `dq_look_tree_pin`, exhaustive tier). Rows: icon, icon_state, dir, colour, alpha, and one row per distinct
+overlay and underlay (`icon:state:plane[:colour]`, `xN` when repeated), taken after the presentation lane settled; each type is made with the RNG
+reseeded from its path, and a runtime while it is made is a row of its own (without its file and line). The rows do not see a look a later state
+change draws: the refresh-drift sweep and hand-written tests cover those.

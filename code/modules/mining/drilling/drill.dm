@@ -500,11 +500,8 @@ CAPABILITIES(/obj/machinery/mining/brace)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_work_on_holds), because = PROC_REF(can_work_on_refusal))), then(PROC_REF(interaction_attackby)))
-
-/obj/machinery/mining/brace/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	make_rotatable()
+	default_parts()
+	rotatable()
 
 /obj/machinery/mining/brace/RefreshParts()
 	..()

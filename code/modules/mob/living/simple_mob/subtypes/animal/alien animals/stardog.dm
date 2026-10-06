@@ -1422,10 +1422,13 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 		)
 	var/faction = FACTION_MACROBACTERIA
 
-// ALLOW(init/INSTANCE_STATE): rolls how long until the door opens
-/obj/structure/auto_flesh_door/Initialize(mapload)
-	. = ..()
-	countdown = rand(50,250)
+CAPABILITIES(/obj/structure/auto_flesh_door)
+	rolls(nameof(countdown), PROC_REF(roll_countdown))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/auto_flesh_door/proc/roll_countdown(datum/roller/R)
+	. = islist(countdown) ? list() + countdown : countdown
+	. = R.number(50, 250)
 
 /// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
 /obj/structure/auto_flesh_door/periodic_step()
