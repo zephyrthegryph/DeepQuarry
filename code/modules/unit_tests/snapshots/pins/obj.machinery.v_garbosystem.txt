@@ -1,0 +1,54 @@
+human|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Open filter hatch (refused: needs a crowbar)
+human|none menu: Toggle
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Emag (refused: needs a cryptographic sequencer)
+robot|none menu: Open filter hatch (refused: needs a crowbar)
+robot|none menu: Toggle
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/screwdriver menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/tool/screwdriver menu: Toggle
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/crowbar menu: Open filter hatch
+human|/obj/item/tool/crowbar menu: Toggle
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wrench menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wirecutters menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/tool/wirecutters menu: Toggle
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/multitool menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/weldingtool menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/weldingtool menu: Toggle
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/stack/cable_coil menu: Toggle
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/material/steel menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/stack/material/steel menu: Toggle
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/card/id menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id click: nothing
+human|/obj/item/card/emag menu: Emag
+human|/obj/item/card/emag menu: Open filter hatch (refused: needs a crowbar)
+human|/obj/item/card/emag menu: Toggle
+human|/obj/item/card/emag click: nothing
+keys: emag, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, v_garbosystem_crowbar_open, v_garbosystem_toggle
+

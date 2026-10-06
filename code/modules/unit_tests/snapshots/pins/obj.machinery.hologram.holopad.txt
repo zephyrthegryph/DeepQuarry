@@ -1,0 +1,34 @@
+human|none menu: Request AI presence
+human|none menu: Request AI presence (refused: needs an item)
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Project
+robot|none menu: Request AI presence
+robot|none menu: Request AI presence (refused: needs an item)
+robot|none click: nothing
+ai|none menu: Project
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Request AI presence
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Request AI presence
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Request AI presence
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Request AI presence
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Request AI presence
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Request AI presence
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Request AI presence
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Request AI presence
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Request AI presence
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Request AI presence
+human|/obj/item click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gen_silicon_holopad_silicon_use, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

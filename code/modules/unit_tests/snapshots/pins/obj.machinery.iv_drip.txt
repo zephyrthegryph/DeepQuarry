@@ -1,0 +1,54 @@
+human|none menu: Attach container (refused: needs a Container)
+human|none menu: Remove container
+human|none menu: Toggle Mode
+human|none click: nothing
+robot|none menu: Attach container (refused: needs a Container)
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Remove container
+robot|none menu: Toggle Mode
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Attach container (refused: needs a Container)
+human|/obj/item/tool/screwdriver menu: Remove container
+human|/obj/item/tool/screwdriver menu: Toggle Mode
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Attach container (refused: needs a Container)
+human|/obj/item/tool/crowbar menu: Remove container
+human|/obj/item/tool/crowbar menu: Toggle Mode
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Attach container (refused: needs a Container)
+human|/obj/item/tool/wrench menu: Remove container
+human|/obj/item/tool/wrench menu: Toggle Mode
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Attach container (refused: needs a Container)
+human|/obj/item/tool/wirecutters menu: Remove container
+human|/obj/item/tool/wirecutters menu: Toggle Mode
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Attach container (refused: needs a Container)
+human|/obj/item/multitool menu: Remove container
+human|/obj/item/multitool menu: Toggle Mode
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Attach container (refused: needs a Container)
+human|/obj/item/weldingtool menu: Remove container
+human|/obj/item/weldingtool menu: Toggle Mode
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Attach container (refused: needs a Container)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Remove container
+human|/obj/item/stack/cable_coil menu: Toggle Mode
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Attach container (refused: needs a Container)
+human|/obj/item/stack/material/steel menu: Remove container
+human|/obj/item/stack/material/steel menu: Toggle Mode
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Attach container (refused: needs a Container)
+human|/obj/item/card/id menu: Remove container
+human|/obj/item/card/id menu: Toggle Mode
+human|/obj/item/card/id click: nothing
+human|/obj/item/reagent_containers menu: Attach container
+human|/obj/item/reagent_containers menu: Remove container
+human|/obj/item/reagent_containers menu: Toggle Mode
+human|/obj/item/reagent_containers click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_iv_drip_interaction_hand, gen_insert_iv_drip_interaction_item, gen_robot_interaction_swallow, gen_verb_iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+
