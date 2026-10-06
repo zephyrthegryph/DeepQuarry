@@ -41,6 +41,7 @@ TRACKED(/obj/machinery/computer/operating, healthAlarm)
 TRACKED(/obj/machinery/computer/operating, spo2)
 
 CAPABILITIES(/obj/machinery/computer/operating)
+	started_work(step = PROC_REF(work_step))
 	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reads = list("stat"))
 	interface("OperatingComputer", title = "Patient Monitor")
 	extend("ui_open", needs(req_operable()), then(PROC_REF(control_fingerprinted)))
@@ -70,7 +71,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
-		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
+		occupantData["paralysis"] = occupant.status_units(STAT_PARALYZED)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
 		occupantData["diagnosis"] = D.report_data()
 		spent(D)
@@ -143,7 +144,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 	set_healthAlarm(value)
 	return OP_OK
 
-/obj/machinery/computer/operating/machine_step()
+/obj/machinery/computer/operating/proc/work_step(datum/act/timer/A)
 	if(!table || !table.check_victim())
 		rel_clear(src, nameof(victim))
 		patientName = null

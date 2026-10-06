@@ -127,19 +127,19 @@
 		if(species.emp_sensitivity & EMP_BLIND)
 			if(blind_dur >= 1) //don't flash them unless they actually roll a positive blind duration
 				src.flash_eyes(3)	//3 allows it to bypass any tier of eye protection, necessary or else sec sunglasses/etc. protect you from this
-			status_at_least(EFFECT_BLINDED, max(0,blind_dur))
+			status_at_least(STAT_BLINDED, max(0,blind_dur))
 		if(species.emp_sensitivity & EMP_DEAFEN)
 			src.set_ear_damage(src.ear_damage + (rand(0,deafen_dur))) //this will heal pretty quickly, but spamming them at someone could cause serious damage
-			src.status_at_least(EFFECT_DEAFENED, deafen_dur)
+			src.status_at_least(STAT_DEAFENED, deafen_dur)
 			src.deaf_loop.start() // Ear Ringing/Deafness
 		if(species.emp_sensitivity & EMP_CONFUSE)
 			if(confuse_dur >= 1)
 				to_chat(src, span_danger("Oh god, everything's spinning!"))
-			status_at_least(EFFECT_CONFUSED, max(0,confuse_dur))
+			status_at_least(STAT_CONFUSED, max(0,confuse_dur))
 		if(species.emp_sensitivity & EMP_WEAKEN)
 			if(weaken_dur >= 1)
 				to_chat(src, span_danger("Your limbs go slack!"))
-			status_at_least(EFFECT_WEAKENED, max(0,weaken_dur))
+			status_at_least(STAT_WEAKENED, max(0,weaken_dur))
 		//physical damage block, deals (minor-4) 5-15, 10-20, 15-25, 20-30 (extreme-1) of *each* type
 		if(species.emp_sensitivity & EMP_BRUTE_DMG)
 			injure(INJURY_BLUNT, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
@@ -151,7 +151,7 @@
 			add_oxygen_debt(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod, "EMP")
 
 /mob/living/carbon/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun = 1)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0
 	if(def_zone == BP_L_HAND || def_zone == BP_R_HAND) //Diona (And any other potential plant people) hands don't get shocked.
 		if(species.flags & IS_PLANT)
@@ -178,13 +178,13 @@
 	if(stun)
 		switch(shock_damage)
 			if(16 to 20)
-				status_at_least(EFFECT_STUNNED, 2)
+				status_at_least(STAT_STUNNED, 2)
 			if(21 to 25)
-				status_at_least(EFFECT_WEAKENED, 2)
+				status_at_least(STAT_WEAKENED, 2)
 			if(26 to 30)
-				status_at_least(EFFECT_WEAKENED, 5)
+				status_at_least(STAT_WEAKENED, 5)
 			if(31 to INFINITY)
-				status_at_least(EFFECT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
+				status_at_least(STAT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
 
 	fx_sparks(loc, 5)
 
@@ -267,9 +267,9 @@
 			if(show_ssd && !client && !teleop)
 				act_message(M, src, MSG_SELF(span_notice("You shake %T%, but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?")), \
 					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
-			else if(lying || src.has_status(EFFECT_SLEEPING))
-				status_adjust(EFFECT_SLEEPING, -5)
-				if(!src.has_status(EFFECT_SLEEPING))
+			else if(lying || src.has_status(STAT_SLEEPING))
+				status_adjust(STAT_SLEEPING, -5)
+				if(!src.has_status(STAT_SLEEPING))
 					set_resting(0)
 				act_message(M, src, MSG_SELF(span_notice("You shake %T% trying to wake [H.p_them()] up!")), \
 					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
@@ -295,9 +295,9 @@
 					M.adjust_fire_stacks(-1)
 				if(M.on_fire)
 					src.ignite_mob()
-			status_adjust(EFFECT_PARALYZED, -3)
-			status_adjust(EFFECT_STUNNED, -3)
-			status_adjust(EFFECT_WEAKENED, -3)
+			status_adjust(STAT_PARALYZED, -3)
+			status_adjust(STAT_STUNNED, -3)
+			status_adjust(STAT_WEAKENED, -3)
 
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
@@ -406,7 +406,7 @@
 		if(COOLDOWN_FINISHED(src, next_emote))
 			src.emote("sflip")
 			return TRUE
-	status_at_least(EFFECT_WEAKENED, FLOOR(stun_duration/2, 1))
+	status_at_least(STAT_WEAKENED, FLOOR(stun_duration/2, 1))
 	return TRUE
 
 /mob/living/carbon/get_default_language()

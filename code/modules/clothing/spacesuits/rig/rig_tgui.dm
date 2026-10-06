@@ -186,7 +186,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	if(ishuman(user) && (user.stat || user.has_status(EFFECT_STUNNED) || user.lying))
+	if(ishuman(user) && (user.stat || user.has_status(STAT_STUNNED) || user.lying))
 		return FALSE
 	toggle_piece(piece, user)
 	. = TRUE

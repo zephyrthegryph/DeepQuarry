@@ -146,7 +146,7 @@
 		if(message_type == AUDIBLE_MESSAGE)
 			if(isliving(user))
 				var/mob/living/L = user
-				if(L.has_status(EFFECT_MUTED))
+				if(L.has_status(STAT_MUTED))
 					act_message(M, null, MSG_SELF("You cannot say anything!"), MSG_OTHERS("[MSG_LITERAL("[name_to_use]")] opens their mouth silently!"), MSG_BLIND(emote_message_impaired), runemessage = "opens their mouth silently!")
 					return
 				else

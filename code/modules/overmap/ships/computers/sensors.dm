@@ -39,6 +39,7 @@
 
 // The sensors window: one op per button; the range is asked in the op (asks()), and applied by its handler.
 CAPABILITIES(/obj/machinery/computer/ship/sensors)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("OvermapShipSensors")
 	without("ui_open")
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
@@ -161,8 +162,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	terminal_typed(A.actor)
 	return TRUE
 
-/obj/machinery/computer/ship/sensors/machine_step()
-	..()
+/obj/machinery/computer/ship/sensors/proc/work_step(datum/act/timer/A)
 	refresh_sensor_light()
 	return PROCESS_KILL
 
@@ -244,9 +244,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 		use_power_oneoff(idle_power_usage*5)
 	set_use_power(!use_power)
 	refresh_linked_consoles()
-	MACHINE_WAKE(src)
+	work_start(src)
 
-/obj/machinery/shipsensors/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/shipsensors)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
+/obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
 	if(use_power) //can't run in non-vacuum
 		if(!in_vacuum())
 			toggle()
@@ -290,11 +294,11 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 	heat_reduction = 0.2
 	desc = "Miniaturized gravity scanner with various other sensors, used to detect irregularities in surrounding space. Can only run in vacuum to protect delicate quantum bluespace elements."
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/shipsensors/step_start_condition()
 	return use_power
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/computer/ship/sensors/step_start_condition()
 	return TRUE // its sensor light
 

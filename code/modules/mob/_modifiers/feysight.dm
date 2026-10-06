@@ -43,4 +43,4 @@
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		H.status_set(EFFECT_DRUGGED, min(15, H.status_units(EFFECT_DRUGGED) + 4))
+		H.status_set(STAT_DRUGGED, min(15, H.status_units(STAT_DRUGGED) + 4))

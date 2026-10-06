@@ -131,7 +131,7 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 	uses_left--
 	if(isliving(A))
 		var/mob/living/M = A
-		M.status_adjust(EFFECT_STUNNED, 20) // Keep them from moving during the duration of the extraction
+		M.status_adjust(STAT_STUNNED, 20) // Keep them from moving during the duration of the extraction
 		if(M?.buckled_to())
 			var/atom/movable/_tmp_buck_15 = M?.buckled_to()
 			_tmp_buck_15.unbuckle_mob(M)
@@ -175,8 +175,8 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 	animate(src, pixel_z = 1000, time = 30)
 	if(ishuman(A))
 		var/mob/living/carbon/human/L = A
-		L.status_adjust(EFFECT_STUNNED, 20)
-		L.status_set(EFFECT_DROWSY, 0)
+		L.status_adjust(STAT_STUNNED, 20)
+		L.status_set(STAT_DROWSY, 0)
 	after(src, 3 SECONDS, PROC_REF(fulton_arrive), with = list(A, landing))
 
 /obj/effect/extraction_holder/proc/fulton_arrive(atom/movable/A, turf/landing)

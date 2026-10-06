@@ -483,7 +483,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(isliving(AM))
 			var/mob/living/L = AM
 			if(L.stat)
-				L.status_set(EFFECT_SLEEPING, min(L.status_units(EFFECT_SLEEPING),20))
+				L.status_set(STAT_SLEEPING, min(L.status_units(STAT_SLEEPING),20))
 			if(L.absorbed && !include_absorbed)
 				continue
 		count += release_specific_contents(AM, silent = TRUE)
@@ -570,7 +570,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	if(isliving(M))
 		var/mob/living/ML = M
 		if(ML.stat)
-			ML.status_set(EFFECT_SLEEPING, min(ML.status_units(EFFECT_SLEEPING),20))
+			ML.status_set(STAT_SLEEPING, min(ML.status_units(STAT_SLEEPING),20))
 
 	//Determines privacy
 	var/privacy_range = world.view
@@ -598,7 +598,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
 
 	if(!owner.ckey && escape_stun)
-		owner.status_at_least(EFFECT_WEAKENED, escape_stun)
+		owner.status_at_least(STAT_WEAKENED, escape_stun)
 
 	return 1
 

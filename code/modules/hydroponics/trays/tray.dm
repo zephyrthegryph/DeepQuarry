@@ -199,7 +199,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	if(istype(user,/mob/living/carbon/alien/diona))
 		var/mob/living/carbon/alien/diona/nymph = user
 
-		if(nymph.stat == DEAD || nymph.has_status(EFFECT_PARALYZED) || nymph.has_status(EFFECT_WEAKENED) || nymph.has_status(EFFECT_STUNNED) || nymph.restrained())
+		if(nymph.stat == DEAD || nymph.has_status(STAT_PARALYZED) || nymph.has_status(STAT_WEAKENED) || nymph.has_status(STAT_STUNNED) || nymph.restrained())
 			return
 
 		if(weedlevel > 0)

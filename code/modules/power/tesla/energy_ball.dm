@@ -240,7 +240,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		else if(isliving(A))
 			var/dist = get_dist(source, A)
 			var/mob/living/L = A
-			if(om_has(L, EFFECT_GODMODE))
+			if(in_godmode(L))
 				continue
 			if(dist <= zap_range && (dist < closest_dist || !closest_mob) && L.stat != DEAD && !has_trait(L, TRAIT_TESLA_SHOCKIMMUNE))
 				closest_mob = L

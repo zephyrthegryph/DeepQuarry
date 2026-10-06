@@ -38,7 +38,7 @@
 	if(src.ear_damage < 25)
 		src.set_ear_damage(max(src.ear_damage - 0.05, 0))
 	if(src.sdisabilities & DEAF)
-		src.status_at_least(EFFECT_DEAFENED, 1)
+		src.status_at_least(STAT_DEAFENED, 1)
 
 /mob/living/silicon/robot/proc/life_robot_senses_due()
 	return (src.sdisabilities & DEAF) || !(src.ear_damage <= 0 || src.ear_damage >= 25)
@@ -172,8 +172,8 @@
 
 	// Blindness is raised by update_senses() when the camera or stat changes.
 	if(src.stat != DEAD && !src.blinded)
-		src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-		src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+		src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+		src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
 	if(src.emagged)
 		src.throw_alert("hacked", /atom/movable/screen/alert/hacked)

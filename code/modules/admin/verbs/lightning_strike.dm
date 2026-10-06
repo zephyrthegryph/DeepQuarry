@@ -102,10 +102,10 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 
 		// Deafen them.
 		if(L.get_ear_protection() < 2)
-			L.status_adjust(EFFECT_SLEEPING, -100)
+			L.status_adjust(STAT_SLEEPING, -100)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
-				C.status_adjust(EFFECT_DEAFENED, 10)
+				C.status_adjust(STAT_DEAFENED, 10)
 				C.deaf_loop.start() // Ear Ringing/Deafness
 			to_chat(L, span_danger("Lightning struck nearby, and the thunderclap is deafening!"))
 

@@ -17,7 +17,7 @@
 /mob/living/SelfMove(turf/n, direct, movetime)
 	// If on walk intent, don't willingly step into hazardous tiles.
 	// Unless the walker is confused.
-	if(m_intent == I_WALK && !has_status(EFFECT_CONFUSED))
+	if(m_intent == I_WALK && !has_status(STAT_CONFUSED))
 		if(!n.is_safe_to_enter(src))
 			to_chat(src, span_warning("\The [n] is dangerous to move into."))
 			return FALSE // In case any code wants to know if movement happened.
@@ -144,12 +144,12 @@ default behaviour is:
 				if(H.has_mutation(HULK)) //No knocking over the hulk
 					return
 				act_message(src, H, others = span_warning("%U% bumps into %T%, knocking them off balance!"))
-				H.status_at_least(EFFECT_WEAKENED, 5)
+				H.status_at_least(STAT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
 			if(H.species.lightweight_light == 1 && !H.combat_mode)
 				act_message(src, H, others = span_warning("%U% bumps into %T%, knocking them off balance!"))
-				H.status_at_least(EFFECT_WEAKENED, 5)
+				H.status_at_least(STAT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
 		// Handle grabbing, stomping, and such of micros!
@@ -180,7 +180,7 @@ default behaviour is:
 	now_pushing = FALSE
 	. = ..()
 	if (!istype(AM, /atom/movable) || AM.anchored)
-		if(((has_status(EFFECT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
+		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
 			AM.stumble_into(src)
 		return
 	if (!now_pushing)

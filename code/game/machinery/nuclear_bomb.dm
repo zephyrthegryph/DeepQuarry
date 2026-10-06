@@ -50,7 +50,7 @@ GLOBAL_VAR(bomb_set)
 	safety_wire = pick(w)
 	w -= safety_wire
 
-/obj/machinery/nuclearbomb/machine_step()
+/obj/machinery/nuclearbomb/proc/work_step(datum/act/timer/A)
 	if(timing)
 		GLOB.bomb_set = 1 //So long as there is one nuke timing, it means one nuke is armed.
 		timeleft--
@@ -60,7 +60,7 @@ GLOBAL_VAR(bomb_set)
 		for(var/mob/M in viewers(1, src))
 			if((M.client && M.check_current_machine(src)))
 				attack_hand(M)
-	return ..()
+	return PROCESS_KILL
 
 /obj/machinery/nuclearbomb/declare_interactions(list/into)
 	into += list(
@@ -222,6 +222,7 @@ GLOBAL_VAR(bomb_set)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("NuclearBomb", title = "Nuclear Fission Explosive")
 	op("auth", ui_act("auth"), then(PROC_REF(ui_act_auth)))
 	op("type", ui_act("type", arg("key", schema_text(4096))), then(PROC_REF(ui_act_type)))
@@ -550,7 +551,7 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 /obj/item/disk/nuclear/touch_map_edge()
 	spent(src)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/nuclearbomb/step_start_condition()
 	return timing
 

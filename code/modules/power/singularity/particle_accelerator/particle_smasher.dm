@@ -27,6 +27,7 @@
 	var/list/recipes	// The list containing the Particle Smasher's recipes.
 
 CAPABILITIES(/obj/machinery/particle_smasher)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(energy), wakes_on = list(nameof(energy)))
 	owns_many(nameof(recipes))
 
 /obj/machinery/particle_smasher/Initialize(mapload)
@@ -36,10 +37,8 @@ CAPABILITIES(/obj/machinery/particle_smasher)
 
 
 /// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
-/// It bleeds it off (machine_step()) while it has any.
+/// It bleeds it off (work_step(null)) while it has any.
 OM_FIELD(/obj/machinery/particle_smasher, energy, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energy")
-
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -192,7 +191,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	return ..()
 
 /// Bleeds its stored energy (radiating) while it has any; empty, it sleeps until a particle hits.
-/obj/machinery/particle_smasher/machine_step()
+/obj/machinery/particle_smasher/proc/work_step(datum/act/timer/A)
 	if(!src.anchored)	// Rapidly loses focus.
 		radiation_pulse(
 			src,

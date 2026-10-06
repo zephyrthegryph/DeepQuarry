@@ -362,16 +362,16 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		capture_chance *= 0.9
 	else
 		capture_chance = 0
-	if(M.has_status(EFFECT_WEAKENED))			//Haha you fall down
+	if(M.has_status(STAT_WEAKENED))			//Haha you fall down
 		capture_chance += 0.1
 		effect_count += 1
-	if(M.has_status(EFFECT_STUNNED))			//What's the matter???
+	if(M.has_status(STAT_STUNNED))			//What's the matter???
 		capture_chance += 0.1
 		effect_count += 1
 	if(M.on_fire)			//AAAAAAAA
 		capture_chance += 0.1
 		effect_count += 1
-	if(M.has_status(EFFECT_PARALYZED))			//Oh noooo
+	if(M.has_status(STAT_PARALYZED))			//Oh noooo
 		capture_chance += 0.1
 		effect_count += 1
 	if((M.ai_brain && M.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) == STANCE_IDLE)	//SNEAK ATTACK???

@@ -66,10 +66,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 /obj/item/melee/artifact_blade/on_destroy(force)
 	if(stored_blood && last_touched() && last_touched().stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched(), span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
-		last_touched().status_at_least(EFFECT_PARALYZED, 10)
-		last_touched().status_at_least(EFFECT_SLEEPING, 10)
-		last_touched().status_adjust(EFFECT_JITTERY, 1000)
-		last_touched().status_adjust(EFFECT_BLURRY, 10)
+		last_touched().status_at_least(STAT_PARALYZED, 10)
+		last_touched().status_at_least(STAT_SLEEPING, 10)
+		last_touched().status_adjust(STAT_JITTERY, 1000)
+		last_touched().status_adjust(STAT_BLURRY, 10)
 		last_touched().apply_body_effect(/datum/body_effect/agonize, 30 SECONDS)
 		blood_splatter(last_touched(), last_touched(), 1)
 		if(last_touched().loc)
@@ -101,7 +101,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 		act_message(user, null, others = span_cult("%U%'s arm is engulfed in dark flames!"))
 		to_chat(user, span_cult("An inexplicable force rips through your arm as it's engulfed in flames, tearing the sword from your grasp!"))
 		user.drop_from_inventory(src, user.loc)
-		user.status_at_least(EFFECT_WEAKENED, 5)
+		user.status_at_least(STAT_WEAKENED, 5)
 		throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,10),5)
 		user.injure(INJURY_BURN, rand(force/2, force), zone, src)
 		return ITEM_INTERACT_SUCCESS

@@ -31,7 +31,7 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite anyone in your current state!")
 		return
 
@@ -138,7 +138,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		return FALSE
 	if(!B || stat || !Adjacent(B))
 		return FALSE
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite in your current state.")
 		return FALSE
 	if(B.vessel.total_volume <= 0 || HAS_SYNTHETIC_BIOLOGY(B)) //Do they have any blood in the first place, and are they synthetic?
@@ -274,7 +274,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		if(3 to 99)
 			C.set_nutrition((C.nutrition + (T.nutrition*0.1))) //Just keep draining them.
 			T.set_nutrition(T.nutrition*0.9)
-			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 			if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
@@ -339,7 +339,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		if(3 to 48) //Should be more than enough to get under 100.
 			set_nutrition((nutrition + (T.nutrition*0.1))) //Just keep draining them.
 			T.set_nutrition(T.nutrition*0.9)
-			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 			if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
 				stage = 49
 		if(49)
@@ -369,7 +369,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 				return 0
 			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
-			T.status_adjust(EFFECT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
+			T.status_adjust(STAT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 			set_nutrition((nutrition + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition.
 		if(99)
 			if(drain_finalized != 1)
@@ -433,7 +433,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		if(3 to 99)
 			T.set_nutrition((T.nutrition + (C.nutrition*0.1))) //Just keep draining them.
 			C.set_nutrition(C.nutrition*0.9)
-			T.status_adjust(EFFECT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
+			T.status_adjust(STAT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
 			if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
@@ -470,7 +470,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src,span_warning("You can't shred that type of creature."))
 		return FALSE
 	//Needs to be capable (replace with incapacitated call?)
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src,span_warning("You cannot do that in your current state!"))
 		return FALSE
 	//Needs to be adjacent, at the very least.
@@ -848,7 +848,7 @@ CAPABILITIES(/datum/shred_limb_review)
 		to_chat(src, "You don't have enough space to spin a cocoon!")
 		return
 
-	if(src?.buckled_to() ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(src?.buckled_to() ||stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -909,7 +909,7 @@ CAPABILITIES(/datum/shred_limb_review)
 		return
 	COOLDOWN_START(src, last_special, 5 SECONDS) //No spamming!
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
@@ -1011,7 +1011,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1062,7 +1062,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || is_incorporeal())
+	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || is_incorporeal())
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if (get_dist(src,target) >= 6)
@@ -1134,7 +1134,7 @@ CAPABILITIES(/datum/shred_limb_review)
 		if(hit_object.density || hit_object.anchored)
 			if(isliving(firer))
 				var/mob/living/originator = firer
-				originator.status_at_least(EFFECT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
+				originator.status_at_least(STAT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
 				act_message(originator, null, MSG_SELF(span_warning("You trip over yourself and fall flat on your face!")), \
 					MSG_OTHERS(span_warning("%U% trips over their self and falls flat on their face!")))
 				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
@@ -1144,7 +1144,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(istype(target, /turf/simulated/wall) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/window)) //This can happen normally due to odd terrain. For some reason, it seems to not actually interact with walls.
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			originator.status_at_least(EFFECT_WEAKENED, 2) //Hit a wall? Whoops!
+			originator.status_at_least(STAT_WEAKENED, 2) //Hit a wall? Whoops!
 			act_message(originator, null, MSG_SELF(span_warning("You trip over yourself and fall flat on your face!")), \
 				MSG_OTHERS(span_warning("%U% trips over their self and falls flat on their face!")))
 			play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
@@ -1227,7 +1227,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1269,7 +1269,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
+	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if (get_dist(src,target) >= 6)
@@ -1299,7 +1299,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		target.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+		target.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 
 /mob/living/proc/injection() // Allows the user to inject reagents into others somehow, like stinging, or biting.
@@ -1307,7 +1307,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Inject another being with something!"
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //Epic copypasta from tongue grabbing.
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1419,7 +1419,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	var/mob/living/target = A.answer.value
 	if(target && QDELETED(target))
 		return
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
+	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !Adjacent(target))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if(!istype(target, /mob/living/carbon)) //Safety.
@@ -1597,9 +1597,9 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 /datum/reagent/succubi_numbing/affect_blood(mob/living/carbon/M, alien, removed)
 
 
-	M.status_at_least(EFFECT_BLURRY, 10)
-	M.status_at_least(EFFECT_WEAKENED, 2)
-	M.status_at_least(EFFECT_DROWSY, 20)
+	M.status_at_least(STAT_BLURRY, 10)
+	M.status_at_least(STAT_WEAKENED, 2)
+	M.status_at_least(STAT_DROWSY, 20)
 	if(prob(7))
 		M.show_message(span_warning("You start to feel weakened, your body seems heavy."))
 	return
@@ -1616,8 +1616,8 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 
 /datum/reagent/succubi_paralize/affect_blood(mob/living/carbon/M, alien, removed) //will first keep it like that.  lets see what it changes. if nothing, than I will rework the effect again
 
-	M.status_at_least(EFFECT_WEAKENED, 20)
-	M.status_at_least(EFFECT_BLURRY, 10)
+	M.status_at_least(STAT_WEAKENED, 20)
+	M.status_at_least(STAT_BLURRY, 10)
 	if(prob(10))
 		M.show_message(span_warning("You lose sensation of your body."))
 	return

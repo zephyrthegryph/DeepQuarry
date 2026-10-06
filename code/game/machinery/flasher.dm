@@ -96,7 +96,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 			if(!O.blinded && isliving(O))
 				var/mob/living/L = O
 				L.flash_eyes()
-		O.status_at_least(EFFECT_WEAKENED, flash_time)
+		O.status_at_least(STAT_WEAKENED, flash_time)
 
 CAPABILITIES(/obj/machinery/flasher)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(flasher_emp))))

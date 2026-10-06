@@ -92,7 +92,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 		if(!isliving(M.current))
 			continue
 		if(M.current.stat!=2)
-			M.current.status_at_least(EFFECT_WEAKENED, 10)
+			M.current.status_at_least(STAT_WEAKENED, 10)
 			M.current.flash_eyes()
 
 		SSantag.clear_antag_roles(M)

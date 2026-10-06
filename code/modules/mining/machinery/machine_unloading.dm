@@ -36,7 +36,11 @@
 
 /// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
 /// until something arrives (on_input_entered()).
-/obj/machinery/mineral/unloading_machine/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/mineral/unloading_machine)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/mineral/unloading_machine/proc/work_step(datum/act/timer/A)
 	if(!output_marker() || !input_marker() || !(locate_within(input_marker().loc, /obj/structure/ore_box)) && !(locate_within(input_marker().loc, /obj/item)))
 		return PROCESS_KILL
 	if (src.output_marker() && src.input_marker())

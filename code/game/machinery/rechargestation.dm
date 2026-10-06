@@ -31,8 +31,6 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 /obj/machinery/recharge_station/proc/unbroken()
 	return !has_stat(BROKEN)
 
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, list("unbroken", "cell"))
-
 // ALLOW(init/INSTANCE_STATE): takes its built parts and the high-capacity cell among them
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
@@ -51,7 +49,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, li
 /obj/machinery/recharge_station/proc/has_cell_power()
 	return cell && cell.percent() > 0
 
-/obj/machinery/recharge_station/machine_step()
+/obj/machinery/recharge_station/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	if((has_stat(NOPOWER)) && !has_cell_power()) // No power and cell is dead.
 		if(icon_update_tick)
@@ -257,7 +255,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, li
 
 /obj/machinery/recharge_station/RefreshParts()
 	..()
-	MACHINE_WAKE(src)
+	work_start(src)
 	var/man_rating = 0
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
@@ -313,6 +311,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 	. += build_overlays()
 
 CAPABILITIES(/obj/machinery/recharge_station)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(nameof(stat), nameof(cell)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).
@@ -343,7 +342,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 		add_fingerprint(R)
 		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, R))
 			return
-		MACHINE_WAKE(src)
+		work_start(src)
 		update_icon()
 		return 1
 
@@ -356,7 +355,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 		add_fingerprint(P)
 		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, P))
 			return
-		MACHINE_WAKE(src)
+		work_start(src)
 		update_icon()
 		return 1
 
@@ -366,7 +365,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 			add_fingerprint(H)
 			if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, H))
 				return
-			MACHINE_WAKE(src)
+			work_start(src)
 			update_icon()
 			return 1
 	else
@@ -382,7 +381,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 /obj/machinery/recharge_station/power_change()
 	. = ..()
 	if(.)
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/recharge_station/ghost_pod_recharger
 	name = "drone pod"
@@ -411,7 +410,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYP
 	. += build_overlays()
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
 

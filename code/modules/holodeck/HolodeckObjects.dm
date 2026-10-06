@@ -201,12 +201,12 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 				if(2)
 					act_message(user, M, others = span_danger("%U% bashes %T% against \the [src]!"))
 					if (prob(50))
-						M.status_at_least(EFFECT_WEAKENED, 1)
+						M.status_at_least(STAT_WEAKENED, 1)
 					M.injure(INJURY_PAIN, 10, null, src)
 					hit(25)
 				if(3)
 					act_message(M, user, others = span_danger("<big>%T% crushes %U% against \the [src]!</big>"))
-					M.status_at_least(EFFECT_WEAKENED, 5)
+					M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
 			return OP_PASS
@@ -376,7 +376,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 			return INTERACTION_HANDLED_PASS
 		var/mob/grabbed = G?.grab_target()
 		grabbed.forceMove(src.loc)
-		grabbed.status_at_least(EFFECT_WEAKENED, 5)
+		grabbed.status_at_least(STAT_WEAKENED, 5)
 		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
 		consume(W, user)
 		return INTERACTION_HANDLED_PASS

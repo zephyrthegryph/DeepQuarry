@@ -16,8 +16,6 @@
 
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 OM_FIELD_VIEW(/obj/machinery/optable, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
-DECLARE_PERIODIC_WHILE(/obj/machinery/optable, MACHINE_PIPELINE, "victim")
-
 /obj/machinery/optable/Initialize(mapload)
 	. = ..()
 	for(var/direction in list(NORTH,EAST,SOUTH,WEST))
@@ -27,6 +25,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/optable, MACHINE_PIPELINE, "victim")
 			break
 
 CAPABILITIES(/obj/machinery/optable)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
 	op("optable_interaction_hand", hand(), ungated(), then(PROC_REF(optable_interaction_hand)))
 	op("optable_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), label("Lay on table"), then(PROC_REF(optable_interaction_drag)))
@@ -73,7 +72,7 @@ CAPABILITIES(/obj/machinery/optable)
 	icon_state = "table2-idle"
 	return 0
 
-/obj/machinery/optable/machine_step()
+/obj/machinery/optable/proc/work_step(datum/act/timer/A)
 	if(!check_victim())
 		return // check_victim() cleared the victim, which ends the declared work
 	if(computer)

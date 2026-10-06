@@ -103,8 +103,6 @@
 /// The occupant slot view is a field: rel_set/rel_clear (and the framework clearing it) raise CHANGE_MACHINE_OCCUPANT.
 OM_FIELD_VIEW_OF(/obj/machinery/clonepod, occupant_mob, CHANGE_MACHINE_OCCUPANT)
 OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, list("occupant_mob"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occupied")
-
 /// Derived field: the pod holds a clone (writing occupant_mob raises CHANGE_MACHINE_OCCUPANT).
 /obj/machinery/clonepod/proc/clonepod_occupied()
 	return occupant_mob ? TRUE : FALSE
@@ -122,6 +120,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 	return occupant_mob
 
 CAPABILITIES(/obj/machinery/clonepod)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(clonepod_occupied), wakes_on = list(nameof(occupant_mob)))
 	blast_contents()
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(growing_record), /datum/transhuman/body_record)
@@ -193,8 +192,8 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body
 	// doesn't roll cellular-damage limb mutations.
 	H.body.afflict(/datum/affliction/genetic_damage, null, AFFLICTION_SEVERITY_TERMINAL)
-	H.status_at_least(EFFECT_PARALYZED, 4)
-	H.status_at_least(EFFECT_SLEEPING, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
+	H.status_at_least(STAT_SLEEPING, 4)
 	H.set_cloned_appearance()
 
 	// Move mind to body along with key
@@ -227,7 +226,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	return 1
 
 //Grow clones to maturity then kick them out.  FREELOADERS
-/obj/machinery/clonepod/machine_step()
+/obj/machinery/clonepod/proc/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
 	if(has_stat(NOPOWER)) //Autoeject if power is lost
 		if(occupant)
@@ -243,8 +242,8 @@ CAPABILITIES(/obj/machinery/clonepod)
 			return
 
 		else if(clone_growth_load(occupant) > clone_release_load())
-			occupant.status_at_least(EFFECT_PARALYZED, 4)
-			occupant.status_at_least(EFFECT_SLEEPING, 4)
+			occupant.status_at_least(STAT_PARALYZED, 4)
+			occupant.status_at_least(STAT_SLEEPING, 4)
 
 			//Slowly get that clone healed and finished.
 			occupant.mend(TREAT_GENETIC_REPAIR, (2 * heal_rate) / DQ_CLONE_GROWTH_SCALE)
@@ -255,7 +254,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 			//So clones don't die of oxyloss in a running pod.
 			if(occupant.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 30)
 				occupant.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 60)
-			occupant.status_at_least(EFFECT_SLEEPING, 30)
+			occupant.status_at_least(STAT_SLEEPING, 30)
 			//Also oxygenate ourselves because inaprovaline is so bad at preventing hypoxia!!
 			occupant.mend(TREAT_OXYGENATION, 4)
 

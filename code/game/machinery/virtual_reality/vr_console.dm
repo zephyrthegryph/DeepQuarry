@@ -35,6 +35,7 @@
 	light_color = "#FF0000"
 
 CAPABILITIES(/obj/machinery/vr_sleeper)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
 
@@ -54,8 +55,6 @@ OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADD
 	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
 
 /// Watches its occupant (death, power loss) while it has one.
-DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied")
-
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -70,7 +69,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied
 	..()
 
 /// Watches its occupant (death, power loss) while it has one (the declaration above).
-/obj/machinery/vr_sleeper/machine_step()
+/obj/machinery/vr_sleeper/proc/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable())
 		if(occupant)
@@ -404,7 +403,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 			new_form.set_virtual_reality_mob(TRUE)
 
 	grant(avatar(), granted_verb(/mob/living/carbon/human/proc/perform_exit_vr), avatar()) //ahealing removes the prommie verbs and the VR verbs, giving it back
-	avatar().status_at_least(EFFECT_SLEEPING, 1)
+	avatar().status_at_least(STAT_SLEEPING, 1)
 
 	// Prompt for username after they've enterred the body.
 	open_request(src, /datum/prompt/text, PROC_REF(vr_avatar_named), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)

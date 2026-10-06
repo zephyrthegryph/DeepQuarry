@@ -14,7 +14,11 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/recycling/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/recycling)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/recycling/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL // these are all stateful
 
 DECLARE_APPEARANCE(/obj/machinery/recycling, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("-panel"))))

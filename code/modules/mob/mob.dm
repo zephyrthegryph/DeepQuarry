@@ -66,7 +66,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!client && !teleop)	return
 
 	if (type)
-		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(EFFECT_PARALYZED)) )//Vision related
+		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(STAT_PARALYZED)) )//Vision related
 			if (!( alt ))
 				return
 			else
@@ -81,7 +81,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 				if ((type & VISIBLE_MESSAGE) && (sdisabilities & BLIND))
 					return
 	// Added voice muffling for Issue 41.
-	if(stat == UNCONSCIOUS || has_status(EFFECT_SLEEPING))
+	if(stat == UNCONSCIOUS || has_status(STAT_SLEEPING))
 		to_chat(src, span_filter_notice(span_italics("... You can almost hear someone talking ...")))
 	else
 		if(teleop)
@@ -177,10 +177,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return ((sdisabilities & BLIND) || blinded || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_deaf()
-	return ((sdisabilities & DEAF) || has_status(EFFECT_DEAFENED) || incapacitated(INCAPACITATION_KNOCKOUT))
+	return ((sdisabilities & DEAF) || has_status(STAT_DEAFENED) || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_paralyzed()
-	return status_units(EFFECT_PARALYZED)
+	return status_units(STAT_PARALYZED)
 
 /mob/proc/is_physically_disabled()
 	return incapacitated(INCAPACITATION_DISABLED)
@@ -189,13 +189,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return incapacitated(INCAPACITATION_KNOCKDOWN)
 
 /mob/proc/incapacitated(incapacitation_flags = INCAPACITATION_DEFAULT)
-	if((incapacitation_flags & INCAPACITATION_STUNNED) && has_status(EFFECT_STUNNED))
+	if((incapacitation_flags & INCAPACITATION_STUNNED) && has_status(STAT_STUNNED))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (has_status(EFFECT_WEAKENED) || resting))
+	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (has_status(STAT_WEAKENED) || resting))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || has_status(EFFECT_SLEEPING)))
+	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || has_status(STAT_SLEEPING)))
 		return 1
 
 	if((incapacitation_flags & INCAPACITATION_RESTRAINED) && restrained())
@@ -1527,7 +1527,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	if(ask.stance)
 		L.set_use_stance(ask.stance)
 	if(ask.value == "Yes")
-		L.status_adjust(EFFECT_SLEEPING, -100)
+		L.status_adjust(STAT_SLEEPING, -100)
 
 VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))
 VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS_FULL, PROC_REF(vv_topic_regen_icons_full))

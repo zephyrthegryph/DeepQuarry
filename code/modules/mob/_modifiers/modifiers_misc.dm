@@ -88,9 +88,9 @@ the artifact triggers the rage.
 	act_message(L, null, others = span_critical("%U% descends into an all consuming rage!"))
 
 	// End all stuns.
-	L.status_set(EFFECT_PARALYZED, 0)
-	L.status_set(EFFECT_STUNNED, 0)
-	L.status_set(EFFECT_WEAKENED, 0)
+	L.status_set(STAT_PARALYZED, 0)
+	L.status_set(STAT_STUNNED, 0)
+	L.status_set(STAT_WEAKENED, 0)
 	L.mend(TREAT_ANALGESIC, 200) // Rage drowns out the pain.
 	L.lying = 0
 	L.update_canmove()
@@ -108,8 +108,8 @@ the artifact triggers the rage.
 
 		if(prob(last_shock_stage))
 			to_chat(L, span_warning("You pass out from the pain you were suppressing."))
-			L.status_at_least(EFFECT_PARALYZED, 5)
-			L.status_at_least(EFFECT_SLEEPING, 5)
+			L.status_at_least(STAT_PARALYZED, 5)
+			L.status_at_least(STAT_SLEEPING, 5)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L

@@ -2,7 +2,7 @@
 
 	if(stat == DEAD)
 		icon_state = "[initial(icon_state)]_dead"
-	else if(lying || resting || has_status(EFFECT_STUNNED))
+	else if(lying || resting || has_status(STAT_STUNNED))
 		icon_state = "[initial(icon_state)]_sleep"
 	else
 		icon_state = "[initial(icon_state)]"

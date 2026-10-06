@@ -108,7 +108,7 @@
 	if(target.loc != src)
 		to_chat(user, span_vwarning("\The [target] is no longer in \the [src]."))
 		return FALSE
-	target.status_adjust(EFFECT_SLEEPING, 500000)
+	target.status_adjust(STAT_SLEEPING, 500000)
 	to_chat(target, span_vwarning("\The [user] has put you to sleep, you will remain unconscious until ejected from the belly."))
 	return TRUE
 

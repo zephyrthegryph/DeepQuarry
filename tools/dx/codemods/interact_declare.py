@@ -364,6 +364,8 @@ def main():
                 mention_idx[w].add(line_owner)
                 mention_count[(w, line_owner)] += 1
     tree_text = "\n".join(tree_lines)
+    # a handler called on a receiver (`jets.toggle_rockets_effect(wearer)` from a rig module) is called from outside, whatever the caller's type
+    qualified_calls = set(re.findall(r"\.\s*(\w+)\s*\(", "\n".join(strip_code(l) for l in tree_lines if l)))
     defs_by_name = defaultdict(list)
     dre = re.compile(r"^(/[\w/]+?)/(?:proc/)?(\w+)\(([^)]*)\)\s*(//.*)?$")
     for rel, f in files.items():
@@ -578,7 +580,19 @@ def main():
                     break
             self_mentions = sum(len(words_in(strip_code(f.lines[k]), s["proc"])) for a in asks for k in a["remove"])
             outside = sum(mention_count[(s["proc"], o)] for o in mention_idx.get(s["proc"], ()) if o == "" or related(o, t))
-            if others or outside - self_mentions > 0:
+            if others or outside - self_mentions > 0 or s["proc"] in qualified_calls:
+                # a Use or verb effect the type also calls itself (an older verb, a hotkey): the proc stays as it is, and the op's effect is a thin
+                # one that calls it the way the old resolver did (its return was never read)
+                wbody = chr(10).join(strip_code(l) for l in body_lines)
+                if not others and s["kind"] in FALLS_THROUGH and not asks and "open_request(" not in wbody and not words_in(wbody, n_inter):
+                    wrapper = "%s_op" % s["proc"]
+                    if defs_by_name.get(wrapper) or re.search(r"\b" + wrapper + r"\b", tree_text):
+                        bad = "name_clash"
+                        break
+                    helper = "/// The %s op: the verb's effect, as the old resolver ran it.%s%s/proc/%s(datum/act/op/A)%s%s(A.actor, A.held, null)%sreturn OP_OK" % (
+                        s["proc"], chr(10), t, wrapper, chr(10) + chr(9), s["proc"], chr(10) + chr(9))
+                    handlers.append({"actor_type": "mob", "spec": s, "rel": None, "idx": None, "first": None, "last": None, "actor": None, "held": None, "held_type": "obj/item", "body": "", "asks": [], "wrap": wrapper, "wrap_helper": helper})
+                    continue
                 bad = "handler_shared"
                 break
             # a test that calls the handler on an unknown receiver blocks; one that calls it on a related type is rewritten to the driver by hand
@@ -754,6 +768,7 @@ def main():
         for t, plan in sorted(plans.items()):
             tre = re.escape(t)
             entries = []
+            wrap_helpers = []
             for h in plan["handlers"]:
                 s = h["spec"]
                 extra_b = [binding_of(x, h)[0] for x in s.get("extra_kinds", [])]
@@ -786,6 +801,12 @@ def main():
                 if h.get("pass"):
                     parts.append("passes()")
                     entries.append(", ".join(parts) + ")")
+                    continue
+                if h.get("wrap"):
+                    parts.append("then(PROC_REF(%s))" % h["wrap"])
+                    entries.append(", ".join(parts) + ")")
+                    wrap_helpers.extend((t, hp) for hp in h["helpers"])  # its requirement wrappers: no rewritten handler carries them
+                    wrap_helpers.append((t, h["wrap_helper"]))
                     continue
                 parts.append("then(PROC_REF(%s))" % s["proc"])
                 entries.append(", ".join(parts) + ")")
@@ -878,8 +899,12 @@ def main():
                 fb, lb = body_range(bf.lines, bi)
                 bf.lines[lb] = bf.lines[lb] + "".join("\n\t" + e for e in entries)
                 bf.dirty = True
+                if wrap_helpers:
+                    f.lines[first] = "\n\n".join(hp for _t, hp in wrap_helpers)
             else:
                 f.lines[first] = "CAPABILITIES(%s)" % t + "".join("\n\t" + e for e in entries)
+                if wrap_helpers:
+                    f.lines[first] += "\n\n" + "\n\n".join(hp for _t, hp in wrap_helpers)
             f.dirty = True
         for f in files.values():
             if f.dirty:

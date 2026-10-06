@@ -672,7 +672,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 					H.drop_both_hands()
 
 		L.water_act(2)
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		if(show_message)
 			to_chat(L, effect_message)
 
@@ -741,7 +741,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 			return
 
 		L.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		if(show_message)
 			to_chat(L, effect_message)
 

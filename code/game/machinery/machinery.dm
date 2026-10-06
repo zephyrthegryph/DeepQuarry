@@ -256,6 +256,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 /proc/machine_wake(obj/machinery/M)
 	if(!M || QDELETED(M))
 		return
+	// A machine whose work is declared (started_work(), code/library/machine/started_work.dm) is started there.
+	if(work_start(M))
+		return
 	// A DECLARE_PERIODIC_WHILE(..., MACHINE_PIPELINE, ...) whose state doesn't hold refuses (code/datums/sys/periodic.dm).
 	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
 		return
@@ -274,6 +277,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 
 /// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
 /proc/machine_sleep(obj/machinery/M)
+	if(work_stop(M))
+		return
 	if(M)
 		M.set_step_active(FALSE)
 		M.set_step_waiting_power(FALSE)
@@ -282,6 +287,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 /// until power returns and it is whole (power_change(), atom_fix()), then it runs again. Returns
 /// PROCESS_KILL: `return sleep_until_powered()`.
 /obj/machinery/proc/sleep_until_powered()
+	if(cap_of(src, CAP_STARTED_WORK))
+		return work_wait_for_power(src)
 	set_step_waiting_power(TRUE)
 	return PROCESS_KILL
 
@@ -554,7 +561,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 			if(temp_apc && temp_apc.terminal && temp_apc.terminal.power_region)
 				power_warn(temp_apc.terminal.power_region)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return 1
 	return 0
 

@@ -4,7 +4,7 @@
 // read through get_trauma() / get_burn(). Located injuries reach the limb
 // through receive_injury() (from the humanoid plan, i.e. injure()); nothing
 // else writes limb damage. apply_wound_damage() and heal_wound_damage() are
-// body-internal: code outside code/modules/body and code/modules/organs uses
+// body-internal: code outside code/modules/body uses
 // injure() / mend() (enforced by tools/ci/check_grep.sh).
 //
 // When a limb or organ leaves the body its afflictions travel with it
@@ -15,6 +15,7 @@
 	var/list/detached_afflictions
 
 CAPABILITIES(/obj/item/organ)
+	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))
 
@@ -123,7 +124,7 @@ CAPABILITIES(/obj/item/organ)
 /// excess becomes shock, as in apply_wound_damage(). Returns the amount the
 /// wounds took.
 /obj/item/organ/external/proc/accumulate_wound_damage(wound_kind, amount)
-	if(amount <= 0 || (owner && om_has(owner, EFFECT_GODMODE)))
+	if(amount <= 0 || (owner && in_godmode(owner)))
 		return 0
 	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
 	var/inflict = amount

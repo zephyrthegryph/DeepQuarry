@@ -247,7 +247,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
+			L.status_at_least(STAT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] ambushes you!"))
 			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()

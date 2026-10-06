@@ -195,7 +195,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	if(INCAPACITATED_IGNORING(user, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
 		return
 
-	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED))
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED))
 		return
 
 	user.face_atom(A) // change direction to face what you clicked on

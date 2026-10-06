@@ -19,46 +19,26 @@
 	active_power_usage = 300
 	var/datum/tgui_module/power_monitor/power_monitor
 
-// Checks the sensors for alerts. If change (alerts cleared or detected) occurs, calls for icon update.
-/obj/machinery/computer/power_monitor/machine_step()
+/// Checks the sensors for alerts every machine service interval; a change (alerts cleared or detected) redraws it.
+/obj/machinery/computer/power_monitor/proc/monitor_step(datum/act/timer/A)
 	var/alert = check_warnings()
 	if(alert != alerting)
 		alerting = alert
 		update_icon()
-	var/list/dependencies = list()
-	for(var/obj/machinery/power/sensor/S as anything in LAZYCOPY(power_monitor.grid_sensors))
-		if(S.power_region)
-			dependencies[S] = TRUE
-	if(length(dependencies))
-		var/list/keys = list()
-		for(var/obj/machinery/power/sensor/S as anything in dependencies)
-			keys += list(S, CHANGE_POWER_GRID_STATE)
-		sleep_until_keys(keys)
-		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
+// The power monitoring console: its window is its monitor module's (an empty hand on a working console), and it watches its sensors for alerts
+// (monitor_step()).
 CAPABILITIES(/obj/machinery/computer/power_monitor)
 	owns_one(nameof(power_monitor), starts = /datum/tgui_module/power_monitor)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(monitor_step)))
+	op("use", hand(), label("Use"), ungated(), wait(0), when(req_empty_hand()), needs(req_operable()), then(PROC_REF(used)))
 
 
-// On user click opens the UI of this computer.
-/obj/machinery/computer/power_monitor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/power_monitor_use,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/power_monitor_use
-	id = "power_monitor_use"
-	name = "Use"
-	effect = /obj/machinery/computer/power_monitor/proc/interaction_use
-
-/obj/machinery/computer/power_monitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(!operable())
-		return TRUE
-	tgui_interact(user)
-	return TRUE
+/// A hand opens its monitor.
+/obj/machinery/computer/power_monitor/proc/used(datum/act/op/A)
+	add_fingerprint(A.actor)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/power_monitor/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -74,14 +54,3 @@ CAPABILITIES(/obj/machinery/computer/power_monitor)
 			return 1
 	return 0
 
-/// Audit: a sleeping monitor's alert light must match its sensors.
-/obj/machinery/computer/power_monitor/om_sleep_violation()
-	if(!asleep_on_keys())
-		return null
-	if(check_warnings() != alerting)
-		return "asleep with a stale alert ([alerting] vs [check_warnings()])"
-	return null
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/computer/power_monitor/step_start_condition()
-	return TRUE // arms its grid watches

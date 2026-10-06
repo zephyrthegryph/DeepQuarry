@@ -1795,6 +1795,8 @@ organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURA
   every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
   horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
   (`ORGAN_LEGACY_BURST`).
+* **Liver strain under heavy toxin load is 0.2 a cycle** (was 2.0 every tenth cycle): the pin's twenty cycles cost about 4 (old run 5.65, the
+  bursts landing with other random liver harm).
 * **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
   falls to below 8 within thirty cycles (old run 8 -> 6.6).
 * "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
@@ -1918,3 +1920,69 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
 - Email administration: its buttons need the network access again (`needs(req(PROC_REF(network_admin_access), silent = TRUE))`). The old `ui_act_allowed()` guard had stopped running when the window moved to ops.
 - Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
 - tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.
+
+## Statuses, immunities and godmode on the stat layer (rewrite/om-life, L3)
+
+Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) and every focused test that applies a status.
+
+* **Statuses run on the mob's biology clock.** A status is a status stat (`code/library/mob/statuses.dm`) whose dose is a hold on
+  `HOLD_CLOCK_BIO`: stasis and suspension pause it (the OM statuses ran on the mob's timer clock). A stun taken into a stasis bed lasts until
+  the mob's biology has lived it out.
+* **An immunity zeroes a status instead of ending it.** Gaining the immunity (godmode, a mutation, a type's `immune_to()`) makes `has_status()`
+  FALSE at once, as before; if the immunity ends while the dose still has time left, the status is back for the rest of it (the OM ended the
+  dose when the immunity arrived).
+* **Type immunities are declarations.** The OM decls (`self_effects`) became `immune_to()` / `immune_to_incapacitation()` in each type's
+  CAPABILITIES block; godmode's implied immunities are `immune_to(..., when = STAT_GODMODE)` on /mob.
+* **`holds_status()` holds under the activation's source.** The OM keyed each activation's hold; the stat layer keeps one hold per source and
+  stat, so two activations with the same source share one hold (none exist today).
+* `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
+  path") is a separate step: it changes what ops refuse.
+* Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
+/^>>>>>>> origin/master$/d
+## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+
+Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
+code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
+the step's state checks are its `when()`, steadiness its `needs()`, the organ choice and the drastic-step confirmation `asks()`, `claims()`, `wait()`, and
+the roll in `then()`. `do_surgery()`, the focus and step om tasks, `choose_surgical_step_for()`, `surgery_ask()`, `surgery_zones_in_progress` and the
+steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` and `confirm_text()`).
+
+* **One click runs the best step.** With a tool several steps take, the click performs the highest-priority step (then declaration order); the others
+  are the patient's menu entries. The old click asked which step every time.
+* **One surgery per surgeon, one claim per patient.** The per-zone lock is the op's claim: while a step waits on a patient, a second claiming op on them
+  is refused (two surgeons could work two zones at once before).
+* **The surgeon must stay conscious and adjacent with the tool in hand** (the op's keeps): an interruption abandons the step, as before.
+* **Self-surgery's three seconds of focus are part of the step's wait** (was a separate focus task before choosing).
+* Scanners and stethoscopes keep their patient use through `use_on_patient()` (was an override of `do_surgery()`).
+* Boot fix found on the way: atoms created during global init (a GLOBAL_DATUM_INIT statclick) no longer index the lifecycle tables before they exist.
+
+## Body migration, slice 6: loose organs (rewrite/body-full)
+
+Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
+from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
+`DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).
+
+
+## The machines still on machine_step(): started work (rewrite/power-plants)
+
+Every machine outside atmospherics that still had a `machine_step()` (90 types: medical, kitchen, mining, shields, xenoarchaeology, cargo,
+recycling, overmap consoles, the singularity beacon, ...) runs its step on `started_work()` (`code/library/machine/started_work.dm`): an
+`every(MACHINE_SERVICE_INTERVAL)` that runs while its STARTED_WORK_ACTIVE key holds. The step's PROCESS_KILL stops it; `MACHINE_WAKE()` /
+`MACHINE_SLEEP()` and `sleep_until_powered()` route to `work_start()` / `work_stop()` / `work_wait_for_power()`; a `DECLARE_PERIODIC_WHILE`
+gate became the work's `when` (tracked vars) or `gate` (computed procs, asked before each step), with `wakes_on` the vars the gate read; a
+`step_start_condition()` became `starts =`. The machines left the machine pipeline roster. Conversion pins were recorded for every type
+before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged: no interaction moved.
+
+- **Work no longer sleeps on change keys.** The disposal unit, the point defense turret and the shield capacitor slept on watched keys
+  (`sleep_until_keys()`) and were woken by the pipeline: the disposal unit now stops (PROCESS_KILL) and is started by what changes it (an
+  insertion, a flush, its gas watch, as before); the turret looks for meteors every step while it is active; the capacitor asks its grid
+  again every step while it is short of charge. Their `om_sleep_violation()` audits and the key-sleep tests are gone.
+- A machine whose gate is a computed proc (an occupied pod, a cooker keeping its heat, a powered drying rack) no longer parks while the gate
+  is false: its started work skips the step instead, so the gate is asked every 2 s. The cooker's and the drying rack's gates are virtual
+  (`needs_step()`, `step_gate()`) so the subtype's rule replaces its parent's.
+- `..()` calls into the base `machine_step()` (which only answered PROCESS_KILL) are gone; the nuclear bomb's step answers PROCESS_KILL itself.
+- The legacy tests that read the pipeline (`machine_stepping()`, `sys_periodic_allows()`) read the work (`test_work_allowed()`,
+  `test_machine_idle()`, `test_step_machine()` in `dq_sys_periodic_tests.dm`); `dq_started_work_waits_for_power` tests the library.
+- **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
+  to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
+  runs it through a thin `<verb>_op(A)` effect.

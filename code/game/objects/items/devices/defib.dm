@@ -512,7 +512,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 		return
 
 	M.emote("gasp")
-	M.status_at_least(EFFECT_WEAKENED, rand(10,25))
+	M.status_at_least(STAT_WEAKENED, rand(10,25))
 	apply_brain_damage(M)
 	M.injure(INJURY_PAIN, 40, BP_TORSO, src) // Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
 	// s Start: Defib pain

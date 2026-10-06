@@ -86,7 +86,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlay
 		user.remove_from_mob(src)
 		dismantle(user)
 		var/mob/living/T = M
-		T.status_at_least(EFFECT_WEAKENED, 10)
+		T.status_at_least(STAT_WEAKENED, 10)
 		T.injure(INJURY_BLUNT, 20, null, src)
 		return ITEM_INTERACT_SUCCESS
 	..()

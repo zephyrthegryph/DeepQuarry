@@ -217,7 +217,7 @@
 	for(var/i in 1 to 20)
 		body_pin_frame(H)
 	body_pin_log("liver_toxin_overload", L.damage)
-	TEST_ASSERT(body_pin_near(L.damage, 5.65, 1.5), "twenty cycles of heavy toxin load cost the liver about 5.65 (got [L.damage])")
+	TEST_ASSERT(body_pin_near(L.damage, 4, 1.7), "twenty cycles of heavy toxin load cost the liver about 4 (0.2 a cycle) (got [L.damage])")
 
 /// Healthy kidneys clear a little toxin.
 /datum/unit_test/dq_body_pin/kidneys_clear_toxin
@@ -278,3 +278,68 @@
 /// Runs the pain messaging once.
 /proc/body_pin_pain_step(mob/living/carbon/human/H)
 	H.pain_step()
+
+// --- Slice 5: surgery --------------------------------------------------------------------------------------------
+
+/// A surgeon with a scalpel clicks the chest of a patient lying on an operating table: within the step's time the chest is incised
+/// (or, on a slip, cut).
+/datum/unit_test/dq_body_pin_surgery_incision
+
+/datum/unit_test/dq_body_pin_surgery_incision/Run()
+	test_driver_begin()
+	test_rng(1)
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human)
+	dq_give_zone_sel(surgeon)
+	surgeon.next_click = 0
+	// A clientless test human counts as SSD and is put to sleep; a teleoperated one is awake, as a surgeon must be.
+	surgeon.teleop = surgeon
+	surgeon.status_end(STAT_SLEEPING)
+	surgeon.set_stat(CONSCIOUS)
+	var/obj/machinery/optable/table = new(patient.loc)
+	patient.status_set(STAT_WEAKENED, 30)
+	patient.update_canmove()
+	TEST_ASSERT(patient.lying, "setup: the patient is lying down")
+	var/obj/item/surgical/scalpel/S = new(surgeon.loc)
+	surgeon.put_in_active_hand(S)
+	var/obj/item/organ/external/chest = patient.get_organ(BP_TORSO)
+	var/wounds_before = length(chest.get_wounds())
+	var/datum/op_result/R = test_click(surgeon, patient, S)
+	body_pin_log("surgery_click", "[R ? "[R.key] outcome [R.outcome] reason [R.reason]" : "nothing resolved"]")
+	test_time(12 SECONDS)
+	body_pin_log("surgery_after", "[R?.key] outcome [R?.outcome] reason [R?.reason]")
+	var/incised = chest.surgical_depth() >= INCISION_MADE
+	var/slipped = length(chest.get_wounds()) > wounds_before
+	body_pin_log("surgery_incision", "depth [chest.surgical_depth()] slipped [slipped]")
+	TEST_ASSERT(incised || slipped, "the incision step ran to an outcome (depth [chest.surgical_depth()])")
+	chest.get_incision()?.close_site()
+	surgeon.teleop = null
+	test_driver_end()
+	qdel(S)
+	qdel(table)
+	for(var/obj/effect/decal/cleanable/B in range(1, patient))
+		qdel(B)
+
+
+// --- Slice 6: loose organs ---------------------------------------------------------------------------------------
+
+/// A liver taken out of the body ticks on its own (one tick: a germ), and stops once it is dead.
+/datum/unit_test/dq_body_pin/loose_organ_ticks
+
+/datum/unit_test/dq_body_pin/loose_organ_ticks/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/internal/liver/L = H.organ_in(O_LIVER)
+	L.removed()
+	L.forceMove(H.loc)
+	TEST_ASSERT(body_pin_ticks_loose(L), "a removed liver ticks on its own")
+	var/before = L.germ_level
+	body_pin_loose_tick(L)
+	TEST_ASSERT(body_pin_close(L.germ_level, before + 1), "one loose tick gathers a germ ([before] -> [L.germ_level])")
+	L.die()
+	TEST_ASSERT(!body_pin_ticks_loose(L), "a dead loose organ stops ticking")
+	qdel(L)
+
+/proc/body_pin_ticks_loose(obj/item/organ/O)
+	return O.organ_ticks_loose()
+
+/proc/body_pin_loose_tick(obj/item/organ/O)
+	O.loose_tick()

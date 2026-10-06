@@ -45,7 +45,7 @@
 
 	if(src.stat == DEAD)
 		src.set_blinded(1)
-		src.status_set(EFFECT_MUTED, 0)
+		src.status_set(STAT_MUTED, 0)
 		src.deaf_loop.stop()
 		return 1
 
@@ -65,10 +65,10 @@
 		if(31 to INFINITY)
 			emp_damage = 30//Let's not overdo it
 		if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
-			status_set(EFFECT_BLINDED, 1)
+			status_set(STAT_BLINDED, 1)
 			set_blinded(1)
-			status_set(EFFECT_DEAFENED, 1)
-			status_set(EFFECT_MUTED, 1)
+			status_set(STAT_DEAFENED, 1)
+			status_set(STAT_MUTED, 1)
 			if(!alert)//Sounds an alarm, but only once per 'level'
 				emote("alarm")
 				to_chat(src, span_red("Major electrical distruption detected: System rebooting."))
@@ -78,12 +78,12 @@
 		if(20)
 			alert = 0
 			set_blinded(0)
-			status_set(EFFECT_BLINDED, 0)
-			status_set(EFFECT_DEAFENED, 0)
-			status_set(EFFECT_MUTED, 0)
+			status_set(STAT_BLINDED, 0)
+			status_set(STAT_DEAFENED, 0)
+			status_set(STAT_MUTED, 0)
 			emp_damage -= 1
 		if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
-			status_set(EFFECT_BLURRY, 1)
+			status_set(STAT_BLURRY, 1)
 			set_ear_damage(1)
 			if(!alert)
 				emote("alert")
@@ -93,7 +93,7 @@
 				emp_damage -= 1
 		if(10)
 			alert = 0
-			status_set(EFFECT_BLURRY, 0)
+			status_set(STAT_BLURRY, 0)
 			set_ear_damage(0)
 			emp_damage -= 1
 		if(2 to 9)//Low level of EMP damage, has few effects(handled elsewhere)
@@ -144,8 +144,8 @@
 		else
 			src.clear_fullscreen("blind")
 			src.set_fullscreen(src.is_nearsighted(), "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-			src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+			src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+			src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
 /mob/living/carbon/brain/life_hud_health_icons()
 	. = ..()

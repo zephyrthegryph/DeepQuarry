@@ -49,8 +49,8 @@
 	//Apply damage: the sleeve is grown out of genetic damage in the pod.
 	set_occupant(H)
 	H.body.afflict(/datum/affliction/genetic_damage, null, DQ_SLEEVE_GROWTH_LOAD)
-	H.status_at_least(EFFECT_PARALYZED, 4)
-	H.status_at_least(EFFECT_SLEEPING, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
+	H.status_at_least(STAT_SLEEPING, 4)
 
 	//Machine specific stuff at the end
 	update_icon()
@@ -58,7 +58,7 @@
 	return 1
 
 /// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
-/obj/machinery/clonepod/transhuman/machine_step()
+/obj/machinery/clonepod/transhuman/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
 	if(has_stat(NOPOWER))
 		if(occupant)
@@ -145,8 +145,6 @@
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
 /// Print progress (percent); 0 while idle.
 OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE, "busy")
-
 /obj/machinery/transhuman/synthprinter/latent_generator()
 	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
 	// the key (DM's named-argument list syntax), not circuit's value -- the
@@ -190,7 +188,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	max_res_amount = store_rating
 
 /// Prints while busy with a body; idle, it sleeps until one is queued.
-/obj/machinery/transhuman/synthprinter/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
+
+/obj/machinery/transhuman/synthprinter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
@@ -512,8 +514,8 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	else
 		to_chat(occupant, span_warning("You feel a small pain in your head as you're given a new backup implant. Oh, and a new body. It's disorienting, to say the least."))
 
-	occupant.status_set(EFFECT_CONFUSED, max(occupant.status_units(EFFECT_CONFUSED), confuse_amount))								// Apply immedeate effects
-	occupant.status_at_least(EFFECT_BLURRY, blur_amount)
+	occupant.status_set(STAT_CONFUSED, max(occupant.status_units(STAT_CONFUSED), confuse_amount))								// Apply immedeate effects
+	occupant.status_at_least(STAT_BLURRY, blur_amount)
 
 	// Vore deaths get a fake modifier labeled as such
 	if(!occupant.mind)

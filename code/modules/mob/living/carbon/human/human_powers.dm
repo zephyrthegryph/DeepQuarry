@@ -41,7 +41,7 @@
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, span_notice("You cannot tackle someone in your current state."))
 		return
 
@@ -69,7 +69,7 @@
 	var/mob/living/carbon/human/H = answerer
 	if(!H.Adjacent(selected) || !COOLDOWN_FINISHED(H, last_special))
 		return "can't reach"
-	if(H.stat || H.has_status(EFFECT_PARALYZED) || H.has_status(EFFECT_STUNNED) || H.has_status(EFFECT_WEAKENED) || H.lying || H.restrained() || H.buckled_to())
+	if(H.stat || H.has_status(STAT_PARALYZED) || H.has_status(STAT_STUNNED) || H.has_status(STAT_WEAKENED) || H.lying || H.restrained() || H.buckled_to())
 		return "not able to"
 	return null
 
@@ -88,13 +88,13 @@
 
 	var/failed
 	if(prob(75))
-		T.status_at_least(EFFECT_WEAKENED, rand(0.5,3))
+		T.status_at_least(STAT_WEAKENED, rand(0.5,3))
 	else
 		failed = 1
 
 	play_sfx(src, SFX_WEAPONS_PIERCE)
 	if(failed)
-		src.status_at_least(EFFECT_WEAKENED, rand(2,4))
+		src.status_at_least(STAT_WEAKENED, rand(2,4))
 
 	for(var/mob/O in viewers(src, null))
 		if ((O.client && !( O.blinded )))

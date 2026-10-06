@@ -186,15 +186,15 @@
 		if(SMITE_PIE)
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
 			play_sfx(target, SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
-			target.status_at_least(EFFECT_WEAKENED, 1)
+			target.status_at_least(STAT_WEAKENED, 1)
 			act_message(target, null, others = span_danger("%U% is struck by pie!"))
 
 		if(SMITE_SPICE)
 			to_chat(target, span_warning("Spice spice baby!"))
-			target.status_at_least(EFFECT_BLURRY, 25)
-			target.status_at_least(EFFECT_BLINDED, 10)
-			target.status_at_least(EFFECT_STUNNED, 5)
-			target.status_at_least(EFFECT_WEAKENED, 5)
+			target.status_at_least(STAT_BLURRY, 25)
+			target.status_at_least(STAT_BLINDED, 10)
+			target.status_at_least(STAT_STUNNED, 5)
+			target.status_at_least(STAT_WEAKENED, 5)
 			play_sfx(target, SFX_EFFECTS_SPRAY2, extrarange = get_rand_frequency(), falloff = 5)
 
 		if(SMITE_HOTDOG)
@@ -224,9 +224,9 @@
 		target.gib()
 	else
 		target.injure(INJURY_BLUNT, max(99, target.get_endurance() * target.vitality() - 1), flags = INJURE_IGNORE_RESISTANCE)
-		target.status_at_least(EFFECT_STUNNED, 20)
-		target.status_at_least(EFFECT_WEAKENED, 20)
-		target.status_set(EFFECT_STUTTERING, 20)
+		target.status_at_least(STAT_STUNNED, 20)
+		target.status_at_least(STAT_WEAKENED, 20)
+		target.status_set(STAT_STUTTERING, 20)
 
 GLOBAL_VAR(redspace_abduction_z)
 
@@ -409,7 +409,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), with = list(target))
 
 /proc/hotdog_smite_dress(mob/living/target)
-	target.status_at_least(EFFECT_STUNNED, 10)
+	target.status_at_least(STAT_STUNNED, 10)
 	if(!ishuman(target))
 		return
 	var/mob/living/carbon/human/H = target

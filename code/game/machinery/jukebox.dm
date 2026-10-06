@@ -28,9 +28,8 @@
 	var/list/obj/item/juke_remote/remotes
 	var/datum/track/current_track
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing")
-
 CAPABILITIES(/obj/machinery/media/jukebox)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
 	interface("Jukebox", title = "RetroBox - Space Style")
 	op("change_track", ui_act("change_track", arg("change_track")), then(PROC_REF(ui_act_change_track)))
@@ -67,7 +66,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 
-/obj/machinery/media/jukebox/machine_step()
+/obj/machinery/media/jukebox/proc/work_step(datum/act/timer/A)
 	if(!operable())
 		disconnect_media_source()
 		set_playing(0)
@@ -253,16 +252,16 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 		for(var/mob/living/carbon/M in ohearers(6, src))
 			if(M.get_ear_protection() >= 2)
 				continue
-			M.status_set(EFFECT_SLEEPING, 0)
-			M.status_adjust(EFFECT_STUTTERING, 20)
-			M.status_adjust(EFFECT_DEAFENED, 30)
+			M.status_set(STAT_SLEEPING, 0)
+			M.status_adjust(STAT_STUTTERING, 20)
+			M.status_adjust(STAT_DEAFENED, 30)
 			M.deaf_loop.start() // Ear Ringing/Deafness
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_WEAKENED, 3)
 			if(prob(30))
-				M.status_at_least(EFFECT_STUNNED, 10)
-				M.status_at_least(EFFECT_PARALYZED, 4)
+				M.status_at_least(STAT_STUNNED, 10)
+				M.status_at_least(STAT_PARALYZED, 4)
 			else
-				M.status_adjust(EFFECT_JITTERY, 500)
+				M.status_adjust(STAT_JITTERY, 500)
 		if(!after_pending(src, "jukebox_emag_explosion"))
 			after(src, 1.5 SECONDS, PROC_REF(explode), key = "jukebox_emag_explosion")
 	else if(current_track() == null)
@@ -507,7 +506,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /obj/machinery/media/jukebox/casinojukebox/getTracksList()
 	return SSmedia_tracks.casino_tracks
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/media/jukebox/step_start_condition()
 	return playing
 

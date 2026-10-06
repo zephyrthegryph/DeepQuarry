@@ -148,6 +148,7 @@
 
 /// This limb's open surgical site, if any.
 /obj/item/organ/external/proc/get_incision()
+	RETURN_TYPE(/datum/affliction/surgical_incision)
 	for(var/datum/affliction/surgical_incision/I in afflictions_here())
 		return I
 	return null

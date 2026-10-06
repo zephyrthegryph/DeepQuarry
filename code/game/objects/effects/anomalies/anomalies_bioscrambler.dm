@@ -67,7 +67,7 @@
 	for(var/mob/living/carbon/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(target.z != z)
 			continue
-		if(om_has(target, EFFECT_GODMODE))
+		if(in_godmode(target))
 			continue
 		if(target.stat >= UNCONSCIOUS)
 			continue

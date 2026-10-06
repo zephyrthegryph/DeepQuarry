@@ -9,8 +9,6 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 /obj/machinery/suit_cycler/proc/cycler_has_work()
 	return active && irradiating > 0
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has_work")
-
 /obj/machinery/suit_cycler
 	name = "suit cycler"
 	desc = "An industrial machine for painting and refitting voidsuits."
@@ -331,6 +329,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 STAT(/obj/machinery/suit_cycler, safeties, ALL)
 
 CAPABILITIES(/obj/machinery/suit_cycler)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cycler_has_work), wakes_on = list(nameof(active), nameof(irradiating)))
 	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Suit storage unit", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
@@ -489,7 +488,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		if(radiation_level > 1)
 			suit.wash(CLEAN_SCRUB)
 
-/obj/machinery/suit_cycler/machine_step()
+/obj/machinery/suit_cycler/proc/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(!active)

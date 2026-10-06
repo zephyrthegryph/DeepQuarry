@@ -34,8 +34,8 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 		for(var/obj/item/content_item in target_mob)
 			target_mob.drop_from_inventory(content_item)
 		//teleport person to cell
-		target_mob.status_at_least(EFFECT_PARALYZED, 5)
-		target_mob.status_at_least(EFFECT_SLEEPING, 5)
+		target_mob.status_at_least(STAT_PARALYZED, 5)
+		target_mob.status_at_least(STAT_SLEEPING, 5)
 		target_mob.forceMove(pick(GLOB.prisonwarp))
 		if(ishuman(target_mob))
 			var/mob/living/carbon/human/prisoner = target_mob
@@ -226,16 +226,16 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	feedback_add_details("admin_verb","DIRN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Toggle godmode on the target.", ADMIN_CATEGORY_GAME, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	if(om_has(target_mob, EFFECT_GODMODE))
+	if(in_godmode(target_mob))
 		target_mob.disable_godmode()
 
-	else if(!om_has(target_mob, EFFECT_GODMODE))
+	else if(!in_godmode(target_mob))
 		target_mob.enable_godmode()
 
-	to_chat(user, span_notice("Toggled [om_has(target_mob, EFFECT_GODMODE) ? "ON" : "OFF"]"))
+	to_chat(user, span_notice("Toggled [in_godmode(target_mob) ? "ON" : "OFF"]"))
 
-	log_admin("[key_name(user)] has toggled [key_name(target_mob)]'s godmode to [om_has(target_mob, EFFECT_GODMODE) ? "On" : "Off"]")
-	var/msg = "[key_name_admin(user)] has toggled [ADMIN_LOOKUPFLW(target_mob)]'s godmode to [om_has(target_mob, EFFECT_GODMODE) ? "On" : "Off"]"
+	log_admin("[key_name(user)] has toggled [key_name(target_mob)]'s godmode to [in_godmode(target_mob) ? "On" : "Off"]")
+	var/msg = "[key_name_admin(user)] has toggled [ADMIN_LOOKUPFLW(target_mob)]'s godmode to [in_godmode(target_mob) ? "On" : "Off"]"
 	message_admins(msg)
 	admin_ticket_log(target_mob, msg)
 	feedback_add_details("admin_verb","GOD_ENABLE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

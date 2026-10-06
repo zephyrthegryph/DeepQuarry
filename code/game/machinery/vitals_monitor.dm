@@ -22,8 +22,6 @@
 /// The patient on the monitor (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
 /// Tracks its patient while connected to someone.
-DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim")
-
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/vitals_monitor/Initialize(mapload)
 	. = ..()
@@ -66,7 +64,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		. += span_notice("Breathing: [breathing]")
 
 /// Tracks its patient while it has one (the declaration above).
-/obj/machinery/vitals_monitor/machine_step()
+/obj/machinery/vitals_monitor/proc/work_step(datum/act/timer/A)
 	if(!victim() || QDELETED(victim()))
 		rel_clear(src, nameof(victim))
 		update_icon()
@@ -152,6 +150,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 	return "erratic"
 
 CAPABILITIES(/obj/machinery/vitals_monitor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
 	drag_onto(PROC_REF(drop_input))
 

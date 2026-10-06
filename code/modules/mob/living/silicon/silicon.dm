@@ -34,6 +34,8 @@
 	var/idcard_type = /obj/item/card/id/synthetic
 
 CAPABILITIES(/mob/living/silicon)
+	immune_to(STAT_DIZZY)
+	immune_to(STAT_JITTERY)
 	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam)
 	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor/all/robot)
 	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control/robot)
@@ -96,7 +98,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /// An EMP is an electrical injury that brings a power fault with it. Blocking
 /// components are asked before anything is pulsed, and the parent runs once.
 /mob/living/silicon/emp_act(severity, recursive)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return EMP_PROTECT_SELF
 	. = ..()
 	if(. & EMP_PROTECT_SELF)
@@ -106,7 +108,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	var/band = round(severity)
 	if(band >= 1 && band <= length(surge_by_severity))
 		injure(INJURY_ELECTRIC, surge_by_severity[band], emp_injury_zone(), null, 0, /datum/affliction/synthetic/power_fault)
-		status_at_least(EFFECT_CONFUSED, confusion_by_severity[band])
+		status_at_least(STAT_CONFUSED, confusion_by_severity[band])
 	flash_eyes(affect_silicon = 1)
 	to_chat(src, span_bolddanger("*BZZZT*"))
 	to_chat(src, span_danger("Warning: Electromagnetic pulse detected."))
@@ -128,7 +130,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 			MSG_OTHERS(span_warning("%U% was shocked by %T%!")), \
 			MSG_BLIND(span_warning("You hear an electrical crack.")))
 		if(prob(20))
-			status_at_least(EFFECT_STUNNED, 2)
+			status_at_least(STAT_STUNNED, 2)
 		return
 
 /mob/living/silicon/IsAdvancedToolUser()

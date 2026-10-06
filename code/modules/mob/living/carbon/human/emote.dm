@@ -511,7 +511,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			pass_flags |= PASSTABLE
 			added_passtable = TRUE
 	else
-		status_at_least(EFFECT_CONFUSED, 1) //Thud
+		status_at_least(STAT_CONFUSED, 1) //Thud
 
 	if(dir & WEST)
 		SpinAnimation(7,1,0)
@@ -522,8 +522,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		for(var/obj/structure/stairs/top/S in contents_of(loc))
 			S.use_stairs_instant(src)
 			act_message(src, null, MSG_SELF(span_warning("You fall down the stairs!")), MSG_OTHERS(span_warning("%U% falls down the stairs!")))
-			status_at_least(EFFECT_CONFUSED, 10) //Thud
-			status_adjust(EFFECT_WEAKENED, 12)
+			status_at_least(STAT_CONFUSED, 10) //Thud
+			status_adjust(STAT_WEAKENED, 12)
 			injure(INJURY_BLUNT, 8, null, S)
 			if(prob(80))
 				if(prob(50))

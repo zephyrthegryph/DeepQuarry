@@ -508,8 +508,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
   "notice_fields": [
@@ -971,9 +971,9 @@
    "code/game/objects/structures/ghost_pods/event.dm",
    "code/game/objects/structures/ghost_pods/unified_ghost_hole.dm",
    "code/modules/admin/verbs/randomverbs.dm",
+   "code/modules/body/organs/internal/brain.dm",
    "code/modules/mob/living/living.dm",
    "code/modules/mob/new_player/new_player.dm",
-   "code/modules/organs/internal/brain.dm",
    "code/modules/resleeving/autoresleever.dm",
    "code/modules/resleeving/machines.dm",
    "code/modules/tgui/modules/appearance_changer.dm",
@@ -1253,8 +1253,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1269,8 +1269,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1285,8 +1285,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1301,8 +1301,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"

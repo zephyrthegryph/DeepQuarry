@@ -127,7 +127,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	if(target.loc != src.loc || target.stat == DEAD)
 		rel_remove(src, nameof(converting), target)
 		if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
-			target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING), 500))
+			target.status_set(STAT_HALLUCINATING, min(target.status_units(STAT_HALLUCINATING), 500))
 		return 0
 
 	var/corruption_burn = rand(5, 20)
@@ -150,13 +150,13 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				//hallucination is reduced when the step off as well, provided they haven't hit the last stage...
 
 				//5000 is waaaay too much, in practice.
-				target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
+				target.status_set(STAT_HALLUCINATING, min(target.status_units(STAT_HALLUCINATING) + 100, 500))
 				target.apply_effect(10, STUTTER)
 				target.injure(INJURY_NEURAL, 1)
 			if(100 to INFINITY)
 				to_chat(target, span_cult("Your entire broken soul and being is engulfed in corruption and flames as your mind shatters away into nothing."))
 				//5000 is waaaay too much, in practice.
-				target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING) + 100, 500))
+				target.status_set(STAT_HALLUCINATING, min(target.status_units(STAT_HALLUCINATING) + 100, 500))
 				target.apply_effect(15, STUTTER)
 				target.injure(INJURY_NEURAL, 1)
 
@@ -206,7 +206,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	if(A.answer && A.answer.value == "Submit") //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
 		rel_remove(src, nameof(converting), target)
-		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
+		target.status_set(STAT_HALLUCINATING, 0) //sudden clarity
 
 /////////////////////////////////////////FOURTH RUNE
 
@@ -1022,7 +1022,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
-			C.status_adjust(EFFECT_DEAFENED, 50)
+			C.status_adjust(STAT_DEAFENED, 50)
 			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
 			affected += C
@@ -1043,7 +1043,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
-			C.status_adjust(EFFECT_DEAFENED, 30)
+			C.status_adjust(STAT_DEAFENED, 30)
 			C.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
 			//talismans is weaker.
 			C.show_message(span_warning("The world around you suddenly becomes quiet."), 3)
@@ -1066,8 +1066,8 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
-			C.status_adjust(EFFECT_BLURRY, 50)
-			C.status_at_least(EFFECT_BLINDED, 20)
+			C.status_adjust(STAT_BLURRY, 50)
+			C.status_at_least(STAT_BLINDED, 20)
 			if(prob(5))
 				C.disabilities |= NEARSIGHTED
 				if(prob(10))
@@ -1089,8 +1089,8 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
-			C.status_adjust(EFFECT_BLURRY, 30)
-			C.status_at_least(EFFECT_BLINDED, 10)
+			C.status_adjust(STAT_BLURRY, 30)
+			C.status_at_least(STAT_BLINDED, 10)
 			//talismans is weaker.
 			affected += C
 			C.show_message(span_warning("You feel a sharp pain in your eyes, and the world disappears into darkness.."), 3)
@@ -1176,16 +1176,16 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
 				C.flash_eyes()
-				if(!C.has_status(EFFECT_STUTTERING) && (!(C.has_mutation(HULK))))
-					C.status_set(EFFECT_STUTTERING, 1)
-				C.status_at_least(EFFECT_WEAKENED, 1)
-				C.status_at_least(EFFECT_STUNNED, 1)
+				if(!C.has_status(STAT_STUTTERING) && (!(C.has_mutation(HULK))))
+					C.status_set(STAT_STUTTERING, 1)
+				C.status_at_least(STAT_WEAKENED, 1)
+				C.status_at_least(STAT_STUNNED, 1)
 				C.show_message(span_danger("The rune explodes in a bright flash."), 3)
 				add_attack_logs(user,C,"Stun rune")
 
 			else if(issilicon(L))
 				var/mob/living/silicon/S = L
-				S.status_at_least(EFFECT_WEAKENED, 5)
+				S.status_at_least(STAT_WEAKENED, 5)
 				S.show_message(span_danger("BZZZT... The rune has exploded in a bright flash."), 3)
 				add_attack_logs(user,S,"Stun rune")
 		consume(src, user)
@@ -1200,15 +1200,15 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 				O.show_message(span_boldwarning("[user] invokes a talisman at [T]"), 1)
 
 			if(issilicon(T))
-				T.status_at_least(EFFECT_WEAKENED, 15)
+				T.status_at_least(STAT_WEAKENED, 15)
 				add_attack_logs(user,T,"Stun rune")
 			else if(iscarbon(T))
 				var/mob/living/carbon/C = T
 				C.flash_eyes()
 				if (!(C.has_mutation(HULK)))
-					C.status_adjust(EFFECT_MUTED, 15)
-				C.status_at_least(EFFECT_WEAKENED, 25)
-				C.status_at_least(EFFECT_STUNNED, 25)
+					C.status_adjust(STAT_MUTED, 15)
+				C.status_at_least(STAT_WEAKENED, 25)
+				C.status_at_least(STAT_STUNNED, 25)
 				add_attack_logs(user,C,"Stun rune")
 		return
 

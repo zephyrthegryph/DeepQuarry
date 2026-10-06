@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/clothing/accessory)
 	icon_state = "stethoscope"
 	slot = ACCESSORY_SLOT_TIE
 
-/obj/item/clothing/accessory/stethoscope/do_surgery(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
+/obj/item/clothing/accessory/stethoscope/use_on_patient(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
 	if(stance != I_HELP) //in case it is ever used as a surgery tool
 		return ..()
 	attack(M, user, user.zone_sel?.selecting || BP_TORSO, 1, stance) //default surgery behaviour is just to scan as usual
@@ -826,7 +826,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 			return
 		to_chat(M,span_danger("You feel a sharp shock!"))
 		fx_sparks(M, 3)
-		M.status_at_least(EFFECT_WEAKENED, 10)
+		M.status_at_least(STAT_WEAKENED, 10)
 
 /obj/item/clothing/accessory/collar/spike
 	name = "Spiked collar"

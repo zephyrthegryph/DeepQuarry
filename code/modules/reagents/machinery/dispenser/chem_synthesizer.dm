@@ -80,12 +80,11 @@
 
 OM_FIELD(/obj/machinery/chemical_synthesizer, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
 /// Refills its cartridges while it recharges at all (full, it sleeps until a cartridge is drawn or added).
-DECLARE_PERIODIC_WHILE(/obj/machinery/chemical_synthesizer, MACHINE_PIPELINE, "_recharge_reagents")
-
 // The reagents datum acts as the machine's reaction vessel.
 DECLARE_REAGENTS(/obj/machinery/chemical_synthesizer, 600, null)
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), wakes_on = list(nameof(_recharge_reagents)))
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	interface("ChemSynthesizer")
 	op("start_queue", ui_act("start_queue"), then(PROC_REF(ui_act_start_queue)))
@@ -224,7 +223,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
 	sortTim(cartridges, GLOBAL_PROC_REF(cmp_text_asc)) // in place: the owned list keeps its identity
-	MACHINE_WAKE(src)
+	work_start(src)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
@@ -301,9 +300,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 // More stolen chemical_dispenser code.
 /// Refills its cartridges every 15 frames while any is short; full (or not recharging) it sleeps
 /// until a cartridge is drawn from or added.
-/obj/machinery/chemical_synthesizer/machine_step()
+/obj/machinery/chemical_synthesizer/proc/work_step(datum/act/timer/A)
 	if(!operable())
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	var/short = FALSE
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/cart = LAZYACCESS(cartridges, label)
@@ -815,7 +814,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 
 	// After all this mess of code, we reach the line where the magic happens.
 	C.reagents.trans_to_holder(src.reagents, quantity)
-	MACHINE_WAKE(src) // a cartridge to refill
+	work_start(src) // a cartridge to refill
 	update_icon() // Update underlays.
 	play_sfx(src, SFX_MACHINES_HPLC_BINARY_PUMP)
 

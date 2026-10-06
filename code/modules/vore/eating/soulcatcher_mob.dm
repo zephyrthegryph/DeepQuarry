@@ -34,11 +34,11 @@
 		return
 
 	if(src.ext_blind)
-		src.status_set(EFFECT_BLINDED, 5)
+		src.status_set(STAT_BLINDED, 5)
 		src.client.screen.Remove(GLOB.global_hud.whitense)
 		src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 	else
-		src.status_set(EFFECT_BLINDED, 0)
+		src.status_set(STAT_BLINDED, 0)
 		src.clear_fullscreen("blind")
 		if(!src.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
 			src.client.screen.Add(GLOB.global_hud.whitense)
@@ -48,23 +48,23 @@
 // Say proc for captures souls
 /mob/living/carbon/brain/caught_soul/vore/say(message, datum/language/speaking = null, whispering = 0)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	gem().use_speech(message, src, eyeobj)
 
 // Emote proc for captured souls
 /mob/living/carbon/brain/caught_soul/vore/custom_emote(m_type, message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	gem().use_emote(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/vore/me_verb_subtle(message as message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	gem().use_emote(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/vore/whisper(message as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	gem().use_speech(message,src,eyeobj,TRUE)
 
 // Resist override, only returning a message that one is stuck for now
