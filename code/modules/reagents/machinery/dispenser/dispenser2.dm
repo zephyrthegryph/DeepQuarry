@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
 	// A chemical canister refills the cartridge under its label (it was the canister's afterattack, which the dispenser's ops now answer first).
-	op("refill_cartridge", item(/obj/item/reagent_containers/chem_canister), priority(above("set_container")), label("Refill cartridge"), then(PROC_REF(canister_refill)))
+	op("refill_cartridge", item(/obj/item/reagent_containers/chem_canister), label("Refill cartridge"), then(PROC_REF(canister_refill)))
 	op("set_container", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Set container"),
 		needs(req(PROC_REF(no_container), silent = TRUE), req(PROC_REF(can_take_container), because = PROC_REF(container_refusal))), then(PROC_REF(container_set)))
 
