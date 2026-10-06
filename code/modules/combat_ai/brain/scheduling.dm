@@ -42,11 +42,11 @@ CAPABILITY_TYPE(ai_strategic, CAP_AI_STRATEGIC, /datum/capability/ai_loop/strate
 /datum/capability/ai_loop/strategic/entries()
 	return list(every(2 SECONDS, then(CAP_PROC(strategic_tick))))
 
-/datum/capability/ai_loop/strategic/proc/strategic_tick(datum/act/timer/T)
-	if(!dq_ai_loops_may_run(T.holder))
+/datum/capability/ai_loop/strategic/proc/strategic_tick(datum/act/timer/A)
+	if(!dq_ai_loops_may_run(A.holder))
 		return
-	var/datum/ai_brain/A = brain_of(T.holder)
-	A?.strategic_tick()
+	var/datum/ai_brain/brain = brain_of(A.holder)
+	brain?.strategic_tick()
 
 /// One run of the strategic loop (the capability's every(), and tests driving a brain by hand).
 /datum/ai_brain/proc/strategic_tick()
@@ -66,11 +66,11 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 /datum/capability/ai_loop/tactical/entries()
 	return list(every(0.25 SECONDS, then(CAP_PROC(tactical_tick))))
 
-/datum/capability/ai_loop/tactical/proc/tactical_tick(datum/act/timer/T)
-	if(!dq_ai_loops_may_run(T.holder))
+/datum/capability/ai_loop/tactical/proc/tactical_tick(datum/act/timer/A)
+	if(!dq_ai_loops_may_run(A.holder))
 		return
-	var/datum/ai_brain/A = brain_of(T.holder)
-	A?.tactical_tick()
+	var/datum/ai_brain/brain = brain_of(A.holder)
+	brain?.tactical_tick()
 
 /// One run of the tactical loop (the capability's every(), and tests driving a brain by hand).
 /datum/ai_brain/proc/tactical_tick()

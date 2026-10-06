@@ -169,9 +169,9 @@ CAPABILITIES(/obj)
 		burning_end(BURN_ENDED_FUEL)
 
 /// Alerts any examiners that the object is on fire (even though it should be rather obvious)
-/datum/capability/burning/proc/burn_examined(datum/notice/examine/N)
-	var/obj/O = N.holder
-	N.texts += span_danger("[O.p_Theyre()] burning!")
+/datum/capability/burning/proc/burn_examined(datum/notice/examine/A)
+	var/obj/O = A.holder
+	A.texts += span_danger("[O.p_Theyre()] burning!")
 
 /// Handles searing the hand of anyone who tries to touch the object without protection.
 /datum/capability/burning/proc/burn_touched(datum/act/attack_hand/A)

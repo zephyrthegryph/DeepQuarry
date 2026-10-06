@@ -93,21 +93,21 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	var/mob/living/L = A.holder
 	L.omen_check_accident(L)
 
-/datum/capability/omen/proc/omen_slipped(datum/notice/carbon_slip/N)
-	var/mob/living/L = N.holder
-	L.omen_check_slip(L, N.stun_duration)
+/datum/capability/omen/proc/omen_slipped(datum/notice/carbon_slip/A)
+	var/mob/living/L = A.holder
+	L.omen_check_slip(L, A.stun_duration)
 
 /datum/capability/omen/proc/omen_stairs(datum/act/A)
 	var/mob/living/L = A.holder
 	L.omen_check_stairs(L)
 
-/datum/capability/omen/proc/omen_stunned(datum/notice/stun_effect/N)
-	var/mob/living/L = N.holder
-	L.omen_check_taser(L, N.stun_amount, N.agony_amount, N.def_zone, N.used_weapon, N.electric)
+/datum/capability/omen/proc/omen_stunned(datum/notice/stun_effect/A)
+	var/mob/living/L = A.holder
+	L.omen_check_taser(L, A.stun_amount, A.agony_amount, A.def_zone, A.used_weapon, A.electric)
 
-/datum/capability/omen/proc/omen_picked_up(datum/notice/picked_up_item/N)
-	var/mob/living/L = N.holder
-	L.omen_check_pickup(L, N.item)
+/datum/capability/omen/proc/omen_picked_up(datum/notice/picked_up_item/A)
+	var/mob/living/L = A.holder
+	L.omen_check_pickup(L, A.item)
 
 /// The result an omen forces on a dice roll by this mob, or null (no omen, or luck held).
 /mob/living/proc/omen_roll_override(obj/item/dice/the_dice, silent, result)
