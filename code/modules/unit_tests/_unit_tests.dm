@@ -1105,6 +1105,8 @@
 
 #include "round2_event_trigger_initial_denial.dm"
 
+#include "round2_resleeving_console_requests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
