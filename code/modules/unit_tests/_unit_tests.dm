@@ -1110,6 +1110,8 @@
 
 #include "round2_resleeving_console_requests.dm"
 
+#include "round2_item_bank_retrieval_null_submit.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -82,6 +82,9 @@
 
 /// The questions re-run this proc; the bank is only taken (busy) once the retrieval starts.
 /obj/machinery/item_bank/proc/start_using(mob/living/user)
+	return retrieval_stage(user, list())
+
+/obj/machinery/item_bank/proc/retrieval_stage(mob/living/user, list/retrieval_answers)
 	if(!ishuman(user))
 		return
 	if(busy_bank)
@@ -89,7 +92,10 @@
 		return
 	var/I = persist_item_savefile_load(user, "type")
 	var/Iname = persist_item_savefile_load(user, "name")
-	var/choice = rerun_ask(user, "choice", PROC_REF(start_using), args, /datum/om/prompt/choice/alert, message = "What would you like to do [src]?", title = "[src]", choices = list("Check contents", "Retrieve item", "Info", "Cancel"), timeout = 10 SECONDS)
+	var/choice = retrieval_answers["choice"]
+	if(isnull(choice))
+		open_request(src, /datum/prompt/choice/item_bank_retrieval, PROC_REF(retrieval_answered), answerer = user, captured = retrieval_answers.Copy(), step_name = "choice", question = "What would you like to do [src]?", title = "[src]", choices = list("Check contents", "Retrieve item", "Info", "Cancel"))
+		return
 	if(!choice || choice == "Cancel" || !Adjacent(user) || !operable() || panel_open)
 		return
 	else if(choice == "Check contents" && I)
@@ -101,7 +107,10 @@
 		if(user.ckey in item_takers)
 			to_chat(user, span_warning("You have already taken something out of \the [src] this shift."))
 			return
-		choice = rerun_ask(user, "retrieve", PROC_REF(start_using), args, /datum/om/prompt/choice/alert, message = "If you remove this item from the bank, it will be unable to be stored again. Do you still want to remove it?", title = "[src]", choices = list("No", "Yes"), timeout = 10 SECONDS)
+		choice = retrieval_answers["retrieve"]
+		if(isnull(choice))
+			open_request(src, /datum/prompt/choice/item_bank_retrieval, PROC_REF(retrieval_answered), answerer = user, captured = retrieval_answers.Copy(), step_name = "retrieve", question = "If you remove this item from the bank, it will be unable to be stored again. Do you still want to remove it?", title = "[src]", choices = list("No", "Yes"))
+			return
 		if(!choice || choice == "No" || !Adjacent(user) || !operable() || panel_open || busy_bank)
 			return
 		busy_bank = TRUE
@@ -113,6 +122,42 @@
 		return
 	else if(!I)
 		to_chat(user, span_warning("\The [src] doesn't seem to have anything for you..."))
+
+/// Only the retrieval caller's two scalar answers are retained across its questions.
+/datum/prompt/choice/item_bank_retrieval
+	buttons = TRUE
+	timeout = 10 SECONDS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/item_bank_retrieval/normalize(given)
+	return given
+
+/datum/prompt/choice/item_bank_retrieval/refusal(given)
+	return null
+
+/datum/prompt/choice/item_bank_retrieval/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/obj/machinery/item_bank/proc/retrieval_answered(datum/act/request/A)
+	if(!A || !A.answer || A.answer != A.request)
+		return
+	var/datum/prompt/choice/item_bank_retrieval/completed = A.request
+	if(!istype(completed) || completed.owner != src || !istype(completed.answerer, /mob/living) || QDELETED(completed.answerer) || completed.handler != PROC_REF(retrieval_answered) || completed.is_open() || completed.outcome != REQ_ANSWERED || QDELETED(completed) || isnull(completed.value) || !islist(completed.captured))
+		return
+	if(completed.step_name == "choice")
+		if(length(completed.captured))
+			return
+	else if(completed.step_name == "retrieve")
+		if(length(completed.captured) != 1 || completed.captured["choice"] != "Retrieve item")
+			return
+	else
+		return
+	var/list/retrieval_answers = completed.captured.Copy()
+	retrieval_answers[completed.step_name] = completed.value
+	SStgui.update_uis(src)
+	world.push_usr(completed.answerer, new /datum/callback(src, PROC_REF(retrieval_stage)), completed.answerer, retrieval_answers)
 
 /obj/machinery/item_bank/proc/bank_interrupted()
 	busy_bank = FALSE
