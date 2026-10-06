@@ -41,11 +41,14 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
-// ALLOW(init/CTOR_ARGS): new_species is a constructor argument from whoever builds it
-/mob/living/carbon/human/Initialize(mapload, new_species = null)
+/// The species a human is made as (its constructor param), or null for the default.
+/mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
+
+// ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
+/mob/living/carbon/human/Initialize(mapload)
 	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
 	if(forced_species)
-		new_species = forced_species
+		species_at_make = forced_species
 	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
 	if(forced_hair)
 		h_style = forced_hair
@@ -57,8 +60,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		// Species name is handled by set_species()
 
 	if(!species)
-		if(new_species)
-			set_species(new_species)
+		if(species_at_make)
+			set_species(species_at_make)
 		else
 			set_species()
 

@@ -16,11 +16,9 @@
 	var/x_offset = 0 // Offset from the 'center' of where the projector is, so that if it moves, the shield can recalc its position.
 	var/y_offset = 0 // Ditto.
 
-// ALLOW(init/CTOR_ARGS): new_projector is a constructor argument from whoever builds it
-/obj/effect/directional_shield/Initialize(mapload, new_projector)
-	. = ..()
-	if(new_projector)
-		rel_set(src, nameof(projector), new_projector)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A shield keeps its offset from its projector.
+/obj/effect/directional_shield/proc/place_by_projector(new_projector)
+	if(projector)
 		var/turf/us = get_turf(src)
 		var/turf/them = get_turf(projector)
 		if(them)

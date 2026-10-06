@@ -265,12 +265,10 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
-// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
-/obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A wall stands between two active generators, which pay for it.
+/obj/machinery/shieldwall/proc/span_generators(obj/machinery/shieldwallgen/B)
 	update_nearby_tiles()
-	rel_set(src, nameof(gen_primary), A)
-	rel_set(src, nameof(gen_secondary), B)
+	var/obj/machinery/shieldwallgen/A = gen_primary
 	if(istype(A) && istype(B) && A.active && B.active)
 		needs_power = 1
 		if(prob(50))
@@ -278,7 +276,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		else
 			B.storedpower -= generate_power_usage
 	else
-		return INITIALIZE_HINT_QDEL
+		spent(src)
 
 /obj/machinery/shieldwall/declare_interactions(list/into)
 	into += list(

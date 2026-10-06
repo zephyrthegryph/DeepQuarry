@@ -29,9 +29,9 @@
 CAPABILITIES(/obj/item/stack/material)
 	without("ui_open")
 
-// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
-/obj/item/stack/material/Initialize(mapload, starting_amount)
-	. = ..(mapload, starting_amount)
+// ALLOW(init/INSTANCE_STATE): a sheet stack takes its material's recipes, stack type, colour and conductivity
+/obj/item/stack/material/Initialize(mapload)
+	. = ..()
 
 	randpixel_xy()
 

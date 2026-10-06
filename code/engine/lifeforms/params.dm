@@ -35,8 +35,12 @@
 //		material_name = MAT_IRON
 //
 // A positional argument that is null is not given: the var keeps its default (the `arg || default` the old overrides wrote).
+//
+// `keep = FALSE` is for a value the setters only build from: a mob a statue copies, the assembly a door is built from. Once the setters
+// (every param's apply =) ran at init, the var goes back to its compiled default, so the instance holds no reference to it. Code before the
+// type's `..()` in an Initialize() that remains still reads it; code after does not.
 
-/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null)
+/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null, keep = TRUE)
 	if(!istext(var_name))
 		declare_report("param(): the var is nameof(var), got [var_name]")
 		return null
@@ -45,7 +49,7 @@
 	if(!isnull(apply) && !istext(apply))
 		declare_report("param([var_name]): apply = is PROC_REF(x), got [apply]")
 		apply = null
-	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply))
+	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply, "keep" = !!keep))
 
 /proc/built_from(var_name)
 	return entry_make(ENTRY_BUILT_FROM, "built_from", list("var" = var_name))
@@ -214,7 +218,8 @@ GLOBAL_LIST_EMPTY(param_given)
 		return
 	D.vars[var_name] = value // ALLOW(api): a param is written before init, as a map edit would be
 
-/// At init: each param declared with apply = is put into effect through its setter, with its value (given, defaulted or the compiled one).
+/// At init: each param declared with apply = is put into effect through its setter, with its value (given, defaulted or the compiled one);
+/// then the keep = FALSE params are dropped.
 /proc/params_apply(datum/holder, datum/lifeform_plan/P)
 	for(var/datum/centry/C as anything in P.param_applies)
 		var/datum/entry/E = C.item
@@ -225,3 +230,6 @@ GLOBAL_LIST_EMPTY(param_given)
 			stack_trace("param([var_name], apply = [E.args["apply"]]) on [holder.type]: [e] ([e.file]:[e.line])")
 		if(QDELETED(holder))
 			return
+	for(var/datum/centry/C as anything in P.param_drops)
+		var/datum/entry/E = C.item
+		holder.vars[E.args["var"]] = initial(holder.vars[E.args["var"]])

@@ -93,11 +93,12 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	ram = 35
 	var/emagged = FALSE
 
-// ALLOW(init/CTOR_ARGS): our_name and db_key are constructor arguments from whoever builds it
-/mob/living/silicon/pai/infomorph/Initialize(mapload, our_name = "Unknown", db_key)
-	. = ..()
+CAPABILITIES(/mob/living/silicon/pai/infomorph)
+	param(nameof(name), pos = 1, default = "Unknown")
 
-	name = our_name
+// ALLOW(init/INSTANCE_STATE): an infomorph names its PDA after itself and speaks Galactic Common
+/mob/living/silicon/pai/infomorph/Initialize(mapload)
+	. = ..()
 
 	//PDA
 	pda.ownjob = "Sleevecard"
