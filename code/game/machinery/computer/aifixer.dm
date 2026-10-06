@@ -153,7 +153,6 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 		return
 	look.overlay("ai-fixer-on", when = restoring)
 	var/mob/living/silicon/ai/AI = occupier()
-	// ALLOW(sys_dx_untracked_read): the card's AI is redrawn by the fixer's own update_icon() each repair step, as before
 	var/ai_stat = AI?.stat
 	if(!AI)
 		look.overlay("ai-fixer-empty")

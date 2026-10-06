@@ -12,10 +12,6 @@ SYSTEM_DEF(mobs)
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
 
-/// Set on the first service step: the two-minute profile summary then repeats (dump_profile).
-OM_FIELD(/datum/system/mobs, profiling, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
-
 /datum/system/mobs/stat_entry(msg)
 	var/datum/sequence/life = sequence_def(/datum/sequence/life)
 	return "[..()]P: [REGISTRY_COUNT(REGISTRY_MOBS)] | parked: [members_total(life.parked_key)] | frames: [life.frames] | D: [length(death_list)]"
@@ -23,17 +19,13 @@ DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 /datum/system/mobs/reactions()
 	. = ..()
 	. += every(2 SECONDS, PROC_REF(report_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+	. += every(2 MINUTES, PROC_REF(dump_profile), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
 
 /datum/system/mobs/proc/report_step(dt)
 	if(length(death_list)) // Don't contact DB if this list is empty
 		var/list/batch = death_list
 		death_list = list()
 		insert_deaths(batch)
-	if(!profiling)
-		// This singleton is built at global-var init, before the object model exists, so its
-		// declarations start here on the first step rather than from New().
-		lifecycle_decls_init(src)
-		set_profiling(TRUE)
 	return STEP_DONE
 
 /// The database insert sleeps, so the lane hands it off (the lane itself must not sleep).
@@ -48,7 +40,7 @@ DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 
 /// MOB_STEP_PROFILE lines (sampled cost per Life step, every LIFE_PROFILE_STRIDEth frame) and one MOB_PARK_SUMMARY
 /// line, every two minutes.
-/datum/system/mobs/proc/dump_profile()
+/datum/system/mobs/proc/dump_profile(dt)
 	var/datum/sequence/life = sequence_def(/datum/sequence/life)
 	var/list/steps = list()
 	for(var/i in 1 to length(life.slot_keys))
@@ -66,3 +58,4 @@ DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 	var/list/now = list(life.parks, life.unparks, life.missed)
 	log_runtime("MOB_PARK_SUMMARY parked=[members_total(life.parked_key)] parks=[now[1] - last_counts[1]] unparks=[now[2] - last_counts[2]] missed_wakes=[now[3] - last_counts[3]]")
 	last_counts = now
+	return STEP_DONE

@@ -1002,9 +1002,8 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	return 0
 
 // Please always use this proc, never just set the var directly.
-/// A mob's stat is a declared field: set_stat() is its setter and raises CHANGE_MOB_STAT on a real
-/// change (a strain's spread lane reads "host.stat").
-OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
+/// A mob's stat: set_stat() is its setter and raises CHANGE_MOB_STAT on a real change.
+SETTER(/mob, stat)
 
 /mob/proc/set_stat(new_stat)
 	. = (stat != new_stat)

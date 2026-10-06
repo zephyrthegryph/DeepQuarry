@@ -550,7 +550,8 @@
 // the generated set_<name>() setters (or om_set()); stages that read them wake on them.
 
 /// Technomancer instability.
-OM_FIELD(/mob/living, instability, 0, CHANGE_MOB_CONDITIONS)
+/mob/living/var/instability = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, instability, CHANGE_MOB_CONDITIONS)
 /// Gross boolean for keeping VR mobs in VR.
 /mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
 TRACKED_BRIDGED(/mob/living, virtual_reality_mob, CHANGE_MOB_CONDITIONS)

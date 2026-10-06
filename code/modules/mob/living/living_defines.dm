@@ -132,8 +132,9 @@
 	var/eggs = 0
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
-/// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it).
-OM_FIELD_VIEW(/mob/living, mob/living, cameraFollow, CHANGE_MOB_CONDITIONS)
+/// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it). A relation view (ref_one in
+/// CAPABILITIES(/mob/living)): null once the target is deleted.
+/mob/living/var/mob/living/cameraFollow = null // ALLOW(base_vars): was an OM_FIELD_VIEW on this type; moved, not added
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob/living, tiredness)
