@@ -1788,6 +1788,8 @@ organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURA
   every-20-cycles work fires with chance cycles/20 per step; horror organs' `life_tick % N && prob(p)` events are `prob(p * cycles / N)`; the
   horror heart's 1u spaceacillin every 60 cycles is 1/60 u a cycle. Kidneys, spleen and Unathi organs that applied x10 every cycle keep it
   (`ORGAN_LEGACY_BURST`).
+* **Liver strain under heavy toxin load is 0.2 a cycle** (was 2.0 every tenth cycle): the pin's twenty cycles cost about 4 (old run 5.65, the
+  bursts landing with other random liver harm).
 * **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
   falls to below 8 within thirty cycles (old run 8 -> 6.6).
 * "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
@@ -1929,3 +1931,27 @@ Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) a
 * `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
   path") is a separate step: it changes what ops refuse.
 * Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
+/^>>>>>>> origin/master$/d
+## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+
+Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
+code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
+the step's state checks are its `when()`, steadiness its `needs()`, the organ choice and the drastic-step confirmation `asks()`, `claims()`, `wait()`, and
+the roll in `then()`. `do_surgery()`, the focus and step om tasks, `choose_surgical_step_for()`, `surgery_ask()`, `surgery_zones_in_progress` and the
+steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` and `confirm_text()`).
+
+* **One click runs the best step.** With a tool several steps take, the click performs the highest-priority step (then declaration order); the others
+  are the patient's menu entries. The old click asked which step every time.
+* **One surgery per surgeon, one claim per patient.** The per-zone lock is the op's claim: while a step waits on a patient, a second claiming op on them
+  is refused (two surgeons could work two zones at once before).
+* **The surgeon must stay conscious and adjacent with the tool in hand** (the op's keeps): an interruption abandons the step, as before.
+* **Self-surgery's three seconds of focus are part of the step's wait** (was a separate focus task before choosing).
+* Scanners and stethoscopes keep their patient use through `use_on_patient()` (was an override of `do_surgery()`).
+* Boot fix found on the way: atoms created during global init (a GLOBAL_DATUM_INIT statclick) no longer index the lifecycle tables before they exist.
+
+## Body migration, slice 6: loose organs (rewrite/body-full)
+
+Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
+from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
+`DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).
+>>>>>>> origin/master

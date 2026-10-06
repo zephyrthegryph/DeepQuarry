@@ -43,8 +43,3 @@
 #define INCISION_GERMS_PER_DEPTH 0.5
 /// Severity of the incision affliction per access depth (display, pain).
 #define INCISION_SEVERITY_PER_DEPTH 25
-
-/// Asks a question for the surgery `tool` is choosing (surgery.dm): the answer re-runs
-/// choose_surgical_step_for(), which asks the same questions again and gets the answers given
-/// so far. Null while waiting. `prompt` is a /datum/om/prompt/<kind>, named arguments set its vars.
-#define surgery_ask(tool, user, key, prompt, fields...) tool.om_rerun_ask(user, key, TYPE_PROC_REF(/obj/item, choose_surgical_step_for), GLOB.surgery_rerun_args, prompt, list(fields))

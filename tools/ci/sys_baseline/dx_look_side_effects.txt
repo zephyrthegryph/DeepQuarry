@@ -570,7 +570,7 @@ dx_appearance_side_effect	code/modules/modular_computers/NTNet/NTNet_relay.dm	no
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(0)
 dx_appearance_side_effect	code/modules/modular_computers/computers/modular_computer/core.dm	set_light(light_strength)
 dx_appearance_side_effect	code/modules/modular_computers/computers/subtypes/dev_laptop.dm	set_light(0) // No glow from closed laptops
-dx_appearance_side_effect	code/modules/organs/organ_icon.dm	damage_state = n_is
+dx_appearance_side_effect	code/modules/body/organs/organ_icon.dm	damage_state = n_is
 dx_appearance_side_effect	code/modules/overmap/ships/computers/helm.dm	set_light(0)
 dx_appearance_side_effect	code/modules/overmap/ships/computers/helm.dm	set_light(light_range_on, light_power_on)
 dx_appearance_side_effect	code/modules/overmap/ships/ship.dm	dir = angle2dir(round(heading, 90))

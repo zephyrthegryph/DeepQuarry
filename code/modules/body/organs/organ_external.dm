@@ -448,7 +448,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 /// Reached from injure() through the humanoid plan and the limb's
 /// receive_injury(); brute_mod / burn_mod are applied there, as the part
 /// multiplier in body.injury_multiplier(). Code outside code/modules/body and
-/// code/modules/organs calls injure(), never this.
+/// code/modules/body calls injure(), never this.
 /obj/item/organ/external/proc/apply_wound_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = null, permutation = FALSE, projectile)
 	if(in_godmode(owner))
 		return 0

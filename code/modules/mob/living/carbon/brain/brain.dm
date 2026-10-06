@@ -3,7 +3,7 @@
 /// The thin view a client occupies while its mind is held outside a living
 /// body (removed brain, MMI, posibrain, soulcatcher). It has no health of its
 /// own: when it has a mind host with brain tissue, its status is that organ's
-/// (see refresh_host_status() and code/modules/organs/internal/brain.dm).
+/// (see refresh_host_status() and code/modules/body/organs/internal/brain.dm).
 /mob/living/carbon/brain
 	// Views without brain tissue (digital hosts, souls) keep a simple body;
 	// the old brainmob death margin stays for them.

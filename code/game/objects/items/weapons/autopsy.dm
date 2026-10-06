@@ -171,7 +171,7 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 	if(istype(usr_mob, /mob/living/carbon))
 		usr_mob.put_in_hands(P)
 
-/obj/item/autopsy_scanner/do_surgery(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
+/obj/item/autopsy_scanner/use_on_patient(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
 	if(!istype(M))
 		return 0
 

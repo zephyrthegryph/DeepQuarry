@@ -4,7 +4,7 @@
 // read through get_trauma() / get_burn(). Located injuries reach the limb
 // through receive_injury() (from the humanoid plan, i.e. injure()); nothing
 // else writes limb damage. apply_wound_damage() and heal_wound_damage() are
-// body-internal: code outside code/modules/body and code/modules/organs uses
+// body-internal: code outside code/modules/body uses
 // injure() / mend() (enforced by tools/ci/check_grep.sh).
 //
 // When a limb or organ leaves the body its afflictions travel with it
@@ -15,6 +15,7 @@
 	var/list/detached_afflictions
 
 CAPABILITIES(/obj/item/organ)
+	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))
 

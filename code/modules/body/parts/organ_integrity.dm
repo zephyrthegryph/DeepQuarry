@@ -10,7 +10,7 @@
 // plan turns the injury kind into a lesion and calls apply_lesion_damage());
 // healing through mend(tag, amount, organ). apply_lesion_damage() and
 // restore_lesions() are body-internal: only code/modules/body and
-// code/modules/organs call them (enforced by tools/ci/check_grep.sh).
+// code/modules/body call them (enforced by tools/ci/check_grep.sh).
 //
 // Detached organs carry their lesions in detached_afflictions (see limb.dm).
 

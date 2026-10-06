@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	icon_state = stored_mmi.icon_state
 
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/cell/machine/life_step_idle()
 	return FALSE
 

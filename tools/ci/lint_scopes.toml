@@ -296,7 +296,7 @@ bodytemp_allow = ["code/modules/heat/heat_mobs.dm"]
 # the heat and gas domains own every temperature and energy write
 heat_writes_allow = ["code/domains/", "code/__defines/verdigris/_bindings.dm"]
 weapon_damage_type_allow = ["code/modules/medical/conditions/wounds.dm"]
-organ_damage_allow = ["code/modules/body/", "code/modules/organs/"]
+organ_damage_allow = ["code/modules/body/"]
 rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
