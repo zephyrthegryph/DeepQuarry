@@ -130,6 +130,16 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	var/list/row = stat_hold_find(rec, def.id, source, null)
 	if(row && !override == !(row[H_FLAGS] & HF_OVERRIDE))
 		stat_hold_reapply(E, def, row, value, expires, now, lasts, exact, priority, reason, flags)
+	else if(row)
+		// The same (stat, source) placed again with the other override flag: the one row is replaced outright, never a second row beside it that
+		// release() might leave behind.
+		log_world("STAT: hold on [E.type] [def.name] from [source] changed override [!!(row[H_FLAGS] & HF_OVERRIDE)] -> [!!override]: the existing row was replaced")
+		row[H_VALUE] = value
+		row[H_EXPIRES] = expires
+		row[H_PRIORITY] = priority
+		row[H_FLAGS] = flags
+		row[H_CLOCK] = clock
+		row[H_REASON] = reason || row[H_REASON]
 	else
 		row = list(def.id, source, value, expires, priority, flags, clock, reason, ++GLOB.stat_hold_serial, null, null)
 		rec.holds += list(row)

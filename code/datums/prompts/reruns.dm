@@ -488,7 +488,6 @@ GLOBAL_VAR(prompt_flow)
 /datum/prompt/text/name_var
 	name_text = TRUE
 	encode = FALSE
-	timeout = 0
 	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 	max_len = MAX_NAME_LEN
 	/// The var of the asking atom the name goes into.

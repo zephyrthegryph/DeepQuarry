@@ -73,6 +73,10 @@
 /// Opens a request (code/engine/kernel/requests.dm): open_request(owner, /datum/prompt/x, PROC_REF(done), valid = PROC_REF(ok), field = v, ...).
 /// Not spelled request(): BYOND's preprocessor takes a function-like macro name at the end of a line (`var/datum/request/request`,
 /// `circuit = /obj/item/circuitboard/request`) for a call and eats the next line.
+/// How long a request stays open when its opener gave no timeout: it ends REQ_TIMED_OUT, never pinning its owner for the rest of the round.
+#define REQUEST_DEFAULT_TIMEOUT (10 MINUTES)
+/// timeout = REQUEST_NO_TIMEOUT: the request stays open until it is answered or its owner or answerer goes. Say why where it is used.
+#define REQUEST_NO_TIMEOUT -1
 #define open_request(owner, request_type, handler, fields...) request_open(owner, request_type, handler, list(fields))
 
 // ---- chunked jobs (code/engine/kernel/jobs.dm): what a job step returns.

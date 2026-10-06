@@ -15,6 +15,8 @@
 
 /// Handlers running right now (hook parts, notice handlers): the synchronous nesting depth.
 GLOBAL_VAR_INIT(act_depth, 0)
+/// How many times the kernel backstop had to reset a leaked depth.
+GLOBAL_VAR_INIT(act_backstops, 0)
 /// Counters (metrics, and what a test reads): contexts taken, notices taken, notices queued past the depth cap, actions refused for depth.
 GLOBAL_VAR_INIT(act_taken, 0)
 GLOBAL_VAR_INIT(notice_taken, 0)
@@ -44,6 +46,26 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 /// An action begun under AUTH_ADMIN skips its needs() hooks (the forced transfer): its instead() and adjusts() still run.
 GLOBAL_VAR(act_next_actor)
 GLOBAL_VAR(act_next_authority)
+
+/// Puts the nesting depth and the chain back to what they were when a handler began, after it runtimed. Without it each runtime in a hook leaks one level
+/// of GLOB.act_depth for the rest of the round, and after ACT_MAX_DEPTH of them every action is refused and every notice queued late.
+/proc/act_unwind(depth, chain_len, what, exception/fault)
+	if(GLOB.act_depth != depth)
+		log_world("ACT: unwound the depth from [GLOB.act_depth] to [depth] after a runtime in [what]: [fault?.name] ([fault?.file]:[fault?.line])")
+	GLOB.act_depth = depth
+	if(length(GLOB.act_chain) > chain_len)
+		GLOB.act_chain.len = chain_len
+
+/// The kernel's backstop (phase K, each tick): no handler is running between ticks, so a non-zero depth or a left-over chain is a leak. Reset and logged.
+/// Returns TRUE when it had to reset something.
+/proc/act_backstop_reset()
+	if(!GLOB.act_depth && !length(GLOB.act_chain))
+		return FALSE
+	log_world("ACT: kernel backstop reset act_depth [GLOB.act_depth] and a chain of [length(GLOB.act_chain)] at the start of a tick (a handler leaked it): [act_chain_text()]")
+	GLOB.act_depth = 0
+	GLOB.act_chain.len = 0
+	GLOB.act_backstops++
+	return TRUE
 
 /// A pooled act of `type`, with its holder and target set; null when nesting is at the cap (the action is refused and reported).
 /proc/act_begin(act_type, datum/holder)
@@ -92,8 +114,15 @@ GLOBAL_VAR(act_next_authority)
 		if(!entered_from)
 			continue
 		hook_context(A, H)
+		var/depth = GLOB.act_depth
+		var/chain_len = length(GLOB.act_chain)
 		GLOB.act_chain += "[A.type]:[H.cap_key || H.activation?.def.key || "type"]"
-		var/took = hook_run_parts(H, A, H.entry.children)
+		var/took
+		try
+			took = hook_run_parts(H, A, H.entry.children)
+		catch(var/exception/fault)
+			act_unwind(depth, chain_len, "instead hook of [A.type]", fault)
+			throw fault
 		GLOB.act_chain.len--
 		A.holder = entered_from // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 		if(took)

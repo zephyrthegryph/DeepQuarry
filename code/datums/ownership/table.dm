@@ -74,6 +74,11 @@
 		interned[key] = E
 	return E
 
+/// no_starts(nameof(v)): an annotation-only entry that cancels the starting occupant an ancestor declared for `v`; the ancestor's policy for the var is
+/// unchanged. `owns(v, starts = STARTS_NONE)` does the same while restating a policy.
+/proc/no_starts(var_name)
+	return _own_entry(var_name, null, FALSE, FALSE, FALSE, STARTS_NONE)
+
 /**
  * Owns: the holder owns var_name's value(s) (one, a list, or assoc values) and tears them down.
  *
@@ -316,6 +321,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		if(!(var_name in D.vars))
 			OWN_REPORT("[D.type] declares [own_kind_name(entry[OWNE_KIND])] var '[var_name]', which it doesn't have")
 			continue
+		// rel_*() dispatches OWN, then LIST_STATE, then the relation view: a var declared in two of those tables has an undefined winner. Logged, never fatal.
+		if(list_state_of(D, var_name))
+			log_world("REL OVERLAP: [D.type].[var_name] is declared [own_kind_name(entry[OWNE_KIND])] and LIST_STATE; rel_*() will use the ownership declaration and ignore the LIST_STATE one")
 		switch(entry[OWNE_KIND])
 			if(OWNK_OWN)
 				LAZYADD(T.own_vars, var_name)
@@ -343,6 +351,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		if(start_entry && start_entry[OWNE_KIND] != OWNK_OWN)
 			OWN_REPORT("[D.type].[var_name]: a starting occupant is owned, but the var is declared [own_kind_name(start_entry[OWNE_KIND])]")
 			continue
+		if(decl.starts[var_name] == STARTS_NONE)
+			continue // a subtype cancelled the occupant an ancestor declared
 		LAZYSET(T.start_vars, var_name, decl.starts[var_name])
 	if(T.keyed_key && !(T.keyed_key in D.vars))
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")

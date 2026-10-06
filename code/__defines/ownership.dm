@@ -27,6 +27,9 @@
 /// A light relation edge: a framework-maintained view var (1:1, or a list for 1:N).
 #define OWNK_REL 4
 
+/// owns(..., starts = STARTS_NONE) / no_starts(nameof(v)): a subtype cancels the starting occupant an ancestor declared (the var starts empty).
+#define STARTS_NONE "starts:none"
+
 // ---- teardown policies (OWNK_OWN) ----
 /// owns(nameof(v), policy = OWN_NONE, <annotations>): annotates the var without giving it a kind.
 #define OWN_NONE 0
