@@ -1,5 +1,5 @@
 /obj/machinery/portable_atmospherics/hydroponics/soil|human|none => |
 /obj/machinery/portable_atmospherics/hydroponics/soil|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/portable_atmospherics/hydroponics/soil|ai|none => |
-/obj/machinery/portable_atmospherics/hydroponics/soil|ghost|none => gen_observer_hydroponics_ghost_harvest|
+/obj/machinery/portable_atmospherics/hydroponics/soil|ghost|none => |
 

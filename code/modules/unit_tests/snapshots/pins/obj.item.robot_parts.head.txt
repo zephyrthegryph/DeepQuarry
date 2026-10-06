@@ -82,5 +82,29 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
+human|/obj/item/card/emag menu: Collect (refused: needs a storage)
+human|/obj/item/card/emag menu: Customise (refused: needs an item)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Pick up
+human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/assembly/infra menu: Add sensor
+human|/obj/item/assembly/infra menu: Collect (refused: needs a storage)
+human|/obj/item/assembly/infra menu: Customise (refused: needs an item)
+human|/obj/item/assembly/infra menu: Move To Top
+human|/obj/item/assembly/infra menu: Pick up
+human|/obj/item/assembly/infra menu: Rotate Clockwise
+human|/obj/item/assembly/infra menu: Rotate Counter Clockwise
+human|/obj/item/assembly/infra menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/assembly/infra menu: Turn Around
+human|/obj/item/assembly/infra click: Click: Add sensor
+human|/obj/item/flash menu: Collect (refused: needs a storage)
+human|/obj/item/flash menu: Customise (refused: needs an item)
+human|/obj/item/flash menu: Insert flash
+human|/obj/item/flash menu: Move To Top
+human|/obj/item/flash menu: Pick up
+human|/obj/item/flash menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/flash click: Click: Insert flash
 keys: drag_buckle, emag.subvert, emag.use, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, insert_flash, insert_own_flash, tv_sensor
 

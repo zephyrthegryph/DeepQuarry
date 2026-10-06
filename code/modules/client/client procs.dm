@@ -411,6 +411,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	// so they are plain vars, deleted here by hand.
 	GLOB.directory -= ckey
 	GLOB.clients -= src
+	SSproximity.eye_remove(src)
 	persistent_client?.set_client(null)
 
 	log_access("Logout: [key_name(src)]")
@@ -961,6 +962,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(new_eye == eye)
 		return
 	eye = new_eye
+	SSproximity.eye_update(src)
 
 /mob/proc/is_remote_viewing()
 	if(!client || !client.mob || !client.eye)

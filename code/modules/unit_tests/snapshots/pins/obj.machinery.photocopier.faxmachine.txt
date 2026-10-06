@@ -51,10 +51,12 @@ human|/obj/item/stack/material/steel menu: Staff Request Form
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Insert ID
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove ID card (refused: there is no ID card to remove)
 human|/obj/item/card/id menu: Staff Request Form
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Insert ID
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Insert
 human|/obj/item/paper menu: Remove ID card (refused: there is no ID card to remove)
 human|/obj/item/paper menu: Staff Request Form

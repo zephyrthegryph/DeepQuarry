@@ -86,6 +86,7 @@
 	var/turf/T = get_turf(src)
 	if(isturf(T))
 		update_client_z(T.z)
+	SSproximity.eye_update(client)
 
 	if(dq_get_cloaked(src) && dq_get_cloaked_selfimage(src))
 		client.images += dq_get_cloaked_selfimage(src)

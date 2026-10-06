@@ -41,8 +41,9 @@ if [ "$gen_rc" != "0" ]; then
 	failed+=("analyze gen")
 fi
 
-# check_grep has its own entry point (tools/ci/check_grep.sh); it is excluded here as it always was.
-if ! "$bin" check --ci --lint -check_grep "$@"; then
+# Every lint runs here, check_grep included (it used to be excluded, so a failing check_grep passed this
+# script while tools/ci/check_grep.sh and build.sh lint failed).
+if ! "$bin" check --ci "$@"; then
 	failed+=("analyze check")
 fi
 

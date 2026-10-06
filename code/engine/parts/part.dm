@@ -739,8 +739,14 @@
 /// `autoupdate` refreshes the window every tick, `pinned` keeps it open through "close all windows" (a dedicated skin element: the lobby, a
 /// tooltip, the media panel), `preinitialized` opens a window the host already initialized (its ui_window()). `pressed` (PROC_REF(x), `x(mob/actor, action)`)
 /// runs on the holder for every button pressed in its window, its own ops' and the forwarded ones alike, before the op: the PDA's click and fingerprint.
-/proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null, window_var = null, autoupdate = FALSE, pinned = FALSE, preinitialized = FALSE, pressed = null)
-	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards, "window_var" = window_var, "autoupdate" = autoupdate, "pinned" = pinned, "preinitialized" = preinitialized, "pressed" = pressed)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+/// `observe` (TRUE) adds the read-only view for a ghost: the op "ui_observe", bound to observer() (by(AFF_OBSERVE): only a ghost provides it), which opens the same
+/// window for the observer. The observer's tgui state is update-only, so the ghost sees the data and no button of it reaches an op. Requirements the window's ops share
+/// (a broken machine shows nothing) are given to it with extend("ui_observe", needs(...)).
+/proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null, window_var = null, autoupdate = FALSE, pinned = FALSE, preinitialized = FALSE, pressed = null, observe = FALSE)
+	var/list/declared = list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards, "window_var" = window_var, "autoupdate" = autoupdate, "pinned" = pinned, "preinitialized" = preinitialized, "pressed" = pressed)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+	if(observe)
+		declared += op("ui_observe", observer(), priority(OP_PRIORITY_DEFAULT), label("View"), opens_ui())
+	return declared
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a

@@ -88,6 +88,8 @@
 	var/list/components
 
 	var/obj/item/mmi/mmi = null
+	/// Set when the borg is destroyed with a mind and a place: the MMI leaves for the turf (the policy of `mmi`).
+	var/tmp/mmi_ejects = FALSE
 
 	var/obj/item/pda/ai/rbPDA = null
 
@@ -305,10 +307,10 @@
 			var/datum/mind_host/host = get_mind_host(mmi)
 			if(T)
 				mmi.forceMove(T)
+				mmi_ejects = TRUE // the MMI's policy is OWN_SPILL from here: it lives on, on the turf
 			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(src, nameof(mmi)) // left the robot for the turf
 			else
 				if(!T)
 					// The MMI stays in the robot and goes with it by ownership policy.
@@ -317,7 +319,6 @@
 					if(!shell) // Shells don't have brainmobs in their MMIs.
 						log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
 						to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
-					own_take(src, nameof(mmi)) // left the robot for the turf
 				ghostize(FALSE)
 		// A mindless MMI stays in the robot and goes with it by ownership policy.
 	clear_traitor_hud()
@@ -1914,7 +1915,8 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	. += owns(nameof(hat), policy = OWN_SPILL)
 	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
 	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
-	. += owns(nameof(mmi), policy = OWN_CONTAINED)
+	// A borg with a mind gives its MMI to the turf (mmi_ejects, set in on_destroy()); a mindless one's goes with it.
+	. += owns(nameof(mmi), policy = OWN_SPILL, if_var = nameof(mmi_ejects), else_policy = OWN_CONTAINED)
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
 	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 

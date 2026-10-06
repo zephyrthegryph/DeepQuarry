@@ -578,8 +578,7 @@
 		om_stop_behaviour(rec, i)
 	rec.torn_down = TRUE
 	rec.deadlines = null
-	rec.timers = null
-	rec.timer_soonest = null
+	om_timers_clear(rec)
 	rec.dv = null
 	E.om_listen = 0
 	// Break the rec <-> entity cycle; wheel and queue entries hold the rec

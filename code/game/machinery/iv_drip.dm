@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/iv_drip)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("iv_drip_interaction_item", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Attach container"), needs(req_is(nameof(beaker), FALSE, because = MSG(iv_drip/beaker))), then(PROC_REF(iv_drip_interaction_item)))
 	op("iv_drip_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove container"), then(PROC_REF(iv_drip_interaction_hand)))
-	op("iv_drip_toggle_mode", menu(), label("Toggle Mode"), needs(req_adjacent(), req_capable(), req(/mob/living, of = ON_ACTOR, because = MSG(iv_drip/actor_type))), then(PROC_REF(iv_drip_toggle_mode)))
+	op("iv_drip_toggle_mode", menu(), label("Toggle Mode"), needs(req_adjacent(), req_capable(), req_actor_kind(/mob/living, because = MSG(iv_drip/actor_type))), then(PROC_REF(iv_drip_toggle_mode)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
 /// then the native drop goes on.

@@ -95,5 +95,21 @@ human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Remove cell
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Remove cell
+human|/obj/item/cell menu: Collect (refused: needs a storage)
+human|/obj/item/cell menu: Customise (refused: needs an item)
+human|/obj/item/cell menu: Insert
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Pick up
+human|/obj/item/cell menu: Remove cell
+human|/obj/item/cell menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/cell click: Click: Insert
+human|/obj/item/perfect_tele_beacon menu: Collect (refused: needs a storage)
+human|/obj/item/perfect_tele_beacon menu: Customise (refused: needs an item)
+human|/obj/item/perfect_tele_beacon menu: Insert
+human|/obj/item/perfect_tele_beacon menu: Move To Top
+human|/obj/item/perfect_tele_beacon menu: Pick up
+human|/obj/item/perfect_tele_beacon menu: Remove cell
+human|/obj/item/perfect_tele_beacon menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/perfect_tele_beacon click: Click: Insert
 keys: choose_beacon, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, load, unload
 

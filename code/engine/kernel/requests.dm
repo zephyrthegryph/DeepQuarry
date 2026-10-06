@@ -100,6 +100,11 @@
 /datum/request/proc/transport_failed()
 	request_end(src, REQ_TRANSPORT_FAILED, null)
 
+/// The owner is being deleted: the request ends cancelled now (its handler is skipped: there is no owner to run it on).
+/datum/request/proc/owner_deleted(datum/act/A)
+	log_game("request: [type] ended cancelled: its owner [owner?.type] was deleted while it was open")
+	request_end(src, REQ_CANCELLED, null)
+
 /// The timeout passed before anything answered.
 /datum/request/proc/timed_out()
 	request_end(src, REQ_TIMED_OUT, null)
@@ -188,6 +193,14 @@ SYSTEM_DEF(requests)
 	R.valid = valid
 	R.opened_at = world.time // ALLOW(sys_world_time_write): the request's own open stamp, read for diagnostics, not an expiry
 	R.answerer_expected = !isnull(R.answerer)
+	// Every request ends: one given no timeout gets the default (a request with none pins its owner until the owner dies), logged once per kind so a
+	// caller that should name its own is found. timeout = REQUEST_NO_TIMEOUT is the explicit opt-out.
+	if(R.timeout == 0)
+		R.timeout = REQUEST_DEFAULT_TIMEOUT
+		var/static/list/defaulted = list()
+		if(!defaulted[R.type])
+			defaulted[R.type] = TRUE
+			log_game("request: [R.type] opened without a timeout: it times out after [REQUEST_DEFAULT_TIMEOUT / (1 SECOND)] s (pass timeout = ... to choose, REQUEST_NO_TIMEOUT to opt out)")
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// A test that records the prompts it causes (test_prompts_reset()) sees every one opened, in order.
 	if(islist(GLOB.test_prompts) && istype(R, /datum/prompt))
@@ -198,6 +211,9 @@ SYSTEM_DEF(requests)
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
+	// The owner's deletion ends the request at once (its qdeleting notice), not at the next sweep: the prompt must not stay up, and an answer must not
+	// reach a handler that is gone. The sweep stays as the backstop for a notice that never came.
+	observe(owner, /datum/notice/qdeleting, R, then(TYPE_PROC_REF(/datum/request, owner_deleted)))
 	R.prepare(context)
 	if(R.recheck_on_open && request_recheck(R))
 		request_end(R, REQ_CANCELLED, null)
@@ -209,6 +225,7 @@ SYSTEM_DEF(requests)
 			log_game("request: [R.type] not opened: its costs cannot be paid ([reason_text(why)])")
 			registry.open -= R
 			cancel_after(R, "request_timeout")
+			unobserve(owner, /datum/notice/qdeleting, R)
 			qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: one that never opened is deleted at once
 			return null
 	R.begin()
@@ -359,6 +376,9 @@ SYSTEM_DEF(requests)
 		return FALSE
 	var/datum/system/requests/registry = SSrequests
 	registry.open -= R
+	if(outcome == REQ_ANSWERED && QDELETED(R.owner))
+		log_game("request: [R.type] answer dropped: its owner was deleted")
+		outcome = REQ_CANCELLED
 	if(outcome == REQ_ANSWERED)
 		R.value = value
 		if(R.valid && R.owner && !call(R.owner, R.valid)(R))
@@ -386,6 +406,8 @@ SYSTEM_DEF(requests)
 		if(REQ_TRANSPORT_FAILED)
 			registry.transport_failed++
 	cancel_after(R, "request_timeout")
+	if(R.owner && !QDELETED(R.owner))
+		unobserve(R.owner, /datum/notice/qdeleting, R)
 	if(R.owner && !QDELETED(R.owner) && R.handler)
 		var/datum/act/request/A = take(/datum/act/request)
 		A.holder = R.owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release

@@ -23,7 +23,7 @@ CAPABILITY_TYPE(doors, CAP_DOORS, /datum/capability/lib/doors, key = NONE, open 
 /datum/capability/lib/doors/entries()
 	var/list/by_touch = list(inputs(hand(), item(/obj/item)), \
 		when(cond_not(nameof(/obj/machinery/door::operating))), \
-		when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), \
+		when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), \
 		needs(req_access(), req_is(STAT_OPERABLE, because = MSG(door/unpowered))), \
 		wait(0))
 	return list(

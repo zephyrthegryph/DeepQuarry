@@ -40,9 +40,10 @@ CAPABILITIES(/obj/vehicle/bike)
 	icon_state = "[bike_icon]_off"
 	update_icon()
 
-/obj/vehicle/bike/built/Initialize(mapload)
+/// A frame the builder fits a cell to: it starts without the factory cell.
+/obj/vehicle/bike/built/ownership()
 	. = ..()
-	own_clear(src, nameof(cell), OWN_DELETE)
+	. += no_starts(nameof(cell))
 
 CAPABILITIES(/obj/vehicle/bike/random)
 	rolls(nameof(paint_color), PROC_REF(roll_paint_color))

@@ -701,6 +701,26 @@ fn norm_cond(c: &str) -> String {
             }
         }
     }
+    if let Some(inner) = whole_call(c, "req_actor_kind") {
+        // req_actor_kind(types, because =, not = TRUE): the kinds are the test, `not = TRUE` negates it, the reason is no part of the condition.
+        let args = split_args(inner);
+        let mut types: Option<String> = None;
+        let mut negated = false;
+        for a in &args {
+            let a = a.trim();
+            if let Some((name, value)) = a.split_once('=') {
+                if name.trim() == "not" {
+                    negated = matches!(value.trim(), "TRUE" | "1");
+                }
+            } else if types.is_none() {
+                types = Some(compact(a));
+            }
+        }
+        if let Some(t) = types {
+            let base = format!("actor_kind({})", t);
+            return if negated { format!("cond_not({})", base) } else { base };
+        }
+    }
     if let Some(inner) = whole_call(c, "req") {
         let args = split_args(inner);
         if args.len() == 1 {

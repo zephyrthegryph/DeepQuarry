@@ -67,15 +67,11 @@ CAPABILITIES(/obj/machinery/ai_slipper)
 	interface("AiSlipper", title = "AI Liquid Dispenser")
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 	op("toggle_use", ui_act("toggle_use"), then(PROC_REF(ui_act_toggle_use)))
-	extend(TAG_UI, needs(req(PROC_REF(panel_unlocked), because = MSG(ai_slipper/panel_locked))))
+	extend(TAG_UI, needs(any_of(req_is(nameof(locked), FALSE, because = MSG(ai_slipper/panel_locked)), req_actor_kind(/mob/living/silicon, because = MSG(ai_slipper/panel_locked)))))
 	op("ai_slipper_toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
 	op("ai_slipper_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
-
-/// A locked panel answers only a silicon.
-/obj/machinery/ai_slipper/proc/panel_unlocked(datum/act/op/A)
-	return !locked || issilicon(A.actor)
 
 /obj/machinery/ai_slipper/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

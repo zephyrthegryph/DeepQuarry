@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: Click: Insert swab
 human|/obj/item/stack/material/steel menu: Insert swab
 human|/obj/item/stack/material/steel click: Click: Insert swab
 human|/obj/item/card/id menu: Insert swab
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Insert swab
 human|/obj/item menu: Insert swab
 human|/obj/item click: Click: Insert swab

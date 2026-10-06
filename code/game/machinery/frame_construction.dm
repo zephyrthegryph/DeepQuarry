@@ -397,9 +397,9 @@
 	if(new_machine.component_parts)
 		for(var/CP in new_machine.component_parts)
 			spent(CP, user)
-		rel_take(new_machine, nameof(new_machine.component_parts))
+		rel_take_all(new_machine, nameof(new_machine.component_parts))
 	else
-		rel_take(new_machine, nameof(new_machine.component_parts))
+		rel_take_all(new_machine, nameof(new_machine.component_parts))
 
 	circuit.construct(new_machine, user)
 
@@ -413,7 +413,7 @@
 	// The frame's installed parts are real physical items the player put in;
 	// move_into() keeps the new machine's ledger (roadmap C6) current, so
 	// RefreshParts() and get_part_rating() see them straight away.
-	for(var/obj/O in rel_take(src, nameof(components)))
+	for(var/obj/O in rel_take_all(src, nameof(components)))
 		if(circuit.contain_parts)
 			move_into(new_machine, CONTAINER_SLOT_INTERNALS, O)
 		else

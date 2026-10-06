@@ -568,6 +568,7 @@ request(bot, /datum/io/path, then(PROC_REF(have_path)), from = start, to = goal)
       <tr><td>Per-entity ordered frames (Life)</td><td>A <code>/datum/sequence</code> with <code>seq_step()</code> entries</td><td>Below.</td></tr>
     </tbody>
   </table></div>
+  <div class="note"><p><strong>Only while a player is near.</strong> Cosmetic and ambient periodics park when nobody could see them: a type sets <code>proximity_tracked = TRUE</code> and writes <code>every(interval, then(...), when = STAT_RELEVANCE)</code>. The proximity system (<code>code/controllers/subsystems/proximity.dm</code>) counts each client eye (the mob, or an AI camera, observer or remote view) into an 8-turf cell per z-level and holds <code>RELEVANCE_NEAR</code> on the tracked things in that cell and the eight around it, with the cell as the hold's source; the hold is released when the cell empties, and a thing that moves in or out follows. A carried thing stays relevant. <code>every()</code> parks on a stat <code>when =</code> the way it does on a tracked var. Work that changes simulation state does not opt in: it runs everywhere.</p></div>
   <h3>The old spellings, and what each became</h3>
   <div class="prose"><p>The old forms table had 14 rows. Each is listed here with what it became; two more spellings lived in section 9.</p></div>
   <div class="tbl"><table>
@@ -2132,6 +2133,16 @@ op("rename", label("Rename"), in_hand(), asks(/datum/prompt/text/rename), then(P
       <li><strong>An open <code>asks()</code> takes the actor's one wait slot</strong>, with its own timeout, and the same policy applies. The prompt closes with the reason if a requirement now refuses (<a href="#present">section 13</a>).</li>
       <li><strong>A resumed op reads what it saw.</strong> An op that waits on a request declares per field what it reads after resuming, <code>resume = CAPTURE | LATEST | CANCEL_IF_CHANGED</code>, and the default is <code>CAPTURE</code>: the value the player confirmed is the value the op uses (<a href="#workflows">section 13</a>). The fields that count are the ones a field arg of an <code>asks()</code> names (<code>nameof(v)</code>) and the ones a <code>captures(nameof(v), ...)</code> part names, so a <code>confirms()</code> op captures exactly what it lists. The op's handlers read a captured field with <code>A.captured(nameof(v))</code>, and a lint enforces it for both kinds: a <code>then()</code> handler of an op that has captured fields and reads one directly (<code>src.selected_id</code>) is an error, because DM has no getter to redirect the read and it would see the live value.</li>
       <li><strong><code>shares_effects(key)</code></strong> runs another op's Require and effects in this op's act, with no Match, no Wait and none of its costs, and the other op may not <code>asks()</code>. A <code>shares_effects</code> cycle is a build error. It is the explicit, rare form of sharing; to give an existing op a second input, add a binding (<code>extend(key, binds(ui_act()))</code>), which runs the whole op.</li>
+    </ul>
+  </div>
+  <h3>Interruption and flows</h3>
+  <div class="prose">
+    <ul>
+      <li><strong>An op paused at an <code>asks()</code> or <code>confirms()</code> holds what it holds while it waits</strong> (actor, target, held item, reach, and what its requirements read: a machine's power or operability). If any of it is lost while the prompt is open, the op is cancelled, the prompt closes, and the actor gets the same feedback a cancelled <code>wait()</code> gives (<code>on_interrupt()</code> runs as for a wait). A deleted actor, target or held item cancels it whatever the keeps say.</li>
+      <li><strong>An answer re-runs the requirements before the op goes on.</strong> A requirement that now refuses ends the op with that requirement's reason; nothing is spent (costs are reserved after the last answer).</li>
+      <li><strong>A multi-step flow is a chain of <code>asks()</code> steps in one op</strong>, each step's answer kept in the op (<code>A.step_value("name")</code>, <code>when =</code> skips a step). There is no flow type. The same cancellation applies between steps.</li>
+      <li><strong><code>keeps =</code> on <code>asks()</code> is the opt-in</strong> for the rare prompt that outlives the actor-side keeps (<code>keeps = 0</code>: the actor may walk away or drop the item and still answer). Requirements are re-run on the answer regardless. The default also drops <code>STAY</code>: an open question outlives a step the actor takes unless the binding has a spatial reach.</li>
+      <li>Pinned by <code>dq_prompt_interrupt/*</code>.</li>
     </ul>
   </div>
   <h3>A new kind of part</h3>

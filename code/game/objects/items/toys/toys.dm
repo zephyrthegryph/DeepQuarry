@@ -2878,7 +2878,7 @@ CAPABILITIES(/obj/item/toy/partypopper)
 	var/registered_mob //On request, only one person is able to use it at a time.
 
 CAPABILITIES(/obj/item/toy/acorn_branch)
-	op("pick_acorn", in_hand(), when(req(/mob/living/carbon/human, of = ON_ACTOR)), needs(req_conscious()), then(PROC_REF(interaction_self)))
+	op("pick_acorn", in_hand(), when(req_actor_kind(/mob/living/carbon/human)), needs(req_conscious()), then(PROC_REF(interaction_self)))
 
 /obj/item/toy/acorn_branch/proc/can_pull_acorn(mob/user, atom/target, obj/item/held)
 	if(user.stat || !ishuman(user))

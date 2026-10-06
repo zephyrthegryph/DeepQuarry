@@ -17,12 +17,12 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 	// a cyborg's module and gripper do nothing here
-	op("item", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
-	op("hand", hand(), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_hand)))
 	op("tk", tk(), label("Interaction tk"), then(PROC_REF(interaction_tk)))
 	// the wrench opens or shuts a cabinet that holds an extinguisher, and takes an empty one off the wall
-	op("wrench_toggle", tool(TOOL_WRENCH), label("Use"), wait(0), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), when(nameof(has_extinguisher)), then(PROC_REF(toggled)))
-	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), when(cond_not(nameof(has_extinguisher))),
+	op("wrench_toggle", tool(TOOL_WRENCH), label("Use"), wait(0), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(nameof(has_extinguisher)), then(PROC_REF(toggled)))
+	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(cond_not(nameof(has_extinguisher))),
 		begins(MSG(extinguisher_cabinet/unwrenching)), says(MSG(extinguisher_cabinet/unwrenched)), then(PROC_REF(unwrenched)))
 
 /// A cabinet built on a wall (its constructor param).

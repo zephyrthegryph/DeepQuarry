@@ -154,6 +154,15 @@
 	switch(policy)
 		if(OWN_KEEP)
 			return // released above: it outlives the holder
+		if(OWN_HAND_OVER)
+			var/list/hand_to = own_entry_successor(entry)
+			var/datum/successor = hand_to ? holder.vars[hand_to[1]] : null
+			if(isdatum(successor) && !QDELETED(successor) && (hand_to[2] in successor.vars))
+				var/atom/movable/moving = value
+				if(ismovable(moving) && isatom(successor) && moving.loc != successor)
+					moving.forceMove(successor)
+				rel_add(successor, hand_to[2], value)
+				return
 		if(OWN_CONTAINED)
 			// A contained thing belongs to the holder's ledger slot: in the holder's teardown the
 			// slot has already resolved it (phase 3), and one that left the contents is no longer
@@ -304,7 +313,7 @@
 		value = L[value_or_key]
 		L -= value_or_key
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
+		own_list_emptied(holder, var_name) // a list declared `= list()` stays an empty list, a lazy one goes back to null
 		own_field_changed(holder, var_name)
 	if(value)
 		own_mark_changed(holder, var_name)

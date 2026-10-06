@@ -27,6 +27,9 @@
 /// A light relation edge: a framework-maintained view var (1:1, or a list for 1:N).
 #define OWNK_REL 4
 
+/// owns(..., starts = STARTS_NONE) / no_starts(nameof(v)): a subtype cancels the starting occupant an ancestor declared (the var starts empty).
+#define STARTS_NONE "starts:none"
+
 // ---- teardown policies (OWNK_OWN) ----
 /// owns(nameof(v), policy = OWN_NONE, <annotations>): annotates the var without giving it a kind.
 #define OWN_NONE 0
@@ -41,6 +44,10 @@
 /// rel_one(..., kind = RELK_OWNED, policy = OWN_PRIVATE_COPY): the var holds a registered prototype or a private
 /// copy of one (proto_private() / proto_set()); teardown deletes private copies only (the former proto()).
 #define OWN_PRIVATE_COPY 5
+/// Handed to a successor at teardown: owns(..., policy = OWN_HAND_OVER, successor = nameof(successor_var), successor_var = nameof(var_of_the_successor)). A movable moves into
+/// the successor and the successor takes it under that var (a wrecked mech's cell, which becomes the wreckage's salvage); with no successor
+/// (the var is empty: a plain qdel) the value ends with the holder as OWN_DELETE does.
+#define OWN_HAND_OVER 6
 
 // ---- what a relation does when the entity at its other end is deleted (other_deleted =) ----
 /// The view drops the dead entity (the default).
@@ -75,6 +82,8 @@
 #define OWNE_ON_UNLINK 8
 /// REL/OWN: the declared type of the value(s) (rel_one/rel_many(type =)), or null. Writes of anything else are refused.
 #define OWNE_TYPE 9
+/// OWN with policy OWN_HAND_OVER: list(the holder's var that names the successor, the successor's var that takes the value), or null.
+#define OWNE_TO 10
 
 /// Registry singletons: PATH and subtypes are shared. GETTER(D) returns the registered
 /// instance D stands for (so D is registered iff GETTER(D) == D).

@@ -28,6 +28,7 @@ human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Lay cable
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 wires: Electrification, Lockout, Manual Override 1, Manual Override 2, Manual Override 3, Reboot

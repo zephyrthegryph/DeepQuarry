@@ -70,6 +70,7 @@ human|/obj/item click: Click: Use item
 human|/obj/item/card/id/guest menu: Climb
 human|/obj/item/card/id/guest menu: Eject ID Card
 human|/obj/item/card/id/guest menu: Insert ID
+human|/obj/item/card/id/guest menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id/guest menu: Ui open
 human|/obj/item/card/id/guest menu: Use item
 human|/obj/item/card/id/guest click: Click: Use item

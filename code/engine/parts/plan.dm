@@ -674,6 +674,15 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 /proc/op_cond_negates(cond_a, cond_b)
 	if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && cond_b[2] == cond_a)
 		return TRUE
+	// req_actor_kind(T) against req_actor_kind(T, not = TRUE), or against cond_not(req_actor_kind(T)): one actor is of a kind or it is not
+	if(istype(cond_a, /datum/entry/part/req/actor_kind))
+		var/datum/entry/part/req/actor_kind/KA = cond_a
+		if(istype(cond_b, /datum/entry/part/req/actor_kind))
+			var/datum/entry/part/req/actor_kind/KB = cond_b
+			return !!KA.args["not"] != !!KB.args["not"] && actor_kind_same_types(KA.args["types"], KB.args["types"])
+		if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && istype(cond_b[2], /datum/entry/part/req/actor_kind))
+			var/datum/entry/part/req/actor_kind/KN = cond_b[2]
+			return !!KA.args["not"] == !!KN.args["not"] && actor_kind_same_types(KA.args["types"], KN.args["types"])
 	if(istype(cond_a, /datum/entry/part/req/graph_at) && istype(cond_b, /datum/entry/part/req/graph_at))
 		return graph_at_exclusive(cond_a, cond_b)
 	if(istype(cond_a, /datum/entry/part/req/is) && istype(cond_b, /datum/entry/part/req/is))
@@ -681,3 +690,11 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 		var/datum/entry/part/req/is/RB = cond_b
 		return RA.args["key"] == RB.args["key"] && !!RA.args["value"] != !!RB.args["value"]
 	return FALSE
+
+/// Do two req_actor_kind() type arguments name the same kinds (a type, or a list of them, in any order)?
+/proc/actor_kind_same_types(a, b)
+	if(ispath(a) || ispath(b))
+		return a == b
+	var/list/la = islist(a) ? a : list()
+	var/list/lb = islist(b) ? b : list()
+	return length(la) == length(lb) && !length(la ^ lb)

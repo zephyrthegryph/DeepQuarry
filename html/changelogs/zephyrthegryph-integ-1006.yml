@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Tasks, timed tasks, I/O jobs, prompts and flows run on the kernel instead of the object model"
+  - refactor: "Icon updates draw through the look system; items and structures move to the final op forms"
+  - code_imp: "Rotatable machines list their turn ops in the interaction menu"

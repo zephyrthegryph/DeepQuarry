@@ -154,6 +154,8 @@
 	var/list/items_by_phase = phase_items
 	// Each phase runs inside its own try (not through a call() wrapper, which cost an arglist copy and a dynamic
 	// call per phase per tick): a runtime in one phase is reported by phase_fault() and the tick goes on.
+	// The tick begins at depth zero: whatever a runtime leaked in the last one is cleared here, and logged.
+	act_backstop_reset()
 	// K
 	var/k_start = TICK_USAGE
 	// The phase's work items first (the input inbox drains here, ahead of every host service), then the host services.

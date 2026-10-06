@@ -24,6 +24,7 @@ human|/obj/item/stack/cable_coil menu: Toggle PDA relay
 human|/obj/item/stack/cable_coil click: Click: Toggle PDA relay
 human|/obj/item/stack/material/steel menu: Toggle PDA relay
 human|/obj/item/stack/material/steel click: Click: Toggle PDA relay
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle PDA relay
 human|/obj/item/card/id click: Click: Toggle PDA relay
 human|/obj/item/circuitboard/message_monitor menu: Install memory upgrade

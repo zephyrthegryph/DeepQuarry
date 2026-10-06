@@ -13,6 +13,7 @@
 
 MSG_DEF_SELF(robotics/access_denied, "Access denied.")
 MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
+MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
 
 /obj/machinery/computer/robotics/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
@@ -120,14 +121,14 @@ MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
 
 CAPABILITIES(/obj/machinery/computer/robotics)
 	interface("RoboticsControlConsole")
-	op("arm", ui_act("arm"), then(PROC_REF(ui_act_arm)))
-	op("nuke", ui_act("nuke"), then(PROC_REF(ui_act_nuke)))
+	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
+	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
 	op("killbot", ui_act("killbot", arg("ref")), then(PROC_REF(ui_act_killbot)))
 	op("stopbot", ui_act("stopbot", arg("ref")), then(PROC_REF(ui_act_stopbot)))
 	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied))))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
-	op("robotics_console_robot_use", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(robotics_console_robot_use)))
+	op("robotics_console_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(robotics_console_robot_use)))
 
 /obj/machinery/computer/robotics/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -165,17 +166,11 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	return is_authenticated(A.actor)
 
 /obj/machinery/computer/robotics/proc/ui_act_arm(datum/act/op/A)
-	if(issilicon(A.actor))
-		to_chat(A.actor, span_danger("Access Denied (silicon detected)"))
-		return
 	safety = !safety
 	to_chat(A.actor, span_notice("You [safety ? "disarm" : "arm"] the emergency self destruct."))
 	. = TRUE
 
 /obj/machinery/computer/robotics/proc/ui_act_nuke(datum/act/op/A)
-	if(issilicon(A.actor))
-		to_chat(A.actor, span_danger("Access Denied (silicon detected)"))
-		return
 	if(safety)
 		to_chat(A.actor, span_danger("Self-destruct aborted - safety active"))
 		return

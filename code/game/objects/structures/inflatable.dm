@@ -157,7 +157,7 @@ CAPABILITIES(/obj/structure/inflatable)
 CAPABILITIES(/obj/structure/inflatable/door)
 	op("use_hand", hand(), then(PROC_REF(interaction_door_hand)))
 	without("use_item")
-	op("silicon_open", remote(), label("Open"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), needs(req_adjacent()), then(PROC_REF(inflatable_door_silicon_use)))
+	op("silicon_open", remote(), label("Open"), when(req_actor_kind(/mob/living/silicon/robot)), needs(req_adjacent()), then(PROC_REF(inflatable_door_silicon_use)))
 
 /// Old attack_hand: open/close the door.
 /obj/structure/inflatable/door/proc/interaction_door_hand(datum/act/op/A)

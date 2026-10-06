@@ -36,8 +36,8 @@ CAPABILITIES(/obj/structure/low_wall)
 	op("build_grille", item(/obj/item/stack/rods), label("Use"), then(PROC_REF(interaction_rods)))
 	op("build_window", item(/obj/item/stack/material/glass), label("Use"), then(PROC_REF(interaction_glass)))
 	op("build_window_cyborg", item(/obj/item/stack/material/cyborg/glass), label("Use"), then(PROC_REF(interaction_glass)))
-	op("place", item(/obj/item), label("Use"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_item)))
-	op("place_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on wall"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(interaction_drag)))
+	op("place", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("place_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on wall"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_drag)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A low wall stands only on open floor.
 /obj/structure/low_wall/proc/build_of(materialtype)

@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel menu: Toggle Power (refused: there's nothin
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel menu: Use (refused: The cooker is not working)
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Power (refused: there's nothing in it, add ingredients before turning the cooker on)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use (refused: The cooker is not working)

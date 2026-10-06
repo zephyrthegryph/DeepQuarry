@@ -396,15 +396,21 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 
 /// Calls handler (a PROC_REF text on the holder, CAP_PROC text on the capability, or a /proc path) with the context.
 /proc/hook_call(datum/hook/H, handler, datum/act/A)
+	var/depth = GLOB.act_depth
+	var/chain_len = length(GLOB.act_chain)
 	GLOB.act_depth++
 	. = null
-	if(ispath(handler))
-		. = call(handler)(A)
-	else if(copytext(handler, 1, 5) == "cap:")
-		. = call(A.cap, copytext(handler, 5))(A)
-	else
-		var/datum/run_on = A.holder
-		. = call(run_on, handler)(A)
+	try
+		if(ispath(handler))
+			. = call(handler)(A)
+		else if(copytext(handler, 1, 5) == "cap:")
+			. = call(A.cap, copytext(handler, 5))(A)
+		else
+			var/datum/run_on = A.holder
+			. = call(run_on, handler)(A)
+	catch(var/exception/fault)
+		act_unwind(depth, chain_len, "hook_call [handler]", fault)
+		throw fault
 	GLOB.act_depth--
 
 /// A gate (a when() part or adjusts when =) of hook H for the act: a var name, a proc of the holder x(datum/act/A) that answers TRUE, a
@@ -416,8 +422,14 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	return condition_holds(A.holder, cond)
 
 /proc/hook_call_plain(datum/run_on, handler, datum/act/A)
+	var/depth = GLOB.act_depth
+	var/chain_len = length(GLOB.act_chain)
 	GLOB.act_depth++
-	. = op_pure_call(run_on, handler, A)
+	try
+		. = op_pure_call(run_on, handler, A)
+	catch(var/exception/fault)
+		act_unwind(depth, chain_len, "hook_call_plain [handler]", fault)
+		throw fault
 	GLOB.act_depth--
 
 /// Runs the parts of a hook that gate and act, in order. Returns TRUE when every gate held (the hook took over). `A` is the context.

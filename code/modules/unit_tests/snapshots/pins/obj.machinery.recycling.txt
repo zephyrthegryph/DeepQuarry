@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: Click: Feed
 human|/obj/item/stack/material/steel menu: Feed
 human|/obj/item/stack/material/steel click: Click: Feed
 human|/obj/item/card/id menu: Feed
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Feed
 human|/obj/item menu: Feed
 human|/obj/item click: Click: Feed

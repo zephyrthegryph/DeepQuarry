@@ -174,7 +174,7 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 	for(var/obj/item/O in holdingitems)
 		O.forceMove(src.loc)
 		rel_take(src, nameof(holdingitems), member = O)
-	rel_take(src, nameof(holdingitems))
+	rel_take_all(src, nameof(holdingitems))
 	if(beaker)
 		replace_beaker(user)
 
