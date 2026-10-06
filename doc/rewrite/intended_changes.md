@@ -1762,3 +1762,5 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
 * `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
+- Board games: UI_SUBACT rows are plain procs; each game routes its "game_action"/"setup_action" message with a `game_subaction()`/`setup_subaction()` dispatcher whose arguments go through schemas (`payload_args()` in code/engine/parts/inputs.dm). "Invite player" is an `asks()` step whose choices are the players the inviter sees. Pinned by interim_board_game_subactions.
+- Schemas: at the input boundary, `num()`/`int()` read numeric text ("3") as a number, as the legacy UI_ARG_NUM did. NaN is refused.

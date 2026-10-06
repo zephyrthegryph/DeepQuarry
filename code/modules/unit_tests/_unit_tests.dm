@@ -437,6 +437,7 @@
 #include "dq_organ_slot_tests.dm"
 #include "dx_cap_cell_holder_tests.dm"
 #include "interim_actor_propagation.dm"
+#include "interim_board_game_subactions.dm"
 #include "interim_armor_lifecycle.dm"
 #include "interim_autopsy_actor.dm"
 #include "interim_beam_lifecycle.dm"

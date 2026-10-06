@@ -254,6 +254,23 @@
 			return answered
 	return null
 
+/// A sub-action's arguments: the nested message an op's handler routes itself (a board game's "game_action" carries a move and its data). `schemas`
+/// is name -> schema (null passes the value as it came). Returns name -> value, or null when one is refused (logged like a refused arg()).
+/proc/payload_args(datum/holder, list/data, list/schemas)
+	var/list/typed = list()
+	for(var/name in schemas)
+		var/datum/schema/S = schemas[name]
+		var/value = islist(data) ? data[name] : null
+		if(!S || isnull(value))
+			typed[name] = value
+			continue
+		var/list/checked = schema_input(S, value, holder)
+		if(checked[1] == SCHEMA_REJECT)
+			schema_log(holder, name, "[name] [checked[2]]: sub-action refused")
+			return null
+		typed[name] = checked[1]
+	return typed
+
 /// Runs a payload through the declared arg() schemas: fills `values` (name -> value) and returns a reason when one is refused. A number outside
 /// its range is clamped and logged; any other failure refuses the press.
 /proc/op_validate_args(list/declared, datum/holder, list/payload, list/values)
