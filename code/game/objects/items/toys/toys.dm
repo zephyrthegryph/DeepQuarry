@@ -1891,6 +1891,7 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 		user.electrocute_act(15,src,0.75)
 	else
 		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/toy/plushie/ipc/toaster
 	name = "toaster plushie"
