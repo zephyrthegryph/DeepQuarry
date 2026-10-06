@@ -745,15 +745,6 @@
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 2, "nothing more was held")
 
-/// Ghosts, AI eyes and the blob overmind run their upkeep on their own behaviour.
-/datum/unit_test/life_om/observer_upkeep
-
-/datum/unit_test/life_om/observer_upkeep/run_life()
-	var/mob/observer/dead/life_test/G = allocate(/mob/observer/dead/life_test)
-	TEST_ASSERT(om_attached(G, /datum/om/behaviour/observer_upkeep), "observers carry the upkeep behaviour")
-	life_test_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 3)
-	TEST_ASSERT(G.upkeeps >= 2, "observer upkeep runs on its cadence, ran [G.upkeeps]")
-
 /// The step profiler samples by a sequence-wide frame counter, so every mob is sampled at the same rate (Codex bug:
 /// sampling bias from a run list that restarted each cycle), and a sampled frame records the steps it ran.
 /datum/unit_test/life_om/profiler_is_uniform

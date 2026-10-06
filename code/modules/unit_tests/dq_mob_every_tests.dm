@@ -75,3 +75,30 @@
 	H.set_stat(CONSCIOUS)
 	life_test_advance(3.1)
 	TEST_ASSERT(isnull(H.dream_fragments), "waking ends the dream")
+
+/// A trait's disability is a capability granted with the trait as its source: it ticks once a Life cycle on the mob's clock while
+/// granted, and its revoke ends it.
+/datum/unit_test/life_om/disability_ticks_while_granted
+
+/datum/unit_test/life_om/disability_ticks_while_granted/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/datum/source = src
+	grant(H, /datum/capability/disability/gibbing, source)
+	TEST_ASSERT(granted(H, /datum/capability/disability/gibbing), "the disability is granted")
+	life_test_advance(LIFE_CYCLE_SECONDS * 3 + 0.1)
+	TEST_ASSERT(H.disability_gut_pressure >= 0.029 && H.disability_gut_pressure <= 0.031, "three cycles built three steps of pressure ([H.disability_gut_pressure])")
+	revoke(H, /datum/capability/disability/gibbing, source)
+	var/pressure = H.disability_gut_pressure
+	life_test_advance(LIFE_CYCLE_SECONDS * 2)
+	TEST_ASSERT_EQUAL(H.disability_gut_pressure, pressure, "revoked: it stops")
+	H.status_end(STAT_WEAKENED)
+
+/// Observers keep their upkeep once a Life cycle on their every(), with no Life sequence.
+/datum/unit_test/life_om/observer_upkeep_every_cycle
+
+/datum/unit_test/life_om/observer_upkeep_every_cycle/run_life()
+	var/mob/observer/dead/life_test/G = allocate(/mob/observer/dead/life_test)
+	var/before = G.upkeeps
+	life_test_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 3 + 0.1)
+	TEST_ASSERT_EQUAL(G.upkeeps - before, 3, "one upkeep per cycle")

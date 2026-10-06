@@ -19,6 +19,7 @@
 	var/special_env = FALSE
 	var/added_component_path		//What per-mob state (a /datum/trait_state path, see species_state_add()) this trait applies, if any.
 	var/added_behaviour_path		//What OM behaviour this trait attaches, if any.
+	var/added_capability		//What capability (a /datum/capability path: a disability) this trait grants, with itself as the source.
 
 
 	// Traitgenes Traits can toggle mutations and disabilities
@@ -86,6 +87,8 @@
 		species_state_add(H, added_component_path)
 	if(added_behaviour_path)
 		om_attach(H, added_behaviour_path)
+	if(added_capability)
+		grant(H, added_capability, src)
 	return
 
 /// Verbs a mob has while its species carries this trait (read by human granted_verbs()). Pure. A trait
@@ -137,6 +140,8 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 		rel_remove(S, nameof(S.env_traits), src)
 	if(added_behaviour_path && H)
 		om_detach(H, added_behaviour_path)
+	if(added_capability && H)
+		revoke(H, added_capability, src)
 	if(added_component_path)
 		if(species_state_has(H, added_component_path))
 			if(LAZYLEN(S.species_component))

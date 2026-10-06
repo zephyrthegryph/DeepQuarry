@@ -2003,6 +2003,11 @@ entries gated on a tracked var; the drift and stagger helpers are after() steps.
   the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
   Pinned by `dq_pp/plant_registries`.
+- **Trait disabilities are granted capabilities.** Coughing, epilepsy, coprolalia, tourettes, nervousness, pollen, rotting
+  and gibbing were OM behaviours fed by the Life disabilities step's event; each is now a capability its trait grants
+  (source: the trait) with an `every(LIFE_CYCLE)` on the mob's own clock. They no longer wait on the Life frame's gates
+  (placed, status ok), so a mob in nullspace still ticks; each disability's own checks (conscious, not in a belly, not
+  transforming) are unchanged.
 
 
 ## Leftovers: organ internals (rewrite/leftovers)
