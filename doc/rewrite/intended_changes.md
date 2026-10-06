@@ -1640,3 +1640,5 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   examine line while the panel is open; installing the super I/O coil is a 30 s op.
 - Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
   the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
+- Mecha UI: the window helpers' tgui parameters are renamed so the body's `state` reads the mech's maintenance state again (before this, the parameter shadowed it).
+- Lobby "Observe": the confirmation is now an `asks()` step on the observe op and opens only once the round has finished setting up. The handler still checks login holds and the round state when the answer comes back.
