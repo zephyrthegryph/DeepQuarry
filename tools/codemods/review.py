@@ -30,7 +30,7 @@ def kept(lines, k, name):
     return ("ALLOW(" + name) in lines[k] or (k and lines[k - 1].lstrip().startswith("//") and ("ALLOW(" + name) in lines[k - 1])
 
 
-def dump(kind, files, context):
+def dump(kind, files, context, skip=()):
     n = 0
     for r in files:
         f = File(r)
@@ -44,7 +44,7 @@ def dump(kind, files, context):
         for p in procs_in(f):
             hits = []
             if kind == "init":
-                if p.name == "Initialize" and p.kind is None and not kept(f.lines, p.start, "init"):
+                if p.name == "Initialize" and p.kind is None and not kept(f.lines, p.start, "init") and p.type not in skip:
                     hits = [p.start]
             else:
                 for k in range(p.start + 1, p.end):
@@ -125,9 +125,11 @@ def main():
     ap.add_argument("--others", action="store_true")
     ap.add_argument("--paths", nargs="*", default=["code/"])
     ap.add_argument("--context", type=int, default=6)
+    ap.add_argument("--skip", help="a file of type paths already reviewed and left (init)")
     a = ap.parse_args()
     if a.cmd == "dump":
-        dump(a.what, dm_files(a.paths, others=a.others), a.context)
+        skip = set(x.split()[0] for x in open(a.skip, encoding="utf-8") if x.strip() and not x.startswith("#")) if a.skip else set()
+        dump(a.what, dm_files(a.paths, others=a.others), a.context, skip)
     elif a.cmd == "apply":
         apply(a.what)
 
