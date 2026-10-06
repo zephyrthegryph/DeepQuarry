@@ -34,7 +34,7 @@
 
 /datum/request
 	var/datum/answerer
-	var/answer_value
+	var/value
 
 /datum/prompt
 	parent_type = /datum/request

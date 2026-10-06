@@ -14,38 +14,38 @@
 	if(!A.answer)
 		return
 	// the answer and who gave it
-	return "[A.request.answerer] says [A.answer.answer_value]"
+	return "[A.request.answerer] says [A.answer.value]"
 
 /datum/holder/proc/said(datum/act/request/A)
 	if(!A.answer)
 		return
-	if(A.answer.answer_value)
-		return A.answer.answer_value
+	if(A.answer.value)
+		return A.answer.value
 
 /datum/holder/proc/counted(datum/act/request/A)
 	if(!A.answer)
 		return
-	return A.answer.answer_value + 1
+	return A.answer.value + 1
 
 /datum/holder/proc/picked(datum/act/request/A)
 	if(!A.answer)
 		return
-	switch(A.answer.answer_value)
+	switch(A.answer.value)
 		if("a")
 			open_request(src, /datum/prompt/text, PROC_REF(said), answerer = A.request.answerer, question = "Then?", timeout = 0)
 	return TRUE
 
 /datum/holder/proc/sure(datum/act/request/A)
-	if(!A.answer || !A.answer.answer_value)
+	if(!A.answer || !A.answer.value)
 		return
-	return A.answer.answer_value
+	return A.answer.value
 
 /datum/holder/proc/either(datum/act/request/A)
 	if(!A.answer)
 		return
-	return A.answer.answer_value
+	return A.answer.value
 
 /datum/holder/proc/tinted(datum/act/request/A)
 	if(!A.answer)
 		return
-	return A.answer.answer_value
+	return A.answer.value

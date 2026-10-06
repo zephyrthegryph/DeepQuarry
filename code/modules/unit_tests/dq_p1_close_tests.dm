@@ -241,7 +241,13 @@
 	var/cell_in_holder = cell?.loc == C
 	var/datum/op_result/second_insert = perform_op(M, C, "cell_bay.cell.insert", cell, origin = ORIGIN_SYSTEM) // a click would take the cell instead: the take op is the higher tier
 	perform_op(M, C, "cover.open", origin = ORIGIN_SYSTEM) // the cover closes
-	var/datum/op_result/closed_take = test_click(M, C, null)
+	// The take is behind the closed cover, so a click sets it aside and the cover's own op answers: it opens the cover.
+	var/datum/op_result/closed_click = test_click(M, C, null)
+	var/cover_open_after_click = cover_open(C, null)
+	var/cell_after_closed_click = C.cell
+	perform_op(M, C, "cover.open", origin = ORIGIN_SYSTEM) // closed again
+	// Asked for by name, the take has no other candidate to yield to: it refuses with the door's reason.
+	var/datum/op_result/closed_take = perform_op(M, C, "cell_bay.cell.take")
 	var/cell_after_closed_take = C.cell
 	TEST_ASSERT(started_with_cell, "the bay starts with the cell its holder declared")
 	TEST_ASSERT_EQUAL(cover_started_open, TRUE, "the cover starts open")
@@ -254,6 +260,10 @@
 	TEST_ASSERT(cell_in_holder, "and the cell is in the cabinet")
 	TEST_ASSERT_EQUAL(second_insert?.outcome, ACT_REFUSED, "a full bay refuses another cell")
 	TEST_ASSERT_EQUAL(second_insert?.reason, /datum/msg/bay/full, "with its reason")
+	TEST_ASSERT_EQUAL(closed_click?.key, "cover.open", "an empty hand on a closed bay opens the cover instead of reaching through it")
+	TEST_ASSERT_EQUAL(closed_click?.outcome, ACT_COMMITTED, "and it commits")
+	TEST_ASSERT_EQUAL(cover_open_after_click, TRUE, "the cover is open")
+	TEST_ASSERT_EQUAL(cell_after_closed_click, cell, "and the cell is still in the bay")
 	TEST_ASSERT_EQUAL(closed_take?.outcome, ACT_REFUSED, "a closed cover refuses the take: the bay is a compartment")
 	TEST_ASSERT_EQUAL(closed_take?.reason, /datum/msg/cover/closed, "with the cover's reason")
 	TEST_ASSERT_EQUAL(cell_after_closed_take, cell, "and the cell stays")
