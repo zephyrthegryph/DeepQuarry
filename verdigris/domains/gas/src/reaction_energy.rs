@@ -84,6 +84,10 @@ pub const PN_TRITIUM_CONVERSION_ENERGY: f64 = 10_000.0;
 /// Proto-nitrate's BZ response, per mole consumed.
 /// @dm-define PN_BZASE_ENERGY
 pub const PN_BZASE_ENERGY: f64 = 60_000.0;
+/// The supermatter's exhaust, per unit of its device energy (its power times
+/// its reaction power modifier): the heat it releases into the gas it took.
+/// @dm-define SUPERMATTER_THERMAL_RELEASE
+pub const SUPERMATTER_THERMAL_RELEASE: f64 = 10_000.0;
 
 // --- Reaction kinds (DM passes one) ---------------------------------------------
 
@@ -135,6 +139,9 @@ pub const PN_HYDROGEN_RESPONSE: i32 = 19;
 pub const PN_TRITIUM_RESPONSE: i32 = 20;
 /// @dm-define GAS_REACTION_PN_BZ_RESPONSE
 pub const PN_BZ_RESPONSE: i32 = 21;
+/// Extent: the crystal's device energy; the deltas are the phoron and oxygen it exhales.
+/// @dm-define GAS_REACTION_SUPERMATTER
+pub const SUPERMATTER: i32 = 22;
 
 /// What freon formation absorbs per mole of freon at `t` K: a logistic in
 /// temperature, a tenth of `1000..8000` J.
@@ -173,6 +180,7 @@ pub fn released(kind: i32, extent: f64, t: f64, aux: f64, c_new: f64) -> Option<
         PN_HYDROGEN_RESPONSE => -PN_HYDROGEN_CONVERSION_ENERGY * extent,
         PN_TRITIUM_RESPONSE => PN_TRITIUM_CONVERSION_ENERGY * extent,
         PN_BZ_RESPONSE => PN_BZASE_ENERGY * extent,
+        SUPERMATTER => SUPERMATTER_THERMAL_RELEASE * extent,
         _ => return None,
     })
 }
@@ -240,6 +248,17 @@ mod tests {
         let mut m = plasma_air(10.0);
         let _ = react(&mut m, FREON_FIRE, 1000.0, 0.0, &[]).unwrap();
         assert!((m.get_temperature() - TCMB).abs() < 1e-3);
+    }
+
+    #[test]
+    fn the_supermatter_exhales_its_device_energy_as_heat() {
+        let mut m = plasma_air(500.0);
+        let c_old = f64::from(m.heat_capacity());
+        let device_energy = 550.0;
+        let r = react(&mut m, SUPERMATTER, device_energy, 0.0, &[(GAS_PLASMA, 0.4), (GAS_O2, 0.05)]).unwrap();
+        assert!((r.released - SUPERMATTER_THERMAL_RELEASE * device_energy).abs() < 1e-6);
+        let expected = (500.0 * c_old + r.released) / f64::from(m.heat_capacity());
+        assert!((f64::from(m.get_temperature()) - expected).abs() < 0.01, "{} vs {expected}", m.get_temperature());
     }
 
     #[test]

@@ -1589,3 +1589,51 @@ Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
   a tracked `lastgenlev`; the circulators' hot/cold overlays are set when the level changes, not from inside the TEG's appearance proc.
 - The circulator's and the TEG's wrenches are ops; the circulator's "running" display times out on a keyed `after()` (was `om_after_replace`),
   and its look is `draw(look)` from a tracked `run_state` and `temperature_overlay`. The TEG joins `REGISTRY_TURBINES` with `membership()`.
+
+
+
+## Power plants: the supermatter (rewrite/power-plants)
+
+Pinned by `code/modules/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`), green on the legacy code first.
+
+- **No machine step.** The crystal's reaction is `every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))` (2 s, as the pipeline frame was);
+  it left the machine pipeline's roster. Off a turf it skips the step (it used to stop stepping for good on a null loc; a crystal with a null
+  loc never comes back, so nothing changes in play). Cadence pin: 5 steps in 10 s, before and after.
+- **The exhaust is a gas reaction in Rust** (`GAS_REACTION_SUPERMATTER`, `SUPERMATTER_THERMAL_RELEASE` = 10000 J per unit of device energy,
+  `verdigris/domains/gas/src/reaction_energy.rs`). Before, DM added the phoron and oxygen with `adjust_gas()` (the new moles arrived at the
+  mixture's temperature, so they brought their own heat) and then `heat_add()`ed the release. Now the reaction keeps the mixture's energy over
+  its new heat capacity and adds the release, so the exhaust carries no free heat: at power 500 in 500 K oxygen the step adds 5.50 MJ, where
+  it added 5.54 MJ (the 0.37 mol of phoron and 0.05 mol of oxygen at 500 K were the 37 kJ, 0.7%). Power, damage and the gas amounts are
+  unchanged (pins: `sm_energy_curve_*`, `sm_damage_*`, `sm_gas_release`). The 10000 K cap stays a `heat_set()`.
+- **Touch, item touch and bump are ops and a notice** (`touch`, `touch_item`, `on_notice(/datum/notice/bumped)`); the legacy interaction table,
+  the cyborg "Use" interaction and the `Bumped()` override are gone. What a player sees: a plain click with an empty hand or anything held
+  touches the crystal (the pin's "click: nothing" became "Click: Touch"; that is what the legacy click did in play, the pin harness did not
+  run the legacy click); a cyborg beside it touches it with its empty hand (as the legacy "Use" did when adjacent); a silicon at range and the
+  AI open the monitor window through `interface(..., input = remote())` (was the robot interaction's `tgui_interact()` and `silicon_use`).
+
+## Power plants: the singularity, its containment, emitters, collectors and the particle accelerator (rewrite/power-plants)
+
+Pinned by `dq_pp/sing_*`, `fg_*`, `containment_field_*`, `emitter_*`, `collector_*`, `particle_*`, `pa_*`; green on the legacy code first, every
+number unchanged (size thresholds, dissipation 1 per 11 steps at stage one, field draw 2750 W alone and 8500 W linked with 3 fields, the 250 kJ
+store cap, 64 kJ per emitter shot in bursts of four, collector output moles x strength x 20 W).
+
+- **No machine pipeline, no PERIODIC lanes.** The singularity (and Nar-Sie, the cascade rift and the energy ball) steps on its `every(2 s)`
+  (`singularity_frame()`), field generators and emitters on `every(MACHINE_SERVICE_INTERVAL, when = ...)`, the control box emits on
+  `every(..., when = active)`, particles fly on `every(0.1 s)`. The singularity generator collapses at the drain after a particle brings it to
+  200 (`on_change(nameof(energy))`), not on the next 2 s frame.
+- **Containment-failure alert fixed.** `cleanup()` looked for singularities in `REGISTRY_MACHINES`, where none ever were, so the admin
+  "SINGUL/TESLOOSE!" alert never fired; it now reads `REGISTRY_SINGULARITIES`. A field generator next to the map edge no longer runtimes
+  raising its fields (it stops at the edge).
+- **Field generator warm-up** is a keyed `after()` chain (two 5 s stages, the fields at 10 s, as before); switching off cancels it and the
+  warm-up overlay goes with it (it used to stay on the dead generator).
+- **The bolt-and-weld ladder is a library capability** (`floor_weld()`, `code/library/machine/floor_weld.dm`) for emitters and field
+  generators: wrench instant, welder 2 s, refused while running; same messages.
+- **Locks are `lock()`** (emitter, collector; no alt-click): the ID swipe toggles `LOCK_LOCKED`, an emag shorts it open for good (`emag()`),
+  the collector locks only while active. `activate()` and the remote emitter button read `lock_locked()`.
+- **The particle accelerator parts and control box are on a construction graph** (loose, bolted, wired, closed; `pa_stage()` is the old
+  number). Opening a closed control box's panel now also powers it off (it stayed idle before). Parts and boxes rotate through the
+  `rotatable()` menu instead of granted verbs.
+- **The singularity generator** anchors with `anchor()`, opens with `panel()`; the screwdriver's two flavour waits (3 s then 8 s) became an
+  examine line while the panel is open; installing the super I/O coil is a 30 s op.
+- Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
+  the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
