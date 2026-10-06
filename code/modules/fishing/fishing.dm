@@ -173,8 +173,7 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 			R.consume_bait()
 			var/mob/living/L = fished
 			if(prob(rand(L.mob_size) + 10) && R.line_break)
-				R.strung = FALSE
-				R.update_icon()
+				R.set_strung(FALSE)
 				user.visible_message(span_danger("\The [R]'s string snaps!"))
 			if(prob(33))	// Dead on hook. Good for food, not so much for live catch.
 				L.death()

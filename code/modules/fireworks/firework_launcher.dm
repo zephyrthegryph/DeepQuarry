@@ -19,7 +19,6 @@
 
 	default_apply_parts()
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
-	update_icon()
 
 /obj/machinery/firework_launcher/RefreshParts()
 	launch_cooldown = 5 MINUTES
@@ -28,17 +27,16 @@
 
 	. = ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}{anchored?1:0}{panel_open?_open:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/firework_launcher/draw(datum/look/look)
+	..()
+	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
 CAPABILITIES(/obj/machinery/firework_launcher)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("load_star", item(/obj/item/firework_star), priority(OP_PRIORITY_DEFAULT - 1), label("Insert firework star"), needs(req(PROC_REF(can_load_star_holds), because = PROC_REF(can_load_star_refusal))), then(PROC_REF(interaction_load_star)))
 	op("eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Firework Star"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject)))
 	op("launch", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Launch"), needs(req(PROC_REF(can_launch_holds), because = PROC_REF(can_launch_refusal))), then(PROC_REF(interaction_launch)))
-	extend("machine_panel", then(PROC_REF(maintained)))
-	extend("machine_panel_close", then(PROC_REF(maintained)))
-	extend("machine_anchor", then(PROC_REF(maintained)))
-	extend("machine_unanchor", then(PROC_REF(maintained)))
 
 /// Requirement: the launcher is empty.
 /obj/machinery/firework_launcher/proc/can_load_star(mob/user, atom/target, obj/item/held)
@@ -64,7 +62,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		rel_set(src, nameof(loaded_star), O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
-		update_icon()
 		return TRUE
 	return TRUE
 
@@ -87,7 +84,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		loaded_star().forceMove(get_turf(src))
 		rel_clear(src, nameof(loaded_star))
 		add_fingerprint(user)
-		update_icon()
 	return TRUE
 
 /// Requirement: TRUE, or why the loaded firework can't be launched.
@@ -130,7 +126,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 	rel_clear(src, nameof(loaded_star))
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
-	update_icon()
 	flick("launcher_launch", src)
 	return TRUE
 
@@ -150,7 +145,3 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 /// the loaded_star this refers to (a relation view: null once it is deleted).
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
 	return loaded_star // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
-
-/// After the base screwdriver or wrench: the launcher redraws.
-/obj/machinery/firework_launcher/proc/maintained(datum/act/op/A)
-	update_icon()

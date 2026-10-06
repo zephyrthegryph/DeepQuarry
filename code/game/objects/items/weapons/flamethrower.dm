@@ -49,7 +49,6 @@ CAPABILITIES(/obj/item/flamethrower)
 /obj/item/flamethrower/Initialize(mapload)
 	. = ..()
 	weldtool.status = 0 // for disassembly
-	update_icon()
 
 CAPABILITIES(/obj/item/flamethrower/full)
 	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter)
@@ -73,19 +72,17 @@ TRACKED(/obj/item/flamethrower, lit)
 		location.hotspot_expose(700, 2)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/flamethrower/appearance_overlays()
-	. = list()
+/obj/item/flamethrower/draw(datum/look/look)
+	..()
 	if(igniter)
-		. += "+igniter[status]"
+		look.overlay("+igniter[status]")
 	if(ptank)
-		. += "+ptank"
+		look.overlay("+ptank")
 	if(lit)
-		. += "+lit"
-		item_state = "flamethrower_1"
+		look.overlay("+lit")
+		look.held_state("flamethrower_1")
 	else
-		item_state = "flamethrower_0"
-	return .
+		look.held_state("flamethrower_0")
 
 /obj/item/flamethrower/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))
@@ -107,11 +104,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 			consumed(used_gas, src)
 			if(!check_fuel())
 				set_lit(FALSE)
-			update_icon()
+			changed(src)
+			changed(src)
 		else
 			to_chat(user, span_notice("There is not enough pressure in [src]'s tank!"))
 			set_lit(FALSE)
-			update_icon()
+			changed(src)
+			changed(src)
 		// prevent spam
 		COOLDOWN_START(src, operating, 1.5 SECONDS)
 	return
@@ -135,7 +134,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		if(igniter)		return OP_PASS
 		if(!move_into(src, nameof(src.igniter), I, user))
 			return OP_PASS
-		update_icon()
 		return OP_PASS
 
 	if(istype(W,/obj/item/tank/phoron))
@@ -144,7 +142,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 			return OP_PASS
 		if(!move_into(src, nameof(src.ptank), W, user))
 			return OP_PASS
-		update_icon()
 		return OP_PASS
 
 	return OP_DECLINE
@@ -175,7 +172,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		return OP_OK
 	status = !status
 	to_chat(user, span_notice("[igniter] is now [status ? "secured" : "unsecured"]!"))
-	update_icon()
 	return OP_OK
 
 /// Old attack_self.
@@ -223,7 +219,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		play_sfx(src, SFX_ITEMS_WELDERACTIVATE)
 	else
 		play_sfx(src, SFX_ITEMS_WELDERDEACTIVATE)
-	update_icon()
 	return TRUE
 
 /obj/item/flamethrower/proc/ui_act_amount(datum/act/op/A, amount)
@@ -242,7 +237,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 	user.put_in_hands(ptank)
 	own_take(src, nameof(/obj/item/flamethrower::ptank))
 	set_lit(0)
-	update_icon()
 	return TRUE
 
 // Projectile

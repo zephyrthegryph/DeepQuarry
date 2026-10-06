@@ -78,7 +78,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 		return TRUE
 	return FALSE
 
-APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
 /obj/machinery/computer/security/telescreen/bodycamera/proc/work_step(datum/act/timer/A)
 	var/atom/them = showing

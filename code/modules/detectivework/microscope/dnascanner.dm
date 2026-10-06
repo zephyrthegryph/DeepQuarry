@@ -41,7 +41,6 @@ OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 			return OP_DECLINE
 		rel_set(src, nameof(bloodsamp), swab)
 		to_chat(user, span_notice("You insert [W] into [src]."))
-		update_icon()
 	else
 		to_chat(user, span_warning("\The [src] only accepts used swabs."))
 	return OP_OK
@@ -89,14 +88,12 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	. = TRUE
 	if(scanning)
 		set_scanning(FALSE)
-		update_icon()
 	else
 		if(bloodsamp())
 			scanner_progress = 0
 			set_scanning(TRUE)
 			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 			to_chat(user, span_notice("Scan initiated."))
-			update_icon()
 		else
 			to_chat(user, span_warning("Insert an item to scan."))
 	. = TRUE
@@ -109,7 +106,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		bloodsamp().forceMove(loc)
 		rel_clear(src, nameof(/obj/machinery/dnaforensics::bloodsamp))
 		set_scanning(FALSE)
-		update_icon()
 
 /// Scans while scanning (started from its UI); otherwise it sleeps.
 /obj/machinery/dnaforensics/proc/work_step(datum/act/timer/A)
@@ -127,7 +123,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 
 /obj/machinery/dnaforensics/proc/complete_scan()
 	visible_message(span_notice("[icon2html(src,viewers(src))] makes an insistent chime."), 2)
-	update_icon()
 	if(bloodsamp())
 		var/obj/item/paper/P = new(src)
 		P.name = "[src] report #[++report_num]: [bloodsamp().name]"
@@ -147,7 +142,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		P.forceMove(loc)
 		P.update_icon()
 		set_scanning(FALSE)
-		update_icon()
 	return
 
 /obj/machinery/dnaforensics
@@ -156,7 +150,10 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 MSG_DEF_SELF(dnaforensics/sample_loaded, "there is a sample in the machine")
 MSG_DEF_SELF(dnaforensics/scanning, "it is busy scanning right now")
 
-APPEARANCE_TEMPLATE(/obj/machinery/dnaforensics, "dna{appearance_mode}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/dnaforensics/draw(datum/look/look)
+	..()
+	look.state("dna[appearance_mode()]")
 
 /obj/machinery/dnaforensics/proc/appearance_mode()
 	if(!has_stat(NOPOWER) && scanning)

@@ -249,14 +249,14 @@
 /// Puts `M` on detached grid `id` without a Rust node.
 /proc/power_test_join(id, obj/machinery/power/M)
 	var/old = M.power_region
-	M.power_region = id
+	M.set_power_region(id)
 	power_grid_move_node(M, old, id)
 
 /proc/power_test_drop_grid(id)
 	var/list/nodes = power_grid_nodes(id)
 	for(var/obj/machinery/power/M as anything in nodes.Copy())
 		if(M.power_region == id)
-			M.power_region = 0
+			M.set_power_region(0)
 	SSmachines.power_grids -= id
 
 // ---- material overlay -------------------------------------------------------

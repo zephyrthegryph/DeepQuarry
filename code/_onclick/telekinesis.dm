@@ -118,7 +118,6 @@ CAPABILITIES(/obj/item/tk_grab)
 		consume(src, user)
 		return
 	rel_set(src, nameof(focus), target)
-	update_icon()
 	apply_focus_overlay()
 	return
 
@@ -136,12 +135,10 @@ CAPABILITIES(/obj/item/tk_grab)
 	O.expire(5)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/tk_grab, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tk_grab/appearance_overlays()
-	. = list()
+/obj/item/tk_grab/draw(datum/look/look)
+	..()
 	if(focus() && focus().icon && focus().icon_state)
-		. += icon(focus().icon, focus().icon_state)
-	return .
+		look.overlay(icon(focus().icon, focus().icon_state))
 
 /// The thing held by telekinesis (a relation view: null once that is deleted).
 /obj/item/tk_grab/proc/focus() as /atom/movable

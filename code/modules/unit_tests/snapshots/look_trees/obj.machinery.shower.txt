@@ -1,0 +1,9 @@
+/obj/machinery/shower icon: icons/obj/watercloset.dmi
+/obj/machinery/shower state: shower
+/obj/machinery/shower dir: 2
+/obj/machinery/shower overlay: icons/obj/watercloset.dmi:shower:8:#000000
+/obj/machinery/shower/dq_decl_probe icon: icons/obj/watercloset.dmi
+/obj/machinery/shower/dq_decl_probe state: shower
+/obj/machinery/shower/dq_decl_probe dir: 2
+/obj/machinery/shower/dq_decl_probe overlay: icons/obj/watercloset.dmi:shower:8:#000000
+

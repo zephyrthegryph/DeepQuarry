@@ -67,25 +67,23 @@ CAPABILITIES(/obj/item/flash)
 	if(prob(30))
 		act_message(user, src, others = span_notice("%U% successfully repairs %T%!"))
 		broken = FALSE
-		update_icon()
+		changed(src)
 	playsound(src, tool.usesound, 50, 1)
 
 /obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/flash/appearance_overlays()
-	. = list()
+/obj/item/flash/draw(datum/look/look)
+	..()
 	var/obj/item/cell/battery = power_supply
 
 	if(use_external_power)
 		battery = get_external_power_supply()
 
 	if(broken || !battery || battery.charge < charge_cost)
-		icon_state = "[base_icon]burnt"
+		look.state("[base_icon]burnt")
 	else
-		icon_state = "[base_icon]"
-	return .
+		look.state("[base_icon]")
 
 /obj/item/flash/get_cell()
 	return power_supply
@@ -131,7 +129,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 
 	COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 	times_used = max(0,round(times_used)) //sanity
-	update_icon()
+	changed(src)
 
 // Returns true if the device can flash.
 /obj/item/flash/proc/check_capacitor(mob/user)
@@ -148,27 +146,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 			broken = TRUE
 			if(user)
 				to_chat(user, span_warning("The bulb has burnt out!"))
-			update_icon()
+			changed(src)
 			return TRUE
 		if(prob( max(0, times_used - safe_flashes) * 2 + (times_used >= safe_flashes)) && can_break)	//if you use it 10 times in a minute it has a 30% chance to break.
 			broken = TRUE
 			if(user)
 				to_chat(user, span_warning("The bulb has burnt out!"))
-			update_icon()
+			changed(src)
 			return FALSE
 		else
 			times_used++
-			update_icon()
+			changed(src)
 			return TRUE
 	else if(!charge_only)	//can only use it 10 times a minute, unless it runs purely on charge.
 		if(user)
-			update_icon()
+			changed(src)
 			to_chat(user, span_warning(span_italics("click")))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 1.6)
 		return FALSE
 	else if(battery && battery.checked_use(charge_cost + (round(charge_cost / 4) * max(0, times_used - max_flashes)))) // Using over your maximum flashes starts taking more charge per added flash.
 		times_used++
-		update_icon()
+		changed(src)
 		return TRUE
 
 //attack_as_weapon

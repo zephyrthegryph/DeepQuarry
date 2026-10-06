@@ -1,0 +1,4 @@
+/obj/singularity/narsie/large/exit icon: icons/obj/narsie_spawn_anim.dmi
+/obj/singularity/narsie/large/exit state: rift
+/obj/singularity/narsie/large/exit dir: 2
+

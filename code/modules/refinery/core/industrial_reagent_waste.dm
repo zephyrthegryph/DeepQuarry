@@ -36,11 +36,10 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 		use_power_oneoff(active_power_usage)
 		reagents.clear_reagents()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/waste_processor/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/waste_processor/draw(datum/look/look)
+	..()
 	if(anchored)
-		. += update_input_connection_overlays("waste_intakes")
+		look.overlay(update_input_connection_overlays("waste_intakes"))
 
 /obj/machinery/reagent_refinery/waste_processor/examine(mob/user, infix, suffix)
 	. = ..()
@@ -62,7 +61,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PR
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_container(datum/act/op/A)
@@ -74,7 +72,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PR
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
-	update_icon()
 	return OP_OK
 
 /// Busy while it holds waste: it burns it off at random.

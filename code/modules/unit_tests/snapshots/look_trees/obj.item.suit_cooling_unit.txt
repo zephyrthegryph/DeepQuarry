@@ -1,0 +1,9 @@
+/obj/item/suit_cooling_unit icon: icons/obj/suit_cooler.dmi
+/obj/item/suit_cooling_unit state: suitcooler0
+/obj/item/suit_cooling_unit dir: 2
+/obj/item/suit_cooling_unit overlay: icons/obj/suit_cooler.dmi:suitcooler0:8:#000000
+/obj/item/suit_cooling_unit/emergency icon: icons/obj/suit_cooler.dmi
+/obj/item/suit_cooling_unit/emergency state: esuitcooler
+/obj/item/suit_cooling_unit/emergency dir: 2
+/obj/item/suit_cooling_unit/emergency overlay: icons/obj/suit_cooler.dmi:esuitcooler:8:#000000
+

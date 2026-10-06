@@ -1,0 +1,6 @@
+/obj/item/clipboard icon: icons/obj/bureaucracy.dmi
+/obj/item/clipboard state: clipboard
+/obj/item/clipboard dir: 2
+/obj/item/clipboard overlay: icons/obj/bureaucracy.dmi:clipboard:8:#000000 x2
+/obj/item/clipboard overlay: icons/obj/bureaucracy.dmi:clipboard_over:-32767
+

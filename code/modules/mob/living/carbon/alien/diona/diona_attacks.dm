@@ -7,7 +7,6 @@
 		removed_hat.forceMove(get_turf(src))
 		H.put_in_hands(removed_hat)
 		act_message(H, src, others = span_danger("%U% removes %T%'s [removed_hat]."))
-		update_icon()
 	else
 		return ..()
 

@@ -9,6 +9,7 @@
 	var/honeycombs = 0 // Percent
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
+TRACKED(/obj/machinery/beehive, honeycombs)
 
 TRACKED(/obj/machinery/beehive, closed)
 
@@ -34,24 +35,23 @@ CAPABILITIES(/obj/machinery/beehive)
 	op("beehive_scan", item(/obj/item/analyzer/plant_analyzer), priority(OP_PRIORITY_DEFAULT - 1), label("Scan"), then(PROC_REF(interaction_beehive_scan)))
 	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), then(PROC_REF(interaction_beehive_harvest)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/beehive/appearance_overlays()
-	. = list()
-	icon_state = "beehive"
+/obj/machinery/beehive/draw(datum/look/look)
+	..()
+	look.state("beehive")
 	if(closed)
-		. += "lid"
+		look.overlay("lid")
 	if(length(frames))
-		. += "empty[length(frames)]"
+		look.overlay("empty[length(frames)]")
 	if(honeycombs >= 100)
-		. += "full[round(honeycombs / 100)]"
+		look.overlay("full[round(honeycombs / 100)]")
 	if(!smoked)
 		switch(bee_count)
 			if(1 to 40)
-				. += "bees1"
+				look.overlay("bees1")
 			if(41 to 80)
-				. += "bees2"
+				look.overlay("bees2")
 			if(81 to 100)
-				. += "bees3"
+				look.overlay("bees3")
 
 /obj/machinery/beehive/examine(mob/user)
 	. = ..()
@@ -88,7 +88,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
 	set_smoked(30)
-	update_icon()
 	return OP_OK
 
 /// Requirement: TRUE, or why this frame can't go in.
@@ -105,7 +104,7 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	var/obj/item/honey_frame/held = A.held
 	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
-	update_icon()
+	changed(src)
 	user.drop_from_inventory(held)
 	held.forceMove(src)
 	rel_add(src, nameof(frames), held)
@@ -138,7 +137,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 			item = held)
 		set_bee_count(bee_count / 2)
 		held.fill()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/beehive/proc/interaction_beehive_scan(datum/act/op/A)
@@ -159,7 +157,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	set_closed(!closed)
 	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/beehive/proc/wrench_used(datum/act/op/A)
@@ -203,10 +200,9 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 		return
 	var/obj/item/honey_frame/H = pop(frames)
 	H.set_honey(20)
-	honeycombs -= 100
-	H.update_icon()
+	set_honeycombs(honeycombs - (100))
 	H.forceMove(get_turf(src))
-	update_icon()
+	changed(src)
 	harvest_next(user)
 
 /obj/machinery/beehive/proc/interaction_beehive_harvest(datum/act/op/A)
@@ -227,11 +223,9 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 /obj/machinery/beehive/proc/work_step(datum/act/timer/A)
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
-		update_icon()
 	set_smoked(max(0, smoked - 1))
 	if(!smoked && bee_count)
 		set_bee_count(min(bee_count * 1.005, 100))
-		update_icon()
 
 /obj/machinery/beehive/proc/pollinate_flowers()
 	var/coef = bee_count / 100
@@ -240,7 +234,7 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 		if(H.seed && !H.dead)
 			H.health += 0.05 * coef
 			++trays
-	honeycombs = min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100)
+	set_honeycombs(min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100))
 
 /obj/machinery/honey_extractor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -267,7 +261,6 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/honey_extractor/examine(mob/user)
 	. = ..()
@@ -282,8 +275,12 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 		return "[initial(icon_state)]_moving"
 	return initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "{appearance_state}")
-DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/honey_extractor/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
+	if(panel_open == 1)
+		look.overlay("centrifuge_panel")
 
 /// Requirement (was REQ_* ready_for_item): the legacy check answers TRUE to pass.
 /obj/machinery/honey_extractor/proc/ready_for_item_holds(datum/act/op/A)
@@ -332,10 +329,8 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
 		item = held)
 	set_processing(held.honey)
-	update_icon()
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
 	held.set_honey(0)
-	held.update_icon() //updates the honeyframe
 	after(src, 5 SECONDS, PROC_REF(finish_extracting))
 	return OP_OK
 
@@ -368,14 +363,14 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 
 TRACKED(/obj/item/honey_frame, honey)
 
-/obj/item/honey_frame/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/honey_frame/proc/appearance_has_honey()
 	return honey > 0
 
-DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = list(APPEARANCE_OVERLAYS = list("honeycomb"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/honey_frame/draw(datum/look/look)
+	..()
+	if(appearance_has_honey() == 1)
+		look.overlay("honeycomb")
 
 /obj/item/honey_frame/filled
 	name = "filled beehive frame"
@@ -433,22 +428,27 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	icon = 'icons/obj/beekeeping.dmi'
 	icon_state = "beepack"
 	var/full = 1
-
 TRACKED(/obj/item/bee_pack, full)
 
-DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLAYS = list("beepack-empty")), "1" = list(APPEARANCE_OVERLAYS = list("beepack-full"))))
+
+/// The look (the draw sweep: from its layers).
+/obj/item/bee_pack/draw(datum/look/look)
+	..()
+	switch("[full]")
+		if("0")
+			look.overlay("beepack-empty")
+		if("1")
+			look.overlay("beepack-full")
 
 /obj/item/bee_pack/proc/empty()
 	set_full(0)
 	name = "empty bee pack"
 	desc = "A stasis pack for moving bees. It's empty."
-	update_icon()
 
 /obj/item/bee_pack/proc/fill()
 	set_full(initial(full))
 	name = initial(name)
 	desc = initial(desc)
-	update_icon()
 
 /obj/machinery/honey_extractor/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -483,4 +483,4 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	new /obj/item/stack/material/wax(loc)
 	set_honey(honey + processing)
 	set_processing(0)
-	update_icon()
+	changed(src)

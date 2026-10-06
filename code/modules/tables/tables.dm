@@ -447,6 +447,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table, TYPE_PROC_REF(/atom, appearance_ov
 		if(carpeted)
 			. += "carpet_flip[type]"
 
+
 /// Flood-fills the connected tables into `found` (a transient working list) and returns it.
 /obj/structure/table/proc/get_all_connected_tables(list/found)
 	if(!found)

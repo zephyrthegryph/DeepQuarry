@@ -660,7 +660,6 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 			desc = "A half grown proto-organ ready for chemical injection."
 			prepared = TRUE
 			growth = 0
-			update_icon()
 		cooldown = rand(2,6)
 
 /obj/item/organ/internal/malignant/engineered/lattice/proc/get_mutation_result(reagent)
@@ -713,7 +712,6 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 	desc = "A fully grown mutoid ready for radiation training."
 	growth = 0
 	growth_trigger = rand(160,210) // we will quickly start dying now unless trained
-	update_icon()
 	return TRUE
 
 // Chemical dispensing organs, USES SUB TYPES

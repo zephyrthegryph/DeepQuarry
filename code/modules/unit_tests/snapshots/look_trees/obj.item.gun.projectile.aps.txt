@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/aps icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/aps state: aps
+/obj/item/gun/projectile/aps dir: 2
+/obj/item/gun/projectile/aps overlay: icons/obj/gun.dmi:aps:8:#000000
+

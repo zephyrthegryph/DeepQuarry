@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	if(!operable())
 		return
 	var/level = length(GLOB.atmosphere_alarm.major_alarms()) ? 2 : (length(GLOB.atmosphere_alarm.minor_alarms()) ? 1 : 0)
-	icon_screen = level ? "alert:[level]" : initial(icon_screen)
+	set_icon_screen(level ? "alert:[level]" : initial(icon_screen))
 	switch(level)
 		if(2)
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR)
@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 			after(src, 10 SECONDS, TYPE_PROC_REF(/atom, om_playsound), key = "alert_repeat", with = list('sound/effects/comp_alert_minor.ogg', 50, 1))
 		else
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR)
-	update_icon()
+	changed(src)
 
 /obj/machinery/computer/atmos_alert/proc/ui_act_clear(datum/act/op/A, ref)
 	var/datum/alarm/alarm = ui_ref(ref, GLOB.atmosphere_alarm.alarms, /datum/alarm)
@@ -68,4 +68,3 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 				// Whyyyyyyyyyyyyyyyyyyyyyyy.
 				air_alarm.atmos_reset()
 	. = TRUE
-	update_icon()

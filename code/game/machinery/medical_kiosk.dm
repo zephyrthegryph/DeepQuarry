@@ -45,8 +45,12 @@
 /obj/machinery/medical_kiosk/proc/appearance_awake()
 	return (operable() && active_user()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/medical_kiosk, "kiosk{appearance_awake?:_off}")
-DECLARE_APPEARANCE(/obj/machinery/medical_kiosk, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "kiosk_open")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/medical_kiosk/draw(datum/look/look)
+	..()
+	look.state("kiosk[appearance_awake() ? "" : "_off"]")
+	if(panel_open == 1)
+		look.state("kiosk_open")
 
 EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	INTERACT_HAND(null, PROC_REF(medical_kiosk_interaction_hand)), \
@@ -70,12 +74,10 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
 	rel_set(src, nameof(active_user), user)
-	update_icon()
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
 	rel_clear(src, nameof(active_user))
-	update_icon()
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/medical_kiosk/proc/start_using(mob/living/user)

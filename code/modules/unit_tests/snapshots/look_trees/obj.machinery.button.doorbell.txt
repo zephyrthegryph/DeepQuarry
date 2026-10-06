@@ -1,0 +1,5 @@
+/obj/machinery/button/doorbell icon: icons/obj/machines/doorbell_vr.dmi
+/obj/machinery/button/doorbell state: doorbell-standby
+/obj/machinery/button/doorbell dir: 2
+/obj/machinery/button/doorbell overlay: icons/obj/machines/doorbell_vr.dmi:doorbell-standby:8:#000000
+

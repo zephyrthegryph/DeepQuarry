@@ -87,21 +87,19 @@ CAPABILITIES(/obj/item/aicard)
 	to_chat(user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
 	if(carded_ai().control_disabled && carded_ai().deployed_shell)
 		carded_ai().disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
-	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/aicard/appearance_overlays()
-	. = list()
+/obj/item/aicard/draw(datum/look/look)
+	..()
 	if(carded_ai())
 		if (!carded_ai().control_disabled)
-			. += "aicard-on"
+			look.overlay("aicard-on")
 		if(carded_ai().stat)
-			icon_state = "aicard-404"
+			look.state("aicard-404")
 		else
-			icon_state = "aicard-full"
+			look.state("aicard-full")
 	else
-		icon_state = "aicard"
+		look.state("aicard")
 
 /obj/item/aicard/proc/grab_ai(mob/living/silicon/ai/ai, mob/living/user)
 	if(!ai.client && !ai.deployed_shell)
@@ -148,7 +146,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
 
 	ai.canmove = 1
-	update_icon()
 
 /obj/item/aicard/proc/clear()
 	if(carded_ai() && istype(carded_ai().loc, /turf))
@@ -156,7 +153,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		carded_ai().carded = 0
 	name = initial(name)
 	rel_clear(src, nameof(carded_ai))
-	update_icon()
 
 /obj/item/aicard/see_emote(mob/living/M, text)
 	if(carded_ai() && carded_ai().client)

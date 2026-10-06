@@ -226,7 +226,11 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 
 
-APPEARANCE_NONE(/obj/structure/toilet/wooden)
+/// The look (the draw sweep: from APPEARANCE_NONE).
+/obj/structure/toilet/wooden/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 //cooking pot
 
@@ -238,23 +242,23 @@ APPEARANCE_NONE(/obj/structure/toilet/wooden)
 	visible_action = "starts cooking"
 	audible_action = "fire roar"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/microwave/cookingpot/appearance_overlays()
-	. = list()
+/obj/machinery/microwave/cookingpot/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 	if(broken)
-		icon_state = "cookingpotb"
-		return .
+		look.state("cookingpotb")
+		return
 	if(dirty >= 100)
 		if(operating)
-			icon_state = "cookingpotbloody1"
+			look.state("cookingpotbloody1")
 		else
-			icon_state = "cookingpotbloody0"
-		return .
+			look.state("cookingpotbloody0")
+		return
 	if(operating)
-		icon_state = "cookingpot1"
+		look.state("cookingpot1")
 	else
-		icon_state = "cookingpot"
-	return .
+		look.state("cookingpot")
 
 /obj/machinery/microwave/cookingpot/broke(spark = FALSE)
 	. = ..()

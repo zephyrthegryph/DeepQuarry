@@ -39,7 +39,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		rel_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
 		observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 
-	update_icon()
 
 /// Anything held: an extinguisher goes into an open empty cabinet; anything else opens or shuts it.
 /obj/structure/extinguisher_cabinet/proc/interaction_item(datum/act/op/A)
@@ -55,13 +54,11 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 			opened = !opened
 	else
 		opened = !opened
-	update_icon()
 	return OP_OK
 
 /// The wrench on a full cabinet: it opens or shuts.
 /obj/structure/extinguisher_cabinet/proc/toggled(datum/act/op/A)
 	opened = !opened
-	update_icon()
 	return OP_OK
 
 /// The wrench's wait ran out on an empty cabinet: it comes off the wall as its frame.
@@ -88,7 +85,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		opened = 1
 	else
 		opened = !opened
-	update_icon()
 	return OP_OK
 
 /// Telekinesis pulls the extinguisher out at range, or opens or shuts the cabinet.
@@ -102,7 +98,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		opened = 1
 	else
 		opened = !opened
-	update_icon()
 	return OP_OK
 
 /obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/act/notice/A)
@@ -112,7 +107,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		return
 	own_take(src, nameof(has_extinguisher))
 	opened = TRUE
-	update_icon()
 
 /obj/structure/extinguisher_cabinet/proc/appearance_suffix()
 	if(!has_extinguisher)
@@ -123,7 +117,10 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		return "advanced"
 	return "standard"
 
-APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "{initial(icon_state)}{opened?:_closed}_{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/structure/extinguisher_cabinet/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][opened ? "" : "_closed"]_[appearance_suffix()]")
 
 /obj/structure/extinguisher_cabinet/old
 	name = "extinguisher cabinet"

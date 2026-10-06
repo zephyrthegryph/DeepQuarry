@@ -183,7 +183,6 @@ CAPABILITIES(/obj/machinery/shieldgen)
 			check_delay--
 	else
 		shields_down()
-		update_icon()
 
 	if(malfunction)
 		if(length(deployed_shields) && prob(5))
@@ -274,7 +273,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 /obj/machinery/shieldgen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!malfunction)
 		set_malfunction(TRUE)
-		update_icon()
+		changed(src)
 		return 1
 
 /obj/machinery/shieldgen/proc/needs_repair(mob/actor, atom/target, obj/item/held)
@@ -292,7 +291,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		repair_damage(max_integrity)
 		set_malfunction(0)
 		to_chat(user, span_notice("You repair the [src]!"))
-		update_icon()
+		changed(src)
 
 /obj/machinery/shieldgen/proc/interaction_toggle_lock(datum/act/op/A)
 	var/mob/user = A.actor
@@ -356,4 +355,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 /obj/machinery/shieldgen/proc/appearance_projecting()
 	return active && !has_stat(NOPOWER)
 
-APPEARANCE_TEMPLATE(/obj/machinery/shieldgen, "shield{appearance_projecting?on:off}{malfunction?br:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/shieldgen/draw(datum/look/look)
+	..()
+	look.state("shield[appearance_projecting() ? "on" : "off"][malfunction ? "br" : ""]")

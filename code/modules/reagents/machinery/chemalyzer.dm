@@ -30,7 +30,6 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 /// The sample left the scan before it was done.
 /obj/machinery/chemical_analyzer/proc/scan_failed(datum/act/op/A)
 	to_chat(A.actor, span_warning("Sample moved outside of scan range, please try again and remain still."))
-	update_icon()
 
 /// Two seconds later: identify a chemical mystery and show what the container holds.
 /obj/machinery/chemical_analyzer/proc/scan_done(datum/act/op/A)
@@ -53,7 +52,6 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 	else
 		to_chat(user, span_warning("Nothing detected in [held]"))
 
-	update_icon()
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/chemical_analyzer)

@@ -133,7 +133,6 @@ init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
 init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
-init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
@@ -224,7 +223,6 @@ init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overla
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
-init_visuals	code/modules/reagents/reagent_containers/hypospray.dm	icon_state = "[initial(icon_state)]0"
 init_visuals	code/modules/research/tg/server.dm	add_overlay("RD-server-objective-stripes")
 init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
 init_visuals	code/modules/vehicles/Securitrain.dm	add_overlay(I)

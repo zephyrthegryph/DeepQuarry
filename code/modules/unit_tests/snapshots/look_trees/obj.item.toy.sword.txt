@@ -1,0 +1,9 @@
+/obj/item/toy/sword icon: icons/obj/weapons.dmi
+/obj/item/toy/sword state: esword
+/obj/item/toy/sword dir: 2
+/obj/item/toy/sword overlay: icons/obj/weapons.dmi:esword:8:#000000
+/obj/item/toy/sword/interim_holder_appearance icon: icons/obj/weapons.dmi
+/obj/item/toy/sword/interim_holder_appearance state: esword
+/obj/item/toy/sword/interim_holder_appearance dir: 2
+/obj/item/toy/sword/interim_holder_appearance overlay: icons/obj/weapons.dmi:esword:8:#000000
+

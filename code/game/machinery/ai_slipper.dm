@@ -16,14 +16,13 @@
 OM_FIELD(/obj/machinery/ai_slipper, cooldown_on, 0, CHANGE_MACHINE_SETTINGS)
 DECLARE_REPEAT(/obj/machinery/ai_slipper, 0.5 SECONDS, slip_process, "cooldown_on")
 
-/obj/machinery/ai_slipper/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/machinery/ai_slipper/proc/appearance_on()
 	return (!has_stat(NOPOWER) && !has_stat(BROKEN) && !disabled) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser{appearance_on?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/ai_slipper/draw(datum/look/look)
+	..()
+	look.state("liquid_dispenser[appearance_on() ? "_on" : ""]")
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
 	disabled = !enabled
@@ -93,7 +92,6 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 
 /obj/machinery/ai_slipper/proc/ui_act_toggle_on(datum/act/op/A)
 	disabled = !disabled
-	update_icon()
 	return TRUE
 
 /obj/machinery/ai_slipper/proc/ui_act_toggle_use(datum/act/op/A)

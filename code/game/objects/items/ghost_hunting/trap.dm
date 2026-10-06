@@ -30,8 +30,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
-	if(deployed)
-		update_icon()
 	rel_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
@@ -72,30 +70,28 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			our_entity.forceMove(get_turf(src))
-			update_icon()
+			changed(src)
 			return
 
 	to_chat(user, span_info("There appears to be nothing in the trap!"))
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ghost_trap/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/ghost_trap/draw(datum/look/look)
+	..()
 
 	if(deployed)
-		icon_state = "on"
-		return .
+		look.state("on")
+		return
 
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
 		if(our_entity)
-			icon_state = "item_captured"
-			return .
+			look.state("item_captured")
+			return
 
-		icon_state = initial(icon_state)
-		return .
-	icon_state = initial(icon_state)
+		look.state(initial(icon_state))
+		return
+	look.state(initial(icon_state))
 
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
@@ -108,7 +104,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			announce_escape(our_entity)
-			update_icon()
+			changed(src)
 
 /obj/item/ghost_trap/proc/announce_escape(mob/our_entity)
 	var/area/our_area = get_area(src)
@@ -142,7 +138,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 
 	deployed = TRUE
 	user.drop_from_inventory(src)
-	update_icon()
+	changed(src)
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
@@ -158,7 +154,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
-	update_icon()
+	changed(src)
 
 /// Old attack_hand.
 /obj/item/ghost_trap/proc/interaction_hand(datum/act/op/A)
@@ -188,7 +184,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 		MSG_OTHERS(span_danger("%U% has deactivated %T%.")))
 	deployed = FALSE
 	set_anchored(FALSE)
-	update_icon()
+	changed(src)
 
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
@@ -238,7 +234,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 		catch_ghost(passing_entity)
 		deployed = FALSE
 		set_anchored(FALSE)
-		update_icon()
+		changed(src)
 		log_and_message_admins("has been captured at \the [get_area(loc)] by the [name], last touched by [forensic_data?.get_lastprint()]", passing_entity)
 
 /obj/item/ghost_trap/proc/ghost_trap_hidden_vore_effect(datum/act/op/A)

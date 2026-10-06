@@ -64,7 +64,6 @@ TRACKED(/obj/machinery/atmospherics/valve, open)
 
 	var/list/old_edges = rust_pipe_internal_edges()
 	set_open(1)
-	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -75,7 +74,6 @@ TRACKED(/obj/machinery/atmospherics/valve, open)
 
 	var/list/old_edges = rust_pipe_internal_edges()
 	set_open(0)
-	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -132,7 +130,6 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 	STANDARD_ATMOS_CHOOSE_NODE(1, node1_dir)
 	STANDARD_ATMOS_CHOOSE_NODE(2, node2_dir)
 
-	update_icon()
 	update_underlays()
 
 	if(openDuringInit)

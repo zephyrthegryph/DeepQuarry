@@ -738,7 +738,6 @@ CAPABILITIES(/obj/structure/prop/machine/centrifuge)
 		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "centrifuge"
 
-	update_icon()
 	return TRUE
 
 /obj/structure/prop/machine/incubator
@@ -762,7 +761,6 @@ CAPABILITIES(/obj/structure/prop/machine/incubator)
 		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "incubator"
 
-	update_icon()
 	return TRUE
 
 /obj/structure/prop/machine/disease_analyser
@@ -786,7 +784,6 @@ CAPABILITIES(/obj/structure/prop/machine/disease_analyser)
 		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "analyser"
 
-	update_icon()
 	return TRUE
 
 /obj/structure/prop/machine/isolator
@@ -810,6 +807,5 @@ CAPABILITIES(/obj/structure/prop/machine/isolator)
 		act_message(user, src, others = "%U% turns off %T%.")
 		icon_state = "isolator_in"
 
-	update_icon()
 	return TRUE
 

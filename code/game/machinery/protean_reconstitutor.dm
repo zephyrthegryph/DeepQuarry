@@ -93,11 +93,18 @@
 /obj/machinery/protean_reconstitutor/proc/appearance_tank_full()
 	return (appearance_live() && nanomass_reserve >= nanomass_required) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/protean_reconstitutor, "{state_base}{appearance_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_brain", list("1" = list(APPEARANCE_OVERLAYS = list("recon-brain"))))
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_orchestrator", list("1" = list(APPEARANCE_OVERLAYS = list("recon-orchestrator"))))
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_refactory", list("1" = list(APPEARANCE_OVERLAYS = list("recon-refactory"))))
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full", list("1" = list(APPEARANCE_OVERLAYS = list("recon-tank_full"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/protean_reconstitutor/draw(datum/look/look)
+	..()
+	look.state("[state_base][appearance_suffix()]")
+	if(appearance_brain() == 1)
+		look.overlay("recon-brain")
+	if(appearance_orchestrator() == 1)
+		look.overlay("recon-orchestrator")
+	if(appearance_refactory() == 1)
+		look.overlay("recon-refactory")
+	if(appearance_tank_full() == 1)
+		look.overlay("recon-tank_full")
 
 /obj/machinery/protean_reconstitutor/examine()
 	. = ..()
@@ -166,7 +173,6 @@ MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle curr
 		if(nanomass_reserve > nanotank_max)
 			nanomass_reserve = nanotank_max
 		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
-	update_icon()
 	return OP_DECLINE
 
 MSG_DEF_SELF(protean_reconstitutor/busy, "%T% is busy. Please wait for completion of previous operation.")
@@ -210,7 +216,6 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		//no brain, no orchestrator, and/or not enough goo
 		to_chat(user,span_warning("Essential components missing, or insufficient materials available!"))
 		playsound(src, buzzsound, 100, 1, -1)
-		update_icon()
 		return OP_OK
 	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))
@@ -227,7 +232,6 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		nanomass_reserve -= nanomass_required
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		after(src, base_cook_time, PROC_REF(reconstitute_begin))
-	update_icon()
 	return OP_OK
 
 /// Reconstitution step 1: the body is grown after the base cook time.
@@ -356,7 +360,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	P.forceMove(src.loc)
 	processing_revive = FALSE
 	log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
-	update_icon()
+	changed(src)
 
 /// Stop a cycle cleanly: salvaged components go back into the tank, the
 /// unfinished body is dissolved, the nanites are refunded and the machine is
@@ -377,7 +381,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		spent(P)
 	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
 	processing_revive = FALSE
-	update_icon()
+	changed(src)
 
 /obj/machinery/protean_reconstitutor/ownership()
 	. = ..()

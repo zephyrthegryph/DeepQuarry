@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	. = BB
 	own_take(src, nameof(BB))
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
-	update_icon()
+	changed(src)
 
 /// Mass reloading: one matching shell from `floor` into the box every half second.
 /obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
@@ -125,11 +125,14 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		BB.name = "[initial(BB.name)] (\"[label_text]\")"
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_casing/appearance_overlays()
-	. = list()
-	if(!BB)
-		icon_state = "[initial(icon_state)]-spent"
+/obj/item/ammo_casing/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/ammo_casing/proc/look_parts(datum/look/look)
+	if(!BB && copytext(initial(icon_state), -6) != "-spent") // a casing mapped spent already shows it
+		look.state("[initial(icon_state)]-spent")
 
 /obj/item/ammo_casing/examine(mob/user)
 	. = ..()
@@ -326,6 +329,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, TYPE_PROC_REF(/atom, appearance
 				new_state = LAZYACCESS(ammo_states, idx)
 				break
 		icon_state = (new_state)? new_state : initial(icon_state)
+
 
 /obj/item/ammo_magazine/examine(mob/user)
 	. = ..()

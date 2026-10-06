@@ -19,7 +19,14 @@ Deployable items
 	max_integrity = 100
 	locked = 0.0
 
-DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(APPEARANCE_ICON_STATE = "barrier0"), "1" = list(APPEARANCE_ICON_STATE = "barrier1")))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/deployable/barrier/draw(datum/look/look)
+	..()
+	switch("[locked]")
+		if("0")
+			look.state("barrier0")
+		if("1")
+			look.state("barrier1")
 
 /obj/machinery/deployable/barrier/proc/interaction_swipe_id(datum/act/op/A)
 	var/mob/user = A.actor

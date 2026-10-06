@@ -1,0 +1,14 @@
+/obj/item/medigun_backpack icon: icons/obj/borkmedigun.dmi
+/obj/item/medigun_backpack state: mg-backpack
+/obj/item/medigun_backpack dir: 2
+/obj/item/medigun_backpack overlay: icons/obj/borkmedigun.dmi:greenstrike-blink:-32767
+/obj/item/medigun_backpack overlay: icons/obj/borkmedigun.dmi:mg-backpack:8:#000000 x2
+/obj/item/medigun_backpack overlay: icons/obj/borkmedigun.dmi:no_battery:-32767
+/obj/item/medigun_backpack overlay: icons/obj/borkmedigun.dmi:orangestrike-blink:-32767
+/obj/item/medigun_backpack overlay: icons/obj/borkmedigun.dmi:redstrike-blink:-32767
+/obj/item/medigun_backpack/cmo icon: icons/obj/borkmedigun.dmi
+/obj/item/medigun_backpack/cmo state: mg-backpack_cmo
+/obj/item/medigun_backpack/cmo dir: 2
+/obj/item/medigun_backpack/cmo overlay: icons/obj/borkmedigun.dmi:mg-backpack_cmo:8:#000000 x2
+/obj/item/medigun_backpack/cmo overlay: icons/obj/borkmedigun.dmi:no_battery:-32767
+

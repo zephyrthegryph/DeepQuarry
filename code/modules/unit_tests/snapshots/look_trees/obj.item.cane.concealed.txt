@@ -1,0 +1,5 @@
+/obj/item/cane/concealed icon: icons/obj/weapons.dmi
+/obj/item/cane/concealed state: cane
+/obj/item/cane/concealed dir: 2
+/obj/item/cane/concealed overlay: icons/obj/weapons.dmi:cane:8:#000000
+

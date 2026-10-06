@@ -1,0 +1,6 @@
+/obj/machinery/papershredder icon: icons/obj/papershredder.dmi
+/obj/machinery/papershredder state: shredder-on
+/obj/machinery/papershredder dir: 2
+/obj/machinery/papershredder overlay: icons/obj/papershredder.dmi:shredder-0:-32767
+/obj/machinery/papershredder overlay: icons/obj/papershredder.dmi:shredder-on:8:#000000 x2
+

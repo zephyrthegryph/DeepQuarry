@@ -48,7 +48,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/medical_stand, PERIODIC_SLOW, "stand_worki
 /obj/structure/medical_stand/Initialize(mapload)
 	. = ..()
 	update_icon()
-
 DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/medical_stand/appearance_overlays()
 	. = list()

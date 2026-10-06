@@ -1,0 +1,25 @@
+/obj/machinery/holosign icon: icons/obj/holosign.dmi
+/obj/machinery/holosign state: sign_off
+/obj/machinery/holosign dir: 2
+/obj/machinery/holosign overlay: icons/obj/holosign.dmi:sign_off:8:#000000
+/obj/machinery/holosign/surgery icon: icons/obj/holosign.dmi
+/obj/machinery/holosign/surgery state: sign_off
+/obj/machinery/holosign/surgery dir: 2
+/obj/machinery/holosign/surgery overlay: icons/obj/holosign.dmi:sign_off:8:#000000
+/obj/machinery/holosign/exit icon: icons/obj/holosign.dmi
+/obj/machinery/holosign/exit state: sign_off
+/obj/machinery/holosign/exit dir: 2
+/obj/machinery/holosign/exit overlay: icons/obj/holosign.dmi:sign_off:8:#000000
+/obj/machinery/holosign/bar icon: icons/obj/holosign.dmi
+/obj/machinery/holosign/bar state: barclosed
+/obj/machinery/holosign/bar dir: 2
+/obj/machinery/holosign/bar overlay: icons/obj/holosign.dmi:barclosed:8:#000000
+/obj/machinery/holosign/chemistry icon: icons/obj/holosign.dmi
+/obj/machinery/holosign/chemistry state: chemoff
+/obj/machinery/holosign/chemistry dir: 2
+/obj/machinery/holosign/chemistry overlay: icons/obj/holosign.dmi:chemoff:8:#000000
+/obj/machinery/holosign/robotics icon: icons/obj/holosign.dmi
+/obj/machinery/holosign/robotics state: robotoff
+/obj/machinery/holosign/robotics dir: 2
+/obj/machinery/holosign/robotics overlay: icons/obj/holosign.dmi:robotoff:8:#000000
+

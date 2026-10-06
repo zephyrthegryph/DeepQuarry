@@ -118,6 +118,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 	if(worth > 0)
 		if(update)
 			update_icon()
+			changed(src)
 		return worth
 	else
 		spent(src)
@@ -127,6 +128,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 	worth = max(0, new_worth)
 	if(update)
 		update_icon()
+		changed(src)
 	return worth
 
 DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
@@ -307,6 +309,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 	if(worth > 0)
 		if(update)
 			update_icon()
+			changed(src)
 		return worth
 	else
 		spent(src)
@@ -316,6 +319,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 	worth = max(0, new_worth)
 	if(update)
 		update_icon()
+		changed(src)
 	return worth
 
 DECLARE_INTERACTIONS(/obj/item/spacecasinocash_fake, \

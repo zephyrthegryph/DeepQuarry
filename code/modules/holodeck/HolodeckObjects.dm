@@ -472,7 +472,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 
 	ready = !ready
 
-	update_icon()
+	changed(src)
 
 	var/numbuttons = 0
 	var/numready = 0
@@ -485,7 +485,14 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 		begin_event()
 	return TRUE
 
-DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARANCE_ICON_STATE = "auth_on"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "auth_off")))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/readybutton/draw(datum/look/look)
+	..()
+	switch("[ready]")
+		if("1")
+			look.state("auth_on")
+		else
+			look.state("auth_off")
 
 /obj/machinery/readybutton/proc/begin_event()
 

@@ -29,9 +29,12 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 // update the invisibility and icon
 /obj/machinery/bluespace_beacon/hide(intact)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+	changed(src)
 
-APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?f:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/bluespace_beacon/draw(datum/look/look)
+	..()
+	look.state("floor_beacon[invisibility ? "f" : ""]")
 
 /obj/machinery/bluespace_beacon/proc/work_step(datum/act/timer/A)
 	if(!Beacon)
@@ -45,7 +48,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?
 		if(Beacon.loc != src.loc)
 			Beacon.forceMove(src.loc)
 
-	update_icon()
 	return PROCESS_KILL
 
 /obj/machinery/bluespace_beacon/Moved(atom/old_loc, direction, forced = FALSE)

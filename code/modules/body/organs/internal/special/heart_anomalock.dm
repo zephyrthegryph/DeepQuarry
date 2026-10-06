@@ -115,7 +115,6 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 		return
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
-	update_icon()
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/remove_core_interrupted(datum/act/op/A)
 	balloon_alert(A.actor, "interrupted!")
@@ -129,16 +128,14 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	removed_core.forceMove(drop_location())
 	if(Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS))
 		user.put_in_hands(removed_core)
-	update_icon()
 
 CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock/prebuilt)
 	owns_one(nameof(core), starts = /obj/item/assembly/signaler/anomaly/flux)
 
-/obj/item/organ/internal/heart/machine/anomalock/prebuilt/Initialize(mapload, internal)
-	. = ..()
-	update_icon()
-
-APPEARANCE_TEMPLATE(/obj/item/organ/internal/heart/machine/anomalock, "{initial(icon_state)}{core?-core:}")
+/// The look (the draw sweep: from its template).
+/obj/item/organ/internal/heart/machine/anomalock/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][core ? "-core" : ""]")
 
 /datum/body_effect/voltaic_overdrive
 	stacks = MODIFIER_STACK_FORBID

@@ -16,7 +16,10 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/autoresleever, "autoresleever{appearance_faulty?-o:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/transhuman/autoresleever/draw(datum/look/look)
+	..()
+	look.state("autoresleever[appearance_faulty() ? "-o" : ""]")
 
 /obj/machinery/transhuman/autoresleever/proc/appearance_faulty()
 	return has_stat(BROKEN | MAINT | EMPED)
@@ -29,7 +32,6 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 /// Old attack_ghost.
 /obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	update_icon()
 	if(spawn_slots == 0)
 		to_chat(user, span_warning("There are no more respawn slots."))
 		return
@@ -62,7 +64,6 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 
 /// Old attackby: let's not let people mess with this.
 /obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(mob/user, obj/item/held, datum/interaction/interaction)
-	update_icon()
 	return INTERACTION_HANDLED_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)

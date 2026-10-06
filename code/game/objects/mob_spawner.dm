@@ -321,7 +321,10 @@ TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest/mousehole, mob_spawner_types, l
 	/mob/living/simple_mob/animal/passive/mouse/rat/strong = 10, /* Because I'm a horrible person. <3 */ \
 	/obj/effect/spider/spiderling/non_growing = 5))
 
-DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "tunnel_hole")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/mob_spawner/mouse_nest/mousehole/draw(datum/look/look)
+	..()
+	look.state("tunnel_hole")
 
 /obj/structure/mob_spawner/recycler
 	desc = "A bizarre mess of robotic limbs, glowing microrefineries, and nanoassemblers gradually converting the pile of raw materials into active hivebots."

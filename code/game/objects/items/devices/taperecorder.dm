@@ -24,11 +24,6 @@ CAPABILITIES(/obj/item/taperecorder)
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
-/obj/item/taperecorder/Initialize(mapload)
-	. = ..()
-	if(mytape)
-		update_icon()
-
 /obj/item/taperecorder/empty
 	mytape = null
 
@@ -124,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(!move_into(src, nameof(src.mytape), I, user))
 		return TRUE
 	to_chat(user, span_notice("You insert [I] into [src]."))
-	update_icon()
+	changed(src)
 	return TRUE
 
 /// Heat behaviour rule: fire ruins the tape inside.
@@ -149,7 +144,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	to_chat(user, span_notice("You remove [mytape] from [src]."))
 	user.put_in_hands(mytape)
 	own_take(src, nameof(mytape))
-	update_icon()
+	changed(src)
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE, with_capitalization = TRUE)
@@ -189,7 +184,6 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		emagged = 1
 		set_recording(0)
 		to_chat(user, span_warning("PZZTTPFFFT"))
-		update_icon()
 		return OP_OK
 	else
 		to_chat(user, span_warning("It is already emagged!"))
@@ -214,7 +208,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(mytape.used_capacity < mytape.max_capacity)
 		to_chat(user, span_notice("Recording started."))
 		set_recording(1)
-		update_icon()
+		changed(src)
 
 		mytape.record_speech("Recording started.")
 		return
@@ -224,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 /// One second of recording: the tape fills up.
 /obj/item/taperecorder/proc/record_tick()
 	if(!mytape || mytape.used_capacity >= mytape.max_capacity)
-		update_icon()
+		changed(src)
 		return REPEAT_STOP
 	mytape.used_capacity++
 	if(mytape.used_capacity >= mytape.max_capacity)
@@ -232,13 +226,13 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 			var/mob/M = loc
 			to_chat(M, span_notice("The tape is full."))
 		stop_recording()
-		update_icon()
+		changed(src)
 		return REPEAT_STOP
 
 /obj/item/taperecorder/proc/stop_recording()
 	//Sanity checks skipped, should not be called unless actually recording
 	set_recording(0)
-	update_icon()
+	changed(src)
 	mytape.record_speech("Recording stopped.")
 	if(ismob(loc))
 		var/mob/M = loc
@@ -256,7 +250,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		return
 	else if(playing)
 		playing = 0
-		update_icon()
+		changed(src)
 		to_chat(user, span_notice("Playback stopped."))
 		return
 	else
@@ -276,7 +270,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(user.incapacitated())
 		return
 	playing = 1
-	update_icon()
+	changed(src)
 	to_chat(user, span_notice("Playing started."))
 	play_step(1)
 
@@ -316,7 +310,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 
 /obj/item/taperecorder/proc/play_end()
 	playing = 0
-	update_icon()
+	changed(src)
 
 	if(emagged)
 		var/turf/T = get_turf(src)
@@ -365,7 +359,10 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		return "playing"
 	return "idle"
 
-APPEARANCE_TEMPLATE(/obj/item/taperecorder, "taperecorder_{appearance_tape_state}")
+/// The look (the draw sweep: from its template).
+/obj/item/taperecorder/draw(datum/look/look)
+	..()
+	look.state("taperecorder_[appearance_tape_state()]")
 
 MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 /obj/item/rectape
@@ -383,9 +380,11 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 	var/list/timestamp = new/list() // ALLOW(instance_list): d: index-parallel with storedinfo
 	var/ruined = 0
 
-DECLARE_APPEARANCE(/obj/item/rectape, "ruined", list( \
-	"1" = list(APPEARANCE_OVERLAYS = list("ribbonoverlay")) \
-))
+/// The look (the draw sweep: from its layers).
+/obj/item/rectape/draw(datum/look/look)
+	..()
+	if(ruined == 1)
+		look.overlay("ribbonoverlay")
 
 
 CAPABILITIES(/obj/item/rectape)
@@ -401,11 +400,11 @@ CAPABILITIES(/obj/item/rectape)
 
 /obj/item/rectape/proc/ruin()
 	ruined = 1
-	update_icon()
+	changed(src)
 
 /obj/item/rectape/proc/fix()
 	ruined = 0
-	update_icon()
+	changed(src)
 
 /obj/item/rectape/proc/record_speech(text)
 	timestamp += used_capacity

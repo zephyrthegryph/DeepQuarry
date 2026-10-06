@@ -12,9 +12,11 @@
 	var/mixer_angle = 0
 	var/mixer_rotation_rate = 45
 	var/got_input = FALSE
+TRACKED(/obj/machinery/reagent_refinery/mixer, got_input)
+TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 
 /obj/machinery/reagent_refinery/mixer/Initialize(mapload)
-	mixer_angle = dir2angle(dir)
+	set_mixer_angle(dir2angle(dir))
 	. = ..()
 	default_apply_parts()
 
@@ -30,24 +32,24 @@
 	if(mixer_angle == dir2angle(dir))
 		refinery_transfer()
 		if(reagents.total_volume <= 0)
-			mixer_angle += mixer_rotation_rate
-			mixer_angle = (360 + mixer_angle) % 360
+			set_mixer_angle(mixer_angle + (mixer_rotation_rate))
+			set_mixer_angle((360 + mixer_angle) % 360)
 			update_icon()
-		got_input = FALSE
+		set_got_input(FALSE)
 		return
 
 	// Check if we were filled...
 	if(mixer_angle % 90 != 0) // Not cardinal, keep going
-		got_input = TRUE
+		set_got_input(TRUE)
 	else if(!(locate_within(get_step(src,angle2dir(mixer_angle)), /obj/machinery/reagent_refinery))) // If nothing, keep rotating
-		got_input = TRUE
+		set_got_input(TRUE)
 
 	if(!got_input)
 		return
-	mixer_angle += mixer_rotation_rate
-	mixer_angle = (360 + mixer_angle) % 360
+	set_mixer_angle(mixer_angle + (mixer_rotation_rate))
+	set_mixer_angle((360 + mixer_angle) % 360)
 	update_icon()
-	got_input = FALSE
+	set_got_input(FALSE)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/mixer/appearance_overlays()
@@ -106,7 +108,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 
 	// If we transfered anything, then inform process() of it!
 	if(.)
-		got_input = TRUE
+		set_got_input(TRUE)
 		update_icon()
 
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.

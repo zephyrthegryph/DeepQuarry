@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/automatic/wt550 icon: icons/obj/64x32guns_ch.dmi
+/obj/item/gun/projectile/automatic/wt550 state: wt550-20
+/obj/item/gun/projectile/automatic/wt550 dir: 2
+/obj/item/gun/projectile/automatic/wt550 overlay: icons/obj/64x32guns_ch.dmi:wt550-20:8:#000000
+/obj/item/gun/projectile/automatic/wt550/lethal icon: icons/obj/64x32guns_ch.dmi
+/obj/item/gun/projectile/automatic/wt550/lethal state: wt550-20
+/obj/item/gun/projectile/automatic/wt550/lethal dir: 2
+/obj/item/gun/projectile/automatic/wt550/lethal overlay: icons/obj/64x32guns_ch.dmi:wt550-20:8:#000000
+

@@ -708,7 +708,6 @@ CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 			target_light().overlay_color = target_light().brightness_color
 		else
 			target_light().set_light(0)
-	update_icon()
 
 	GLOB.lights_switched_on_roundstat++
 	return OP_OK

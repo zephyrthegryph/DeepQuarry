@@ -53,12 +53,10 @@
 	if(!R)
 		if(!length(warrants_on_file()))
 			to_chat(A.actor, span_notice("There are no warrants available"))
-		update_icon()
 		return OP_OK
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == R.value)
 			rel_set(src, nameof(active), W)
-	update_icon()
 	return OP_OK
 
 /// An ID swiped through it: authorized after a yes; without the access it says so; anything else goes on.
@@ -87,7 +85,10 @@
 /obj/item/holowarrant/proc/appearance_active()
 	return active() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/holowarrant, "{appearance_active?holowarrant_filled:holowarrant}")
+/// The look (the draw sweep: from its template).
+/obj/item/holowarrant/draw(datum/look/look)
+	..()
+	look.state("[appearance_active() ? "holowarrant_filled" : "holowarrant"]")
 
 // show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 

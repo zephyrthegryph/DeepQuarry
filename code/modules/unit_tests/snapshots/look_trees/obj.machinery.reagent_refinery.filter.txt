@@ -1,0 +1,9 @@
+/obj/machinery/reagent_refinery/filter icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/filter state: filter_l
+/obj/machinery/reagent_refinery/filter dir: 2
+/obj/machinery/reagent_refinery/filter overlay: icons/obj/machines/refinery_machines.dmi:filter_l:8:#000000
+/obj/machinery/reagent_refinery/filter/alt icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/filter/alt state: filter_r
+/obj/machinery/reagent_refinery/filter/alt dir: 2
+/obj/machinery/reagent_refinery/filter/alt overlay: icons/obj/machines/refinery_machines.dmi:filter_r:8:#000000
+

@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/storage/wallet)
 		if(W == front_id())
 			rel_clear(src, nameof(front_id))
 			name = original_name || initial(name)
-			update_icon()
+			changed(src)
 
 /obj/item/storage/wallet/insert_item(obj/item/W, mob/user, prevent_warning = FALSE)
 	. = ..()
@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/storage/wallet)
 			if(!original_name)
 				original_name = name
 			name = "[original_name] ([front_id()])"
-			update_icon()
+			changed(src)
 
 /obj/item/storage/wallet/draw(datum/look/look)
 	. = ..()
@@ -126,7 +126,6 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /obj/item/storage/wallet/poly/Initialize(mapload)
 	. = ..()
 	color = get_random_colour()
-	update_icon()
 
 /obj/item/storage/wallet/poly/proc/change_color()
 	set name = "Change Wallet Color"
@@ -147,7 +146,6 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/act/A)
 	var/original_state = icon_state
 	icon_state = "wallet-emp"
-	update_icon()
 
 	after(src, 20 SECONDS, PROC_REF(emp_recovered), with = list(original_state))
 
@@ -160,7 +158,7 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 /obj/item/storage/wallet/poly/proc/emp_recovered(original_state)
 	if(src)
 		icon_state = original_state
-		update_icon()
+		changed(src)
 
 /// Relation view: front id (reads null once it is gone).
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id

@@ -24,7 +24,6 @@
 /obj/item/vehicle_assembly/Initialize(mapload)
 	. = ..()
 	icon_state = "[initial(icon_state)][build_stage]"
-	update_icon()
 
 /// Sets the numbered icon_state for `stage` and, when given, the display name.
 /obj/item/vehicle_assembly/proc/set_build_visuals(stage, new_name)

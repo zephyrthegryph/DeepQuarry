@@ -114,15 +114,14 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	var/datum/notice/wire_cut/N = A
 	set_mode_changes_locked(!N.mended)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/shield_generator/appearance_overlays()
-	. = list()
+/obj/machinery/power/shield_generator/draw(datum/look/look)
+	..()
 	if(running)
-		icon_state = "generator1"
-		set_light(1, 2, "#66FFFF")
+		look.state("generator1")
+		look.light(1, 2, "#66FFFF")
 	else
-		icon_state = "generator0"
-		set_light(0)
+		look.state("generator0")
+		look.light_off()
 
 /obj/machinery/power/shield_generator/Initialize(mapload)
 	. = ..()
@@ -165,7 +164,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	mitigation_em = 0
 	mitigation_physical = 0
 	mitigation_heat = 0
-	update_icon()
+	changed(src)
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
@@ -312,7 +311,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		SE.update_visuals()
 
 	//Phew, update our own icon
-	update_icon()
+	changed(src)
 
 /obj/machinery/power/shield_generator/proc/do_corner_shield(obj/effect/shield/S, new_dir, force_outside)
 	S.enabled_icon_state = "blank"
@@ -488,7 +487,7 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 		set_running(SHIELD_SPINNING_UP)
 		spinup_counter = round(spinup_delay / idle_multiplier)
 	work_start(src)
-	update_icon()
+	changed(src)
 
 /// The window's data.
 /obj/machinery/power/shield_generator/ui_data(datum/act/eval/A)

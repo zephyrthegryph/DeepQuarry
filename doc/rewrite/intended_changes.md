@@ -2329,6 +2329,38 @@ input takes the next tier down, so the legacy declaration order still decides.
 - **The waste processor's drops** check their silent guard in the effect and decline, like the centrifuge; **the resleever's drag** is
   offered to humans and cyborgs only (a `when()` on the actor) and needs the machine panel shut (`maintenance_panel_shut()`); **a
   cyborg's item click on a conveyor** is its own op that takes the click and does nothing (the module never drops), ahead of the drop.
+
+## The draw sweep: legacy appearance declarations become draw(look) (rewrite/draw-sweep)
+
+Pinned by the look tree pins (`code/modules/unit_tests/snapshots/look_trees/`, `dq_look_tree_pin`): icon, icon_state, dir, colour, overlays and
+underlays of every creatable subtype of each converted chain, recorded from the legacy code and compared after the conversion.
+
+* **A converted type is drawn as it is created, from its state at the end of its init.** A legacy template or layer was applied inside the
+  root `Initialize()` (before the subtype's own init ran) and a provider (`DECLARE_APPEARANCE_PROC`) only on the first `update_icon()`; the draw runs at
+  the first refresh, after the whole init. So a type whose init changes what it shows now shows it at once: the armed bear trap
+  (`/obj/item/beartrap/start_active`) is armed, the suit dispenser and the shutoff monitor show their light and panel overlays, and a robot's flash lying loose shows burnt (it has no robot to
+  draw power from; in a robot it reads the robot's cell, as before).
+* **A subtype's declared look wins over the parent's init.** The mouse hole (`/obj/structure/mob_spawner/mouse_nest/mousehole`) declared
+  `tunnel_hole`, but the nest's init wrote its state after the declaration had drawn, so it showed a trash pile; it shows its hole now.
+* **Three providers named one subtype's sprite for the whole chain**, which a redraw showed (now at creation): shock paddles drew
+  `defibpaddles` for jumper cables too, the multitool's idle state was `multitool` for every disguised hacktool, and a casing mapped spent
+  became `-spent-spent`. Each draws from its own type's `initial(icon_state)` now.
+* **`look.held_state()` and `look.identity()`** (code/datums/capabilities/look.dm): a draw sets the inhand state, the name and the description
+  through the look, and the hands holding an item redraw when its sprite or inhand state changes (providers called `update_held_icon()` by hand).
+  A draw that does not set them leaves them as they are, so a rename or a reskin stays.
+* **The used autoinjector keeps its spent sprite** through a draw of its own; its init wrote the state by hand, which a draw would redraw over.
+* **A generic emissive blocker follows the sprite a look draws** (`look_resync_emissive_blocker()`, `code/datums/capabilities/look.dm`). The blocker
+  is a copy of the sprite taken in `/atom/movable/Initialize()`; a legacy declaration had drawn by then, a draw had not, so the copy kept the type's
+  initial state. Every `draw()` type now swaps it when its icon or state changes (before, any later state change also left it stale).
+* **The suit dispenser's frame overlay is drawn once**: its init added `special_frame` by hand beside the draw that adds it.
+* **Chains whose look reads another object's state stay on their legacy declarations** (35 draws: reagent machines reading a beaker,
+  guns reading a magazine's rounds, vehicles reading a tank...), and so do 13 that built layers by writing an image's members or redrew
+  their holder's hands: a `draw()` reads only tracked state and writes nothing (`sys/dx_reactive`, which now also checks `look_parts()`).
+  Their looks are unchanged; `look_sweep` reports them as residue (hop_read).
+* **A redraw that was immediate is at the end of the frame.** `update_icon()` re-applied a declaration on the spot; its replacement is the tracked
+  write itself (the redraw is generated) or, where the draw reads state nothing publishes, `changed(src)` at the old call site. Code that read
+  `icon_state` or `overlays` right after `update_icon()` would see the old look until the frame ends; none of the converted callers does.
+
 - **The ten prompt machines ask on the op** (`asks()` steps; the question opens before any effect, and the hand and place are kept while it
   is open): the cable layer's wirecutters (cut length), the floor layer's wrench (work mode), crowbar (tiles to remove) and screwdriver
   (tile type), the holoposter's multitool (poster), the mass driver's, conveyor's, conveyor switch's and fax machine's multitools (id or

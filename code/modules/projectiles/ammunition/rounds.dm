@@ -321,7 +321,7 @@ DAMAGE_REACTION(/obj/item/ammo_casing/a12g/stunshell, DAMAGE_EMP, PROC_REF(stuns
 /obj/item/ammo_casing/a12g/stunshell/proc/stunshell_emp_fry(datum/damage_packet/packet)
 	if(prob(100/packet.severity))
 		own_clear(src, nameof(BB), OWN_DELETE)
-	update_icon()
+	changed(src)
 
 MATERIAL_MIX(/obj/item/ammo_casing/a12g/flash, list(MAT_STEEL = 90, MAT_GLASS = 90))
 //Does not stun, only blinds, but has area of effect.

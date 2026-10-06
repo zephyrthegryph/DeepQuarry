@@ -7,22 +7,9 @@ GLOBAL_LIST_INIT(dq_variants_under_explorer_utility, list(
 	"engineering" = list("name" = "\improper explorer engineering uniform", "icon_state" = "blackutility_eng", "desc" = "The utility uniform of the Explorer's association, made from biohazard resistant material. This one has silver trim and organge blazes."),
 ))
 
-// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
-/obj/item/clothing/under/explorer/utility/Initialize(mapload)
-	apply_variant()
-	. = ..()
+CAPABILITIES(/obj/item/clothing/under/explorer/utility)
+	variants(nameof(variant), PROC_REF(variant_table))
 
-/obj/item/clothing/under/explorer/utility/apply_variant()
-	if(!variant)
-		return
-	var/list/v = GLOB.dq_variants_under_explorer_utility[variant]
-	if(!v)
-		return
-	if(v["name"])
-		name = v["name"]
-	if(v["icon_state"])
-		icon_state = v["icon_state"]
-	if(v["desc"])
-		desc = v["desc"]
-	if(v["item_state"])
-		item_state = v["item_state"]
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/under/explorer/utility/proc/variant_table()
+	return GLOB.dq_variants_under_explorer_utility

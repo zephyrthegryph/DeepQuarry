@@ -1,0 +1,31 @@
+/obj/structure/grille icon: icons/obj/structures.dmi
+/obj/structure/grille state: grille
+/obj/structure/grille dir: 2
+/obj/structure/grille overlay: icons/obj/structures.dmi:grille:8:#000000
+/obj/structure/grille/cult icon: icons/obj/structures.dmi
+/obj/structure/grille/cult state: grillecult
+/obj/structure/grille/cult dir: 2
+/obj/structure/grille/cult overlay: icons/obj/structures.dmi:grillecult:8:#000000
+/obj/structure/grille/rustic icon: icons/obj/structures.dmi
+/obj/structure/grille/rustic state: grillerustic
+/obj/structure/grille/rustic dir: 2
+/obj/structure/grille/rustic overlay: icons/obj/structures.dmi:grillerustic:8:#000000
+/obj/structure/grille/broken icon: icons/obj/structures.dmi
+/obj/structure/grille/broken state: grille-b-b
+/obj/structure/grille/broken dir: 2
+/obj/structure/grille/broken overlay: icons/obj/structures.dmi:grille-b-b:8:#000000
+/obj/structure/grille/broken/cult icon: icons/obj/structures.dmi
+/obj/structure/grille/broken/cult state: grillecult-b-b
+/obj/structure/grille/broken/cult dir: 2
+/obj/structure/grille/broken/cult overlay: icons/obj/structures.dmi:grillecult-b-b:8:#000000
+/obj/structure/grille/broken/rustic icon: icons/obj/structures.dmi
+/obj/structure/grille/broken/rustic state: grillerustic-b-b
+/obj/structure/grille/broken/rustic dir: 2
+/obj/structure/grille/broken/rustic overlay: icons/obj/structures.dmi:grillerustic-b-b:8:#000000
+/obj/structure/grille/bay icon: icons/obj/bay_grille.dmi
+/obj/structure/grille/bay state: 
+/obj/structure/grille/bay dir: 2
+/obj/structure/grille/bay color: #666666
+/obj/structure/grille/bay overlay: icons/obj/bay_grille.dmi::8:#000000 x2
+/obj/structure/grille/bay overlay: icons/obj/bay_grille.dmi:grille0:-32767 x4
+

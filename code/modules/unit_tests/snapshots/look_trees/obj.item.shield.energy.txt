@@ -1,0 +1,13 @@
+/obj/item/shield/energy icon: icons/obj/weapons.dmi
+/obj/item/shield/energy state: eshield
+/obj/item/shield/energy dir: 2
+/obj/item/shield/energy overlay: icons/obj/weapons.dmi:eshield:8:#000000
+/obj/item/shield/energy/imperial icon: icons/obj/weapons_vr.dmi
+/obj/item/shield/energy/imperial state: impshield
+/obj/item/shield/energy/imperial dir: 2
+/obj/item/shield/energy/imperial overlay: icons/obj/weapons_vr.dmi:impshield:8:#000000
+/obj/item/shield/energy/interim_holder_appearance icon: icons/obj/weapons.dmi
+/obj/item/shield/energy/interim_holder_appearance state: eshield
+/obj/item/shield/energy/interim_holder_appearance dir: 2
+/obj/item/shield/energy/interim_holder_appearance overlay: icons/obj/weapons.dmi:eshield:8:#000000
+

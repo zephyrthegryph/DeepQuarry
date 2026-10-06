@@ -53,7 +53,6 @@
 	H.status_at_least(STAT_SLEEPING, 4)
 
 	//Machine specific stuff at the end
-	update_icon()
 	attempting = 0
 	return 1
 
@@ -103,7 +102,6 @@
 		set_occupant(null)
 		if(locked)
 			set_locked(0)
-		update_icon()
 		return PROCESS_KILL
 
 	return
@@ -162,7 +160,6 @@ OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTING
 	. = ..()
 	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/transhuman/synthprinter/RefreshParts()
 
@@ -196,7 +193,6 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	if(has_stat(NOPOWER))
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
-		update_icon()
 		return
 
 	if(busy > 0 && busy <= 95)
@@ -214,7 +210,6 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 
 	rel_set(src, nameof(current_br), BR)
 	set_busy(5)
-	update_icon()
 
 	return 1
 
@@ -225,7 +220,6 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	if(!current_project)
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
-		update_icon()
 		return
 
 	//Get the DNA and generate a new mob
@@ -243,7 +237,6 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	stored_material[MAT_STEEL] -= body_cost
 	stored_material[MAT_GLASS] -= body_cost
 	set_busy(0)
-	update_icon()
 
 	return 1
 
@@ -294,7 +287,10 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 	return
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mode}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/transhuman/synthprinter/draw(datum/look/look)
+	..()
+	look.state("pod_[appearance_mode()]")
 
 /obj/machinery/transhuman/synthprinter/proc/appearance_mode()
 	if(busy && !has_stat(NOPOWER))
@@ -342,7 +338,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 	. = ..()
 	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
-	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
 /// the occupant's environment, same as before the ledger tracked it.

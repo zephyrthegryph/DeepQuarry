@@ -12,7 +12,10 @@
 	magazine_type = null // R&D builds this. Starts unloaded.
 	allowed_magazines = list(/obj/item/ammo_magazine/m5mmcaseless)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/caseless/prototype, "{initial(icon_state)}{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/caseless/prototype/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/caseless/prototype/loaded
 	magazine_type = /obj/item/ammo_magazine/m5mmcaseless

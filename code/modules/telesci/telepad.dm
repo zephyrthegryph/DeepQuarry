@@ -33,7 +33,6 @@
 	. = ..()
 	own_take_all(src, nameof(component_parts))
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/telepad/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)

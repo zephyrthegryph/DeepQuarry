@@ -231,7 +231,6 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 	if(!move_into(src, nameof(src.helmet), IH, user))
 		return TRUE
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
@@ -243,7 +242,6 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 	if(!move_into(src, nameof(src.suit), IS, user))
 		return TRUE
 
-	update_icon()
 	return TRUE
 
 /// The multitool or wirecutters: a live cycler shocks; behind the open panel its window opens.
@@ -518,7 +516,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	slot_remove(occupant, get_turf(src))
 
 	add_fingerprint(user)
-	update_icon()
 
 	return
 

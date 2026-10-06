@@ -65,10 +65,6 @@
 	var/obj/item/robot_parts/head/head = null
 	var/created_name = ""
 
-/obj/item/robot_parts/robot_suit/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/robot_parts/robot_suit/draw(datum/look/look)
 	..()
 	if(src.l_arm)
@@ -118,32 +114,27 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		if(src.l_leg)	return INTERACTION_HANDLED_PASS
 		if(!move_into(src, nameof(src.l_leg), W, user))
 			return INTERACTION_HANDLED_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
 		if(src.r_leg)	return INTERACTION_HANDLED_PASS
 		if(!move_into(src, nameof(src.r_leg), W, user))
 			return INTERACTION_HANDLED_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
 		if(src.l_arm)	return INTERACTION_HANDLED_PASS
 		if(!move_into(src, nameof(src.l_arm), W, user))
 			return INTERACTION_HANDLED_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
 		if(src.r_arm)	return INTERACTION_HANDLED_PASS
 		if(!move_into(src, nameof(src.r_arm), W, user))
 			return INTERACTION_HANDLED_PASS
-		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
 		if(src.chest)	return INTERACTION_HANDLED_PASS
 		if(W:wires_const && W:cell)
 			if(!move_into(src, nameof(src.chest), W, user))
 				return INTERACTION_HANDLED_PASS
-			src.update_icon()
 		else if(!W:wires_const)
 			to_chat(user, span_warning("You need to attach wires_const to it first!"))
 		else
@@ -154,7 +145,6 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		if(W:flash2 && W:flash1)
 			if(!move_into(src, nameof(src.head), W, user))
 				return INTERACTION_HANDLED_PASS
-			src.update_icon()
 		else
 			to_chat(user, span_warning("You need to attach a flash to it first!"))
 

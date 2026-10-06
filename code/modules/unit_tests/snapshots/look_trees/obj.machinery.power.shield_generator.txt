@@ -1,0 +1,17 @@
+/obj/machinery/power/shield_generator icon: icons/obj/machines/shielding_vr.dmi
+/obj/machinery/power/shield_generator state: generator0
+/obj/machinery/power/shield_generator dir: 2
+/obj/machinery/power/shield_generator overlay: icons/obj/machines/shielding_vr.dmi:generator0:8:#000000
+/obj/machinery/power/shield_generator/charged icon: icons/obj/machines/shielding_vr.dmi
+/obj/machinery/power/shield_generator/charged state: generator0
+/obj/machinery/power/shield_generator/charged dir: 2
+/obj/machinery/power/shield_generator/charged overlay: icons/obj/machines/shielding_vr.dmi:generator0:8:#000000
+/obj/machinery/power/shield_generator/upgraded icon: icons/obj/machines/shielding_vr.dmi
+/obj/machinery/power/shield_generator/upgraded state: generator0
+/obj/machinery/power/shield_generator/upgraded dir: 2
+/obj/machinery/power/shield_generator/upgraded overlay: icons/obj/machines/shielding_vr.dmi:generator0:8:#000000
+/obj/machinery/power/shield_generator/upgraded/admin icon: icons/obj/machines/shielding_vr.dmi
+/obj/machinery/power/shield_generator/upgraded/admin state: generator0
+/obj/machinery/power/shield_generator/upgraded/admin dir: 2
+/obj/machinery/power/shield_generator/upgraded/admin overlay: icons/obj/machines/shielding_vr.dmi:generator0:8:#000000
+

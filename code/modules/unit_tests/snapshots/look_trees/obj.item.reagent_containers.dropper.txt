@@ -1,0 +1,9 @@
+/obj/item/reagent_containers/dropper icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/dropper state: dropper0
+/obj/item/reagent_containers/dropper dir: 2
+/obj/item/reagent_containers/dropper overlay: icons/obj/chemical.dmi:dropper0:8:#000000
+/obj/item/reagent_containers/dropper/industrial icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/dropper/industrial state: dropper0
+/obj/item/reagent_containers/dropper/industrial dir: 2
+/obj/item/reagent_containers/dropper/industrial overlay: icons/obj/chemical.dmi:dropper0:8:#000000
+

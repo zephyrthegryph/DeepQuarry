@@ -127,7 +127,6 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 	if(wrapper_color)
 		wrapper_image = image(icon, "pillbottle_wrap")
 		wrapper_image.color = wrapper_color
-	update_icon()
 
 /obj/item/storage/pill_bottle/draw(datum/look/look)
 	. = ..()

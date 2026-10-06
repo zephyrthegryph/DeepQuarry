@@ -1,0 +1,5 @@
+/obj/item/card_fluff icon: icons/obj/card_fluff.dmi
+/obj/item/card_fluff state: 
+/obj/item/card_fluff dir: 2
+/obj/item/card_fluff overlay: icons/obj/card_fluff.dmi::8:#000000
+

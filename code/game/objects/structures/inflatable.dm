@@ -199,7 +199,7 @@ CAPABILITIES(/obj/structure/inflatable/door)
 	set_density(FALSE)
 	set_opacity(0)
 	state = 1
-	update_icon()
+	changed(src)
 	isSwitchingStates = 0
 
 /obj/structure/inflatable/door/proc/Close()
@@ -211,10 +211,13 @@ CAPABILITIES(/obj/structure/inflatable/door)
 	set_density(TRUE)
 	set_opacity(0)
 	state = 0
-	update_icon()
+	changed(src)
 	isSwitchingStates = 0
 
-APPEARANCE_TEMPLATE(/obj/structure/inflatable/door, "door_{state?open:closed}")
+/// The look (the draw sweep: from its template).
+/obj/structure/inflatable/door/draw(datum/look/look)
+	..()
+	look.state("door_[state ? "open" : "closed"]")
 
 /obj/structure/inflatable/door/deflate()
 	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)

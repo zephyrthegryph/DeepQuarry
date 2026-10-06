@@ -1,0 +1,5 @@
+/obj/machinery/protean_reconstitutor icon: icons/obj/protean_recon.dmi
+/obj/machinery/protean_reconstitutor state: recon
+/obj/machinery/protean_reconstitutor dir: 2
+/obj/machinery/protean_reconstitutor overlay: icons/obj/protean_recon.dmi:recon:8:#000000
+

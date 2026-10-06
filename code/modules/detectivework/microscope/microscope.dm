@@ -32,7 +32,6 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 		return OP_DECLINE
 	rel_set(src, nameof(sample), held)
 	to_chat(user, span_notice("You insert \the [held] into the microscope."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/microscope/proc/interaction_remove_sample(datum/act/op/A)
@@ -121,7 +120,6 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 	sample().forceMove(get_turf(src))
 	remover.put_in_hands(sample())
 	rel_clear(src, nameof(sample))
-	update_icon()
 
 CAPABILITIES(/obj/machinery/microscope)
 	drag_onto(PROC_REF(mousedrop_input))
@@ -140,7 +138,10 @@ CAPABILITIES(/obj/machinery/microscope)
 	remove_sample(user)
 	return TRUE
 
-APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope{sample?slide:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/microscope/draw(datum/look/look)
+	..()
+	look.state("microscope[sample ? "slide" : ""]")
 
 /// the sample this refers to (a relation view: null once it is deleted).
 /obj/machinery/microscope/proc/sample() as /obj/item

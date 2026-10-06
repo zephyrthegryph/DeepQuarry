@@ -32,7 +32,6 @@ CAPABILITIES(/obj/item/storage/belt)
 
 /obj/item/storage/belt/proc/toggle_layer_effect(datum/act/op/A)
 	set_show_above_suit(!show_above_suit)
-	update_icon()
 	return OP_OK
 
 //Some belts have sprites to show icons

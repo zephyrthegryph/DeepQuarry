@@ -771,12 +771,10 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 				if(casinosentientprize_sale == "disabled")
 					casinosentientprize_sale = "enabled"
 					icon_state = "casinoslave_hub_on"
-					update_icon()
 					to_chat(user,span_notice("Prize sale has been enabled."))
 				else
 					casinosentientprize_sale = "disabled"
 					icon_state = "casinoslave_hub_off"
-					update_icon()
 					to_chat(user,span_notice("Prize sale has been disabled."))
 
 			if("Wipe Selected Prize Entry")

@@ -1,0 +1,5 @@
+/obj/machinery/air_sensor icon: icons/obj/stationobjs.dmi
+/obj/machinery/air_sensor state: gsensor1
+/obj/machinery/air_sensor dir: 2
+/obj/machinery/air_sensor overlay: icons/obj/stationobjs.dmi:gsensor1:8:#000000
+

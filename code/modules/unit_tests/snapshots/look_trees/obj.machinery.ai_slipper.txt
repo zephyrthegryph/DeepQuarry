@@ -1,0 +1,5 @@
+/obj/machinery/ai_slipper icon: icons/obj/device.dmi
+/obj/machinery/ai_slipper state: liquid_dispenser
+/obj/machinery/ai_slipper dir: 2
+/obj/machinery/ai_slipper overlay: icons/obj/device.dmi:liquid_dispenser:8:#000000
+

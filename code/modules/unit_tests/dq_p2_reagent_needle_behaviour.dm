@@ -200,10 +200,10 @@
 
 /datum/unit_test/dq_p2_reagents/dropper_look_follows_fill/run_gate()
 	var/obj/item/reagent_containers/dropper/D = rc_filled(/obj/item/reagent_containers/dropper, 0)
-	D.update_icon()
+	appearance_flush()
 	TEST_ASSERT_EQUAL(D.icon_state, "dropper0", "an empty dropper looks empty")
 	D.reagents.add_reagent(REAGENT_ID_WATER, 2)
-	D.update_icon()
+	appearance_flush()
 	TEST_ASSERT_EQUAL(D.icon_state, "dropper1", "a filled one looks filled")
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -151,7 +151,6 @@
 		return //do not update_icon
 
 	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
-	update_icon()
 	return
 
 // ---- the controls ----
@@ -192,7 +191,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/valve_switched(datum/act/op/A)
 	set_unlocked(!unlocked)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/ui_set_regulate_mode(datum/act/op/A, mode)
@@ -203,7 +201,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 			set_regulate_mode(REGULATE_INPUT)
 		if("output")
 			set_regulate_mode(REGULATE_OUTPUT)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/press_is_set(datum/act/op/A)
@@ -227,7 +224,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 			set_target_pressure(max_pressure_setting)
 		if("set")
 			set_target_pressure(between(0, A.step_value("gate_press"), max_pressure_setting))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/ui_set_flow_rate(datum/act/op/A, press)
@@ -238,7 +234,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 			set_set_flow_rate(air1.return_volume())
 		if("set")
 			set_set_flow_rate(between(0, A.step_value("gate_flow"), air1.return_volume()))
-	update_icon()
 	return OP_OK
 
 #undef REGULATE_NONE

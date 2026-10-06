@@ -22,6 +22,8 @@
 	var/list/areas_added
 	var/field_type = /obj/structure/atmospheric_retention_field
 	circuit = /obj/item/circuitboard/arf_generator
+TRACKED(/obj/machinery/atmospheric_field_generator, isactive)
+TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 
 /obj/machinery/atmospheric_field_generator/impassable
 	desc = "An older model of ARF-G that generates an impassable retention field. Works just as well as the modern variety, but is slightly more energy-efficient.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
@@ -45,7 +47,7 @@
 		return OP_OK
 	to_chat(user, span_notice("You [hatch_open ? "close" : "open"] \the [src]'s access hatch."))
 	hatch_open = !hatch_open
-	update_icon()
+	changed(src)
 	if(alwaysactive && wires_intact)
 		generate_field()
 	return OP_OK
@@ -56,7 +58,6 @@
 		return OP_OK
 	to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive ? "emergency" : "always-on"]."))
 	alwaysactive = !alwaysactive
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospheric_field_generator/proc/wirecutter_used(datum/act/op/A)
@@ -64,8 +65,7 @@
 	if(!hatch_open)
 		return OP_OK
 	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
-	wires_intact = !wires_intact
-	update_icon()
+	set_wires_intact(!wires_intact)
 	return OP_OK
 
 /obj/machinery/atmospheric_field_generator/proc/welder_used(datum/act/op/A)
@@ -91,7 +91,10 @@
 		return wires_intact ? "open_wires" : "open_wirescut"
 	return isactive ? "on" : "off"
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/atmospheric_field_generator/draw(datum/look/look)
+	..()
+	look.state("arfg_[appearance_state()]")
 
 /obj/machinery/atmospheric_field_generator/power_change()
 	. = ..()
@@ -137,7 +140,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	if(!ispowered || hatch_open || !wires_intact || isactive) //if it's not powered, the hatch is open, the wires are busted, or it's already on, don't do anything
 		return
 	else
-		isactive = TRUE
+		set_isactive(TRUE)
 		icon_state = "arfg_on"
 		new field_type (src.loc)
 		src.visible_message(span_warning("The ARF-G crackles to life!"),span_warning("You hear an ARF-G coming online!"))
@@ -154,7 +157,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 				spent(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
 			set_use_power(USE_POWER_IDLE)
-			isactive = FALSE
+			set_isactive(FALSE)
 	return
 
 /obj/machinery/atmospheric_field_generator/Initialize(mapload)
@@ -197,26 +200,22 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
-DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/atmospheric_retention_field/appearance_overlays()
-	. = list()
+/obj/structure/atmospheric_retention_field/draw(datum/look/look)
+	..()
 	var/list/dirs = list()
 	for(var/obj/structure/atmospheric_retention_field/F in orange(src,1))
 		dirs += get_dir(src, F)
 
 	var/list/connections = dirs_to_corner_states(dirs)
 
-	icon_state = ""
+	look.state("")
 	for(var/i = 1 to 4)
 		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		. += I
-
-	return .
+		look.overlay(I)
 
 /obj/structure/atmospheric_retention_field/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles() //Force ZAS update
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 

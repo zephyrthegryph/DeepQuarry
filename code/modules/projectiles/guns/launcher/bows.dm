@@ -51,6 +51,7 @@
 
 	///Var for attack_self chain
 	var/hardlight = FALSE
+TRACKED(/obj/item/gun/launcher/crossbow/bow, drawn)
 
 /obj/item/gun/launcher/crossbow/bow/update_release_force(obj/item/projectile)
 	return 0
@@ -58,10 +59,9 @@
 /obj/item/gun/launcher/crossbow/bow/proc/unload(mob/user)
 	var/obj/item/arrow/A = bolt
 	own_take(src, nameof(bolt))
-	drawn = FALSE
+	set_drawn(FALSE)
 	A.forceMove(get_turf(user))
 	user.put_in_hands(A)
-	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/consume_next_projectile(mob/user)
 	if(!drawn)
@@ -71,8 +71,7 @@
 
 /obj/item/gun/launcher/crossbow/bow/handle_post_fire(mob/user, atom/target)
 	own_take(src, nameof(bolt))
-	drawn = FALSE
-	update_icon()
+	set_drawn(FALSE)
 	..()
 
 CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
@@ -99,8 +98,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	if(drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
-		drawn = FALSE
-		update_icon()
+		set_drawn(FALSE)
 	else
 		draw_string(user)
 
@@ -116,13 +114,11 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to draw back the string of %T%.")))
 	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
-	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)
-	drawn = TRUE
+	set_drawn(TRUE)
 	act_message(user, src, MSG_SELF(span_infoplain("You draw the string on %T% back fully!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "draws the string on %T% back fully!")))
-	update_icon()
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
 /obj/item/gun/launcher/crossbow/bow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -131,7 +127,6 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 		if(!move_into(src, nameof(src.bolt), W, user))
 			return
 		act_message(user, src, MSG_SELF(span_infoplain("You slide [bolt] into %T%.")), MSG_OTHERS(span_infoplain("%U% slides [bolt] into %T%.")))
-		update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/appearance_draw_suffix()
 	if(drawn)
@@ -139,7 +134,10 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	if(bolt)
 		return "_loaded"
 	return ""
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{appearance_draw_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/launcher/crossbow/bow/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_draw_suffix()]")
 
 
 
@@ -152,7 +150,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 
 /obj/item/gun/launcher/crossbow/bow/hardlight/unload(mob/user)
 	own_clear(src, nameof(bolt), OWN_DELETE)
-	update_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/launcher/crossbow/bow/hardlight/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
@@ -162,15 +159,13 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 	if(drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
-		drawn = FALSE
-		update_icon()
+		set_drawn(FALSE)
 		return
 	// Automatically knock the arrow as it forms
 	if(!bolt)
 		act_message(user, src, MSG_SELF(span_infoplain("You fabricate a new hardlight projectile with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " fabricates a new hardlight projectile with %T%.")))
 		rel_set(src, nameof(bolt), new /obj/item/arrow/energy(src))
-		update_icon()
 	draw_string(user)
 
 /obj/item/gun/launcher/crossbow/bow/glamour

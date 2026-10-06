@@ -1,0 +1,5 @@
+/obj/machinery/exonet_node icon: icons/obj/stationobjs.dmi
+/obj/machinery/exonet_node state: exonet
+/obj/machinery/exonet_node dir: 2
+/obj/machinery/exonet_node overlay: icons/obj/stationobjs.dmi:exonet:8:#000000
+

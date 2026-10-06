@@ -80,7 +80,6 @@ CAPABILITIES(/obj/structure/gravemarker)
 		grave_name += carving_1
 	if(carving_2)
 		epitaph += carving_2
-	update_icon()
 	return OP_OK
 
 /obj/structure/gravemarker/proc/wrench_used(datum/act/op/A)

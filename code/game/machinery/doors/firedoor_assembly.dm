@@ -10,8 +10,19 @@
 
 TRACKED(/obj/structure/firedoor_assembly, glass)
 
-DECLARE_APPEARANCE(/obj/structure/firedoor_assembly, "glass", list("1" = list(APPEARANCE_ICON = 'icons/obj/doors/DoorHazardGlass.dmi'), APPEARANCE_ANY = list(APPEARANCE_ICON = 'icons/obj/doors/DoorHazard.dmi')))
-DECLARE_APPEARANCE(/obj/structure/firedoor_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "door_anchored"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "door_construction")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/firedoor_assembly/draw(datum/look/look)
+	..()
+	switch("[glass]")
+		if("1")
+			look.set_icon('icons/obj/doors/DoorHazardGlass.dmi')
+		else
+			look.set_icon('icons/obj/doors/DoorHazard.dmi')
+	switch("[anchored]")
+		if("1")
+			look.state("door_anchored")
+		else
+			look.state("door_construction")
 
 // ---- what a firedoor assembly is, declared ----
 //
@@ -50,7 +61,6 @@ CAPABILITIES(/obj/structure/firedoor_assembly)
 	set_anchored(!anchored)
 	playsound(src, A.held.usesound, 50, TRUE)
 	act_message(A.actor, src, MSG_SELF("You have [anchored ? "" : "un"]secured %T%!"), MSG_OTHERS(span_warning("%U% has [anchored ? "" : "un"]secured %T%!")))
-	update_icon()
 	return OP_OK
 
 /obj/structure/firedoor_assembly/proc/wired_up(datum/act/op/A)
@@ -91,12 +101,10 @@ CAPABILITIES(/obj/structure/firedoor_assembly)
 		return OP_REFUSED
 	to_chat(A.actor, span_notice("You installed reinforced glass windows into \the [src]."))
 	set_glass(TRUE)
-	update_icon()
 	return OP_OK
 
 /obj/structure/firedoor_assembly/proc/glass_out(datum/act/op/A)
 	to_chat(A.actor, span_notice("You welded the glass panel out!"))
 	new /obj/item/stack/material/glass/reinforced(drop_location())
 	set_glass(FALSE)
-	update_icon()
 	return OP_OK

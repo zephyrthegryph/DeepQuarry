@@ -1,0 +1,8 @@
+/obj/machinery/reagent_refinery/mixer icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/mixer state: mixer
+/obj/machinery/reagent_refinery/mixer dir: 2
+/obj/machinery/reagent_refinery/mixer overlay: icons/obj/machines/refinery_machines.dmi:mixer:8:#000000 x2
+/obj/machinery/reagent_refinery/mixer overlay: icons/obj/machines/refinery_machines.dmi:mixer_arm:-32767
+/obj/machinery/reagent_refinery/mixer overlay: icons/obj/machines/refinery_machines.dmi:mixer_cons:-32767
+/obj/machinery/reagent_refinery/mixer overlay: icons/obj/machines/refinery_machines.dmi:mixer_dot_off:-32767
+

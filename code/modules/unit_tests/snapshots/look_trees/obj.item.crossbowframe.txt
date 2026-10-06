@@ -1,0 +1,5 @@
+/obj/item/crossbowframe icon: icons/obj/weapons.dmi
+/obj/item/crossbowframe state: crossbowframe0
+/obj/item/crossbowframe dir: 2
+/obj/item/crossbowframe overlay: icons/obj/weapons.dmi:crossbowframe0:8:#000000
+

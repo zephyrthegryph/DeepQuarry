@@ -18,13 +18,11 @@
 	idle_power_usage = 300
 	active_power_usage = 300
 	var/datum/tgui_module/power_monitor/power_monitor
+TRACKED(/obj/machinery/computer/power_monitor, alerting)
 
 /// Checks the sensors for alerts every machine service interval; a change (alerts cleared or detected) redraws it.
 /obj/machinery/computer/power_monitor/proc/monitor_step(datum/act/timer/A)
-	var/alert = check_warnings()
-	if(alert != alerting)
-		alerting = alert
-		update_icon()
+	set_alerting(check_warnings()) // the screen follows (screen_state())
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
 // The power monitoring console: its window is its monitor module's (an empty hand on a working console), and it watches its sensors for alerts
 // (monitor_step()).

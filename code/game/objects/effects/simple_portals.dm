@@ -66,7 +66,6 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 
 /obj/effect/simple_portal/linked/handle_teleport(atom/movable/AM)
 	rel_clear(src, nameof(destination))
-	update_icon()
 	if(linked_portal() && icon_state == "portal")
 		var/rel_x = round(rand(-1,1))
 		var/rel_y = round(rand(-1,1))
@@ -122,7 +121,6 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 		if(istype(candidate) && portal_id == candidate.portal_id && candidate != src)
 			rel_set(src, nameof(linked_portal), candidate)
 			break
-	update_icon()
 
 /obj/effect/simple_portal/linked/draw(datum/look/look)
 	..()

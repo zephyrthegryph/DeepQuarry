@@ -1,0 +1,5 @@
+/obj/machinery/gear_painter icon: icons/obj/vending_vr.dmi
+/obj/machinery/gear_painter state: colormate
+/obj/machinery/gear_painter dir: 2
+/obj/machinery/gear_painter overlay: icons/obj/vending_vr.dmi:colormate:8:#000000
+

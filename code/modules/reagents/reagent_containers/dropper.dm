@@ -75,13 +75,16 @@ MSG_DEF(dropper/begin, null, "%U% is trying to squirt something into %T%'s eyes!
 		MSG_OTHERS(span_warning("%U% squirts something into %T%'s eyes!")))
 
 /obj/item/reagent_containers/dropper/on_reagent_change()
-	update_icon()
+	changed(src)
 
 /// Appearance reader: TRUE while the dropper holds reagents.
 /obj/item/reagent_containers/dropper/proc/appearance_filled()
 	return reagents?.total_volume ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/dropper, "dropper{appearance_filled?1:0}")
+/// The look (the draw sweep: from its template).
+/obj/item/reagent_containers/dropper/draw(datum/look/look)
+	..()
+	look.state("dropper[appearance_filled() ? "1" : "0"]")
 
 /obj/item/reagent_containers/dropper/industrial
 	name = "Industrial Dropper"

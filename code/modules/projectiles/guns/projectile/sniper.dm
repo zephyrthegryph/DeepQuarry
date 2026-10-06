@@ -23,7 +23,10 @@
 	bolt_open = 0
 	special_weapon_handling = TRUE
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/heavysniper/draw(datum/look/look)
+	..()
+	look.state("heavysniper[bolt_open ? "-open" : ""]")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/projectile/heavysniper/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
@@ -31,7 +34,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open
 	if(.)
 		return TRUE
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	bolt_open = !bolt_open
+	set_bolt_open(!bolt_open)
 	if(bolt_open)
 		if(chambered)
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
@@ -42,9 +45,8 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open
 			to_chat(user, span_notice("You work the bolt open."))
 	else
 		to_chat(user, span_notice("You work the bolt closed."))
-		bolt_open = 0
+		set_bolt_open(0)
 	add_fingerprint(user)
-	update_icon()
 
 /obj/item/gun/projectile/heavysniper/special_check(mob/user)
 	if(bolt_open)
@@ -92,7 +94,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 	magazine_type = /obj/item/ammo_magazine/m762svd
 	allowed_magazines = list(/obj/item/ammo_magazine/m762svd)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/SVD, "SVD{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/SVD/draw(datum/look/look)
+	..()
+	look.state("SVD[ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
 	perform_scope_interaction(user, PROC_REF(svd_verb_scope))

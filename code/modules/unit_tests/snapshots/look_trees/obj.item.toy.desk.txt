@@ -1,0 +1,25 @@
+/obj/item/toy/desk icon: icons/obj/toy.dmi
+/obj/item/toy/desk state: 
+/obj/item/toy/desk dir: 2
+/obj/item/toy/desk overlay: icons/obj/toy.dmi::8:#000000
+/obj/item/toy/desk/newtoncradle icon: icons/obj/toy.dmi
+/obj/item/toy/desk/newtoncradle state: newtoncradle
+/obj/item/toy/desk/newtoncradle dir: 2
+/obj/item/toy/desk/newtoncradle overlay: icons/obj/toy.dmi:newtoncradle:8:#000000
+/obj/item/toy/desk/fan icon: icons/obj/toy.dmi
+/obj/item/toy/desk/fan state: fan
+/obj/item/toy/desk/fan dir: 2
+/obj/item/toy/desk/fan overlay: icons/obj/toy.dmi:fan:8:#000000
+/obj/item/toy/desk/officetoy icon: icons/obj/toy.dmi
+/obj/item/toy/desk/officetoy state: desktoy
+/obj/item/toy/desk/officetoy dir: 2
+/obj/item/toy/desk/officetoy overlay: icons/obj/toy.dmi:desktoy:8:#000000
+/obj/item/toy/desk/dippingbird icon: icons/obj/toy.dmi
+/obj/item/toy/desk/dippingbird state: dippybird
+/obj/item/toy/desk/dippingbird dir: 2
+/obj/item/toy/desk/dippingbird overlay: icons/obj/toy.dmi:dippybird:8:#000000
+/obj/item/toy/desk/stellardelight icon: icons/obj/toy.dmi
+/obj/item/toy/desk/stellardelight state: stellar_delight
+/obj/item/toy/desk/stellardelight dir: 2
+/obj/item/toy/desk/stellardelight overlay: icons/obj/toy.dmi:stellar_delight:8:#000000
+

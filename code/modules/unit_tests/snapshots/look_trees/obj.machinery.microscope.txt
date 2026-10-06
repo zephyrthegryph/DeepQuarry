@@ -1,0 +1,5 @@
+/obj/machinery/microscope icon: icons/obj/forensics.dmi
+/obj/machinery/microscope state: microscope
+/obj/machinery/microscope dir: 2
+/obj/machinery/microscope overlay: icons/obj/forensics.dmi:microscope:8:#000000
+

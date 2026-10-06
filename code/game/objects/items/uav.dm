@@ -204,11 +204,14 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			return "_packed"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/item/uav, "{initial(icon_state)}{appearance_uav_suffix}")
+/// The look (the draw sweep: from its template and its layers).
+/obj/item/uav/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_uav_suffix()]")
+	if(state == 2)
+		look.overlay("uav_pairing")
+
 // "2" is UAV_PAIRING.
-DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
-	"2" = list(APPEARANCE_OVERLAYS = list("uav_pairing")) \
-))
 
 OM_FIELD(/obj/item/uav, state, UAV_OFF, CHANGE_EXPLICIT)
 OM_DERIVE_FIELD(/obj/item/uav, is_flying, list("state"))
@@ -259,14 +262,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 			w_class = ITEMSIZE_LARGE
 			slowdown = 0.5
 			set_density(FALSE)
-			update_icon()
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			set_state(UAV_OFF)
 			w_class = ITEMSIZE_HUGE
 			slowdown = 1.5
 			set_density(TRUE)
-			update_icon()
 			return TRUE
 	return FALSE
 

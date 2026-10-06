@@ -25,7 +25,6 @@
 /obj/machinery/power/quantumpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 // Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
 // whichever of the two materializes first (replaces the static id map).
@@ -106,22 +105,20 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 		return OP_OK
 	rel_set(src, nameof(linked_pad), multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
-	update_icon()
 	return OP_OK
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/quantumpad/appearance_overlays()
-	. = list()
-	. += ..()
+
+/obj/machinery/power/quantumpad/draw(datum/look/look)
+	..()
 
 	if(panel_open)
-		. += "qpad-panel"
+		look.overlay("qpad-panel")
 
 	if(!operable() || panel_open || !power_region)
-		icon_state = "[initial(icon_state)]-o"
+		look.state("[initial(icon_state)]-o")
 	else if (!linked_pad())
-		icon_state = "[initial(icon_state)]-b"
+		look.state("[initial(icon_state)]-b")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 // Panel flips retry power cable connections so you don't have to decon the whole thing.
 
@@ -180,7 +177,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 		ghost.forceMove(get_turf(linked_pad()))
 
 /obj/machinery/power/quantumpad/proc/doteleport(mob/user)
-	update_icon()
 	if(!linked_pad())
 		return
 	// ition Start
@@ -197,7 +193,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 	. = FALSE
 	// The keyed relation links mapped pads when they materialize; this only reports it.
 	if(linked_pad())
-		update_icon()
 		. = TRUE
 
 /obj/machinery/power/quantumpad/proc/use_teleport_power()
@@ -301,4 +296,4 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 		disconnect_from_network()
 	connect_to_network()
 	if(power_region != original_powernet)
-		update_icon()
+		changed(src)

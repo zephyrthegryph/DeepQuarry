@@ -592,15 +592,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 		//Cleanup these empty husk ingredients now
 		if (I)
 			consumed(I, src)
-			CI.container().food_items--
+			CI.container().set_food_items(CI.container().food_items - 1)
 		if(S && !QDELETED(S)) //Incase I = S up there.
 			consumed(S, src)
-			CI.container().food_items--
+			CI.container().set_food_items(CI.container().food_items - 1)
 
 	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
 
 	var/obj/item/reagent_containers/food/snacks/result = new cook_path(CI.container())
-	CI.container().food_items++
+	CI.container().set_food_items(CI.container().food_items + 1)
 	buffer.trans_to_holder(result.reagents, buffer.total_volume)	//trans_to doesn't handle food items well, so
 																	//just call trans_to_holder instead
 
@@ -820,10 +820,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 	if(user)
 		act_message(user, src, others = span_notice("%U% removes %I% from %T%."), item = thing)
 		if(cook_container)
-			cook_container.food_items--
+			cook_container.set_food_items(cook_container.food_items - 1)
 			if(!LAZYLEN(cook_container.food_items)) //Empty.
-				cook_container.food_items = 0
-			cook_container.update_icon()
+				cook_container.set_food_items(0)
+			changed(cook_container)
 	else
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it automatically ejects its contents!"))
 		if(cooked_sound)
@@ -945,7 +945,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module) - get_part_count(/obj/item/stock_parts/scanning_module)
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 
-	active_power_usage = initial(active_power_usage) - scan_rating * 25
+	set_active_power_usage(initial(active_power_usage) - scan_rating * 25)
 	heating_power = initial(heating_power) + cap_rating * 25
 	cooking_power = cooking_coeff * (1 + (scan_rating + cap_rating) / 20) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.

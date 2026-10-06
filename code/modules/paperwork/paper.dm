@@ -530,7 +530,6 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 			user.drop_from_inventory(src)
 		src.forceMove(CB)
 		rel_set(CB, nameof(CB.toppaper), src)
-		CB.update_icon()
 		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
 
 	if(istype(P, /obj/item/folder))

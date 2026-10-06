@@ -112,6 +112,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	to_chat(user,span_notice("You puts 5 credits in the slot machine and presses start."))
 	cashmoney.worth -= 5
 	cashmoney.update_icon()
+	changed(cashmoney)
 
 	if(cashmoney.worth <= 0)
 		consume(cashmoney, user)

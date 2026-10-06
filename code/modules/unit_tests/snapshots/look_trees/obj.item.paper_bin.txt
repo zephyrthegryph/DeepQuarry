@@ -1,0 +1,5 @@
+/obj/item/paper_bin icon: icons/obj/bureaucracy.dmi
+/obj/item/paper_bin state: paper_bin1
+/obj/item/paper_bin dir: 2
+/obj/item/paper_bin overlay: icons/obj/bureaucracy.dmi:paper_bin1:8:#000000
+

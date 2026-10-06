@@ -1,0 +1,9 @@
+/obj/item/slow_sizegun icon: icons/obj/gun.dmi
+/obj/item/slow_sizegun state: sizegun-old-0
+/obj/item/slow_sizegun dir: 2
+/obj/item/slow_sizegun overlay: icons/obj/gun.dmi:sizegun-old-0:8:#000000
+/obj/item/slow_sizegun/magic icon: icons/obj/gun.dmi
+/obj/item/slow_sizegun/magic state: sizegun-magic-0
+/obj/item/slow_sizegun/magic dir: 2
+/obj/item/slow_sizegun/magic overlay: icons/obj/gun.dmi:sizegun-magic-0:8:#000000
+

@@ -80,7 +80,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		SSpersistence.track_value(src, persistent)
 
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
-	update_icon()
 	default_apply_parts()
 
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm).
@@ -149,37 +148,40 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	for(var/datum/stored_item/I as anything in item_records)
 		. += I.get_amount()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/smartfridge/appearance_overlays()
-	. = list()
+/obj/machinery/smartfridge/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/machinery/smartfridge/proc/look_parts(datum/look/look)
 	if(panel_open)
-		. += "[icon_base]-panel"
+		look.overlay("[icon_base]-panel")
 
 	if(has_stat(BROKEN))
-		icon_state = "[icon_base]-broken"
+		look.state("[icon_base]-broken")
 
 	if(has_stat(NOPOWER))
-		icon_state = "[icon_base]-off"
+		look.state("[icon_base]-off")
 		switch(stored_count())
 			if(0)
-				. += "[icon_base]-0-off"
+				look.overlay("[icon_base]-0-off")
 			if(1 to 3)
-				. += "[icon_base]-[icon_contents]1-off"
+				look.overlay("[icon_base]-[icon_contents]1-off")
 			if(3 to 6)
-				. += "[icon_base]-[icon_contents]2-off"
+				look.overlay("[icon_base]-[icon_contents]2-off")
 			if(6 to INFINITY)
-				. += "[icon_base]-[icon_contents]3-off"
+				look.overlay("[icon_base]-[icon_contents]3-off")
 	else
-		icon_state = icon_base
+		look.state(icon_base)
 		switch(stored_count())
 			if(0)
-				. += "[icon_base]-0"
+				look.overlay("[icon_base]-0")
 			if(1 to 3)
-				. += "[icon_base]-[icon_contents]1"
+				look.overlay("[icon_base]-[icon_contents]1")
 			if(3 to 6)
-				. += "[icon_base]-[icon_contents]2"
+				look.overlay("[icon_base]-[icon_contents]2")
 			if(6 to INFINITY)
-				. += "[icon_base]-[icon_contents]3"
+				look.overlay("[icon_base]-[icon_contents]3")
 
 /// Requirement (was REQ_* is_powered_for_stocking): the legacy check answers TRUE to pass.
 /obj/machinery/smartfridge/proc/is_powered_for_stocking_holds(datum/act/op/A)
@@ -245,7 +247,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, TYPE_PROC_REF(/atom, appeara
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the maintenance panel of %T%.")), \
 		MSG_OTHERS(span_filter_notice("%U% [panel_open ? "opens" : "closes"] the maintenance panel of %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/smartfridge/proc/wrench_used(datum/act/op/A)
@@ -287,7 +288,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 		rel_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
-	update_icon()
+	changed(src)
 
 /obj/machinery/smartfridge/proc/vend(datum/stored_item/I, count)
 	var/amount = I.get_amount()
@@ -298,7 +299,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	for(var/i = 1 to min(amount, count))
 		I.get_product(get_turf(src))
 	SStgui.update_uis(src)
-	update_icon()
+	changed(src)
 
 /// Old attack_hand.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_hand(datum/act/op/A)
@@ -349,7 +350,6 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 		return TRUE
 
 	vend(item_records[index], amount)
-	update_icon()
 	return TRUE
 
 /obj/machinery/smartfridge/proc/throw_item()
@@ -369,7 +369,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	throw_item.throw_at(target,16,3,src)
 	src.visible_message(span_warning("[src] launches [throw_item.name] at [target.name]!"))
 	SStgui.update_uis(src)
-	update_icon()
+	changed(src)
 	return TRUE
 
 /*

@@ -834,7 +834,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				reagents.trans_to_obj(P, min(reagents.total_volume, MAX_UNITS_PER_PILL))
 				if(P.icon_state in list("pill1", "pill2", "pill3", "pill4")) // if using greyscale, take colour from reagent
 					P.color = P.reagents.get_color()
-				P.update_icon()
 
 		if(3) // Patches
 			while(reagents.total_volume)
@@ -846,7 +845,6 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				reagents.trans_to_obj(P, min(reagents.total_volume, MAX_UNITS_PER_PATCH))
 				if(P.icon_state in list("patch1", "patch2", "patch3", "patch4")) // if using greyscale, take colour from reagent
 					P.color = P.reagents.get_color()
-				P.update_icon()
 
 		else // Bottles. Official value is 1, but this works as a sanity check.
 			while(reagents.total_volume)
@@ -856,7 +854,7 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 				B.pixel_y = rand(-7, 7)
 				B.icon_state = "bottle-[bottle_icon]"
 				reagents.trans_to_obj(B, min(reagents.total_volume, MAX_UNITS_PER_BOTTLE))
-				B.update_icon()
+				changed(B)
 
 	// Sanity check when manual bottling is triggered.
 	if(queue.len)

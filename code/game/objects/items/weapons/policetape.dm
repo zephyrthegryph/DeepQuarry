@@ -45,24 +45,19 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	var/tape_dir = 0
 	var/icon_base = "tape"
 
-DECLARE_APPEARANCE_PROC(/obj/item/tape, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tape/appearance_overlays()
-	. = list()
+/obj/item/tape/draw(datum/look/look)
+	..()
 	//Possible directional bitflags: 0 (AIRLOCK), 1 (NORTH), 2 (SOUTH), 4 (EAST), 8 (WEST), 3 (VERTICAL), 12 (HORIZONTAL)
 	switch (tape_dir)
 		if(0)  // AIRLOCK
-			icon_state = "[icon_base]_door_[crumpled]"
+			look.state("[icon_base]_door_[crumpled]")
 		if(3)  // VERTICAL
-			icon_state = "[icon_base]_v_[crumpled]"
+			look.state("[icon_base]_v_[crumpled]")
 		if(12) // HORIZONTAL
-			icon_state = "[icon_base]_h_[crumpled]"
+			look.state("[icon_base]_h_[crumpled]")
 		else   // END POINT (1|2|4|8)
-			icon_state = "[icon_base]_dir_[crumpled]"
-			dir = tape_dir
-
-/obj/item/tape/Initialize(mapload)
-	. = ..()
-	update_icon()
+			look.state("[icon_base]_dir_[crumpled]")
+			look.set_dir(tape_dir)
 
 /obj/item/taperoll/medical
 	name = "medical tape"
@@ -184,13 +179,13 @@ CAPABILITIES(/obj/item/taperoll)
 				for(var/dir in list(NORTH, SOUTH))
 					if (possible_dirs & dir)
 						TP.tape_dir += dir
-				TP.update_icon()
+				changed(TP)
 			if(possible_dirs & (EAST|WEST))
 				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(EAST, WEST))
 					if (possible_dirs & dir)
 						TP.tape_dir += dir
-				TP.update_icon()
+				changed(TP)
 			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
@@ -278,7 +273,7 @@ CAPABILITIES(/obj/item/taperoll)
 			if(!tapetest)
 				var/obj/item/tape/T = new tape_type(cur)
 				T.tape_dir = tape_dir
-				T.update_icon()
+				changed(T)
 				if(tape_dir & SOUTH)
 					T.layer += 0.1 // Must always show above other tapes
 			if(cur == get_end())
@@ -300,7 +295,7 @@ CAPABILITIES(/obj/item/taperoll)
 			to_chat(user, "There's already tape over that door!")
 		else
 			var/obj/item/tape/P = new tape_type(T)
-			P.update_icon()
+			changed(P)
 			P.layer = WINDOW_LAYER
 			to_chat(user, span_notice("You finish placing \the [src]."))
 
@@ -324,7 +319,7 @@ CAPABILITIES(/obj/item/taperoll)
 /obj/item/tape/proc/crumple()
 	if(!crumpled)
 		crumpled = 1
-		update_icon()
+		changed(src)
 		name = "crumpled [name]"
 
 /obj/item/tape/CanPass(atom/movable/mover, turf/target)

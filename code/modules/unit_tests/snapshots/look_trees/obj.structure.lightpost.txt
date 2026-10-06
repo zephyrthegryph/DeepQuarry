@@ -1,0 +1,21 @@
+/obj/structure/lightpost icon: icons/obj/32x64.dmi
+/obj/structure/lightpost state: lightpost
+/obj/structure/lightpost dir: 2
+/obj/structure/lightpost overlay: :lightpost-glow:7
+/obj/structure/lightpost overlay: icons/obj/32x64.dmi:lightpost:8:#000000
+/obj/structure/lightpost/unlit icon: icons/obj/32x64.dmi
+/obj/structure/lightpost/unlit state: lightpost
+/obj/structure/lightpost/unlit dir: 2
+/obj/structure/lightpost/unlit overlay: icons/obj/32x64.dmi:lightpost:8:#000000
+/obj/structure/lightpost/festive icon: icons/obj/32x64.dmi
+/obj/structure/lightpost/festive state: lightpost
+/obj/structure/lightpost/festive dir: 2
+/obj/structure/lightpost/festive overlay: :lightpost-festive:-32767
+/obj/structure/lightpost/festive overlay: :lightpost-glow:7
+/obj/structure/lightpost/festive overlay: icons/obj/32x64.dmi:lightpost:8:#000000
+/obj/structure/lightpost/festive/unlit icon: icons/obj/32x64.dmi
+/obj/structure/lightpost/festive/unlit state: lightpost
+/obj/structure/lightpost/festive/unlit dir: 2
+/obj/structure/lightpost/festive/unlit overlay: :lightpost-festive:-32767
+/obj/structure/lightpost/festive/unlit overlay: icons/obj/32x64.dmi:lightpost:8:#000000
+

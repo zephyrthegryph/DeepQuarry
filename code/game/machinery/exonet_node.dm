@@ -58,7 +58,10 @@ CAPABILITIES(/obj/machinery/exonet_node)
 		electronically."
 
 
-APPEARANCE_TEMPLATE(/obj/machinery/exonet_node, "{initial(icon_state)}{on?:_off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/exonet_node/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][on ? "" : "_off"]")
 
 // Proc: update_power()
 // Parameters: None

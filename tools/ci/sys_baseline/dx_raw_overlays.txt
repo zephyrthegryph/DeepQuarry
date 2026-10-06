@@ -80,7 +80,6 @@ dx_raw_overlays	code/game/machinery/doors/brigdoors.dm	add_overlay(mutable_appea
 dx_raw_overlays	code/game/machinery/flasher.dm	add_overlay("[base_state]-s")
 dx_raw_overlays	code/game/machinery/flasher.dm	cut_overlays()
 dx_raw_overlays	code/game/machinery/flasher.dm	add_overlay("[base_state]-s")
-dx_raw_overlays	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
 dx_raw_overlays	code/game/machinery/gear_dispenser.dm	add_overlay("working")
 dx_raw_overlays	code/game/machinery/gear_dispenser.dm	add_overlay("fullsuit")
 dx_raw_overlays	code/game/machinery/gear_dispenser.dm	add_overlay("light2")

@@ -134,7 +134,6 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 /obj/machinery/pointdefense/get_description_interaction()
 	. = ..()
@@ -144,7 +143,10 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 /obj/machinery/pointdefense/proc/appearance_live()
 	return (active && id_tag && operable()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearance_live?:_off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/pointdefense/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_live() ? "" : "_off"]")
 
 // Find controller with the same tag on connected z levels (if any)
 /obj/machinery/pointdefense/proc/get_controller()

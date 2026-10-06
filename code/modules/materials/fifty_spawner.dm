@@ -15,7 +15,6 @@ MAP_RESOLVER_VARS(/obj/fiftyspawner, "type_to_spawn")
 	var/obj/fiftyspawner/P = path
 	var/stack_type = MAP_VAR(P, varedits, type_to_spawn)
 	var/obj/item/stack/M = new stack_type(map_spawn_container(loc), -1)
-	M.update_icon() // Some stacks have different sprites depending on how full they are.
 	if(varedits && ("pixel_y" in varedits))
 		M.pixel_y = varedits["pixel_y"]
 	return TRUE

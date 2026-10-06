@@ -175,7 +175,7 @@ CAPABILITIES(/obj/item/shovel/wood)
 	else
 		name = "[material().display_name] shovel"
 		set_bulk_material(material().name, 50)
-		update_icon()
+		changed(src)
 
 /obj/item/shovel/wood/draw(datum/look/look)
 	..()
@@ -234,7 +234,6 @@ CAPABILITIES(/obj/item/stack/flag)
 /obj/item/stack/flag/Initialize(mapload)
 	. = ..()
 	base_state = icon_state
-	update_icon()
 
 /obj/item/stack/flag/blue
 	name = "blue flags"

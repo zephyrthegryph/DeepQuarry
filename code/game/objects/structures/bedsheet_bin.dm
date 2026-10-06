@@ -250,7 +250,10 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 		return "half"
 	return "full"
 
-APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
+/// The look (the draw sweep: from its template).
+/obj/structure/bedsheetbin/draw(datum/look/look)
+	..()
+	look.state("linenbin-[appearance_fill()]")
 
 
 CAPABILITIES(/obj/structure/bedsheetbin)
@@ -318,7 +321,6 @@ CAPABILITIES(/obj/structure/bedsheetbin)
 
 		B.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [B] from [src]."))
-		update_icon()
 
 		if(hidden())
 			hidden().forceMove(loc)

@@ -130,7 +130,7 @@ CAPABILITIES(/obj/structure/simple_door)
 	set_density(FALSE)
 	set_opacity(0)
 	state = 1
-	update_icon()
+	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 
@@ -144,14 +144,17 @@ CAPABILITIES(/obj/structure/simple_door)
 	set_density(TRUE)
 	set_opacity(1)
 	state = 0
-	update_icon()
+	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 
 /obj/structure/simple_door/proc/appearance_base()
 	return material.door_icon_base
 
-APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}")
+/// The look (the draw sweep: from its template).
+/obj/structure/simple_door/draw(datum/look/look)
+	..()
+	look.state("[appearance_base()][state ? "open" : ""]")
 
 /obj/structure/simple_door/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

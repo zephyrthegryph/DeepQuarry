@@ -43,7 +43,7 @@
 	STANDARD_ATMOS_CHOOSE_NODE(1, node1_connect)
 	STANDARD_ATMOS_CHOOSE_NODE(2, node2_connect)
 
-	update_icon()
+	changed(src)
 	update_underlays()
 
 /obj/machinery/atmospherics/binary/return_network(obj/machinery/atmospherics/reference)
@@ -94,7 +94,7 @@
 		rust_release_network_wrapper(network2)
 		rel_clear(src, nameof(node2))
 
-	update_icon()
+	changed(src)
 	update_underlays()
 
 	return null

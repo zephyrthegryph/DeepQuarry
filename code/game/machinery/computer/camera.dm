@@ -156,7 +156,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	return FALSE
 	// end
 
-APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 /obj/machinery/computer/security/telescreen/entertainment/proc/show_thing(atom/thing)
 	if(!enabled)
 		return

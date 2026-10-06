@@ -37,14 +37,12 @@ CAPABILITIES(/obj/structure/bookcase)
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/book))
 			I.forceMove(src)
-	update_icon()
 
 /// Old attackby: a book goes on the shelf (the click goes on).
 /obj/structure/bookcase/proc/shelve_book(datum/act/op/A)
 	var/mob/user = A.actor
 	user.drop_item()
 	A.held.forceMove(src)
-	update_icon()
 	return OP_PASS
 
 /// Old attackby: a pen names the shelf with the answered title (the click goes on).
@@ -92,7 +90,6 @@ CAPABILITIES(/obj/structure/bookcase)
 					user.put_in_hands(choice)
 			else
 				choice.forceMove(get_turf(src))
-			update_icon()
 	return TRUE
 
 /obj/structure/bookcase/atom_destruction(damage_flag)
@@ -103,7 +100,10 @@ CAPABILITIES(/obj/structure/bookcase)
 /obj/structure/bookcase/proc/appearance_books()
 	return min(contents_count(src), 5)
 
-APPEARANCE_TEMPLATE(/obj/structure/bookcase, "book-{appearance_books}")
+/// The look (the draw sweep: from its template).
+/obj/structure/bookcase/draw(datum/look/look)
+	..()
+	look.state("book-[appearance_books()]")
 
 /*
 Book Cart
@@ -126,12 +126,14 @@ CAPABILITIES(/obj/structure/bookcase/bookcart)
 	if(istype(O, /obj/item/book))
 		user.drop_item()
 		O.forceMove(src)
-		update_icon()
 	else
 		return OP_PASS
 	return OP_PASS
 
-APPEARANCE_TEMPLATE(/obj/structure/bookcase/bookcart, "bookcart-{appearance_books}")
+/// The look (the draw sweep: from its template).
+/obj/structure/bookcase/bookcart/draw(datum/look/look)
+	..()
+	look.state("bookcart-[appearance_books()]")
 
 /*
 Book Cart End
@@ -395,7 +397,6 @@ CAPABILITIES(/obj/item/book/bundle)
 /obj/item/book/bundle/proc/interaction_read_bundle(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	update_icon()
 	tgui_interact(user)
 
 /obj/item/book/bundle/ui_data(datum/act/eval/A)

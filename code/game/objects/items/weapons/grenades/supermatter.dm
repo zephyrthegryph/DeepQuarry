@@ -10,14 +10,12 @@
 	om_task_periodic(src, PERIODIC_SLOW)
 	EXPIRY_SET(src, implode_at, 10 SECONDS, CLOCK_WORLD)
 	after(src, 10 SECONDS, PROC_REF(implode))
-	update_icon()
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
-DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/grenade/supermatter/appearance_overlays()
-	. = list()
+/obj/item/grenade/supermatter/draw(datum/look/look)
+	..()
 	if(implode_at)
-		. += image(icon = 'icons/rust.dmi', icon_state = "emfield_s1")
+		look.overlay(image(icon = 'icons/rust.dmi', icon_state = "emfield_s1"))
 
 /obj/item/grenade/supermatter/periodic_step()
 	if(!isturf(loc))

@@ -1,0 +1,5 @@
+/obj/item/camera_assembly icon: icons/obj/monitors_vr.dmi
+/obj/item/camera_assembly state: cameracase
+/obj/item/camera_assembly dir: 2
+/obj/item/camera_assembly overlay: icons/obj/monitors_vr.dmi:cameracase:8:#000000
+

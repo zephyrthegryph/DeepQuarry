@@ -386,7 +386,6 @@ OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
 	icon_state = tostate
-	update_icon()
 
 /obj/item/paper/dosimeter_manual
 	name = "Dosimeter manual"
