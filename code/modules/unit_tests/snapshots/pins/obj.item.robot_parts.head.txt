@@ -105,7 +105,10 @@ human|/obj/item/assembly/infra menu: Insert a flash (refused: needs a flash)
 human|/obj/item/assembly/infra menu: Insert an infrared emitter
 human|/obj/item/assembly/infra menu: Move To Top
 human|/obj/item/assembly/infra menu: Pick up
+human|/obj/item/assembly/infra menu: Rotate Clockwise
+human|/obj/item/assembly/infra menu: Rotate Counter Clockwise
 human|/obj/item/assembly/infra menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/assembly/infra menu: Turn Around
 human|/obj/item/assembly/infra click: nothing
 human|/obj/item/flash menu: Collect (refused: needs a storage)
 human|/obj/item/flash menu: Customise (refused: needs an item)

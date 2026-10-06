@@ -26,10 +26,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	op("insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert power cell"), then(PROC_REF(interaction_insert_cell)))
 	op("swipe_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe card"), then(PROC_REF(interaction_swipe_card)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-/// Holds its field (draining its cell) while it has one.
-/obj/machinery/suspension_gen/Initialize(mapload)
-	. = ..()
-	make_rotatable()
+	rotatable()
 
 /// Holds its field (draining its cell); runs while it has one (declared).
 /obj/machinery/suspension_gen/proc/work_step(datum/act/timer/A)

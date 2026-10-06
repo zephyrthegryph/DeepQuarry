@@ -14,6 +14,12 @@ the entries go into the type's CAPABILITIES block (made when it has none):
              `if(!isnull(a)) v = a`, `if(a) v = a`, `set_dir(a)` / `if(a) set_dir(a)`: param(nameof(v), pos = N) for the N-th argument.
   contains   `new /T(src)` (statements alone): initial_contents(/T), repeated ones with count =.
   knows      `add_language(LANGUAGE_X)`: knows(LANGUAGE_X).
+  parts      `default_apply_parts()` in a machine whose ancestors below /obj/machinery override no Initialize(): default_parts()
+             (code/library/machine/parts.dm).
+  rotatable  `make_rotatable()` / `make_rotatable(only_flip = TRUE)` on a type whose chain overrides none of the rotation hooks
+             (handle_rotation_verbs, ghosts_can_use_rotate_verbs, can_use_rotate_verbs_while_anchored): rotatable() (library).
+  lifetime   `expire(X)` of a constant delay: `T/lifecycle_lifetime = X` (the movable's init arms it).
+  no-op      `update_icon()` on a type whose chain has no legacy appearance declaration: dropped (look_sweep dead).
 
 The classes combine: an override of rolls and contains statements converts. Idempotent. Run `analyze gen` afterwards.
 """
@@ -132,7 +138,27 @@ class Plan:
         self.proc = proc
         self.entries = []
         self.procs = []  # (name, body lines)
+        self.defaults = []  # (var, value): a type default written beside the type
+        self.dropped = 0  # statements that did nothing (a no-op update_icon())
         self.why = None
+
+
+# Set by main(): the types that override Initialize(), the types that override a rotation hook, and the appearance chains (look_sweep).
+INIT_TYPES = set()
+ROT_HOOK_TYPES = set()
+CHAINS = None
+
+
+def ancestors_of(t):
+    out = []
+    while t.count("/") > 1:
+        t = t.rsplit("/", 1)[0]
+        out.append(t)
+    return out
+
+
+def related_any(t, types):
+    return any(u == t or u.startswith(t + "/") or t.startswith(u + "/") for u in types)
 
 
 def plan_override(proc):
@@ -245,6 +271,28 @@ def plan_override(proc):
             return None, "condition"
         if s.indent != 1:
             return None, "nested"
+        if code == "default_apply_parts()" and proc.type.startswith("/obj/machinery/"):
+            if any(a in INIT_TYPES for a in ancestors_of(proc.type) if a.count("/") > 2):
+                return None, "parts_ancestor_init"
+            plan.entries.append("default_parts()")
+            i += 1
+            continue
+        rm = re.fullmatch(r"make_rotatable\(\s*(only_flip\s*=\s*TRUE)?\s*\)", code)
+        if rm:
+            if related_any(proc.type, ROT_HOOK_TYPES):
+                return None, "rotation_hooks"
+            plan.entries.append("rotatable(only_flip = TRUE)" if rm.group(1) else "rotatable()")
+            i += 1
+            continue
+        if code == "update_icon()" and CHAINS is not None and not CHAINS.live(proc.type):
+            plan.dropped += 1
+            i += 1
+            continue
+        em = re.fullmatch(r"expire\((.+)\)", code)
+        if em and not re.search(r"(?<![A-Z_])[a-z_][a-z0-9_]*(?![A-Z0-9_(])", re.sub(r"\b(SECONDS?|MINUTES?|DECISECONDS?|DS|TICKS?)\b", "", em.group(1))):
+            plan.defaults.append(("lifecycle_lifetime", em.group(1).strip()))
+            i += 1
+            continue
         # contains / knows
         nm = NEW_SRC.match(code)
         if nm:
@@ -319,7 +367,7 @@ def plan_override(proc):
         seen.add(key)
         entries.append(e)
     plan.entries = list(reversed(entries))
-    if not plan.entries:
+    if not plan.entries and not plan.defaults and not plan.dropped:
         return None, "nothing"
     return plan, None
 
@@ -404,6 +452,18 @@ def main():
     ap.add_argument("--residue")
     a = ap.parse_args()
     files = dm_files(a.paths, others=a.others)
+    global CHAINS
+    every = dm_files(["code/"], others=True)
+    for rel in every:
+        g = File(rel)
+        for p in procs_in(g):
+            if p.name == "Initialize" and p.kind is None:
+                INIT_TYPES.add(p.type)
+            if p.name in ("handle_rotation_verbs", "ghosts_can_use_rotate_verbs", "can_use_rotate_verbs_while_anchored"):
+                ROT_HOOK_TYPES.add(p.type)
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dx", "codemods"))
+    import look_sweep  # noqa: E402
+    CHAINS = look_sweep.Chains({rel: File(rel) for rel in look_sweep.code_files()})
     counts = collections.Counter()
     residue = collections.Counter()
     cap_idx = capabilities_index() if a.apply else None
@@ -439,6 +499,11 @@ def main():
                 roll_procs += ["", "/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.",
                                "%s/proc/%s(datum/roller/R)" % (ty, name)] + body
             entries = ["\t" + e for e in plan.entries]
+            if plan.defaults:
+                f.lines[at:at] = ["%s/%s = %s" % (ty, var, value) for var, value in plan.defaults] + [""]
+            if not entries and not roll_procs:
+                f.dirty = True
+                continue
             where = cap_idx.get(ty)
             if where and where[0] == rel:
                 hdr = where[1]
