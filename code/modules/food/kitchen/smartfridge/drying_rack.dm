@@ -9,7 +9,6 @@
 	collapse_stock = FALSE
 
 CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(operable), wakes_on = list(nameof(stat)))
 	climb()
 
 /obj/machinery/smartfridge/drying_rack/accept_check(obj/item/O as obj)
@@ -81,3 +80,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge/drying_rack, TYPE_PROC_REF(/a
 			WL.set_wetness(max(0, WL.wetness - rand(1, 3)))
 
 	return
+
+/obj/machinery/smartfridge/drying_rack/step_gate(datum/act/A)
+	return operable()
+
+/obj/machinery/smartfridge/drying_rack/step_start_condition()
+	return TRUE

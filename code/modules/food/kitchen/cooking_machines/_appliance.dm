@@ -45,7 +45,7 @@
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
 CAPABILITIES(/obj/machinery/appliance)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cooking), wakes_on = list(nameof(cooking)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), nameof(stat)))
 	owns_many(nameof(cooking_objs))
 	// the AI's ctrl-click switches it on or off over its link
 	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle power"),
@@ -416,6 +416,10 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			M.injure(mob_injury_kind, rand(1,3) * (1/M.size_multiplier), pick(BP_ALL), source = src)
 
 	return TRUE
+
+/// Whether its step has work: an appliance steps while it cooks (a cooker also while it keeps its heat).
+/obj/machinery/appliance/proc/needs_step(datum/act/A)
+	return cooking
 
 /obj/machinery/appliance/proc/work_step(datum/act/timer/A)
 	if(cooking_power <= 0 || !cooking)

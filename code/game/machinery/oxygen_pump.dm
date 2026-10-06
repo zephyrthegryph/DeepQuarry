@@ -332,9 +332,6 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	name = "portable patient stabilizer"
 	desc = "A portable oxygen pump with a retractable mask used for stabilizing patients in the field."
 
-// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
-CAPABILITIES(/obj/machinery/oxygen_pump/mobile/stabilizer)
-	started_work(step = PROC_REF(work_step))
 /obj/machinery/oxygen_pump/mobile/stabilizer/work_step(datum/act/timer/A)
 	if(!breather())
 		return PROCESS_KILL

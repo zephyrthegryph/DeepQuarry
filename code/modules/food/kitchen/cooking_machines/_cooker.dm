@@ -6,6 +6,9 @@
 /// A cooker steps while cooking, while on (its thermostat; it hibernates at temperature on a heat
 /// watch), and while off until its heat body has cooled back to the room and been released.
 OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, list("cooking", "stat", "heat_body"))
+/obj/machinery/appliance/cooker/needs_step(datum/act/A)
+	return cooker_needs_step()
+
 /obj/machinery/appliance/cooker/proc/cooker_needs_step()
 	return cooking || !has_stat(MACHINE_STAT_ANY) || !isnull(heat_body)
 
@@ -30,7 +33,6 @@ OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, list("cookin
 	tgui_id = "CookingAppliance"
 
 CAPABILITIES(/obj/machinery/appliance/cooker)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cooker_needs_step), wakes_on = list(nameof(cooking), nameof(stat), nameof(heat_body)))
 	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
 
 /obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)

@@ -17,7 +17,6 @@ fundamental differences
 	tgui_id = "KitchenMixer"
 
 CAPABILITIES(/obj/machinery/appliance/mixer)
-	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer)
 
 /obj/machinery/appliance/mixer/examine(mob/user)

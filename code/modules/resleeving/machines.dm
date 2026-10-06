@@ -58,9 +58,6 @@
 	return 1
 
 /// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
-// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
-CAPABILITIES(/obj/machinery/clonepod/transhuman)
-	started_work(step = PROC_REF(work_step))
 /obj/machinery/clonepod/transhuman/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
 	if(has_stat(NOPOWER))

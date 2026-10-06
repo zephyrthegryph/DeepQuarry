@@ -36,7 +36,7 @@ STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
-	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(nameof(stat)))
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
@@ -98,6 +98,10 @@ CAPABILITIES(/obj/machinery/smartfridge)
 
 /obj/machinery/smartfridge/proc/accept_check(obj/item/O)
 	return FALSE
+
+/// Whether a step may run now (a drying rack works only powered and whole).
+/obj/machinery/smartfridge/proc/step_gate(datum/act/A)
+	return TRUE
 
 /obj/machinery/smartfridge/proc/work_step(datum/act/timer/A)
 	if(!operable())

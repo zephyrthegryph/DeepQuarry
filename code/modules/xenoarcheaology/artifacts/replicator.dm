@@ -462,7 +462,6 @@ CAPABILITIES(/obj/machinery/replicator)
 	return data
 
 CAPABILITIES(/obj/machinery/replicator/vore)
-	started_work(step = PROC_REF(work_step))
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 /obj/machinery/replicator/vore/ui_act_construct(datum/act/op/A, key_arg)
 	. = ..()
@@ -733,7 +732,6 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 
 
 CAPABILITIES(/obj/machinery/replicator/clothing)
-	started_work(step = PROC_REF(work_step))
 	interface("XenoarchReplicatorClothing")
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))

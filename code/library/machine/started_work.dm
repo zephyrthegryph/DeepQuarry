@@ -47,7 +47,7 @@ cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = M
 /// One step of the work: the machine's step; PROCESS_KILL ends the work.
 /datum/capability/lib/started_work/proc/run_step(datum/act/timer/A)
 	for(var/test in (islist(gate) ? gate : (gate ? list(gate) : null)))
-		if(!call(A.holder, test)(A))
+		if(!call(A.holder, test)()) // no arguments: a gate may be a proc with optional parameters of its own (operable())
 			return
 	if(call(A.holder, step)(A) == PROCESS_KILL)
 		key_set(A.holder, STARTED_WORK_ACTIVE, FALSE)

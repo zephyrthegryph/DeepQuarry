@@ -91,9 +91,46 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 /// TRUE when `M` has no step work right now: its declared state doesn't hold (the gate keeps the
 /// step from running at all), or its step, run once, says it is done.
 /proc/test_machine_idle(obj/machinery/M)
+	var/datum/capability/lib/started_work/work = cap_of(M, CAP_STARTED_WORK)
+	if(work)
+		// A machine with started work (code/library/machine/started_work.dm) is idle when its work is stopped, its `when` does not hold,
+		// its gate refuses, or its step ends it.
+		if(!work_started(M))
+			return TRUE
+		if(work.when && !condition_holds(M, work.when))
+			return TRUE
+		for(var/test in (islist(work.gate) ? work.gate : (work.gate ? list(work.gate) : null)))
+			if(!call(M, test)(null))
+				return TRUE
+		return test_step_machine(M) == PROCESS_KILL
 	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
 		return TRUE
 	return M.machine_step() == PROCESS_KILL
+
+/// The machine's periodic work may run now: for started work, it is started, its `when` holds and its gate passes; else the legacy
+/// started step of a machine still on the machine pipeline (machine_stepping()).
+/proc/test_work_allowed(obj/machinery/M)
+	var/datum/capability/lib/started_work/work = cap_of(M, CAP_STARTED_WORK)
+	if(!work)
+		return machine_stepping(M)
+	kernel_drain_now() // a change that starts the work reaches it at the drain
+	if(!work_started(M))
+		return FALSE
+	if(work.when && !condition_holds(M, work.when))
+		return FALSE
+	for(var/test in (islist(work.gate) ? work.gate : (work.gate ? list(work.gate) : null)))
+		if(!call(M, test)(null))
+			return FALSE
+	return TRUE
+
+/// One step of a machine's periodic work: its started work's step (work_step()), or the legacy machine_step().
+/proc/test_step_machine(obj/machinery/M)
+	if(hascall(M, "work_step"))
+		. = call(M, "work_step")(null)
+		if(. == PROCESS_KILL && cap_of(M, CAP_STARTED_WORK))
+			key_set(M, STARTED_WORK_ACTIVE, FALSE) // what the library's step does with PROCESS_KILL
+		return .
+	return M.machine_step()
 
 /// Cross-entity derived input: the holder's work follows a field on the entity its relation names.
 /datum/sys_periodic_test_target
