@@ -16,9 +16,10 @@
 	. = ..()
 	update_icon()
 
-/obj/item/clipboard/MouseDrop(obj/over_object as obj) //Quick clipboard fix. -Agouri
-	if(!handle_hand_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native clipboard drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/clipboard/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_hand_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/clipboard/proc/handle_hand_drop(mob/user, obj/over_object)
 	if(ishuman(user))
@@ -97,6 +98,7 @@ CAPABILITIES(/obj/item/clipboard)
 	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
 	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
 	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// The computed part of /obj/item/clipboard's window data (declared on its UI_DATA row).
 /obj/item/clipboard/ui_data(datum/act/eval/A)

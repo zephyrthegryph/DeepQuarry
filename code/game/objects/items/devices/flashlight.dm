@@ -41,6 +41,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 CAPABILITIES(/obj/item/flashlight)
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/flashlight/Initialize(mapload)
 	. = ..()
@@ -184,9 +185,10 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		return TRUE
 	return FALSE
 
-/obj/item/flashlight/MouseDrop(obj/over_object as obj)
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native flashlight drag supplies its actor before unchanged conditional parent input routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/flashlight/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/flashlight/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
@@ -419,10 +421,12 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 // Flares burn fuel while lit (they have no cell, so power_use is off).
 DECLARE_PERIODIC_WHILE(/obj/item/flashlight/flare, PERIODIC_SLOW, "on")
 
-// ALLOW(init/INSTANCE_STATE): fuel rolled at random for each instance
-/obj/item/flashlight/flare/Initialize(mapload)
-	fuel += rand(0, 200)
-	. = ..()
+CAPABILITIES(/obj/item/flashlight/flare)
+	rolls(nameof(fuel), PROC_REF(roll_fuel))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/flashlight/flare/proc/roll_fuel(datum/roller/R)
+	return fuel + (R.number(0, 200))
 
 /obj/item/flashlight/flare/periodic_step()
 	var/turf/pos = get_turf(src)
@@ -481,10 +485,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/flashlight/flare, PERIODIC_SLOW, "on")
 
 DECLARE_PERIODIC_WHILE(/obj/item/flashlight/glowstick, PERIODIC_SLOW, "on")
 
-// ALLOW(init/INSTANCE_STATE): fuel rolled at random for each instance
-/obj/item/flashlight/glowstick/Initialize(mapload)
-	fuel += rand(0, 400)
-	. = ..()
+CAPABILITIES(/obj/item/flashlight/glowstick)
+	rolls(nameof(fuel), PROC_REF(roll_fuel))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/flashlight/glowstick/proc/roll_fuel(datum/roller/R)
+	return fuel + (R.number(0, 400))
 
 /obj/item/flashlight/glowstick/periodic_step()
 	fuel = max(fuel - 1, 0)

@@ -143,9 +143,13 @@
 	rel_clear(src, nameof(sample))
 	update_icon()
 
-/obj/machinery/microscope/MouseDrop(atom/other)
-	if(!handle_sample_drop(usr, other)) // ALLOW(sys_usr_outside_verb): Native microscope drag supplies the actor before selecting the unchanged parent routing branch.
-		return ..()
+CAPABILITIES(/obj/machinery/microscope)
+	drag_onto(PROC_REF(mousedrop_input))
+
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/machinery/microscope/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_sample_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/machinery/microscope/proc/handle_sample_drop(mob/user, atom/other)
 	if(user != other)

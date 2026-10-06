@@ -142,10 +142,12 @@ CAPABILITIES(/obj/item/photo)
 
 CAPABILITIES(/obj/item/storage/photo_album)
 	configure(storage(accepts = list(/obj/item/photo)))
+	drag_onto(PROC_REF(mousedrop_input))
 
-/obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
-	if(!handle_album_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native photo album drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/storage/photo_album/mousedrop_input(datum/act/input/A)
+	if(!handle_album_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/storage/photo_album/proc/handle_album_drop(mob/user, obj/over_object)
 

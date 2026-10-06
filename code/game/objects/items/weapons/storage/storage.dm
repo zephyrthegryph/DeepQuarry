@@ -67,6 +67,7 @@ CAPABILITIES(/obj/item/storage)
 	op("feed_replacer", item(/obj/item/lightreplacer), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
 		then(PROC_REF(feed_replacer)))
 	owns_one(nameof(hud), /datum/storage_hud)
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// A held light replacer that has room takes the good bulbs out of a storage.
 /obj/item/storage/proc/has_bulbs_for(datum/act/op/A)
@@ -406,9 +407,10 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 // ---- Interaction ----
 
-/obj/item/storage/MouseDrop(obj/over_object as obj)
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native storage drag supplies its actor after existing subtype guards and preserves conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/storage/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/storage/proc/handle_inventory_drop(mob/user, obj/over_object)
 	make_contents_real()
