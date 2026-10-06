@@ -102,9 +102,8 @@ OM_FIELD_SETTER(/obj/machinery, density, CHANGE_MACHINE_SETTINGS)
 /// Vehicles keep their own condition bits (BROKEN, ...), same API as machines.
 OM_FLAG_FIELD(/obj/vehicle, stat, 0, CHANGE_EXPLICIT)
 
-/// Power mode (USE_POWER_OFF/IDLE/ACTIVE): set_use_power() (machinery_power.dm) is the setter and
-/// moves the area's tally between the type's idle_power_usage and active_power_usage rows, so the
-/// draw always follows the field.
+/// Power mode (USE_POWER_OFF/IDLE/ACTIVE): set_use_power() (machinery_power.dm) is the setter; the machine's contribution to its
+/// area's demand reads it with the idle and active usage, so the draw always follows the field.
 OM_FIELD_SETTER(/obj/machinery, use_power, CHANGE_MACHINE_SETTINGS)
 
 /// Appearance (doc/rewrite/systems.md section 1): a machine's look follows its core fields, so a
