@@ -324,7 +324,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		occupantData["diagnosis"] = D.report_data()
 		spent(D)
-		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
+		occupantData["paralysis"] = occupant.status_units(STAT_PARALYZED)
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.body_temperature()
 		occupantData["maxTemp"] = SLEEPER_TEMPERATURE_BAR_MAX

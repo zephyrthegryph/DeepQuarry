@@ -227,8 +227,8 @@
 					if(1)
 						act_message(src, null, MSG_SELF(span_danger("You suddenly feel very light-headed, and faint!")), \
 							MSG_OTHERS(span_warning("%U% suddenly collapses!")))
-						status_at_least(EFFECT_PARALYZED, instability * 0.1)
-						status_at_least(EFFECT_SLEEPING, instability * 0.1)
+						status_at_least(STAT_PARALYZED, instability * 0.1)
+						status_at_least(STAT_SLEEPING, instability * 0.1)
 					if(2)
 						if(can_feel_pain())
 							apply_effect(instability, AGONY)

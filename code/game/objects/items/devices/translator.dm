@@ -78,9 +78,9 @@ CAPABILITIES(/obj/item/universal_translator)
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(STAT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(STAT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient
@@ -140,9 +140,9 @@ TYPE_TABLE_DECLARE(/obj/item/universal_translator/limited, translator_languages,
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(STAT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(STAT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient

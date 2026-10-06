@@ -645,8 +645,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
-		M.status_adjust(EFFECT_STUNNED, 2)
+		M.status_at_least(STAT_WEAKENED, 5)
+		M.status_adjust(STAT_STUNNED, 2)
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))
@@ -768,7 +768,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		if(!faction_bump_vore && faction == tmob.faction)
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
-			tmob.status_at_least(EFFECT_WEAKENED, 5)
+			tmob.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
 		ai_busy_begin()
 		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after(); no timer or task form can wait on it until ops land (wait())
@@ -947,7 +947,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.status_at_least(EFFECT_WEAKENED, 3)
+			H.status_at_least(STAT_WEAKENED, 3)
 			return
 	var/armor_block = T.armor_against(INJURY_PAIN)
 	T.injure(INJURY_PAIN, 20, null, src, flags = INJURE_ARMORED)

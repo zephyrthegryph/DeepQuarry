@@ -220,7 +220,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 
 	ai_busy_end()
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /////Gelatinous Cube/////
 

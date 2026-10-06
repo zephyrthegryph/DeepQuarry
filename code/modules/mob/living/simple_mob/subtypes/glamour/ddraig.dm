@@ -85,6 +85,7 @@
 	movement_cooldown = -3
 
 CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/proc/set_size, login = TRUE)
@@ -183,7 +184,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 
 	ai_busy_end()
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathstart(atom/A) //Borrowed from le big dragon
 	set_glow_toggle(1)

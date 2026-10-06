@@ -103,13 +103,13 @@
 			user.set_tf_mob_holder(null)
 		else
 			user.set_tf_mob_holder(M)
-		user.status_set(EFFECT_SLEEPING, 10) //Device knocks out both the user and the target.
-		user.status_set(EFFECT_BLURRY, 30) //Blurry vision while they both get used to their new body's vision
-		user.status_set(EFFECT_SLURRING, 50) //And let's also have them slurring while they attempt to get used to using their new body.
+		user.status_set(STAT_SLEEPING, 10) //Device knocks out both the user and the target.
+		user.status_set(STAT_BLURRY, 30) //Blurry vision while they both get used to their new body's vision
+		user.status_set(STAT_SLURRING, 50) //And let's also have them slurring while they attempt to get used to using their new body.
 		if(ishuman(M)) //Let's not have the AI slurring, even though its downright hilarious.
-			M.status_set(EFFECT_SLEEPING, 10)
-			M.status_set(EFFECT_BLURRY, 30)
-			M.status_set(EFFECT_SLURRING, 50)
+			M.status_set(STAT_SLEEPING, 10)
+			M.status_set(STAT_BLURRY, 30)
+			M.status_set(STAT_SLURRING, 50)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 

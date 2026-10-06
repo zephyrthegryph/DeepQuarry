@@ -46,7 +46,7 @@
 		return
 
 	if(is_queen)
-		status_set(EFFECT_PARALYZED, 7998)
+		status_set(STAT_PARALYZED, 7998)
 		play_sfx(src, SFX_METROID_METROIDGROW)
 		act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay an egg.")))
 		after(src, 5 SECONDS, PROC_REF(lay_egg))
@@ -57,7 +57,7 @@
 			to_chat(src, span_warning("There is already a queen."))
 			return
 		play_sfx(src, SFX_METROID_METROIDGROW)
-		status_set(EFFECT_PARALYZED, 7998)
+		status_set(STAT_PARALYZED, 7998)
 		after(src, 5 SECONDS, PROC_REF(expand_troid))
 
 	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
@@ -97,13 +97,13 @@
 					power_charge = max(0, power_charge - 3)
 					act_message(L, src, MSG_SELF(span_danger("%T% has shocked you!")), MSG_OTHERS(span_danger("%T% has shocked %U%!")))
 					play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
-					L.status_at_least(EFFECT_WEAKENED, 4)
-					L.status_at_least(EFFECT_STUNNED, 4)
+					L.status_at_least(STAT_WEAKENED, 4)
+					L.status_at_least(STAT_STUNNED, 4)
 					do_attack_animation(L)
 					if(L?.buckled_to())
 						var/atom/movable/_tmp_buck_23 = L?.buckled_to()
 						_tmp_buck_23.unbuckle_mob() // To prevent an exploit where being src?.buckled_to() prevents metroids from jumping on you.
-					L.status_at_least(EFFECT_STUTTERING, stun_power)
+					L.status_at_least(STAT_STUTTERING, stun_power)
 
 					fx_sparks(L, 5)
 
@@ -114,7 +114,7 @@
 				else if(prob(20)) // Try to do a regular disarm attack.
 					act_message(L, src, MSG_SELF(span_danger("%T% has pounced at you!")), MSG_OTHERS(span_danger("%T% has pounced at %U%!")))
 					play_sfx(src, SFX_WEAPONS_THUDSWOOSH, 1.5, extrarange = 0)
-					L.status_at_least(EFFECT_WEAKENED, 2)
+					L.status_at_least(STAT_WEAKENED, 2)
 					do_attack_animation(L)
 					if(L?.buckled_to())
 						var/atom/movable/_tmp_buck_24 = L?.buckled_to()
@@ -168,5 +168,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGAT
 /mob/living/simple_mob/metroid/juvenile/proc/lay_egg()
 	new /obj/effect/metroid/egg(loc, src)
 	adjust_nutrition(-500)
-	status_set(EFFECT_PARALYZED, 0)
+	status_set(STAT_PARALYZED, 0)
 

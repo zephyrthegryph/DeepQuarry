@@ -88,7 +88,7 @@
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /mob/living/carbon/human/proc/life_stasis_sleep(datum/seq_frame/life/F)
 	if(src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
-		src.status_at_least(EFFECT_SLEEPING, 20)
+		src.status_at_least(STAT_SLEEPING, 20)
 
 /// Factor changes (body invalidate, CHANGE_MOB_HEALTH) wake it.
 /mob/living/carbon/human/proc/life_stasis_sleep_due()
@@ -248,9 +248,9 @@
 		if(0 <= rn && rn <= 3)
 			src.custom_pain("Your head feels numb and painful.", 10)
 	if(brain_damage >= 15)
-		if(4 <= rn && rn <= 6) if(!src.has_status(EFFECT_BLURRY))
+		if(4 <= rn && rn <= 6) if(!src.has_status(STAT_BLURRY))
 			to_chat(src, span_warning("It becomes hard to see for some reason."))
-			src.status_set(EFFECT_BLURRY, 10)
+			src.status_set(STAT_BLURRY, 10)
 	if(brain_damage >= 35)
 		if(7 <= rn && rn <= 9) if(src.get_active_hand())
 			to_chat(src, span_danger("Your hand won't respond properly, you drop what you're holding!"))
@@ -259,11 +259,11 @@
 		if(10 <= rn && rn <= 12)
 			if(prob(50))
 				to_chat(src, span_danger("You suddenly black out!"))
-				src.status_at_least(EFFECT_PARALYZED, 10)
-				src.status_at_least(EFFECT_SLEEPING, 10)
+				src.status_at_least(STAT_PARALYZED, 10)
+				src.status_at_least(STAT_SLEEPING, 10)
 			else if(!src.lying)
 				to_chat(src, span_danger("Your legs won't respond properly, you fall down!"))
-				src.status_at_least(EFFECT_WEAKENED, 10)
+				src.status_at_least(STAT_WEAKENED, 10)
 
 /mob/living/carbon/human/life_mutations_due()
 	return TRUE
@@ -431,17 +431,17 @@
 
 /mob/living/carbon/human/proc/life_radiation_seizure()
 	to_chat(src, span_critical("You have a seizure!"))
-	src.status_at_least(EFFECT_PARALYZED, 10)
-	src.status_at_least(EFFECT_SLEEPING, 10)
-	src.status_adjust(EFFECT_JITTERY, 1000)
+	src.status_at_least(STAT_PARALYZED, 10)
+	src.status_at_least(STAT_SLEEPING, 10)
+	src.status_adjust(STAT_JITTERY, 1000)
 	if(!src.lying)
 		src.emote("collapse")
 
 /// Tier 1 (1-2 Gy): fatigue, hair loss, the odd vomit.
 /mob/living/carbon/human/proc/life_radiation_sickness_mild()
-	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !src.has_status(EFFECT_WEAKENED))
+	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !src.has_status(STAT_WEAKENED))
 		to_chat(src, span_warning("You feel exhausted."))
-		src.status_adjust(EFFECT_WEAKENED, 3)
+		src.status_adjust(STAT_WEAKENED, 3)
 	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && src.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
 		if((src.h_style != "Bald" || src.f_style != "Shaved" ))
 			to_chat(src, span_warning("Your hair falls out."))
@@ -460,9 +460,9 @@
 		src.emote("gasp")
 	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 		life_radiation_vomit()
-	if(prob(10) && !src.has_status(EFFECT_WEAKENED))
+	if(prob(10) && !src.has_status(STAT_WEAKENED))
 		to_chat(src, span_warning("You feel sick."))
-		src.status_adjust(EFFECT_WEAKENED, 3)
+		src.status_adjust(STAT_WEAKENED, 3)
 
 /// Tier 3 (6-8 Gy): heavier burns; organ damage begins.
 /mob/living/carbon/human/proc/life_radiation_sickness_severe(damage, rad_mod)
@@ -473,9 +473,9 @@
 		src.emote("gasp")
 	if(prob(10) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 		life_radiation_vomit()
-	if(prob(15) && !src.has_status(EFFECT_WEAKENED))
+	if(prob(15) && !src.has_status(STAT_WEAKENED))
 		to_chat(src, span_warning("You feel horribly ill."))
-		src.status_adjust(EFFECT_WEAKENED, 3)
+		src.status_adjust(STAT_WEAKENED, 3)
 	if(prob(5))
 		life_radiation_organ_mutation(damage, rad_mod, 40)
 
@@ -485,15 +485,15 @@
 		src.radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
 		if(prob(5) && life_radiation_irradiate_organ(damage * rad_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Burns", O_EYES))
 			to_chat(src, span_warning("Your eyes burn!"))
-			src.status_adjust(EFFECT_BLURRY, 10)
+			src.status_adjust(STAT_BLURRY, 10)
 	if(prob(4))
 		src.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
 		src.emote("gasp")
 	if(prob(25) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 		life_radiation_vomit()
-	if(prob(20) && !src.has_status(EFFECT_WEAKENED))
+	if(prob(20) && !src.has_status(STAT_WEAKENED))
 		to_chat(src, span_critical("You feel like your insides are burning!"))
-		src.status_adjust(EFFECT_WEAKENED, 5)
+		src.status_adjust(STAT_WEAKENED, 5)
 	if(prob(5))
 		to_chat(src, span_critical("Your entire body feels like it's on fire!"))
 		src.injure(INJURY_PAIN, 5)
@@ -506,10 +506,10 @@
 	src.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
 	src.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
 	if(life_radiation_irradiate_organ(organ_damage, "Radiation Burns", O_EYES, INJURE_CONTINUOUS)) //3 eye damage a tick as your eyes melt down.
-		src.status_adjust(EFFECT_BLURRY, 10)
+		src.status_adjust(STAT_BLURRY, 10)
 	if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 		life_radiation_vomit()
-	if(!src.has_status(EFFECT_PARALYZED) && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
+	if(!src.has_status(STAT_PARALYZED) && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
 		life_radiation_seizure()
 	if(src.get_active_hand() && prob(15)) //CNS is shutting down.
 		to_chat(src, span_danger("Your hand won't respond properly, you drop what you're holding!"))
@@ -528,23 +528,23 @@
 	if(src.organ_in(O_EYES))
 		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(src, span_warning("Your eyes water."))
-			src.status_adjust(EFFECT_BLURRY, 5)
+			src.status_adjust(STAT_BLURRY, 5)
 		if(rads > 300 && prob(2) && prob(rads * RADIATION_SPEED_COEFFICIENT)) // (6Gy)
 			to_chat(src, span_warning("Your eyes burn."))
 			//0.1 damage. Not a lot, but enough to tell you to get to medical.
 			life_radiation_irradiate_organ(1 * src.species.radiation_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Burns", O_EYES)
-			src.status_adjust(EFFECT_BLURRY, 10)
+			src.status_adjust(STAT_BLURRY, 10)
 	if(rads > 200) // (4Gy)
 		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(src, span_warning("Your feel nauseated."))
 			life_radiation_vomit()
-		if(!src.has_status(EFFECT_WEAKENED) && prob(2) && prob(rads * RADIATION_SPEED_COEFFICIENT))
+		if(!src.has_status(STAT_WEAKENED) && prob(2) && prob(rads * RADIATION_SPEED_COEFFICIENT))
 			to_chat(src, span_warning("Your feel exhausted."))
-			src.status_adjust(EFFECT_WEAKENED, 3)
+			src.status_adjust(STAT_WEAKENED, 3)
 	if(rads > 300 && src.get_active_hand() && prob(15) && prob(100 * RADIATION_SPEED_COEFFICIENT)) // (6Gy) CNS is shutting down.
 		to_chat(src, span_danger("Your hand won't respond properly, you drop what you're holding!"))
 		src.drop_item()
-	if(rads > 700 && !src.has_status(EFFECT_PARALYZED) && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) // (12Gy) 1 in 1000 chance per tick.
+	if(rads > 700 && !src.has_status(STAT_PARALYZED) && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) // (12Gy) 1 in 1000 chance per tick.
 		life_radiation_seizure()
 
 	/** breathing **/
@@ -584,7 +584,7 @@
 /// One lung breath's gas exchange (P2-F1: split into the steps below). Reports the breath's
 /// quality (0..1) to the physiology, which decides whether the body suffocates.
 /mob/living/carbon/human/life_breathing_exchange(datum/gas_mixture/breath)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0	// Cancelled by a component
 
 	if(src.suiciding)
@@ -875,7 +875,7 @@
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		life_environment_convect(loc_temp, environment)
 
-	var/godmode = om_has(src, EFFECT_GODMODE)
+	var/godmode = in_godmode(src)
 	if(isbelly(src.loc) && src.allowtemp)
 		life_environment_belly_temperature_harm()
 	else if(!godmode) // Cancelled by a component
@@ -1158,7 +1158,7 @@
 		// Whole branch was inert; restore properly if/when contamination
 		// machinery is rebuilt on the LINDA gas model.
 
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0	// Cancelled by a component
 
 	// nutrition decrease, for the biological time since the last one (the stage idles between
@@ -1234,7 +1234,7 @@
 	// blinded is reset every frame (type_pre) and set again here, so anything that blinds keeps it awake.
 	if(src.tiredness || src.fear || src.embedded_flag || src.resting || src.wearing_blindfold() || life_status_rig_visor_blinds())
 		return TRUE
-	if(src.has_status(EFFECT_SLEEPING) || src.has_status(EFFECT_DROWSY) || src.has_status(EFFECT_HALLUCINATING) || src.has_status(EFFECT_BLINDED) || src.has_status(EFFECT_DEAFENED))
+	if(src.has_status(STAT_SLEEPING) || src.has_status(STAT_DROWSY) || src.has_status(STAT_HALLUCINATING) || src.has_status(STAT_BLINDED) || src.has_status(STAT_DEAFENED))
 		return TRUE
 	if((src.sdisabilities & (BLIND | DEAF)) || src.ear_damage)
 		return TRUE
@@ -1252,12 +1252,12 @@
 
 /// P2-F1: the status update, split into one proc per concern below.
 /mob/living/carbon/human/life_status_update_status()
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0	// Cancelled by a component
 
 	//SSD check, if a logged player is awake put them back to sleep!
 	if(src.species.get_ssd(src) && !src.client && !src.teleop)
-		src.status_at_least(EFFECT_SLEEPING, 2)
+		src.status_at_least(STAT_SLEEPING, 2)
 	if(src.stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
 		life_status_dead_senses()
 		return 1
@@ -1283,15 +1283,15 @@
 
 /mob/living/carbon/human/proc/life_status_dead_senses()
 	src.set_blinded(1)
-	src.status_set(EFFECT_MUTED, 0)
+	src.status_set(STAT_MUTED, 0)
 	src.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 
 /// UNCONSCIOUS. NO-ONE IS HOME. Returns TRUE when the consciousness model has the body out.
 /mob/living/carbon/human/proc/life_status_update_consciousness()
 	if(!src.body.is_unconscious())
 		return FALSE
-	src.status_at_least(EFFECT_PARALYZED, 3)
-	src.status_at_least(EFFECT_SLEEPING, 3)
+	src.status_at_least(STAT_PARALYZED, 3)
+	src.status_at_least(STAT_SLEEPING, 3)
 	src.set_stat(UNCONSCIOUS)
 	src.set_blinded(TRUE)
 	if(!has_trait(src, TRAIT_CRITICAL_CONDITION))
@@ -1299,9 +1299,9 @@
 	return TRUE
 
 /mob/living/carbon/human/proc/life_status_update_hallucinations()
-	if(!src.has_status(EFFECT_HALLUCINATING))
+	if(!src.has_status(STAT_HALLUCINATING))
 		return
-	if(src.status_units(EFFECT_HALLUCINATING) >= HALLUCINATION_THRESHOLD && !(src.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !has_trait(src, TRAIT_MADNESS_IMMUNE))
+	if(src.status_units(STAT_HALLUCINATING) >= HALLUCINATION_THRESHOLD && !(src.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !has_trait(src, TRAIT_MADNESS_IMMUNE))
 		src.handle_hallucinations()
 
 /// Tiredness from vore drain wears off; very tired bodies fall asleep.
@@ -1310,7 +1310,7 @@
 		return
 	src.set_tiredness((src.tiredness - 1))
 	if(src.tiredness >= 100)
-		src.status_at_least(EFFECT_SLEEPING, 5)
+		src.status_at_least(STAT_SLEEPING, 5)
 
 /// Fear wears off; a frightened organic body shakes, drops things and shows it.
 /mob/living/carbon/human/proc/life_status_update_fear()
@@ -1341,7 +1341,7 @@
 
 /// Asleep: unconscious, pain eases, dreams and snores. Otherwise (and not knocked out) conscious.
 /mob/living/carbon/human/proc/life_status_update_sleep(in_crit)
-	if(!src.has_status(EFFECT_SLEEPING))
+	if(!src.has_status(STAT_SLEEPING))
 		if(!in_crit)
 			src.set_stat(CONSCIOUS)
 			if(has_trait(src, TRAIT_CRITICAL_CONDITION))
@@ -1351,7 +1351,7 @@
 	src.set_stat(UNCONSCIOUS)
 	src.animate_tail_reset()
 	src.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
-	if(!src.has_status(EFFECT_SLEEPING))
+	if(!src.has_status(STAT_SLEEPING))
 		return
 	if(prob(2))
 		if(prob(50))
@@ -1361,7 +1361,7 @@
 	src.handle_dreams()
 	// Nobody home (SSD, or no mind at all): the body stays asleep until a player returns.
 	if(!src.mind || !src.client)
-		src.status_at_least(EFFECT_SLEEPING, 1)
+		src.status_at_least(STAT_SLEEPING, 1)
 	if(prob(2) && !src.is_critical() && !src.get_hallucination_state()?.get_fakecrit() && src.client)
 		src.emote("snore")
 
@@ -1380,27 +1380,27 @@
 		src.set_blinded(1)
 
 	if(!src.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
-		src.status_set(EFFECT_BLINDED, 0)
+		src.status_set(STAT_BLINDED, 0)
 		src.set_blinded(0)
-		src.status_set(EFFECT_BLURRY, 0)
+		src.status_set(STAT_BLURRY, 0)
 		src.clear_alert("blind")
 		return
 	var/obj/item/organ/vision = src.organ_in(src.species.vision_organ)
 	if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
-		src.status_set(EFFECT_BLINDED, 1)
+		src.status_set(STAT_BLINDED, 1)
 		src.set_blinded(1)
-		src.status_set(EFFECT_BLURRY, 1)
+		src.status_set(STAT_BLURRY, 1)
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 		return
 	//You have the requisite organs
 	if(src.sdisabilities & BLIND) 	// Disabled-blind, doesn't get better on its own
 		src.set_blinded(1)
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
-	else if(src.has_status(EFFECT_BLINDED) || src.wearing_blindfold())	// Blindness wears off on its own; a blindfold also heals blur faster (status_rate())
+	else if(src.has_status(STAT_BLINDED) || src.wearing_blindfold())	// Blindness wears off on its own; a blindfold also heals blur faster (status_rate())
 		src.set_blinded(1)
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 	if(vision.is_bruised())   // Vision organs impaired? Permablurry.
-		src.status_at_least(EFFECT_BLURRY, 1)
+		src.status_at_least(STAT_BLURRY, 1)
 
 /// A worn rig helmet whose visor restriction blinds.
 /mob/living/carbon/human/proc/life_status_rig_visor_blinds()
@@ -1412,12 +1412,12 @@
 /// Ears: disability deafness holds; ear damage heals, faster under earmuffs.
 /mob/living/carbon/human/proc/life_status_update_hearing()
 	if(src.sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
-		src.status_at_least(EFFECT_DEAFENED, 1)
+		src.status_at_least(STAT_DEAFENED, 1)
 		src.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
-	else if(!src.has_status(EFFECT_DEAFENED))	// deafness wears off on its own; ears don't heal meanwhile
+	else if(!src.has_status(STAT_DEAFENED))	// deafness wears off on its own; ears don't heal meanwhile
 		if(src.get_ear_protection() >= 2)	//resting your ears with earmuffs heals ear damage faster
 			src.set_ear_damage(max(src.ear_damage-0.15, 0))
-			src.status_at_least(EFFECT_DEAFENED, 1)
+			src.status_at_least(STAT_DEAFENED, 1)
 		else if(src.ear_damage < 25)	//ear damage heals slowly under this threshold. otherwise you'll need earmuffs
 			src.set_ear_damage(max(src.ear_damage-0.05, 0))
 
@@ -1426,11 +1426,11 @@
 	//Resting eases pain faster than it fades on its own.
 	if(src.resting)
 		src.mend(TREAT_ANALGESIC, 2)
-	if(src.has_status(EFFECT_DROWSY))
-		src.status_at_least(EFFECT_BLURRY, 2)
+	if(src.has_status(STAT_DROWSY))
+		src.status_at_least(STAT_BLURRY, 2)
 		if(prob(5))
-			src.status_at_least(EFFECT_SLEEPING, 1)
-			src.status_at_least(EFFECT_PARALYZED, 5)
+			src.status_at_least(STAT_SLEEPING, 1)
+			src.status_at_least(STAT_PARALYZED, 5)
 	// If you're dirty, your gloves will become dirty, too.
 	var/obj/item/gloves = src.get_equipped_item(SLOT_ID_GLOVES)
 	if(gloves && src.germ_level > gloves.germ_level && prob(10))
@@ -1453,7 +1453,7 @@
 		return FALSE
 	if(src.tiredness || src.fear || src.blinded)
 		return FALSE
-	return !src.has_status(EFFECT_BLURRY) && !src.has_status(EFFECT_DRUGGED)
+	return !src.has_status(STAT_BLURRY) && !src.has_status(STAT_DRUGGED)
 
 /// Nutrition drains and darksight re-adapts slowly; hud_updateflag bits are set raw.
 /mob/living/carbon/human/life_hud_rewake_delay()
@@ -1475,7 +1475,7 @@
 			src.client.screen |= cam.client_huds
 
 	if(src.stat == DEAD) //Dead
-		if(!src.has_status(EFFECT_DRUGGED))
+		if(!src.has_status(STAT_DRUGGED))
 			src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 	else if(src.is_critical()) //Crit
 		life_hud_crit_overlay()
@@ -1573,9 +1573,9 @@
 			apply_nearsighted_overlay = FALSE
 	src.set_fullscreen(apply_nearsighted_overlay, "nearsighted", /atom/movable/screen/fullscreen/impaired, 1)
 
-	src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-	src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
-	if(src.has_status(EFFECT_DRUGGED))
+	src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+	src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+	if(src.has_status(STAT_DRUGGED))
 		src.throw_alert("high", /atom/movable/screen/alert/high)
 	else
 		src.clear_alert("high")
@@ -1694,7 +1694,7 @@
 		if(src.has_mutation(XRAY))
 			src.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			src.see_in_dark = 8
-			if(!src.has_status(EFFECT_DRUGGED))		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+			if(!src.has_status(STAT_DRUGGED))		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 		if(src.seer==1)
 			var/obj/effect/rune/R = locate_within(src.loc, /obj/effect/rune)
@@ -1729,7 +1729,7 @@
 		if(src.has_mutation(XRAY))
 			src.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			src.see_in_dark = 8
-			if(!src.has_status(EFFECT_DRUGGED))
+			if(!src.has_status(STAT_DRUGGED))
 				src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
 		src.sight |= src.factor(BF_SIGHT_FLAGS)
@@ -1772,7 +1772,7 @@
 		if(G.see_invisible >= 0)
 			see_invisible = G.see_invisible
 			. = TRUE
-		else if(!has_status(EFFECT_DRUGGED) && !seer)
+		else if(!has_status(STAT_DRUGGED) && !seer)
 			see_invisible = see_invisible_default
 
 /mob/living/carbon/human/proc/process_nifsoft_vision(datum/nifsoft/NS)
@@ -1793,10 +1793,10 @@
 	if(!src.stat && !isbelly(src.loc))
 		var/toxic_load = src.injury_load(INJURY_CATEGORY_TOXIC)
 		if (toxic_load >= 30 && HAS_SYNTHETIC_BIOLOGY(src))
-			if(!src.has_status(EFFECT_CONFUSED))
+			if(!src.has_status(STAT_CONFUSED))
 				if(prob(5))
 					to_chat(src, span_danger("You lose directional control!"))
-					src.status_at_least(EFFECT_CONFUSED, 10)
+					src.status_at_least(STAT_CONFUSED, 10)
 		if (toxic_load >= 45 && !HAS_SYNTHETIC_BIOLOGY(src))
 			after(src, 0, TYPE_PROC_REF(/mob/living, vomit))
 
@@ -1879,7 +1879,7 @@
 /// Traumatic shock stages from pain.
 /mob/living/carbon/human/proc/life_shock(datum/seq_frame/life/F)
 	src.updateshock()
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0	// Cancelled by a component
 	if(src.traumatic_shock >= 80 && src.can_feel_pain())
 		src.adjust_shock(1, "traumatic pain")
@@ -1897,9 +1897,9 @@
 	if(src.shock_stage >= 30)
 		if(src.shock_stage == 30 && !isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "is having trouble keeping their eyes open.", check_stat = TRUE)
-		src.status_at_least(EFFECT_BLURRY, 2)
+		src.status_at_least(STAT_BLURRY, 2)
 		if(src.traumatic_shock >= 80)
-			src.status_at_least(EFFECT_STUTTERING, 5)
+			src.status_at_least(STAT_STUTTERING, 5)
 
 
 	if(src.shock_stage == 40)
@@ -1912,7 +1912,7 @@
 		if (prob(2))
 			if(src.traumatic_shock >= 80)
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
-			src.status_at_least(EFFECT_WEAKENED, 20)
+			src.status_at_least(STAT_WEAKENED, 20)
 
 	if(src.shock_stage >= 80)
 		if (prob(5))
@@ -1920,7 +1920,7 @@
 				to_chat(src, span_danger("[pick("The pain is excruciating", "Please&#44; just end the pain", "Your whole body is going numb")]!"))
 				if(prob(20) && !isbelly(src.loc))
 					src.emote("pain")
-			src.status_at_least(EFFECT_WEAKENED, 20)
+			src.status_at_least(STAT_WEAKENED, 20)
 
 	if(src.shock_stage >= 120)
 		if (prob(2))
@@ -1928,18 +1928,18 @@
 				to_chat(src, span_danger("[pick("You black out", "You feel like you could die any moment now", "You are about to lose consciousness")]!"))
 				if(prob(40) && !isbelly(src.loc))
 					src.emote("pain")
-			src.status_at_least(EFFECT_PARALYZED, 5)
-			src.status_at_least(EFFECT_SLEEPING, 5)
+			src.status_at_least(STAT_PARALYZED, 5)
+			src.status_at_least(STAT_SLEEPING, 5)
 
 	if(src.shock_stage == 150)
 		if(!isbelly(src.loc))
 			src.automatic_custom_emote(VISIBLE_MESSAGE, "can no longer stand, collapsing!", check_stat = TRUE)
 			if(prob(60))
 				src.emote("pain")
-		src.status_at_least(EFFECT_WEAKENED, 20)
+		src.status_at_least(STAT_WEAKENED, 20)
 
 	if(src.shock_stage >= 150)
-		src.status_at_least(EFFECT_WEAKENED, 20)
+		src.status_at_least(STAT_WEAKENED, 20)
 
 /mob/living/carbon/human/proc/life_pulse(datum/seq_frame/life/F)
 	src.pulse = life_pulse_compute()

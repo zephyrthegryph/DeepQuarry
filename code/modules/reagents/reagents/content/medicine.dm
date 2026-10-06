@@ -63,7 +63,7 @@
 /datum/reagent/bicaridine/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	var/wound_heal = 2.5 * removed
-	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + wound_heal, 250))
+	M.status_set(STAT_BLURRY, min(M.status_units(STAT_BLURRY) + wound_heal, 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.organs)
@@ -217,9 +217,9 @@
 	var/chem_effective = M.species.chem_strength_heal * species_mult(M)
 	// Kept: a dose-gated status effect, not a factor or a strength.
 	if(alien == IS_SLIME && dose >= 15)
-		M.status_at_least(EFFECT_DRUGGED, 5)
-	M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
-	M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
+		M.status_at_least(STAT_DRUGGED, 5)
+	M.status_adjust(STAT_DROWSY, -(6 * removed * chem_effective))
+	M.status_adjust(STAT_HALLUCINATING, -(9 * removed * chem_effective))
 
 /datum/reagent/carthatoline
 	treatment_tags = list(TREAT_ANTITOXIN = 1.0, TREAT_HEPATORENAL = 0.4)
@@ -248,7 +248,7 @@
 			return
 		// Liver repair is carthatoline's TREAT_HEPATORENAL tag (body/treatment.dm).
 		if(alien == IS_SLIME)
-			H.status_set(EFFECT_DRUGGED, max(M.status_units(EFFECT_DRUGGED), 5))
+			H.status_set(STAT_DRUGGED, max(M.status_units(STAT_DRUGGED), 5))
 
 /datum/reagent/carthatoline/overdose(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_PAIN, 2, source = src)
@@ -283,7 +283,7 @@
 			to_chat(M, span_notice("You have a moment of clarity as you collapse."))
 			// Random burst, not a continuous effect: mend directly.
 			M.mend(TREAT_NEURAL_REPAIR, 20 * removed)
-			M.status_at_least(EFFECT_WEAKENED, 6)
+			M.status_at_least(STAT_WEAKENED, 6)
 
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 8 * removed)
 
@@ -312,7 +312,7 @@
 			to_chat(M, span_notice("You have a moment of clarity, as you feel your tubes lose pressure rapidly."))
 			// Random burst, not a continuous effect: mend directly.
 			M.mend(TREAT_NEURAL_REPAIR, 8 * removed)
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_WEAKENED, 3)
 
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 3 * removed)
 
@@ -341,8 +341,8 @@
 
 /datum/reagent/tricordrazine/overdose(mob/living/carbon/M, alien)
 	..()
-	M.status_at_least(EFFECT_DRUGGED, 5)
-	M.status_at_least(EFFECT_CONFUSED, 5)
+	M.status_at_least(STAT_DRUGGED, 5)
+	M.status_at_least(STAT_CONFUSED, 5)
 
 // Tricordrazine's healing (blood or touch) is its treatment_tags profile.
 
@@ -407,9 +407,9 @@
 		// Kept: temperature-gated status side effects.
 		if(alien == IS_SLIME)
 			to_chat(M, span_danger("It's cold. Something causes your cellular mass to harden occasionally, resulting in vibration."))
-			M.status_at_least(EFFECT_WEAKENED, 10)
-			M.status_at_least(EFFECT_MUTED, 10)
-			M.status_adjust(EFFECT_JITTERY, 4)
+			M.status_at_least(STAT_WEAKENED, 10)
+			M.status_at_least(STAT_MUTED, 10)
+			M.status_adjust(STAT_JITTERY, 4)
 		// Only works below 170K, a gate a continuous treatment tag can't
 		// express, so the cryo-healing mends directly.
 		dq_cryo_mend(M, 10 * removed * chem_effective)
@@ -436,9 +436,9 @@
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
-			M.status_at_least(EFFECT_WEAKENED, 20)
-			M.status_at_least(EFFECT_MUTED, 20)
-			M.status_adjust(EFFECT_JITTERY, 4)
+			M.status_at_least(STAT_WEAKENED, 20)
+			M.status_at_least(STAT_MUTED, 20)
+			M.status_adjust(STAT_JITTERY, 4)
 		// Temperature-gated (see cryoxadone): mends directly.
 		dq_cryo_mend(M, 30 * removed * chem_effective)
 
@@ -477,9 +477,9 @@
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to solidify sporadically, resulting in uncontrollable twitching."))
-			M.status_at_least(EFFECT_WEAKENED, 10)
-			M.status_at_least(EFFECT_MUTED, 10)
-			M.status_adjust(EFFECT_JITTERY, 4)
+			M.status_at_least(STAT_WEAKENED, 10)
+			M.status_at_least(STAT_MUTED, 10)
+			M.status_adjust(STAT_JITTERY, 4)
 		// Cold- or death-gated: mends directly (a tag can't express the gate).
 		if(M.stat != DEAD)
 			M.mend(TREAT_GENETIC_REPAIR, 5 * removed * chem_effective)
@@ -520,9 +520,9 @@
 		if(alien == IS_SLIME)
 			if(prob(10))
 				to_chat(M, span_danger("It's so cold. Something causes your cellular mass to harden sporadically, resulting in seizure-like twitching."))
-			M.status_at_least(EFFECT_WEAKENED, 20)
-			M.status_at_least(EFFECT_MUTED, 20)
-			M.status_adjust(EFFECT_JITTERY, 4)
+			M.status_at_least(STAT_WEAKENED, 20)
+			M.status_at_least(STAT_MUTED, 20)
+			M.status_adjust(STAT_JITTERY, 4)
 		// Cold/corpse-gated boost on top of the baseline treatment_tags
 		// profile; the gate can't be a tag, so it mends directly.
 		M.mend(TREAT_GENETIC_REPAIR, (M.stat != DEAD ? 20 : 15) * removed * chem_effective)
@@ -552,7 +552,7 @@
 
 /datum/reagent/paracetamol/overdose(mob/living/carbon/M, alien)
 	..()
-	M.status_at_least(EFFECT_HALLUCINATING, 2)
+	M.status_at_least(STAT_HALLUCINATING, 2)
 
 /datum/reagent/tramadol
 	factors = alist(BF_ANALGESIA = 80)
@@ -574,7 +574,7 @@
 
 /datum/reagent/tramadol/overdose(mob/living/carbon/M, alien)
 	..()
-	M.status_at_least(EFFECT_HALLUCINATING, 2)
+	M.status_at_least(STAT_HALLUCINATING, 2)
 
 /datum/reagent/oxycodone
 	factors = alist(BF_ANALGESIA = 200, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25)
@@ -599,13 +599,13 @@
 	var/chem_effective = M.species.chem_strength_pain * species_mult(M)
 	// Kept: a species-only status side effect.
 	if(alien == IS_SLIME)
-		M.status_set(EFFECT_STUTTERING, min(50, max(0, M.status_units(EFFECT_STUTTERING) + 5))) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
-	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + 10, 250 * chem_effective))
+		M.status_set(STAT_STUTTERING, min(50, max(0, M.status_units(STAT_STUTTERING) + 5))) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
+	M.status_set(STAT_BLURRY, min(M.status_units(STAT_BLURRY) + 10, 250 * chem_effective))
 
 /datum/reagent/oxycodone/overdose(mob/living/carbon/M, alien)
 	..()
-	M.status_at_least(EFFECT_DRUGGED, 10)
-	M.status_at_least(EFFECT_HALLUCINATING, 3)
+	M.status_at_least(STAT_DRUGGED, 10)
+	M.status_at_least(STAT_HALLUCINATING, 3)
 
 /* Other medicine */
 
@@ -640,12 +640,12 @@
 			M.adjust_nutrition(removed * 2)
 			M.mend(TREAT_TISSUE_REPAIR, 2 * removed)
 			M.mend(TREAT_BURN_CARE, 1 * removed)
-	M.status_adjust(EFFECT_DROWSY, -5)
-	M.status_adjust(EFFECT_PARALYZED, -1)
-	M.status_adjust(EFFECT_STUNNED, -1)
-	M.status_adjust(EFFECT_WEAKENED, -1)
+	M.status_adjust(STAT_DROWSY, -5)
+	M.status_adjust(STAT_PARALYZED, -1)
+	M.status_adjust(STAT_STUNNED, -1)
+	M.status_adjust(STAT_WEAKENED, -1)
 	holder.remove_reagent(REAGENT_ID_MINDBREAKER, 5)
-	M.status_adjust(EFFECT_HALLUCINATING, -10)
+	M.status_adjust(STAT_HALLUCINATING, -10)
 	M.injure(INJURY_TOXIN, 10 * removed * chem_effective, source = src) // It used to be incredibly deadly due to an oversight. Not anymore!
 
 /datum/reagent/hyperzine
@@ -669,7 +669,7 @@
 	removed *= species_mult(M)
 	// Kept: a species-only, dose-gated status/nutrition side effect.
 	if(alien == IS_SLIME)
-		M.status_adjust(EFFECT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
+		M.status_adjust(STAT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
 			M.adjust_nutrition(-removed * 2) // Sadly this movement starts burning food in higher doses.
 	..()
@@ -708,9 +708,9 @@
 /datum/reagent/alkysine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)
 		if(M.injury_load(INJURY_CATEGORY_NEURAL) >= 10)
-			M.status_at_least(EFFECT_WEAKENED, 5)
-		if(dose >= 10 && M.status_units(EFFECT_PARALYZED) < 40)
-			M.status_adjust(EFFECT_PARALYZED, 1) //Messing with the core with a simple chemical probably isn't the best idea.
+			M.status_at_least(STAT_WEAKENED, 5)
+		if(dose >= 10 && M.status_units(STAT_PARALYZED) < 40)
+			M.status_adjust(STAT_PARALYZED, 1) //Messing with the core with a simple chemical probably isn't the best idea.
 	// Brain repair is alkysine's TREAT_NEURAL_REPAIR tag (body/treatment.dm);
 	// past the salvage band a swollen brain outpaces it (lesions.dm).
 
@@ -729,8 +729,8 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/imidazoline/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_adjust(EFFECT_BLURRY, -5)
-	M.status_adjust(EFFECT_BLINDED, -5)
+	M.status_adjust(STAT_BLURRY, -5)
+	M.status_adjust(STAT_BLINDED, -5)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
@@ -772,18 +772,18 @@
 			if(I.is_robotic())
 				continue
 			if(I.damage > 0) // Repair is peridaxon's organ tags; the confusion is its side effect.
-				H.status_at_least(EFFECT_CONFUSED, 5)
+				H.status_at_least(STAT_CONFUSED, 5)
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
-				H.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + 10, 250)) //Eyes need to reset, or something
+				H.status_set(STAT_BLURRY, min(M.status_units(STAT_BLURRY) + 10, 250)) //Eyes need to reset, or something
 				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 		if(alien == IS_SLIME)
 			if(prob(33))
-				H.status_at_least(EFFECT_CONFUSED, 10)
+				H.status_at_least(STAT_CONFUSED, 10)
 
 /datum/reagent/peridaxon/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	M.injure(INJURY_PAIN, 5, source = src)
-	M.status_at_least(EFFECT_HALLUCINATING, 10)
+	M.status_at_least(STAT_HALLUCINATING, 10)
 
 /datum/reagent/osteodaxon
 	treatment_tags = list(TREAT_BONE_REPAIR = 1.0, TREAT_TISSUE_REPAIR = 0.3)
@@ -817,9 +817,9 @@
 			for(var/obj/item/organ/external/O in H.damaged_limbs())
 				if(dq_reagent_knit_fracture(O))
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
-					H.status_adjust(EFFECT_WEAKENED, 10)		//Bones being regrown will knock you over
+					H.status_adjust(STAT_WEAKENED, 10)		//Bones being regrown will knock you over
 					H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
-					H.status_adjust(EFFECT_STUNNED, 1)		//Bones being regrown will knock you over
+					H.status_adjust(STAT_STUNNED, 1)		//Bones being regrown will knock you over
 
 /datum/reagent/myelamine
 	// The clotting agent: runs down bleeds; its wound closure is affect_blood.
@@ -842,7 +842,7 @@
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/myelamine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + (repair_strength * removed), 250))
+	M.status_set(STAT_BLURRY, min(M.status_units(STAT_BLURRY) + (repair_strength * removed), 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength
@@ -889,7 +889,7 @@ TYPE_TABLE_DECLARE(/datum/reagent, daxon_partners, null)
 		if(I.is_robotic() || !(I.organ_tag in targets))
 			continue
 		if(I.damage > 0)
-			H.status_at_least(EFFECT_CONFUSED, 2)
+			H.status_at_least(STAT_CONFUSED, 2)
 			break
 	for(var/partner in TYPE_TABLE_GET(src, daxon_partners))
 		if(H.body?.reagent_volume(partner))
@@ -931,7 +931,7 @@ TYPE_TABLE(/datum/reagent/respirodaxon, daxon_partners, list(REAGENT_ID_GASTIROD
 
 /datum/reagent/respirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
 	if(H.losebreath >= 15 && prob(H.losebreath))
-		H.status_at_least(EFFECT_STUNNED, 2)
+		H.status_at_least(STAT_STUNNED, 2)
 	else
 		H.losebreath = CLAMP(H.losebreath + 3, 0, 20)
 
@@ -1165,10 +1165,10 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/ethylredoxrazine/affect_ingest(mob/living/carbon/M, alien, removed)
-	M.status_end(EFFECT_DIZZY)
-	M.status_set(EFFECT_DROWSY, 0)
-	M.status_set(EFFECT_STUTTERING, 0)
-	M.status_set(EFFECT_CONFUSED, 0)
+	M.status_end(STAT_DIZZY)
+	M.status_set(STAT_DROWSY, 0)
+	M.status_set(STAT_STUTTERING, 0)
+	M.status_set(STAT_CONFUSED, 0)
 	if(M.ingested)
 		for(var/datum/reagent/R in M.ingested.reagent_list)
 			if(istype(R, /datum/reagent/ethanol))
@@ -1178,10 +1178,10 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/ethylredoxrazine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_end(EFFECT_DIZZY)
-	M.status_set(EFFECT_DROWSY, 0)
-	M.status_set(EFFECT_STUTTERING, 0)
-	M.status_set(EFFECT_CONFUSED, 0)
+	M.status_end(STAT_DIZZY)
+	M.status_set(STAT_DROWSY, 0)
+	M.status_set(STAT_STUTTERING, 0)
+	M.status_set(STAT_CONFUSED, 0)
 	if(M.bloodstr)
 		for(var/datum/reagent/R in M.bloodstr.reagent_list)
 			if(istype(R, /datum/reagent/ethanol))
@@ -1299,21 +1299,21 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
 				data = EXPIRY_AT(src, CLOCK_WORLD, 0) // ALLOW(sys_world_time_write): reagent `data` is an untyped per-reagent payload slot, not a declarable var
 				to_chat(M, span_critical("It feels like your body is revolting!"))
-		M.status_at_least(EFFECT_CONFUSED, 7)
+		M.status_at_least(STAT_CONFUSED, 7)
 		M.injure(INJURY_BURN, removed * 2, source = src)
 		M.injure(INJURY_TOXIN, removed * 2, source = src)
 		var/toxic_load = M.injury_load(INJURY_CATEGORY_TOXIC)
 		if(dose >= 5 && toxic_load >= 10) //It all starts going wrong.
 			M.injure(INJURY_BLUNT, removed * 3, source = src)
-			M.status_set(EFFECT_BLURRY, min(20, max(0, M.status_units(EFFECT_BLURRY) + 10)))
+			M.status_set(STAT_BLURRY, min(20, max(0, M.status_units(STAT_BLURRY) + 10)))
 			if(prob(25))
 				if(prob(25))
 					to_chat(M, span_danger("Your pneumatic fluids seize for a moment."))
-				M.status_at_least(EFFECT_STUNNED, 2)
-				after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(EFFECT_WEAKENED, 2))
+				M.status_at_least(STAT_STUNNED, 2)
+				after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(STAT_WEAKENED, 2))
 		if(dose >= 10 || toxic_load >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
 			M.injure(INJURY_TOXIN, removed * 4, source = src)
-			M.status_adjust(EFFECT_JITTERY, 5)
+			M.status_adjust(STAT_JITTERY, 5)
 		if(dose >= 20 || toxic_load >= 60) //Core disentigration, cellular mass begins treating itself as an enemy, while maintaining regeneration. Slime-cancer.
 			M.injure(INJURY_NEURAL, 2 * removed, source = src)
 			M.adjust_nutrition(-20)
@@ -1326,13 +1326,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 	//Based roughly on Levofloxacin's rather severe side-effects
 	if(prob(20))
-		M.status_at_least(EFFECT_CONFUSED, 5)
+		M.status_at_least(STAT_CONFUSED, 5)
 	if(prob(20))
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 	if(prob(20))
-		M.status_adjust(EFFECT_DIZZY, 5)
+		M.status_adjust(STAT_DIZZY, 5)
 	if(prob(20))
-		M.status_at_least(EFFECT_HALLUCINATING, 10)
+		M.status_at_least(STAT_HALLUCINATING, 10)
 
 	//One of the levofloxacin side effects is 'spontaneous tendon rupture', which I'll immitate here. 1:1000 chance, so, pretty darn rare.
 	if(ishuman(M) && rand(1,10000) == 1) //Adjusted to 1:10000
@@ -1509,8 +1509,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	if(dose > 3)
 		M.set_status_flags(M.status_flags & ~DISFIGURED)
 	if(dose > 10)
-		M.status_adjust(EFFECT_DIZZY, 5)
-		M.status_adjust(EFFECT_JITTERY, 5)
+		M.status_adjust(STAT_DIZZY, 5)
+		M.status_adjust(STAT_JITTERY, 5)
 
 // This exists to cut the number of chemicals a merc borg has to juggle on their hypo.
 /datum/reagent/healing_nanites
@@ -1574,8 +1574,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/earthsblood/affect_blood(mob/living/carbon/M, alien, removed)
 	// The healing is the treatment_tags profile; the Tithe is paid here.
-	M.status_at_least(EFFECT_DRUGGED, 20)
-	M.status_at_least(EFFECT_HALLUCINATING, 3)
+	M.status_at_least(STAT_DRUGGED, 20)
+	M.status_at_least(STAT_HALLUCINATING, 3)
 	M.injure(INJURY_NEURAL, 1 * removed, source = src) //your life for your mind. The Earthmother's Tithe.
 
 
@@ -1627,7 +1627,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	// proc side effect
 	if(current_addiction <= 30)
 		if(prob(3))
-			M.status_at_least(EFFECT_WEAKENED, 2)
+			M.status_at_least(STAT_WEAKENED, 2)
 			M.emote("vomit")
 			M.apply_body_effect(/datum/body_effect/withdrawal_strain/severe, 3 SECONDS)
 	else if(current_addiction <= 40)
@@ -1685,15 +1685,15 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		if(3)
 			M.custom_pain("Your mouth feels dry!",30)
 		if(4)
-			M.status_adjust(EFFECT_DIZZY, 2)
+			M.status_adjust(STAT_DIZZY, 2)
 		if(5)
-			M.status_adjust(EFFECT_WEAKENED, 10)
+			M.status_adjust(STAT_WEAKENED, 10)
 		if(6)
-			M.status_adjust(EFFECT_STUNNED, 1)
+			M.status_adjust(STAT_STUNNED, 1)
 		if(7)
-			M.status_adjust(EFFECT_PARALYZED, 0.1)
+			M.status_adjust(STAT_PARALYZED, 0.1)
 		if(8)
-			M.status_set(EFFECT_HALLUCINATING, max(M.status_units(EFFECT_HALLUCINATING), 2))
+			M.status_set(STAT_HALLUCINATING, max(M.status_units(STAT_HALLUCINATING), 2))
 		if(9)
 			M.flash_eyes()
 		else
@@ -1811,13 +1811,13 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		if(effective_dose <= metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 5)
-		M.status_at_least(EFFECT_BLURRY, 10)
+		M.status_at_least(STAT_BLURRY, 10)
 	else if(effective_dose < 20)
 		if(prob(50))
-			M.status_at_least(EFFECT_WEAKENED, 2)
-		M.status_at_least(EFFECT_DROWSY, 20)
+			M.status_at_least(STAT_WEAKENED, 2)
+		M.status_at_least(STAT_DROWSY, 20)
 	else
-		M.status_at_least(EFFECT_SLEEPING, 20)
+		M.status_at_least(STAT_SLEEPING, 20)
 
 
 /datum/reagent/bullvalene //This is for the third sap. It converts Brute Oxy and burn into slightly less toxins.
@@ -1865,8 +1865,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/serazine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_adjust(EFFECT_DROWSY, -(3 * removed))
-	M.status_adjust(EFFECT_HALLUCINATING, -(6 * removed))
+	M.status_adjust(STAT_DROWSY, -(3 * removed))
+	M.status_adjust(STAT_HALLUCINATING, -(6 * removed))
 
 /datum/reagent/alizene
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.5)
@@ -1903,11 +1903,11 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/adranol/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.has_status(EFFECT_CONFUSED))
-		M.status_at_least(EFFECT_CONFUSED, -8*removed)
-	if(M.has_status(EFFECT_BLURRY))
-		M.status_adjust(EFFECT_BLURRY, -(25*removed))
-	M.status_adjust(EFFECT_JITTERY, -25*removed)
+	if(M.has_status(STAT_CONFUSED))
+		M.status_at_least(STAT_CONFUSED, -8*removed)
+	if(M.has_status(STAT_BLURRY))
+		M.status_adjust(STAT_BLURRY, -(25*removed))
+	M.status_adjust(STAT_JITTERY, -25*removed)
 
 /datum/reagent/numbing_enzyme
 	factors = alist(BF_ANALGESIA = 200)
@@ -1935,23 +1935,23 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		var/mob/living/carbon/human/H = M
 		if(prob(1))
 			to_chat(H,span_warning("Your entire body feels numb and the sensation of pins and needles continually assaults you. You blink and the next thing you know, your legs give out momentarily!"))
-			H.status_adjust(EFFECT_WEAKENED, 5) //Fall onto the floor for a few moments.
-			H.status_at_least(EFFECT_CONFUSED, 15) //Be unable to walk correctly for a bit longer.
+			H.status_adjust(STAT_WEAKENED, 5) //Fall onto the floor for a few moments.
+			H.status_at_least(STAT_CONFUSED, 15) //Be unable to walk correctly for a bit longer.
 		if(prob(1))
 			if(H.losebreath <= 1 && H.oxygen_debt() <= 20) //Let's not suffocate them to the point that they pass out.
 				to_chat(H,span_warning("You feel a sharp stabbing pain in your chest and quickly realize that your lungs have stopped functioning!")) //Let's scare them a bit.
 				H.losebreath = 10
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
-			H.status_adjust(EFFECT_HALLUCINATING, 20) //It messes with your mind for some reason.
-			H.status_adjust(EFFECT_BLURRY, 20) //Groggy vision for a small bit.
+			H.status_adjust(STAT_HALLUCINATING, 20) //It messes with your mind for some reason.
+			H.status_adjust(STAT_BLURRY, 20) //Groggy vision for a small bit.
 		if(prob(3))
 			to_chat(H,span_warning("You shiver, your body continually being assaulted by the sensation of pins and needles."))
 			H.emote("shiver")
-			H.status_adjust(EFFECT_JITTERY, 10)
+			H.status_adjust(STAT_JITTERY, 10)
 		if(prob(3))
 			to_chat(H,span_warning("Your tongue feels numb and unresponsive."))
-			H.status_adjust(EFFECT_STUTTERING, 20)
+			H.status_adjust(STAT_STUTTERING, 20)
 
 /datum/reagent/vermicetol
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 1.3)
@@ -2261,7 +2261,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/cleansingagent/affect_blood(mob/living/carbon/M, alien, removed)
 	// Antitoxin action is the treatment_tags profile.
-	M.status_at_least(EFFECT_DRUGGED, 5)
+	M.status_at_least(STAT_DRUGGED, 5)
 
 /datum/reagent/purifyingagent
 	treatment_tags = list(TREAT_ANTITOXIN = 0.8, TREAT_ANTIRADIATION = 0.5)
@@ -2306,7 +2306,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 /datum/reagent/burncard/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	var/wound_heal = 3 * removed
-	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + wound_heal, 250))
+	M.status_set(STAT_BLURRY, min(M.status_units(STAT_BLURRY) + wound_heal, 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.damaged_limbs())
@@ -2329,7 +2329,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/flamecure/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + (repair_strength * removed), 250))
+	M.status_set(STAT_BLURRY, min(M.status_units(STAT_BLURRY) + (repair_strength * removed), 250))
 	// The legacy negative burn-heal here was a burn (twice for humans).
 	M.injure(INJURY_BURN, (ishuman(M) ? 2 : 1) * removed, source = src)
 	if(ishuman(M))
@@ -2406,8 +2406,8 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 
 /datum/reagent/livingagent/overdose(mob/living/carbon/M, alien)
 	..()
-	M.status_at_least(EFFECT_DRUGGED, 5)
-	M.status_at_least(EFFECT_CONFUSED, 5)
+	M.status_at_least(STAT_DRUGGED, 5)
+	M.status_at_least(STAT_CONFUSED, 5)
 
 /datum/reagent/performancepeaker
 	factors = alist(BF_ANALGESIA = 10, BF_SLOWDOWN = -0.5, BF_PENALTY_SCALE = 0.5)
@@ -2424,9 +2424,9 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/performancepeaker/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_adjust(EFFECT_PARALYZED, -1)
-	M.status_adjust(EFFECT_STUNNED, -1)
-	M.status_adjust(EFFECT_WEAKENED, -1)
+	M.status_adjust(STAT_PARALYZED, -1)
+	M.status_adjust(STAT_STUNNED, -1)
+	M.status_adjust(STAT_WEAKENED, -1)
 	M.injure(INJURY_TOXIN, 15 * removed, source = src)
 
 //advanced crafting

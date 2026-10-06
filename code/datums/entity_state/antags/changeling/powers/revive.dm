@@ -34,9 +34,9 @@
 	var/mob/living/carbon/C = src
 
 	C.fully_heal()
-	C.status_set(EFFECT_PARALYZED, 0)
-	C.status_set(EFFECT_STUNNED, 0)
-	C.status_set(EFFECT_WEAKENED, 0)
+	C.status_set(STAT_PARALYZED, 0)
+	C.status_set(STAT_STUNNED, 0)
+	C.status_set(STAT_WEAKENED, 0)
 	C.clear_radiation()
 	C.reagents.clear_reagents()
 	if(ishuman(C))

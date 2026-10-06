@@ -227,7 +227,7 @@ CAPABILITIES(/obj/item/leash)
 	if(!leash_master || !leash_pet || leash_pet.absorbed) //Just to stop error messages. Break the loop early if something removed the master
 		clear_leash()
 		return
-	if(get_dist(leash_pet, leash_master) > 3 && !leash_pet.has_status(EFFECT_STUNNED))
+	if(get_dist(leash_pet, leash_master) > 3 && !leash_pet.has_status(STAT_STUNNED))
 		act_message(leash_pet, null, MSG_SELF(span_warning("You are pulled to the ground by your leash!")), \
 			MSG_OTHERS(span_warning("%U% is pulled to the ground by %THEIR% leash!")))
 		leash_pet.apply_effect(5, STUN, 0)

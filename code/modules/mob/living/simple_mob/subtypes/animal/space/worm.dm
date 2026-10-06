@@ -411,3 +411,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	return 0
 
 // Neighbouring segments: Destroy() severs the back half and unlinks the front.
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	immune_to_incapacitation()

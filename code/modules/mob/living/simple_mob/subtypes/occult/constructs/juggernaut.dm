@@ -167,3 +167,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/juggernaut, mob_organ_hit_zones, list("bo
 	agony = 0
 	damage = 15
 	armor_penetration = 60
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/construct/juggernaut)
+	immune_to_incapacitation()

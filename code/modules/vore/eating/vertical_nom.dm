@@ -7,7 +7,7 @@
 	set desc = "Allows you to eat people who are below your tile or adjacent one. Requires passability."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || is_incorporeal())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || is_incorporeal())
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
@@ -74,7 +74,7 @@
 		var/mob/living/target = value
 		if(!istype(target) || QDELETED(target))
 			return "gone"
-	if(user.stat == DEAD || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_STUNNED) || user.is_incorporeal())
+	if(user.stat == DEAD || user.has_status(STAT_PARALYZED) || user.has_status(STAT_WEAKENED) || user.has_status(STAT_STUNNED) || user.is_incorporeal())
 		return VERTICAL_NOM_STATE
 	if(!user.vore_selected)
 		return VERTICAL_NOM_BELLY

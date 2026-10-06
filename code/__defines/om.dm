@@ -114,7 +114,6 @@
 #define OM_EFFECT_RELEVANCE 3
 #define OM_EFFECT_SUSPEND 4
 /// A timed status (units, wear rate, immunity, hooks): status.dm.
-#define OM_EFFECT_STATUS 5
 
 // Built-in effect ids (library.dm defines the rest).
 #define EFFECT_RELEVANCE "om_relevance"
@@ -150,46 +149,9 @@
 /// The world's step with no cadence grant held, seconds.
 #define CADENCE_BASE_DT 0.5
 
-// Status and stat presets.
-// Mob statuses (doc/rewrite/life_on_om.md §7): timed contributions a mob holds on itself,
-// amounts in status units (one LIFE_CYCLE each unless the status wears off faster).
-#define EFFECT_STUNNED "stunned"
-#define EFFECT_PARALYZED "paralyzed"
-#define EFFECT_WEAKENED "weakened"
-#define EFFECT_SLEEPING "sleeping"
-#define EFFECT_CONFUSED "confused"
-/// Temporary blindness (was eye_blind).
-#define EFFECT_BLINDED "blinded"
-/// Blurred sight (was eye_blurry).
-#define EFFECT_BLURRY "blurry"
-/// Temporary deafness (was ear_deaf).
-#define EFFECT_DEAFENED "deafened"
-/// Temporary nearsightedness (a flash, a sting); the lasting kind is the NEARSIGHTED disability.
-#define EFFECT_NEARSIGHTED "nearsighted"
-#define EFFECT_STUTTERING "stuttering"
-/// Can't speak (was silent).
-#define EFFECT_MUTED "muted"
-/// Drugged (was druggy).
-#define EFFECT_DRUGGED "drugged"
-#define EFFECT_SLURRING "slurring"
-/// Drowsy (was drowsyness).
-#define EFFECT_DROWSY "drowsy"
-#define EFFECT_HALLUCINATING "hallucinating"
-/// Dizziness and jitters: magnitude statuses, 0-1000 points (were components' counters).
-#define EFFECT_DIZZY "dizzy"
-#define EFFECT_JITTERY "jittery"
-// Status immunities: holding one blocks (and on gaining, ends) the statuses that name it.
-#define EFFECT_IMMUNE_STUN "immune_stun"
-#define EFFECT_IMMUNE_WEAKEN "immune_weaken"
-#define EFFECT_IMMUNE_PARALYZE "immune_paralyze"
-#define EFFECT_IMMUNE_DIZZY "immune_dizzy"
-#define EFFECT_IMMUNE_JITTER "immune_jitter"
-/// Godmode (admins, soulstones, AI eyes, preview dummies): harm is cancelled; implies the incapacitation immunities.
-#define EFFECT_GODMODE "godmode"
+// Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
 #define EFFECT_BUCKLED "buckled"
 #define EFFECT_SLOWED "slowed"
-#define EFFECT_CAN_MOVE "can_move"
-#define EFFECT_CAN_ACT "can_act"
 #define EFFECT_ARMOR_MELEE "armor_melee"
 #define EFFECT_ARMOR_BULLET "armor_bullet"
 #define EFFECT_ARMOR_HEAT "armor_heat"

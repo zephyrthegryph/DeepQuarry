@@ -88,7 +88,7 @@ DECLARE_REPEAT(/mob/living/carbon, "dream_wait", dream_sequence, "dream_fragment
 	if(LAZYLEN(dream_fragments))
 		dream_wait = rand(10, 30)
 		if(current_dream?.sleep_until_finished)
-			status_adjust(EFFECT_SLEEPING, dream_wait)
+			status_adjust(STAT_SLEEPING, dream_wait)
 	else
 		end_dream()
 		return REPEAT_STOP

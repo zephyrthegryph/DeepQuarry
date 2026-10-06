@@ -27,6 +27,6 @@
 	owner.disability_gut_pressure += 0.01
 	if(owner.disability_gut_pressure > 0 && prob(owner.disability_gut_pressure))
 		owner.emote(pick("whimper","belch","belch","belch","choke","shiver"))
-		owner.status_at_least(EFFECT_WEAKENED, owner.disability_gut_pressure / 3)
+		owner.status_at_least(STAT_WEAKENED, owner.disability_gut_pressure / 3)
 	if((owner.disability_gut_pressure/3) >= 1 && prob(owner.disability_gut_pressure/3))
 		owner.disability_death_time = TRUE

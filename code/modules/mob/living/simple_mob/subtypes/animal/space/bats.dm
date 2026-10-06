@@ -43,7 +43,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(scare_chance))
-			L.status_at_least(EFFECT_STUNNED, 1)
+			L.status_at_least(STAT_STUNNED, 1)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% scares %T%!")))
 
 // Spookiest of bats

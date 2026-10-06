@@ -137,7 +137,7 @@ CAPABILITIES(/datum/action)
 		if(owner.restrained())
 			return FALSE
 	if(check_flags & AB_CHECK_STUNNED)
-		if(owner.has_status(EFFECT_STUNNED))
+		if(owner.has_status(STAT_STUNNED))
 			return FALSE
 	if(check_flags & AB_CHECK_LYING)
 		if(owner.lying)

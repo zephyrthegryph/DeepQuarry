@@ -119,3 +119,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 	if(away && !away.density)
 		owner.IMove(away)
 	return DQ_BEHAVIOR_CONTINUE
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse)
+	immune_to_incapacitation()

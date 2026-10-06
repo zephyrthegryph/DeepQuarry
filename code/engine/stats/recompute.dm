@@ -212,6 +212,9 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		op_changed(E)
 		if(READERS(E, def.stat_key))
 			publish_change(E, def.stat_key)
+	// A status started or ended: its holder's hooks and presentation follow at once (code/library/mob/statuses.dm).
+	if(def.units && ((isnum(old) && old > 0) != (isnum(new_value) && new_value > 0)))
+		E.status_flipped(def.id, isnum(new_value) && new_value > 0)
 	return TRUE
 
 /// The value a stat holds now, without computing it.

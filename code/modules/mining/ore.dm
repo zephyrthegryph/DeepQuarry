@@ -47,8 +47,8 @@ CAPABILITIES(/obj/item/ore)
 	var/mob/living/carbon/human/H = hit_atom
 	if(istype(H) && H.has_eyes() && prob(85))
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
-		H.status_at_least(EFFECT_BLINDED, 5)
-		H.status_adjust(EFFECT_BLURRY, 10)
+		H.status_at_least(STAT_BLINDED, 5)
+		H.status_adjust(STAT_BLURRY, 10)
 		after(src, 0.1 SECONDS, PROC_REF(scatter_if_dropped))
 
 
@@ -93,8 +93,8 @@ CAPABILITIES(/obj/item/ore)
 	var/mob/living/carbon/human/H = hit_atom
 	if(istype(H) && H.has_eyes() && prob(85))
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
-		H.status_at_least(EFFECT_BLINDED, 10)
-		H.status_adjust(EFFECT_BLURRY, 15)
+		H.status_at_least(STAT_BLINDED, 10)
+		H.status_adjust(STAT_BLURRY, 15)
 		after(src, 0.1 SECONDS, PROC_REF(scatter_if_dropped))
 
 /obj/item/ore/lead

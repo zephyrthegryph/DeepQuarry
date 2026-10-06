@@ -94,7 +94,7 @@
 		break
 
 	if(victim)
-		victim.status_at_least(EFFECT_WEAKENED, 2)
+		victim.status_at_least(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 

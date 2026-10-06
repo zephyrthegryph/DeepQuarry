@@ -148,13 +148,13 @@
 		return
 	else
 		if(prob(45))
-			owner.status_adjust(EFFECT_WEAKENED, 3 * base_mult)
+			owner.status_adjust(STAT_WEAKENED, 3 * base_mult)
 		if(prob(75))
-			owner.status_adjust(EFFECT_CONFUSED, 4 * base_mult)
+			owner.status_adjust(STAT_CONFUSED, 4 * base_mult)
 		var/obj/item/organ/external/O = owner.organs_by_name[parent_organ]
 		if(damage >= min_broken_damage)
 			owner.custom_pain(span_warning("You feel a painful sensation in your [O.name]."),damage,TRUE)
-			owner.status_adjust(EFFECT_BLINDED, 6 * base_mult)
+			owner.status_adjust(STAT_BLINDED, 6 * base_mult)
 			owner.injure(INJURY_TOXIN, 4 * base_mult, flags = INJURE_SILENT)
 		else
 			owner.custom_pain(span_warning("You feel a strange sensation in your [O.name]."),damage / 10,TRUE)
@@ -186,11 +186,11 @@
 
 	if(stage == 1)
 		if(prob(1))
-			owner.status_at_least(EFFECT_WEAKENED, 2)
+			owner.status_at_least(STAT_WEAKENED, 2)
 			cooldown = rand(cooldownmin,cooldownmax)
 	if(stage > 1)
 		if(prob(1))
-			owner.status_at_least(EFFECT_WEAKENED, 3)
+			owner.status_at_least(STAT_WEAKENED, 3)
 			owner.injure(INJURY_TOXIN, 3, flags = INJURE_SILENT)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
@@ -203,9 +203,9 @@
 					if(prob(30))
 						owner.vomit()
 					else if(prob(30))
-						owner.status_adjust(EFFECT_DIZZY, 90)
+						owner.status_adjust(STAT_DIZZY, 90)
 					else
-						owner.status_at_least(EFFECT_CONFUSED, 20)
+						owner.status_at_least(STAT_CONFUSED, 20)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
 	if(stage > 3)
@@ -213,7 +213,7 @@
 			var/obj/item/organ/external/bodypart = owner.get_organ(parent_organ)
 			bodypart?.add_wound(new /datum/affliction/wound/internal_bleeding(bodypart, 2))
 			bodypart?.update_damages()
-			owner.status_at_least(EFFECT_WEAKENED, 10)
+			owner.status_at_least(STAT_WEAKENED, 10)
 			owner.injure(INJURY_TOXIN, 20, flags = INJURE_SILENT)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
@@ -300,9 +300,9 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 		if(prob(30))
 			owner.vomit()
 		else if(prob(30))
-			owner.status_adjust(EFFECT_DIZZY, 20)
+			owner.status_adjust(STAT_DIZZY, 20)
 		else
-			owner.status_at_least(EFFECT_CONFUSED, 30)
+			owner.status_at_least(STAT_CONFUSED, 30)
 
 	if(prob(2))
 		var/obj/item/organ/external/O = owner.organs_by_name[parent_organ]
@@ -472,22 +472,22 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 			if(prob(30))
 				owner.vomit()
 			else if(prob(30))
-				owner.status_adjust(EFFECT_DIZZY, 10)
+				owner.status_adjust(STAT_DIZZY, 10)
 			else
-				owner.status_at_least(EFFECT_CONFUSED, 15)
+				owner.status_at_least(STAT_CONFUSED, 15)
 		else if(thalers < 5000)
 			owner.custom_pain(span_danger("The pressure inside your [O.name] hurts."),15,TRUE)
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "winces painfully.", check_stat = TRUE)
-			owner.status_at_least(EFFECT_WEAKENED, 3)
+			owner.status_at_least(STAT_WEAKENED, 3)
 			if(prob(30))
-				owner.status_at_least(EFFECT_STUNNED, 10)
-				owner.status_at_least(EFFECT_PARALYZED, 4)
+				owner.status_at_least(STAT_STUNNED, 10)
+				owner.status_at_least(STAT_PARALYZED, 4)
 			if(prob(30))
 				owner.vomit()
 			else if(prob(30))
-				owner.status_adjust(EFFECT_DIZZY, 20)
+				owner.status_adjust(STAT_DIZZY, 20)
 			else
-				owner.status_at_least(EFFECT_CONFUSED, 30)
+				owner.status_at_least(STAT_CONFUSED, 30)
 		else
 			pop()
 		cooldown = rand(cooldownmin,cooldownmax)
@@ -595,7 +595,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 
 /obj/item/organ/internal/malignant/parasite/gethigh/feed()
 	..()
-	owner.status_at_least(EFFECT_DRUGGED, 10 + (growth * 20))
+	owner.status_at_least(STAT_DRUGGED, 10 + (growth * 20))
 	return prob(6) && growth < 5
 
 

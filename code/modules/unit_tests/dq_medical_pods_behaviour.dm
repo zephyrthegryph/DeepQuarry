@@ -458,8 +458,9 @@
 	cell.stat_add(NOPOWER)
 	P.set_bodytemperature(100)
 	test_time(10 SECONDS)
-	TEST_ASSERT_EQUAL(P.injury_load(INJURY_CATEGORY_PHYSICAL), load, "an unpowered cell treats nothing")
-	TEST_ASSERT(!P.has_status(EFFECT_SLEEPING) || P.status_remaining(EFFECT_SLEEPING) > 0, "and holds nobody asleep (only the cold's own timed sleep is left)")
+	// Sleep itself may mend a point (a 2% roll per sleeping Life frame): the cell's treatment would take far more.
+	TEST_ASSERT(P.injury_load(INJURY_CATEGORY_PHYSICAL) >= load - 1, "an unpowered cell treats nothing ([load] -> [P.injury_load(INJURY_CATEGORY_PHYSICAL)])")
+	TEST_ASSERT(!P.has_status(STAT_SLEEPING) || P.status_remaining(STAT_SLEEPING) > 0, "and holds nobody asleep (only the cold's own timed sleep is left)")
 
 /// An occupant ejected while frozen is warmed to 261 K on the way out.
 /datum/unit_test/dq_medpod/cryo_eject_warms_the_frozen

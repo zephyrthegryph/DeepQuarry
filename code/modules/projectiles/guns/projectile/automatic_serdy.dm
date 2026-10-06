@@ -977,10 +977,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 
 		if(deafening) //Very loud, ears go ouch. Should not make you permanently deaf, though.
 			H.ear_damage += 60
-			H.status_adjust(EFFECT_DEAFENED, 80)
+			H.status_adjust(STAT_DEAFENED, 80)
 
 		user.injure(INJURY_PAIN, 150, source = src) //That hurt a lot.
-		user.status_adjust(EFFECT_SLEEPING, 50) //Knocked out
+		user.status_adjust(STAT_SLEEPING, 50) //Knocked out
 		var/recoil_dir = turn(user.dir,180)
 		var/turf/target_turf = get_step(get_step(user,recoil_dir),recoil_dir)
 		user.throw_at(target_turf,3,3) //Yeet

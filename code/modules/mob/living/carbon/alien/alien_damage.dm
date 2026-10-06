@@ -26,15 +26,15 @@ CAPABILITIES(/mob/living/carbon/alien)
 			f_loss += 60
 
 			set_ear_damage(ear_damage + (30))
-			status_adjust(EFFECT_DEAFENED, 120)
+			status_adjust(STAT_DEAFENED, 120)
 			deaf_loop.start() // Ear Ringing/Deafness
 
 		if(3.0)
 			b_loss += 30
 			if (prob(50))
-				status_at_least(EFFECT_PARALYZED, 1)
+				status_at_least(STAT_PARALYZED, 1)
 			set_ear_damage(ear_damage + (15))
-			status_adjust(EFFECT_DEAFENED, 60)
+			status_adjust(STAT_DEAFENED, 60)
 			deaf_loop.start() // Ear Ringing/Deafness
 
 	if(b_loss)

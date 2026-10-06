@@ -680,7 +680,7 @@
 		set_absorbed(FALSE) //Make sure we're not absorbed
 		muffled = FALSE		//Removes Muffling
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
-		status_set(EFFECT_SLEEPING, 0) //Wake up instantly if asleep
+		status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
 			rel_add(SA, nameof(SA.prey_excludes), src)
 		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
@@ -971,7 +971,7 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Toggle your glowing on/off!"
 
-	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1018,7 +1018,7 @@
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held garbage."
 
-	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1084,12 +1084,12 @@
 
 	var/mob/living/carbon/human/H = src
 	if(nom["WTF"] && istype(H)) //Bites back.
-		H.status_at_least(EFFECT_WEAKENED, 2)
-		H.status_at_least(EFFECT_CONFUSED, nom["WTF"])
+		H.status_at_least(STAT_WEAKENED, 2)
+		H.status_at_least(STAT_CONFUSED, nom["WTF"])
 		H.apply_effect(nom["WTF"], STUTTER)
-		H.status_adjust(EFFECT_JITTERY, nom["WTF"])
-		H.status_adjust(EFFECT_DIZZY, nom["WTF"])
-		H.status_at_least(EFFECT_DRUGGED, nom["WTF"])
+		H.status_adjust(STAT_JITTERY, nom["WTF"])
+		H.status_adjust(STAT_DIZZY, nom["WTF"])
+		H.status_at_least(STAT_DRUGGED, nom["WTF"])
 
 /mob/living/proc/handle_eat_minerals(obj/item/snack, mob/living/user)
 	var/mob/living/feeder = user ? user : src //Whoever's doing the feeding - us or someone else.

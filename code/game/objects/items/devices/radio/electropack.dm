@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 		to_chat(M, span_danger("You feel a sharp shock!"))
 		fx_sparks(M, 3)
 
-		M.status_at_least(EFFECT_WEAKENED, 10)
+		M.status_at_least(STAT_WEAKENED, 10)
 
 	return
 

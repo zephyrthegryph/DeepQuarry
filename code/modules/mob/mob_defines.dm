@@ -189,7 +189,7 @@
 
 	var/update_icon = 1 //Set to 1 to trigger update_icons() at the next life() call
 
-	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
+	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, STAT_GODMODE).
 
 	var/tmp/area/lastarea = null
 	EXPIRY_TMP_DECLARE(lastareachange)
@@ -262,6 +262,7 @@
 
 CAPABILITIES(/mob)
 	telekinetic_reach()
+	godmode_immunities()
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
 	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)

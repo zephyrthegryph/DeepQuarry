@@ -25,3 +25,7 @@
 /mob/living/simple_mob/humanoid/merc/voxpirate/ranged/suppressor
 	ranged_attack_delay = 1 SECONDS
 	reload_max = 20
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc)
+	immune_to_incapacitation()

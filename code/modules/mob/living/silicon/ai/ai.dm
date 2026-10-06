@@ -104,6 +104,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	can_be_antagged = TRUE
 
 CAPABILITIES(/mob/living/silicon/ai)
+	immune_to(STAT_WEAKENED)
 	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	ref_many(nameof(multicam_screens))
 	remote_interface()

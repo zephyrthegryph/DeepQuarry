@@ -172,7 +172,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 			consume(src)
 			return null
 		var/mob/living/carbon/human/H = M
-		if(!H.has_status(EFFECT_HALLUCINATING))
+		if(!H.has_status(STAT_HALLUCINATING))
 			consume(src)
 			return null
 

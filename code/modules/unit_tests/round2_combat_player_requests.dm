@@ -49,13 +49,13 @@
 	TEST_ASSERT(istype(question) && question.step_name == "target", "No primary threat produces the actual manual target request")
 	var/target_label = "[victim] ([get_dist(dragon, victim)] tiles)"
 	TEST_ASSERT(target_label in question.choices, "Actual visible hostile is offered by manual targeting")
-	TEST_ASSERT_EQUAL(victim.status_units(EFFECT_WEAKENED), 0, "Actual victim starts without tail-sweep knockdown")
+	TEST_ASSERT_EQUAL(victim.status_units(STAT_WEAKENED), 0, "Actual victim starts without tail-sweep knockdown")
 	test_answer(dragon, target_label)
 	TEST_ASSERT_NULL(SSrequests.open_for(dragon), "Actual target answer retires the request")
 	var/datum/ai_behavior/sweep = dq_get_behavior(/datum/ai_behavior/dragon_tail_sweep)
 	TEST_ASSERT(!sweep.is_off_cooldown(dragon.ai_brain, null), "Real brain lifecycle records the tail-sweep cooldown")
 	test_time(0.1 SECONDS)
-	TEST_ASSERT(victim.status_units(EFFECT_WEAKENED) > 0, "Actual delayed dragon yeet weakens the real victim")
+	TEST_ASSERT(victim.status_units(STAT_WEAKENED) > 0, "Actual delayed dragon yeet weakens the real victim")
 
 /datum/unit_test/round2_combat_dragon_expired_disposition/Run()
 	test_driver_begin()
@@ -118,4 +118,4 @@
 	var/datum/ai_behavior/sweep = dq_get_behavior(/datum/ai_behavior/dragon_tail_sweep)
 	TEST_ASSERT(!sweep.is_off_cooldown(dragon.ai_brain, null), "Actual automatic result starts tail sweep despite vanished manual target")
 	test_time(0.1 SECONDS)
-	TEST_ASSERT(first.status_units(EFFECT_WEAKENED) > 0 && second.status_units(EFFECT_WEAKENED) > 0, "Actual tail sweep yeets both current automatic hostiles")
+	TEST_ASSERT(first.status_units(STAT_WEAKENED) > 0 && second.status_units(STAT_WEAKENED) > 0, "Actual tail sweep yeets both current automatic hostiles")

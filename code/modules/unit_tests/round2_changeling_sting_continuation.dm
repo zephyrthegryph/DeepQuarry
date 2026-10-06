@@ -44,7 +44,7 @@
 		comp.regenerate()
 	TEST_ASSERT_EQUAL(comp.chem_charges, comp.chem_storage, "Actual chemical regeneration fills the real storage without assigning resources or gates")
 	TEST_ASSERT(comp.chem_charges >= 30 && comp.check_cooldown(), "Actual prepared changeling can afford a sting and has no active sting cooldown")
-	TEST_ASSERT_EQUAL(target.status_units(EFFECT_WEAKENED), 0, "Actual target begins without the tested paralysis effect")
+	TEST_ASSERT_EQUAL(target.status_units(STAT_WEAKENED), 0, "Actual target begins without the tested paralysis effect")
 	TEST_ASSERT(!HAS_SYNTHETIC_BIOLOGY(target), "Actual target has biological sting-compatible anatomy")
 	TEST_ASSERT(actor.sting_can_reach(target, comp.sting_range), "Actual production path finder can reach the neighboring target")
 	var/original_chems = comp.chem_charges
@@ -53,7 +53,7 @@
 	TEST_ASSERT(istype(question) && question.owner == actor && question.answerer == actor, "Actual public power opens its native target request on the original changeling")
 	TEST_ASSERT(target in question.choices, "Actual actor-centered target collection offers the real adjacent human")
 	TEST_ASSERT_EQUAL(comp.chem_charges, original_chems, "Opening a pending sting does not debit chemicals")
-	TEST_ASSERT_EQUAL(target.status_units(EFFECT_WEAKENED), 0, "Opening a pending sting does not apply the effect")
+	TEST_ASSERT_EQUAL(target.status_units(STAT_WEAKENED), 0, "Opening a pending sting does not apply the effect")
 	if(sting_case == "cancelled")
 		test_answer(actor, null, REQ_CANCELLED)
 	else if(sting_case == "late_range")
@@ -70,16 +70,16 @@
 		test_answer(actor, target)
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Accepted, cancelled or late-refused sting retires its original request")
 	if(sting_case == "accepted")
-		TEST_ASSERT_EQUAL(target.status_units(EFFECT_WEAKENED), 20, "Actual native continuation resumes the caller's real paralysis effect tail")
+		TEST_ASSERT_EQUAL(target.status_units(STAT_WEAKENED), 20, "Actual native continuation resumes the caller's real paralysis effect tail")
 		TEST_ASSERT_EQUAL(comp.chem_charges, original_chems - 30, "Actual completed sting debits exactly one thirty-unit chemical cost")
 		TEST_ASSERT(!comp.check_cooldown(), "Actual completed sting starts its real common anti-spam cooldown")
 		TEST_ASSERT_EQUAL(comp.sting_range, 1, "Actual completed sting resets its next range to the ordinary value")
 		TEST_ASSERT_NULL(test_answer(actor, target), "Duplicate driver answer has no retired request to execute")
 		TEST_ASSERT_EQUAL(comp.chem_charges, original_chems - 30, "Duplicate answer cannot charge a second sting cost")
-		TEST_ASSERT_EQUAL(target.status_units(EFFECT_WEAKENED), 20, "Duplicate answer preserves the single actual effect")
+		TEST_ASSERT_EQUAL(target.status_units(STAT_WEAKENED), 20, "Duplicate answer preserves the single actual effect")
 	else
 		TEST_ASSERT_EQUAL(comp.chem_charges, original_chems, "Actual cancellation or late range refusal keeps the chemical budget")
-		TEST_ASSERT_EQUAL(target.status_units(EFFECT_WEAKENED), 0, "Actual cancellation or late range refusal never executes the paralysis tail")
+		TEST_ASSERT_EQUAL(target.status_units(STAT_WEAKENED), 0, "Actual cancellation or late range refusal never executes the paralysis tail")
 		TEST_ASSERT(comp.check_cooldown(), "Actual cancelled or unreachable sting does not start common cooldown")
 
 /datum/unit_test/round2_changeling_sting_continuation/cancelled

@@ -190,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 /obj/item/melee/baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(status && CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_danger("You accidentally hit yourself with the [src]!"))
-		user.status_at_least(EFFECT_WEAKENED, 30)
+		user.status_at_least(STAT_WEAKENED, 30)
 		deductcharge()
 		return ITEM_INTERACT_SUCCESS
 	deductcharge()

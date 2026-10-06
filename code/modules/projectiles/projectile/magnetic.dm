@@ -97,8 +97,8 @@
 					eye_coverage = M.eyecheck()
 				if(eye_coverage < 2)
 					M.flash_eyes()
-					M.status_at_least(EFFECT_STUNNED, 2)
-					M.status_at_least(EFFECT_WEAKENED, 10)
+					M.status_at_least(STAT_STUNNED, 2)
+					M.status_at_least(STAT_WEAKENED, 10)
 
 		if(searing)
 			if(blocked)

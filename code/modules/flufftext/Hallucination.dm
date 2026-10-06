@@ -49,7 +49,7 @@ CAPABILITIES(/datum/hallucinations)
 
 /datum/hallucinations/proc/make_timer()
 	PROTECTED_PROC(TRUE)
-	after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
+	after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(STAT_HALLUCINATING),100)/25)), PROC_REF(trigger))
 
 /datum/hallucinations/proc/get_fakecrit()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -86,7 +86,7 @@ CAPABILITIES(/datum/hallucinations)
 	if(!our_human.client)
 		spent(src)
 		return
-	if(our_human.status_units(EFFECT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
+	if(our_human.status_units(STAT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
 		spent(src)
 		return
 	handle_hallucinating()

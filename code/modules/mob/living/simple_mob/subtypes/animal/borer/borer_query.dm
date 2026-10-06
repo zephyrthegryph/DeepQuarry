@@ -2,6 +2,7 @@
 	var/datum/ghost_query/ghost_check // Used to unregister our signal
 
 CAPABILITIES(/mob/living/simple_mob/animal/borer)
+	immune_to_incapacitation()
 	after_init(0, then(PROC_REF(find_player)))
 	owns_one(nameof(ghost_check), /datum/ghost_query)
 	owns_one(nameof(host_brain), /mob/living/captive_brain)

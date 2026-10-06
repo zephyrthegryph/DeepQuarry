@@ -395,7 +395,7 @@ CAPABILITIES(/obj/structure/closet)
 		return FALSE
 	if(O.loc == user || O.anchored || user.contents.Find(src) || !isturf(user.loc))
 		return FALSE
-	if(user.restrained() || user.stat || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED))
+	if(user.restrained() || user.stat || user.has_status(STAT_WEAKENED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED))
 		return FALSE
 	return Adjacent(user) && Adjacent(O) && user.Adjacent(O)
 

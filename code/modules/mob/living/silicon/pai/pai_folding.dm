@@ -2,7 +2,7 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Unfold Chassis"
 
-	if(stat || has_status(EFFECT_SLEEPING) || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED))
+	if(stat || has_status(STAT_SLEEPING) || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED))
 		return
 
 	if(loc != card)
@@ -77,7 +77,7 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Collapse Chassis"
 
-	if(stat || has_status(EFFECT_SLEEPING) || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED))
+	if(stat || has_status(STAT_SLEEPING) || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED))
 		return
 
 	if(src.loc == card)

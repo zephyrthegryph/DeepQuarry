@@ -960,23 +960,23 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 			return
 	else if(eyes_covered)
 		to_chat(M, span_warning("Your [safe_thing] protects you from most of the pepperspray!"))
-		M.status_at_least(EFFECT_BLURRY, effective_strength * 3)
-		M.status_at_least(EFFECT_BLINDED, effective_strength)
-		M.status_at_least(EFFECT_STUNNED, 5)
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_BLURRY, effective_strength * 3)
+		M.status_at_least(STAT_BLINDED, effective_strength)
+		M.status_at_least(STAT_STUNNED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		if(!skin_burns)
 			return
 	else if(mouth_covered) // Mouth cover is better than eye cover
 		to_chat(M, span_warning("Your [safe_thing] protects your face from the pepperspray!"))
-		M.status_at_least(EFFECT_BLURRY, effective_strength)
+		M.status_at_least(STAT_BLURRY, effective_strength)
 		if(!skin_burns)
 			return
 	else// Oh dear :D
 		to_chat(M, span_warning("You're sprayed directly in the eyes with pepperspray!"))
-		M.status_at_least(EFFECT_BLURRY, effective_strength * 5)
-		M.status_at_least(EFFECT_BLINDED, effective_strength * 2)
-		M.status_at_least(EFFECT_STUNNED, 5)
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_BLURRY, effective_strength * 5)
+		M.status_at_least(STAT_BLINDED, effective_strength * 2)
+		M.status_at_least(STAT_STUNNED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		if(!skin_burns)
 			return
 	if(skin_burns)

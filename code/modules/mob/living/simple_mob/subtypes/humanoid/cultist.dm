@@ -176,7 +176,7 @@
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
 			play_sfx(src, SFX_PUNCH, 1.5)
-			status_at_least(EFFECT_WEAKENED, 5)
+			status_at_least(STAT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 
@@ -564,6 +564,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	ghostize()
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	immune_to_incapacitation()
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/magus)
 
 ////////////////////////////
@@ -795,6 +796,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
 	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
@@ -835,6 +837,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
@@ -874,6 +877,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
@@ -901,3 +905,26 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
 		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",
 		"The motion of the %pred's trotting sloshes and sways you from side to side, occasionally coating you in more hot fluids! Eating away your stamina with irragular flexes to allow them to keep eating you away." ,)
 
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	immune_to_incapacitation()

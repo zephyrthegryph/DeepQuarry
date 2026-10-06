@@ -87,7 +87,7 @@
 			threat *= 2 // Target cannot see src.
 
 	// Handle statuses.
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		threat /= 2
 
 	if(has_body_effect(/datum/body_effect/berserk))
@@ -128,7 +128,7 @@
 			threat *= 2 // Target cannot see src.
 
 	// Handle statuses.
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		threat /= 2
 
 	if(has_body_effect(/datum/body_effect/berserk))
@@ -235,7 +235,7 @@
 		tension *= 10
 		return tension
 
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		tension *= 2
 
 	return tension

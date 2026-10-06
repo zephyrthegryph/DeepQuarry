@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
 	extend(TAG_POD_ENTER, needs(req_operable(), req(PROC_REF(piped), because = MSG(cryo_cell/not_connected))))
-	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(EFFECT_SLEEPING), on = ON_CONTENTS))
+	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(STAT_SLEEPING), on = ON_CONTENTS))
 	// While it works, the occupant's body and the cell's gas trade heat through one link (the heat domain conserves it and wakes the pipe network).
 	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, heat_link(HEAT_HOLDER, HEAT_PORT(1), CRYO_OCCUPANT_CONDUCTANCE), on = ON_CONTENTS))
 	owns_one(nameof(beaker), /obj/item/reagent_containers/glass, on_destroy = ON_DESTROY_SPILL)
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	if(!istype(M))
 		return
 	M.extinguish_mob()
-	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
+	if(M.stat != DEAD && (M.is_critical() || M.has_status(STAT_SLEEPING)))
 		act_message_t(M, src, /datum/msg/cryo_cell/cold_liquid)
 	M.cozyloop?.start() // Cozy Music
 	buckle_mob(M, forced = TRUE, check_loc = FALSE)
@@ -156,8 +156,8 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	if(!occupant || occupant.stat == DEAD || !piped() || !air_contents || air_contents.total_moles() < CRYO_MIN_MOLES)
 		return
 	if(occupant.body_temperature() < T0C)
-		occupant.status_at_least(EFFECT_SLEEPING, max(CRYO_MIN_STATUS, CRYO_SLEEP_SCALE / occupant.body_temperature()))
-		occupant.status_at_least(EFFECT_PARALYZED, max(CRYO_MIN_STATUS, CRYO_PARALYSIS_SCALE / occupant.body_temperature()))
+		occupant.status_at_least(STAT_SLEEPING, max(CRYO_MIN_STATUS, CRYO_SLEEP_SCALE / occupant.body_temperature()))
+		occupant.status_at_least(STAT_PARALYZED, max(CRYO_MIN_STATUS, CRYO_PARALYSIS_SCALE / occupant.body_temperature()))
 		if(!treat_occupant())
 			return
 	var/has_cryo_medicine = occupant.reagents.get_reagent_amount(REAGENT_ID_CRYOXADONE) >= 1 || occupant.reagents.get_reagent_amount(REAGENT_ID_CLONEXADONE) >= 1

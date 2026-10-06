@@ -93,7 +93,7 @@
 	if(target.get_equipped_item(SLOT_ID_BACK))
 		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))
 	act_message(H, target, MSG_SELF(span_danger("You latch yourself onto %T%!")), MSG_OTHERS(span_danger("%U% latched onto %T%!")))
-	target.status_at_least(EFFECT_WEAKENED, 3)
+	target.status_at_least(STAT_WEAKENED, 3)
 	if(!F.enter_rig())
 		return
 	target.equip_to_slot(F.rig, SLOT_ID_BACK)

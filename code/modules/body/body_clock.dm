@@ -178,8 +178,8 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			pale = 1
 			update_icons_body()
 		if(blood_volume_raw < species.blood_volume * species.blood_level_fatal)
-			status_at_least(EFFECT_PARALYZED, 3)
-			status_at_least(EFFECT_SLEEPING, 3)
+			status_at_least(STAT_PARALYZED, 3)
+			status_at_least(STAT_SLEEPING, 3)
 			injure(INJURY_TOXIN, (factor(BF_STABILIZATION) ? 1.5 : 3) * cycles, flags = INJURE_SILENT)
 		// Without enough blood you slowly go hungry.
 		if(nutrition >= 300)

@@ -38,9 +38,9 @@
 				var/applied_strength = flash_strength * H.species.flash_mod
 
 				if(applied_strength > 0)
-					H.status_at_least(EFFECT_CONFUSED, applied_strength + 5)
-					H.status_at_least(EFFECT_BLINDED, applied_strength)
-					H.status_at_least(EFFECT_BLURRY, applied_strength + 5)
+					H.status_at_least(STAT_CONFUSED, applied_strength + 5)
+					H.status_at_least(STAT_BLINDED, applied_strength)
+					H.status_at_least(STAT_BLURRY, applied_strength + 5)
 					H.injure(INJURY_PAIN, 22 * (applied_strength / 5), source = src) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
 
 	//snap pop
@@ -237,14 +237,14 @@
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)
-		M.status_at_least(EFFECT_CONFUSED, 150)
+		M.status_at_least(STAT_CONFUSED, 150)
 	else if (ear_safety > 1)
-		M.status_at_least(EFFECT_CONFUSED, 30)
+		M.status_at_least(STAT_CONFUSED, 30)
 	else if (!ear_safety)
-		M.status_at_least(EFFECT_STUNNED, 10)
-		M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(STAT_STUNNED, 10)
+		M.status_at_least(STAT_WEAKENED, 2)
 		M.set_ear_damage(M.ear_damage + (rand(1, 10)))
-		M.status_at_least(EFFECT_DEAFENED, 15)
+		M.status_at_least(STAT_DEAFENED, 15)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))

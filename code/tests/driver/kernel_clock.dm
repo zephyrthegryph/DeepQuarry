@@ -41,10 +41,17 @@
 	var/datum/om/scheduler/sched = om_test_begin()
 	K.test_now = 0
 	K.test_slots = 0
-	// The kernel's own infrastructure systems (the inbox, requests, jobs) run in the test graph while the test owns the clock.
+	// The kernel's own infrastructure systems (the inbox, requests, jobs) and the Life sweep run in the test graph while the test owns the
+	// clock; a sequence's sweep runs as in the game run level.
 	for(var/datum/work_item/W as anything in K.work_all)
 		if(W.owner_type in GLOB.kernel_test_systems)
 			W.test_owned = TRUE
+			if(istype(W, /datum/work_item/sequence))
+				// In the game run level, and unspread: every member runs when the interval comes due (a test's few mobs all get
+				// their frame on the same slot instead of one after another across the interval).
+				var/datum/work_item/sequence/S = W
+				S.test_runlevel = RUNLEVEL_GAME
+				S.spread = FALSE
 	// Each test meets its fixtures' items fresh: their schedule state from an earlier test is dropped.
 	for(var/datum/work_item/W as anything in K.work_all)
 		if(W.test_owned)
@@ -53,7 +60,7 @@
 	K.work_dirty = TRUE
 	return sched
 
-GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/requests, /datum/system/kernel_jobs))
+GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/requests, /datum/system/kernel_jobs, /datum/sequence/life))
 
 /// Hands the clock back: the live scheduler is current again, and the infrastructure systems' items return to the live graph.
 /proc/kernel_test_end()
@@ -66,6 +73,10 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 		if(W.owner_type in GLOB.kernel_test_systems)
 			W.test_owned = FALSE
 			W.test_reset()
+			if(istype(W, /datum/work_item/sequence))
+				var/datum/work_item/sequence/S = W
+				S.test_runlevel = null
+				S.spread = S.def.interval > world.tick_lag
 	K.work_dirty = TRUE
 	K.test_dirty = TRUE
 
@@ -83,6 +94,21 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 	last_at = null
 	urgent_pending = null
 	sweep_began = 0
+
+/// A sequence's members carry their execution tokens on their states, stamped on the clock that ran them: handing the sweep to (or back
+/// from) the test clock starts every member afresh, with one interval, as a dormant sweep resuming does.
+/datum/work_item/sequence/test_reset()
+	..()
+	for(var/datum/member as anything in members_of(members))
+		var/datum/seq_state/state = SEQ_STATE_OF(member, def.idx)
+		if(state)
+			state.last_at = null
+			state.acc = 0
+	for(var/datum/member as anything in members_of(def.parked_key))
+		var/datum/seq_state/state = SEQ_STATE_OF(member, def.idx)
+		if(state)
+			state.last_at = null
+			state.acc = 0
 
 /// Switches the kernel's phase lists to the test-owned items' (built on first use and when an item registered), until test_leave().
 /datum/controller/kernel/proc/test_enter()

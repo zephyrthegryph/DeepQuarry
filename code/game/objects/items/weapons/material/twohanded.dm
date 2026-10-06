@@ -291,7 +291,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 		else
 			target.stun_effect_act(10 , 50, BP_TORSO, src)
 			target.injure(INJURY_ELECTRIC, 10, BP_TORSO, src)
-			target.status_at_least(EFFECT_PARALYZED, 20)
+			target.status_at_least(STAT_PARALYZED, 20)
 			play_sfx(src.loc, SFX_SPARKS)
 			return
 
@@ -382,7 +382,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE
 /obj/item/material/twohanded/staff/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	. = ..()
 	if(src.wielded == 1 && stance == I_DISARM && prob(stun_chance))
-		target.status_at_least(EFFECT_WEAKENED, stun_duration)
+		target.status_at_least(STAT_WEAKENED, stun_duration)
 		act_message(user, src, others = span_danger("%U% trips [target] with %T%!"))
 
 /obj/item/material/twohanded/fireaxe/get_mechanics_info(list/additional_information)

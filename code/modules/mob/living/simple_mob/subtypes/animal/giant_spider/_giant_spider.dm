@@ -211,7 +211,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/giant_spider, spider_preparent_
 
 	if(victim?.reagents)
 		victim.reagents.add_reagent(REAGENT_ID_WARNINGTOXIN, poison_per_bite)
-		victim.status_adjust(EFFECT_WEAKENED, 2)
+		victim.status_adjust(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% has bitten %T%!")))
 		to_chat(victim, span_critical("\The [src] bites you and retreats!"))
 		. = TRUE

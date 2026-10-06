@@ -339,7 +339,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 				to_chat(user, span_warning("Your eyes sting a little."))
 				H.injure(INJURY_BURN, rand(1, 2), E, src, flags = INJURE_SILENT)
 				if(E.damage > 12)
-					user.status_adjust(EFFECT_BLURRY, rand(3,6))
+					user.status_adjust(STAT_BLURRY, rand(3,6))
 			if(0)
 				to_chat(user, span_warning("Your eyes burn."))
 				H.injure(INJURY_BURN, rand(2, 4), E, src, flags = INJURE_SILENT)
@@ -347,7 +347,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 					H.injure(INJURY_BURN, rand(4, 10), E, src, flags = INJURE_SILENT)
 			if(-1)
 				to_chat(user, span_danger("Your thermals intensify the welder's glow. Your eyes itch and burn severely."))
-				user.status_adjust(EFFECT_BLURRY, rand(12,20))
+				user.status_adjust(STAT_BLURRY, rand(12,20))
 				H.injure(INJURY_BURN, rand(12, 16), E, src, flags = INJURE_SILENT)
 		if(safety<2)
 
@@ -359,9 +359,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 				user.set_sdisabilities(user.sdisabilities | (BLIND))
 			else if (E.damage >= E.min_bruised_damage)
 				to_chat(user, span_danger("You go blind!"))
-				user.status_at_least(EFFECT_BLINDED, 5)
-				user.status_set(EFFECT_BLURRY, 5)
-				user.status_at_least(EFFECT_NEARSIGHTED, 2)
+				user.status_at_least(STAT_BLINDED, 5)
+				user.status_set(STAT_BLURRY, 5)
+				user.status_at_least(STAT_NEARSIGHTED, 2)
 	return
 
 /obj/item/weldingtool/is_hot()

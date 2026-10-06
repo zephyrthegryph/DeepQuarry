@@ -132,9 +132,9 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		if(prob(shock_chance))
 			A.emp_act(4) //The weakest strength of EMP
 			play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
-			L.status_at_least(EFFECT_WEAKENED, 4)
-			L.status_at_least(EFFECT_STUNNED, 4)
-			L.status_at_least(EFFECT_STUTTERING, 4)
+			L.status_at_least(STAT_WEAKENED, 4)
+			L.status_at_least(STAT_STUNNED, 4)
+			L.status_at_least(STAT_STUTTERING, 4)
 			fx_sparks(L, 5)
 			visible_message(span_danger("The grub releases a powerful shock!"))
 		else

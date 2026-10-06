@@ -59,7 +59,7 @@
 		consume(src, user)
 		return
 
-	L.status_at_least(EFFECT_WEAKENED, 3)
+	L.status_at_least(STAT_WEAKENED, 3)
 	act_message(user, L, others = span_warning(span_bold("%U%") + " seizes %T%!"))
 
 	var/obj/item/grab/G = new(user, L)

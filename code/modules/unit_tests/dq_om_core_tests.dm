@@ -136,7 +136,7 @@
 /datum/om/behaviour/test/holder/tick(datum/om_test_entity/E, dt)
 	E.ticks++
 	if(E.enabled)
-		om_hold(E, EFFECT_STUNNED, E)
+		om_hold(E, EFFECT_UNPUSHABLE, E)
 
 /datum/om/behaviour/test/handler
 	handles = list(/datum/om/event/test)
@@ -877,16 +877,13 @@
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/src_a = entity(made)
 	var/datum/om_test_entity/src_b = entity(made)
-	TEST_ASSERT(om_value_of(E, EFFECT_CAN_MOVE), "composite default")
-	om_apply(E, EFFECT_STUNNED, src_a, 1 SECONDS)
-	TEST_ASSERT(om_has(E, EFFECT_STUNNED), "applied")
-	TEST_ASSERT(!om_value_of(E, EFFECT_CAN_MOVE), "EFFECT_CAN_MOVE = NOT(ANY(stunned, ...))")
-	om_apply(E, EFFECT_STUNNED, src_a, 3 SECONDS)
+	om_apply(E, EFFECT_UNPUSHABLE, src_a, 1 SECONDS)
+	TEST_ASSERT(om_has(E, EFFECT_UNPUSHABLE), "applied")
+	om_apply(E, EFFECT_UNPUSHABLE, src_a, 3 SECONDS)
 	scheduler_advance(2)
-	TEST_ASSERT(om_has(E, EFFECT_STUNNED), "STACKING_MAX keeps the longer expiry")
+	TEST_ASSERT(om_has(E, EFFECT_UNPUSHABLE), "a re-apply keeps the longer expiry")
 	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(E, EFFECT_STUNNED), "expired through the deadline wheel")
-	TEST_ASSERT(om_value_of(E, EFFECT_CAN_MOVE), "composite follows its parts")
+	TEST_ASSERT(!om_has(E, EFFECT_UNPUSHABLE), "expired through the deadline wheel")
 	om_hold(E, EFFECT_SLOWED, src_a, 2)
 	om_hold(E, EFFECT_SLOWED, src_b, 3)
 	TEST_ASSERT_EQUAL(om_value_of(E, EFFECT_SLOWED), 5, "COMBINE_SUM")
@@ -902,25 +899,25 @@
 /datum/unit_test/om/regression_no_stuck_overrides/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/source = entity(made)
-	om_hold(E, EFFECT_PARALYZED, source)
+	om_hold(E, EFFECT_HUD_VITALS, source)
 	om_grant(E, GRANT_LANGUAGE, "test_language", source)
-	TEST_ASSERT(om_has(E, EFFECT_PARALYZED), "held")
+	TEST_ASSERT(om_has(E, EFFECT_HUD_VITALS), "held")
 	qdel(source)
-	TEST_ASSERT(!om_has(E, EFFECT_PARALYZED), "a hold dies with its source")
+	TEST_ASSERT(!om_has(E, EFFECT_HUD_VITALS), "a hold dies with its source")
 	TEST_ASSERT(!om_has_grant(E, GRANT_LANGUAGE, "test_language"), "so does a grant")
 	// Holds made from a hook last only while the hook keeps making them.
 	var/datum/om_test_entity/H = entity(made)
 	om_attach(H, /datum/om/behaviour/test/holder)
 	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_STUNNED), "hook hold made")
+	TEST_ASSERT(om_has(H, EFFECT_UNPUSHABLE), "hook hold made")
 	H.enabled = FALSE
 	scheduler_advance(1.5)
-	TEST_ASSERT(!om_has(H, EFFECT_STUNNED), "not re-held: released on return")
+	TEST_ASSERT(!om_has(H, EFFECT_UNPUSHABLE), "not re-held: released on return")
 	H.enabled = TRUE
 	scheduler_advance(1.5)
-	TEST_ASSERT(om_has(H, EFFECT_STUNNED), "held again")
+	TEST_ASSERT(om_has(H, EFFECT_UNPUSHABLE), "held again")
 	om_detach(H, /datum/om/behaviour/test/holder)
-	TEST_ASSERT(!om_has(H, EFFECT_STUNNED), "stopping the behaviour releases its holds")
+	TEST_ASSERT(!om_has(H, EFFECT_UNPUSHABLE), "stopping the behaviour releases its holds")
 
 /datum/unit_test/om/grants_vocabulary
 

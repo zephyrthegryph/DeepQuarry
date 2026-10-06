@@ -162,8 +162,8 @@
 			if(is_bolted(darth_airlock) || !darth_airlock.power_systems_on())
 				continue
 			to_chat(living_guy, span_warning("The airlock suddenly closes on you!"))
-			living_guy.status_at_least(EFFECT_PARALYZED, 5)
-			living_guy.status_at_least(EFFECT_SLEEPING, 5)
+			living_guy.status_at_least(STAT_PARALYZED, 5)
+			living_guy.status_at_least(STAT_SLEEPING, 5)
 			omen_slam_airlock(darth_airlock)
 			omen_consume()
 			return
@@ -173,7 +173,7 @@
 			continue
 		if(the_turf.CanZPass(our_guy, DOWN) && !isspace(the_turf))
 			to_chat(living_guy, span_warning("You lose your balance and slip towards the edge!"))
-			living_guy.status_at_least(EFFECT_WEAKENED, 5)
+			living_guy.status_at_least(STAT_WEAKENED, 5)
 			living_guy.throw_at(the_turf, 1, 20)
 			omen_consume()
 			return
@@ -212,7 +212,7 @@
 				living_guy.forceMove(evil_disposal)
 				evil_disposal.flush = TRUE
 				evil_disposal.update_icon()
-				living_guy.status_at_least(EFFECT_STUNNED, 5)
+				living_guy.status_at_least(STAT_STUNNED, 5)
 				omen_consume()
 				return
 
@@ -268,7 +268,7 @@
 					for(var/obj/item/organ/external/limb in living_guy.organs)
 						living_guy.injure(INJURY_CUT, max_health_coefficient * omen_damage, limb.organ_tag, evil_mirror)
 
-			living_guy.status_adjust(EFFECT_JITTERY, 250)
+			living_guy.status_adjust(STAT_JITTERY, 250)
 			if(omen_evil && prob(7 * effective_luck))
 				to_chat(living_guy, span_warning("You are completely shocked by this turn of events!"))
 				if(ishuman(living_guy))
@@ -300,7 +300,7 @@
 				MSG_OTHERS(span_danger("%U% stubs %THEIR% toe on %T%!")))
 			living_guy.injure(INJURY_BLUNT, 2 * omen_damage, pick(BP_L_FOOT, BP_R_FOOT), evil_table)
 			living_guy.injure(INJURY_PAIN, 25) //It REALLY hurts.
-			living_guy.status_at_least(EFFECT_WEAKENED, 3)
+			living_guy.status_at_least(STAT_WEAKENED, 3)
 			omen_consume()
 			return
 	//Ran out of turf options. Let's do more generic options.
@@ -308,9 +308,9 @@
 	if(prob(omen_luck * 5))
 		// In complete darkness
 		if(our_guy_pos.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
-			living_guy.status_at_least(EFFECT_BLINDED, 5) //10 seconds of 'OH GOD WHAT'S HAPPENING'
-			living_guy.status_at_least(EFFECT_MUTED, 5)
-			living_guy.status_at_least(EFFECT_PARALYZED, 5)
+			living_guy.status_at_least(STAT_BLINDED, 5) //10 seconds of 'OH GOD WHAT'S HAPPENING'
+			living_guy.status_at_least(STAT_MUTED, 5)
+			living_guy.status_at_least(STAT_PARALYZED, 5)
 			to_chat(living_guy, span_bolddanger("You feel the ground buckle underneath you, falling down, your vision going dark as you feel paralyzed in place!"))
 			omen_consume()
 			return
@@ -370,7 +370,7 @@
 				return TRUE
 		else
 			act_message(unlucky_soul, null, others = span_attack("%U% tries to catch [source] and fumbles it, getting thrown back!"))
-			unlucky_soul.status_at_least(EFFECT_WEAKENED, 5)
+			unlucky_soul.status_at_least(STAT_WEAKENED, 5)
 			return TRUE
 
 /*
@@ -460,7 +460,7 @@
 		var/max_health_coefficient = (unlucky_soul.get_endurance() * 0.09)
 		for(var/obj/item/organ/external/limb in unlucky_soul.organs) //In total, you should have 11 limbs (generally, unless you have an amputation). The full omen variant we want to leave you at 1 hp, the trait version less. As of writing, the trait version is 25% of the damage, so you take 24.75 across all limbs.
 			unlucky_soul.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, limb.organ_tag)
-		unlucky_soul.status_at_least(EFFECT_WEAKENED, 5)
+		unlucky_soul.status_at_least(STAT_WEAKENED, 5)
 		omen_consume()
 
 /mob/living/proc/omen_check_taser(mob/living/unlucky_soul, stun_amount, agony_amount, def_zone, used_weapon, electric)
@@ -478,7 +478,7 @@
 				human_guy.injure(INJURY_BLUNT, 0.25 * agony_amount * omen_damage, heart, src)
 			play_sfx(src, SFX_EFFECTS_SINGLEBEAT)
 			to_chat(unlucky_soul, span_bolddanger("You feel as though your heart stopped"))
-			human_guy.status_at_least(EFFECT_STUNNED, 5)
+			human_guy.status_at_least(STAT_STUNNED, 5)
 			omen_consume()
 			return
 

@@ -39,7 +39,7 @@ CAPABILITIES(/obj/structure/prop/desert_rock/rock)
 	if(istype(source, /mob/living))
 		var/mob/living/M = source
 		if(M.m_intent == I_RUN && prob(5))
-			M.status_at_least(EFFECT_WEAKENED, 2)
+			M.status_at_least(STAT_WEAKENED, 2)
 			to_chat(M, "You trip over the [src]!")
 
 CAPABILITIES(/obj/structure/prop/desert_rock/pebble)

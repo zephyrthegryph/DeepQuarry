@@ -165,8 +165,8 @@
 			return
 		forceMove(T)
 		var/original_canmove = canmove
-		status_set(EFFECT_STUNNED, 0)
-		status_set(EFFECT_WEAKENED, 0)
+		status_set(STAT_STUNNED, 0)
+		status_set(STAT_WEAKENED, 0)
 		var/obj/buckled = src?.buckled_to()
 		if(buckled)
 			buckled.unbuckle_mob()
@@ -236,7 +236,7 @@
 
 	SK.doing_phase = FALSE
 	if(SK.flicker_time < 5 || SK.flicker_distance < 5 || SK.flicker_break_chance < 5)
-		status_at_least(EFFECT_STUNNED, SK.calculate_stun())
+		status_at_least(STAT_STUNNED, SK.calculate_stun())
 	if(!SK.flicker_time)
 		return //Early return. No time, no flickering.
 	//Affect nearby lights
@@ -266,8 +266,8 @@
 		// pre-change
 		forceMove(T)
 		var/original_canmove = canmove
-		status_set(EFFECT_STUNNED, 0)
-		status_set(EFFECT_WEAKENED, 0)
+		status_set(STAT_STUNNED, 0)
+		status_set(STAT_WEAKENED, 0)
 		var/obj/buckled = src?.buckled_to()
 		if(buckled)
 			buckled.unbuckle_mob()

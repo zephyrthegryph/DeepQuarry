@@ -701,7 +701,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	if(!H)
 		return
 
-	if((H == wearer() && (H.stat||H.has_status(EFFECT_PARALYZED)||H.has_status(EFFECT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
+	if((H == wearer() && (H.stat||H.has_status(STAT_PARALYZED)||H.has_status(STAT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
 		return
 
 	var/obj/item/check_slot
@@ -824,7 +824,7 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 /obj/item/rig/proc/shock(mob/user)
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.
 		fx_sparks(src, 5, FALSE)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return 1
 	return 0
 

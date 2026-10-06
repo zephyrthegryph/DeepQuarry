@@ -42,7 +42,7 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Disinfect and heal small wounds with your saliva."
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

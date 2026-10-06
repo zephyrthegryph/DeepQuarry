@@ -189,7 +189,7 @@ TYPE_TABLE(/datum/affliction_symptom/synthetic/error_chatter, get_patient_messag
 /datum/affliction_symptom/synthetic/speech_glitch/tick(mob/living/M, datum/affliction/source)
 	..()
 	if(M && prob(5))
-		M.status_at_least(EFFECT_STUTTERING, 3)
+		M.status_at_least(STAT_STUTTERING, 3)
 
 /datum/affliction_symptom/synthetic/checksum_errors
 	name = "checksum errors"

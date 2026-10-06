@@ -96,8 +96,8 @@
 		om_emit(src, new /datum/om/event/stun_effect(stun_amount, agony_amount, def_zone, used_weapon, electric))
 
 	if (stun_amount)
-		status_at_least(EFFECT_STUNNED, stun_amount)
-		status_at_least(EFFECT_WEAKENED, stun_amount)
+		status_at_least(STAT_STUNNED, stun_amount)
+		status_at_least(STAT_WEAKENED, stun_amount)
 		apply_effect(STUTTER, stun_amount)
 		apply_effect(EYE_BLUR, stun_amount)
 
@@ -339,10 +339,10 @@
 // Called when struck by lightning.
 /mob/living/proc/lightning_act()
 	// The actual damage/electrocution is handled by the tesla_zap() that accompanies this.
-	status_at_least(EFFECT_PARALYZED, 5)
-	status_at_least(EFFECT_SLEEPING, 5)
-	status_adjust(EFFECT_STUTTERING, 20)
-	status_adjust(EFFECT_JITTERY, 150)
+	status_at_least(STAT_PARALYZED, 5)
+	status_at_least(STAT_SLEEPING, 5)
+	status_adjust(STAT_STUTTERING, 20)
+	status_adjust(STAT_JITTERY, 150)
 	emp_act(EMP_HEAVY)
 	to_chat(src, span_critical("You've been struck by lightning!"))
 
@@ -364,11 +364,11 @@
 /mob/living/proc/get_accuracy_penalty()
 	// Certain statuses make it harder to score a hit.
 	var/accuracy_penalty = 0
-	if(has_status(EFFECT_BLINDED))
+	if(has_status(STAT_BLINDED))
 		accuracy_penalty += 75
-	if(has_status(EFFECT_BLURRY))
+	if(has_status(STAT_BLURRY))
 		accuracy_penalty += 30
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		accuracy_penalty += 45
 
 	return accuracy_penalty

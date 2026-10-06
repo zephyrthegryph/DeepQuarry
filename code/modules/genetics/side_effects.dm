@@ -11,7 +11,7 @@
 	var/datum/genetics/side_effect/S = new tp
 
 	S.start(H)
-	after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(EFFECT_WEAKENED, 4))
+	after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(STAT_WEAKENED, 4))
 	after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, complete))
 	//above is doing: Call S.finish() in S.duration (dropped if H, and so S, is deleted first)
 
@@ -88,4 +88,4 @@
 /datum/genetics/side_effect/confuse/finish()
 	if(..()) return
 	var/mob/living/carbon/human/H = host
-	H.status_at_least(EFFECT_CONFUSED, 100)
+	H.status_at_least(STAT_CONFUSED, 100)

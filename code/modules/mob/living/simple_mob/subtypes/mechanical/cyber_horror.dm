@@ -179,7 +179,7 @@
 		break
 
 	if(victim)
-		victim.status_at_least(EFFECT_WEAKENED, 2)
+		victim.status_at_least(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
@@ -262,7 +262,7 @@
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
+			L.status_at_least(STAT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] tears into you!"))
 			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()

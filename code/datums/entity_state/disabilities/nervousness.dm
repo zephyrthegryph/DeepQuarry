@@ -13,6 +13,6 @@
 	if(owner.transforming)
 		return
 	if(prob(5) && prob(7))
-		owner.status_at_least(EFFECT_STUTTERING, 15)
-		if(owner.status_units(EFFECT_JITTERY) < 50)
-			owner.status_adjust(EFFECT_JITTERY, 65)
+		owner.status_at_least(STAT_STUTTERING, 15)
+		if(owner.status_units(STAT_JITTERY) < 50)
+			owner.status_adjust(STAT_JITTERY, 65)

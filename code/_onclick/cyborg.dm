@@ -8,7 +8,7 @@
 
 /// Can this cyborg act on a click at all right now?
 /mob/living/silicon/robot/proc/can_click_act()
-	return !(stat || lockdown || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_PARALYZED))
+	return !(stat || lockdown || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || has_status(STAT_PARALYZED))
 
 // Cyborg clicks route through the input router with the robot adapter (adapters.dm) when no op of the target answered them first. A machine's
 // remote controls (a ctrl-click bolting a door) are remote() ops, reached through the cyborg's interface provider while its link works

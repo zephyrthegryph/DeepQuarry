@@ -193,7 +193,7 @@
 	play_sfx(src, SFX_EFFECTS_GHOST2)
 	for(var/mob/living/M in orange(src, 2))
 		if(M.get_ear_protection() == 0)
-			M.status_at_least(EFFECT_CONFUSED, 10)
+			M.status_at_least(STAT_CONFUSED, 10)
 
 
 //the basic ranged mobs
@@ -394,7 +394,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/body/dagger)
 	play_sfx(src, SFX_EFFECTS_GHOST2)
 	for(var/mob/living/M in orange(src, 3))
 		if(M.get_ear_protection() == 0)
-			M.status_at_least(EFFECT_STUNNED, 0.5)
+			M.status_at_least(STAT_STUNNED, 0.5)
 
 //The mind is the science branch. Their goal is to limit or disable your options
 /mob/living/simple_mob/humanoid/astral_collective/mind
@@ -500,3 +500,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
 		L.apply_body_effect(/datum/body_effect/aura/astralcollect_church, null, src)
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	immune_to_incapacitation()

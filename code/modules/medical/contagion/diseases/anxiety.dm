@@ -31,7 +31,7 @@
 				to_chat(host, span_notice("You feel panicky."))
 			if(prob(2))
 				to_chat(host, span_danger("You're overtaken with panic!"))
-				host.status_adjust(EFFECT_CONFUSED, rand(4, 6))
+				host.status_adjust(STAT_CONFUSED, rand(4, 6))
 		if(4)
 			if(prob(10))
 				to_chat(host, span_danger("You feel butterflies in your stomach."))
@@ -40,8 +40,8 @@
 					span_danger("[host] stumbles around in a panic"),
 					span_userdanger("You have a panic attack!")
 				)
-				host.status_adjust(EFFECT_CONFUSED, rand(12, 16))
-				host.status_adjust(EFFECT_JITTERY, 100 + rand(12, 16))
+				host.status_adjust(STAT_CONFUSED, rand(12, 16))
+				host.status_adjust(STAT_JITTERY, 100 + rand(12, 16))
 			if(prob(2))
 				host.visible_message(
 					span_danger("[host] coughs up butterflies!"),

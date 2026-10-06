@@ -46,7 +46,7 @@
 	ensure_vitals()
 	if(consciousness <= CONSCIOUSNESS_THRESHOLD)
 		return TRUE
-	return owner.status_units(EFFECT_PARALYZED) || owner.has_status(EFFECT_STUNNED) || owner.has_status(EFFECT_WEAKENED)
+	return owner.status_units(STAT_PARALYZED) || owner.has_status(STAT_STUNNED) || owner.has_status(STAT_WEAKENED)
 
 /// The one writer of a machine's conscious/unconscious stat.
 /datum/body/simple/machine/update_consciousness()

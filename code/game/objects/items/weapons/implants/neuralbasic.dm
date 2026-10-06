@@ -105,8 +105,8 @@ Implant Specifics:<BR>"}
 			H = my_brain().owner
 			if(robotic_brain)
 				to_chat(H, span_critical("WARNING. Fault dete-ct-- in the \the [src]."))
-			H.status_at_least(EFFECT_CONFUSED, 30)
-			H.status_adjust(EFFECT_BLINDED, 5)
+			H.status_at_least(STAT_CONFUSED, 30)
+			H.status_adjust(STAT_BLINDED, 5)
 		my_brain().owner?.injure(INJURY_NEURAL, 15, my_brain(), src)
 		rel_clear(src, nameof(my_brain))
 	return

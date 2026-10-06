@@ -1,7 +1,7 @@
 /*
 dizzy shake - wiggles the client's pixel offset while the mob is dizzy.
 
-Dizziness itself is the EFFECT_DIZZY status (0-1000 points, below 100 is not dizzy), which wears
+Dizziness itself is the STAT_DIZZY status (0-1000 points, below 100 is not dizzy), which wears
 off on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob attaches this behaviour when the
 status starts and detaches it when it ends (the status row's on_start/on_end hooks).
 (Was /datum/component/dizzy_shake; its state lives on the mob.)
@@ -35,7 +35,7 @@ DECLARE_REPEAT(/mob, 1, dizzy_shake_tick, "dizzy_shaking") // Needs to be a LOT 
 
 /datum/om/behaviour/dizzy_shake/on_event(mob/M, datum/om/event/event)
 	if(istype(event, /datum/om/event/mob_death) && ismob(M))
-		M.status_end(EFFECT_DIZZY)
+		M.status_end(STAT_DIZZY)
 
 /mob/proc/dizzy_shake_tick()
 	if(QDELETED(src) || !om_attached(src, /datum/om/behaviour/dizzy_shake))
@@ -44,10 +44,10 @@ DECLARE_REPEAT(/mob, 1, dizzy_shake_tick, "dizzy_shaking") // Needs to be a LOT 
 	// Resting wears dizziness off faster.
 	if(resting != dizzy_was_resting)
 		dizzy_was_resting = resting
-		status_rate_check(EFFECT_DIZZY)
+		status_rate_check(STAT_DIZZY)
 
 	// Handle wobbles
-	var/dizziness = status_units(EFFECT_DIZZY)
+	var/dizziness = status_units(STAT_DIZZY)
 	if(dizziness > 100 && client)
 		var/amplitude = dizziness*(sin(dizziness * 0.044 * world.time) + 1) / 70
 		client.pixel_x = amplitude * sin(0.008 * dizziness * world.time)

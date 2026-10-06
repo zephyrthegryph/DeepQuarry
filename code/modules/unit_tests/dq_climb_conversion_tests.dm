@@ -280,7 +280,7 @@
 	climb_it(climber, C)
 	test_time(1 SECOND)
 	C.open()
-	TEST_ASSERT(climber.status_units(EFFECT_WEAKENED) > 0, "the climber was knocked down")
+	TEST_ASSERT(climber.status_units(STAT_WEAKENED) > 0, "the climber was knocked down")
 	test_time(8 SECONDS)
 	TEST_ASSERT_EQUAL(climber.loc, floor_at(1, 0), "and never made it up")
 
@@ -294,7 +294,7 @@
 	test_time(1 SECOND)
 	C.Move(floor_at(2, 1))
 	TEST_ASSERT_EQUAL(C.loc, floor_at(2, 1), "the crate moved")
-	TEST_ASSERT(climber.status_units(EFFECT_WEAKENED) > 0, "the climber was knocked down")
+	TEST_ASSERT(climber.status_units(STAT_WEAKENED) > 0, "the climber was knocked down")
 	test_time(8 SECONDS)
 	TEST_ASSERT_EQUAL(climber.loc, floor_at(1, 0), "and never made it up")
 
@@ -305,7 +305,7 @@
 	var/obj/structure/closet/crate/C = allocate(/obj/structure/closet/crate, floor_at(1, 1))
 	var/mob/living/carbon/human/bystander = actor(floor_at(1, 0))
 	climb_shake_off(C, bystander)
-	TEST_ASSERT_EQUAL(bystander.status_units(EFFECT_WEAKENED), 0, "nobody was knocked down")
+	TEST_ASSERT_EQUAL(bystander.status_units(STAT_WEAKENED), 0, "nobody was knocked down")
 
 /// A climber cannot shake itself off.
 /datum/unit_test/dq_climb/a_climber_cannot_shake_itself_off
@@ -316,6 +316,6 @@
 	climb_it(climber, C)
 	test_time(1 SECOND)
 	climb_shake_off(C, climber)
-	TEST_ASSERT_EQUAL(climber.status_units(EFFECT_WEAKENED), 0, "the climber is not knocked down by its own shake")
+	TEST_ASSERT_EQUAL(climber.status_units(STAT_WEAKENED), 0, "the climber is not knocked down by its own shake")
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(climber.loc, C.loc, "and gets up")

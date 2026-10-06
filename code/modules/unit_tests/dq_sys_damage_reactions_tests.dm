@@ -212,12 +212,12 @@ DAMAGE_REACTION(/mob/living/simple_mob/dq_projectile_immune, DAMAGE_PROJECTILE, 
 	P.weaken = 10
 	var/vitality = immune.vitality()
 	immune.bullet_act(P, BP_TORSO)
-	TEST_ASSERT_EQUAL(immune.status_units(EFFECT_STUNNED), 0, "a blocked stun round applies no stun")
-	TEST_ASSERT_EQUAL(immune.status_units(EFFECT_WEAKENED), 0, "nor weaken")
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_STUNNED), 0, "a blocked stun round applies no stun")
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_WEAKENED), 0, "nor weaken")
 	TEST_ASSERT_EQUAL(immune.vitality(), vitality, "nor damage")
 
 	var/mob/living/simple_mob/animal/passive/cockroach/control = allocate(/mob/living/simple_mob/animal/passive/cockroach)
 	var/obj/item/projectile/Q = projectile(INJURY_BLUNT, 0)
 	Q.stun = 10
 	control.bullet_act(Q, BP_TORSO)
-	TEST_ASSERT(control.status_units(EFFECT_STUNNED) > 0, "the same round stuns a mob with no blocking reaction")
+	TEST_ASSERT(control.status_units(STAT_STUNNED) > 0, "the same round stuns a mob with no blocking reaction")

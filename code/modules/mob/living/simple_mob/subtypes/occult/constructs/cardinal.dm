@@ -76,3 +76,7 @@
 
 /datum/decl/mob_organ_names/juggernaut
 TYPE_TABLE(/datum/decl/mob_organ_names/juggernaut, mob_organ_hit_zones, list("body", "left pauldron", "right pauldron", "left arm", "right arm", "eye", "head", "crystaline spike"))
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/construct/cardinal)
+	immune_to_incapacitation()

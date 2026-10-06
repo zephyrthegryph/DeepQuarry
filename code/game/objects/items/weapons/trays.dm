@@ -33,7 +33,7 @@
 
 	if(CLUMSY_FAIL_CHANCE(user))              //What if he's a clown?
 		to_chat(M, span_warning("You accidentally slam yourself with the [src]!"))
-		M.status_at_least(EFFECT_WEAKENED, 1)
+		M.status_at_least(STAT_WEAKENED, 1)
 		user.injure(INJURY_BLUNT, 2, source = src)
 		playsound(src, tray_sound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
@@ -43,7 +43,7 @@
 	if(!(user.zone_sel.selecting == O_EYES) && !(user.zone_sel.selecting == BP_HEAD) && !(user.zone_sel.selecting == O_MOUTH))
 		add_attack_logs(user,M,"Hit with [src]")
 		if(prob(15))
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_WEAKENED, 3)
 
 	else
 		//attack_area = BP_HEAD //Ensure we're hitting a valid area.
@@ -59,9 +59,9 @@
 			to_chat(M, span_warning("You get slammed in the face with the tray!"))
 			M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src) //This gets double damage. One here and one below.
 			if(prob(30))
-				M.status_at_least(EFFECT_STUNNED, rand(2,4))
+				M.status_at_least(STAT_STUNNED, rand(2,4))
 			else if(prob(30))
-				M.status_at_least(EFFECT_WEAKENED, 2)
+				M.status_at_least(STAT_WEAKENED, 2)
 		else
 			to_chat(M, span_warning("You get slammed in the face with the tray, against your mask!"))
 			if(M.get_equipped_item(SLOT_ID_MASK) && prob(33))
@@ -74,7 +74,7 @@
 					H.get_equipped_item(SLOT_ID_EYES).add_blood(H)
 
 			if(prob(10))
-				M.status_at_least(EFFECT_STUNNED, rand(1,3))
+				M.status_at_least(STAT_STUNNED, rand(1,3))
 	if(prob(33))
 		add_blood(M)
 		var/turf/location = get_turf(M)

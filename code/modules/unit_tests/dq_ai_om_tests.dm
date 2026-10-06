@@ -114,7 +114,7 @@
 	TEST_ASSERT(next && !next.density, "no open floor next to the test origin")
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject, start)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, next)
-	target.status_at_least(EFFECT_PARALYZED, 5)
+	target.status_at_least(STAT_PARALYZED, 5)
 	target.set_stat(UNCONSCIOUS)
 	TEST_ASSERT_EQUAL(target.stat, UNCONSCIOUS, "the target should be unconscious")
 	var/datum/ai_brain/B = hunter.ai_brain

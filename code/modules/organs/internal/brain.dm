@@ -123,7 +123,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("Your feel very dizzy for a moment!",0)
-			owner.status_at_least(EFFECT_CONFUSED, 2)
+			owner.status_at_least(STAT_CONFUSED, 2)
 
 /obj/item/organ/internal/brain/proc/replace_self_with(replace_path)
 	var/mob/living/carbon/human/tmp_owner = owner
@@ -265,8 +265,8 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	H.set_nutrition(260) //Enough to try to regenerate ONCE.
 	H.injure(INJURY_BLUNT, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.injure(INJURY_BURN, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	H.status_at_least(EFFECT_PARALYZED, 4)
-	H.status_at_least(EFFECT_SLEEPING, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
+	H.status_at_least(STAT_SLEEPING, 4)
 	for(var/obj/item/organ/external/E in H.organs) //They've still gotta congeal, but it's faster than the clone sickness they'd normally get.
 		if(E && E.organ_tag == BP_L_ARM || E.organ_tag == BP_R_ARM || E.organ_tag == BP_L_LEG || E.organ_tag == BP_R_LEG)
 			E.removed()
@@ -333,7 +333,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/grey/colormatch)
 	var/obj/item/organ/internal/brain/tissue = host_tissue()
 	if(!tissue)
 		return ..()
-	if(amount <= 0 || kind < 1 || kind > INJURY_KIND_COUNT || om_has(src, EFFECT_GODMODE))
+	if(amount <= 0 || kind < 1 || kind > INJURY_KIND_COUNT || in_godmode(src))
 		return 0
 	var/lesion_type = ispath(affliction, /datum/affliction/lesion) ? affliction : organ_lesion_for_injury(kind)
 	if(!lesion_type)

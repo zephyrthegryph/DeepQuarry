@@ -91,8 +91,8 @@
 				var/spore_strength = 5
 				if(ishuman(C))
 					var/mob/living/carbon/human/H = C
-					H.status_at_least(EFFECT_CONFUSED, spore_strength)
-					H.status_at_least(EFFECT_BLURRY, spore_strength)
+					H.status_at_least(STAT_CONFUSED, spore_strength)
+					H.status_at_least(STAT_BLURRY, spore_strength)
 					H.injure(INJURY_PAIN, 10 * (spore_strength / 5), affliction = /datum/affliction/venom/spore_irritation)
 
 /datum/effect/effect/system/smoke_spread/mothspore

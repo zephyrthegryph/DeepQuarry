@@ -216,8 +216,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 
 /// Knocked out on arrival from an abductor portal.
 /mob/living/proc/abduction_arrived()
-	status_at_least(EFFECT_PARALYZED, 10)
-	status_at_least(EFFECT_SLEEPING, 10)
+	status_at_least(STAT_PARALYZED, 10)
+	status_at_least(STAT_SLEEPING, 10)
 	src << 'sound/effects/bamf.ogg'
 	to_chat(src, span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
 

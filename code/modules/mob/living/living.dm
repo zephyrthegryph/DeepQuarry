@@ -258,9 +258,9 @@
 
 	// shut down various types of badness
 	fully_heal()
-	status_set(EFFECT_PARALYZED, 0)
-	status_set(EFFECT_STUNNED, 0)
-	status_set(EFFECT_WEAKENED, 0)
+	status_set(STAT_PARALYZED, 0)
+	status_set(STAT_STUNNED, 0)
+	status_set(STAT_WEAKENED, 0)
 
 	// undo various death related conveniences
 	sight = initial(sight)
@@ -278,9 +278,9 @@
 
 	// fix blindness and deafness
 	set_blinded(0)
-	status_set(EFFECT_BLINDED, 0)
-	status_set(EFFECT_BLURRY, 0)
-	status_set(EFFECT_DEAFENED, 0)
+	status_set(STAT_BLINDED, 0)
+	status_set(STAT_BLURRY, 0)
+	status_set(STAT_DEAFENED, 0)
 	set_ear_damage(0)
 
 	// fix all of our organs
@@ -341,7 +341,7 @@
 	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(src, resist_cooldown)))
 		COOLDOWN_START(src, resist_cooldown, RESIST_COOLDOWN)
 		resist_grab()
-		if(!has_status(EFFECT_WEAKENED))
+		if(!has_status(STAT_WEAKENED))
 			process_resist()
 		else if(absorbed && isbelly(loc))			// Allow absorbed resistance
 			var/obj/belly/B = loc
@@ -471,14 +471,14 @@
 /mob/living/adjustEarDamage(damage, deaf)
 	set_ear_damage(max(0, ear_damage + damage))
 	if(deaf)
-		status_adjust(EFFECT_DEAFENED, deaf)
+		status_adjust(STAT_DEAFENED, deaf)
 
 //pass a negative argument to skip one of the variable
 /mob/living/setEarDamage(damage, deaf)
 	if(damage >= 0)
 		set_ear_damage(damage)
 	if(deaf >= 0)
-		status_set(EFFECT_DEAFENED, deaf)
+		status_set(STAT_DEAFENED, deaf)
 
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 	if(!lastpuke)
@@ -510,7 +510,7 @@
 				MSG_OTHERS(span_warning("%U% dry heaves!")))
 
 		if(stun)
-			status_at_least(EFFECT_STUNNED, stun)
+			status_at_least(STAT_STUNNED, stun)
 		return TRUE
 
 	var/obj/vomit_goal = get_active_hand()
@@ -553,7 +553,7 @@
 				blood = TRUE
 
 	if(stun)
-		status_at_least(EFFECT_STUNNED, stun)
+		status_at_least(STAT_STUNNED, stun)
 
 	// Vomiting while unconscious: the patient aspirates it.
 	if(ishuman(src) && stat != CONSCIOUS && !HAS_SYNTHETIC_BIOLOGY(src))
@@ -686,7 +686,7 @@
 					riding_datum.force_dismount(L)
 				else
 					unbuckle_mob(L)
-				L.status_at_least(EFFECT_STUNNED, 5)
+				L.status_at_least(STAT_STUNNED, 5)
 
 	return canmove
 
@@ -889,15 +889,15 @@
 	return TRUE
 
 /mob/living/get_sound_env(spot, pressure_factor)
-	if (has_status(EFFECT_HALLUCINATING))
+	if (has_status(STAT_HALLUCINATING))
 		return SOUND_ENVIRONMENT_PSYCHOTIC
-	else if (has_status(EFFECT_DRUGGED))
+	else if (has_status(STAT_DRUGGED))
 		return SOUND_ENVIRONMENT_DRUGGED
-	else if (has_status(EFFECT_DROWSY))
+	else if (has_status(STAT_DROWSY))
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (has_status(EFFECT_CONFUSED))
+	else if (has_status(STAT_CONFUSED))
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (has_status(EFFECT_SLEEPING))
+	else if (has_status(STAT_SLEEPING))
 		return SOUND_ENVIRONMENT_UNDERWATER
 	else
 		return ..()
@@ -920,7 +920,7 @@
 	return
 
 /mob/living/proc/has_vision()
-	return !(has_status(EFFECT_BLINDED) || (disabilities & BLIND) || stat || blinded)
+	return !(has_status(STAT_BLINDED) || (disabilities & BLIND) || stat || blinded)
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
 	return makes_dirt

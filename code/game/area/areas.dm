@@ -481,10 +481,10 @@ VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_powe
 			return
 
 		if(H.m_intent == I_RUN)
-			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
+			H.status_adjust(STAT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(6) // No longer weakens.
 		else
-			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
+			H.status_adjust(STAT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(3) // No longer weakens.
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(has_trait(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))

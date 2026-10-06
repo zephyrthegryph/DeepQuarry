@@ -135,7 +135,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
 
 	ai_busy_end()
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/cryptdrake/albedo //A slight variation of the cryptdrake requested for an event with glowing eyes
 	icon_dead = "cryptdrake_albedo-dead"

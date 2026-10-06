@@ -1799,3 +1799,21 @@ form, robot and vore tests that run Life frames.
   step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
 * Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
   Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.
+
+## Statuses, immunities and godmode on the stat layer (rewrite/om-life, L3)
+
+Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) and every focused test that applies a status.
+
+* **Statuses run on the mob's biology clock.** A status is a status stat (`code/library/mob/statuses.dm`) whose dose is a hold on
+  `HOLD_CLOCK_BIO`: stasis and suspension pause it (the OM statuses ran on the mob's timer clock). A stun taken into a stasis bed lasts until
+  the mob's biology has lived it out.
+* **An immunity zeroes a status instead of ending it.** Gaining the immunity (godmode, a mutation, a type's `immune_to()`) makes `has_status()`
+  FALSE at once, as before; if the immunity ends while the dose still has time left, the status is back for the rest of it (the OM ended the
+  dose when the immunity arrived).
+* **Type immunities are declarations.** The OM decls (`self_effects`) became `immune_to()` / `immune_to_incapacitation()` in each type's
+  CAPABILITIES block; godmode's implied immunities are `immune_to(..., when = STAT_GODMODE)` on /mob.
+* **`holds_status()` holds under the activation's source.** The OM keyed each activation's hold; the stat layer keeps one hold per source and
+  stat, so two activations with the same source share one hold (none exist today).
+* `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
+  path") is a separate step: it changes what ops refuse.
+* Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).

@@ -64,7 +64,7 @@ CAPABILITIES(/obj/structure/closet/crate)
 			var/mob/living/L = user
 			if(L.electrocute_act(17, src))
 				fx_sparks(src, 5)
-				if(user.has_status(EFFECT_STUNNED))
+				if(user.has_status(STAT_STUNNED))
 					return 2
 
 	playsound(src, open_sound, 50, 1, -3)

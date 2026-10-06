@@ -75,6 +75,6 @@
 /proc/remove_client_image(mob/M, image/I)
 	M.client?.images -= I
 
-/// Nearsighted for good (the disability) or for a while (EFFECT_NEARSIGHTED: a flash, a sting).
+/// Nearsighted for good (the disability) or for a while (STAT_NEARSIGHTED: a flash, a sting).
 /mob/proc/is_nearsighted()
-	return (disabilities & NEARSIGHTED) || has_status(EFFECT_NEARSIGHTED)
+	return (disabilities & NEARSIGHTED) || has_status(STAT_NEARSIGHTED)

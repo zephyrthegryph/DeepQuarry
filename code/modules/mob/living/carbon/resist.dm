@@ -1,6 +1,6 @@
 /mob/living/carbon/resist_fire()
 	adjust_fire_stacks(-1.2)
-	status_at_least(EFFECT_WEAKENED, 3)
+	status_at_least(STAT_WEAKENED, 3)
 	spin(32,2)
 	act_message(src, null, MSG_SELF(span_notice("You stop, drop, and roll!")), MSG_OTHERS(span_danger("%U% rolls on the floor, trying to put themselves out!")))
 	after(src, 3 SECONDS, PROC_REF(resist_fire_done))

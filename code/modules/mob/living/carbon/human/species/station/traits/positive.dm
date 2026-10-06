@@ -720,25 +720,25 @@
 
 /datum/body_effect/adrenaline/on_start(mob/living/L)
 	var/original_length = L.body_effect_remaining(type)
-	var/list/original_values = list("stun" = L.current_pain()*1.5, "weaken" = L.status_units(EFFECT_WEAKENED)*1.5, "paralyze" = L.status_units(EFFECT_PARALYZED)*1.5, "stutter" = L.status_units(EFFECT_STUTTERING)*1.5, "eye_blur" = L.status_units(EFFECT_BLURRY)*1.5, "drowsy" = L.status_units(EFFECT_DROWSY)*1.5, "agony" = L.current_pain()*1.5, "confuse" = L.status_units(EFFECT_CONFUSED)*1.5)
+	var/list/original_values = list("stun" = L.current_pain()*1.5, "weaken" = L.status_units(STAT_WEAKENED)*1.5, "paralyze" = L.status_units(STAT_PARALYZED)*1.5, "stutter" = L.status_units(STAT_STUTTERING)*1.5, "eye_blur" = L.status_units(STAT_BLURRY)*1.5, "drowsy" = L.status_units(STAT_DROWSY)*1.5, "agony" = L.current_pain()*1.5, "confuse" = L.status_units(STAT_CONFUSED)*1.5)
 	L.set_body_effect_state(type, list(original_length, original_values))
 
 /datum/body_effect/adrenaline/on_tick(mob/living/L)
 	L.mend(TREAT_ANALGESIC, 100)
-	L.status_set(EFFECT_WEAKENED, 0)
-	L.status_set(EFFECT_PARALYZED, 0)
-	L.status_set(EFFECT_STUTTERING, 0)
-	L.status_set(EFFECT_BLURRY, 0)
-	L.status_set(EFFECT_DROWSY, 0)
-	L.status_set(EFFECT_CONFUSED, 0)
-	L.status_set(EFFECT_STUNNED, 0)
+	L.status_set(STAT_WEAKENED, 0)
+	L.status_set(STAT_PARALYZED, 0)
+	L.status_set(STAT_STUTTERING, 0)
+	L.status_set(STAT_BLURRY, 0)
+	L.status_set(STAT_DROWSY, 0)
+	L.status_set(STAT_CONFUSED, 0)
+	L.status_set(STAT_STUNNED, 0)
 
 /datum/body_effect/adrenaline/on_end(mob/living/L, expired)	//Your time is up, time to suffer the consequences.
 	var/list/state = L.body_effect_state(type)
 	var/original_length = state?[1] || 0
 	var/list/original_values = state?[2] || list()
 	L.apply_effects(original_values["stun"] + 30,original_values["weaken"] + 20,original_values["paralyze"] + 15,0,original_values["stutter"] + 40,original_values["eye_blur"] + 20,original_values["drowsy"] + 75,original_values["agony"])
-	L.status_at_least(EFFECT_CONFUSED, original_values["confused"])
+	L.status_at_least(STAT_CONFUSED, original_values["confused"])
 	L.apply_body_effect(/datum/body_effect/adrenaline_recovery,original_length*17.5)
 
 /datum/body_effect/adrenaline_recovery

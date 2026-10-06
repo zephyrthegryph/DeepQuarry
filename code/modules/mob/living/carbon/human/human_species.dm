@@ -149,3 +149,7 @@ TYPE_TABLE(/mob/living/carbon/human/lleill, forced_initial_species, SPECIES_LLEI
 TYPE_TABLE(/mob/living/carbon/human/hanner, forced_initial_species, SPECIES_HANNER)
 
 TYPE_TABLE(/mob/living/carbon/human/sparkledog, forced_initial_species, SPECIES_SPARKLE)
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/carbon/human/dummy)
+	immune_to_incapacitation()

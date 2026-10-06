@@ -176,7 +176,7 @@
 		var/mob/living/L = AM
 		if(istype(L, /mob/living/simple_mob/vore/slug))
 			return
-		L.status_at_least(EFFECT_WEAKENED, 10)
+		L.status_at_least(STAT_WEAKENED, 10)
 		play_sfx(src, SFX_RAKSHASA_DECAY3)
 		alert_slug(L)
 
@@ -188,7 +188,7 @@
 				return
 			buckle_mob(L)
 			L.stop_pulling()
-			L.status_at_least(EFFECT_WEAKENED, 2)
+			L.status_at_least(STAT_WEAKENED, 2)
 			to_chat(L, span_warning("You tripped in the sticky substance, sticking to [my_turf]!"))
 			play_sfx(src, SFX_RAKSHASA_DECAY3)
 			alert_slug(L)

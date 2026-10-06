@@ -132,7 +132,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
 			play_sfx(src, SFX_PUNCH, 1.5)
-			status_at_least(EFFECT_WEAKENED, 5)
+			status_at_least(STAT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 

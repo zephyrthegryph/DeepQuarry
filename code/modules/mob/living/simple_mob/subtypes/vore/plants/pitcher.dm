@@ -274,7 +274,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 				continue
 			if(src.Adjacent(H)) //If they can breathe and are next to the pitcher, confuse them.
 				to_chat(H,span_red("The sweet, overwhelming scent from \the [src] makes your senses reel!"))
-				H.status_at_least(EFFECT_CONFUSED, scent_strength)
+				H.status_at_least(STAT_CONFUSED, scent_strength)
 				continue
 			else
 				to_chat(H, span_red("[pick(pitcher_plant_lure_messages)]"))

@@ -66,7 +66,7 @@
 		else
 			if(!episode["meds_at_beginning"] && med_vol)
 				episode["next_episode_end"] = EXPIRY_AT(src, CLOCK_WORLD, LEFT_UNTIL(src, episode["next_episode_end"], CLOCK_WORLD)/8)
-			human_guy.status_set(EFFECT_HALLUCINATING, min(hallucination_max,human_guy.status_units(EFFECT_HALLUCINATING) + hallucination_increase))
+			human_guy.status_set(STAT_HALLUCINATING, min(hallucination_max,human_guy.status_units(STAT_HALLUCINATING) + hallucination_increase))
 
 ///Checks to see if we have tercozolam in our systeem and returns how much if so.
 /datum/trait_state/schizophrenia/proc/get_med_volume(mob/living/carbon/human/human_guy)

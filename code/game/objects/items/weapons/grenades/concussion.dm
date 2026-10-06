@@ -32,16 +32,16 @@
 
 				if((get_dist(H, T) <= round(radius * 0.3 * bang_effectiveness) || loc == H.loc || loc == H))
 					if(ear_safety > 0)
-						H.status_at_least(EFFECT_CONFUSED, 2)
+						H.status_at_least(STAT_CONFUSED, 2)
 					else
-						H.status_at_least(EFFECT_CONFUSED, 8)
-						H.status_at_least(EFFECT_WEAKENED, 1)
+						H.status_at_least(STAT_CONFUSED, 8)
+						H.status_at_least(STAT_WEAKENED, 1)
 						H.deaf_loop.start() // Ear Ringing/Deafness
 						if ((prob(14) || (H == loc && prob(70))))
 							H.set_ear_damage(H.ear_damage + (rand(1, 10)))
 						else
 							H.set_ear_damage(H.ear_damage + (rand(0, 5)))
-							H.status_at_least(EFFECT_DEAFENED, 15)
+							H.status_at_least(STAT_DEAFENED, 15)
 					if(H.client)
 						if(prob(50))
 							H.client.spinleft()
@@ -50,9 +50,9 @@
 
 				else if(get_dist(H, T) <= round(radius * 0.5 * bang_effectiveness))
 					if(!ear_safety)
-						H.status_at_least(EFFECT_CONFUSED, 6)
+						H.status_at_least(STAT_CONFUSED, 6)
 						H.set_ear_damage(H.ear_damage + (rand(0, 3)))
-						H.status_at_least(EFFECT_DEAFENED, 10)
+						H.status_at_least(STAT_DEAFENED, 10)
 						H.deaf_loop.start() // Ear Ringing/Deafness
 
 					if(H.client)
@@ -62,9 +62,9 @@
 							H.client.spinright()
 
 				else if(!ear_safety && get_dist(H, T) <= (radius * bang_effectiveness))
-					H.status_at_least(EFFECT_CONFUSED, 4)
+					H.status_at_least(STAT_CONFUSED, 4)
 					H.set_ear_damage(H.ear_damage + (rand(0, 1)))
-					H.status_at_least(EFFECT_DEAFENED, 5)
+					H.status_at_least(STAT_DEAFENED, 5)
 					H.deaf_loop.start() // Ear Ringing/Deafness
 
 				if(H.ear_damage >= 15)

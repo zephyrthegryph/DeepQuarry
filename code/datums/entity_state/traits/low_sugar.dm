@@ -19,11 +19,11 @@
 		else
 			to_chat(living_guy,span_critical("You're feeling extremely weak and lightheaded. You feel as though you might pass out any moment and your stomach is screaming for food by now! You should really find something to eat!"))
 	if((living_guy.nutrition < nutrition_weak) && prob(10))
-		living_guy.status_at_least(EFFECT_CONFUSED, 10)
+		living_guy.status_at_least(STAT_CONFUSED, 10)
 	if((living_guy.nutrition < nutrition_danger) && prob(25))
-		living_guy.status_set(EFFECT_HALLUCINATING, min(30,living_guy.status_units(EFFECT_HALLUCINATING)+8))
+		living_guy.status_set(STAT_HALLUCINATING, min(30,living_guy.status_units(STAT_HALLUCINATING)+8))
 	if((living_guy.nutrition < nutrition_critical) && prob(5))
-		living_guy.status_set(EFFECT_DROWSY, min(100,living_guy.status_units(EFFECT_DROWSY)+30))
+		living_guy.status_set(STAT_DROWSY, min(100,living_guy.status_units(STAT_DROWSY)+30))
 
 /// Trait system: low blood sugar.
 /// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).

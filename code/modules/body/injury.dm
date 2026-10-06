@@ -62,7 +62,7 @@
 /mob/living/proc/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(amount <= 0 || !body || kind < 1 || kind > INJURY_KIND_COUNT)
 		return 0
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0
 	// A hook on the mob refuses the injury (a stasis field) or changes its amount in flight (a cluster that soaks it): doc section 8.
 	var/datum/act/injure/hit = ACT_TRY(src, injure, kind, amount, zone, source, flags)

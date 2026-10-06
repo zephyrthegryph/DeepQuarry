@@ -79,7 +79,7 @@
 	//result: drop_mob is eaten by source
 	if(can_drop_vore(prey = drop_mob, pred = source))
 		source.feed_grabbed_to_self_falling_nom(source, prey = drop_mob)
-		source.status_at_least(EFFECT_WEAKENED, 4)
+		source.status_at_least(STAT_WEAKENED, 4)
 		act_message(drop_mob, source, others = span_vdanger("%U% falls right into %T%!"))
 		return TRUE
 

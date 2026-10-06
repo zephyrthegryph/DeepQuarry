@@ -152,8 +152,8 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 		M.drop_from_inventory(I, locker)
 
 	//so they black out before warping
-	M.status_at_least(EFFECT_PARALYZED, 5)
-	M.status_at_least(EFFECT_SLEEPING, 5)
+	M.status_at_least(STAT_PARALYZED, 5)
+	M.status_at_least(STAT_SLEEPING, 5)
 
 	M.forceMove(prison_cell)
 	if(ishuman(M))
@@ -204,8 +204,8 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /// The shared tail of the thunderdome actions: knock out, move, tell and log.
 /datum/admins/proc/topic_finish_thunderdome(mob/user, mob/M, list/destinations, team_label)
-	M.status_at_least(EFFECT_PARALYZED, 5)
-	M.status_at_least(EFFECT_SLEEPING, 5)
+	M.status_at_least(STAT_PARALYZED, 5)
+	M.status_at_least(STAT_SLEEPING, 5)
 	M.forceMove(pick(destinations))
 	after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(M, span_filter_system(span_notice("You have been sent to the Thunderdome."))))
 	log_admin("[key_name(user)] has sent [key_name(M)] to the thunderdome. ([team_label])")

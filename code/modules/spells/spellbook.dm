@@ -229,7 +229,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/blind/recoil(mob/user as mob)
 	..()
 	to_chat(user, span_warning("You go blind!"))
-	user.status_at_least(EFFECT_BLINDED, 10)
+	user.status_at_least(STAT_BLINDED, 10)
 
 /obj/item/spellbook/oneuse/mindswap
 	spell = /datum/spell/targeted/mind_transfer
@@ -303,7 +303,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/knock/recoil(mob/user as mob)
 	..()
 	to_chat(user, span_warning("You're knocked down!"))
-	user.status_at_least(EFFECT_WEAKENED, 20)
+	user.status_at_least(STAT_WEAKENED, 20)
 
 /obj/item/spellbook/oneuse/horsemask
 	spell = /datum/spell/targeted/equip_item/horsemask

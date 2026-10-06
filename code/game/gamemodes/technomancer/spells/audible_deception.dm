@@ -91,15 +91,15 @@
 			for(var/mob/living/carbon/M in ohearers(6, T))
 				if(M.get_ear_protection() >= 2)
 					continue
-				M.status_set(EFFECT_SLEEPING, 0)
-				M.status_adjust(EFFECT_STUTTERING, 20)
-				M.status_adjust(EFFECT_DEAFENED, 30)
+				M.status_set(STAT_SLEEPING, 0)
+				M.status_adjust(STAT_STUTTERING, 20)
+				M.status_adjust(STAT_DEAFENED, 30)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-				M.status_at_least(EFFECT_WEAKENED, 3)
+				M.status_at_least(STAT_WEAKENED, 3)
 				if(prob(30))
-					M.status_at_least(EFFECT_STUNNED, 10)
-					M.status_at_least(EFFECT_PARALYZED, 4)
-					M.status_at_least(EFFECT_SLEEPING, 4)
+					M.status_at_least(STAT_STUNNED, 10)
+					M.status_at_least(STAT_PARALYZED, 4)
+					M.status_at_least(STAT_SLEEPING, 4)
 				else
-					M.status_adjust(EFFECT_JITTERY, 50)
+					M.status_adjust(STAT_JITTERY, 50)
 				to_chat(M, span_red(span_massive(span_bold("HONK"))))

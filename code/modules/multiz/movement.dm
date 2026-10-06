@@ -594,14 +594,14 @@
 		if(has_trait(src, TRAIT_HEAVY_LANDING))
 			for(var/i = 1 to 10)
 				injure(INJURY_BLUNT, rand((damage_min * 2), (damage_max * 2)), ran_zone(), landing)
-			status_at_least(EFFECT_WEAKENED, 20)
+			status_at_least(STAT_WEAKENED, 20)
 			if(istype(landing, /turf/simulated/floor) && prob(50))
 				var/turf/simulated/floor/our_crash = landing
 				our_crash.break_tile()
 		else
 			for(var/i = 1 to 10)
 				injure(INJURY_BLUNT, rand(damage_min, damage_max), ran_zone(), landing)
-			status_at_least(EFFECT_WEAKENED, 4)
+			status_at_least(STAT_WEAKENED, 4)
 	// There is really no situation where smacking into a floor and possibly dying horribly would NOT result in you dropping your remote view... It's also safer then assuming they should persist.
 	reset_perspective()
 
@@ -667,7 +667,7 @@
 	for(var/mob/living/L in contents_of(hit_atom))
 		act_message(src, L, others = span_danger("%U% crushes %T% as it lands on them!"))
 		L.injure(INJURY_BLUNT, rand(70, 100), null, src)
-		L.status_at_least(EFFECT_WEAKENED, 8)
+		L.status_at_least(STAT_WEAKENED, 8)
 
 	var/turf/landing = get_turf(hit_atom)
 
@@ -748,8 +748,8 @@
 
 		forceMove(get_turf(drop_mob))
 		if(!safe_fall)
-			drop_mob.status_at_least(EFFECT_WEAKENED, 8)
-			status_at_least(EFFECT_WEAKENED, 8)
+			drop_mob.status_at_least(STAT_WEAKENED, 8)
+			status_at_least(STAT_WEAKENED, 8)
 			play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 			var/tdamage
 			for(var/i = 1 to 5)	//Twice as less damage because cushioned fall, but both get damaged.

@@ -5,7 +5,7 @@
 	set name = "Merge with gestalt"
 	set desc = "Merge with another diona."
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
 
 	if(istype(src.loc,/mob/living/carbon))
@@ -65,7 +65,7 @@
 	set name = "Split from gestalt"
 	set desc = "Split away from your gestalt as a lone nymph."
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
 
 	if(!(istype(src.loc,/mob/living/carbon)))

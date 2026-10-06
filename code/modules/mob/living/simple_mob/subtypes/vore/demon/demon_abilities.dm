@@ -22,8 +22,8 @@
 
 	forceMove(T)
 	var/original_canmove = canmove
-	status_set(EFFECT_STUNNED, 0)
-	status_set(EFFECT_WEAKENED, 0)
+	status_set(STAT_STUNNED, 0)
+	status_set(STAT_WEAKENED, 0)
 	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()
@@ -94,8 +94,8 @@
 	shift_state = AB_SHIFT_ACTIVE
 	forceMove(T)
 	var/original_canmove = canmove
-	status_set(EFFECT_STUNNED, 0)
-	status_set(EFFECT_WEAKENED, 0)
+	status_set(STAT_STUNNED, 0)
+	status_set(STAT_WEAKENED, 0)
 	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()

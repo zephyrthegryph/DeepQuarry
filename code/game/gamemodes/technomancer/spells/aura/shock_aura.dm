@@ -32,7 +32,7 @@
 
 		if(HAS_SYNTHETIC_BIOLOGY(L))
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
-			L.status_adjust(EFFECT_STUTTERING, 3)
+			L.status_adjust(STAT_STUTTERING, 3)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L

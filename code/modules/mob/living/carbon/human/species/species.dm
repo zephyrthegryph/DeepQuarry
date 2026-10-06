@@ -762,7 +762,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			landing.visible_message(span_infoplain(span_bold("\The [H]") + " 's fall is cushioned by \The [landing]."))
 			play_sfx(H, SFX_RUSTLE, extrarange = 0)
 		if(!soft_landing)
-			H.status_at_least(EFFECT_WEAKENED, 10)
+			H.status_at_least(STAT_WEAKENED, 10)
 		return TRUE*/
 	//end edit
 	if(istype(landing, /turf/simulated/floor/water))
@@ -790,7 +790,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			play_sfx(H, SFX_EFFECTS_METEORIMPACT, volume = 75, extrarange = 3)
 			for(var/i = 1 to 10)
 				H.injure(INJURY_BLUNT, rand((0), (10)), null, landing)
-			H.status_at_least(EFFECT_WEAKENED, 20)
+			H.status_at_least(STAT_WEAKENED, 20)
 			if(istype(landing, /turf/simulated/floor) && prob(50))
 				var/turf/simulated/floor/our_crash = landing
 				our_crash.break_tile()

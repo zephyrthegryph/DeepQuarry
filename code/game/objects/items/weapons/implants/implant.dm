@@ -531,9 +531,9 @@ CAPABILITIES(/obj/item/implant/chem)
 	if (emote == "pale")
 		src.uses--
 		to_chat(source, span_notice("You feel a sudden surge of energy!"))
-		source.status_set(EFFECT_STUNNED, 0)
-		source.status_set(EFFECT_WEAKENED, 0)
-		source.status_set(EFFECT_PARALYZED, 0)
+		source.status_set(STAT_STUNNED, 0)
+		source.status_set(STAT_WEAKENED, 0)
+		source.status_set(STAT_PARALYZED, 0)
 
 	return
 

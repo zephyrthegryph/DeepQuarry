@@ -74,7 +74,7 @@
 /mob/living/simple_mob/vore/stalker/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 1 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))

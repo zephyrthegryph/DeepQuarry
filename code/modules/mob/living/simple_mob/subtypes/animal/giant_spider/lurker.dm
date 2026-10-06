@@ -103,7 +103,7 @@
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.apply_body_effect(/datum/body_effect/entangled, 2 SECONDS) //L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
+			L.apply_body_effect(/datum/body_effect/entangled, 2 SECONDS) //L.status_at_least(STAT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] ambushes you!"))
 			play_sfx(src, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()

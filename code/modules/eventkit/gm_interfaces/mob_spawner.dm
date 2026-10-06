@@ -185,7 +185,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 					L.faction = faction
 					L.set_use_stance(intent)
 					L.initialize_ai_brain()
-					L.status_adjust(EFFECT_SLEEPING, -100)
+					L.status_adjust(STAT_SLEEPING, -100)
 				else
 					to_chat(original_actor, span_notice("You can only set AI for subtypes of mob/living!"))
 

@@ -212,7 +212,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 	triggered = TRUE
 	fx_sparks(src, 3)
 	if(istype(M))
-		M.status_at_least(EFFECT_STUNNED, 30)
+		M.status_at_least(STAT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
 	SSmotiontracker.ping(src,100)
 	consume(src)

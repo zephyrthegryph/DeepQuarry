@@ -113,7 +113,7 @@
 
 		act_message(src, L, null, MSG_OTHERS(span_danger("%U% erupts from underneath, and hits %T%!")))
 		play_sfx(src, SFX_WEAPONS_HEAVYSMASH)
-		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
+		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(STAT_WEAKENED, 3)
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
@@ -167,7 +167,7 @@
 	if(T.check_density(ignore_mobs = TRUE))
 		to_chat(src, span_critical("You hit something really solid!"))
 		play_sfx(src, SFX_PUNCH, 1.5)
-		status_at_least(EFFECT_WEAKENED, 5)
+		status_at_least(STAT_WEAKENED, 5)
 		apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 		tunnel_finish(FALSE, then_proc, extra) // Hit a wall.
 		return
@@ -175,7 +175,7 @@
 	// Stun anyone in our way.
 	for(var/mob/living/L in contents_of(T))
 		play_sfx(src, SFX_WEAPONS_HEAVYSMASH)
-		L.status_at_least(EFFECT_WEAKENED, 2)
+		L.status_at_least(STAT_WEAKENED, 2)
 
 	// Get into the tile.
 	forceMove(T)

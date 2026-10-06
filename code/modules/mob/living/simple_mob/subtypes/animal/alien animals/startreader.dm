@@ -88,11 +88,11 @@
 /mob/living/simple_mob/vore/alienanimals/startreader/apply_melee_effects(mob/living/L)
 	if(!isliving(L))
 		return
-	if(L.has_status(EFFECT_WEAKENED)) //Don't stun people while they're already stunned! That's SILLY!
+	if(L.has_status(STAT_WEAKENED)) //Don't stun people while they're already stunned! That's SILLY!
 		return
 	if(prob(15))
 		act_message(src, L, null, MSG_OTHERS(span_danger("%U% trips %T%!")))
-		L.status_adjust(EFFECT_WEAKENED, rand(1,10))
+		L.status_adjust(STAT_WEAKENED, rand(1,10))
 
 /mob/living/simple_mob/vore/alienanimals/startreader/life_type_post_due()
 	return TRUE
@@ -107,16 +107,16 @@
 		return
 	if(src.flip_cooldown)
 		src.flip_cooldown --
-		src.status_set(EFFECT_STUNNED, 2)
+		src.status_set(STAT_STUNNED, 2)
 
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)
 		set_armor(dq_armor_none())
 		icon_living = "startreader_flipped"
-		status_adjust(EFFECT_STUNNED, flip_cooldown)
+		status_adjust(STAT_STUNNED, flip_cooldown)
 	else
 		set_armor(dq_armor(list(MELEE = 100, BULLET = 100, LASER = 100, ENERGY = 100, BIO = 100, ARMOR_RAD = 100)))
 		icon_living = "startreader"
-		status_set(EFFECT_STUNNED, 0)
+		status_set(STAT_STUNNED, 0)
 
 	update_icon()

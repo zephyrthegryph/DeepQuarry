@@ -116,7 +116,7 @@ CAPABILITIES(/obj/item/beartrap)
 		var/obj/item/organ/external/affected = H.get_organ(check_zone(target_zone))
 		if(!affected) // took it clean off!
 			to_chat(H, span_danger("The steel jaws of \the [src] take your limb clean off!"))
-			L.status_at_least(EFFECT_STUNNED, stun_length*2)
+			L.status_at_least(STAT_STUNNED, stun_length*2)
 			deployed = 0
 			set_anchored(FALSE)
 			return
@@ -125,7 +125,7 @@ CAPABILITIES(/obj/item/beartrap)
 	set_dir(L.dir)
 	can_buckle = TRUE
 	buckle_mob(L)
-	L.status_at_least(EFFECT_STUNNED, stun_length)
+	L.status_at_least(STAT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
 	deployed = 0
 	set_anchored(FALSE)
@@ -354,7 +354,7 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 						L.electrocute_act(PN_damage, src, 0.8)
 
 			fx_sparks(src, 3)
-			if(user.has_status(EFFECT_STUNNED))
+			if(user.has_status(STAT_STUNNED))
 				return 1
 		else
 			return 0
@@ -407,7 +407,7 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 					return
 				H.injure(INJURY_BLUNT, force, affecting, src)
 				if(affecting.organ_can_feel_pain())
-					H.status_at_least(EFFECT_WEAKENED, 3)
+					H.status_at_least(STAT_WEAKENED, 3)
 				return
 			check -= picked
 

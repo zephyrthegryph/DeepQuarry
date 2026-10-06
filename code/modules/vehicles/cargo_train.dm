@@ -172,7 +172,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	if(user != load)
 		return 0
 	// Start
-	if(user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING))
+	if(user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING))
 		return 0
 	// End
 	if(is_train_head())

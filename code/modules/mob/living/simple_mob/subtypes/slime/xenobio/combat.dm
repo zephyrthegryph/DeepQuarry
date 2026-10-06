@@ -18,13 +18,13 @@
 					power_charge = max(0, power_charge - 3)
 					act_message(L, src, MSG_SELF(span_danger("%T% has shocked you!")), MSG_OTHERS(span_danger("%T% has shocked %U%!")))
 					play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
-					L.status_at_least(EFFECT_WEAKENED, 4)
-					L.status_at_least(EFFECT_STUNNED, 4)
+					L.status_at_least(STAT_WEAKENED, 4)
+					L.status_at_least(STAT_STUNNED, 4)
 					do_attack_animation(L)
 					if(L?.buckled_to())
 						var/atom/movable/_tmp_buck_25 = L?.buckled_to()
 						_tmp_buck_25.unbuckle_mob() // To prevent an exploit where being buckled prevents slimes from jumping on you.
-					L.status_at_least(EFFECT_STUTTERING, stun_power)
+					L.status_at_least(STAT_STUTTERING, stun_power)
 
 					fx_sparks(L, 5)
 
@@ -35,7 +35,7 @@
 				else if(prob(20)) // Try to do a regular disarm attack.
 					act_message(L, src, MSG_SELF(span_danger("%T% has pounced at you!")), MSG_OTHERS(span_danger("%T% has pounced at %U%!")))
 					play_sfx(src, SFX_WEAPONS_THUDSWOOSH, 1.5, extrarange = 0)
-					L.status_at_least(EFFECT_WEAKENED, 2)
+					L.status_at_least(STAT_WEAKENED, 2)
 					do_attack_animation(L)
 					if(L?.buckled_to())
 						var/atom/movable/_tmp_buck_26 = L?.buckled_to()

@@ -117,7 +117,7 @@
 /mob/living/simple_mob/vore/fluffball/PounceTarget(mob/living/M, successrate = 100)
 	EXPIRY_SET(src, vore_pounce_cooldown, 20 SECONDS, CLOCK_WORLD) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% pounces on %T%!</span>!"))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% attempts to pounce %T% but misses!</span>!"))

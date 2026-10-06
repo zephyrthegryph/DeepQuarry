@@ -580,9 +580,9 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal
 		var/mob/living/carbon/human/M = src.loc
 		to_chat(M, span_red("The Optical Thermal Scanner overloads and blinds you!"))
 		if(M.get_equipped_item(SLOT_ID_EYES) == src)
-			M.status_at_least(EFFECT_BLINDED, 3)
-			M.status_set(EFFECT_BLURRY, 5)
-			M.status_at_least(EFFECT_NEARSIGHTED, 2)
+			M.status_at_least(STAT_BLINDED, 3)
+			M.status_set(STAT_BLURRY, 5)
+			M.status_at_least(STAT_NEARSIGHTED, 2)
 
 /obj/item/clothing/glasses/thermal/Initialize(mapload)
 	. = ..()

@@ -19,7 +19,7 @@
 				var/mob/living/simple_mob/slime/S = M
 				S.slimebatoned(user, 5) // Feral and xenobio slimes will react differently to this.
 			else
-				M.status_at_least(EFFECT_WEAKENED, 5)
+				M.status_at_least(STAT_WEAKENED, 5)
 
 		// Now for prommies.
 		if(ishuman(M))
@@ -92,7 +92,7 @@ REMOVAL
 				var/mob/living/simple_mob/slime/S = L
 				S.slimebatoned(firer, round(agony/2))
 			else
-				L.status_at_least(EFFECT_WEAKENED, round(agony/2))
+				L.status_at_least(STAT_WEAKENED, round(agony/2))
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L

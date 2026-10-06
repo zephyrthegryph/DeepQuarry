@@ -184,7 +184,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 			if(check.stat == CONSCIOUS)
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
-			else if (!check.has_status(EFFECT_BLINDED))
+			else if (!check.has_status(STAT_BLINDED))
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
 	for(var/atom/T in view(world.view, target_turf))	//Is anyone at our target?
@@ -193,12 +193,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 			if(check.stat == CONSCIOUS)
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
-			else if (!check.has_status(EFFECT_BLINDED))
+			else if (!check.has_status(STAT_BLINDED))
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
 	forceMove(target_turf)
 	if(l)
-		l.status_at_least(EFFECT_WEAKENED, succlet_weaken_rate)
+		l.status_at_least(STAT_WEAKENED, succlet_weaken_rate)
 		if(client || prob(succlet_eat_chance))
 			animal_nom(l)
 			l.stop_pulling()
@@ -232,7 +232,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, 	IN
 		if(isliving(user))
 			var/mob/living/l = user
 			to_chat(l, span_warning("You feel \the [src]'s sting!!!"))
-			l.status_adjust(EFFECT_HALLUCINATING, 25)
+			l.status_adjust(STAT_HALLUCINATING, 25)
 			l.injure(INJURY_PAIN, 200, source = src)
 			l.injure(INJURY_TOXIN, 10, source = src, affliction = /datum/affliction/venom/neurotoxic_sting)
 

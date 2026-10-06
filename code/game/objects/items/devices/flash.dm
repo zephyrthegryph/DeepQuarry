@@ -251,15 +251,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 					if(shield.active)
 						shield.adjust_flash_count(R, 1)
 						return FALSE
-		target.status_at_least(EFFECT_WEAKENED, rand(5,10))
+		target.status_at_least(STAT_WEAKENED, rand(5,10))
 		return TRUE
 	else
 		return FALSE
 
 	//Now do all the actual effects.
-	target.status_at_least(EFFECT_CONFUSED, flash_strength + 5)
-	target.status_at_least(EFFECT_BLINDED, flash_strength)
-	target.status_at_least(EFFECT_BLURRY, flash_strength + 5)
+	target.status_at_least(STAT_CONFUSED, flash_strength + 5)
+	target.status_at_least(STAT_BLINDED, flash_strength)
+	target.status_at_least(STAT_BLURRY, flash_strength + 5)
 	target.flash_eyes()
 	target.injure(INJURY_PAIN, halloss_per_flash * (flash_strength / 5), BP_HEAD, src) // Should take two flashes to stun.
 	if(flash_burn)

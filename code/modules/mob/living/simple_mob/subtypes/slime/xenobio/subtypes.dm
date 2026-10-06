@@ -399,7 +399,7 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 		if(L.mob_size <= MOB_MEDIUM)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			play_sfx(src, SFX_PUNCH)
-			L.status_at_least(EFFECT_WEAKENED, 1)
+			L.status_at_least(STAT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else

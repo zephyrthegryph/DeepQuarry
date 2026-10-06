@@ -423,7 +423,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 	var/obj/machinery/power/terminal/term = terminal_under(user)
 	if(prob(50) && electrocute_mob(user, term.power_region, term))
 		fx_sparks(src, 5)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return OP_OK
 	new /obj/item/stack/cable_coil(loc, 10)
 	rel_remove(src, nameof(terminals), term)

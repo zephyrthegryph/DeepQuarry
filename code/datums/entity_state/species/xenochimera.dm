@@ -51,7 +51,7 @@ CAPABILITIES(/datum/xenochimera)
 
 /datum/xenochimera/proc/handle_regeneration()
 	if(revive_ready == REVIVING_NOW || revive_ready == REVIVING_DONE)
-		owner.status_set(EFFECT_STUNNED, 5)
+		owner.status_set(STAT_STUNNED, 5)
 		owner.canmove = 0
 		owner.set_does_not_breathe(TRUE)
 		if(prob(2)) // 2% chance of playing squelchy noise while reviving, which is run roughly every 2 seconds/tick while regenerating.
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/xenochimera)
 	var/shock = 0.75*owner.traumatic_shock
 
 	//Caffeinated or otherwise overexcited xenochimera can become feral and have special messages
-	var/jittery = max(0, owner.status_units(EFFECT_JITTERY) - 100)
+	var/jittery = max(0, owner.status_units(STAT_JITTERY) - 100)
 
 	//Are we in danger of ferality?
 	var/danger = FALSE
@@ -507,7 +507,7 @@ CAPABILITIES(/datum/xenochimera)
 	//Unfreeze some things
 	owner.set_does_not_breathe(FALSE)
 	owner.update_canmove()
-	owner.status_adjust(EFFECT_STUNNED, 2)
+	owner.status_adjust(STAT_STUNNED, 2)
 
 	revive_ready = REVIVING_READY
 	COOLDOWN_START(src, revive_cooldown, 10 MINUTES) //set the cooldown, Reduced this to 10 minutes, you're playing with fire if you're reviving that often.

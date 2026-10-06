@@ -76,7 +76,7 @@
 	return ((!A.power_equip) && A.requires_power == 1 || istype(T, /turf/space)) && !istype(src.loc,/obj/item)
 
 /mob/living/silicon/ai/proc/adjust_backup_charge(amount)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		backup_charge = AI_BACKUP_CAPACITY
 		return
 	var/old_charge = backup_charge

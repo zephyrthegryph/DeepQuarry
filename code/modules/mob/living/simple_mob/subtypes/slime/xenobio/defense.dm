@@ -55,4 +55,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio, INTERACT_HAND_UNGATED(
 // Getting slimebatoned/xenotased.
 /mob/living/simple_mob/slime/xenobio/slimebatoned(mob/living/user, amount)
 	adjust_discipline(round(amount/2))
-	status_at_least(EFFECT_WEAKENED, amount*5) // This needs to come afterwards or else it will always be considered abuse to the slime. Multiply by 5 for stun to not end instantly.
+	status_at_least(STAT_WEAKENED, amount*5) // This needs to come afterwards or else it will always be considered abuse to the slime. Multiply by 5 for stun to not end instantly.
