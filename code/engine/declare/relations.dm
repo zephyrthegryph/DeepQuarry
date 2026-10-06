@@ -307,28 +307,46 @@
 		return list_state_remove(E, var_name, value, list_state)
 	return rel_view_remove(E, var_name, value)
 
-/// Empties the var: owned values are disposed of by on_destroy, links are unlinked on both sides.
-/proc/rel_clear(datum/E, var_name)
+/// Empties the var: owned values are disposed of by on_destroy, links are unlinked on both sides. `policy` (an OWN_* constant) overrides what the
+/// declaration says for this one call, on an owned var (an explicit delete over a CONTAINED / SPILL / KEEP declaration).
+/proc/rel_clear(datum/E, var_name, policy = null)
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
-			return own_clear(E, var_name)
+			return own_clear(E, var_name, policy)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_clear(E, var_name, list_state)
 	. = rel_view_clear(E, var_name)
 	activations_relation_changed(E, var_name)
 
-/// Detaches a value without disposing of it and returns it unowned. On a many, `member` picks one and `key` one keyed member; with
-/// neither it detaches every member and returns them as a fresh list.
+/// Is the var a list by declaration (an owns_many / list-typed var) or by what it holds now?
+/proc/rel_is_list_shaped(datum/E, var_name)
+	var/list/entry = own_table_of(E).entries[var_name]
+	if(entry && entry[OWNE_LIST])
+		return TRUE
+	return islist(E.vars[var_name]) || !isnull(list_state_of(E, var_name))
+
+/// Detaches one value without disposing of it and returns it unowned. On a many, `member` picks one and `key` one keyed member. A many with neither
+/// (a null member or key included: DM cannot tell "omitted" from "passed null") detaches NOTHING and returns null: taking everything is
+/// rel_take_all(), never an accident of a null argument. A one-shape var is taken whole.
 /proc/rel_take(datum/E, var_name, member = null, key = null)
 	if(!isnull(member))
 		return own_take_member(E, var_name, member)
 	if(!isnull(key))
 		return own_take_member(E, var_name, key)
-	var/value = E.vars[var_name]
-	if(islist(value))
-		return own_take_all(E, var_name)
+	if(rel_is_list_shaped(E, var_name))
+		log_world("REL: rel_take([E.type], [var_name]) with no member or key on a list var took nothing (use rel_take_all() to take every member)")
+		return null
 	return own_take(E, var_name)
+
+/// Detaches every member of a many (or the one value of a one-shape var) without disposing of them and returns them as a fresh list, always: empty when
+/// the var holds nothing, whether it is declared eager or lazy.
+/proc/rel_take_all(datum/E, var_name)
+	if(!rel_is_list_shaped(E, var_name))
+		var/taken = own_take(E, var_name)
+		return isnull(taken) ? list() : list(taken)
+	var/list/taken_all = own_take_all(E, var_name)
+	return islist(taken_all) ? taken_all : list()
 
 /// Re-owns a value in one write, so it is never destroyed or orphaned on the way.
 /proc/rel_move(datum/old_holder, var_a, datum/new_holder, var_b, member = null, key = null)

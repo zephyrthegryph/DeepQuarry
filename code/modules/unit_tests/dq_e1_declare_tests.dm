@@ -213,7 +213,7 @@
 	rel_move(F, nameof(F.gizmos), G, nameof(G.gizmo), member = p1)
 	TEST_ASSERT(G.gizmo == p1 || QDELETED(p1) == FALSE, "rel_move re-owns without destroying")
 	TEST_ASSERT(!QDELETED(p1), "the moved value is alive")
-	var/list/everything = rel_take(F, nameof(F.gizmos))
+	var/list/everything = rel_take_all(F, nameof(F.gizmos))
 	TEST_ASSERT_EQUAL(length(everything), 1, "rel_take with no member detaches every member (p2 is what is left)")
 	// rel_remove disposes of an owned member.
 	rel_add(F, nameof(F.gizmos), p2)

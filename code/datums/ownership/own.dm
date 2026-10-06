@@ -304,7 +304,7 @@
 		value = L[value_or_key]
 		L -= value_or_key
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
+		own_list_emptied(holder, var_name) // a list declared `= list()` stays an empty list, a lazy one goes back to null
 		own_field_changed(holder, var_name)
 	if(value)
 		own_mark_changed(holder, var_name)

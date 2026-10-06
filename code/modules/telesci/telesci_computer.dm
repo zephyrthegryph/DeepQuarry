@@ -330,7 +330,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
-	for(var/obj/item/I as anything in rel_take(src, nameof(crystals)))
+	for(var/obj/item/I as anything in rel_take_all(src, nameof(crystals)))
 		I.forceMove(src.loc)
 	distance = 0
 
