@@ -11,13 +11,15 @@
 	TEST_ASSERT(user.put_in_active_hand(pipe), "the actor holds the actual material-built pipe")
 	add_trait(pipe, TRAIT_NODROP, "interim_pipelayer_sticky_pipe")
 	TEST_ASSERT(user.release_refusal(pipe, user), "the actual inventory refuses release of the sticky pipe")
-	layer.interaction_recycle_pipe(user, pipe, null)
+	user.next_click = 0
+	test_click(user, layer, pipe)
 	TEST_ASSERT(!QDELETED(pipe), "refused recycling preserves the original input pipe")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), pipe, "refused recycling preserves the exact source hand")
 	TEST_ASSERT_EQUAL(pipe.loc, user, "refused recycling preserves actual inventory containment")
 	TEST_ASSERT_EQUAL(layer.metal, original_metal, "refused input consumption grants no internal metal")
 	remove_trait(pipe, TRAIT_NODROP, "interim_pipelayer_sticky_pipe")
-	layer.interaction_recycle_pipe(user, pipe, null)
+	user.next_click = 0
+	test_click(user, layer, pipe)
 	TEST_ASSERT(QDELETED(pipe), "allowed actual recycling consumes the original pipe")
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed recycling clears the source hand")
 	TEST_ASSERT_EQUAL(layer.metal, original_metal + layer.pipe_cost, "allowed recycling credits exactly the actual configured pipe cost")

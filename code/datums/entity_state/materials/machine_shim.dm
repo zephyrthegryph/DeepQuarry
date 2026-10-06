@@ -51,6 +51,7 @@
 /datum/using_machine_shim/proc/on_mob_action()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(host_mob().stat == DEAD || !host_mob().client || !host_mob().Adjacent(linked_machine()))
+		// ALLOW(lifecycle): the machine link ends when its user dies, leaves or steps away
 		qdel(src)
 
 /// Called by the using machine shim trait system each Life() cycle.
@@ -61,12 +62,14 @@
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
+	// ALLOW(lifecycle): the machine link ends with its machine
 	qdel(src)
 
 /datum/using_machine_shim/proc/on_mob_logout(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
+	// ALLOW(lifecycle): the machine link ends when its user logs out
 	qdel(src)
 
 /////////////////////////////////////////////////////////////////////////////////

@@ -23,6 +23,7 @@
 
 DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 
+// ALLOW(init/INSTANCE_STATE): pixel_y rolled at random for each instance
 /obj/item/material/kitchen/utensil/Initialize(mapload)
 	. = ..()
 	if (prob(60))

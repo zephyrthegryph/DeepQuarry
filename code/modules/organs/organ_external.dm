@@ -1099,6 +1099,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for(var/obj/item/I in slot_contents())
 				if(I.w_class > ITEMSIZE_SMALL && !istype(I,/obj/item/organ))
 					slot_remove(I, droploc, null, LEDGER_MOVE_FORCED)
+			// ALLOW(lifecycle): the limb burns to ash
 			qdel(src)
 		if(DROPLIMB_BLUNT)
 			var/obj/effect/decal/cleanable/blood/gibs/gore
@@ -1117,6 +1118,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(slot_remove(thing, droploc, null, LEDGER_MOVE_FORCED))
 					thing.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
+			// ALLOW(lifecycle): the limb is blown apart
 			qdel(src)
 
 		if(DROPLIMB_ACID)

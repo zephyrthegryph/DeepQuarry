@@ -19,6 +19,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	/// The setup questions set_vars() asks.
 	var/setup_flow = /datum/prompt/text/event_trigger_setup/name
 
+// ALLOW(init/INSTANCE_STATE): coordinates taken from where this instance is placed
 /obj/effect/landmark/event_trigger/Initialize(mapload)
 	. = ..()
 	coordinates = "(X:[loc.x];Y:[loc.y];Z:[loc.z])"

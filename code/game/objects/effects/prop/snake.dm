@@ -23,6 +23,7 @@
 // Relation view: is the snake hunting a specific atom? (Will always try to meander toward this target.)
 	var/atom/hunting
 
+// ALLOW(init/CTOR_ARGS): hunt_target and Creator are constructor arguments from whoever builds it
 /obj/effect/temporary_effect/pulse/snake/Initialize(mapload, atom/hunt_target, atom/Creator)
 	. = ..()
 	if(hunt_target)

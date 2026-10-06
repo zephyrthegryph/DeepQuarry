@@ -132,6 +132,7 @@
 /mob/living/simple_mob/ysbryd/replace_death(gibbed)
 	if(chosen_target)
 		disconnect_target()
+	// ALLOW(lifecycle): the ysbryd leaves no corpse when it dies
 	qdel(src)
 	return TRUE
 

@@ -93,6 +93,7 @@
 	///the group of hotspots we are a part of
 	var/datum/hot_group/our_hot_group
 
+// ALLOW(init/CTOR_ARGS): starting_volume and starting_temperature are constructor arguments from whoever builds it
 /obj/effect/hotspot/Initialize(mapload, starting_volume, starting_temperature)
 	. = ..()
 	SSair.hotspots += src
@@ -288,6 +289,7 @@
 
 	var/turf/open/location = loc
 	if(!istype(location))
+		// ALLOW(lifecycle): a hotspot off an open turf goes out
 		qdel(src)
 		return
 
@@ -300,15 +302,18 @@
 		cold_fire = TRUE
 
 	if((temperature < FIRE_MINIMUM_TEMPERATURE_TO_EXIST && !cold_fire) || (volume <= 1))
+		// ALLOW(lifecycle): a hotspot too cold or too small to burn goes out
 		qdel(src)
 		return
 
 	//Not enough / nothing to burn. One batched read covers every fuel and oxidiser check.
 	if(!location.air)
+		// ALLOW(lifecycle): a hotspot on a turf without air goes out
 		qdel(src)
 		return
 	var/list/readings = read_gas_mixtures(list(location.air))
 	if((INSUFFICIENT(GAS_ID_PLASMA) && INSUFFICIENT(GAS_ID_TRITIUM) && INSUFFICIENT(GAS_ID_HYDROGEN) && INSUFFICIENT(GAS_ID_FREON)) || INSUFFICIENT(GAS_ID_OXYGEN))
+		// ALLOW(lifecycle): a hotspot without fuel or oxidiser goes out
 		qdel(src)
 		return
 
@@ -415,6 +420,7 @@ CAPABILITIES(/datum/hot_group)
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	rel_remove(src, nameof(spot_list), target)
 	if(!length(spot_list))
+		// ALLOW(lifecycle): a hot group with no hotspots left ends
 		qdel(src)
 		return
 

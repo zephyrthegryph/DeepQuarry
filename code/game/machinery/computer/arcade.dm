@@ -25,6 +25,7 @@
 							)
 	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
+// ALLOW(init/INSTANCE_STATE): a generic arcade cabinet becomes a randomly picked arcade machine
 /obj/machinery/computer/arcade/Initialize(mapload)
 	. = ..()
 	// If it's a generic arcade machine, pick a random arcade
@@ -120,6 +121,7 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 	var/blocked = 0 //Player cannot attack/heal while set
 	var/turtle = 0
 
+// ALLOW(init/INSTANCE_STATE): rolls its arcade characters per machine
 /obj/machinery/computer/arcade/battle/Initialize(mapload)
 	. = ..()
 	randomize_characters()
@@ -1074,6 +1076,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		if(3)
 			src.visible_message(span_danger("[src] explodes!"))
 			explosion(src.loc, 1,2,4)
+			// ALLOW(lifecycle): the toy ship blows up at the end of its countdown
 			qdel(src)
 
 #undef ORION_TRAIL_WINTURN

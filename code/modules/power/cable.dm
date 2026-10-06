@@ -346,6 +346,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 
 	investigate_log("was cut by [key_name(user, user.client)] in [user.loc.loc]","wires")
 
+	// ALLOW(lifecycle): the cut cable is gone
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
@@ -464,6 +465,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	tool_qualities = list(TOOL_CABLE_COIL)
 	singular_name = "cable"
 
+// ALLOW(init/CTOR_ARGS): length, param_color and material_id are constructor arguments from whoever builds it
 /obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
 	apply_blueprint_effects()

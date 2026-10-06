@@ -23,6 +23,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	/// Relation view: the anomaly this harvester is attached to.
 	var/obj/effect/anomaly/harvested
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/anomaly_harvester/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

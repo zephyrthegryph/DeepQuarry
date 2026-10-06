@@ -584,6 +584,7 @@ CAPABILITIES(/datum/reagents)
 			trans_to(M, mobportion, multiplier, copy)
 	trans_to(T, total_volume, multiplier, copy)
 	if (total_volume <= 0)
+		// ALLOW(lifecycle): a splash that emptied the holder leaves nothing to keep
 		qdel(src)
 
 /**

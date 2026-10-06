@@ -35,6 +35,7 @@
 	var/capacity_plastic = 60000 // 30 sheets of plastic
 
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/injector_maker/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

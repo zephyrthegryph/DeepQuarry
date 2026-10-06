@@ -162,6 +162,7 @@ CAPABILITIES(/obj/item/ore)
 	icon_state = "slag"
 	material = null
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 /obj/item/ore/Initialize(mapload)
 	. = ..()
 	randpixel_xy()

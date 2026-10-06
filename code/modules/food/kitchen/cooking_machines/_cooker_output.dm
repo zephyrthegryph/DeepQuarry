@@ -148,6 +148,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/variable, TYPE_
 	size = 30
 	w_class = ITEMSIZE_NORMAL
 
+// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
 /obj/item/reagent_containers/food/snacks/variable/cereal/Initialize(mapload)
 	. =..()
 	name = pick(list("flakes", "krispies", "crunch", "pops", "O's", "crisp", "loops", "jacks", "clusters"))

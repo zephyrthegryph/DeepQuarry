@@ -13,6 +13,7 @@
 CAPABILITIES(/obj/item/rocksliver)
 	owns_one(nameof(geological_data_static), /datum/geosample)
 
+// ALLOW(init/INSTANCE_STATE): icon_state and its pixel offset rolled at random for each instance
 /obj/item/rocksliver/Initialize(mapload)
 	. = ..()
 	icon_state = "sliver[rand(1, 3)]"

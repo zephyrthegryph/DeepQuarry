@@ -47,6 +47,7 @@
 		return TRUE
 	// Changelings are immune to these, so we may as well stop handling it... It's unlikely you will turn back from a changeling as well.
 	if(human_parent.get_changeling_state()) // We are never alone~
+		// ALLOW(lifecycle): a changeling never feels crowded, so the trait state goes
 		qdel(src)
 		return TRUE
 	return FALSE

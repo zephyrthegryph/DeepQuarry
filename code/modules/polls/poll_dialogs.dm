@@ -40,6 +40,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 
 /datum/privacy_poll_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the privacy poll lives only while its window is open
 	qdel(src)
 
 /datum/privacy_poll_dialog/proc/ui_act_vote(datum/act/op/A, choice_arg)
@@ -52,6 +53,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 		return
 	if(choice == PRIVACY_OPTION_LATER)
 		SStgui.close_uis(src)
+		// ALLOW(lifecycle): the privacy poll closes for good when deferred
 		qdel(src)
 		return TRUE
 	var/option
@@ -87,6 +89,7 @@ CAPABILITIES(/datum/privacy_poll_dialog)
 
 	answered = TRUE
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the privacy poll closes for good once answered
 	qdel(src)
 
 // ============================================================
@@ -121,6 +124,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 
 /datum/poll_browser_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the poll browser lives only while its window is open
 	qdel(src)
 
 /// A prompt flow (flow_io.dm): the list is replaced when the rows arrive.

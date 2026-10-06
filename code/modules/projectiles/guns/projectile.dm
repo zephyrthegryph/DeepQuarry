@@ -45,6 +45,7 @@ CAPABILITIES(/obj/item/gun/projectile)
 
 TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
 
+// ALLOW(init/CTOR_ARGS): starts_loaded is a constructor argument from whoever builds it
 /obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
 	. = ..()
 	if(starts_loaded)

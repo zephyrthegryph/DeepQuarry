@@ -481,6 +481,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	// Keep the identity (ownership.md sec 4.1): the handle slot is parked and relation views naming
 	// this thing go dormant, to re-link when the entry re-materializes into the same slot.
 	var/hid = om_handle_park(src)
+	// ALLOW(lifecycle): collapsing to a latent entry replaces the live object with that entry
 	qdel(src)
 	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
 	if(hid)

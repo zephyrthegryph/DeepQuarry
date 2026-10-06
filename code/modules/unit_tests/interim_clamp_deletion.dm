@@ -6,7 +6,11 @@
 	var/obj/machinery/clamp/clamp = allocate(/obj/machinery/clamp, T, pipe)
 	TEST_ASSERT_EQUAL(clamp.target_ref(), pipe, "The real clamp constructor must attach to its supplied pipe")
 	TEST_ASSERT(!pipe.in_stasis, "The unclamped pipe must initially allow normal flow")
-	TEST_ASSERT(clamp.interaction_toggle(actor, null, null), "The real toggle interaction must close its attached clamp")
+	test_driver_begin()
+	actor.next_click = 0
+	test_click(actor, clamp)
+	test_time(1 SECOND)
+	test_driver_end()
 	TEST_ASSERT(!clamp.open, "Toggling must close the actual clamp")
 	TEST_ASSERT(pipe.in_stasis, "The closed clamp must place its actual pipe into stasis")
 	qdel(clamp)

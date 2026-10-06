@@ -269,6 +269,7 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 
 	var/mob/living/carbon/human/hume
 
+// ALLOW(init/CTOR_ARGS): H is a constructor argument from whoever builds it
 /obj/item/cell/standin/Initialize(mapload, mob/living/carbon/human/H)
 	. = ..()
 	if(!istype(H))

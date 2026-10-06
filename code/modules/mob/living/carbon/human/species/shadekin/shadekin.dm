@@ -252,4 +252,5 @@
 /mob/living/carbon/human/proc/species_death_vanish()
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
+	// ALLOW(lifecycle): a shadekin vanishes when it dies
 	qdel(src)

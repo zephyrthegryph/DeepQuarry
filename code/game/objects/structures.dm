@@ -38,6 +38,7 @@
 /obj/structure/atom_destruction(damage_flag)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): a structure broken to nothing is removed
 		qdel(src)
 
 /obj/structure/proc/can_touch(mob/user)

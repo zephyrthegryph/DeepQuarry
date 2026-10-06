@@ -61,6 +61,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	if(mind)
 		src.mind.transfer_to(L)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
+	// ALLOW(lifecycle): the critter is replaced by its evolved form
 	qdel(src)
 
 /mob/living/simple_mob/vore/spacecritter/proc/duplicate()

@@ -49,6 +49,7 @@
 
 	var/omniteleport = FALSE // Will this teleport anchored things too?
 
+// ALLOW(init/INSTANCE_STATE): rolls its colours and makes its paired cube where it is placed
 /obj/item/telecube/Initialize(mapload)
 	. = ..()
 

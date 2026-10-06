@@ -98,19 +98,17 @@ CAPABILITIES(/obj/mecha/medical/odysseus)
 
 			C.images += holder
 */
-/obj/mecha/medical/odysseus/loaded/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun
-	ME.attach(src)
+TYPE_TABLE(/obj/mecha/medical/odysseus/loaded, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tool/sleeper, \
+		/obj/item/mecha_parts/mecha_equipment/tool/sleeper, \
+		/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun \
+		))
 
 //Meant for random spawns.
 /obj/mecha/medical/odysseus/old
 	desc = "An aging combat exosuit utilized by many corporations. Originally developed to combat hostile alien lifeforms. This one is particularly worn looking and likely isn't as sturdy."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/medical/odysseus/old/Initialize(mapload)
 	. = ..()
 	max_integrity = 50	//Just slightly worse.

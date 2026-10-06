@@ -43,7 +43,12 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_goto(user, 18)
 
 /datum/admins/proc/topic_ac_set_channel_name(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a35", /datum/om/prompt/text, message = "Provide a Feed Channel Name", title = "Network Channel Handler", encode = FALSE)
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a35")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide a Feed Channel Name", title = "Network Channel Handler", encode = FALSE, captured = list("href" = original_href, "ac_key" = "a35"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_feed_channel().channel_name = sanitizeSafe(answer)
@@ -62,7 +67,12 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	if(admincaster_feed_channel().channel_name == "" || admincaster_feed_channel().channel_name == "\[REDACTED\]" || check)
 		admincaster_screen = 7
 	else
-		var/choice = topic_ask(user, args, "a36", /datum/om/prompt/choice/alert, message = "Please confirm Feed channel creation", title = "Network Channel Handler", choices = list("Confirm","Cancel"))
+		var/datum/request/replayed = admincaster_prompt_request(user, args, "a36")
+		if(!replayed)
+			var/list/original_href = admincaster_scalar_href(args)
+			open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, buttons = TRUE, question = "Please confirm Feed channel creation", title = "Network Channel Handler", choices = list("Confirm","Cancel"), captured = list("href" = original_href, "ac_key" = "a36"))
+			return
+		var/choice = replayed.value
 		if(isnull(choice))
 			return
 		if(choice == "Confirm")
@@ -76,21 +86,36 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	var/list/available_channels = list()
 	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 		available_channels += F.channel_name
-	var/answer = topic_ask(user, args, "a37", /datum/om/prompt/choice, message = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels)
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a37")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels, captured = list("href" = original_href, "ac_key" = "a37"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_feed_channel().channel_name = answer
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_new_title(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a38", /datum/om/prompt/text, message = "Enter the Feed title", title = "Network Channel Handler")
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a38")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Enter the Feed title", title = "Network Channel Handler", captured = list("href" = original_href, "ac_key" = "a38"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_feed_message.title = answer
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_new_message(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a39", /datum/om/prompt/text, message = "Write your Feed story", title = "Network Channel Handler", multiline = TRUE)
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a39")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Write your Feed story", title = "Network Channel Handler", multiline = TRUE, captured = list("href" = original_href, "ac_key" = "a39"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_feed_message.body = answer
@@ -127,14 +152,24 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_goto(user, 14)
 
 /datum/admins/proc/topic_ac_set_wanted_name(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a40", /datum/om/prompt/text, message = "Provide the name of the Wanted person", title = "Network Security Handler")
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a40")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide the name of the Wanted person", title = "Network Security Handler", captured = list("href" = original_href, "ac_key" = "a40"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_feed_message.author = answer
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_wanted_desc(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a41", /datum/om/prompt/text, message = "Provide the a description of the Wanted person and any other details you deem important", title = "Network Security Handler")
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a41")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide the a description of the Wanted person and any other details you deem important", title = "Network Security Handler", captured = list("href" = original_href, "ac_key" = "a41"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_feed_message.body = answer
@@ -145,7 +180,12 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	if(admincaster_feed_message.author == "" || admincaster_feed_message.body == "")
 		admincaster_screen = 16
 	else
-		var/choice = topic_ask(user, args, "a42", /datum/om/prompt/choice/alert, message = "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]", title = "Network Security Handler", choices = list("Confirm","Cancel"))
+		var/datum/request/replayed = admincaster_prompt_request(user, args, "a42")
+		if(!replayed)
+			var/list/original_href = admincaster_scalar_href(args)
+			open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, buttons = TRUE, question = "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]", title = "Network Security Handler", choices = list("Confirm","Cancel"), captured = list("href" = original_href, "ac_key" = "a42"))
+			return
+		var/choice = replayed.value
 		if(isnull(choice))
 			return
 		if(choice == "Confirm")
@@ -171,7 +211,12 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_cancel_wanted(mob/user, list/args)
-	var/choice = topic_ask(user, args, "a43", /datum/om/prompt/choice/alert, message = "Please confirm Wanted Issue removal", title = "Network Security Handler", choices = list("Confirm","Cancel"))
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a43")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, buttons = TRUE, question = "Please confirm Wanted Issue removal", title = "Network Security Handler", choices = list("Confirm","Cancel"), captured = list("href" = original_href, "ac_key" = "a43"))
+		return
+	var/choice = replayed.value
 	if(isnull(choice))
 		return
 	if(choice == "Confirm")
@@ -243,8 +288,65 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_set_signature(mob/user, list/args)
-	var/answer = topic_ask(user, args, "a44", /datum/om/prompt/text, message = "Provide your desired signature", title = "Network Identity Handler")
+	var/datum/request/replayed = admincaster_prompt_request(user, args, "a44")
+	if(!replayed)
+		var/list/original_href = admincaster_scalar_href(args)
+		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide your desired signature", title = "Network Identity Handler", captured = list("href" = original_href, "ac_key" = "a44"))
+		return
+	var/answer = replayed.value
 	if(isnull(answer))
 		return
 	admincaster_signature = answer
 	admincaster_refresh(user)
+
+/// Keep only the original href: an ended replay token never parks in a later request.
+/datum/admins/proc/admincaster_scalar_href(list/args)
+	var/list/original_href = args[TOPIC_HREF]
+	var/list/scalar_href = original_href.Copy()
+	scalar_href -= "ac_request"
+	return scalar_href
+
+/// Only an actual ended question supplies an admincaster answer.
+/datum/admins/proc/admincaster_prompt_request(mob/user, list/args, key)
+	var/list/original_href = args[TOPIC_HREF]
+	var/datum/request/resumed
+	if(original_href)
+		resumed = original_href["ac_request"]
+	if((istype(resumed, /datum/prompt/text/admincaster_topic) || istype(resumed, /datum/prompt/choice/admincaster_topic)) && resumed.owner == src && resumed.answerer == user && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(admincaster_prompt_answered) && resumed.captured?["ac_key"] == key)
+		return resumed
+	return null
+
+/datum/admins/proc/admincaster_prompt_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/captured_href = A.answer.captured["href"]
+	var/list/replayed_href = captured_href.Copy()
+	replayed_href["ac_request"] = A.answer
+	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)
+
+/datum/prompt/text/admincaster_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admincaster_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/admincaster_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admincaster_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admincaster_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/choice/admincaster_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admincaster_topic/refusal(given)
+	return null

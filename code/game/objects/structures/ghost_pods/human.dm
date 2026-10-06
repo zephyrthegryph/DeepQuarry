@@ -120,6 +120,7 @@
 	H.offer_spawn_rename()
 
 
+	// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
 	qdel(src)
 
 // Manual Variant

@@ -130,6 +130,7 @@ CAPABILITIES(/obj/item/reagent_containers/blood)
 	name = "Ration BloodPack"
 	desc = "A standard issue BloodPack Ration given to crew that require blood to be sustained!"
 
+// ALLOW(init/INSTANCE_STATE): blood_type rolled at random for each instance
 /obj/item/reagent_containers/blood/random_bloodsucker/Initialize(mapload)
 	blood_type = pick("A+", "A-", "B+", "B-", "O-", "O+", "AB+", "AB-")
 	. = ..()

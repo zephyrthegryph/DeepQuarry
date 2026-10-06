@@ -115,6 +115,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	var/list/internal_log
 	mode = 0  // 0 - making pass, 1 - viewing logs
 
+// ALLOW(init/INSTANCE_STATE): uid rolled at random for each instance
 /obj/machinery/computer/guestpass/Initialize(mapload)
 	. = ..()
 	uid = "[rand(100,999)]-G[rand(10,99)]"

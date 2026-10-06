@@ -205,6 +205,7 @@ badges
 	badge_string = "Sol Central Government"
 	slot_flags = SLOT_MASK | SLOT_TIE
 
+// ALLOW(init/INSTANCE_STATE): names its tags after the human it is made on
 /obj/item/clothing/accessory/badge/solgov/tags/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/human/H

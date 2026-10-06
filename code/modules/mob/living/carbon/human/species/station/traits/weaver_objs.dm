@@ -39,6 +39,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 /obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
+	// ALLOW(lifecycle): the silk burns away in the fire
 	qdel(src)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
@@ -56,6 +57,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	plane = DIRTY_PLANE
 	layer = DIRTY_LAYER
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/weaversilk/floor/Initialize(mapload)
 	. = ..()
 	icon_state = pick(possible_icon_states) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
@@ -67,6 +69,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	var/possible_icon_states = list("wallweb1", "wallweb2", "wallweb3")
 	density = TRUE
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/weaversilk/wall/Initialize(mapload)
 	. = ..()
 	icon_state = pick(possible_icon_states) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form

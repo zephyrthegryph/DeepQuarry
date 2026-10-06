@@ -187,6 +187,7 @@ CAPABILITIES(/obj/machinery/newscaster)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
+// ALLOW(init/INSTANCE_STATE): numbers each unit as it is made and fills its paper tray
 /obj/machinery/newscaster/Initialize(mapload)
 	. = ..()
 	unit_no = ++unit_no_cur

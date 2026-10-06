@@ -153,6 +153,7 @@ CAPABILITIES(/datum/remote_view)
 	if(!host_mob)
 		return
 	end_view()
+	// ALLOW(lifecycle): the remote view ends when its viewer moves
 	qdel(src)
 
 /datum/remote_view/proc/on_recursive_moved_event(datum/act/notice/A)
@@ -172,6 +173,7 @@ CAPABILITIES(/datum/remote_view)
 	if(!host_mob)
 		return
 	end_view()
+	// ALLOW(lifecycle): the remote view ends when the item carrying it moves
 	qdel(src)
 
 /datum/remote_view/proc/on_forced_endview_event(datum/act/notice/A)
@@ -195,6 +197,7 @@ CAPABILITIES(/datum/remote_view)
 	if(!host_mob)
 		return
 	end_view()
+	// ALLOW(lifecycle): the remote view ends when its end notice arrives
 	qdel(src)
 
 /datum/remote_view/proc/on_status_effect_event(datum/act/notice/N)
@@ -242,6 +245,7 @@ CAPABILITIES(/datum/remote_view)
 	if(host_mob.client.eye == remote_view_target)
 		return
 	// The object already changed it's view, lets not interupt it like the others
+	// ALLOW(lifecycle): the remote view ends when the viewer looks elsewhere
 	qdel(src)
 
 /datum/remote_view/proc/on_remotetarget_reset_perspective(datum/act/notice/A)
@@ -257,6 +261,7 @@ CAPABILITIES(/datum/remote_view)
 	// This is an ugly one, but if we want to follow the other object properly we need to copy its state!
 	if(!remote_view_mob.client || !host_mob.client)
 		end_view()
+		// ALLOW(lifecycle): the remote view ends when either side has no client
 		qdel(src)
 		return
 	// Only continue to observe if their view location is the same as their turf. otherwise they are doing their own ACTUALLY-REMOTE viewing
@@ -416,6 +421,7 @@ CAPABILITIES(/datum/remote_view)
 	if(host_mob.stat == CONSCIOUS && (host_mob.has_mutation(mRemote)) && remote_mob && remote_mob.stat == CONSCIOUS)
 		return
 	end_view()
+	// ALLOW(lifecycle): the remote view ends when the mutation or a conscious target is lost
 	qdel(src)
 
 /**
@@ -534,6 +540,7 @@ CAPABILITIES(/datum/remote_view)
 			OM_EMIT(check_belly, /datum/om/event/remote_view_clear)
 		for(var/obj/item/dogborg/sleeper/check_sleeper in contents_of(cache_mob))
 			OM_EMIT(check_sleeper, /datum/om/event/remote_view_clear)
+	// ALLOW(lifecycle): the remote view ends once it is decoupled to the turf
 	qdel(src)
 
 /// We were forcibly disconnected, this situation is probably a recursive hellscape, so just decouple entirely and fix it when someone moves.

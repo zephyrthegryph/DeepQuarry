@@ -73,6 +73,10 @@
 
 CAPABILITIES(/obj/item/paper)
 	owns_one(nameof(contract_document), /datum/contract_document)
+	interface("Paper")
+	without("ui_open")
+	op("write_field", ui_act("write_field", arg("id", schema_text(4096))), then(PROC_REF(ui_act_write_field)))
+	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
 
 /obj/item/paper/card
 	name = "blank card"
@@ -126,6 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_o
 	plane_foldable = FALSE // No airplanes for me.
 
 
+// ALLOW(init/CTOR_ARGS): text and title are constructor arguments from whoever builds it
 /obj/item/paper/Initialize(mapload, text, title)
 	. = ..()
 
@@ -192,9 +197,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	tgui_view = "read"
 	tgui_interact(user)
 
-DECLARE_UI(/obj/item/paper, "Paper")
-
-UI_DATA_REPLACE(/obj/item/paper, "title=name:text", "view=tgui_view:text", "merge:ui_data_obj_item_paper{segments:unknown,stamps:bool,garbled:bool}")
+/obj/item/paper/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = name
+	data["view"] = tgui_view
+	var/list/merged_1 = ui_data_obj_item_paper(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/paper's window data (declared on its UI_DATA row).
 /obj/item/paper/proc/ui_data_obj_item_paper(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -237,13 +248,13 @@ UI_DATA_REPLACE(/obj/item/paper, "title=name:text", "view=tgui_view:text", "merg
 		cursor = iend + close_len
 	return segs
 
-UI_ACT(/obj/item/paper, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/item/paper, ui_act_write_field)
-	do_write_action("[params["id"]]", user)
+/obj/item/paper/proc/ui_act_write_field(datum/act/op/A, id)
+	var/mob/user = A.actor
+	do_write_action("[id]", user)
 	return TRUE
 
-UI_ACT(/obj/item/paper, "write_end", ui_act_write_end)
-UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
+/obj/item/paper/proc/ui_act_write_end(datum/act/op/A)
+	var/mob/user = A.actor
 	do_write_action("end", user)
 	return TRUE
 

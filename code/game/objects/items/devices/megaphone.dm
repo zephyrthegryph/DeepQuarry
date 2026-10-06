@@ -170,6 +170,7 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 
 /obj/item/megaphone/super/proc/overload_boom()
 	explosion(get_turf(src), -1, -1, 1, 3, adminlog = 1)
+	// ALLOW(lifecycle): the overloaded megaphone blows up
 	qdel(src)
 	return
 

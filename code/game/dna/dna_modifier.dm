@@ -79,6 +79,7 @@ CAPABILITIES(/datum/dna2/record)
 	var/scan_level
 	var/precision_coeff
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and sizes itself from them
 /obj/machinery/dna_scannernew/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

@@ -41,6 +41,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
+// ALLOW(init/CTOR_ARGS): new_species is a constructor argument from whoever builds it
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
 	if(forced_species)

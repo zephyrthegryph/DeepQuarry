@@ -128,6 +128,7 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 	desc = "Heavy-duty, combat exosuit, developed after the Durand model. Rarely found among civilian populations. This one is particularly worn looking and likely isn't as sturdy."
 
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/combat/marauder/old/Initialize(mapload)
 	. = ..()
 	max_integrity = 300	//Just slightly worse.

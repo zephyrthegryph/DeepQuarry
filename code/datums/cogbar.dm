@@ -29,10 +29,12 @@
 	offset_y = icon_offsets["y"]
 	if(isnull(cogicon))
 		stack_trace("/datum/cogbar was created with a null icon.")
+		// ALLOW(lifecycle): a cog bar built without an icon is a caller error and is dropped
 		qdel(src)
 		return
 	if(isnull(cogiconstate))
 		stack_trace("/datum/cogbar was created with a null icon state.")
+		// ALLOW(lifecycle): a cog bar built without an icon state is a caller error and is dropped
 		qdel(src)
 		return
 
@@ -75,6 +77,7 @@
 /// Removes the cog from the user
 /datum/cogbar/proc/remove()
 	if(isnull(cog()))
+		// ALLOW(lifecycle): the cog bar ends when its overlay is already gone
 		qdel(src)
 		return
 
@@ -86,6 +89,7 @@
 /datum/cogbar/proc/on_user_delete(datum/act/notice/A)
 	EVENT_HANDLER
 
+	// ALLOW(lifecycle): the cog bar ends with the mob it is drawn over
 	qdel(src)
 
 #undef COGBAR_ANIMATION_TIME

@@ -265,6 +265,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
+// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
 /obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
 	. = ..()
 	update_nearby_tiles()
@@ -294,10 +295,12 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 /obj/machinery/shieldwall/machine_step()
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
+			// ALLOW(lifecycle): the shield wall collapses without both generators
 			qdel(src)
 			return
 
 		if(!(gen_primary.active)||!(gen_secondary.active))
+			// ALLOW(lifecycle): the shield wall collapses when a generator turns off
 			qdel(src)
 			return
 

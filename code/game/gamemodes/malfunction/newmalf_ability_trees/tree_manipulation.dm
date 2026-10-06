@@ -209,4 +209,5 @@
 /// The end of a malfunctioning AI's machine overload.
 /obj/machinery/proc/malf_overload_boom(explosion_intensity)
 	explosion(get_turf(src), round(explosion_intensity/4),round(explosion_intensity/2),round(explosion_intensity),round(explosion_intensity * 2))
+	// ALLOW(lifecycle): the overloaded machine is destroyed in its own explosion
 	qdel(src)

@@ -28,6 +28,7 @@ GLOBAL_LIST_INIT(dq_variants_head_tesh_hood_standard, list(
 	"brown_grey" = list("name" = "brown and grey cloak hood", "icon_state" = "tesh_hood_brg"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/head/tesh_hood/standard/Initialize(mapload)
 	apply_variant()
 	. = ..()

@@ -182,6 +182,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
 	light_color = "#ed9200"
 	anchored = TRUE
 
+// ALLOW(init/CTOR_ARGS): ndir and flame are constructor arguments from whoever builds it
 /obj/effect/engine_exhaust/Initialize(mapload, ndir, flame)
 	. = ..()
 	if(flame)

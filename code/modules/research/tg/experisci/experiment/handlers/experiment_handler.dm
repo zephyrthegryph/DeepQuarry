@@ -61,6 +61,7 @@ CAPABILITIES(/datum/experiment_handler)
 	. = ..()
 	if(!ismovable(new_owner))
 		log_runtime("experiment_handler: created for a non-movable ([new_owner]); discarded")
+		// ALLOW(lifecycle): a handler built for a non-movable is a caller error and is dropped
 		qdel(src)
 		return
 	// The owner adopts us; its previous handler is deleted by rel_set().

@@ -21,6 +21,7 @@
 CAPABILITIES(/obj/machinery/reagentgrinder)
 	owns_many(nameof(holdingitems))
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/reagentgrinder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

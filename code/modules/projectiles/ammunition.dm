@@ -20,6 +20,7 @@
 CAPABILITIES(/obj/item/ammo_casing)
 	owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type))
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 /obj/item/ammo_casing/Initialize(mapload)
 	. = ..()
 	randpixel_xy()
@@ -178,6 +179,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_o
 CAPABILITIES(/obj/item/ammo_magazine)
 	owns_many(nameof(stored_ammo))
 
+// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
 /obj/item/ammo_magazine/Initialize(mapload, material_key)
 	. = ..()
 	pixel_x = rand(-5, 5)

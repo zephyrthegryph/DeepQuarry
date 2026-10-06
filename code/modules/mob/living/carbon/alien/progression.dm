@@ -52,6 +52,7 @@
 	for(var/datum/language/L in languages)
 		adult.add_language(L.name)
 
+	// ALLOW(lifecycle): the larva is replaced by its evolved form
 	qdel(src)
 
 /mob/living/carbon/alien/proc/update_progression()

@@ -134,6 +134,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 /// Steps (watches for and shoots meteors) while switched on and working.
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/pointdefense, MACHINE_PIPELINE, list("active", "operable"))
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

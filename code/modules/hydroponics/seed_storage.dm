@@ -99,6 +99,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/proc/lockdown_wire_pulsed(datum/act/A)
 	lockdown = !lockdown
 
+// ALLOW(init/INSTANCE_STATE): rolls its contraband seed batch
 /obj/machinery/seed_storage/Initialize(mapload)
 	. = ..()
 	if(!length(contraband_seeds))

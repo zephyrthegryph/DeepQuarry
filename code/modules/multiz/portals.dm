@@ -32,6 +32,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	if(!target)
 		if(isliving(user))
 			to_chat(user, span_notice("Your hand scatters \the [src]..."))
+			// ALLOW(lifecycle): an untargeted portal scatters when touched
 			qdel(src)	//Delete portals which aren't set that people mess with.
 		else return TRUE
 	else if(isliving(user) || isobserver(user) && check_rights_for(user?.client, R_HOLDER))	//unless they're staff
@@ -121,6 +122,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 		return
 	if (!target)
 		to_chat(M, span_notice("\The [src] scatters as you pass through it..."))
+		// ALLOW(lifecycle): an untargeted portal scatters when entered
 		qdel(src)
 		return
 	if (!istype(M, /atom/movable))

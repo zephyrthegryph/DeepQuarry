@@ -46,6 +46,7 @@ CAPABILITIES(/mob/living/silicon)
 	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot)
 	owns_many(nameof(queued_alarms))
 
+// ALLOW(init/CTOR_ARGS): is_decoy is a constructor argument from whoever builds it
 /mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
 	if(silicon_subsystems)
 		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
@@ -434,6 +435,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 	SSantag.clear_antag_roles(mind)
 
 	ghostize(0)
+	// ALLOW(lifecycle): the silicon is removed once its player has been ghosted
 	qdel(src)
 
 /mob/living/silicon/has_vision()

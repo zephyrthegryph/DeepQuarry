@@ -20,6 +20,7 @@
 	var/amount_grown = 0
 	var/metroid_type = /mob/living/simple_mob/metroid/juvenile/baby
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/metroid/egg/Initialize(mapload, atom/parent)
 	get_light_and_color(parent)
 	. = ..()

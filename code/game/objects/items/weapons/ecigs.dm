@@ -82,6 +82,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
 	icon_empty = "ecigoff1"
 	icon_on = "ecigon"
 
+// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
 /obj/item/clothing/mask/smokable/ecig/util/Initialize(mapload)
 	. = ..()
 	color = pick(ecig_colors)

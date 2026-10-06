@@ -251,6 +251,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 	var/processing = 0
 	var/honey = 0
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/honey_extractor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

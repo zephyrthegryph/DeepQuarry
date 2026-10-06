@@ -724,6 +724,7 @@
 				if(possessed_voice.item_tf)
 					mind.transfer_to(ourmob)
 					own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
+					// ALLOW(lifecycle): the possessed voice ends when its mob escapes the object form
 					qdel(src)
 					ourmob.forceMove(item_to_destroy.loc)
 					qdel(item_to_destroy)
@@ -737,6 +738,7 @@
 				return
 			src.mind.transfer_to(ourmob)
 			own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
+			// ALLOW(lifecycle): the possessed voice ends when its mob escapes the object form
 			qdel(src)
 			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 			return

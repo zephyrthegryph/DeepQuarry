@@ -67,7 +67,8 @@
 	anomaly_core = null
 	var/report_text
 
-/obj/effect/anomaly/hallucination/decoy/Initialize(mapload, new_lifespan)
+// ALLOW(init/INSTANCE_STATE): report_text rolled at random for each instance
+/obj/effect/anomaly/hallucination/decoy/Initialize(mapload)
 	. = ..()
 	report_text = pick(
 		"[src]'s unstable field is fluctuating along frequency 9999999.99999, code 9999999.99999. No, no, that can't be right?",

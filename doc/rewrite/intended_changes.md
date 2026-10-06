@@ -1432,6 +1432,14 @@ focused tests of the touched windows (the tests that called a handler with its o
   module's, through `ui_redirect()`) and is gone.
 * **Messages.** The ice cream vat's flavour and cone messages are `act_message()` (the actor reads "You ...").
 * **The holodeck's AI override** is asked by how the press came (`A.authority & AUTH_REMOTE_ACCESS`), not `issilicon()`.
+* **Ship consoles (helm, engines, sensors, disperser).** Their questions (navigation entry, coordinates, autopilot and thrust limits,
+  sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
+  stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
+  view over its link from anywhere it works the console (the distance check is a hand's).
+* **Copier, fax, ore console, exosuit console, paper.** Their window questions are `asks()` steps: the AI's photo pick, the fax title,
+  department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
+  admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
+  1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
@@ -1451,6 +1459,60 @@ focused tests of the touched windows (the tests that called a handler with its o
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
 
+## Pipe construction: fittings, the dispenser, the pipe layer (rewrite/pipenet-full)
+
+Pinned by the generated pins `snapshots/pins/obj.item.pipe*.txt`, `obj.machinery.pipedispenser.txt`, `obj.machinery.pipelayer.txt` and
+`dq_atmos_m/pipes/fitting_fastens`.
+
+- A fitting's use-in-hand (rotate), its "Flip Pipe" verb (now a menu op), its material liner and its wrench are ops; the wrench's tile check is
+  a requirement with the old refusal texts (the shared init-direction cache is filled when the fitting is made, so the check only reads it). The
+  meter and gas-sensor items fasten with wrench ops. `fasten()` is the one way a fitting becomes its device (the pipe layer calls it instead of
+  faking a wrench `attackby()`).
+- The dispenser's "put back" (a fitting or a meter item), its wrench (2 s to bolt, 4 s to unbolt, tracked `unwrenched`) and the disposal
+  dispenser's drag-in are ops.
+- The pipe layer's hand switch (empty hand only), its metal eject (asks yes/no with `asks()`), pipe recycling, steel loading, pipe-type choice
+  (wrench), auto-dismantle and dismantle (crowbar) are ops; its RPED is `part_replacement()` and its status is an `examine_line()`.
+
+## Portable pumps and scrubbers, the area air console, the stasis clamp (rewrite/pipenet-full)
+
+Generated pins: `snapshots/pins/obj.machinery.portable_atmospherics.powered.*`, `obj.machinery.computer.area_atmos.txt`, `obj.machinery.clamp.txt`.
+
+- **Portable pump and scrubber** work on `every(MACHINE_SERVICE_INTERVAL, when = on)` (the machine pipeline's portable stages are deleted);
+  their looks are `draw(look)`; the window is `interface()` alone (the legacy ungated open-UI interaction is gone, and with it the ghost's
+  "View" menu entry, as on the canister). EMPs and the power button no longer raise the machine channel by hand.
+- **Huge pumps and scrubbers** (`huge_portable_controls()`): an empty hand says to use the console (it used to open the portable's window
+  through the inherited `interface()`, a master bug); cells and tanks are swallowed; the wrench bolts it while off (the stationary one refuses:
+  its bolts are too tight); the inherited window, cell, tank-bay and port ops are dropped. Their step is `every(when = on)`.
+- **Area air console**: no MACHINE_WAKE when it switches the scrubbers (their `every()` follows `on`).
+- **Stasis clamp**: its hand toggle (only while on a pipe), its drag-onto-yourself removal (3 s, refused while active) and the clamp item's
+  attach (3 s, refused where a clamp already is) are ops; the OM timed tasks are gone. `open` is tracked.
+
+## Phase C init and lifecycle codemods (rewrite/lifecycle)
+
+The codemods are `tools/codemods/init_overrides.py`, `qdel_src.py` and `review.py` (the hand-review dump and decisions). Most of the change is
+`ALLOW(init/CODE)` and `ALLOW(lifecycle)` reasons on overrides and self-deletes that stay as they are; those change nothing. The conversions that do:
+
+* **Constant lights are light vars.** An `Initialize()` that only called `set_light(range, power, color)` with constants (12 spell, effect and snack
+  types) is now `light_range`, `light_power`, `light_color` and `light_on = TRUE` on the type. A static light is lit when the thing materializes
+  (`/atom/movable/on_materialize()`), not during `Initialize()`, so a latent instance carries no light source until it is materialized. A range
+  between 0 and 1.4 is written as 1.4, the value `set_light()` raised it to. Turfs are not converted: a turf does not light itself from its vars.
+* **Loaded exosuits list their equipment in `mecha_starting_equipment`** (Odysseus loaded, combat and shuttle pods, the death Ripley, the gorilla,
+  the Scree phazon). The base `/obj/mecha` init attaches table equipment before it adds its radio, cabin, air tank and cell, where the overrides
+  attached it after; no equipment's `attach()` reads those. Test: `dq_init_codemod/mecha_equipment`.
+* **Storage boxes whose `Initialize()` only made their contents use `starts_with`** (the forensics boxes, dice, botany disks, NIFsoft boxes, two pill
+  bottles, body record disks, the backup kit). The contents are latent until the box is used (C5) and `calibrate_size()` counts them; the old
+  contents were made after it ran. A box mapped with `empty = TRUE` now starts empty, as the var says; the overrides filled it anyway.
+  Test: `dq_init_codemod/storage_contents`.
+* **A repainted cardboard cutout is `replace_with()`d** by the cutout type picked: made where the old one stands, as before, and handles that named
+  the old cutout now resolve to the new one.
+* **Mech equipment destroyed with its exosuit goes with `expire(0)`** instead of a bare `spawn` before `qdel()`: the delete is a timer owned by the
+  equipment, run after the current call returns, as the spawn did.
+* **qdel(src) is banned** (`qdel_src` lint, hard ban): every self-delete is a verb or carries an `ALLOW(lifecycle)` reason. Converted to
+  `replace_with()`: a cut-apart closet (steel), the singularity generator (its singularity, or the particle smasher once installed), a box
+  crumpled into its trash (then put in the user's hands, as before).
+* **Bare `spawn` is counted by the scheduler lint.** The shuttle turf's breaklight refresh is `after(src, 0)` (a turf changed meanwhile drops
+  the timer, which replaces the type check), a suffocating carbon gasps at once (the other gasp branch never spawned), and a toxin-loaded
+  human vomits on `after(self, 0)`.
 ## Body migration, slice 1: wounds, bleeding and blood on the body clock (rewrite/body-full)
 
 Pinned by `code/modules/unit_tests/dq_body_rate_pins.dm` (green on the old code first; numbers below are old -> new over the pin's span).

@@ -16,6 +16,7 @@
 	max_level = 5
 	full_override = TRUE
 
+// ALLOW(init/INSTANCE_STATE): max_known_targets rolled at random for each instance
 /obj/item/multitool/hacktool/Initialize(mapload)
 	. = ..()
 	max_known_targets = 5 + rand(1,3)

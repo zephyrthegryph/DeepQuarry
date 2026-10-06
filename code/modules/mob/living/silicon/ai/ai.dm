@@ -128,6 +128,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
 	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
 
+// ALLOW(init/CTOR_ARGS): is_decoy, L, B and safety are constructor arguments from whoever builds it
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
@@ -345,6 +346,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
+// ALLOW(init/INSTANCE_STATE): binds to the AI it is made inside and stands where that AI is
 /obj/machinery/ai_powersupply/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(powered_ai), loc)
@@ -360,9 +362,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 /obj/machinery/ai_powersupply/machine_step()
 	if(!powered_ai || powered_ai.stat == DEAD)
+		// ALLOW(lifecycle): the AI power supply ends with its dead or missing AI
 		qdel(src)
 		return
 	if(powered_ai.psupply != src) // For some reason, the AI has different powersupply object. Delete this one, it's no longer needed.
+		// ALLOW(lifecycle): a stale power supply the AI no longer uses is removed
 		qdel(src)
 		return
 	if(powered_ai.APU_power)
@@ -982,6 +986,7 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 /mob/living/silicon/ai/proc/core_blast(datum/act/hit/explosion/A)
 	if(A.packet.severity != 1)
 		return HOOK_DECLINE
+	// ALLOW(lifecycle): the AI core is destroyed by a severe blast
 	qdel(src)
 	return TRUE
 

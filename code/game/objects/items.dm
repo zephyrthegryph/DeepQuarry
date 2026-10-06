@@ -468,6 +468,7 @@
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
 		OM_EMIT(src, /datum/om/event/item_dropped, user)
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
+			// ALLOW(lifecycle): an item flagged to delete on drop is gone once dropped
 			qdel(src)
 
 	if(item_my_augment(src) && !QDELETED(src))

@@ -24,6 +24,7 @@
 /datum/tgui_ban_panel/tgui_close()
 	rel_clear(src, nameof(holder))
 	rel_clear(src, nameof(admin_datum))
+	// ALLOW(lifecycle): the ban panel lives only while its window is open
 	qdel(src)
 
 CAPABILITIES(/datum/tgui_ban_panel)

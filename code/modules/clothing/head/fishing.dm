@@ -20,6 +20,7 @@
 	/// hat restored from saved state looks like the one that was saved instead of re-rolling.
 	var/colourtype
 
+// ALLOW(init/INSTANCE_STATE): rolls its slogan and draws it
 /obj/item/clothing/head/fishing/Initialize(mapload)
 	. = ..()
 	roll_slogan()
