@@ -5,6 +5,12 @@
 	stop_following()
 
 ADMIN_VERB(Jump, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Area", "Area to jump to.", ADMIN_CATEGORY_GAME, areaname as null|anything in return_sorted_areas())
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if(istype(resumed, /datum/prompt/choice/admin_jump_area_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(jump_area_replay_answered) && areaname == resumed.captured["original_area_name"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
@@ -14,7 +20,11 @@ ADMIN_VERB(Jump, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Area", "Area to jump to
 	if(areaname)
 		target_area = return_sorted_areas()[areaname]
 	else
-		var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Pick an area:", title = "Jump to Area", choices = return_sorted_areas())
+		if(!("a1" in replay_answers))
+			replay_answers["original_area_name"] = args[2]
+			open_request(src, /datum/prompt/choice/admin_jump_area_replay, PROC_REF(jump_area_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", question = "Pick an area:", title = "Jump to Area", choices = return_sorted_areas())
+			return
+		var/_answer_a1 = replay_answers["a1"]
 		if(isnull(_answer_a1))
 			return
 		target_area = return_sorted_areas()[_answer_a1]
@@ -133,6 +143,11 @@ ADMIN_VERB(jumptocoord, R_ADMIN|R_MOD|R_DEBUG|R_EVENT,"Jump to Coordinate", "Jum
 	message_admins("[key_name_admin(user)] jumped to coordinates [tx], [ty], [tz]")
 
 ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a player.", ADMIN_CATEGORY_GAME)
+	var/datum/request/replayed
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/admin_jump_key_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(jumptokey_replay_answered))
+			replayed = resumed
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
@@ -140,7 +155,11 @@ ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a p
 	var/list/keys = list()
 	for(var/mob/player_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += player_mob.client
-	var/client/selection = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Select a key:", title = "Jump to Key", choices = sortKey(keys))
+	if(!replayed)
+		open_request(src, /datum/prompt/choice/admin_jump_key_replay, PROC_REF(jumptokey_replay_answered), answerer = user.mob, question = "Select a key:", title = "Jump to Key", choices = sortKey(keys))
+		return
+	// Resolve the original client key at the same choice point as the old kept answer.
+	var/client/selection = istext(replayed.value) ? GLOB.directory[copytext(replayed.value, 6)] : null
 	if(isnull(selection))
 		return
 	if(!selection)
@@ -156,12 +175,20 @@ ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a p
 	feedback_add_details("admin_verb","JK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(Getmob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Mob",  "Mob to teleport.", ADMIN_CATEGORY_GAME, mob/living/living_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
+	var/datum/request/replayed
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if(istype(resumed, /datum/prompt/choice/admin_get_mob_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(get_mob_replay_answered) && isnull(living_mob))
+			replayed = resumed
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
 
 	if(!living_mob)
-		var/_answer_a6 = verb_ask(user, "a6", args, /datum/om/prompt/choice, message = "Pick a mob:", title = "Get Mob", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(!replayed)
+			open_request(src, /datum/prompt/choice/admin_get_mob_replay, PROC_REF(get_mob_replay_answered), answerer = user.mob, question = "Pick a mob:", title = "Get Mob", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+			return
+		var/_answer_a6 = replayed.value
 		if(isnull(_answer_a6))
 			return
 		living_mob = _answer_a6
@@ -176,6 +203,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(Getmob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Mob",  "
 	feedback_add_details("admin_verb","GM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport.", ADMIN_CATEGORY_GAME)
+	var/datum/request/replayed
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/admin_get_key_replay) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(Getkey_replay_answered))
+			replayed = resumed
 	if(!CONFIG_GET(flag/allow_admin_jump))
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
@@ -183,7 +215,11 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	var/list/keys = list()
 	for(var/mob/curernt_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += curernt_mob.client
-	var/client/selection = verb_ask(user, "a7", args, /datum/om/prompt/choice, message = "Pick a key:", title = "Get Key", choices = sortKey(keys))
+	if(!replayed)
+		open_request(src, /datum/prompt/choice/admin_get_key_replay, PROC_REF(Getkey_replay_answered), answerer = user.mob, question = "Pick a key:", title = "Get Key", choices = sortKey(keys))
+		return
+	// Resolve the original client key at the same choice point as the old kept answer.
+	var/client/selection = istext(replayed.value) ? GLOB.directory[copytext(replayed.value, 6)] : null
 	if(isnull(selection))
 		return
 	if(!selection)
@@ -390,3 +426,113 @@ CAPABILITIES(/datum/prompt/number/move_atom_coord)
 	var/list/coordinate_answers = ask.coordinate_answers.Copy()
 	coordinate_answers[ask.coordinate_key] = ask.value
 	return coordinate_jump_stage(user, ask.original_coordinates, coordinate_answers)
+
+
+/datum/prompt/choice/admin_jump_area_replay
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_jump_area_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_jump_area_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_jump_area_replay/refusal(given)
+	return null
+
+/datum/admin_verb/Jump/proc/jump_area_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_area_name"], A.answer)
+
+/datum/prompt/choice/admin_get_mob_replay
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_get_mob_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_get_mob_replay/normalize(given)
+	if(!ismob(given))
+		return null
+	var/mob/selected = given
+	return QDELETED(selected) ? null : selected
+
+/datum/prompt/choice/admin_get_mob_replay/refusal(given)
+	return null
+
+/datum/admin_verb/Getmob/proc/get_mob_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, null, A.answer)
+
+/datum/prompt/choice/admin_jump_key_replay
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_jump_key_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_jump_key_replay/normalize(given)
+	if(!istype(given, /client))
+		return null
+	var/client/selected = given
+	return "ckey:[selected.ckey]"
+
+/datum/prompt/choice/admin_jump_key_replay/refusal(given)
+	return null
+
+/datum/admin_verb/jumptokey/proc/jumptokey_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_get_key_replay
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_DEBUG|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_get_key_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_get_key_replay/normalize(given)
+	if(!istype(given, /client))
+		return null
+	var/client/selected = given
+	return "ckey:[selected.ckey]"
+
+/datum/prompt/choice/admin_get_key_replay/refusal(given)
+	return null
+
+/datum/admin_verb/Getkey/proc/Getkey_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

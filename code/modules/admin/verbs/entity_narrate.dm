@@ -160,6 +160,13 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 //using TGUI/Byond list/alert inputs
 //Does not actually interact with the game world, it passes user input to narrate_mob_args(name, mode, message) after sanitizing
 ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visible or audiable message through your chosen entities using an interface.", ADMIN_CATEGORY_FUN_NARRATE)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_narrate_interface_replay) || istype(resumed, /datum/prompt/text/admin_narrate_interface_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(narrate_mob_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	if(!user.entity_narrate_holder)
 		user.entity_narrate_holder = new /datum/entity_narrate()
 		to_chat(user, "No references were added yet! First add references!")
@@ -170,18 +177,27 @@ ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visi
 
 	//Obtaining and sanitizing arguments for the actual proc
 	var/choices = (holder.entity_names || list()) + "Open TGUI"
-	var/which_entity = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Choose which mob to narrate", title = "Narrate mob", choices = choices)
+	if(!("a5" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_narrate_interface_replay, PROC_REF(narrate_mob_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a5", question = "Choose which mob to narrate", title = "Narrate mob", choices = choices)
+		return
+	var/which_entity = replay_answers["a5"]
 	if(isnull(which_entity))
 		return
 	if(!which_entity) return
 	if(which_entity == "Open TGUI")
 		holder.tgui_interact(user.mob)
 	else
-		var/mode = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Speak or emote?", title = "mode", choices = list("Speak", "Emote", "Cancel"))
+		if(!("a6" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_narrate_interface_replay, PROC_REF(narrate_mob_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a6", buttons = TRUE, question = "Speak or emote?", title = "mode", choices = list("Speak", "Emote", "Cancel"))
+			return
+		var/mode = replay_answers["a6"]
 		if(isnull(mode))
 			return
 		if(!mode || mode == "Cancel") return
-		var/message = verb_ask(user, "a7", args, /datum/om/prompt/text, message = "Input what you want [which_entity] to [mode]", title = "narrate", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+		if(!("a7" in replay_answers))
+			open_request(src, /datum/prompt/text/admin_narrate_interface_replay, PROC_REF(narrate_mob_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a7", question = "Input what you want [which_entity] to [mode]", title = "narrate", multiline = TRUE, max_len = MAX_TGUI_INPUT)
+			return
+		var/message = replay_answers["a7"]
 		if(isnull(message))
 			return
 		if(message)
@@ -189,6 +205,15 @@ ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visi
 
 //The actual logic of the verb. Called by narrate_mob() when used.
 ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using positional arguments. Name should be as saved in ref list, mode should be Speak or Emote, follow with message.", "Fun.Narrate", name as text, mode as text, message as text)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	var/is_native_replay = FALSE
+	if(length(args) >= 5)
+		var/datum/request/resumed = args[5]
+		if((istype(resumed, /datum/prompt/text/admin_narrate_args_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(narrate_mob_args_replay_answered) && name == resumed.captured["original_name"] && mode == resumed.captured["original_mode"] && message == resumed.captured["original_message"])
+			is_native_replay = TRUE
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	if(!user.entity_narrate_holder)
 		user.entity_narrate_holder = new /datum/entity_narrate()
 		to_chat(user, "No references were added yet! First add references!")
@@ -219,10 +244,16 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	if(isliving(selection))
 		var/mob/living/our_entity = selection
 		if(our_entity.client) //Making sure we can't speak for players
-			if(!om_answers) // Once: the message prompt re-runs this.
+			if(!is_native_replay) // Once: the message prompt re-runs this.
 				log_and_message_admins("used entity-narrate to speak through [our_entity.ckey]'s mob", user)
 		if(!message)
-			var/_answer_a8 = verb_ask(user, "a8", args, /datum/om/prompt/text, message = "Input what you want [our_entity] to [mode]", title = "narrate", encode = FALSE)
+			if(!("a8" in replay_answers))
+				replay_answers["original_name"] = args[2]
+				replay_answers["original_mode"] = args[3]
+				replay_answers["original_message"] = args[4]
+				open_request(src, /datum/prompt/text/admin_narrate_args_replay, PROC_REF(narrate_mob_args_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a8", question = "Input what you want [our_entity] to [mode]", title = "narrate", encode = FALSE)
+				return
+			var/_answer_a8 = replay_answers["a8"]
 			if(isnull(_answer_a8))
 				return
 			message = _answer_a8 //say/emote sanitize already
@@ -238,7 +269,13 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	else if(istype(selection, /atom))
 		var/atom/our_entity = selection
 		if(!message)
-			var/_answer_a9 = verb_ask(user, "a9", args, /datum/om/prompt/text, message = "Input what you want [our_entity] to [mode]", title = "narrate")
+			if(!("a9" in replay_answers))
+				replay_answers["original_name"] = args[2]
+				replay_answers["original_mode"] = args[3]
+				replay_answers["original_message"] = args[4]
+				open_request(src, /datum/prompt/text/admin_narrate_args_replay, PROC_REF(narrate_mob_args_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a9", question = "Input what you want [our_entity] to [mode]", title = "narrate")
+				return
+			var/_answer_a9 = replay_answers["a9"]
 			if(isnull(_answer_a9))
 				return
 			message = _answer_a9
@@ -442,3 +479,63 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 	buttons = TRUE
 	recheck_on_open = TRUE
 
+
+/datum/prompt/choice/admin_narrate_interface_replay
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_narrate_interface_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_narrate_interface_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_narrate_interface_replay/refusal(given)
+	return null
+
+/datum/prompt/text/admin_narrate_interface_replay
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_narrate_interface_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/admin_narrate_interface_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/admin_verb/narrate_mob/proc/narrate_mob_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/text/admin_narrate_args_replay
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_narrate_args_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/admin_narrate_args_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/admin_verb/narrate_mob_args/proc/narrate_mob_args_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_name"], A.answer.captured["original_mode"], A.answer.captured["original_message"], A.answer)

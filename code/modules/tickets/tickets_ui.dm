@@ -105,11 +105,18 @@ UI_ACT_PROC(/datum/tickets, ui_act_legacy)
 
 UI_ACT(/datum/tickets, "new_ticket", ui_act_new_ticket)
 UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
+	return new_ticket_stage(ui, list(), ui.user)
+
+/datum/tickets/proc/new_ticket_stage(datum/tgui/ui, list/answers, mob/token_actor)
+	var/mob/user = ui.user
 	var/list/ckeys = list()
 	for(var/client/C in GLOB.clients)
 		ckeys += C.key
 
-	var/_answer_k115 = act_ask(ui.user, action, params, ui, "k115", /datum/om/prompt/choice, message = "Please select the ckey of the user.", title = "Select CKEY", choices = ckeys)
+	if(!("k115" in answers))
+		open_request(ui, /datum/prompt/choice/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k115", question = "Please select the ckey of the user.", title = "Select CKEY", choices = ckeys)
+		return
+	var/_answer_k115 = answers["k115"]
 	if(isnull(_answer_k115))
 		return
 	var/ckey = lowertext(_answer_k115)
@@ -125,14 +132,20 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 		to_chat(ui.user, span_warning("Ckey ([ckey]) not online."))
 		return
 
-	var/ticket_text = act_ask(ui.user, action, params, ui, "k128", /datum/om/prompt/text, message = "What should the initial text be?", title = "New Ticket")
+	if(!("k128" in answers))
+		open_request(ui, /datum/prompt/text/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k128", question = "What should the initial text be?", title = "New Ticket")
+		return
+	var/ticket_text = answers["k128"]
 	if(isnull(ticket_text))
 		return
 	if(!ticket_text)
 		to_chat(ui.user, span_warning("Ticket message cannot be empty."))
 		return
 
-	var/level = act_ask(ui.user, action, params, ui, "k133", /datum/om/prompt/choice/alert, message = "Is this ticket Admin-Level or Mentor-Level?", title = "Ticket Level", choices = list("Admin", "Mentor"))
+	if(!("k133" in answers))
+		open_request(ui, /datum/prompt/choice/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k133", question = "Is this ticket Admin-Level or Mentor-Level?", title = "Ticket Level", choices = list("Admin", "Mentor"), buttons = TRUE)
+		return
+	var/level = answers["k133"]
 	if(isnull(level))
 		return
 	if(!level)
@@ -140,7 +153,10 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 
 	feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(player.current_ticket())
-		var/input = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/choice/alert, message = "The player already has a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
+		if(!("k139" in answers))
+			open_request(ui, /datum/prompt/choice/ticket_create, TYPE_PROC_REF(/datum/tgui, ticket_create_answered), answerer = ui.user, captured = answers.Copy(), step_name = "k139", question = "The player already has a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes", "No"), buttons = TRUE)
+			return
+		var/input = answers["k139"]
 		if(isnull(input))
 			return
 		if(!input)
@@ -157,7 +173,7 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 			player.current_ticket().Close(ui.user)
 
 	// Create a new ticket and handle it. You created it afterall!
-	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level, user)
+	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level, user, token_actor)
 	if(level == "Admin")
 		T.level = 1
 	else
@@ -167,8 +183,52 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 		if (0)
 			ui.user.client.cmd_mentor_pm(player, ticket_text, T)
 		if (1)
-			ui.user.client.cmd_admin_pm(player, ticket_text, T)
-	. = TRUE
+			ui.user.client.cmd_admin_pm(player, ticket_text, T, token_actor)
+	return TRUE
+
+/datum/tgui/proc/ticket_create_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/answers = A.answer.captured.Copy()
+	answers[A.answer.step_name] = A.answer.value
+	var/datum/tickets/manager = src_object()
+	if(manager.new_ticket_stage(src, answers, A.request.answerer))
+		SStgui.update_uis(manager)
+
+/proc/ticket_create_refusal(datum/request/ask)
+	var/datum/tgui/original_ui = ask.owner
+	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(ask.answerer))
+		return "gone"
+	var/datum/tickets/manager = original_ui.src_object()
+	if(!istype(manager) || QDELETED(manager))
+		return "gone"
+	if(original_ui.status != STATUS_INTERACTIVE)
+		return "the original window is not interactive"
+	return manager.ui_act_allowed(original_ui.user, "new_ticket", original_ui, original_ui.state()) ? null : "the ticket action is unavailable"
+
+/datum/prompt/choice/ticket_create
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ticket_create/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/ticket_create/refusal(given)
+	return null
+
+/datum/prompt/choice/ticket_create/recheck_extra()
+	return ticket_create_refusal(src)
+
+/datum/prompt/text/ticket_create
+	timeout = 0
+	max_len = MAX_MESSAGE_LEN
+	recheck_on_open = TRUE
+
+/datum/prompt/text/ticket_create/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/ticket_create/recheck_extra()
+	return ticket_create_refusal(src)
 
 UI_ACT(/datum/tickets, "pick_ticket", ui_act_pick_ticket, UI_ARG_NUM("ticket_id"))
 UI_ACT_PROC(/datum/tickets, ui_act_pick_ticket)

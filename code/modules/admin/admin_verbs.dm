@@ -29,9 +29,19 @@ ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.
 
 
 ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the option to return at any time.", ADMIN_CATEGORY_GAME)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_ghost_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(admin_ghost_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/build_mode
 	if(user.buildmode)
-		var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "You appear to be currently in buildmode. Do you want to re-enter buildmode after aghosting?", title = "Buildmode", choices = list("Yes", "No"))
+		if(!("a1" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_ghost_replay, PROC_REF(admin_ghost_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", buttons = TRUE, question = "You appear to be currently in buildmode. Do you want to re-enter buildmode after aghosting?", title = "Buildmode", choices = list("Yes", "No"))
+			return
+		var/_answer_a1 = replay_answers["a1"]
 		if(isnull(_answer_a1))
 			return
 		build_mode = _answer_a1
@@ -1254,3 +1264,28 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
 	var/obj/target_object = context.request.subject
 	return sound_message_stage(user, target_object, list("a10" = context.answer.value))
+
+/datum/prompt/choice/admin_ghost_replay
+	timeout = 0
+	rights = R_HOLDER
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_ghost_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_ghost_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_ghost_replay/refusal(given)
+	return null
+
+/datum/admin_verb/admin_ghost/proc/admin_ghost_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

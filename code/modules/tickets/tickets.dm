@@ -255,7 +255,7 @@ CAPABILITIES(/datum/ticket)
  * required is_bwoink boolean TRUE if this ticket was started by an admin PM
  * required level integer The level of the ticket. 0 = Admin, 1 = Mentor
  */
-/datum/ticket/New(raw_msg, client/C, is_bwoink, ticket_level, mob/user)
+/datum/ticket/New(raw_msg, client/C, is_bwoink, ticket_level, mob/user, mob/token_actor)
 	//clean the input msg
 	var/msg = sanitize(copytext(raw_msg,1,MAX_MESSAGE_LEN))
 	if(!msg || !C || !C.mob)
@@ -278,7 +278,7 @@ CAPABILITIES(/datum/ticket)
 		initiator().current_ticket().Close(user || C.mob)
 	initiator().current_ticket_id = id
 
-	var/parsed_message = keywords_lookup(msg)
+	var/parsed_message = keywords_lookup(msg, FALSE, token_actor)
 
 	rel_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
 	_interactions = list()
@@ -710,7 +710,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 		else
 			.["present"] += X
 
-/proc/keywords_lookup(msg,irc)
+/proc/keywords_lookup(msg,irc, mob/token_actor)
 
 	//This is a list of words which are ignored by the parser when comparing message contents for names. MUST BE IN LOWER CASE!
 	var/static/list/adminhelp_ignored_words = list("unknown","the","a","an","of","monkey","alien","as", "i")
@@ -770,7 +770,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 							if(found.mind && found.mind.special_role)
 								is_antag = 1
 							founds += "Name: [found.name]([found.real_name]) Ckey: [found.ckey] [is_antag ? "(Antag)" : null] "
-							var/textentry = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[found]'>?</A>|<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservefollow=\ref[found]'>F</A> "
+							var/textentry = "(<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminmoreinfo=\ref[found]'>?</A>|<A href='byond://?_src_=holder;[token_actor ? HrefTokenFor(token_actor) : HrefToken()];adminplayerobservefollow=\ref[found]'>F</A> "
 							msg += "[original_word]" + span_small((is_antag ? span_red(textentry) : span_black(textentry)))
 							continue
 		msg += "[original_word] "

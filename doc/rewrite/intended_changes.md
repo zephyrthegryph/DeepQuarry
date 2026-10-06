@@ -1432,6 +1432,14 @@ focused tests of the touched windows (the tests that called a handler with its o
   module's, through `ui_redirect()`) and is gone.
 * **Messages.** The ice cream vat's flavour and cone messages are `act_message()` (the actor reads "You ...").
 * **The holodeck's AI override** is asked by how the press came (`A.authority & AUTH_REMOTE_ACCESS`), not `issilicon()`.
+* **Ship consoles (helm, engines, sensors, disperser).** Their questions (navigation entry, coordinates, autopilot and thrust limits,
+  sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
+  stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
+  view over its link from anywhere it works the console (the distance check is a hand's).
+* **Copier, fax, ore console, exosuit console, paper.** Their window questions are `asks()` steps: the AI's photo pick, the fax title,
+  department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
+  admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
+  1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
@@ -1450,11 +1458,17 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
-* **Ship consoles (helm, engines, sensors, disperser).** Their questions (navigation entry, coordinates, autopilot and thrust limits,
-  sensor range, disperser settings) are `asks()` steps of the button's op instead of requests owned by the window; a window button's op
-  stops when its window closes or stops being interactive (`/datum/pending_op/recheck_reason()`). A silicon toggles the sensors' overmap
-  view over its link from anywhere it works the console (the distance check is a hand's).
-* **Copier, fax, ore console, exosuit console, paper.** Their window questions are `asks()` steps: the AI's photo pick, the fax title,
-  department and the "default title" check on an admin fax (asked before sending, as before), the ore setting, a beacon's message, the
-  admin paper's send confirmation. The ore console's named setting is a number (`int(0, 3)`): the legacy text arg stored "1" instead of
-  1. A text arg at the window boundary takes a number as its text (`schema_check()`), as the legacy parse did.
+
+## Pipe construction: fittings, the dispenser, the pipe layer (rewrite/pipenet-full)
+
+Pinned by the generated pins `snapshots/pins/obj.item.pipe*.txt`, `obj.machinery.pipedispenser.txt`, `obj.machinery.pipelayer.txt` and
+`dq_atmos_m/pipes/fitting_fastens`.
+
+- A fitting's use-in-hand (rotate), its "Flip Pipe" verb (now a menu op), its material liner and its wrench are ops; the wrench's tile check is
+  a requirement with the old refusal texts (the shared init-direction cache is filled when the fitting is made, so the check only reads it). The
+  meter and gas-sensor items fasten with wrench ops. `fasten()` is the one way a fitting becomes its device (the pipe layer calls it instead of
+  faking a wrench `attackby()`).
+- The dispenser's "put back" (a fitting or a meter item), its wrench (2 s to bolt, 4 s to unbolt, tracked `unwrenched`) and the disposal
+  dispenser's drag-in are ops.
+- The pipe layer's hand switch (empty hand only), its metal eject (asks yes/no with `asks()`), pipe recycling, steel loading, pipe-type choice
+  (wrench), auto-dismantle and dismantle (crowbar) are ops; its RPED is `part_replacement()` and its status is an `examine_line()`.
