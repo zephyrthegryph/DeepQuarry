@@ -9,6 +9,7 @@
 	if(E) . = E.name
 
 /mob/living/proc/get_organ(zone)
+	RETURN_TYPE(/obj/item/organ/external)
 	if(!zone)
 		zone = BP_TORSO
 	else if (zone in list( O_EYES, O_MOUTH ))
