@@ -53,12 +53,12 @@
 					attackcycle = 0
 
 
-/datum/om/stage/life/special/mechanical/mecha/eclipse/battle_top
-	of = /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/mechanical/mecha/eclipse/battle_top/perform(mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.frozen_aura()
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.frozen_aura()
 	..()
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/proc/frozen_aura()

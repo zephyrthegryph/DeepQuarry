@@ -165,8 +165,7 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 		"all_species" = all_species,
 	)
 
-UI_ACT(/datum/preference_editor/species_picker, "set_species", ui_act_set_species, UI_ARG_VALUE("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/species_picker, ui_act_set_species)
+/datum/preference_editor/species_picker/proc/ui_act_set_species(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
 	if(value == DQ_PLAY_MODE_ROBOT_KEY)
 		preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "robot")
@@ -196,8 +195,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/species_picker, ui_act_set_species)
 	preferences.set_job_priority(JOB_CYBORG, "off")
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/species_picker, "set_custom_species", ui_act_set_custom_species, UI_ARG_VALUE("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/species_picker, ui_act_set_custom_species)
+/datum/preference_editor/species_picker/proc/ui_act_set_custom_species(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// Plain display-name override — applies on top of whatever species
 	// the player picked. custom_base (sprite override) is no longer
 	// exposed; players who want a different sprite pick a different
@@ -207,3 +205,21 @@ UI_ACT_PREF_PROC(/datum/preference_editor/species_picker, ui_act_set_custom_spec
 
 #undef DQ_PLAY_MODE_ROBOT_KEY
 #undef DQ_PLAY_MODE_PAI_KEY
+
+/// /datum/preference_editor/species_picker's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/species_picker/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_species")
+			typed = payload_args(src, params, list("value" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_species(user, typed, preferences, null, action)
+		if("set_custom_species")
+			typed = payload_args(src, params, list("value" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_custom_species(user, typed, preferences, null, action)
+	return ..()

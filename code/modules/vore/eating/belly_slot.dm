@@ -10,7 +10,7 @@
 // cycle) only while something is inside it (or its owner previews it):
 // belly_reschedule() starts it when the first thing enters and cancels it when the
 // last one leaves. An empty belly that makes liquid from nutrition sleeps on an
-// om_after() timer for its next batch instead. An empty, idle belly holds no
+// after() timer for its next batch instead. An empty, idle belly holds no
 // scheduler state and runs no code.
 //
 // Rates. Every mode's effect is a rate per BELLY_BASELINE_TICK scaled by the

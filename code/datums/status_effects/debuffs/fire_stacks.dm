@@ -272,7 +272,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 /// Hooked to before/atom_extinguish on the owner.
 /datum/status_effect/fire_handler/fire_stacks/proc/on_extinguish_event(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	extinguish()
 
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
@@ -334,7 +334,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 /// Trait gain/loss on the owner: TRAIT_WET_FOR_LONGER retunes the stack
 /// modifier, TRAIT_SLIPPERY_WHEN_WET toggles slipperiness.
 /datum/status_effect/fire_handler/wet_stacks/proc/on_owner_trait_changed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(N, /datum/notice/trait_gained))
 		var/datum/notice/trait_gained/gained = N
 		if(gained.trait == TRAIT_WET_FOR_LONGER)

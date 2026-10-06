@@ -37,6 +37,10 @@
 	var/running = FALSE
 	/// world.time it parked (the audit's message).
 	var/parked_at = 0
+	/// Position -> when that step's rewake is due (seq_rewake_now()), or null; the list is null until a step arms one.
+	var/list/rewake_at
+	/// When the member's one rewake timer goes off (the soonest due), or 0 when none is armed.
+	var/rewake_next = 0
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// Tests: position -> (read key -> value) when that step fell asleep, for the audit's diff.
 	var/list/snaps

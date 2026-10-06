@@ -118,7 +118,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 		cooldown = -1
 		silencing = TRUE
 		// The silence ends by a timer on the global owner; the handler itself never waits.
-		// (Lists pass through om_after() as they are: the exception rides in one.)
+		// (Lists pass through after() as they are: the exception rides in one.)
 		after(null, configured_error_silence_time, /proc/error_silence_ended, with = list(erroruid, error_cooldown, list(E)))
 
 	error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)

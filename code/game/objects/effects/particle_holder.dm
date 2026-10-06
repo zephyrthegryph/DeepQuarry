@@ -44,12 +44,12 @@
 
 /// Non movables don't delete contents on destroy, so we gotta do this
 /obj/effect/abstract/particle_holder/proc/parent_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	consume(src)
 
 /// Hooked on the parent's moved event.
 /obj/effect/abstract/particle_holder/proc/on_parent_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/attached = A.target
 	var/datum/notice/moved/event = A
 	on_move(attached, event.old_loc, event.direction)

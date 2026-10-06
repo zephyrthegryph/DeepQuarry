@@ -93,16 +93,16 @@
 			new held_hazard(loc)
 			held_hazard = null
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/spacewhale
-	of = /mob/living/simple_mob/vore/overmap/spacewhale
+/mob/living/simple_mob/vore/overmap/spacewhale/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/spacewhale/perform(mob/living/simple_mob/vore/overmap/spacewhale/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/overmap/spacewhale/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.post_restless_tired)
-		self.post_restless_tired--
+	if(src.post_restless_tired)
+		src.post_restless_tired--
 		return
 	if(prob(0.5))
-		self.handle_restless()
+		src.handle_restless()
 
 /mob/living/simple_mob/vore/overmap/spacewhale/proc/handle_restless()
 	if(restless)

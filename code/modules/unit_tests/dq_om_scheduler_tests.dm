@@ -86,17 +86,17 @@
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/witness = entity(made)
 	var/datum/om_test_entity/live = entity(made)
-	var/id = om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "gone", witness)
+	var/id = after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("gone", witness))
 	TEST_ASSERT(id, "om_after with a proc returns a timer id")
 	TEST_ASSERT(om_timer_pending(E, id), "the timer is pending")
-	om_after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "live", witness)
-	om_after(null, 1 SECONDS, /proc/om_test_global_hit, witness, "global")
+	after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("live", witness))
+	after(null, 1 SECONDS, /proc/om_test_global_hit, with = list(witness, "global"))
 	qdel(E)
 	scheduler_advance(2)
 	TEST_ASSERT(!("gone via" in witness.log), "a deleted owner's timer never runs")
 	TEST_ASSERT("live" in live.log, "a live owner's timer runs")
 	TEST_ASSERT("global" in witness.log, "the global owner runs unowned timers")
-	var/cancel_id = om_after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "cancelled")
+	var/cancel_id = after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("cancelled"))
 	TEST_ASSERT(om_cancel_timer(live, cancel_id), "cancel finds the timer")
 	scheduler_advance(2)
 	TEST_ASSERT(!("cancelled" in live.log), "a cancelled timer never runs")
@@ -122,8 +122,8 @@
 		if(entry == "once")
 			runs++
 	TEST_ASSERT_EQUAL(runs, 1, "the replaced call ran once")
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "a")
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "b")
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("a"))
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("b"))
 	TEST_ASSERT_EQUAL(om_cancel_calls(E, /datum/om_test_entity/proc/timer_hit), 2, "cancel_calls drops every call of the proc")
 	TEST_ASSERT_EQUAL(om_timer_count(E), 0, "nothing is left pending")
 
@@ -132,7 +132,7 @@
 /datum/unit_test/om/timer_follows_clock/run_om(list/made)
 	var/datum/om_test_entity/bio/E = entity(made, /datum/om_test_entity/bio)
 	var/datum/om_test_entity/source = entity(made)
-	om_after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, "stasis")
+	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("stasis"))
 	om_hold(E, EFFECT_CLOCK_BIO_INHIBIT, source, 1)
 	scheduler_advance(5)
 	TEST_ASSERT(!("stasis" in E.log), "stasis (an inhibited bio clock) pauses the timer")
@@ -142,7 +142,7 @@
 	scheduler_advance(1.5)
 	TEST_ASSERT("stasis" in E.log, "the timer runs once its clock has advanced 2 s")
 
-	om_after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, "suspended")
+	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("suspended"))
 	scheduler_advance(1)
 	om_suspend(E, E)
 	scheduler_advance(5)
@@ -153,18 +153,18 @@
 
 	var/datum/om_test_entity/fast_source = entity(made)
 	om_hold(E, EFFECT_CLOCK_BIO_MULT, fast_source, 2)
-	om_after(E, 4 SECONDS, /datum/om_test_entity/proc/timer_hit, "fast")
+	after(E, 4 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("fast"))
 	scheduler_advance(2.5)
 	TEST_ASSERT("fast" in E.log, "a doubled clock halves the wait")
 
-/// The default (om_after()/after()): a deleted argument arrives as null and the call still runs,
+/// The default (after()/after()): a deleted argument arrives as null and the call still runs,
 /// counted and logged (SStimer's semantics: cleanup like vend_ready = TRUE always happens).
 /datum/unit_test/om/timer_arg_deleted_is_nulled
 
 /datum/unit_test/om/timer_arg_deleted_is_nulled/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/arg = entity(made)
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "weak", arg)
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("weak", arg))
 	var/nulled = sched.timers_nulled
 	var/dropped = sched.timers_dropped
 	qdel(arg)
@@ -172,7 +172,7 @@
 	TEST_ASSERT("weak" in E.log, "a timer whose argument was deleted still runs (the argument arrives as null)")
 	TEST_ASSERT_EQUAL(sched.timers_nulled, nulled + 1, "the nulled call is counted")
 	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped, "and not dropped")
-	TEST_ASSERT(om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "late", arg), "an already-deleted argument is scheduled as null")
+	TEST_ASSERT(after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("late", arg)), "an already-deleted argument is scheduled as null")
 	scheduler_advance(2)
 	TEST_ASSERT("late" in E.log, "and the call runs")
 
@@ -211,7 +211,7 @@
 	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("listed", list(member)))
 	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("keyed", list("who" = keyed)))
 	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("kept", list(kept)))
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "defaulted", list(nulled, kept))
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("defaulted", list(nulled, kept)))
 	var/list/T = E.om_rec.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		var/list/captured = T[i + 3]
@@ -355,8 +355,8 @@
 	var/datum/om_test_entity/E = entity(made)
 	set_global("om_expect_sleep", TRUE)
 	var/before = sched.callees_slept
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/sleepy_hit, "sleepy")
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "after")
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/sleepy_hit, with = list("sleepy"))
+	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("after"))
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 1, "the sleeping timer callee is counted")
 	TEST_ASSERT("after" in E.log, "a timer due with the sleeping one still runs in the same pass")

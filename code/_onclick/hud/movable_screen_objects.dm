@@ -24,15 +24,25 @@
 	snap2grid = TRUE
 
 
-/atom/movable/screen/movable/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)
-	if(locked) // no! i am locked! begone!
-		return
-	var/position = mouse_params_to_position(params, usr?.client?.view) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
-	if(!position)
-		return
+CAPABILITIES(/atom/movable/screen/movable)
+	drag_onto(PROC_REF(drop_input))
 
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm): the object moves to where
+/// it was dropped on the dragging player's screen.
+/atom/movable/screen/movable/proc/drop_input(datum/act/input/A)
+	move_to_drop(A.params, A.actor)
+	return TRUE
+
+/// Moves to the screen position a drop's params name, in `user`'s view. FALSE when locked or the params carry no position.
+/atom/movable/screen/movable/proc/move_to_drop(params, mob/user)
+	if(locked) // no! i am locked! begone!
+		return FALSE
+	var/position = mouse_params_to_position(params, user?.client?.view)
+	if(!position)
+		return FALSE
 	screen_loc = position
 	moved = screen_loc
+	return TRUE
 
 /// Takes mouse parmas as input, returns a string representing the appropriate mouse position
 /atom/movable/screen/movable/proc/mouse_params_to_position(params, view = null)

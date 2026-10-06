@@ -135,14 +135,14 @@
 	dissolved(src)
 	return TRUE
 
-/datum/om/stage/life/type_pre/simple_mob/ysbryd
-	of = /mob/living/simple_mob/ysbryd
+/mob/living/simple_mob/ysbryd/life_type_pre_due()
+	return TRUE
 
-/datum/om/stage/life/type_pre/simple_mob/ysbryd/perform(mob/living/simple_mob/ysbryd/self, datum/om/frame/life/ctx)
-	if(self.chosen_target)
-		self.handle_target()
-	if(self.vitality() * self.get_endurance() <= self.boost_health)
-		self.movement_cooldown = -2
+/mob/living/simple_mob/ysbryd/life_type_pre(datum/seq_frame/life/F)
+	if(src.chosen_target)
+		src.handle_target()
+	if(src.vitality() * src.get_endurance() <= src.boost_health)
+		src.movement_cooldown = -2
 	return ..()
 
 /mob/living/simple_mob/ysbryd/proc/handle_target()

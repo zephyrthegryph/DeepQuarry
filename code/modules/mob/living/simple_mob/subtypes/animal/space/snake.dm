@@ -138,30 +138,30 @@
 
 	var/turns_since_scan = 0
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/snake/python/noodle
-	of = /mob/living/simple_mob/animal/passive/snake/python/noodle
+/mob/living/simple_mob/animal/passive/snake/python/noodle/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/snake/python/noodle/perform(mob/living/simple_mob/animal/passive/snake/python/noodle/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/snake/python/noodle/life_type_post(datum/seq_frame/life/F)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!self.stat && !self.resting && !self?.buckled_to())
-		self.turns_since_scan++
-		if(self.turns_since_scan > 5)
-			self.turns_since_scan = 0
-			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				rel_clear(self, nameof(self.movement_target))
-			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				rel_clear(self, nameof(self.movement_target))
-				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(self,7))
+	if(!src.stat && !src.resting && !src?.buckled_to())
+		src.turns_since_scan++
+		if(src.turns_since_scan > 5)
+			src.turns_since_scan = 0
+			if((src.movement_target) && !(isturf(src.movement_target.loc) || ishuman(src.movement_target.loc) ))
+				rel_clear(src, nameof(src.movement_target))
+			if(!src.movement_target || !(src.movement_target.loc in oview(src, 7)) )
+				rel_clear(src, nameof(src.movement_target))
+				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(src,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						rel_set(self, nameof(self.movement_target), S)
-						after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("turns towards \the [self.movement_target] and slithers towards it."))
+						rel_set(src, nameof(src.movement_target), S)
+						after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("turns towards \the [src.movement_target] and slithers towards it."))
 						break
-			if(self.movement_target)
-				after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+			if(src.movement_target)
+				after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 /mob/living/simple_mob/animal/passive/snake/python/noodle/apply_melee_effects(atom/A)
 	if(ismouse(A))

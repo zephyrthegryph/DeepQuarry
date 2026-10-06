@@ -19,17 +19,17 @@
 	observe(L, /datum/notice/living_revived, src, then(PROC_REF(on_revived)))
 
 /datum/dq_vital_listener/proc/on_death(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/source = N.target
 	deaths++
 	stat_at_death = source.stat
 
 /datum/dq_vital_listener/proc/on_final(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	finals++
 
 /datum/dq_vital_listener/proc/on_revived(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/living_revived/event = N
 	revivals++
 	rel_set(src, nameof(last_revive_source), event.source_)

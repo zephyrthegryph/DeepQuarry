@@ -383,7 +383,7 @@
 	// I hate /area
 	var/atom/movable/lies_to_children = src
 	lies_to_children.vis_contents += visual
-	om_after_realtime(duration, GLOBAL_PROC_REF(qdel), visual)
+	after(duration, GLOBAL_PROC_REF(qdel), visual, clock = CLOCK_WORLD)
 	return visual
 
 /area/flick_overlay_view_atom(mutable_appearance/display, duration)

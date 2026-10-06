@@ -22,7 +22,7 @@
 
 	var/simulating = 0
 	EXPIRY_DECLARE(simulation_started)
-	/// om_after() timer that ends the running simulation, or 0.
+	/// after() timer that ends the running simulation, or 0.
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results

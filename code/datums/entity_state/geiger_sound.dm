@@ -52,7 +52,7 @@ CAPABILITIES(/datum/geiger_sound)
 	last_parent = null
 
 /datum/geiger_sound/proc/on_pre_potential_irradiation(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = N.target
 	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
@@ -64,7 +64,7 @@ CAPABILITIES(/datum/geiger_sound)
 	after(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound, stop), key = "geiger_sound_stop")
 
 /datum/geiger_sound/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	register_to_loc(source.loc)
 

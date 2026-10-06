@@ -46,13 +46,23 @@
 	can_be_drop_prey = FALSE
 	allow_mind_transfer = TRUE
 
-// Pepe is love, not hate.
-// ALLOW(init/INSTANCE_STATE): name and desc rolled at random for each instance
-/mob/living/simple_mob/vore/aggressive/frog/Initialize(mapload)
-	. = ..()
-	if(rand(1,1000000) == 1)
-		name = "rare Pepe"
-		desc = "You found a rare Pepe. Screenshot for good luck."
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/frog)
+	rolls(nameof(rare), PROC_REF(roll_rare))
+	rolls(nameof(name), PROC_REF(roll_rare_name), from = list(nameof(rare)))
+	rolls(nameof(desc), PROC_REF(roll_rare_desc), from = list(nameof(rare)))
+
+/// A one-in-a-million frog (rolled).
+/mob/living/simple_mob/vore/aggressive/frog/var/rare = FALSE
+
+/// Rolled before init (rolls()): one frog in a million.
+/mob/living/simple_mob/vore/aggressive/frog/proc/roll_rare(datum/roller/R)
+	return R.number(1, 1000000) == 1
+
+/mob/living/simple_mob/vore/aggressive/frog/proc/roll_rare_name(datum/roller/R)
+	return rare ? "rare Pepe" : name
+
+/mob/living/simple_mob/vore/aggressive/frog/proc/roll_rare_desc(datum/roller/R)
+	return rare ? "You found a rare Pepe. Screenshot for good luck." : desc
 
 /mob/living/simple_mob/vore/aggressive/frog/do_special_attack(atom/A, stance)
 	ai_busy_begin()

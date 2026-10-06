@@ -19,7 +19,7 @@
 	H.failed_last_breath = 0
 	H.losebreath = 0
 	var/debt_before = H.oxygen_debt()
-	life_test_breathe(H)
+	H.life_breathing_breathe()
 	TEST_ASSERT(H.failed_last_breath, "breathing through a closed airway should fail")
 	H.body.physiology_tick(2)
 	TEST_ASSERT(H.oxygen_debt() > debt_before, "a closed airway should build oxygen debt")

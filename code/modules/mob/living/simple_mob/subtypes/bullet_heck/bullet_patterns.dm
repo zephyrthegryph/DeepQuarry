@@ -1,5 +1,5 @@
 // Counted volleys (random, quad random, gattling, cutoff): the entry procs below keep their old
-// signatures (callers om_after() them) and start the volley; the declared repeat fires the rest
+// signatures (callers after() them) and start the volley; the declared repeat fires the rest
 // every volley_fire_delay while shots remain, then moves on to the volley's next attack cycle.
 #define ECLIPSE_VOLLEY_RANDOM 1
 #define ECLIPSE_VOLLEY_QUAD_RANDOM 2

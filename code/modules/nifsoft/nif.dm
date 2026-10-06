@@ -112,7 +112,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
 /obj/item/nif/proc/on_human_death(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = A.target
 	after(src, 0, PROC_REF(persist_on_death), with = list(source))
 

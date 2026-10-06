@@ -84,14 +84,14 @@
 	threaten_sound = 'sound/effects/refill.ogg'
 	stand_down_sound = 'sound/effects/sparks5.ogg'
 
-/datum/om/stage/life/special/animal/sif/frostfly
-	of = /mob/living/simple_mob/animal/sif/frostfly
+/mob/living/simple_mob/animal/sif/frostfly/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/sif/frostfly/perform(mob/living/simple_mob/animal/sif/frostfly/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/sif/frostfly/life_special(datum/seq_frame/life/F)
 	..()
 
-	if(self.energy < self.max_energy)
-		self.energy++
+	if(src.energy < src.max_energy)
+		src.energy++
 
 /mob/living/simple_mob/animal/sif/frostfly/get_status_tab_items()
 	. = ..()

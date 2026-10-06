@@ -302,6 +302,6 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	name = "personal datacore computer"
 	desc = "Have you Bingled THAT today?"
 
-/// om_after() target: the prank crash fixes itself.
+/// after() target: the prank crash fixes itself.
 /obj/machinery/librarywikicomp/proc/uncrash()
 	crash = FALSE

@@ -1253,7 +1253,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
 	return ownegg
 
-/// om_after() target: a temporary digest mode wears off.
+/// after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)
 	digest_mode = mode
 

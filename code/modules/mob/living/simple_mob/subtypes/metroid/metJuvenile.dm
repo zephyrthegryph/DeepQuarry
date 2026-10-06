@@ -18,13 +18,13 @@
 		stop_consumption() // Unbuckle us from our victim.
 	..()
 
-/datum/om/stage/life/special/metroid/juvenile
-	of = /mob/living/simple_mob/metroid/juvenile
+/mob/living/simple_mob/metroid/juvenile/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/metroid/juvenile/perform(mob/living/simple_mob/metroid/juvenile/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		if(self.victim)
-			self.handle_consumption()
+/mob/living/simple_mob/metroid/juvenile/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		if(src.victim)
+			src.handle_consumption()
 
 	..()
 

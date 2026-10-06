@@ -800,7 +800,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	rel_clear(src, nameof(vore_selected))
 	ourmob.mob_belly_transfer(src)
 
-	om_run_frame_now(ourmob, /datum/om/pipeline/life)
+	seq_run_frame_now(ourmob, /datum/sequence/life)
 
 	if(ishuman(src))
 		for(var/obj/item/W in contents_of(src))

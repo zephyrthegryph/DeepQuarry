@@ -81,12 +81,12 @@
 
 
 // Cloaks the spider automatically, if possible.
-/datum/om/stage/life/special/vore/aggressive/panther/thor
-	of = /mob/living/simple_mob/vore/aggressive/panther/thor
+/mob/living/simple_mob/vore/aggressive/panther/thor/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/vore/aggressive/panther/thor/perform(mob/living/simple_mob/vore/aggressive/panther/thor/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/vore/aggressive/panther/thor/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 
 // Applies bonus base damage if dq_get_cloaked(src).

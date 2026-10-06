@@ -105,12 +105,16 @@
 /obj/item/clothing/accessory/hawaiian/random_flower
 	name = "flower-pattern shirt"
 
-// ALLOW(init/INSTANCE_STATE): icon_state and color rolled at random for each instance
-/obj/item/clothing/accessory/hawaiian/random_flower/Initialize(mapload)
-	if(prob(50))
-		icon_state = "hawaiian_red"
-	color = color_rotation(rand(-11,12)*15)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/accessory/hawaiian/random_flower)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): half are red, every one a little hue-shifted.
+/obj/item/clothing/accessory/hawaiian/random_flower/proc/roll_icon_state(datum/roller/R)
+	return R.chance(50) ? "hawaiian_red" : icon_state
+
+/obj/item/clothing/accessory/hawaiian/random_flower/proc/roll_color(datum/roller/R)
+	return color_rotation(R.number(-11, 12) * 15)
 
 /*
  * 80s

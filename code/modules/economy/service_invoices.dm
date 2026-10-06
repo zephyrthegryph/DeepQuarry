@@ -341,12 +341,12 @@
 	observe(parent, /datum/notice/item_attack, src, then(PROC_REF(on_attack)))
 
 /datum/economic_adoption/proc/on_attack_self(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/attack_self/event = N
 	record_use(event.user)
 
 /datum/economic_adoption/proc/on_attack(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/item_attack/event = A
 	record_use(event.user)
 

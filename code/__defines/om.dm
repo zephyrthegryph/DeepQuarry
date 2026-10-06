@@ -284,8 +284,6 @@
 /// The entity world-wide events go to (was SEND_GLOBAL_SIGNAL's target).
 #define OM_WORLD (GLOB.om_world)
 #define OM_EMIT_WORLD(path, args...) OM_EMIT(GLOB.om_world, path, ##args)
-/// First line of every observe() handler and behaviour event hook: it must not sleep.
-#define EVENT_HANDLER SHOULD_NOT_SLEEP(TRUE)
 
 // ---- Tasks (section I). ----
 #define OM_TASK_RUNNING 0

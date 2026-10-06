@@ -33,30 +33,30 @@ CAPABILITIES(/mob/living/simple_mob/animal/goat)
 	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
 	rel_set(udder, nameof(udder.my_atom), src)
 
-/datum/om/stage/life/type_post/simple_mob/animal/goat
-	of = /mob/living/simple_mob/animal/goat
+/mob/living/simple_mob/animal/goat/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/goat/perform(mob/living/simple_mob/animal/goat/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/goat/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(ctx.fact("alive"))
-		if(self.stat == CONSCIOUS)
-			if(self.udder && prob(5))
-				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
+	if(F.alive())
+		if(src.stat == CONSCIOUS)
+			if(src.udder && prob(5))
+				src.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
-		if(locate_in_list(self.loc, /obj/effect/plant))
-			var/obj/effect/plant/SV = locate_in_list(self.loc, /obj/effect/plant)
+		if(locate_in_list(src.loc, /obj/effect/plant))
+			var/obj/effect/plant/SV = locate_in_list(src.loc, /obj/effect/plant)
 			SV.die_off(1)
 
-		if(locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
-			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+		if(locate_in_list(src.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
+			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(src.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 			spent(SP)
 
-		if(!self?.pulled_by_mob())
+		if(!src?.pulled_by_mob())
 			var/obj/effect/plant/food
-			food = locate_in_list(oview(5,self.loc), /obj/effect/plant)
+			food = locate_in_list(oview(5,src.loc), /obj/effect/plant)
 			if(food)
-				var/step = get_step_to(self, food, 0)
-				self.Move(step)
+				var/step = get_step_to(src, food, 0)
+				src.Move(step)
 
 /mob/living/simple_mob/animal/goat/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

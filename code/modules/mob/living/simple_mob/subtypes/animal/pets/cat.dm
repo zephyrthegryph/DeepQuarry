@@ -62,12 +62,12 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()
 	return GLOB.cat_default_emotes.Copy()
 
-/datum/om/stage/life/special/animal/passive/cat
-	of = /mob/living/simple_mob/animal/passive/cat
+/mob/living/simple_mob/animal/passive/cat/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/passive/cat/perform(mob/living/simple_mob/animal/passive/cat/self, datum/om/frame/life/ctx)
-	if(!self.stat && prob(2)) // spooky
-		var/mob/observer/dead/spook = locate_in_list(range(self, 5), /mob/observer/dead)
+/mob/living/simple_mob/animal/passive/cat/life_special(datum/seq_frame/life/F)
+	if(!src.stat && prob(2)) // spooky
+		var/mob/observer/dead/spook = locate_in_list(range(src, 5), /mob/observer/dead)
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()
@@ -76,7 +76,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""]."))
+				after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""]."))
 
 // Instakills mice.
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
@@ -149,11 +149,8 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	gender = NEUTER
 	holder_type = /obj/item/holder/cat/kitten
 
-// ALLOW(init/INSTANCE_STATE): gender rolled at random for each instance
-/mob/living/simple_mob/animal/passive/cat/kitten/Initialize(mapload)
-	if(gender == NEUTER)
-		gender = pick(MALE, FEMALE)
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
+	rolls(nameof(gender), pick_one(list(MALE, FEMALE)))
 
 /mob/living/simple_mob/animal/passive/cat/black
 	icon_state = "cat3"
@@ -358,28 +355,28 @@ CAPABILITIES(/obj/item/cat_box)
 	meat_amount = 0
 	endurance = 50
 
-/datum/om/stage/life/special/animal/passive/cat/tabiranth
-	of = /mob/living/simple_mob/animal/passive/cat/tabiranth
+/mob/living/simple_mob/animal/passive/cat/tabiranth/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/passive/cat/tabiranth/perform(mob/living/simple_mob/animal/passive/cat/tabiranth/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/cat/tabiranth/life_special(datum/seq_frame/life/F)
 	. = ..()
-	if ((self.ai_brain != null) && self.friend)
-		var/friend_dist = get_dist(self,self.friend)
+	if ((src.ai_brain != null) && src.friend)
+		var/friend_dist = get_dist(src,src.friend)
 		if (friend_dist <= 1)
-			if (self.friend.stat >= DEAD || self.friend.is_critical())
-				if (prob((self.friend.stat < DEAD)? 50 : 15))
+			if (src.friend.stat >= DEAD || src.friend.is_critical())
+				if (prob((src.friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
-					after(self, 0, TYPE_PROC_REF(/mob, audible_emote), with = list(pick("[verb] in distress.", "[verb] anxiously.")))
+					after(src, 0, TYPE_PROC_REF(/mob, audible_emote), with = list(pick("[verb] in distress.", "[verb] anxiously.")))
 			else
 				if (prob(5))
-					after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("nuzzles [self.friend].",
-									"brushes against [self.friend].",
-									"rubs against [self.friend].",
+					after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("nuzzles [src.friend].",
+									"brushes against [src.friend].",
+									"rubs against [src.friend].",
 									"purrs.")))
-		else if (self.friend.vitality() <= 0.5)
+		else if (src.friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
-				after(self, 0, TYPE_PROC_REF(/mob, audible_emote), with = list("[verb] anxiously."))
+				after(src, 0, TYPE_PROC_REF(/mob, audible_emote), with = list("[verb] anxiously."))
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth

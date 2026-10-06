@@ -7,6 +7,7 @@ CAPABILITIES(/mob/observer/dead)
 	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 	op("observer_tome_manifest", item(/obj/item/book/tome), label("Manifest"), then(PROC_REF(observer_tome_manifest)))
+	drag_onto(PROC_REF(drop_input))
 
 /datum/exonet_log_panel
 	var/tmp/mob/observer/dead/host

@@ -522,12 +522,12 @@
 	recompute_power_demand()
 	update_icon()
 
-/datum/om/stage/life/light/silicon/robot
-	of = /mob/living/silicon/robot
+/mob/living/silicon/robot/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.lights_on)
-		self.set_light(self.integrated_light_power, 1, self.robot_light_col)
+/mob/living/silicon/robot/life_light(datum/seq_frame/life/F)
+	if(src.lights_on)
+		src.set_light(src.integrated_light_power, 1, src.robot_light_col)
 		return TRUE
 	return ..()
 

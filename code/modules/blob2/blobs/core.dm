@@ -193,7 +193,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 	rel_clear(src, nameof(controller)) //Controller has been set. Let's null it now.
 
 /obj/structure/blob/core/proc/get_winner(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		var/client/C

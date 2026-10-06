@@ -15,39 +15,31 @@
 
 /// Skin germs creep up to the ambient level, on a rewake. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
-/datum/om/stage/life/germs
-	order = LIFE_PHASE_TAIL + 10
-	name = "germs"
-	wake_on = CHANGE_MOB_HEALTH
-	of = /mob/living/carbon
-
 /mob/living/carbon
 	fire_heats_body = TRUE
 	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 	var/germs_rolled_at
 
-/datum/om/stage/life/germs/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
+/mob/living/carbon/proc/life_germs(datum/seq_frame/life/F)
 	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
 	// stage idles and comes back on its rewake), so stasis stops the creep too.
-	var/now = om_clock_now(self, CLOCK_BIO)
+	var/now = om_clock_now(src, CLOCK_BIO)
 	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
 	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
-	var/cycles = !isnull(self.germs_rolled_at) ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
-	self.germs_rolled_at = now
-	if(self.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
+	var/cycles = !isnull(src.germs_rolled_at) ? clamp((now - src.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
+	src.germs_rolled_at = now
+	if(src.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return
 	var/expected = cycles * 0.3
 	var/gain = round(expected) + (prob((expected - round(expected)) * 100) ? 1 : 0)
 	if(gain)
-		self.germ_level = min(GERM_LEVEL_AMBIENT, self.germ_level + gain)
+		src.germ_level = min(GERM_LEVEL_AMBIENT, src.germ_level + gain)
 
 /// Lazy: germs creep up on the rewake; washing lowers them, and the next roll resumes the creep.
-/datum/om/stage/life/germs/idle(mob/living/carbon/self)
-	return TRUE
 
-/datum/om/stage/life/germs/rewake_delay(mob/living/carbon/self)
-	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
+/mob/living/carbon/proc/life_germs_rewake()
+	return src.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
 
 /mob/living/carbon/rejuvenate()

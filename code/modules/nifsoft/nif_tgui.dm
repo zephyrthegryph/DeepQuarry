@@ -61,11 +61,11 @@ CAPABILITIES(/obj/item/nif)
 	..()
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	ended_with(src)
 
 /datum/nif_menu/proc/on_client_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	create_mob_button(source)
 
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/nif)
 	grant(user, granted_verb(/mob/living/carbon/human/proc/nif_menu), src)
 
 /datum/nif_menu/proc/nif_menu_click(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/mob/living/carbon/human/H = event.user
 	if(istype(H) && H.nif)

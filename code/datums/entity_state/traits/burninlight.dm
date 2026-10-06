@@ -1,5 +1,4 @@
 /datum/trait_state/burninlight
-	life_stage = /datum/om/stage/life/trait/burninlight
 	// This is a merge of the old shadow species light burning life code, and Zaddat's environment_effects() proc.
 	// It handles both cases, but shadows behave more like Zaddat do now. By default this code follows Zaddat damage with no healing.
 	var/threshold = 0.2 // percent from 0 to 1
@@ -43,8 +42,6 @@
 		owner.mend(TREAT_BURN_CARE, heal_rate)
 
 /// Trait system: light burns.
-/datum/om/stage/life/trait/burninlight
-	name = "burninlight"
-	state_type = /datum/trait_state/burninlight
-	// P2-S6: paused stasis frames and dead bodies skip it.
-	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/burninlight/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_burninlight", when = list("placed", "!in_stasis", "alive")))
