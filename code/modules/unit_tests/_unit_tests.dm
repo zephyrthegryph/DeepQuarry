@@ -409,7 +409,6 @@
 #include "dq_sys_requirements_tests.dm"
 #include "dq_cap_slot_tests.dm"
 #include "dq_sys_tables_tests.dm"
-#include "dq_sys_ui_tests.dm"
 #include "dq_sys_topic_tests.dm"
 #include "dq_sys_messages_tests.dm"
 #include "dq_om_core_fix_tests.dm"

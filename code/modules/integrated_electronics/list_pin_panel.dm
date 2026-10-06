@@ -15,7 +15,7 @@ CAPABILITIES(/datum/integrated_io/list)
 /datum/integrated_io/list/ui_title(mob/user)
 	return "List Pin: [name]"
 
-/// The computed part of /datum/integrated_io/list's window data (declared on its UI_DATA row).
+/// /datum/integrated_io/list's window data.
 /datum/integrated_io/list/ui_data(datum/act/eval/A)
 	var/list/data_out = list()
 	data_out["name"] = "[src]"

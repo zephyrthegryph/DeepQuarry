@@ -20,7 +20,7 @@ CAPABILITIES(/datum/ticket_chat)
 	if(user.client?.current_ticket())
 		user.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-/// The computed part of /datum/ticket_chat's window data (declared on its UI_DATA row).
+/// /datum/ticket_chat's window data.
 /datum/ticket_chat/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

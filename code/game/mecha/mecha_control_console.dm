@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "motion2"
 
-/// The computed part of /obj/item/mecha_parts/mecha_tracking's window data (declared on its UI_DATA row).
+/// /obj/item/mecha_parts/mecha_tracking's window data.
 /obj/item/mecha_parts/mecha_tracking/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!in_mecha())

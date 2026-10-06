@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /obj/machinery/ore_silo/tgui_static_data(mob/user)
 	return materials.tgui_static_data(user)
 
-/// The computed part of /obj/machinery/ore_silo's window data (declared on its UI_DATA row).
+/// /obj/machinery/ore_silo's window data.
 /obj/machinery/ore_silo/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

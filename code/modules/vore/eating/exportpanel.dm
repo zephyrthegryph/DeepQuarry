@@ -16,7 +16,7 @@ CAPABILITIES(/datum/vore_look/export_panel)
 
 
 
-/// The computed part of /datum/vore_look/export_panel's window data (declared on its UI_DATA row).
+/// /datum/vore_look/export_panel's window data.
 /datum/vore_look/export_panel/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()

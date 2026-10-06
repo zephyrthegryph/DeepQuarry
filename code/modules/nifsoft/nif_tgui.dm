@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/nif)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/nif's window data (declared on its UI_DATA row).
+/// /obj/item/nif's window data.
 /obj/item/nif/proc/ui_data_obj_item_nif(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

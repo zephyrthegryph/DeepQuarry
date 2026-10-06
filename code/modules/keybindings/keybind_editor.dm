@@ -58,7 +58,7 @@ CAPABILITIES(/datum/keybind_editor)
 		"max_keys" = KEYBIND_MAX_KEYS,
 	)
 
-/// The computed part of /datum/keybind_editor's window data (declared on its UI_DATA row).
+/// /datum/keybind_editor's window data.
 /datum/keybind_editor/ui_data(datum/act/eval/A)
 	var/list/overrides = owner()?.prefs?.key_bindings
 	var/list/keys = list()

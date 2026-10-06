@@ -17,7 +17,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/// The computed part of /obj/machinery/implantchair's window data (declared on its UI_DATA row).
+/// /obj/machinery/implantchair's window data.
 /obj/machinery/implantchair/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_IMPLANT_CHAIR)

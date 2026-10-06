@@ -348,7 +348,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 	return TRUE
 
-/// The computed part of /obj/machinery/seed_storage's window data (declared on its UI_DATA row).
+/// /obj/machinery/seed_storage's window data.
 /obj/machinery/seed_storage/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

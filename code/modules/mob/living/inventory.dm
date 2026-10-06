@@ -237,7 +237,7 @@ CAPABILITIES(/datum/inventory_panel)
 /datum/inventory_panel/ui_title(mob/user)
 	return host.name
 
-/// The computed part of /datum/inventory_panel's window data (declared on its UI_DATA row).
+/// /datum/inventory_panel's window data.
 /datum/inventory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
@@ -298,7 +298,7 @@ CAPABILITIES(/datum/inventory_panel/human)
 		get_asset_datum(/datum/asset/simple/inventory)
 	)
 
-/// The computed part of /datum/inventory_panel/human's window data (declared on its UI_DATA row).
+/// /datum/inventory_panel/human's window data.
 /datum/inventory_panel/human/ui_data(datum/act/eval/A)
 	var/list/data = list() // We don't inherit TGUI data because humans are soooo different.
 

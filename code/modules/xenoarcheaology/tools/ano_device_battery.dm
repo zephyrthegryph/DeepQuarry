@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	tgui_interact(user)
 	return TRUE
 
-/// The computed part of /obj/item/anodevice's window data (declared on its UI_DATA row).
+/// /obj/item/anodevice's window data.
 /obj/item/anodevice/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

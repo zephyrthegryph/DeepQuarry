@@ -31,7 +31,7 @@ CAPABILITIES(/datum/exonet_log_panel)
 		return FALSE
 	return TRUE
 
-/// The computed part of /datum/exonet_log_panel's window data (declared on its UI_DATA row).
+/// /datum/exonet_log_panel's window data.
 /datum/exonet_log_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["lines"] = host() ? (host().exonet_messages ? host().exonet_messages.Copy() : list()) : list()

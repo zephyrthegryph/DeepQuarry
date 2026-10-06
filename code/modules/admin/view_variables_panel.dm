@@ -72,7 +72,7 @@ CAPABILITIES(/datum/view_variables_panel)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/view_variables_panel's window data (declared on its UI_DATA row).
+/// /datum/view_variables_panel's window data.
 /datum/view_variables_panel/proc/ui_data_datum_view_variables_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["has_target"] = !!thing

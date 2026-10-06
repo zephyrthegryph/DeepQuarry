@@ -26,7 +26,7 @@ CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 
-/// The computed part of /obj/machinery/computer/specops_shuttle's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/specops_shuttle's window data.
 /obj/machinery/computer/specops_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(temp)

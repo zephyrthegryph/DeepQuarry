@@ -28,7 +28,7 @@ CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 	op("turn", ui_act("turn", arg("angle", num())), then(PROC_REF(ui_act_turn)))
 	op("toggle_pixel", ui_act("toggle_pixel"), then(PROC_REF(ui_act_toggle_pixel)))
 
-/// The computed part of /datum/nobody_wants_to_learn_matrix_math's window data (declared on its UI_DATA row).
+/// /datum/nobody_wants_to_learn_matrix_math's window data.
 /datum/nobody_wants_to_learn_matrix_math/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["matrix_a"] = testing_matrix.a

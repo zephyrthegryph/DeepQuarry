@@ -101,7 +101,7 @@ CAPABILITIES(/datum/board_game/nine_mens)
 	op("play_again_swapped", ui_act("play_again_swapped"), then(PROC_REF(ui_act_play_again_swapped)))
 	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
-/// The computed part of /datum/board_game/nine_mens's window data (declared on its UI_DATA row).
+/// /datum/board_game/nine_mens's window data.
 /datum/board_game/nine_mens/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one

@@ -89,7 +89,10 @@
 	return TRUE
 
 /obj/machinery/computer/shuttle_control/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
+	return console_gate(A.actor)
+
+/// The console's guard on every button, and on the answer to a question one of them asked: the shuttle is still linked (a print, a warning).
+/obj/machinery/computer/shuttle_control/proc/console_gate(mob/user)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(skip_act)
 		return FALSE
@@ -146,7 +149,7 @@
 		return
 	var/obj/machinery/computer/shuttle_control/console = src_object()
 	// The original virtual guard fingerprints and reports failures; it is an effect.
-	var/allowed = console.ui_act_allowed(user, "set_codes", src, state())
+	var/allowed = console.console_gate(user)
 	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
 	if(request_recheck(A.request))
 		return
@@ -193,7 +196,7 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/computer/shuttle_control's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/shuttle_control's window data.
 /obj/machinery/computer/shuttle_control/proc/ui_data_obj_machinery_computer_shuttle_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(!istype(shuttle))

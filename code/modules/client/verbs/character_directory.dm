@@ -30,7 +30,7 @@ CAPABILITIES(/datum/character_directory)
 	op("setSexualityTag", ui_act("setSexualityTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
 	op("setEventTag", ui_act("setEventTag", arg("overwrite_prefs", bool())), then(PROC_REF(ui_act_directory_setting)))
 
-/// The computed part of /datum/character_directory's window data (declared on its UI_DATA row).
+/// /datum/character_directory's window data.
 /datum/character_directory/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/list/data = list()
