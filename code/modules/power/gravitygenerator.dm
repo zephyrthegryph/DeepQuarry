@@ -290,8 +290,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	data["operational"] = (has_stat(BROKEN)) ? FALSE : TRUE
 	return data
 
-	return data
-
 /obj/machinery/gravity_generator/main/proc/ui_act_gentoggle(datum/act/op/A)
 	var/mob/user = A.actor
 	breaker = !breaker
