@@ -301,10 +301,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_sec"
 
-/obj/item/storage/box/nifsofts_security/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/security(src)
+/obj/item/storage/box/nifsofts_security
+	starts_with = list(
+		/obj/item/disk/nifsoft/security = 8,
+	)
 
 // Engineering Disk //
 /obj/item/disk/nifsoft/engineering
@@ -327,10 +327,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_eng"
 
-/obj/item/storage/box/nifsofts_engineering/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/engineering(src)
+/obj/item/storage/box/nifsofts_engineering
+	starts_with = list(
+		/obj/item/disk/nifsoft/engineering = 8,
+	)
 
 // Medical Disk //
 /obj/item/disk/nifsoft/medical
@@ -352,10 +352,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_med"
 
-/obj/item/storage/box/nifsofts_medical/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/medical(src)
+/obj/item/storage/box/nifsofts_medical
+	starts_with = list(
+		/obj/item/disk/nifsoft/medical = 8,
+	)
 
 // Mining Disk //
 /obj/item/disk/nifsoft/mining
@@ -381,10 +381,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_mining"
 
-/obj/item/storage/box/nifsofts_mining/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/mining(src)
+/obj/item/storage/box/nifsofts_mining
+	starts_with = list(
+		/obj/item/disk/nifsoft/mining = 8,
+	)
 
 // Pilot Disk //
 /obj/item/disk/nifsoft/pilot
@@ -410,10 +410,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes_vr.dmi'
 	icon_state = "nifsoft_kit_pilot"
 
-/obj/item/storage/box/nifsofts_pilot/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/pilot(src)
+/obj/item/storage/box/nifsofts_pilot
+	starts_with = list(
+		/obj/item/disk/nifsoft/pilot = 8,
+	)
 
 // Mass Alteration Disk //
 /obj/item/disk/nifsoft/sizechange
@@ -433,10 +433,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_mining"
 
-/obj/item/storage/box/nifsofts_sizechange/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/sizechange(src)
+/obj/item/storage/box/nifsofts_sizechange
+	starts_with = list(
+		/obj/item/disk/nifsoft/sizechange = 8,
+	)
 
 /// LC-refs: The NIF that the software is stored in -- a relation view: null once it is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif

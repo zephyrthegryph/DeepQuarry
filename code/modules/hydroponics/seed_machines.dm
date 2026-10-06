@@ -43,10 +43,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	name = "flora disk box"
 	desc = "A box of flora data disks, apparently."
 
-/obj/item/storage/box/botanydisk/Initialize(mapload)
-	. = ..()
-	for(var/i = 0;i<7;i++)
-		new /obj/item/disk/botany(src)
+/obj/item/storage/box/botanydisk
+	starts_with = list(
+		/obj/item/disk/botany = 7,
+	)
 
 /obj/machinery/botany
 	maintenance_flags = MACHINE_MAINT_STANDARD

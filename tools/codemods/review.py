@@ -79,14 +79,61 @@ def dump(kind, files, context, skip=()):
     print("# %d sites" % n, file=sys.stderr)
 
 
-def apply(path):
+def site_key(f, k, pattern):
+    """A line's key that survives edits above it: the enclosing proc's header and the hit's index among the proc's hits."""
+    for p in procs_in(f):
+        if p.start <= k < p.end:
+            hits = [j for j in range(p.start, p.end) if pattern.search(strip_code(f.lines[j]))]
+            return "K|%s|%s|%d" % (f.rel, f.lines[p.start].strip(), hits.index(k))
+    return None
+
+
+def resolve_key(f, key, pattern):
+    _, rel, header, n = key.split("|", 3)
+    for p in procs_in(f):
+        if f.lines[p.start].strip() == header:
+            hits = [j for j in range(p.start, p.end) if pattern.search(strip_code(f.lines[j]))]
+            if int(n) < len(hits):
+                return hits[int(n)]
+    return None
+
+
+def rekey(path, kind):
+    """file:line decisions -> keyed decisions (enclosing proc header + hit index), to apply after a merge moved lines."""
+    pattern = QDEL_SRC if kind == "qdel_src" else USR
+    files = {}
+    for line in open(path, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if not line.strip() or line.startswith("#"):
+            continue
+        loc, rest = line.split("\t", 1)
+        r, ln = loc.rsplit(":", 1)
+        f = files.get(r) or File(r)
+        files[r] = f
+        key = site_key(f, int(ln) - 1, pattern)
+        if not key:
+            print("NO KEY", loc, file=sys.stderr)
+            continue
+        print(key + "\t" + rest)
+
+
+def apply(path, kind="qdel_src"):
     by_file = collections.defaultdict(list)
+    pattern = QDEL_SRC if kind == "qdel_src" else USR
     for line in open(path, encoding="utf-8"):
         line = line.rstrip("\n")
         if not line.strip() or line.startswith("#"):
             continue
         loc, action, *rest = line.split("\t")
         arg = rest[0] if rest else ""
+        if loc.startswith("K|"):
+            r = loc.split("|")[1]
+            k = resolve_key(File(r), loc, pattern)
+            if k is None:
+                print("UNRESOLVED", loc)
+                continue
+            by_file[r].append((k, action, arg))
+            continue
         r, ln = loc.rsplit(":", 1)
         by_file[r].append((int(ln) - 1, action, arg))
     done = 0
@@ -125,13 +172,16 @@ def main():
     ap.add_argument("--others", action="store_true")
     ap.add_argument("--paths", nargs="*", default=["code/"])
     ap.add_argument("--context", type=int, default=6)
+    ap.add_argument("--kind", default="qdel_src", help="apply/rekey: the site pattern keyed decisions resolve against")
     ap.add_argument("--skip", help="a file of type paths already reviewed and left (init)")
     a = ap.parse_args()
     if a.cmd == "dump":
         skip = set(x.split()[0] for x in open(a.skip, encoding="utf-8") if x.strip() and not x.startswith("#")) if a.skip else set()
         dump(a.what, dm_files(a.paths, others=a.others), a.context, skip)
     elif a.cmd == "apply":
-        apply(a.what)
+        apply(a.what, a.kind)
+    elif a.cmd == "rekey":
+        rekey(a.what, a.kind)
 
 
 if __name__ == "__main__":

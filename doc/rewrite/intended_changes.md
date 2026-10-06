@@ -1450,3 +1450,24 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
+
+## Phase C init and lifecycle codemods (rewrite/lifecycle)
+
+The codemods are `tools/codemods/init_overrides.py`, `qdel_src.py` and `review.py` (the hand-review dump and decisions). Most of the change is
+`ALLOW(init/CODE)` and `ALLOW(lifecycle)` reasons on overrides and self-deletes that stay as they are; those change nothing. The conversions that do:
+
+* **Constant lights are light vars.** An `Initialize()` that only called `set_light(range, power, color)` with constants (12 spell, effect and snack
+  types) is now `light_range`, `light_power`, `light_color` and `light_on = TRUE` on the type. A static light is lit when the thing materializes
+  (`/atom/movable/on_materialize()`), not during `Initialize()`, so a latent instance carries no light source until it is materialized. A range
+  between 0 and 1.4 is written as 1.4, the value `set_light()` raised it to. Turfs are not converted: a turf does not light itself from its vars.
+* **Loaded exosuits list their equipment in `mecha_starting_equipment`** (Odysseus loaded, combat and shuttle pods, the death Ripley, the gorilla,
+  the Scree phazon). The base `/obj/mecha` init attaches table equipment before it adds its radio, cabin, air tank and cell, where the overrides
+  attached it after; no equipment's `attach()` reads those. Test: `dq_init_codemod/mecha_equipment`.
+* **Storage boxes whose `Initialize()` only made their contents use `starts_with`** (the forensics boxes, dice, botany disks, NIFsoft boxes, two pill
+  bottles, body record disks, the backup kit). The contents are latent until the box is used (C5) and `calibrate_size()` counts them; the old
+  contents were made after it ran. A box mapped with `empty = TRUE` now starts empty, as the var says; the overrides filled it anyway.
+  Test: `dq_init_codemod/storage_contents`.
+* **A repainted cardboard cutout is `replace_with()`d** by the cutout type picked: made where the old one stands, as before, and handles that named
+  the old cutout now resolve to the new one.
+* **Mech equipment destroyed with its exosuit goes with `expire(0)`** instead of a bare `spawn` before `qdel()`: the delete is a timer owned by the
+  equipment, run after the current call returns, as the spawn did.

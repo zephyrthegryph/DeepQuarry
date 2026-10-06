@@ -76,11 +76,9 @@ TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 	max_universal_equip = 1
 	max_special_equip = 1
 
-/obj/mecha/working/ripley/deathripley/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/safety
-	ME.attach(src)
-	return
+TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/safety \
+		))
 
 /obj/mecha/working/ripley/mining
 	desc = "An old, dusty mining ripley."

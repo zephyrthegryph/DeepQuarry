@@ -198,10 +198,10 @@ CAPABILITIES(/obj/item/dice)
 	drop_sound = SFX_ITEMS_DROP_HAT
 	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
-/obj/item/storage/pill_bottle/dice/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 7)
-		new /obj/item/dice(src)
+/obj/item/storage/pill_bottle/dice
+	starts_with = list(
+		/obj/item/dice = 7,
+	)
 
 /obj/item/storage/pill_bottle/dice_nerd	//DnD dice
 	name = "bag of gaming dice"
@@ -275,10 +275,10 @@ CAPABILITIES(/obj/item/storage/dicecup)
 		revealDice(player)
 
 
-/obj/item/storage/dicecup/loaded/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 5)
-		new /obj/item/dice(src)
+/obj/item/storage/dicecup/loaded
+	starts_with = list(
+		/obj/item/dice = 5,
+	)
 
 /obj/item/dice/d20/cursed
 	name = "d20"

@@ -3723,6 +3723,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/open = 0 // Is the box open?
 	var/ismessy = 0 // Fancy mess on the lid
 	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/pizza // Content pizza
+	/// The pizza a box starts with (a subtype or a map edit sets it); made into `pizza` at init.
+	var/pizza_type
 	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
@@ -3730,7 +3732,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
 CAPABILITIES(/obj/item/pizzabox)
-	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza)
+	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
 	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked), because = MSG(pizzabox/stacked))), then(PROC_REF(toggled)))
 	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
 	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
@@ -3890,35 +3892,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	update_icon()
 	return OP_OK
 
-/obj/item/pizzabox/margherita/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+/obj/item/pizzabox/margherita
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 	boxtag = "Margherita Deluxe"
-	. = ..()
 
-/obj/item/pizzabox/vegetable/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+/obj/item/pizzabox/vegetable
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza
 	boxtag = "Gourmet Vegatable"
-	. = ..()
 
-/obj/item/pizzabox/mushroom/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+/obj/item/pizzabox/mushroom
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza
 	boxtag = "Mushroom Special"
-	. = ..()
 
-/obj/item/pizzabox/meat/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+/obj/item/pizzabox/meat
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza
 	boxtag = "Meatlover's Supreme"
-	. = ..()
 
-/obj/item/pizzabox/pineapple/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+/obj/item/pizzabox/pineapple
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple
 	boxtag = "Hawaiian Sunrise"
-	. = ..()
 
-/obj/item/pizzabox/old/Initialize(mapload)
-	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+/obj/item/pizzabox/old
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza
 	boxtag = "Deluxe Gourmet"
-	. = ..()
 
 /obj/item/reagent_containers/food/snacks/dionaroast
 	name = "roast diona"

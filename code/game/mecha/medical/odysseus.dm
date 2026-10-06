@@ -98,14 +98,11 @@ CAPABILITIES(/obj/mecha/medical/odysseus)
 
 			C.images += holder
 */
-/obj/mecha/medical/odysseus/loaded/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun
-	ME.attach(src)
+TYPE_TABLE(/obj/mecha/medical/odysseus/loaded, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tool/sleeper, \
+		/obj/item/mecha_parts/mecha_equipment/tool/sleeper, \
+		/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun \
+		))
 
 //Meant for random spawns.
 /obj/mecha/medical/odysseus/old
