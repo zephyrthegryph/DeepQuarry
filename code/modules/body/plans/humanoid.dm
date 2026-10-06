@@ -90,7 +90,7 @@
 	. = REGENERATION_BASE_LEVEL * CONFIG_GET(number/organ_regeneration_multiplier)
 	if(H.nutrition < REGENERATION_HUNGRY_NUTRITION)
 		. *= REGENERATION_HUNGRY_MULT
-	if(H.has_status(EFFECT_SLEEPING))
+	if(H.has_status(STAT_SLEEPING))
 		. *= REGENERATION_SLEEP_MULT
 	. *= get_factor(BF_HEALING)
 
@@ -230,7 +230,7 @@
 		else if(E.is_dislocated())
 			raw_pain += PAIN_DISLOCATION
 	raw_pain *= H.species.trauma_mod
-	if(H.has_status(EFFECT_SLURRING))
+	if(H.has_status(STAT_SLURRING))
 		raw_pain -= PAIN_SLURRING_RELIEF
 	raw_pain += get_factor(BF_PAIN)
 	return max(0, raw_pain - get_factor(BF_ANALGESIA))

@@ -238,7 +238,7 @@
 /// Jitters, splints, vore and size lines, responsiveness, fire and SSD.
 /mob/living/carbon/human/proc/examine_status_lines(mob/user, list/hidden)
 	. = list()
-	var/jitter = status_units(EFFECT_JITTERY)
+	var/jitter = status_units(STAT_JITTERY)
 	if(jitter >= 300)
 		. += span_boldwarning("[p_Theyre()] convulsing violently!")
 	else if(jitter >= 200)

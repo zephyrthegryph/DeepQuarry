@@ -10,7 +10,7 @@
 //
 // Order (also in the define file's header and the doc, keep all three in step):
 //   init:          starting occupants (owns_one / owns_many with starts =),
-//                  gas, reagents, appearance
+//                  gas, appearance
 //   materialize:   registries, service members, binds, behaviours, periodic, declared periodic work (sys_periodic)
 //   dematerialize: periodic stop, declared periodic stop, service leave, bind release
 //   destroy:       phase 1 bind release; phase 4 children (their DECLARE_REF kind);
@@ -51,15 +51,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 	/// list(var, volume, temperature, list(gas = kPa)), or null.
 	var/list/gas
-	/// A number or a var name; null: no declared reagents.
-	var/reagent_volume
-	/// list(id = amount), or null.
-	var/list/reagent_contents
-	/// Reagents named by instance vars: id var name -> amount (number or var name). Read per atom.
-	var/list/reagent_var_contents
-	var/reagent_holder_type
-	/// Set color from the reagents after filling.
-	var/reagent_tint = FALSE
 	// Appearance declarations: code/datums/sys/appearance.dm.
 	/// Registry ids declared with DECLARE_REGISTRY that are conditional (joined at materialize).
 	var/list/registries
@@ -91,7 +82,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// A table with no work: every declaration list dropped (finish() found nothing to run).
 /datum/lifecycle_decls/proc/emptied()
 	gas = null
-	clear_reagents()
 	drop_appearance()
 	registries = null
 	services = null
@@ -107,35 +97,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 /datum/lifecycle_decls/proc/set_gas(var_name, volume, temperature, list/gases)
 	gas = list(var_name, volume, temperature, gases)
-
-/datum/lifecycle_decls/proc/set_reagents(volume, list/added, holder_type, tint)
-	if(!isnull(volume))
-		reagent_volume = volume
-	else if(isnull(reagent_volume))
-		reagent_volume = 0 // contents with no holder declared anywhere up the chain
-	if(length(added))
-		var/list/merged = reagent_contents ? reagent_contents.Copy() : list()
-		for(var/id in added)
-			merged[id] += added[id] || 1
-		reagent_contents = merged
-	if(holder_type)
-		reagent_holder_type = holder_type
-	if(tint)
-		reagent_tint = TRUE
-
-/// Adds a reagent whose id (and optionally amount) comes from the atom's own vars at init.
-/datum/lifecycle_decls/proc/set_reagent_var(volume, id_var, amount)
-	set_reagents(volume, null, null, FALSE)
-	var/list/merged = reagent_var_contents ? reagent_var_contents.Copy() : list()
-	merged[id_var] = amount
-	reagent_var_contents = merged
-
-/datum/lifecycle_decls/proc/clear_reagents()
-	reagent_volume = null
-	reagent_contents = null
-	reagent_var_contents = null
-	reagent_holder_type = null
-	reagent_tint = FALSE
 
 
 /datum/lifecycle_decls/proc/add_registry(id)
@@ -184,9 +145,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(gas && !(gas[1] in D.vars))
 		stack_trace("DECLARE_GAS([owner_type], \"[gas[1]]\"): no such var; dropped")
 		gas = null
-	if(!isnull(reagent_volume) && !isatom(D))
-		stack_trace("DECLARE_REAGENTS([owner_type]): only atoms have reagents; dropped")
-		clear_reagents()
 	finish_appearance(D)
 	for(var/id in registries?.Copy())
 		var/datum/registry/registry = get_registry(id)
@@ -221,7 +179,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		work |= DECL_WORK_VERBS
 	if(appearance_draws || appearance_mask)
 		work |= DECL_WORK_INIT | DECL_WORK_APPEARANCE
-	if(gas || !isnull(reagent_volume) || verbs_always || verbs_if || verbs_hidden)
+	if(gas || verbs_always || verbs_if || verbs_hidden)
 		work |= DECL_WORK_INIT
 	for(var/hook_var in expiry_hooks?.Copy())
 		if(!(hook_var in D.vars))
@@ -268,8 +226,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		sys_periodic_start(D, decls.sys_periodic)
 	if(decls.gas)
 		decls.create_gas(D)
-	if(!isnull(decls.reagent_volume))
-		decls.create_reagents_on(D)
 	if(decls.work & DECL_WORK_APPEARANCE)
 		decls.init_appearance(D)
 	if(decls.verbs_always || decls.verbs_if || decls.verbs_hidden)
@@ -381,31 +337,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		mix.adjust_gas(gas_id, gases[gas_id] * volume / (R_IDEAL_GAS_EQUATION * temperature))
 	rel_set(D, var_name, mix) // the holder owns its mixture (its arena slot goes with it)
 
-/datum/lifecycle_decls/proc/create_reagents_on(atom/A)
-	var/volume = lifecycle_decl_value(A, reagent_volume)
-	if(!isnum(volume))
-		volume = 0
-	A.create_reagents(volume, reagent_holder_type || /datum/reagents)
-	var/total = 0
-	for(var/id_var in reagent_var_contents)
-		var/id = A.vars[id_var]
-		var/amount = lifecycle_decl_value(A, reagent_var_contents[id_var])
-		if(!id || !isnum(amount) || amount <= 0)
-			continue
-		total += amount
-		A.reagents.add_reagent(id, amount)
-	if(!length(reagent_contents))
-		if(total > volume)
-			WARNING("[A]([A.type]) declares more reagents ([total]) than its volume ([volume])")
-		return
-	for(var/id in reagent_contents)
-		var/amount = reagent_contents[id] || 1
-		total += amount
-		A.reagents.add_reagent(id, amount)
-	if(reagent_tint)
-		A.color = A.reagents.get_color()
-	if(total > volume)
-		WARNING("[A]([A.type]) declares more reagents ([total]) than its volume ([volume])")
 
 // ---- appearance: code/datums/sys/appearance.dm ----
 

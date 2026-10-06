@@ -222,27 +222,32 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe)
 	name = "Syringe (inaprovaline)"
 	desc = "Contains inaprovaline - used to stabilize patients."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/inaprovaline, null, list(REAGENT_ID_INAPROVALINE = 15))
+CAPABILITIES(/obj/item/reagent_containers/syringe/inaprovaline)
+	configure(reagents(add = list(REAGENT_ID_INAPROVALINE = 15)))
 
 /obj/item/reagent_containers/syringe/antitoxin
 	name = "Syringe (anti-toxin)"
 	desc = "Contains anti-toxins."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/antitoxin, null, list(REAGENT_ID_ANTITOXIN = 15))
+CAPABILITIES(/obj/item/reagent_containers/syringe/antitoxin)
+	configure(reagents(add = list(REAGENT_ID_ANTITOXIN = 15)))
 
 /obj/item/reagent_containers/syringe/antiviral
 	name = "Syringe (spaceacillin)"
 	desc = "Contains antiviral agents."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/antiviral, null, list(REAGENT_ID_SPACEACILLIN = 15))
+CAPABILITIES(/obj/item/reagent_containers/syringe/antiviral)
+	configure(reagents(add = list(REAGENT_ID_SPACEACILLIN = 15)))
 
 /obj/item/reagent_containers/syringe/drugs
 	name = "Syringe (drugs)"
 	desc = "Contains aggressive drugs meant for torture."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/drugs, null, list(REAGENT_ID_BLISS = 5, REAGENT_ID_MINDBREAKER = 5, REAGENT_ID_CRYPTOBIOLIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/syringe/drugs)
+	configure(reagents(add = list(REAGENT_ID_BLISS = 5, REAGENT_ID_MINDBREAKER = 5, REAGENT_ID_CRYPTOBIOLIN = 5)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/ld50_syringe/choral, null, list(REAGENT_ID_CHLORALHYDRATE = 50))
+CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe/choral)
+	configure(reagents(add = list(REAGENT_ID_CHLORALHYDRATE = 50)))
 
 /obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
 	. = ..()
@@ -253,7 +258,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/ld50_syringe/choral, null,
 	name = "Syringe (anabolic steroids)"
 	desc = "Contains drugs for muscle growth."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGENT_ID_HYPERZINE = 10))
+CAPABILITIES(/obj/item/reagent_containers/syringe/steroid)
+	configure(reagents(add = list(REAGENT_ID_HYPERZINE = 10)))
 
 /obj/item/reagent_containers/syringe/proc/dirty(mob/living/carbon/human/target, obj/item/organ/external/eo)
 	if(!ishuman(loc))

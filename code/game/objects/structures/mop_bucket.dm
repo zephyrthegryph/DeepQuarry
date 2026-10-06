@@ -11,9 +11,9 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 
-DECLARE_REAGENTS(/obj/structure/mopbucket, 300, null)
 
 CAPABILITIES(/obj/structure/mopbucket)
+	reagents(300)
 	climb()
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

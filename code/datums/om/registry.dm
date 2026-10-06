@@ -207,33 +207,22 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			if(rows[id])
 				error("effect [id] defined twice (second in [B.type])")
 			rows[id] = B.effects[id]
-	var/static/list/allowed = list("combine", "stacking", "channel", "publishes", "default", "expr", "type", "kind", "clock", "implies",
-		"unit", "rate", "rate_resting", "max_units", "immunity", "scaled", "signal", "alert", "alert_type", "indicator", "on_start", "on_end", "on_increase", "entity_type")
-	var/static/list/status_keys = list("unit", "rate", "rate_resting", "max_units", "immunity", "scaled", "signal", "alert", "alert_type", "indicator", "on_start", "on_end", "on_increase", "entity_type")
+	var/static/list/allowed = list("combine", "stacking", "channel", "publishes", "default", "expr", "type", "kind", "clock", "implies")
 	for(var/id in rows)
 		var/list/row = rows[id]
 		if(!islist(row))
 			error("effect [id]: row must be a list")
 			continue
-		var/is_status = row["kind"] == OM_EFFECT_STATUS
-		var/path = row["type"] || (is_status ? /datum/om/effect/status : /datum/om/effect)
+		var/path = row["type"] || /datum/om/effect
 		if(!ispath(path, /datum/om/effect))
 			error("effect [id]: type [path] is not a /datum/om/effect")
 			path = /datum/om/effect
-		if(is_status && !ispath(path, /datum/om/effect/status))
-			error("effect [id]: a status must be a /datum/om/effect/status")
-			path = /datum/om/effect/status
 		var/datum/om/effect/E = new path
 		E.id = id
 		for(var/key in row)
 			if(!(key in allowed))
 				error("effect [id]: unknown key [key]")
-			else if(!is_status && (key in status_keys))
-				error("effect [id]: [key] is only for statuses (kind OM_EFFECT_STATUS)")
 		E.implies = row["implies"]
-		if(is_status)
-			var/datum/om/effect/status/ST = E
-			ST.parse_row(row, src)
 		if(!isnull(row["combine"]))
 			E.combine = row["combine"]
 		if(!(E.combine in list(COMBINE_ANY, COMBINE_SUM, COMBINE_MAX, COMBINE_MIN, COMBINE_MULTIPLY, COMBINE_SUM_PER_KEY)))
@@ -270,7 +259,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		effects += E
 		E.idx = length(effects)
 		effect_by_id[id] = E
-	// Implied effects and immunities.
+	// Implied effects.
 	for(var/datum/om/effect/E as anything in effects)
 		for(var/implied in E.implies)
 			var/datum/om/effect/other = effect_by_id[implied]
@@ -278,15 +267,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 				error("effect [E.id]: implies unknown or composite effect [implied]")
 				continue
 			LAZYADD(E.implies_idx, other.idx)
-		var/datum/om/effect/status/ST = E
-		if(istype(ST) && ST.immunity)
-			var/datum/om/effect/immunity = effect_by_id[ST.immunity]
-			if(!immunity || immunity.expr)
-				error("status [E.id]: unknown immunity [ST.immunity]")
-				ST.immunity = null
-			else
-				ST.immunity_idx = immunity.idx
-				LAZYADD(immunity.blocks, E.idx)
 	// Composite dependencies.
 	for(var/datum/om/effect/E as anything in effects)
 		if(!E.expr)

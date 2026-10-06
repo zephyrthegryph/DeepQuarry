@@ -217,11 +217,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 			if (get_ear_protection() < 2)
 				set_ear_damage(ear_damage + (30))
-				status_adjust(EFFECT_DEAFENED, 120)
+				status_adjust(STAT_DEAFENED, 120)
 				deaf_loop.start() // Ear Ringing/Deafness
 			if (prob(70) && !shielded)
-				status_at_least(EFFECT_PARALYZED, 10)
-				status_at_least(EFFECT_SLEEPING, 10)
+				status_at_least(STAT_PARALYZED, 10)
+				status_at_least(STAT_SLEEPING, 10)
 
 		if(3.0)
 			b_loss += 30
@@ -229,11 +229,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 				b_loss = b_loss/2
 			if (get_ear_protection() < 2)
 				set_ear_damage(ear_damage + (15))
-				status_adjust(EFFECT_DEAFENED, 60)
+				status_adjust(STAT_DEAFENED, 60)
 				deaf_loop.start() // Ear Ringing/Deafness
 			if (prob(50) && !shielded)
-				status_at_least(EFFECT_PARALYZED, 10)
-				status_at_least(EFFECT_SLEEPING, 10)
+				status_at_least(STAT_PARALYZED, 10)
+				status_at_least(STAT_SLEEPING, 10)
 
 	// focus most of the blast on one organ
 	var/obj/item/organ/external/take_blast = pick(organs)
@@ -387,7 +387,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 //Now checks siemens_coefficient of the affected area by default
 /mob/living/carbon/human/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun)
 
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0
 
 	if (!def_zone)
@@ -2010,7 +2010,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 /mob/living/carbon/human/proc/update_icon_special() //For things such as teshari hiding and whatnot.
 	if(status_flags & HIDING) // Hiding? Carry on.
-		if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+		if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 			reveal(null)
 		else
 			layer = HIDING_LAYER
@@ -2143,7 +2143,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

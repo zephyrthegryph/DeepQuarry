@@ -14,10 +14,7 @@
 	/// Afflictions carried while this organ is outside a body.
 	var/list/detached_afflictions
 
-CAPABILITIES(/obj/item/organ)
-	loose_organ_clock()
-	owns_many(nameof(detached_afflictions))
-	owns_many(nameof(autopsy_data))
+// The organ's CAPABILITIES block (organ.dm) runs its loose clock and owns its detached afflictions.
 
 /obj/item/organ/external
 	/// Cached sum of non-internal physical wound damage. Read via get_trauma().
@@ -124,7 +121,7 @@ CAPABILITIES(/obj/item/organ)
 /// excess becomes shock, as in apply_wound_damage(). Returns the amount the
 /// wounds took.
 /obj/item/organ/external/proc/accumulate_wound_damage(wound_kind, amount)
-	if(amount <= 0 || (owner && om_has(owner, EFFECT_GODMODE)))
+	if(amount <= 0 || (owner && in_godmode(owner)))
 		return 0
 	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
 	var/inflict = amount

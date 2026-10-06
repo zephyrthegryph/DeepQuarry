@@ -868,12 +868,12 @@ CAPABILITIES(/obj/machinery/door/airlock)
 			COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
 			return TRUE
 		return FALSE
-	if(user.status_units(EFFECT_HALLUCINATING) > 50 && prob(10) && operating == 0)
+	if(user.status_units(STAT_HALLUCINATING) > 50 && prob(10) && operating == 0)
 		EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
 		to_chat(user, span_danger("You feel a powerful shock course through your body!"))
 		user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
 		user.injure(INJURY_PAIN, 10, null, src)
-		user.status_adjust(EFFECT_STUNNED, 10)
+		user.status_adjust(STAT_STUNNED, 10)
 		return TRUE
 	return FALSE
 
@@ -1218,8 +1218,8 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 	. = ..()
 	var/turf/T = get_turf(src)
 	injure(INJURY_BLUNT, crush_damage)
-	status_set(EFFECT_STUNNED, 5)
-	status_set(EFFECT_WEAKENED, 5)
+	status_set(STAT_STUNNED, 5)
+	status_set(STAT_WEAKENED, 5)
 	if(T)
 		T.add_blood(src)
 	return TRUE

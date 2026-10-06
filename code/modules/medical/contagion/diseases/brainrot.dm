@@ -45,7 +45,7 @@
 					to_chat(host, span_danger("Strange buzzing fills your head, removing all thoughts."))
 			if(prob(3))
 				to_chat(host, span_danger("You lose consciousness..."))
-				host.status_at_least(EFFECT_SLEEPING, rand(5, 10))
+				host.status_at_least(STAT_SLEEPING, rand(5, 10))
 				if(prob(1))
 					host.emote("snore")
 			if(prob(15))

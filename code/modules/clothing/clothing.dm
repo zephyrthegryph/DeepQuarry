@@ -785,7 +785,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 			else
 				message_pred = "You firmly push your foot down on [prey], painfully but harmlessly pinning them to the insole of your [name]!"
 				message_prey = "[pred] firmly pushes their foot down on you, painfully but harmlessly pinning you to the insole of their [name]!"
-				prey.status_at_least(EFFECT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
+				prey.status_at_least(STAT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
 				add_attack_logs(pred, prey, "Pinned inshoe (walk, weaken(5))")
 
 		if(I_GRAB)
@@ -795,7 +795,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 			else
 				message_pred = "You pin [prey] down against the insole of your [name] with your foot, your toes curling up around their body, tightly trapping them inbetween them!"
 				message_prey = "[pred] pins you down against the insole of their [name] with their foot, their toes curling up around your body, tighly trapping you inbetween them!"
-				prey.status_at_least(EFFECT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
+				prey.status_at_least(STAT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
 				add_attack_logs(pred, prey, "Grabbed inshoe (walk, weaken(5))")
 
 		if(I_HURT)

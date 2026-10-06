@@ -200,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 				return TRUE
 			if (G.state < 2)
 				if(interaction.stance == I_HURT)
-					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
+					if (prob(15))	M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
 					visible_message(span_danger("[G?.grab_assailant()] slams [M]'s face against \the [src]!"))
@@ -213,7 +213,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 					M.forceMove(get_step(src, src.dir))
 				else
 					M.forceMove(get_turf(src))
-				M.status_at_least(EFFECT_WEAKENED, 5)
+				M.status_at_least(STAT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] throws [M] over \the [src]!"))
 			consume(W, user)
 			return TRUE

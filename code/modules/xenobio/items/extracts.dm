@@ -14,7 +14,8 @@
 	var/slime_type
 	flags = OPENCONTAINER
 
-DECLARE_REAGENTS(/obj/item/slime_extract, 60, null)
+CAPABILITIES(/obj/item/slime_extract)
+	reagents(60)
 
 DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -1582,7 +1583,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_colors/on_reaction(datum/reagents/holder)
 	for(var/mob/living/carbon/human/H in range(3, holder.my_atom))
-		H.status_at_least(EFFECT_DRUGGED, 30)
+		H.status_at_least(STAT_DRUGGED, 30)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_unity

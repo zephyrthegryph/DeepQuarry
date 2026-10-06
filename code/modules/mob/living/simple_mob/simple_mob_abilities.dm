@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	//trying/permitted to pounce
 	if(pouncing)
 		//able to pounce (not dead or stunned or on CD)
-		if(isliving(src) && !src.has_status(EFFECT_WEAKENED) && (COOLDOWN_FINISHED(src, pounce_last)) && !(status_flags & LEAPING))
+		if(isliving(src) && !src.has_status(STAT_WEAKENED) && (COOLDOWN_FINISHED(src, pounce_last)) && !(status_flags & LEAPING))
 			//can see pounce target
 			if((A in view(src, world.view)))
 				//make sure we're targetting a turf!
@@ -201,7 +201,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 						var/atom/movable/_tmp_buck_21 = M?.buckled_to()
 						_tmp_buck_21.unbuckle_mob()
 
-					LM.status_at_least(EFFECT_WEAKENED, 5)
+					LM.status_at_least(STAT_WEAKENED, 5)
 					playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 					pouncing = 0
 			src.Move(T)
@@ -210,7 +210,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		if(get_dist(src, T))
 			pouncing = 0
 			update_icon()
-			src.status_at_least(EFFECT_WEAKENED, 5)
+			src.status_at_least(STAT_WEAKENED, 5)
 			playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 		else
 			//if we arrived, and weren't blocked, and are STILL pouncing, see if we landed on any living things that didn't block us that ISN't ourselves lmfao.
@@ -218,7 +218,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 				for(var/mob/living/M in contents_of(T))
 					if(isliving(M) && M != src)
 						var/mob/living/LM = M
-						LM.status_at_least(EFFECT_WEAKENED, 5)
+						LM.status_at_least(STAT_WEAKENED, 5)
 						playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 						pouncing = 0
 			update_icon()
@@ -343,7 +343,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 
 	if(isliving(AM))
 		var/mob/living/M = AM
-		M.status_at_least(EFFECT_WEAKENED, 1.5)
+		M.status_at_least(STAT_WEAKENED, 1.5)
 		if(!gentle)
 			M.injure(INJURY_BLUNT, damage, source = src)
 		to_chat(M, span_userdanger("You're thrown back by [src]!"))

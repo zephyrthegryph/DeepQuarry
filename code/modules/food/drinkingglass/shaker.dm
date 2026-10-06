@@ -31,7 +31,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessf
 	base_icon = "protein_shake"
 	desc = "NanoTrasen brand pre-done pre-workout mix. Also perfect for an empty stomach."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake, null, list(REAGENT_ID_NUTRIMENT = 30, REAGENT_ID_IRON = 10, REAGENT_ID_PROTEIN = 35, REAGENT_ID_WATER = 25))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 30, REAGENT_ID_IRON = 10, REAGENT_ID_PROTEIN = 35, REAGENT_ID_WATER = 25)))
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/Initialize(mapload)
 	. = ..()
@@ -47,7 +48,8 @@ APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pro
 	base_icon = "protean_shake"
 	desc = "A strangely unlabeled, unbranded pre-workout drink carton."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake, null, list(REAGENT_ID_LIQUIDPROTEAN = 50, REAGENT_ID_NUTRIMENT = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)
+	configure(reagents(add = list(REAGENT_ID_LIQUIDPROTEAN = 50, REAGENT_ID_NUTRIMENT = 50)))
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/Initialize(mapload)
 	. = ..()

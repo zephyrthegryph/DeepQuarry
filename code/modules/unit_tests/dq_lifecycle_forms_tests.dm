@@ -47,51 +47,53 @@ REGISTRY_DECLARE_CONDITIONAL(dq_forms_cond, REGISTRY_DQ_FORMS_COND)
 /obj/machinery/power/apc/dx_test/cell_start
 	cell_type = /obj/item/cell/high
 
-/// reagents() + refine(CAP_REAGENTS) + without().
+/// reagents() + configure(reagents(add = | starts = | volume =)) + without(CAP_REAGENTS) (code/library/reagents/reagents.dm).
 /obj/item/dq_forms_flask
 	name = "forms flask"
 	var/volume = 40
 
-/obj/item/dq_forms_flask/capabilities()
-	. = ..()
-	. += reagents(PROC_REF(flask_volume), starts = list(REAGENT_ID_WATER = 10))
+CAPABILITIES(/obj/item/dq_forms_flask)
+	reagents(PROC_REF(flask_volume), starts = list(REAGENT_ID_WATER = 10))
 
-/// The volume per instance: a holder proc (reagents(volume = PROC_REF(...))), never a var name read.
+/// The volume per instance: a holder proc (reagents(volume = PROC_REF(...))).
 /obj/item/dq_forms_flask/proc/flask_volume()
 	return volume
 
-/obj/item/dq_forms_flask/spiked/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5), volume = 60)
+CAPABILITIES(/obj/item/dq_forms_flask/spiked)
+	configure(reagents(add = list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5), volume = 60))
 
-/// The one-line form, on a data-only subtype: starts = replaces the inherited contents.
-/obj/item/dq_forms_flask/replaced
-CAPABILITY(/obj/item/dq_forms_flask/replaced, refine(CAP_REAGENTS, starts = list(REAGENT_ID_ETHANOL = 3)))
+/// starts = replaces the inherited contents.
+CAPABILITIES(/obj/item/dq_forms_flask/replaced)
+	configure(reagents(starts = list(REAGENT_ID_ETHANOL = 3)))
 
-/// One-line declarations accumulate down the tree and sit beside a capabilities() override on the same type.
-/obj/item/dq_forms_flask/replaced/topped
-CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 2)))
+/// add = on a grandchild merges after the parent's replacement; volume = replaces the volume only.
+CAPABILITIES(/obj/item/dq_forms_flask/replaced/topped)
+	configure(reagents(add = list(REAGENT_ID_WATER = 2), volume = 25))
 
-/obj/item/dq_forms_flask/replaced/topped/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, volume = 25)
+/// A volume named by nameof(): read from the holder's var at init (a mapped volume).
+/obj/item/dq_forms_flask/by_var
+	volume = 55
 
-/obj/item/dq_forms_flask/dry/capabilities()
-	. = ..()
-	. = without(., CAP_REAGENTS)
+CAPABILITIES(/obj/item/dq_forms_flask/by_var)
+	configure(reagents(volume = nameof(volume)))
 
-/obj/item/dq_forms_flask/tinted/capabilities()
-	. = ..()
-	. += reagents(20, starts = list(REAGENT_ID_ETHANOL = 5), tint = TRUE)
+CAPABILITIES(/obj/item/dq_forms_flask/dry)
+	without(CAP_REAGENTS)
+
+CAPABILITIES(/obj/item/dq_forms_flask/tinted)
+	configure(reagents(volume = 20, starts = list(REAGENT_ID_ETHANOL = 5), tint = TRUE))
 
 /// A reagent named by holder vars (the old DECLARE_REAGENT_FROM_VAR).
 /obj/item/dq_forms_flask/from_var
 	var/reagent_id = REAGENT_ID_ETHANOL
 	var/reagent_amount = 7
 
-/obj/item/dq_forms_flask/from_var/capabilities()
-	. = ..()
-	. += reagents(30, starts_from = list(nameof(reagent_id) = nameof(reagent_amount)))
+CAPABILITIES(/obj/item/dq_forms_flask/from_var)
+	configure(reagents(volume = 30, starts = list(), starts_from = list(nameof(reagent_id) = nameof(reagent_amount))))
+
+/// A holder of a /datum/reagents subtype.
+CAPABILITIES(/obj/item/dq_forms_flask/distilling)
+	configure(reagents(holder = /datum/reagents/distilling))
 
 /// gas_store(): a mixture made at init and owned.
 /obj/item/dq_forms_tank
@@ -197,33 +199,39 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	TEST_ASSERT(istype(probe.part, /obj/item/dq_decl_part), "and the child is made")
 	TEST_ASSERT(istype(probe.mapped_part, /obj/item/dq_decl_part/better), "a path held in the var still wins")
 
-/// reagents(): a holder filled at init; refine(CAP_REAGENTS, add =) merges, starts = replaces; without() drops it;
-/// CAPABILITY(T, entry) declares one line.
+/// reagents(): a holder filled at init; configure(reagents(add =)) merges, starts = replaces, volume = replaces the volume; without() drops it.
 /datum/unit_test/dq_forms_reagents/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_forms_flask/F = allocate(/obj/item/dq_forms_flask, T)
 	TEST_ASSERT_EQUAL(F.reagents?.maximum_volume, 40, "volume answered by the holder proc")
 	TEST_ASSERT_EQUAL(F.reagents.get_reagent_amount(REAGENT_ID_WATER), 10, "starting contents")
 	var/obj/item/dq_forms_flask/spiked/S = allocate(/obj/item/dq_forms_flask/spiked, T)
-	TEST_ASSERT_EQUAL(S.reagents.maximum_volume, 60, "refine(volume =) replaces the volume")
-	TEST_ASSERT_EQUAL(S.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "refine(add =) merges into the inherited contents")
+	TEST_ASSERT_EQUAL(S.reagents.maximum_volume, 60, "configure(volume =) replaces the volume")
+	TEST_ASSERT_EQUAL(S.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "configure(add =) merges into the inherited contents")
 	TEST_ASSERT_EQUAL(S.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 5, "and brings its own")
 	var/obj/item/dq_forms_flask/replaced/R = allocate(/obj/item/dq_forms_flask/replaced, T)
-	TEST_ASSERT_EQUAL(R.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "refine(starts =) replaces the inherited contents")
-	TEST_ASSERT_EQUAL(R.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "with its own (CAPABILITY one-line form)")
+	TEST_ASSERT_EQUAL(R.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "configure(starts =) replaces the inherited contents")
+	TEST_ASSERT_EQUAL(R.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "with its own")
+	TEST_ASSERT_EQUAL(R.reagents.maximum_volume, 40, "and keeps the inherited volume")
 	var/obj/item/dq_forms_flask/replaced/topped/top = allocate(/obj/item/dq_forms_flask/replaced/topped, T)
-	TEST_ASSERT_EQUAL(top.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "an inherited CAPABILITY line still applies")
-	TEST_ASSERT_EQUAL(top.reagents.get_reagent_amount(REAGENT_ID_WATER), 2, "and the subtype's line adds after it")
-	TEST_ASSERT_EQUAL(top.reagents.maximum_volume, 25, "capabilities() entries apply before the CAPABILITY lines, which keep them")
+	TEST_ASSERT_EQUAL(top.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "an inherited replacement still applies")
+	TEST_ASSERT_EQUAL(top.reagents.get_reagent_amount(REAGENT_ID_WATER), 2, "and the subtype's add goes after it")
+	TEST_ASSERT_EQUAL(top.reagents.maximum_volume, 25, "volume = replaces the volume")
+	var/obj/item/dq_forms_flask/by_var/BV = allocate(/obj/item/dq_forms_flask/by_var, T)
+	TEST_ASSERT_EQUAL(BV.reagents.maximum_volume, 55, "nameof(var) reads the holder's var")
+	TEST_ASSERT_EQUAL(BV.reagents.get_reagent_amount(REAGENT_ID_WATER), 10, "and keeps the inherited contents")
 	var/obj/item/dq_forms_flask/dry/D = allocate(/obj/item/dq_forms_flask/dry, T)
-	TEST_ASSERT_NULL(D.reagents, "without(., CAP_REAGENTS) drops the holder")
+	TEST_ASSERT_NULL(D.reagents, "without(CAP_REAGENTS) drops the holder")
 	var/obj/item/dq_forms_flask/tinted/tint = allocate(/obj/item/dq_forms_flask/tinted, T)
 	TEST_ASSERT_EQUAL(uppertext(copytext(tint.color, 1, 8)), uppertext(copytext(tint.reagents.get_color(), 1, 8)), "tint colours from the reagents")
 	var/obj/item/dq_forms_flask/from_var/V = allocate(/obj/item/dq_forms_flask/from_var, T)
 	TEST_ASSERT_EQUAL(V.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 7, "starts_from reads the id and amount vars")
+	TEST_ASSERT_EQUAL(V.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "starts = list() empties the inherited contents")
+	var/obj/item/dq_forms_flask/distilling/DS = allocate(/obj/item/dq_forms_flask/distilling, T)
+	TEST_ASSERT(istype(DS.reagents, /datum/reagents/distilling), "holder = picks the holder type")
 	// Memory: one shared capability per declaration, nothing per instance but the holder itself.
 	var/obj/item/dq_forms_flask/F2 = allocate(/obj/item/dq_forms_flask, T)
-	TEST_ASSERT(cap_of(F, CAP_REAGENTS) == cap_of(F2, CAP_REAGENTS), "the capability is one flyweight per declaration")
+	TEST_ASSERT(table_cap_defs(table_of(F), CAP_REAGENTS, null)[1] == table_cap_defs(table_of(F2), CAP_REAGENTS, null)[1], "the capability is one flyweight per declaration")
 	TEST_ASSERT_NULL(F.cap_data, "no per-instance capability data")
 	var/obj/item/dq_forms_part/plain_part = allocate(/obj/item/dq_forms_part, T)
 	TEST_ASSERT_NULL(plain_part.reagents, "a type without the capability allocates nothing")

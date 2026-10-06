@@ -252,7 +252,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	rel_set(brainmob, nameof(brainmob.nif), nif())
 	rel_set(brainmob, nameof(brainmob.soulcatcher), src)
 	rel_set(brainmob, nameof(brainmob.container), src)
-	brainmob.status_set(EFFECT_MUTED, 0)
+	brainmob.status_set(STAT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
 	rel_add(src, nameof(brainmobs), brainmob)
 
@@ -356,20 +356,20 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	//If they're blinded
 	if(src.soulcatcher()) // needs it's own handling to allow vore_fx
 		if(src.ext_blind)
-			src.status_set(EFFECT_BLINDED, 5)
+			src.status_set(STAT_BLINDED, 5)
 			src.client.screen.Remove(GLOB.global_hud.whitense)
 			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			src.status_set(EFFECT_BLINDED, 0)
+			src.status_set(STAT_BLINDED, 0)
 			src.clear_fullscreens()
 			src.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf
 	if(src.ext_deaf)
-		src.status_set(EFFECT_DEAFENED, 5)
+		src.status_set(STAT_DEAFENED, 5)
 		src.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 	else
-		src.status_set(EFFECT_DEAFENED, 0)
+		src.status_set(STAT_DEAFENED, 0)
 		src.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
 
 /mob/living/carbon/brain/caught_soul/hear_say()
@@ -398,23 +398,23 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().say_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/emote(act,m_type=1,message = null)
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	if (act == "me")
-		if(has_status(EFFECT_MUTED))
+		if(has_status(STAT_MUTED))
 			return
 		if (src.client)
 			if (client.prefs.muted & MUTE_IC)
@@ -430,7 +430,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().emote_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/resist()

@@ -255,7 +255,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 	mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
 	mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
 	mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
-	status_at_least(EFFECT_STUNNED, 10)
+	status_at_least(STAT_STUNNED, 10)
 	movement_cooldown = 5
 	set_nutrition(0)
 

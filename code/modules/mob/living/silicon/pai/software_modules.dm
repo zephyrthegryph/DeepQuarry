@@ -312,21 +312,19 @@ CAPABILITIES(/datum/pai_software/door_jack)
 		return
 	hack_tick()
 
-/// DECLARE_REPEAT while hackdoor is set: one second of brute-forcing the door.
-/mob/living/silicon/pai/proc/hack_tick()
+/// One second of brute-forcing the door (its every() runs while hackdoor is set).
+/mob/living/silicon/pai/proc/hack_tick(datum/act/A)
 	if(cable && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
 		hackprogress = min(hackprogress+rand(1, 20), 1000)
 	else
 		hack_aborted = 1
 		hackprogress = 0
 		rel_clear(src, nameof(hackdoor))
-		return REPEAT_STOP
 	if(hackprogress >= 1000)
 		hackprogress = 0
 		hackdoor.open()
 		rel_clear(cable, nameof(cable.machine))
 		rel_clear(src, nameof(hackdoor))
-		return REPEAT_STOP
 
 /datum/pai_software/atmosphere_sensor
 	name = "Atmosphere Sensor"

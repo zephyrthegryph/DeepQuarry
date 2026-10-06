@@ -54,8 +54,8 @@
 	prey.ai_brain?.react_to_attack(user)
 
 	//Timer and progress bar
-	if(!user.client && prey.has_status(EFFECT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
-		prey.status_at_least(EFFECT_STUNNED, min(prey.status_units(EFFECT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
+	if(!user.client && prey.has_status(STAT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
+		prey.status_at_least(STAT_STUNNED, min(prey.status_units(STAT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
 	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
 	var/started = om_task_launch(/datum/om/task/timed/proc_devour, user, prey, list(receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE), null)
 	return !istext(started)

@@ -126,4 +126,5 @@ DECLARE_LOOT(/obj/random/fromList/mecha_toys, LOOT_TABLE(\
 	desc = "God weeps. you flew too close to the sun. the plastic is yellowed. the bun is nearly entirely a whiteish-bluish-greenish mess. This abomination is probably sapient at this point, no doubt older than most of the station. you didn't even think twice. your wax wings are melting. it's over. you're falling. and the burger remains, as accursed as it is. this is your fault. you unleashed it from it's damnable prison. Pandora's box has been opened, and the only thing inside was this burger."
 	nutriment_desc = list("regret. regret. regret.")
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburger/ancient, null, list(REAGENT_ID_MOLD = 5, REAGENT_ID_SALMONELLA = 5, REAGENT_ID_MINDBREAKER = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendburger/ancient)
+	configure(reagents(add = list(REAGENT_ID_MOLD = 5, REAGENT_ID_SALMONELLA = 5, REAGENT_ID_MINDBREAKER = 2)))

@@ -269,17 +269,16 @@
 
 /// A change to an op declared earlier on the type (or by a bundle): the refined op replaces it in
 /// place. caps_intern_list() applies it; refining a key nothing declared is an init error. A key that
-/// names a capability which is not an op (CAP_REAGENTS) refines that capability: its refined() makes the
-/// replacement from the same named fields.
+/// names a capability which is not an op refines that capability: its refined() makes the replacement
+/// from the same named fields.
 /datum/capability/refine
 	var/base_key
 	var/list/overrides
 
-/// key: the op's key (or a capability's, e.g. CAP_REAGENTS). delay: the new wait. effect: the new handler
-/// (PROC_REF). input: the new `using`. action: the new ACT_*. priority: the new OP_PRIORITY_*. starts / add / volume:
-/// a capability's starting contents and volume: `starts =` REPLACES the inherited contents, `add =` merges into
-/// them (refine(CAP_REAGENTS, add = list(REAGENT_ID_SUGAR = 2))). No field has two meanings.
-/proc/refine(key, delay, effect, input, action, priority, starts, volume, add)
+/// key: the op's key (or a capability's). delay: the new wait. effect: the new handler (PROC_REF). input: the new
+/// `using`. action: the new ACT_*. priority: the new OP_PRIORITY_*. No field has two meanings. (A reagent holder is
+/// reagents() in a CAPABILITIES block, changed with configure(reagents(...)): code/library/reagents/reagents.dm.)
+/proc/refine(key, delay, effect, input, action, priority)
 	var/datum/capability/refine/C = new
 	C.base_key = key
 	var/list/o = list()
@@ -293,12 +292,6 @@
 		o["action"] = action
 	if(!isnull(priority))
 		o["priority"] = priority
-	if(!isnull(starts))
-		o["starts"] = starts
-	if(!isnull(volume))
-		o["volume"] = volume
-	if(!isnull(add))
-		o["add"] = add
 	C.overrides = o
 	C.key = "refine:[key]:[md5(datum_signature(o))]"
 	return C

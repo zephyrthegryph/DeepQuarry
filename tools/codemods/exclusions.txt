@@ -13,10 +13,7 @@ interact /obj/item/uav request_in_effect
 interact /obj/item/robot_parts/robot_suit request_in_effect
 interact /obj/item/melee/energy request_in_effect
 interact /obj/item/paint_palette request_in_effect
-interact /obj/structure/sign/double/barsign request_in_effect
 interact /obj/structure/bonfire request_in_effect
-interact /obj/structure/foodcart request_in_effect
-interact /obj/structure/sign/flag request_in_effect
 interact /obj/structure/biowaste_tank request_in_effect
 # The handler asks who the actor is (isrobot): the op's binding or a requirement says it, by hand.
 tool_act /obj/structure/extinguisher_cabinet/wrench handler_actor_check
@@ -54,3 +51,5 @@ emag /obj/item/sleevemate request_in_effect
 interact /obj/item/vac_attachment request_in_effect
 interact /obj/item/capture_crystal request_in_effect
 interact /obj/item/taperecorder unknown_read
+interact /obj/structure/girder unknown_read
+lower /obj/structure/girder unknown_read

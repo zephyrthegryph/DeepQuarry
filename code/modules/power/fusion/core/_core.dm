@@ -33,7 +33,6 @@
 /obj/machinery/power/fusion_core/mapped
 	anchored = TRUE
 
-DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
 MSG_DEF_SELF(fusion_core/field_on, "The fusion field must be shut down before opening the material cradle.")
 MSG_DEF_SELF(fusion_core/cradle_full, "The material cradle is already occupied.")
@@ -43,8 +42,11 @@ MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment c
 // machine service interval (core_step(): the field's strength, the material cradle, then the field's own reaction a decisecond later,
 // core_tick()). The field, the material sample in its cradle and its ident are its own; with the field down the cradle opens, a part
 // replacer works and a multitool sets its ident.
+TRACKED(/obj/machinery/power/fusion_core, id_tag)
+
 CAPABILITIES(/obj/machinery/power/fusion_core)
-	membership(joins = REGISTRY_FUSION_CORES)
+	reagents(10000)
+	registry(REGISTRY_FUSION_CORES, key = nameof(id_tag))
 	owns_one(nameof(owned_field), /obj/effect/fusion_em_field)
 	owns_one(nameof(material_sample), /obj/item/stack/material/processed_alloy, on_destroy = ON_DESTROY_SPILL)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(core_step)), when = nameof(owned_field))
@@ -125,7 +127,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 /obj/machinery/power/fusion_core/proc/ident_entered(datum/act/op/A)
 	var/datum/prompt/text/answer = A.answer
 	if(answer?.value && A.actor?.Adjacent(src))
-		id_tag = answer.value
+		set_id_tag(answer.value)
 	return OP_OK
 
 /// A hand on the core: an emergency shutdown of a running field, else the sample comes out of the cradle.

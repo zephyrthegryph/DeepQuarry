@@ -304,52 +304,44 @@
 /// Temporary blindness, blur and deafness end on their own (timed statuses); this keeps the
 /// ones that don't (a disability, unconsciousness) topped up and heals ear damage.
 /mob/living/proc/life_disabilities(datum/seq_frame/life/F)
-	OM_EMIT(src, /datum/om/event/handle_disabilities)
 	//Eyes: blindness from disability or unconsciousness doesn't get better on its own. It is an
 	// untimed hold while the cause lasts, not a one-cycle top-up: re-topping a timed status every
 	// frame raised a status change on the mob's own frame and kept it from ever parking.
-	life_disability_hold(src, EFFECT_BLINDED, "disability_blind", (src.sdisabilities & BLIND) || src.stat)
-	if(src.has_status(EFFECT_BLINDED))
+	life_disability_hold(src, STAT_BLINDED, SRC_DISABILITY_BLIND, (src.sdisabilities & BLIND) || src.stat)
+	if(src.has_status(STAT_BLINDED))
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else
 		src.clear_alert("blind")
 
 	//Ears
-	life_disability_hold(src, EFFECT_DEAFENED, "disability_deaf", src.sdisabilities & DEAF) //disabled-deaf, doesn't get better on its own
+	life_disability_hold(src, STAT_DEAFENED, SRC_DISABILITY_DEAF, src.sdisabilities & DEAF) //disabled-deaf, doesn't get better on its own
 	if(!(src.sdisabilities & DEAF) && src.ear_damage > 0 && src.ear_damage < 100)
 		// ear damage heals slowly over time, unless it is over 100
 		src.adjustEarDamage(-0.05, 0)
 
 /// Busy while a disability or unconsciousness keeps blindness or deafness up, ears are healing,
-/// a disability component listens, or the blind alert doesn't match the status yet.
+/// or the blind alert doesn't match the status yet. (Trait disabilities tick on their own every(): disability.dm.)
 /mob/living/proc/life_disabilities_due()
-	if(om_wants(src, /datum/om/event/handle_disabilities))
+	if(!life_disability_hold_matches(src, STAT_BLINDED, SRC_DISABILITY_BLIND, (src.sdisabilities & BLIND) || src.stat))
 		return TRUE
-	if(!life_disability_hold_matches(src, EFFECT_BLINDED, "disability_blind", (src.sdisabilities & BLIND) || src.stat))
-		return TRUE
-	if(!life_disability_hold_matches(src, EFFECT_DEAFENED, "disability_deaf", src.sdisabilities & DEAF))
+	if(!life_disability_hold_matches(src, STAT_DEAFENED, SRC_DISABILITY_DEAF, src.sdisabilities & DEAF))
 		return TRUE
 	if(src.ear_damage > 0 && src.ear_damage < 100)
 		return TRUE
-	return !src.alerts?["blind"] == src.has_status(EFFECT_BLINDED)
+	return !src.alerts?["blind"] == src.has_status(STAT_BLINDED)
 
-/// Holds `effect_id` on `self` (keyed `key`, self-sourced) while `wanted`, releases it otherwise.
+/// Holds status `status_id` on `self` under `source` (a disability) while `wanted`, releases it otherwise.
 /// Holding what is already held and releasing what isn't are no-ops, so no change is raised.
-/proc/life_disability_hold(mob/living/self, effect_id, key, wanted)
-	if(life_disability_hold_matches(self, effect_id, key, wanted))
+/proc/life_disability_hold(mob/living/self, status_id, source, wanted)
+	if(life_disability_hold_matches(self, status_id, source, wanted))
 		return
 	if(wanted)
-		om_hold(self, effect_id, self, TRUE, key)
+		hold(self, status_id, 1, source)
 	else
-		om_release(self, effect_id, self, key)
+		release(self, status_id, source)
 
-/proc/life_disability_hold_matches(mob/living/self, effect_id, key, wanted)
-	var/datum/om/rec/rec = self.om_rec
-	var/held = FALSE
-	if(rec)
-		var/datum/om/effect/eff = om_registry().effect(effect_id)
-		held = !isnull(om_contrib_value(rec, eff.idx, self, key))
-	return held == !!wanted
+/proc/life_disability_hold_matches(mob/living/self, status_id, source, wanted)
+	return held_by_source(self, status_id, source) == !!wanted
 
 // --- Output -----------------------------------------------------------------------------------
 
@@ -561,19 +553,23 @@
 /// Technomancer instability.
 OM_FIELD(/mob/living, instability, 0, CHANGE_MOB_CONDITIONS)
 /// Gross boolean for keeping VR mobs in VR.
-OM_FIELD(/mob/living, virtual_reality_mob, FALSE, CHANGE_MOB_CONDITIONS)
+/mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, virtual_reality_mob, CHANGE_MOB_CONDITIONS)
 /// If they're glowing!
 OM_FIELD(/mob/living, glow_toggle, FALSE, CHANGE_MOB_CONDITIONS)
 /// Ignore the manual toggle.
-OM_FIELD(/mob/living, glow_override, FALSE, CHANGE_MOB_CONDITIONS)
+/mob/living/var/glow_override = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, glow_override, CHANGE_MOB_CONDITIONS)
 OM_FIELD(/mob/living, glow_range, 2, CHANGE_MOB_CONDITIONS)
 OM_FIELD(/mob/living, glow_intensity, null, CHANGE_MOB_CONDITIONS)
 /// The color they're glowing!
 OM_FIELD(/mob/living, glow_color, "#FFFFFF", CHANGE_MOB_CONDITIONS)
 /// The mob this one was transformed from (vore/mob_tf.dm).
-OM_FIELD_TYPED(/mob/living, mob/living, tf_mob_holder, null, CHANGE_MOB_CONDITIONS)
+/mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, tf_mob_holder, CHANGE_MOB_CONDITIONS)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
-OM_FIELD(/mob, sdisabilities, 0, CHANGE_MOB_STATUS)
+/mob/var/sdisabilities = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob, sdisabilities, CHANGE_MOB_STATUS)
 OM_FIELD(/mob, ear_damage, 0, CHANGE_MOB_STATUS)
 /// Cult stuff.
 OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)

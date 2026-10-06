@@ -156,13 +156,13 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 		return
 	else
 		if(prob(45))
-			owner.status_adjust(EFFECT_WEAKENED, 3 * base_mult)
+			owner.status_adjust(STAT_WEAKENED, 3 * base_mult)
 		if(prob(75))
-			owner.status_adjust(EFFECT_CONFUSED, 4 * base_mult)
+			owner.status_adjust(STAT_CONFUSED, 4 * base_mult)
 		var/obj/item/organ/external/O = owner.organs_by_name[parent_organ]
 		if(damage >= min_broken_damage)
 			owner.custom_pain(span_warning("You feel a painful sensation in your [O.name]."),damage,TRUE)
-			owner.status_adjust(EFFECT_BLINDED, 6 * base_mult)
+			owner.status_adjust(STAT_BLINDED, 6 * base_mult)
 			owner.injure(INJURY_TOXIN, 4 * base_mult, flags = INJURE_SILENT)
 		else
 			owner.custom_pain(span_warning("You feel a strange sensation in your [O.name]."),damage / 10,TRUE)
@@ -194,11 +194,11 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 
 	if(stage == 1)
 		if(prob(1))
-			owner.status_at_least(EFFECT_WEAKENED, 2)
+			owner.status_at_least(STAT_WEAKENED, 2)
 			cooldown = rand(cooldownmin,cooldownmax)
 	if(stage > 1)
 		if(prob(1))
-			owner.status_at_least(EFFECT_WEAKENED, 3)
+			owner.status_at_least(STAT_WEAKENED, 3)
 			owner.injure(INJURY_TOXIN, 3, flags = INJURE_SILENT)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
@@ -211,9 +211,9 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 					if(prob(30))
 						owner.vomit()
 					else if(prob(30))
-						owner.status_adjust(EFFECT_DIZZY, 90)
+						owner.status_adjust(STAT_DIZZY, 90)
 					else
-						owner.status_at_least(EFFECT_CONFUSED, 20)
+						owner.status_at_least(STAT_CONFUSED, 20)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
 	if(stage > 3)
@@ -221,7 +221,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 			var/obj/item/organ/external/bodypart = owner.get_organ(parent_organ)
 			bodypart?.add_wound(new /datum/affliction/wound/internal_bleeding(bodypart, 2))
 			bodypart?.update_damages()
-			owner.status_at_least(EFFECT_WEAKENED, 10)
+			owner.status_at_least(STAT_WEAKENED, 10)
 			owner.injure(INJURY_TOXIN, 20, flags = INJURE_SILENT)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
@@ -251,32 +251,29 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 		owner.vomit()
 		cooldown = rand(cooldownmin,cooldownmax)
 
+// A knife cuts the mimetic potato into sticks; five lengths of cable make it a battery.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
-	op("potato_interaction_item", item(/obj/item), then(PROC_REF(potato_interaction_item)))
+	op("cut", item(/obj/item/material/knife), label("Cut"), priority(OP_PRIORITY_PART), then(PROC_REF(potato_cut)))
+	op("wire", item(/obj/item/stack/cable_coil), label("Wire"), then(PROC_REF(potato_wired)))
 
-/// Old attackby.
-/obj/item/organ/internal/malignant/tumor/potato/proc/potato_interaction_item(datum/act/op/A)
+/obj/item/organ/internal/malignant/tumor/potato/proc/potato_cut(datum/act/op/A)
+	new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
+	to_chat(A.actor, span_notice("You cut the mimetic potato."))
+	consume(src, A.actor)
+
+/obj/item/organ/internal/malignant/tumor/potato/proc/potato_wired(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(istype(W,/obj/item/material/knife))
-		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
-		to_chat(user, span_notice("You cut the mimetic potato."))
-		consume(src, user)
-		return OP_PASS
-	if(istype(W, /obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = W
-		if(C.use(5))
-			//TODO: generalize this.
-			to_chat(user, span_notice("You add some cable to the [src.name] and slide it inside the battery casing."))
-			var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
-			if(src.loc == user && ishuman(user))
-				user.put_in_hands(pocell)
-			pocell.maxcharge = 2000 // same as potato
-			pocell.charge = pocell.maxcharge
-			consume(src, user)
-			return OP_PASS
-
-	return OP_DECLINE
+	var/obj/item/stack/cable_coil/C = A.held
+	if(!C.use(5))
+		return OP_DECLINE // five lengths or nothing: the click goes on as before
+	//TODO: generalize this.
+	to_chat(user, span_notice("You add some cable to the [src.name] and slide it inside the battery casing."))
+	var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
+	if(src.loc == user && ishuman(user))
+		user.put_in_hands(pocell)
+	pocell.maxcharge = 2000 // same as potato
+	pocell.charge = pocell.maxcharge
+	consume(src, user)
 
 
 
@@ -308,9 +305,9 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 		if(prob(30))
 			owner.vomit()
 		else if(prob(30))
-			owner.status_adjust(EFFECT_DIZZY, 20)
+			owner.status_adjust(STAT_DIZZY, 20)
 		else
-			owner.status_at_least(EFFECT_CONFUSED, 30)
+			owner.status_at_least(STAT_CONFUSED, 30)
 
 	if(prob(2))
 		var/obj/item/organ/external/O = owner.organs_by_name[parent_organ]
@@ -324,16 +321,15 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 			owner.custom_pain(span_danger("The pressure inside your [O.name] hurts."),1,TRUE)
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "winces painfully.", check_stat = TRUE)
 
+// Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
-	op("pinata_interaction_item", item(/obj/item), then(PROC_REF(pinata_interaction_item)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req(PROC_REF(punctured_by))), then(PROC_REF(popped)))
 
-/// Old attackby.
-/obj/item/organ/internal/malignant/tumor/pinata/proc/pinata_interaction_item(datum/act/op/A)
-	var/obj/item/W = A.held
-	if(can_puncture(W))
-		pop()
-		return OP_PASS
-	return OP_DECLINE
+/obj/item/organ/internal/malignant/tumor/pinata/proc/punctured_by(datum/act/op/A)
+	return can_puncture(A.held)
+
+/obj/item/organ/internal/malignant/tumor/pinata/proc/popped(datum/act/op/A)
+	pop()
 
 /obj/item/organ/internal/malignant/tumor/pinata/proc/pop()
 	// place a ton of candy at location, then delete organ!
@@ -480,36 +476,35 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 			if(prob(30))
 				owner.vomit()
 			else if(prob(30))
-				owner.status_adjust(EFFECT_DIZZY, 10)
+				owner.status_adjust(STAT_DIZZY, 10)
 			else
-				owner.status_at_least(EFFECT_CONFUSED, 15)
+				owner.status_at_least(STAT_CONFUSED, 15)
 		else if(thalers < 5000)
 			owner.custom_pain(span_danger("The pressure inside your [O.name] hurts."),15,TRUE)
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "winces painfully.", check_stat = TRUE)
-			owner.status_at_least(EFFECT_WEAKENED, 3)
+			owner.status_at_least(STAT_WEAKENED, 3)
 			if(prob(30))
-				owner.status_at_least(EFFECT_STUNNED, 10)
-				owner.status_at_least(EFFECT_PARALYZED, 4)
+				owner.status_at_least(STAT_STUNNED, 10)
+				owner.status_at_least(STAT_PARALYZED, 4)
 			if(prob(30))
 				owner.vomit()
 			else if(prob(30))
-				owner.status_adjust(EFFECT_DIZZY, 20)
+				owner.status_adjust(STAT_DIZZY, 20)
 			else
-				owner.status_at_least(EFFECT_CONFUSED, 30)
+				owner.status_at_least(STAT_CONFUSED, 30)
 		else
 			pop()
 		cooldown = rand(cooldownmin,cooldownmax)
 
+// Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
-	op("moneyorgan_interaction_item", item(/obj/item), then(PROC_REF(moneyorgan_interaction_item)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req(PROC_REF(punctured_by))), then(PROC_REF(popped)))
 
-/// Old attackby.
-/obj/item/organ/internal/malignant/tumor/moneyorgan/proc/moneyorgan_interaction_item(datum/act/op/A)
-	var/obj/item/W = A.held
-	if(can_puncture(W))
-		pop()
-		return OP_PASS
-	return OP_DECLINE
+/obj/item/organ/internal/malignant/tumor/moneyorgan/proc/punctured_by(datum/act/op/A)
+	return can_puncture(A.held)
+
+/obj/item/organ/internal/malignant/tumor/moneyorgan/proc/popped(datum/act/op/A)
+	pop()
 
 /obj/item/organ/internal/malignant/tumor/moneyorgan/proc/pop()
 	if(owner)
@@ -603,7 +598,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 
 /obj/item/organ/internal/malignant/parasite/gethigh/feed()
 	..()
-	owner.status_at_least(EFFECT_DRUGGED, 10 + (growth * 20))
+	owner.status_at_least(STAT_DRUGGED, 10 + (growth * 20))
 	return prob(6) && growth < 5
 
 

@@ -25,9 +25,9 @@
 	if(comp.recursive_enhancement)
 		duration = duration + 15 SECONDS
 		to_chat(src, span_notice("They will be deprived of sight for longer."))
-	T.status_at_least(EFFECT_NEARSIGHTED, CEILING(duration / LIFE_CYCLE, 1))
-	T.status_at_least(EFFECT_BLINDED, 10)
-	T.status_set(EFFECT_BLURRY, 20)
+	T.status_at_least(STAT_NEARSIGHTED, CEILING(duration / LIFE_CYCLE, 1))
+	T.status_at_least(STAT_BLINDED, 10)
+	T.status_set(STAT_BLURRY, 20)
 	feedback_add_details("changeling_powers","BS")
 	return TRUE
 

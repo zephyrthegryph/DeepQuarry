@@ -33,7 +33,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 
 		var/turf/T = get_turf(suspension_field)
 		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_WEAKENED, 3)
 			cell.charge -= power_use
 			if(prob(5))
 				to_chat(M, span_warning("[pick("You feel tingly","You feel like floating","It is hard to speak","You can barely move")]."))
@@ -189,7 +189,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 	var/collected = 0
 
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(M, null, MSG_SELF("You feel tingly and light, but it is difficult to move."), \
 			MSG_OTHERS(span_blue("[icon2html(M,viewers(M))] %U% begins to float in the air!")))
 
@@ -225,7 +225,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 		to_chat(M, span_info("You no longer feel like floating."))
-		M.status_at_least(EFFECT_WEAKENED, 3)
+		M.status_at_least(STAT_WEAKENED, 3)
 
 	for(var/obj/effect/anomaly/anom in turf_contents_of_type(T, /obj/effect/anomaly))
 		if(anom.stats)

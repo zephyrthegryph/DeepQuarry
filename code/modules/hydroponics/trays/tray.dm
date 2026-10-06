@@ -139,6 +139,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	reagents(200)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(temp_chem_holder), /obj)
 
@@ -199,7 +200,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	if(istype(user,/mob/living/carbon/alien/diona))
 		var/mob/living/carbon/alien/diona/nymph = user
 
-		if(nymph.stat == DEAD || nymph.has_status(EFFECT_PARALYZED) || nymph.has_status(EFFECT_WEAKENED) || nymph.has_status(EFFECT_STUNNED) || nymph.restrained())
+		if(nymph.stat == DEAD || nymph.has_status(STAT_PARALYZED) || nymph.has_status(STAT_WEAKENED) || nymph.has_status(STAT_STUNNED) || nymph.restrained())
 			return
 
 		if(weedlevel > 0)
@@ -217,7 +218,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 				MSG_OTHERS(span_notice(span_bold("%U%") + " rolls around in %T% for a bit.")))
 		return
 
-DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 OM_FIELD(/obj/machinery/portable_atmospherics/hydroponics, frozen, 0, CHANGE_MACHINE_SETTINGS)

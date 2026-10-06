@@ -74,7 +74,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 			L.burn_skin(85)
 			to_chat(L, span_danger("You feel a deep shock course through your body!"))
 			L.burn_skin(85)
-			L.status_at_least(EFFECT_STUNNED, 600)
+			L.status_at_least(STAT_STUNNED, 600)
 	visible_message(span_danger("The electric chair went off!"), span_danger("You hear a deep sharp shock!"))
 
 	A.power_light = light

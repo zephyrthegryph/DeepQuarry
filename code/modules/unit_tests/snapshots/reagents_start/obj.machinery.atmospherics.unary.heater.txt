@@ -1,0 +1,4 @@
+/obj/machinery/atmospherics/unary/heater vol=120 holder=/datum/reagents 
+/obj/machinery/atmospherics/unary/heater/sauna vol=120 holder=/datum/reagents 
+/obj/machinery/atmospherics/unary/heater/cryosauna vol=120 holder=/datum/reagents 
+

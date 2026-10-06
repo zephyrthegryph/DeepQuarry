@@ -642,8 +642,8 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				flick("pain",M.pain)
 			M.flash_eyes()
 			if(prob(50))
-				M.status_at_least(EFFECT_STUNNED, 5)
-			M.status_adjust(EFFECT_JITTERY, 50) //SHAKY this used to be 1000(seizure) but I toned it to 50 to be less aggressive.
+				M.status_at_least(STAT_STUNNED, 5)
+			M.status_adjust(STAT_JITTERY, 50) //SHAKY this used to be 1000(seizure) but I toned it to 50 to be less aggressive.
 		if(prob(25))
 			excavate_find(prob(25), finds[1])
 		if(prob(2))

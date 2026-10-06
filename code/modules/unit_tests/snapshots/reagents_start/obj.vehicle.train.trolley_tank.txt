@@ -1,0 +1,2 @@
+/obj/vehicle/train/trolley_tank vol=3000 holder=/datum/reagents 
+

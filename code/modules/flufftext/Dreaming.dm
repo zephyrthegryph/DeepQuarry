@@ -53,8 +53,10 @@
 	dream_wait = 0
 	set_dream_fragments(chosen_dream.GenerateDream(src))
 
-/// The dream fragments still to show, in order. dream_sequence() shows one every `dream_wait` while set (DECLARE_REPEAT).
-OM_FIELD_TYPED(/mob/living/carbon, tmp/list, dream_fragments, null, CHANGE_MOB_CONDITIONS)
+/// The dream fragments still to show, in order. dream_sequence() shows one every `dream_wait` while set (its every() in
+/// CAPABILITIES(/mob/living/carbon)).
+/mob/living/carbon/var/tmp/list/dream_fragments = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living/carbon, dream_fragments, CHANGE_MOB_CONDITIONS)
 /// The dream datum of the current dream.
 /mob/living/carbon/var/tmp/datum/dream/current_dream
 /// Dreams are GLOB.dreams singletons: a mob's current_dream is shared, never owned.
@@ -64,18 +66,21 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 	return (D in GLOB.dreams) ? D : null
 /// Wait before the next dream fragment.
 /mob/living/carbon/var/tmp/dream_wait = 0
-DECLARE_REPEAT(/mob/living/carbon, "dream_wait", dream_sequence, "dream_fragments")
+
+/// The every() interval of dream_sequence(): the wait the last fragment set.
+/mob/living/carbon/proc/dream_interval(datum/act/A)
+	return dream_wait
 
 /**
- * Displays the next of the sleeper's dream fragments (DECLARE_REPEAT while dream_fragments is set).
+ * Displays the next of the sleeper's dream fragments (every dream_wait while dream_fragments is set).
  *
  * Displays the first string of the dream fragments, then either ends the dream sequence
  * or waits a moment before the next one depending on if there are any remaining dream fragments to display.
  */
-/mob/living/carbon/proc/dream_sequence()
+/mob/living/carbon/proc/dream_sequence(datum/act/A)
 	if(stat != UNCONSCIOUS || stat == DEAD || !LAZYLEN(dream_fragments))
 		end_dream()
-		return REPEAT_STOP
+		return
 	var/next_message = dream_fragments[1]
 	dream_fragments.Cut(1,2)
 
@@ -88,10 +93,10 @@ DECLARE_REPEAT(/mob/living/carbon, "dream_wait", dream_sequence, "dream_fragment
 	if(LAZYLEN(dream_fragments))
 		dream_wait = rand(10, 30)
 		if(current_dream?.sleep_until_finished)
-			status_adjust(EFFECT_SLEEPING, dream_wait)
+			status_adjust(STAT_SLEEPING, dream_wait)
 	else
 		end_dream()
-		return REPEAT_STOP
+		return
 
 /// Ends the current dream: the trait goes and the dream datum is told.
 /mob/living/carbon/proc/end_dream()

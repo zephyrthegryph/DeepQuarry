@@ -126,8 +126,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 			if(!isnull(H.overlays_standing[i]))
 				add_overlay(H.overlays_standing[i])
 
-	initial_sleep = H.status_units(EFFECT_SLEEPING)
-	initial_blind = H.status_units(EFFECT_BLINDED)
+	initial_sleep = H.status_units(STAT_SLEEPING)
+	initial_blind = H.status_units(STAT_BLINDED)
 	initial_is_shifted = H.is_shifted
 	transform = H.transform
 	layer = H.layer
@@ -146,8 +146,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 	act_message(H, null, MSG_SELF(span_warning("Your skin abruptly [adjective] as you turn to [material]!")), \
 		MSG_OTHERS(span_warning("%U%'s skin rapidly [adjective] as they turn to [material]!")))
 	H.forceMove(src)
-	H.status_set(EFFECT_BLINDED, 0)
-	H.status_set(EFFECT_SLEEPING, 0)
+	H.status_set(STAT_BLINDED, 0)
+	H.status_set(STAT_SLEEPING, 0)
 	H.canmove = 0
 
 // the petrified gargoyle reverts, or crumbles.
@@ -224,8 +224,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
 	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE))
-	gargoyle.status_set(EFFECT_BLINDED, initial_blind)
-	gargoyle.status_set(EFFECT_SLEEPING, initial_sleep)
+	gargoyle.status_set(STAT_BLINDED, initial_blind)
+	gargoyle.status_set(STAT_SLEEPING, initial_sleep)
 	gargoyle.canmove = 1
 	gargoyle.update_canmove()
 	var/hurtmessage = ""

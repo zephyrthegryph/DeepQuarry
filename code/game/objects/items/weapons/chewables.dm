@@ -13,12 +13,12 @@
 
 TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
 
 /// TRUE while worn in the mask slot by a mob with a mouth.
 /obj/item/clothing/mask/chewable/var/chewing = FALSE
 TRACKED(/obj/item/clothing/mask/chewable, chewing)
 CAPABILITIES(/obj/item/clothing/mask/chewable)
+	reagents(nameof(chem_volume))
 	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
 	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
 
@@ -109,13 +109,15 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 	name = "chewing tobacco"
 	desc = "A chewy wad of tobacco. Cut in long strands and treated with syrup so it tastes less like an ash-tray when you stuff it into your face."
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/cheap, null, list(REAGENT_ID_NICOTINE = 2))
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/cheap)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2)))
 
 /obj/item/clothing/mask/chewable/tobacco/fine
 	name = "deluxe chewing tobacco"
 	desc = "A chewy wad of fine tobacco. Cut in long strands and treated with syrup so it doesn't taste like an ash-tray when you stuff it into your face."
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/fine, null, list(REAGENT_ID_NICOTINE = 3))
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/fine)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 3)))
 
 /obj/item/clothing/mask/chewable/tobacco/nico
 	name = "nicotine gum"
@@ -124,7 +126,8 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/fine, null, list(REAGE
 	type_butt = /obj/item/trash/spitgum
 	wrapped = TRUE
 
-DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, list(REAGENT_ID_NICOTINE = 2))
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2), tint = TRUE))
 
 /obj/item/storage/chewables
 	name = "box of chewing wads master"
@@ -221,7 +224,8 @@ TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 	chem_volume = 50
 	chewtime = 300
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/clothing/mask/chewable/candy/gum
 	name = "chewing gum"
@@ -375,7 +379,8 @@ CAPABILITIES(/obj/item/storage/box/pocky)
 	item_state = "pocky"
 	type_butt = null
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGENT_ID_CHOCOLATE = 5))
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy/pocky)
+	configure(reagents(add = list(REAGENT_ID_CHOCOLATE = 5)))
 
 /obj/item/clothing/mask/chewable/candy/pocky/chewable_step(datum/act/timer/A)
 	chew()

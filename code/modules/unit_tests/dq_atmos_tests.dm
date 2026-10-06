@@ -4059,16 +4059,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(A.scanning, "composition change did not wake air alarm")
 
 	var/obj/machinery/air_sensor/S = new(T)
-	S.register_gas_dependencies()
-	var/sensor_wakes_before = S.gas_dependency_wake_count
+	S.broadcast_readings()
+	var/sensor_reading_before = S.last_broadcast
 	heat_set(T.air, T.air.return_temperature() + 5, HEAT_SOURCE_OTHER)
-	for(var/sensor_i in 1 to 65536)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(S.gas_dependency_wake_count > sensor_wakes_before)
+	for(var/sensor_i in 1 to 600)
+		native_system().drain()
+		if(S.last_broadcast != sensor_reading_before)
 			break
-		if(!(sensor_i % 256))
-			stoplag()
-	TEST_ASSERT(S.gas_dependency_wake_count > sensor_wakes_before, "temperature change did not wake air sensor")
+		stoplag()
+	TEST_ASSERT(S.last_broadcast != sensor_reading_before, "temperature change did not reach the air sensor's gas watch")
 
 	qdel(V)
 	qdel(A)

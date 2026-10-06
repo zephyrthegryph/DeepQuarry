@@ -61,7 +61,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/cola, null, list(REAGENT_ID_COLA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/cola)
+	configure(reagents(add = list(REAGENT_ID_COLA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/decaf_cola
 	name = "\improper Space Cola Free"
@@ -71,7 +72,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/cola, null, list(
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/decaf_cola, null, list(REAGENT_ID_DECAFCOLA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/decaf_cola)
+	configure(reagents(add = list(REAGENT_ID_DECAFCOLA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle
 	name = "bottled water"
@@ -83,7 +85,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/decaf_cola, null,
 	pickup_sound = SFX_ITEMS_PICKUP_DISK
 	cant_chance = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle, null, list(REAGENT_ID_WATER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle)
+	configure(reagents(add = list(REAGENT_ID_WATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/space_mountain_wind
 	name = "\improper Space Mountain Wind"
@@ -93,7 +96,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle, null
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind, null, list(REAGENT_ID_SPACEMOUNTAINWIND = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind)
+	configure(reagents(add = list(REAGENT_ID_SPACEMOUNTAINWIND = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/thirteenloko
 	name = "\improper Thirteen Loko"
@@ -102,7 +106,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/space_mountain_wi
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/thirteenloko, null, list(REAGENT_ID_THIRTEENLOKO = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/thirteenloko)
+	configure(reagents(add = list(REAGENT_ID_THIRTEENLOKO = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/dr_gibb
 	name = "\improper Dr. Gibb"
@@ -112,7 +117,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/thirteenloko, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/dr_gibb, null, list(REAGENT_ID_DRGIBB = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/dr_gibb)
+	configure(reagents(add = list(REAGENT_ID_DRGIBB = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet
 	name = "\improper Diet Dr. Gibb"
@@ -122,7 +128,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/dr_gibb, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet, null, list(REAGENT_ID_DIETDRGIBB = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet)
+	configure(reagents(add = list(REAGENT_ID_DIETDRGIBB = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/starkist
 	name = "\improper Star-kist"
@@ -132,7 +139,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/starkist, null, list(REAGENT_ID_BROWNSTAR = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/starkist)
+	configure(reagents(add = list(REAGENT_ID_BROWNSTAR = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/starkistdecaf
 	name = "\improper Star-kist Classic"
@@ -142,7 +150,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/starkist, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/starkistdecaf, null, list(REAGENT_ID_BROWNSTARDECAF = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/starkistdecaf)
+	configure(reagents(add = list(REAGENT_ID_BROWNSTARDECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/space_up
 	name = "\improper Space-Up"
@@ -152,7 +161,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/starkistdecaf, nu
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/space_up, null, list(REAGENT_ID_SPACEUP = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/space_up)
+	configure(reagents(add = list(REAGENT_ID_SPACEUP = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/lemon_lime
 	name = "\improper Lemon-Lime"
@@ -162,7 +172,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/space_up, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/lemon_lime, null, list(REAGENT_ID_LEMONLIME = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/lemon_lime)
+	configure(reagents(add = list(REAGENT_ID_LEMONLIME = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/iced_tea
 	name = "\improper Vrisk Serket Iced Tea"
@@ -172,7 +183,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/lemon_lime, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/iced_tea, null, list(REAGENT_ID_ICETEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/iced_tea)
+	configure(reagents(add = list(REAGENT_ID_ICETEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/grape_juice
 	name = "\improper Grapel Juice"
@@ -182,7 +194,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/iced_tea, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/grape_juice, null, list(REAGENT_ID_GRAPEJUICE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/grape_juice)
+	configure(reagents(add = list(REAGENT_ID_GRAPEJUICE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/tonic
 	name = "\improper T-Borg's Tonic Water"
@@ -192,7 +205,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/grape_juice, null
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/tonic, null, list(REAGENT_ID_TONIC = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/tonic)
+	configure(reagents(add = list(REAGENT_ID_TONIC = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/sodawater
 	name = "soda water"
@@ -201,7 +215,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/tonic, null, list
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/sodawater, null, list(REAGENT_ID_SODAWATER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/sodawater)
+	configure(reagents(add = list(REAGENT_ID_SODAWATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/gingerale
 	name = "\improper Classic Ginger Ale"
@@ -211,7 +226,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/sodawater, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/gingerale, null, list(REAGENT_ID_GINGERALE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/gingerale)
+	configure(reagents(add = list(REAGENT_ID_GINGERALE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/root_beer
 	name = "\improper R&D Root Beer"
@@ -221,7 +237,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/gingerale, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/root_beer, null, list(REAGENT_ID_ROOTBEER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/root_beer)
+	configure(reagents(add = list(REAGENT_ID_ROOTBEER = 30)))
 
 /////////////////////////BODA VENDOR DRINKS/////////////////////////
 
@@ -233,7 +250,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/root_beer, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/kvass, null, list(REAGENT_ID_KVASS = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/kvass)
+	configure(reagents(add = list(REAGENT_ID_KVASS = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/kompot
 	name = "\improper Kompot"
@@ -243,7 +261,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/kvass, null, list
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/kompot, null, list(REAGENT_ID_KOMPOT = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/kompot)
+	configure(reagents(add = list(REAGENT_ID_KOMPOT = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/boda
 	name = "\improper Boda"
@@ -252,7 +271,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/kompot, null, lis
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/boda, null, list(REAGENT_ID_SODAWATER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/boda)
+	configure(reagents(add = list(REAGENT_ID_SODAWATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/bodaplus
 	name = "\improper Boda-Plyus"
@@ -261,7 +281,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/boda, null, list(
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bodaplus, null, list(REAGENT_ID_SODAWATER = 15))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/bodaplus)
+	configure(reagents(add = list(REAGENT_ID_SODAWATER = 15)))
 
 // ALLOW(init/INSTANCE_STATE): rolls which juice this can holds
 /obj/item/reagent_containers/food/drinks/cans/bodaplus/Initialize(mapload)
@@ -283,7 +304,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bodaplus, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/redarmy, null, list(REAGENT_ID_POTATOJUICE = 15, REAGENT_ID_SODAWATER = 15))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/redarmy)
+	configure(reagents(add = list(REAGENT_ID_POTATOJUICE = 15, REAGENT_ID_SODAWATER = 15)))
 
 /obj/item/reagent_containers/food/drinks/cans/arstbru
 	name = "\improper Arstotzka Brü"
@@ -292,7 +314,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/redarmy, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/arstbru, null, list(REAGENT_ID_TURNIPJUICE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/arstbru)
+	configure(reagents(add = list(REAGENT_ID_TURNIPJUICE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/terra_cola
 	name = "\improper Terra-Cola"
@@ -302,7 +325,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/arstbru, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/terra_cola, null, list(REAGENT_ID_WATER = 25, REAGENT_ID_IRON = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/terra_cola)
+	configure(reagents(add = list(REAGENT_ID_WATER = 25, REAGENT_ID_IRON = 5)))
 
 /////////////////////////MISC VENDOR DRINKS/////////////////////////
 
@@ -313,7 +337,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/terra_cola, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/straw_cola, null, list(REAGENT_ID_STRAWSODA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/straw_cola)
+	configure(reagents(add = list(REAGENT_ID_STRAWSODA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/apple_cola
 	name = "\improper Andromeda Apple"
@@ -322,7 +347,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/straw_cola, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/apple_cola, null, list(REAGENT_ID_APPLESODA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/apple_cola)
+	configure(reagents(add = list(REAGENT_ID_APPLESODA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/lemon_cola
 	name = "\improper Lunar Lemon"
@@ -331,7 +357,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/apple_cola, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/lemon_cola, null, list(REAGENT_ID_LEMONSODA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/lemon_cola)
+	configure(reagents(add = list(REAGENT_ID_LEMONSODA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/sarsaparilla
 	name = "\improper Starship Sarsaparilla"
@@ -340,7 +367,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/lemon_cola, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/sarsaparilla, null, list(REAGENT_ID_SARSAPARILLA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/sarsaparilla)
+	configure(reagents(add = list(REAGENT_ID_SARSAPARILLA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/grape_cola
 	name = "\improper Gravity Grape"
@@ -349,7 +377,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/sarsaparilla, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/grape_cola, null, list(REAGENT_ID_GRAPESODA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/grape_cola)
+	configure(reagents(add = list(REAGENT_ID_GRAPESODA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/orange_cola
 	name = "\improper Orion Orange"
@@ -358,7 +387,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/grape_cola, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/orange_cola, null, list(REAGENT_ID_ORANGESODA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/orange_cola)
+	configure(reagents(add = list(REAGENT_ID_ORANGESODA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/baconsoda
 	name = "\improper Bacon Soda"
@@ -367,7 +397,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/orange_cola, null
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/baconsoda, null, list(REAGENT_ID_PORKSODA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/baconsoda)
+	configure(reagents(add = list(REAGENT_ID_PORKSODA = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/bepis
 	name = "\improper Bepis"
@@ -380,7 +411,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/baconsoda, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bepis, null, list(REAGENT_ID_BEPIS = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/bepis)
+	configure(reagents(add = list(REAGENT_ID_BEPIS = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/astrodew
 	name = "\improper Astro Dew Spring Water"
@@ -390,7 +422,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bepis, null, list
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/astrodew, null, list(REAGENT_ID_WATER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/astrodew)
+	configure(reagents(add = list(REAGENT_ID_WATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/icecoffee
 	name = "\improper Café Del Consumir"
@@ -405,7 +438,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/astrodew, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/icecoffee, null, list(REAGENT_ID_ICECOFFEE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/icecoffee)
+	configure(reagents(add = list(REAGENT_ID_ICECOFFEE = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/buzz
 	name = "\improper Buzz Fuzz"
@@ -415,7 +449,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/icecoffee, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/buzz, null, list(REAGENT_ID_BUZZFUZZ = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/buzz)
+	configure(reagents(add = list(REAGENT_ID_BUZZFUZZ = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/shambler
 	name = "\improper Shambler's Juice"
@@ -425,7 +460,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/buzz, null, list(
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/shambler, null, list(REAGENT_ID_SHAMBLERS = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/shambler)
+	configure(reagents(add = list(REAGENT_ID_SHAMBLERS = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/cranberry
 	name = "\improper Sprited Cranberry"
@@ -435,7 +471,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/shambler, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/cranberry, null, list(REAGENT_ID_SPRITEDCRANBERRY = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/cranberry)
+	configure(reagents(add = list(REAGENT_ID_SPRITEDCRANBERRY = 30)))
 
 /////////////////////////CANNED BOOZE DRINKS/////////////////////////
 
@@ -446,7 +483,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/cranberry, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/beercan, null, list(REAGENT_ID_BEER = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/beercan)
+	configure(reagents(add = list(REAGENT_ID_BEER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/alecan
 	name = "\improper Spacecastle Pale Ale"
@@ -455,7 +493,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/beercan, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/alecan, null, list(REAGENT_ID_ALE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/alecan)
+	configure(reagents(add = list(REAGENT_ID_ALE = 30)))
 
 /////////////////////////ENERGY DRINKS/////////////////////////
 
@@ -467,7 +506,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/alecan, null, lis
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_peach, null, list(REAGENT_ID_NUKIEPEACH = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_peach)
+	configure(reagents(add = list(REAGENT_ID_NUKIEPEACH = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_pear
 	name = "\improper Nukies - Great Pear"
@@ -477,7 +517,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_peach, null
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_pear, null, list(REAGENT_ID_NUKIEPEAR = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_pear)
+	configure(reagents(add = list(REAGENT_ID_NUKIEPEAR = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_cherry
 	name = "\improper Nukies - Popping Cherry"
@@ -487,7 +528,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_pear, null,
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_cherry, null, list(REAGENT_ID_NUKIECHERRY = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_cherry)
+	configure(reagents(add = list(REAGENT_ID_NUKIECHERRY = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_melon
 	name = "\improper Nukies - Melon Squirter"
@@ -497,7 +539,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_cherry, nul
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_melon, null, list(REAGENT_ID_NUKIEMELON = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_melon)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMELON = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_banana
 	name = "\improper Nukies - Bursting Banana"
@@ -507,7 +550,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_melon, null
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_banana, null, list(REAGENT_ID_NUKIEBANANA = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_banana)
+	configure(reagents(add = list(REAGENT_ID_NUKIEBANANA = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_rose
 	name = "\improper Nukies - Insatiable Rose"
@@ -517,7 +561,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_banana, nul
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_rose, null, list(REAGENT_ID_NUKIEROSE = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_rose)
+	configure(reagents(add = list(REAGENT_ID_NUKIEROSE = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_lemon
 	name = "\improper Nukies - Citrus Got Real"
@@ -527,7 +572,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_rose, null,
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_lemon, null, list(REAGENT_ID_NUKIELEMON = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_lemon)
+	configure(reagents(add = list(REAGENT_ID_NUKIELEMON = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_fruit
 	name = "\improper Nukies - Swelling Fruit"
@@ -537,7 +583,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_lemon, null
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_fruit, null, list(REAGENT_ID_NUKIEFRUIT = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_fruit)
+	configure(reagents(add = list(REAGENT_ID_NUKIEFRUIT = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_special
 	name = "\improper Nukies - Limited Edition"
@@ -547,7 +594,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_fruit, null
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_special, null, list(REAGENT_ID_NUKIESPECIAL = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_special)
+	configure(reagents(add = list(REAGENT_ID_NUKIESPECIAL = 60)))
 
 /////////////////////////MEGA NUKIES/////////////////////////
 //Rare loot energy drinks with special properties, for the funnies.
@@ -560,7 +608,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_special, nu
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight, null, list(REAGENT_ID_NUKIEMEGASIGHT = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGASIGHT = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart
 	name = "\improper Nukies Mega - Juice Pumper"
@@ -570,7 +619,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight,
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart, null, list(REAGENT_ID_NUKIEMEGAHEART = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGAHEART = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep
 	name = "\improper Nukies Nega - Vibrating Nights"
@@ -580,7 +630,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart,
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep, null, list(REAGENT_ID_NUKIEMEGASLEEP = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGASLEEP = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock
 	name = "\improper Nukies Mega - Jolt Railer"
@@ -590,7 +641,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep,
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock, null, list(REAGENT_ID_NUKIEMEGASHOCK = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGASHOCK = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast
 	name = "\improper Nukies Mega - Rapid Rager"
@@ -600,7 +652,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock,
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast, null, list(REAGENT_ID_NUKIEMEGAFAST = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGAFAST = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_high
 	name = "\improper Nukies Mega - Diamond Sky"
@@ -610,7 +663,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast, 
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high, null, list(REAGENT_ID_NUKIEMEGAHIGH = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGAHIGH = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink
 	name = "\improper Nukies Mega - Shrinking Flower"
@@ -620,7 +674,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high, 
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink, null, list(REAGENT_ID_NUKIEMEGASHRINK = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGASHRINK = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow
 	name = "\improper Nukies Mega - Growing Geyser"
@@ -630,7 +685,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow, null, list(REAGENT_ID_NUKIEMEGAGROWTH = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow)
+	configure(reagents(add = list(REAGENT_ID_NUKIEMEGAGROWTH = 60)))
 
 ////////////////////////Event Only Nukie//////////////////////////////////
 
@@ -642,7 +698,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow, 
 	center_of_mass_y = 8
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_one, null, list(REAGENT_ID_NUKIEONE = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_one)
+	configure(reagents(add = list(REAGENT_ID_NUKIEONE = 60)))
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur
 	name = "bottled wataur"
@@ -652,4 +709,5 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_one, null, 
 	volume = 150
 	drop_sound = SFX_ITEMS_DROP_FOOD
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur, null, list(REAGENT_ID_WATER = 120))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur)
+	configure(reagents(add = list(REAGENT_ID_WATER = 120)))

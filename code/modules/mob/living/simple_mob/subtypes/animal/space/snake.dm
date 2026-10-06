@@ -214,4 +214,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	icon_state = "sneksnakbox"
 	storage_slots = 7
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/snakesnack, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/snakesnack)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))

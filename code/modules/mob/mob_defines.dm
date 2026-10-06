@@ -262,6 +262,9 @@
 
 CAPABILITIES(/mob)
 	telekinetic_reach()
+	godmode_immunities()
+	every(1 DECISECONDS, then(PROC_REF(dizzy_shake_tick)), when = nameof(dizzy_shaking))
+	every(1 DECISECONDS, then(PROC_REF(jittery_shake_tick)), when = nameof(jittery_shaking))
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
 	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)

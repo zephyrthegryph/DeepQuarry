@@ -2,7 +2,8 @@
 /obj/item/reagent_containers/glass/replenishing
 	var/spawning_id
 
-DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
+	every(2 SECONDS, then(PROC_REF(replenishing_step)))
 
 // ALLOW(init/INSTANCE_STATE): rolls which reagent it replenishes
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
@@ -15,7 +16,7 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 			spawning_id = new_chem
 			break
 
-/obj/item/reagent_containers/glass/replenishing/periodic_step()
+/obj/item/reagent_containers/glass/replenishing/proc/replenishing_step(datum/act/timer/A)
 	reagents.add_reagent(spawning_id, 0.3)
 
 //a talking gas mask!
@@ -199,7 +200,7 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 			play_sfx(src, SFX_HALLUCINATIONS_VOICES)
 			to_chat(M, span_cult("The [src] phases right into your body, your entire form feeling cold and numb!")) //You just had a ghost possess / take residence you...YEAH, it's going to be alarming!
 			act_message(M, null, others = span_cult("%U%'s body glows bright red for a moment as glyphs spread across their form!")) //Let's try something fancy.
-			M.status_at_least(EFFECT_SLEEPING, rand(5, 10))
+			M.status_at_least(STAT_SLEEPING, rand(5, 10))
 
 			src.moveToNullspace()
 	else

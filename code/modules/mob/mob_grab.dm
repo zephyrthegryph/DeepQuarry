@@ -137,10 +137,10 @@
 			if(affecting.loc != assailant.loc || size_difference(affecting, assailant) > 0)
 				force_down = 0
 			else
-				affecting.status_at_least(EFFECT_WEAKENED, 2)
+				affecting.status_at_least(STAT_WEAKENED, 2)
 
 	if(state >= GRAB_NECK)
-		affecting.status_at_least(EFFECT_STUNNED, 3)
+		affecting.status_at_least(STAT_STUNNED, 3)
 		if(isliving(affecting))
 			var/mob/living/L = affecting
 			// A chokehold squeezes the airway for as long as it's held.
@@ -148,8 +148,8 @@
 
 	if(state >= GRAB_KILL)
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.
-		affecting.status_at_least(EFFECT_STUTTERING, 5) //It will hamper your voice, being choked and all.
-		affecting.status_at_least(EFFECT_WEAKENED, 5)	//Should keep you down unless you get help.
+		affecting.status_at_least(STAT_STUTTERING, 5) //It will hamper your voice, being choked and all.
+		affecting.status_at_least(STAT_WEAKENED, 5)	//Should keep you down unless you get help.
 		affecting.losebreath = max(affecting.losebreath + 2, 3)
 
 	adjust_position()
@@ -164,13 +164,13 @@
 		if(O_MOUTH)
 			if(announce)
 				act_message(user, target, others = span_warning("%U% covers %T%'s mouth!"))
-			if(target.status_units(EFFECT_MUTED) < 3)
-				target.status_set(EFFECT_MUTED, 3)
+			if(target.status_units(STAT_MUTED) < 3)
+				target.status_set(STAT_MUTED, 3)
 		if(O_EYES)
 			if(announce)
 				act_message(assailant, affecting, others = span_warning("%U% covers %T%'s eyes!"))
-			if(affecting.status_units(EFFECT_BLINDED) < 3)
-				affecting.status_at_least(EFFECT_BLINDED, 3)
+			if(affecting.status_units(STAT_BLINDED) < 3)
+				affecting.status_at_least(STAT_BLINDED, 3)
 		if(BP_HEAD)
 			if(force_down)
 				if(!user.combat_mode) // the holder's posture while the grab ticks (state)
@@ -279,7 +279,7 @@ CAPABILITIES(/obj/item/grab)
 		add_attack_logs(assailant,affecting,"Neck grabbed")
 		hud.icon_state = "kill"
 		hud.name = "kill"
-		affecting.status_at_least(EFFECT_STUNNED, 10) //10 ticks of ensured grab
+		affecting.status_at_least(STAT_STUNNED, 10) //10 ticks of ensured grab
 	else if(state < GRAB_UPGRADING)
 		act_message(assailant, affecting, others = span_danger("%U% starts to tighten %THEIR% grip on %T%'s neck!"))
 		hud.icon_state = "kill1"
@@ -378,7 +378,7 @@ CAPABILITIES(/obj/item/grab)
 		if(GRAB_NECK)
 			grab_name = "headlock"
 			//If the you move when grabbing someone then it's easier for them to break free. Same if the affected mob is immune to stun.
-			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(EFFECT_STUNNED))
+			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(STAT_STUNNED))
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 

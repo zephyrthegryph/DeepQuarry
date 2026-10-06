@@ -203,21 +203,21 @@
 /datum/reagent/adminordrazine/affect_blood(mob/living/carbon/M, alien, removed)
 	// Admin chem: heals everything.
 	M.fully_heal()
-	M.status_set(EFFECT_HALLUCINATING, 0)
+	M.status_set(STAT_HALLUCINATING, 0)
 	M.disabilities = 0
 	M.set_sdisabilities(0)
-	M.status_set(EFFECT_BLURRY, 0)
-	M.status_set(EFFECT_BLINDED, 0)
-	M.status_set(EFFECT_WEAKENED, 0)
-	M.status_set(EFFECT_STUNNED, 0)
-	M.status_set(EFFECT_PARALYZED, 0)
-	M.status_set(EFFECT_MUTED, 0)
-	M.status_end(EFFECT_DIZZY)
-	M.status_end(EFFECT_JITTERY)
-	M.status_set(EFFECT_DROWSY, 0)
-	M.status_set(EFFECT_STUTTERING, 0)
-	M.status_set(EFFECT_CONFUSED, 0)
-	M.status_set(EFFECT_SLEEPING, 0)
+	M.status_set(STAT_BLURRY, 0)
+	M.status_set(STAT_BLINDED, 0)
+	M.status_set(STAT_WEAKENED, 0)
+	M.status_set(STAT_STUNNED, 0)
+	M.status_set(STAT_PARALYZED, 0)
+	M.status_set(STAT_MUTED, 0)
+	M.status_end(STAT_DIZZY)
+	M.status_end(STAT_JITTERY)
+	M.status_set(STAT_DROWSY, 0)
+	M.status_set(STAT_STUTTERING, 0)
+	M.status_set(STAT_CONFUSED, 0)
+	M.status_set(STAT_SLEEPING, 0)
 	M.purge_radiation(INFINITY)
 	M.extinguish_mob()
 	M.fire_stacks = 0
@@ -380,8 +380,8 @@
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/adrenaline/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_set(EFFECT_PARALYZED, 0)
-	M.status_set(EFFECT_WEAKENED, 0)
+	M.status_set(STAT_PARALYZED, 0)
+	M.status_set(STAT_WEAKENED, 0)
 	M.injure(INJURY_TOXIN, rand(3), source = src)
 
 /datum/reagent/water/holywater
@@ -1043,15 +1043,16 @@
 
 /datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)
 	var/drug_strength = 12 * species_mult(M)
-	M.status_adjust(EFFECT_DIZZY, drug_strength)
-	M.status_at_least(EFFECT_CONFUSED, drug_strength * 14)
+	M.status_adjust(STAT_DIZZY, drug_strength)
+	M.status_at_least(STAT_CONFUSED, drug_strength * 14)
 
 /obj/item/reagent_containers/pill/benzilate
 	name = "Benzilate pill"
 	desc = "You probably shouldn't swallow this."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/benzilate, null, list(REAGENT_ID_BENZILATE = 50))
+CAPABILITIES(/obj/item/reagent_containers/pill/benzilate)
+	configure(reagents(add = list(REAGENT_ID_BENZILATE = 50), tint = TRUE))
 
 
 /obj/item/reagent_containers/pill/phenethylamine
@@ -1059,7 +1060,8 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/benzilate, null, list(
 	desc = "Smells like... lilacs?"
 	icon_state = "pill5"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, list(REAGENT_ID_PHENETHYLAMINE = 50))
+CAPABILITIES(/obj/item/reagent_containers/pill/phenethylamine)
+	configure(reagents(add = list(REAGENT_ID_PHENETHYLAMINE = 50), tint = TRUE))
 
 
 // PILLS THAT WE PROBABLY SHOULDN'T HAVE AAAAAAAAAA. The below is only so they can be included through mapping or "spawn " command. -Carl

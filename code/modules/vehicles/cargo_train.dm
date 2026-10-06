@@ -172,7 +172,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	if(user != load)
 		return 0
 	// Start
-	if(user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING))
+	if(user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING))
 		return 0
 	// End
 	if(is_train_head())
@@ -394,9 +394,9 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, TYPE_PROC_REF(/atom, appearan
 	flags = OPENCONTAINER
 	paint_color = "#efdd16"
 
-DECLARE_REAGENTS(/obj/vehicle/train/trolley_tank, CARGOTANKER_VOLUME, null)
 
 CAPABILITIES(/obj/vehicle/train/trolley_tank)
+	reagents(CARGOTANKER_VOLUME)
 	climb()
 	// the tank's own uses answer before the vehicle's generic item use (a hit), one tier above it
 	op("fill_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_PART + 1), then(PROC_REF(fill_container)))

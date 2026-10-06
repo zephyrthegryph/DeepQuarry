@@ -1,0 +1,2 @@
+/obj/machinery/v_garbosystem vol=6000 holder=/datum/reagents 
+

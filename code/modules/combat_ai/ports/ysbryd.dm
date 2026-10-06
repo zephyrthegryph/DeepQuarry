@@ -72,3 +72,7 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 		// Brain dropped the target — release the haunt.
 		Y.disconnect_target()
 	return DQ_BEHAVIOR_DONE
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/ysbryd)
+	immune_to_incapacitation()

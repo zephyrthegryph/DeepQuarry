@@ -224,7 +224,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 			act_message(GM, src, MSG_SELF(span_userdanger("You get sucked into %T%!")), \
 				MSG_OTHERS(span_danger("%U% gets sucked into %T% due to their small size!")))
 			GM.forceMove(get_turf(src))
-			GM.status_at_least(EFFECT_WEAKENED, 5)
+			GM.status_at_least(STAT_WEAKENED, 5)
 		flush()
 	else
 		act_message(user, GM, MSG_SELF(span_warning("You cant give %T% swirlie while \the [src] is still refilling!")), \
@@ -518,6 +518,7 @@ CAPABILITIES(/obj/structure/urinal)
 	var/reaction_volume = 200
 
 CAPABILITIES(/obj/machinery/shower)
+	reagents(nameof(reaction_volume), starts_from = list(nameof(reagent_id) = nameof(reaction_volume)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	owns_one(nameof(soundloop), /datum/looping_sound/showering)
 
@@ -525,7 +526,6 @@ CAPABILITIES(/obj/machinery/shower)
 	. = ..()
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 
-DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
 /// Washes its tile every machine step while running.
 /obj/structure/toilet/proc/crowbar_used(datum/act/op/A)
@@ -1158,9 +1158,9 @@ EXTEND_INTERACTIONS(/obj/structure/sink, \
 		if(B.bcell)
 			if(B.bcell.charge > 0 && B.status == 1)
 				flick("baton_active", src)
-				user.status_at_least(EFFECT_STUNNED, 10)
-				user.status_set(EFFECT_STUTTERING, 10)
-				user.status_at_least(EFFECT_WEAKENED, 10)
+				user.status_at_least(STAT_STUNNED, 10)
+				user.status_set(STAT_STUTTERING, 10)
+				user.status_at_least(STAT_WEAKENED, 10)
 				if(isrobot(user))
 					var/mob/living/silicon/robot/R = user
 					R.draw_power(ROBOT_CELL_JOULES(20), src, 0, TRUE)

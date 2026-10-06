@@ -157,7 +157,7 @@
 		to_chat(A.actor, span_danger("You need a better grip to do that!"))
 	else if(G.state > GRAB_AGGRESSIVE || COOLDOWN_FINISHED(G, upgrade_cooldown))
 		M.forceMove(get_turf(src))
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		visible_message(span_danger("[G?.grab_assailant()] puts [G?.grab_target()] on \the [src]."))
 	consume(G, A.actor)
 	return OP_OK
@@ -177,7 +177,7 @@
 	var/mob/living/M = G?.grab_target()
 	if(!user.Adjacent(M))
 		return OP_REFUSED
-	if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
+	if (prob(15))	M.status_at_least(STAT_WEAKENED, 5)
 	M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 	visible_message(span_danger("[G?.grab_assailant()] slams [G?.grab_target()]'s face against \the [src]!"))
 	if(material())

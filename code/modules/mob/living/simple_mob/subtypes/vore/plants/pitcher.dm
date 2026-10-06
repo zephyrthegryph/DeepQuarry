@@ -274,7 +274,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 				continue
 			if(src.Adjacent(H)) //If they can breathe and are next to the pitcher, confuse them.
 				to_chat(H,span_red("The sweet, overwhelming scent from \the [src] makes your senses reel!"))
-				H.status_at_least(EFFECT_CONFUSED, scent_strength)
+				H.status_at_least(STAT_CONFUSED, scent_strength)
 				continue
 			else
 				to_chat(H, span_red("[pick(pitcher_plant_lure_messages)]"))
@@ -304,7 +304,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 	var/obj/item/seeds/pit = null
 	special_handling = TRUE
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5))
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
 	. = ..()
@@ -330,6 +329,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, l
 	consume(src, user)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
+	configure(reagents(add = list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5)))
 	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
 
 /// Old attack_self: plant the fruit.

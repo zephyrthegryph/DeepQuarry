@@ -60,6 +60,7 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	immune_to_incapacitation()
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color)

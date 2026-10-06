@@ -78,12 +78,13 @@
 		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
 		)
 
-OM_FIELD(/obj/machinery/chemical_synthesizer, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/chemical_synthesizer/var/_recharge_reagents = TRUE
+TRACKED_BRIDGED(/obj/machinery/chemical_synthesizer, _recharge_reagents, CHANGE_MACHINE_SETTINGS)
 /// Refills its cartridges while it recharges at all (full, it sleeps until a cartridge is drawn or added).
 // The reagents datum acts as the machine's reaction vessel.
-DECLARE_REAGENTS(/obj/machinery/chemical_synthesizer, 600, null)
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	reagents(600)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), wakes_on = list(nameof(_recharge_reagents)))
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	interface("ChemSynthesizer")

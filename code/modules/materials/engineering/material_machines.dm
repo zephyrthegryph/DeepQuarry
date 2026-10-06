@@ -66,10 +66,10 @@
 	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED, is_list = TRUE)
 
 CAPABILITIES(/obj/machinery/material_furnace)
+	reagents(120)
 	owns_one(nameof(chamber_air), /datum/gas_mixture)
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
-DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 
 // ALLOW(init/INSTANCE_STATE): copies the build turf's air into this instance's chamber
 /obj/machinery/material_furnace/Initialize(mapload)
@@ -421,7 +421,8 @@ DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
 	icon_state = "bath_off"
 	anchored = TRUE
 
-DECLARE_REAGENTS(/obj/structure/bed/bath/material_treatment, 200, null)
+CAPABILITIES(/obj/structure/bed/bath/material_treatment)
+	configure(reagents(volume = 200))
 
 EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
 

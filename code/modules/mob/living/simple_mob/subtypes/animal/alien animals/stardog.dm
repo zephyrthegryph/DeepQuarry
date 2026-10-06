@@ -1160,7 +1160,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 		if(check_keys && !L.ckey)
 			return
 		L.stop_pulling()
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		L.reset_perspective() // Needed for food items that get gobbled with micros in them
 		GLOB.prey_eaten_roundstat++
 	if(target.reciever)		//We don't have to worry
@@ -1449,7 +1449,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 	if(!state)
 		for(var/mob/living/L in contents_of(src.loc))
 			if(isliving(L))
-				L.status_at_least(EFFECT_WEAKENED, 3)
+				L.status_at_least(STAT_WEAKENED, 3)
 				if(prob(5))
 					to_chat(L, span_warning("\The [src] throbs heavily around you..."))
 
@@ -1534,7 +1534,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	plane = ABOVE_MOB_PLANE
 	for(var/mob/living/L in contents_of(src.loc))
 		if(isliving(L))
-			L.status_at_least(EFFECT_WEAKENED, 3)
+			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
 APPEARANCE_TEMPLATE(/obj/structure/auto_flesh_door, "flesh-{state?open:closed}")

@@ -627,7 +627,7 @@
 	cost = 0
 	custom_only = FALSE
 	allergen = ALLERGEN_POLLEN // Gee billy...
-	added_behaviour_path = /datum/om/behaviour/disability/pollen // Why does mom let you have two things?
+	added_capability = /datum/capability/disability/pollen // Why does mom let you have two things?
 
 /datum/trait/neutral/allergy/salt
 	name = "Allergy: Salt"

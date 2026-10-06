@@ -96,6 +96,16 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 /proc/after(datum/owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null)
 	return rx_after(owner, delay, handler, key, clock, with, TRUE)
 
+/// Steps `steps` times in `direction`, one step every `delay` deciseconds (the old sleep()/step() drift loop), on
+/// this atom's clock; deleting it drops the rest.
+/atom/movable/proc/drift(direction, steps, delay)
+	if(steps > 0)
+		after(src, delay, PROC_REF(drift_step), with = list(direction, steps, delay))
+
+/atom/movable/proc/drift_step(direction, steps, delay)
+	step(src, direction)
+	drift(direction, steps - 1, delay)
+
 /// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
 /// (counted and logged by the scheduler).
 /proc/after_if_alive(datum/owner, delay, handler, list/with = null)

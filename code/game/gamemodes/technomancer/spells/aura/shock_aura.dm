@@ -16,7 +16,7 @@
 	aspect = ASPECT_SHOCK
 	glow_color = "#0000FF" //TODO
 
-/obj/item/spell/aura/shock/periodic_step()
+/obj/item/spell/aura/shock/aura_step(datum/act/timer/A)
 	if(!pay_energy(500))
 		spent(src)
 		return
@@ -32,7 +32,7 @@
 
 		if(HAS_SYNTHETIC_BIOLOGY(L))
 			to_chat(L, span_danger("ERROR: Electrical fault detected!"))
-			L.status_adjust(EFFECT_STUTTERING, 3)
+			L.status_adjust(STAT_STUTTERING, 3)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L

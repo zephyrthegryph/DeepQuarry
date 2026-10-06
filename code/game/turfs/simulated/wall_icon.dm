@@ -34,8 +34,8 @@
 	else if(material.opacity < 0.5 && opacity)
 		set_light(0)
 
-	// Inside a map-load batch the batch smooths every wall once at its end (atoms.dm).
-	if(!SSatoms?.batch_defer(BATCH_WORK_WALL_SMOOTHING, src))
+	// Inside a map-load batch every queued member joins its neighbours once at its end (BATCH_WORK_ADJACENCY).
+	if(!SSatoms?.batch_defer(BATCH_WORK_ADJACENCY, src))
 		update_connections(1)
 		update_icon()
 	if(SSair?.initialized)
@@ -162,24 +162,31 @@ DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_se
 		damage_overlays[i] = img
 
 
+/// The neighbours a wall joins (its adjacency() mask, code/engine/lifeforms/adjacency.dm): faces and corners.
+/turf/simulated/wall/var/smooth_mask = 0
+
+/// adjacency() connects: a wall joins walls of a blending material and the low walls it takes.
+/turf/simulated/wall/proc/smooth_joins(atom/other, bit)
+	if(istype(other, /turf/simulated/wall))
+		var/turf/simulated/wall/W = other
+		return W.material && can_join_with_wall(W)
+	if(istype(other, /obj/structure/low_wall))
+		return can_join_with_low_wall(other)
+	return FALSE
+
+/// adjacency() changed: its neighbours changed; it redraws against them.
+/turf/simulated/wall/proc/smooth_changed(mask)
+	smooth_mask = mask
+	update_connections()
+	update_icon()
+
 /turf/simulated/wall/proc/update_connections(propagate = 0)
 	if(!material)
 		return
-	var/list/dirs = list()
-	var/inrange = orange(src, 1)
-	for(var/turf/simulated/wall/W in inrange)
-		if(!W.material)
-			continue
-		if(propagate)
-			W.update_connections()
-			W.update_icon()
-		if(can_join_with_wall(W))
-			dirs += get_dir(src, W)
-	for(var/obj/structure/low_wall/WF in inrange)
-		if(can_join_with_low_wall(WF))
-			dirs += get_dir(src, WF)
-
-	special_wall_connections(dirs, inrange)
+	if(propagate)
+		adjacency_refresh(src, TRUE) // a material change the index cannot see: this wall and its neighbours look again
+	var/list/dirs = adjacency_mask_dirs(smooth_mask)
+	special_wall_connections(dirs, orange(src, 1))
 	wall_connections = string_list(dirs_to_corner_states(dirs))
 
 /// wall_connections, or the unconnected corner states before update_connections() has run.

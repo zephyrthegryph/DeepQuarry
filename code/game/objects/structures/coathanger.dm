@@ -6,51 +6,37 @@
 	var/obj/item/clothing/suit/coat
 	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 
-/obj/structure/coatrack/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/coatrack_hand,
-		/datum/interaction/entry_item/coatrack_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/coatrack)
+	op("take_coat", hand(), label("Take coat"), when(nameof(coat)), then(PROC_REF(interaction_hand)))
+	op("hang_coat", item(/obj/item), label("Hang coat"), then(PROC_REF(interaction_item)))
 
-/// Old attack_hand: take the hung coat off the rack.
-/datum/interaction/entry_hand/coatrack_hand
-	id = "coatrack_hand"
-	name = "Take coat"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/coatrack/proc/coatrack_has_coat, null))
-	effect = /obj/structure/coatrack/proc/interaction_hand
-
-/obj/structure/coatrack/proc/coatrack_has_coat(mob/actor, atom/target, obj/item/held)
-	return !!coat()
-
-/obj/structure/coatrack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// A hand takes the hung coat off the rack (offered only while one hangs there).
+/obj/structure/coatrack/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF("You take [coat()] off %T%"), MSG_OTHERS("%U% takes [coat()] off %T%."))
 	if(!user.put_in_active_hand(coat()))
 		coat().forceMove(get_turf(user))
 	rel_clear(src, nameof(coat))
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attackby: hang a coat/labcoat on the rack.
-/datum/interaction/entry_item/coatrack_item
-	id = "coatrack_item"
-	name = "Hang coat"
-	effect = /obj/structure/coatrack/proc/interaction_item
-
-/obj/structure/coatrack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Anything held: a coat or a labcoat hangs on the rack; anything else is refused with a word.
+/obj/structure/coatrack/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/can_hang = 0
 	for (var/T in allowed)
 		if(istype(W,T))
 			can_hang = 1
 	if (can_hang && !coat())
 		if(!own_bring_in(src, nameof(coat), W, null, user, TRUE, null, FALSE))
-			return TRUE
+			return OP_OK
 		act_message(user, src, MSG_SELF("You hang [W] on %T%"), MSG_OTHERS("%U% hangs [W] on %T%."))
 		rel_set(src, nameof(coat), W)
 		update_icon()
 	else
 		to_chat(user, span_notice("You cannot hang [W] on [src]"))
-	return TRUE
+	return OP_OK
 
 /obj/structure/coatrack/CanPass(atom/movable/mover, turf/target)
 	var/can_hang = 0

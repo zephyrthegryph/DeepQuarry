@@ -34,12 +34,13 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 /// Made without its cell (its constructor param).
 /obj/machinery/portable_atmospherics/powered/pump/var/skip_cell = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a portable machine comes with its cell unless made without one, and a pump fills with air
+/// A portable machine comes with its cell unless made without one.
+/obj/machinery/portable_atmospherics/powered/pump/starting_cell(datum/act/A)
+	return skip_cell ? null : /obj/item/cell/apc
+
+// ALLOW(init/INSTANCE_STATE): a pump fills with air, a per-instance mixture
 /obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload)
 	. = ..()
-
-	if(!skip_cell)
-		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
 
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])

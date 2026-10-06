@@ -113,11 +113,7 @@
 	var/obj/item/healthanalyzer/med_analyzer = null
 
 CAPABILITIES(/obj/item/organ/internal/augment/bioaugment/health_scan)
-	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
-
-/obj/item/organ/internal/augment/bioaugment/health_scan/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
+	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer, starts = /obj/item/healthanalyzer/advanced)
 
 
 /obj/item/organ/internal/augment/bioaugment/health_scan/augment_action()

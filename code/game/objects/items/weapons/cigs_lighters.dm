@@ -105,7 +105,6 @@ CAPABILITIES(/obj/item/flame)
 	blood_sprite_state = null //Can't bloody these
 	drop_sound = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 
 /// Smokes (smokable_step) every 2 s while lit.
 /obj/item/clothing/mask/smokable/var/lit = 0
@@ -134,6 +133,7 @@ SETTER(/obj/item/clothing/mask/smokable, lit)
 SETTER(/obj/item/clothing/mask/smokable, smoketime)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable)
+	reagents(nameof(chem_volume))
 	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
 	op("item_applied", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
 
@@ -350,13 +350,17 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	ignitermes = span_notice("USER fiddles with FLAME, and manages to light their NAME.")
 	special_handling = TRUE
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette, null, list(REAGENT_ID_NICOTINE = 2))
-DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar, null, list(REAGENT_ID_NICOTINE = 2)) // 4 total
-DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba, null, list(REAGENT_ID_NICOTINE = 3)) // 7 total
-DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/cigar/havana, null, list(REAGENT_ID_NICOTINE = 6)) // 10 total
-DECLARE_REAGENTS(/obj/item/clothing/mask/smokable/cigarette/joint/blunt, null, list(REAGENT_ID_NICOTINE = 2)) // 4 total
+CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
+CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 3))) // 7 total
+CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar/havana)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 6))) // 10 total
+CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/joint/blunt)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2)))
 	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
 	op("tread_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(tread_out)))
 
@@ -1152,7 +1156,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 					user.apply_effect(100, EYE_BLUR)
 					user.apply_effect(50, AGONY)
 					user.add_oxygen_debt(5, src)
-					user.status_set(EFFECT_BLURRY, 10)
+					user.status_set(STAT_BLURRY, 10)
 				else			// This one just blinds and blurs your screen, but otherwise doesn't actually risk harming you. Even the oxy damage heals on its own.
 					user.injure(INJURY_PAIN, 15, BP_R_HAND, src)
 					user.apply_effect(5, WEAKEN)
@@ -1160,7 +1164,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 					user.apply_effect(100, EYE_BLUR)
 					user.apply_effect(50, AGONY)
 					user.add_oxygen_debt(15, src)
-					user.status_set(EFFECT_BLURRY, 10)
+					user.status_set(STAT_BLURRY, 10)
 			if(100)				// This is the part that makes it admin only for the moment, it spawns 500 rads from the carbon's position, and dusts the carbon instantly. It does also drop everything unlike the supermatter crystal though, so hopefully you won't lose any items if you fumble this badly!
 				act_message(user, src, MSG_SELF(span_danger("You almost dropped your [src], thank goodness you caught it! By the glowing crystal within. You find your ears filled with unearthly ringing and your last thought is \"Oh, fuck.\"")), MSG_OTHERS(span_warning("OH NO! %U% almost dropped their live %T%! Thank goodness they caught it... by the glowing yellow crystal... oh.")))
 				user.drop_r_hand() // To ensure the lighter is dropped <3

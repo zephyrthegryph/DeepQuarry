@@ -109,7 +109,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	var/mob/living/holder_mob = loc
 	if(istype(holder_mob))
 		holder_mob.drop_from_inventory(src)
-	spent(src, user)
+	replaced_by(src, stored_mmi) // out of the body, the interface is its MMI again
 /obj/item/organ/internal/mmi_holder/posibrain
 	name = "positronic brain interface"
 	brain_type = /obj/item/mmi/digital/posibrain

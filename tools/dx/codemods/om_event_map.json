@@ -508,8 +508,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "note": "a veto event whose watchers use the notice twin; emit sites and vetoing listeners stay on the event",
   "notice_fields": [
@@ -911,20 +911,6 @@
    "code/modules/unit_tests/interim_manual_passenger_actor.dm"
   ]
  },
- "/datum/om/event/handle_disabilities": {
-  "emits": [
-   "code/modules/mob/living/life/living_systems.dm"
-  ],
-  "fields": [],
-  "listeners": [
-   "code/datums/entity_state/disabilities/_disability.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [],
-  "reads_result": false,
-  "target": "/datum/notice/handle_disabilities",
-  "tests": []
- },
  "/datum/om/event/hitby": {
   "emits": [
    "code/game/atom/_atom.dm"
@@ -1253,8 +1239,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1269,8 +1255,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1285,8 +1271,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1301,8 +1287,8 @@
    "amount"
   ],
   "listeners": [
-   "code/datums/om/library.dm",
-   "code/engine/_generated/event_twins.dm"
+   "code/engine/_generated/event_twins.dm",
+   "code/library/mob/statuses.dm"
   ],
   "notice_fields": [
    "amount"
@@ -1539,8 +1525,6 @@
    "gibbed"
   ],
   "listeners": [
-   "code/datums/entity_state/animations/dizzy.dm",
-   "code/datums/entity_state/animations/jittery.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [

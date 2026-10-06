@@ -338,7 +338,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			"health" = round((2 * patient.vitality() - 1) * 100),
 			"max_health" = 100,
 			"findings" = findings,
-			"paralysis" = patient.status_units(EFFECT_PARALYZED),
+			"paralysis" = patient.status_units(STAT_PARALYZED),
 			"braindamage" = !!patient.injury_load(INJURY_CATEGORY_NEURAL),
 			"clonedamage" = !!patient.injury_load(INJURY_CATEGORY_GENETIC),
 			"ingested_reagents" = ingested_reagents
@@ -558,7 +558,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
-	if(om_has(T, EFFECT_GODMODE) || !T.digestable)
+	if(in_godmode(T) || !T.digestable)
 		rel_add(src, nameof(items_preserved), T)
 		return
 	var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
@@ -669,8 +669,8 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		if(patient.is_critical())
 			patient.mend(TREAT_OXYGENATION, 1) //Heal some oxygen damage if they're in critical condition
 			drain()
-		patient.status_adjust(EFFECT_STUNNED, -4)
-		patient.status_adjust(EFFECT_WEAKENED, -4)
+		patient.status_adjust(STAT_STUNNED, -4)
+		patient.status_adjust(STAT_WEAKENED, -4)
 		drain(1)
 		return
 

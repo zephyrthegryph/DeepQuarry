@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["vitality"] = round(occupant.vitality() * 100)
-		occupantData["paralysis"] = occupant.status_units(EFFECT_PARALYZED)
+		occupantData["paralysis"] = occupant.status_units(STAT_PARALYZED)
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/operating_computer)
 		occupantData["diagnosis"] = D.report_data()
 		spent(D)

@@ -333,6 +333,6 @@ CAPABILITIES(/obj/item/pipe_gsensor)
 /obj/item/pipe_gsensor/proc/fastened(datum/act/op/A)
 	var/obj/machinery/air_sensor/air_sensor = new /obj/machinery/air_sensor(loc)
 	air_sensor.id_tag = id_tag
-	air_sensor.output = output
+	air_sensor.set_output(output)
 	replace_with(src, air_sensor)
 	return OP_OK

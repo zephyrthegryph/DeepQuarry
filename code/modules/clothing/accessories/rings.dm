@@ -54,7 +54,8 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/engagement)
 /obj/item/clothing/accessory/ring/reagent
 	flags = OPENCONTAINER
 
-DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent, 15, null)
+CAPABILITIES(/obj/item/clothing/accessory/ring/reagent)
+	reagents(15)
 
 /obj/item/clothing/accessory/ring/reagent/equipped(mob/living/carbon/human/H)
 	..()
@@ -75,7 +76,8 @@ DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent, 15, null)
 	icon_state = "material"
 
 // Less than a sleepy-pen, but still enough to knock someone out
-DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent/sleepy, null, list(REAGENT_ID_CHLORALHYDRATE = 15))
+CAPABILITIES(/obj/item/clothing/accessory/ring/reagent/sleepy)
+	configure(reagents(add = list(REAGENT_ID_CHLORALHYDRATE = 15)))
 
 /////////////////////////////////////////
 //Seals and Signet Rings

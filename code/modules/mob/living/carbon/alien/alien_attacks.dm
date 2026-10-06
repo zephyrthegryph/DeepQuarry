@@ -35,7 +35,7 @@
 			if (prob(90))
 				if (M.has_mutation(HULK))
 					damage += 5
-					status_at_least(EFFECT_PARALYZED, 1)
+					status_at_least(STAT_PARALYZED, 1)
 					step_away(src,M,15)
 					after(src, 0.3 SECONDS, PROC_REF(knocked_away_from), with = list(M))
 				play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
@@ -43,7 +43,7 @@
 					if ((O.client && !( O.blinded )))
 						O.show_message(span_bolddanger(text("[] has punched []!", M, src)), 1)
 				if (damage > 4.9)
-					status_at_least(EFFECT_WEAKENED, rand(10,15))
+					status_at_least(STAT_WEAKENED, rand(10,15))
 					for(var/mob/O in viewers(M, null))
 						if ((O.client && !( O.blinded )))
 							O.show_message(span_bolddanger(text("[] has weakened []!", M, src)), 1, span_red("You hear someone fall."), 2)

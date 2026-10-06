@@ -65,7 +65,7 @@
 		at_key["[C.key]"] = length(.)
 
 /// Applies refine() R to the op it names in list `into` (at_key: key -> position), or, when the key names a
-/// capability that is not an op (CAP_REAGENTS), to that capability through its refined().
+/// capability that is not an op, to that capability through its refined().
 /proc/cap_apply_refine(list/into, list/at_key, datum/capability/refine/R)
 	var/slot = at_key["op:[R.base_key]"]
 	if(slot)

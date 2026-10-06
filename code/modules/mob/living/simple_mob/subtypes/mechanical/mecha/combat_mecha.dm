@@ -22,7 +22,7 @@
 		if(L.mob_size <= MOB_MEDIUM)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with their mechanized fist!")))
 			play_sfx(src, SFX_PUNCH)
-			L.status_at_least(EFFECT_WEAKENED, weaken_amount)
+			L.status_at_least(STAT_WEAKENED, weaken_amount)
 			var/throw_dir = get_dir(src, L)
 			var/throw_dist = L.incapacitated(INCAPACITATION_DISABLED) ? 4 : 1
 			L.throw_at(get_edge_target_turf(L, throw_dir), throw_dist, 1, src)

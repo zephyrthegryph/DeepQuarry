@@ -1,0 +1,2 @@
+/obj/machinery/chemical_synthesizer vol=600 holder=/datum/reagents 
+

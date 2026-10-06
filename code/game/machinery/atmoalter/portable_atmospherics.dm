@@ -184,11 +184,15 @@ MSG_DEF_SELF(portable/cell_present, "There is already a power cell installed.")
 MSG_DEF_SELF(portable/no_cell, "There is no power cell installed.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(starting_cell))
 	op("cell_in", item(/obj/item/cell), label("Insert power cell"), wait(0), when(nameof(use_cell)),
 		needs(req_empty(nameof(cell), because = MSG(portable/cell_present))), put_in(nameof(cell)), says(MSG(portable/cell_in)), then(PROC_REF(cell_changed)))
 	op("cell_out", tool(TOOL_SCREWDRIVER), label("Remove power cell"), when(nameof(removeable_cell)),
 		needs(req(PROC_REF(has_cell), because = MSG(portable/no_cell))), says(MSG(portable/cell_out)), then(PROC_REF(take_cell_out)))
+
+/// The cell it comes with (none by default).
+/obj/machinery/portable_atmospherics/powered/proc/starting_cell(datum/act/A)
+	return null
 
 /obj/machinery/portable_atmospherics/powered/powered()
 	if(use_power) //using area power

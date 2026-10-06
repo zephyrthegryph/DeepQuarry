@@ -814,8 +814,9 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "bed"
 
-/obj/structure/bed/pod/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH)
+/obj/structure/bed/pod
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH
 
 //Survival Storage Unit
 /obj/machinery/smartfridge/survival_pod
