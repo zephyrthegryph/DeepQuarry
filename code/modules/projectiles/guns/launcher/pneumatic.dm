@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		var/turf/T = get_turf(src.loc)
 		if(T)
 			T.assume_air(removed)
-		qdel(removed)
+		spent(removed)
 	..()
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, appearance_overlays), list())

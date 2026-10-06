@@ -26,5 +26,5 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark/engine_loader)
 			for(var/turf/T in turfs_to_clean)
 				for(var/atom/movable/AM in T)
 					++deleted_atoms
-					qdel(AM)
+					spent(AM)
 	admin_notice(span_danger("Annihilated [deleted_atoms] objects."), R_DEBUG)

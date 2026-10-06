@@ -86,5 +86,5 @@ APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
 		src << riftimage
 	else
 		if(riftimage)
-			qdel(riftimage)
+			spent(riftimage)
 

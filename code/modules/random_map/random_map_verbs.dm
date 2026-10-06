@@ -36,7 +36,7 @@ ADMIN_VERB(delete_random_map, R_DEBUG, "Delete Random Map", "Delete a random map
 	registry_leave(REGISTRY_RANDOM_MAPS, selected_map)
 	if(istype(selected_map))
 		log_and_message_admins("has deleted [selected_map.name].", user)
-		qdel(selected_map)
+		spent(selected_map, user)
 
 ADMIN_VERB(create_random_map, R_DEBUG, "Create Random Map", "Create a random map.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	return random_map_stage(user, list())

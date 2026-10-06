@@ -116,7 +116,7 @@
 	if(value != SD_EMPTY_TILE && contents_count(T))
 		for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 			if(AM.simulated && !istype(AM, /mob/observer))
-				qdel(AM)
+				spent(AM)
 
 	// Also spawn doors and loot.
 	if(value == SD_DOOR_TILE)

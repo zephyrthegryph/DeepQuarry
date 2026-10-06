@@ -892,7 +892,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	for(var/image/I in client.images)
 		if(I.icon_state == icon)
 			iconRemoved = 1
-			qdel(I)
+			spent(I)
 
 	if(!iconRemoved)
 		var/image/J = image('icons/mob/mob.dmi', loc = src, icon_state = icon)

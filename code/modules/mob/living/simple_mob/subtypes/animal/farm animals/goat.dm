@@ -49,7 +49,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/goat)
 
 		if(locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
 			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
-			qdel(SP)
+			spent(SP)
 
 		if(!self?.pulled_by_mob())
 			var/obj/effect/plant/food

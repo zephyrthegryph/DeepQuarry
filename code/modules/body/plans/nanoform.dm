@@ -181,7 +181,7 @@
 			continue
 		if(E)
 			E.removed()
-			qdel(E)
+			spent(E)
 		var/list/organ_data = H.species.has_limbs[limb_tag]
 		var/limb_path = organ_data["path"]
 		var/obj/item/organ/external/new_limb = new limb_path(H)

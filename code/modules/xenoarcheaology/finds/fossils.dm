@@ -145,7 +145,10 @@ CAPABILITIES(/datum/prompt/text/skeleton_plaque)
 	desc = "It's fossilised plant remains."
 	animal = 0
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/item/fossil/plant/Initialize(mapload)
-	. = ..()
-	icon_state = "plant[rand(1,4)]"
+CAPABILITIES(/obj/item/fossil/plant)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/fossil/plant/proc/roll_icon_state(datum/roller/R)
+	return "plant[R.number(1, 4)]"
+

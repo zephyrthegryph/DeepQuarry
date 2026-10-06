@@ -120,7 +120,7 @@
 	if(!evidence || evidence_by_id[evidence.id] != evidence)
 		return
 	evidence_by_id -= evidence.id
-	qdel(evidence)
+	spent(evidence)
 
 /datum/system/contracts/proc/void_evidence(evidence_id, reason)
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]

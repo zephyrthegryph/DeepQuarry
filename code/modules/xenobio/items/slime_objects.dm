@@ -99,7 +99,7 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 		C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN)
 
 /datum/slime_cube_invitation_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+	spent(src)
 
 /datum/prompt/choice/slime_cube_invitation
 	title = "Promethean request"

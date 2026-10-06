@@ -282,7 +282,7 @@
 		if(isitem(sale_item))
 			var/obj/item/sold_item = sale_item
 			if(sold_item.economic_adoption)
-				qdel(sold_item.economic_adoption)
+				spent(sold_item.economic_adoption, user)
 	record_currency_refund(invoice.amount, FALSE)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = invoice.customer_account_number,
@@ -324,13 +324,11 @@
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()
 	if(!istype(new_parent) || !_invoice_id || !_customer_account || !_customer_department || !_provider_department || _value <= 0)
-		// ALLOW(lifecycle): an adoption record with missing invoice data is discarded
-		qdel(src)
+		spent(src)
 		return
 	if(new_parent.economic_adoption)
 		// Unique: the existing adoption record is kept.
-		// ALLOW(lifecycle): the item already has an adoption record, which is kept instead
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(parent), new_parent)
 	rel_set(new_parent, nameof(new_parent.economic_adoption), src)

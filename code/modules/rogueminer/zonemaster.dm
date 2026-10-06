@@ -414,7 +414,7 @@
 	om_after_stagger(src, doomed, delay, PROC_REF(clean_atom), 1, null, pass == 1 ? PROC_REF(clean_second_pass) : PROC_REF(clean_done))
 
 /datum/rogue/zonemaster/proc/clean_atom(atom/I)
-	qdel(I)
+	spent(I)
 
 /datum/rogue/zonemaster/proc/clean_second_pass()
 	clean_pass(1, 2)

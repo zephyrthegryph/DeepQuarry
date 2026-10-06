@@ -235,7 +235,7 @@ CAPABILITIES(/datum/trader_review)
 			for(var/obj/d in trader.products)
 				if(istype(d, temp))
 					d.forceMove(get_turf(trader.loc))
-					qdel(d)
+					spent(d)
 	input.forceMove(get_turf(user))
 	user.put_in_hands(input)
 	own_take_member(trader, nameof(trader.products), input) // no-op once it left our contents
@@ -324,7 +324,7 @@ CAPABILITIES(/datum/trader_review)
 					a.update_icon()
 					if(a.worth <= 0)
 						rel_remove(src, nameof(bank), a)
-						qdel(a)
+						spent(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
 			// and spin forever (DoS). Also stop if the bank runs out of matching items.
@@ -336,7 +336,7 @@ CAPABILITIES(/datum/trader_review)
 				for(var/obj/c in bank)
 					if(istype(c, accepted_itemtype))
 						c.forceMove(get_turf(loc))
-						qdel(c)
+						spent(c)
 						v -= accepted_item_worth
 						removed_any = TRUE
 						if(v <= 0)

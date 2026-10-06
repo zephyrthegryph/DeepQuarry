@@ -82,10 +82,12 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
 	icon_empty = "ecigoff1"
 	icon_on = "ecigon"
 
-// ALLOW(init/INSTANCE_STATE): color rolled at random for each instance
-/obj/item/clothing/mask/smokable/ecig/util/Initialize(mapload)
-	. = ..()
-	color = pick(ecig_colors)
+CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/clothing/mask/smokable/ecig/util/proc/roll_color(datum/roller/R)
+	return R.choose(ecig_colors)
 
 /obj/item/clothing/mask/smokable/ecig/deluxe
 	name = "deluxe electronic cigarette"

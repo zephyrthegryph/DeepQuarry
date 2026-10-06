@@ -156,7 +156,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			dat += span_blue("Sapient Species: [occupant.custom_species] \[Similar biology to [occupant.species.name]\]")
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/body_scanner, src, TRUE) // D9: a printed scan is an explicit scan
 	dat += D.render_chat()
-	qdel(D)
+	spent(D)
 	dat += "<hr>"
 	if(occupant.has_status(EFFECT_PARALYZED) && !(occupant.status_flags & FAKEDEATH))
 		dat += "Paralysis: [round(occupant.status_seconds(EFFECT_PARALYZED))] seconds left."

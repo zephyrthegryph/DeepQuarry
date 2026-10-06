@@ -19,8 +19,7 @@
 
 /obj/item/spell/aura/frost/periodic_step()
 	if(!pay_energy(100))
-		// ALLOW(lifecycle): the aura collapses when its caster runs out of energy
-		qdel(src)
+		spent(src)
 		return
 	var/list/nearby_mobs = range(round(calculate_spell_power(4)),owner_ref())
 

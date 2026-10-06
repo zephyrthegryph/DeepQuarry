@@ -19,7 +19,7 @@ DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
 				var/obj/effect/decal/cleanable/chemcoating/C = O
 				if(C.reagents && C.reagents.reagent_list.len)
 					C.reagents.trans_to_obj(src,C.reagents.total_volume)
-				qdel(O)
+				spent(O)
 
 /obj/effect/decal/cleanable/chemcoating/Bumped(A as mob|obj)
 	if(reagents)

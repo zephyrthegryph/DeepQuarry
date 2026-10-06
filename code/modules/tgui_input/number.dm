@@ -35,7 +35,7 @@
 	number_input.wait()
 	if (number_input)
 		. = number_input.entry
-		qdel(number_input)
+		spent(number_input, user)
 
 /**
  * # tgui_input_number

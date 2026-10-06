@@ -33,7 +33,7 @@
 // its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/on_destroy(force)
 	for(var/obj/singularity/energy_ball/EB as anything in orbiting_balls())
-		qdel(EB)
+		destroyed(EB)
 
 	..()
 
@@ -92,8 +92,7 @@
 	if (energy <= 0)
 		log_game("TESLA([x],[y],[z]) Collapsed entirely.")
 		investigate_log("collapsed.", I_SINGULO)
-		// ALLOW(lifecycle): an energy ball out of energy collapses
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	if(energy >= energy_to_raise)
@@ -108,7 +107,7 @@
 		energy_to_lower = (energy_to_raise / 1.25) - 20
 
 		var/Orchiectomy_target = DEFAULTPICK(orbiting_balls(), null)
-		qdel(Orchiectomy_target)
+		spent(Orchiectomy_target)
 
 	else
 		dissipate() //sing code has a much better system.

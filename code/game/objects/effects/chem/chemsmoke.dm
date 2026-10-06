@@ -198,7 +198,7 @@ CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 /datum/effect/effect/system/smoke_spread/chem/proc/fadeOut(atom/A, frames = 16) // Fades out the smoke smoothly using it's alpha variable.
 	A.set_opacity(0)		// lighting and view range updates
 	if(A.alpha == 0) //Handle already transparent case
-		qdel(A)
+		spent(A)
 		return
 	if(frames == 0)
 		frames = 1 //We will just assume that by 0 frames, the coder meant "during one frame".

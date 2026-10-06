@@ -162,7 +162,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 		if(!isobj(A) && !isliving(A))
 			continue
 		if(istype(A, /obj/effect/decal/cleanable) || istype(A, /mob/living/voice))
-			qdel(A)
+			spent(A)
 		if(!A.anchored)
 			if(A.loc == src.loc)
 				if(isliving(A))
@@ -181,7 +181,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 								var/obj/item/meat = new L.meat_type(src)
 								if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
 									transfer_reagent_to_tank(meat.reagents,1)
-								qdel(meat)
+								spent(meat)
 								L.meat_amount--
 						L.gib()
 						items_taken++
@@ -233,7 +233,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 			transfer_reagent_to_tank(A.reagents,1)
 		if(istype(A, /obj/structure/closet))
 			new /obj/item/stack/material/steel(loc, 2)
-		qdel(A)
+		spent(A)
 
 /// Connects to regular crusher (a relation view: it reads null once the target is deleted).
 /obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher

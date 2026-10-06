@@ -55,8 +55,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 
 /datum/edit_memory_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	// ALLOW(lifecycle): the memory panel lives only while its window is open
-	qdel(src)
+	spent(src, user)
 
 /// The computed part of /datum/edit_memory_panel's window data (declared on its UI_DATA row).
 /datum/edit_memory_panel/ui_data(datum/act/eval/A)

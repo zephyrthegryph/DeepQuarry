@@ -442,8 +442,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
 
 /obj/item/projectile/energy/homing_bolt/missile/throw_impact(atom/target, speed)
 	explosion(target, 0, 0, 2, 4)//No need to have a question.
-	// ALLOW(lifecycle): the missile is spent on impact
-	qdel(src)
+	spent(src)
 
 //Cool boss visuals, auras, and me saying no to stun.
 

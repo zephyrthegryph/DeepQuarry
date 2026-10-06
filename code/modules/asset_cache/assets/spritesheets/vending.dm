@@ -55,5 +55,5 @@
 		var/obj/machinery/vending/x = new path(null)
 		// force an inventory build; with map_loader_begin active, init isn't called
 		x.build_inventory()
-		qdel(x)
+		spent(x)
 	SSatoms.map_loader_stop()

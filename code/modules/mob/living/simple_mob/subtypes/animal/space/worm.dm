@@ -361,17 +361,17 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 				if(!istype(stomachContent,/obj/item/stack/material/phoron))
 					var/obj/item/stack/oldStack = stomachContent
 					new /obj/item/stack/material/phoron(src, oldStack.get_amount())
-					qdel(oldStack)
+					spent(oldStack)
 					continue
 			else if(istype(stomachContent,/obj/item)) //converts to plasma, keeping the w_class
 				var/obj/item/oldItem = stomachContent
 				new /obj/item/stack/material/phoron(src, oldItem.w_class)
-				qdel(oldItem)
+				spent(oldItem)
 				continue
 			else
 				new /obj/item/stack/material/phoron(src, flatPlasmaValue) //just flat amount
 				if(!isliving(stomachContent))
-					qdel(stomachContent)
+					spent(stomachContent)
 				else
 					var/mob/living/L = stomachContent
 					if(iscarbon(L))

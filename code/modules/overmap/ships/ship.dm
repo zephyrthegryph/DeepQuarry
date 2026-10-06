@@ -70,7 +70,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
 		if(vessel)
 			SSflight.vessel_by_ship -= REF(src)
-			qdel(vessel)
+			spent(vessel)
 	return ..()
 
 /obj/effect/overmap/visitable/ship/on_destroy(force)

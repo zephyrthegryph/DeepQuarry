@@ -20,14 +20,14 @@
 					validation_messages += "[issue.severity == GENERATED_STATION_ISSUE_ERROR ? "error" : "warning"] [issue.code][issue.subject_id ? " ([issue.subject_id])" : ""]: [issue.message]"
 		if(!spec)
 			spec = generated_station_emergency_spec(seed)
-	qdel(validation)
+	spent(validation)
 
 	var/z = acquire_z()
 	if(!isnum(z) || z < 1)
 		if(validation_messages)
 			validation_messages += "No expedition z-level was available."
-		qdel(spec)
-		qdel(planner)
+		spent(spec)
+		spent(planner)
 		return null
 	var/origin_x = max(1, round((world.maxx - spec.grid_width) / 2))
 	var/origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
@@ -42,14 +42,14 @@
 		materializer.strict_room_contracts = FALSE
 		materialization = materializer.materialize(spec, z, origin_x, origin_y)
 		materialization_failure = materializer.last_failure_details
-		qdel(materializer)
-	qdel(planner)
+		spent(materializer)
+	spent(planner)
 	if(!materialization?.entry())
 		if(validation_messages)
 			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed[materialization_failure ? ": [materialization_failure]" : "."]"
-		qdel(materialization)
+		spent(materialization)
 		wipe_z(z)
-		qdel(spec)
+		spent(spec)
 		spec = generated_station_emergency_spec(seed)
 		materialization = generated_station_emergency_materialization(spec, z)
 

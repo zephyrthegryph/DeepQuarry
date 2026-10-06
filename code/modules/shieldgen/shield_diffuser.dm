@@ -54,7 +54,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffus
 			S.diffuse(5)
 		// Legacy shield support
 		for(var/obj/effect/energy_field/S in turf_contents_of_type(shielded_tile, /obj/effect/energy_field))
-			qdel(S)
+			spent(S)
 	return PROCESS_KILL
 
 /// Appearance reader: working and switched on.

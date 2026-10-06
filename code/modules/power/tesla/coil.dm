@@ -149,8 +149,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_ope
 		new_coil.set_anchored(anchored)
 
 		to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))
-		// ALLOW(lifecycle): the coil is swapped for its modified version built above
-		qdel(src)
+		spent(src, user)
 		return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_BLOCKING

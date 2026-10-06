@@ -377,7 +377,7 @@ CAPABILITIES(/obj/item/paicard)
 
 /obj/item/paicard/proc/setEmotion(emotion)
 	cut_overlays()
-	qdel(screen_layer)
+	spent(screen_layer)
 	screen_layer = null
 	switch(emotion)
 		if(1) screen_layer = image(icon, "pai-neutral")
@@ -858,11 +858,8 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	pickup_sound = SFX_ITEMS_PICKUP_CARD
 	drop_sound = SFX_ITEMS_DROP_CARD
 
-// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-/obj/item/paiparts/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-10,10)
-	pixel_y = rand(-10,10)
+CAPABILITIES(/obj/item/paiparts)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 
 /obj/item/paiparts/cell
 	name = "pAI power cell"

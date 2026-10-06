@@ -113,7 +113,7 @@
 		self.overmind.blob_type.on_spore_lifetick(self)
 
 	if(self.factory && self.z != self.factory.z) // This is to prevent spores getting lost in space and making the factory useless.
-		qdel(self)
+		spent(self)
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE

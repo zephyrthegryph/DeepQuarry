@@ -272,7 +272,7 @@
 			C.installed = ROBOT_PART_INSTALLED
 			continue
 		if(C.installed == ROBOT_PART_DESTROYED)
-			qdel(C.uninstall())
+			spent(C.uninstall())
 		if(C.installed == ROBOT_PART_INSTALLED)
 			continue
 		if(C.slot == ROBOT_SLOT_POWER)
@@ -964,8 +964,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	rel_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
 	C.update_icon()
 	new/obj/item/robot_parts/chest(loc)
-	// ALLOW(lifecycle): the gutted cyborg leaves its frame and chest behind
-	qdel(src)
+	spent(src, user)
 	return TRUE
 
 /// Pry an external part (or its fried remains) out of its slot. The part

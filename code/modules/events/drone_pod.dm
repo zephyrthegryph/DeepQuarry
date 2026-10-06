@@ -19,7 +19,7 @@
 		kill()
 	else
 		registry_leave(REGISTRY_LANDMARKS, target_spot)
-		qdel(target_spot)
+		spent(target_spot)
 
 /datum/event/drone_pod_drop/announce()
 	GLOB.command_announcement.Announce("An unidentified drone pod has been detected on a collision course towards the [location_name()]. Open and examine at your own risk.", "[location_name()] Sensor Network", ANNOUNCER_MSG_DRONEPOD)

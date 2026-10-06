@@ -19,7 +19,7 @@ CAPABILITIES(/datum/uplink)
 
 	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
-			qdel(item) // ALLOW(lifecycle): init_subtypes() made an abstract uplink item nothing adopts; it goes at once
+			spent(item)
 			continue
 
 		rel_add(src, nameof(items), item)

@@ -97,7 +97,7 @@
 /mob/proc/changeling_lesser_transform_finish(atom/movable/overlay/animation, datum/dna/chosen_dna, list/implants)
 	var/mob/living/carbon/C = src
 	var/datum/changeling/changeling = is_changeling(src)
-	qdel(animation)
+	spent(animation)
 
 	for(var/obj/item/W in contents_of(src))
 		C.drop_from_inventory(W)
@@ -112,7 +112,7 @@
 	O.real_name = chosen_dna.real_name
 
 	for(var/obj/T in C)
-		qdel(T)
+		spent(T)
 
 	O.forceMove(C.loc)
 
@@ -133,7 +133,7 @@
 	O.changeling_update_languages(changeling.absorbed_languages)
 
 	feedback_add_details("changeling_powers","LFT")
-	qdel(C)
+	spent(C)
 	return 1
 
 /mob/proc/lesser_transform_answered(datum/act/request/context)

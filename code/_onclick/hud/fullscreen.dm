@@ -36,7 +36,7 @@
 	else
 		if(client)
 			client.screen -= screen
-		qdel(screen)
+		spent(screen)
 
 /mob/proc/clear_fullscreens()
 	for(var/category in screens)
@@ -166,4 +166,4 @@
 /mob/proc/remove_faded_fullscreen(atom/movable/screen/fullscreen/screen)
 	if(client)
 		client.screen -= screen
-	qdel(screen)
+	spent(screen)

@@ -114,7 +114,7 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 	if(F)
 		var/datum/computer_file/data/backup = F.clone()
 		if(!F.holder().remove_file(F))
-			qdel(backup)
+			spent(backup)
 			return TRUE
 		F.stored_data = newtext
 		F.calculate_size()
@@ -125,9 +125,9 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 		if(!drive.store_file(F))
 			error = "I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>"
 			drive.store_file(backup)
-			qdel(F) // detached by remove_file() and not stored again
+			spent(F) // detached by remove_file() and not stored again
 		else
-			qdel(backup)
+			spent(backup)
 		return TRUE
 
 /datum/computer_file/program/filemanager/proc/ui_act_prg_printfile(datum/act/op/A)
@@ -155,7 +155,7 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 	if(!file || file.undeletable)
 		return
 	if(file.holder().remove_file(file))
-		qdel(file)
+		spent(file)
 	return TRUE
 
 /datum/computer_file/program/filemanager/proc/ui_act_prg_rename(datum/act/op/A, new_name, uid)

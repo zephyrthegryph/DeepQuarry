@@ -40,7 +40,7 @@
 
 	// Cleanup for synthfab default dna
 	if(self_clear)
-		qdel(dna)
+		spent(dna)
 
 /datum/organ_data/proc/setup_from_species(datum/species/S) // This needs a full rework, but can't be done unless all of transformating species code is refactored
 	SHOULD_NOT_OVERRIDE(TRUE)

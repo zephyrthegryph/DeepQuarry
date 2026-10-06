@@ -123,7 +123,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 	to_chat(user, span_notice("You launch the firework!"))
 	play_sfx(get_turf(src), SFX_WEAPONS_RPG)
 	loaded_star().trigger_firework(WH)
-	qdel(loaded_star())
+	spent(loaded_star(), user)
 	rel_clear(src, nameof(loaded_star))
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)

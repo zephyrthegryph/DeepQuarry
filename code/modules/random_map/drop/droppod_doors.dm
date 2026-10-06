@@ -71,11 +71,11 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	for(var/obj/O in turf_contents_of_type(origin, /obj))
 		if(!O.simulated)
 			continue
-		qdel(O) //crunch
+		spent(O) //crunch
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(!O.simulated)
 			continue
-		qdel(O) //crunch
+		spent(O) //crunch
 
 	// Hurl the mobs away.
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))

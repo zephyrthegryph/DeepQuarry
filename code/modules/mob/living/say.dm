@@ -534,5 +534,5 @@ CAPABILITIES(/datum/om/global_owner)
 			if(C) //Could have disconnected after message sent, before removing bubble.
 				C.images -= I
 		own_take_member(om_global_owner(), nameof(/datum/om/global_owner::pending_speech_images), I)
-		qdel(I)
+		spent(I)
 

@@ -146,7 +146,7 @@ SYSTEM_DEF(atoms)
 
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
 	for (var/atom/queued as anything in queued_deletions?.Copy())
-		qdel(queued)
+		spent(queued)
 	rel_clear(src, nameof(queued_deletions))
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
@@ -266,7 +266,7 @@ SYSTEM_DEF(atoms)
 /datum/system/atoms/proc/prepare_deletion(atom/target)
 	if (atom_initialized == INITIALIZATION_INNEW_REGULAR)
 		// Atoms SS has already completed, just kill it now.
-		qdel(target)
+		spent(target)
 	else
 		rel_add(src, nameof(queued_deletions), target)
 

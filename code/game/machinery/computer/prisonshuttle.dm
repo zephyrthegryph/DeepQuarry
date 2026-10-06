@@ -174,7 +174,7 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 				for(var/atom/movable/AM as mob|obj in contents_of(T))
 					AM.Move(D)
 				if(istype(T, /turf/simulated))
-					qdel(T)
+					spent(T)
 			start_location.move_contents_to(end_location)
 
 		if(1)
@@ -199,7 +199,7 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 				for(var/atom/movable/AM as mob|obj in contents_of(T))
 					AM.Move(D)
 				if(istype(T, /turf/simulated))
-					qdel(T)
+					spent(T)
 
 			for(var/mob/living/carbon/bug in area_contents_of_type(end_location, /mob/living/carbon)) // If someone somehow is still in the shuttle's docking area...
 				bug.gib()

@@ -218,7 +218,7 @@ CAPABILITIES(/datum/pin_value_review)
 	return default_entity_selected ? default_entity : default_scalar
 
 /datum/pin_value_review/proc/retire()
-	qdel(src) // ALLOW(lifecycle): Finished nonspatial pin edit state has no inventory release contract.
+	spent(src)
 
 /datum/pin_value_review/proc/why_not()
 	if(QDELETED(actor) || QDELETED(pin) || (default_entity_selected && QDELETED(default_entity)))

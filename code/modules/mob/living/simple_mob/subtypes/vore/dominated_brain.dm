@@ -37,10 +37,10 @@ CAPABILITIES(/mob/living/dominated_brain)
 /datum/om/stage/life/type_post/dominated_brain/perform(mob/living/dominated_brain/self, datum/om/frame/life/ctx)
 	..()
 	if(!isliving(self.loc))
-		qdel(self)
+		spent(self)
 		return
 	if(!self.mind && !self.was_mob)
-		qdel(self)
+		spent(self)
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
 	if(pred_body.say_understands(other, speaking))
@@ -166,8 +166,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [returning_prey?.key].", pred_body)
 	pred_body.absorb_langs()
 	pred_body.prey_controlled = FALSE
-	// ALLOW(lifecycle): the dominating prey mind is dissolved once control returns
-	qdel(src)
+	dissolved(src)
 
 /mob/living/proc/absorb_langs()		//This should be called on the predator in the exchange
 	var/list/langlist = list()
@@ -737,7 +736,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	pred.prey_controlled = TRUE
 	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via [method], and were originally controlled by [pred_brain.pred_mind?.key].", pred)
 	if(punished_prey)
-		qdel(punished_prey)
+		spent(punished_prey)
 	return pred_brain
 
 /// The mind-move half of dominate prey: `M`'s mind is gathered into a back
@@ -767,6 +766,5 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	to_chat(prey_body, span_warning("Your connection to [pred_body] fades, and you awaken back in your own body!"))
 	to_chat(pred_body, span_warning("You feel as though a piece of yourself is missing, as \the [src] returns to their body."))
 	log_admin("[prey_body] ([prey_body.ckey]) has returned to their body from [pred_body].")
-	// ALLOW(lifecycle): the dominated brain is dissolved once its prey returns
-	qdel(src)
+	dissolved(src)
 

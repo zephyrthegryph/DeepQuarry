@@ -238,7 +238,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 					delete_holder = FALSE
 			if (delete_holder)
 				rel_clear(micro, nameof(micro.held_mob))
-				qdel(micro)
+				consumed(micro)
 			return
 		if(!move_into(belly, BELLY_SLOT_INTERIOR, to_eat, hound))
 			return
@@ -328,7 +328,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		var/list/findings = list()
 		for(var/datum/diagnosis_finding/F as anything in D?.findings)
 			UNTYPED_LIST_ADD(findings, list("name" = F.name, "band" = F.band))
-		qdel(D)
+		spent(D)
 		patient_data = list(
 			"name" = patient.name,
 			"stat" = patient.stat,
@@ -609,7 +609,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		patient_laststat = null
 		rel_clear(src, nameof(patient))
 	T.mind?.vore_death = TRUE
-	qdel(T)
+	dissolved(T)
 
 /// Digest (or preserve) one loose item or remains.
 /obj/item/dogborg/sleeper/proc/digest_loose_item(atom/target)
@@ -651,7 +651,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			else
 				hound.adjust_nutrition(5 * digested)  //drain(-50 * digested)
 	else if(istype(target,/obj/effect/decal/remains))
-		qdel(target)
+		consumed(target)
 		hound.adjust_nutrition(10) //drain(-100)
 	else
 		rel_add(src, nameof(items_preserved), target)

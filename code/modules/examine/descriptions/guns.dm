@@ -24,7 +24,7 @@
 		return "no"
 	var/firepower = P.damage
 	if(created_projectile)
-		qdel(P)
+		spent(P)
 	switch(firepower)
 		if(0)
 			return "no"
@@ -69,7 +69,7 @@
 		return "no"
 	var/penetration = P.armor_penetration
 	if(created_projectile)
-		qdel(P)
+		spent(P)
 	switch(penetration)
 		if(0)
 			return "cannot pierce armor"

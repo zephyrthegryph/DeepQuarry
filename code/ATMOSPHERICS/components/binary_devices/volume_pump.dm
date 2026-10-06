@@ -80,7 +80,7 @@ Thus, the two variables affect pump operation are set in New():
 				var/leak_fraction = min(VOLUME_PUMP_LEAK_AMOUNT * moles / air2_total, 1)
 				var/datum/gas_mixture/leaked = air2.remove_ratio(leak_fraction)
 				T.air.merge(leaked)
-				qdel(leaked)
+				spent(leaked)
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
 

@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 		key = user.key
 	SetName("[modtype] [braintype]-[rand(100,999)]")
 	after(src, 0.1 SECONDS, PROC_REF(welcome_client))
-	qdel(user)
+	spent(user)
 
 /mob/living/silicon/robot/platform/proc/welcome_client()
 	if(client)

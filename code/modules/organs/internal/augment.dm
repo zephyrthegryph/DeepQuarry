@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/organ/internal/augment)
 		if(slot_is_accessible(slot, equipping, src))
 			equip_to_slot(equipping, slot, 1, 1)
 		else if(del_if_failure)
-			qdel(equipping)
+			spent(equipping)
 			return 0
 
 	if(cling_to_organ) // Does the object automatically return to the organ?

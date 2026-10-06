@@ -113,7 +113,7 @@
 	else
 		own_take_member(src, nameof(detached_afflictions), L)
 		recalc_integrity()
-	qdel(L)
+	spent(L)
 
 /// Remove every lesion (rejuvenate / full heal).
 /obj/item/organ/internal/proc/clear_lesions()

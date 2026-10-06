@@ -2,11 +2,8 @@
 /obj/structure/cable/generated_station
 	icon_state = "0-1"
 
-// ALLOW(init/CTOR_ARGS): generated_icon_state is a constructor argument from whoever builds it
-/obj/structure/cable/generated_station/Initialize(mapload, generated_icon_state)
-	if(generated_icon_state)
-		icon_state = generated_icon_state
-	return ..()
+CAPABILITIES(/obj/structure/cable/generated_station)
+	param(nameof(icon_state), pos = 1)
 
 /obj/machinery/power/smes/generated_station
 	circuit = null
@@ -37,78 +34,48 @@ CAPABILITIES(/obj/machinery/power/generator/generated_station)
 	connect_types = CONNECT_TYPE_SUPPLY
 	piping_layer = PIPING_LAYER_SUPPLY
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/air/full/generated_station)
+	param(nameof(dir), pos = 1)
 
 /obj/machinery/atmospherics/pipe/tank/generated_station_scrub
 	dir = WEST
 	connect_types = CONNECT_TYPE_SCRUBBER
 	piping_layer = PIPING_LAYER_SCRUBBER
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/tank/generated_station_scrub/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/generated_station_scrub)
+	param(nameof(dir), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station)
+	param(nameof(dir), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station)
+	param(nameof(dir), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station)
+	param(nameof(dir), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station)
+	param(nameof(dir), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station)
+	param(nameof(dir), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station)
+	param(nameof(dir), pos = 1)
 
 /obj/machinery/atmospherics/unary/vent_pump/on/generated_station
 	dir = WEST
 	piping_layer = PIPING_LAYER_SUPPLY
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/unary/vent_pump/on/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/on/generated_station)
+	param(nameof(dir), pos = 1)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station
 	dir = EAST
 	piping_layer = PIPING_LAYER_SCRUBBER
 
-// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
-/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station)
+	param(nameof(dir), pos = 1)
 
 /datum/generated_station_utility_topology
 	var/station_id
@@ -725,10 +692,10 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 			continue
 		if(length(directions) <= 2)
 			var/cable_state = length(directions) == 1 ? "0-[directions[1]]" : "[min(directions[1], directions[2])]-[max(directions[1], directions[2])]"
-			rel_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, cable_state))
+			rel_add(result, nameof(result.power_objects), make(/obj/structure/cable/generated_station, at = T, icon_state = cable_state))
 		else
 			for(var/direction in directions)
-				rel_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, "0-[direction]"))
+				rel_add(result, nameof(result.power_objects), make(/obj/structure/cable/generated_station, at = T, icon_state = "0-[direction]"))
 
 /// Gives every terminal/source an explicit center tap even when the routed cable bends on its tile.
 /datum/generated_station_utility_builder/proc/ensure_global_power_connections(list/path, list/targets)
@@ -743,7 +710,7 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 				found = TRUE
 				break
 		if(!found)
-			rel_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, required_state))
+			rel_add(result, nameof(result.power_objects), make(/obj/structure/cable/generated_station, at = T, icon_state = required_state))
 
 /datum/generated_station_utility_builder/proc/spanning_path_directions(list/path)
 	var/list/tree_directions = list()
@@ -776,13 +743,13 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		var/obj/machinery/atmospherics/pipe/pipe
 		switch(length(directions))
 			if(1)
-				pipe = supply ? new /obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station(T, directions[1]) : new /obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station(T, directions[1])
+				pipe = supply ? make(/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station, at = T, dir = directions[1]) : make(/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station, at = T, dir = directions[1])
 			if(2)
 				var/generated_dir = simple_pipe_direction(directions[1], directions[2])
-				pipe = supply ? new /obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station(T, generated_dir) : new /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station(T, generated_dir)
+				pipe = supply ? make(/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station, at = T, dir = generated_dir) : make(/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station, at = T, dir = generated_dir)
 			if(3)
 				var/missing_direction = (NORTH|SOUTH|EAST|WEST) & ~direction_mask
-				pipe = supply ? new /obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station(T, missing_direction) : new /obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station(T, missing_direction)
+				pipe = supply ? make(/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station, at = T, dir = missing_direction) : make(/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station, at = T, dir = missing_direction)
 			if(4)
 				pipe = supply ? new /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply(T) : new /obj/machinery/atmospherics/pipe/manifold4w/hidden/scrubbers(T)
 		if(pipe)
@@ -818,7 +785,7 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		return FALSE
 	var/datum/generated_station_utility_builder/builder = new
 	rel_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
-	qdel(builder)
+	spent(builder)
 	return !!station_utilities
 
 

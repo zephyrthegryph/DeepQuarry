@@ -48,6 +48,6 @@ SYSTEM_DEF(instruments)
 		I = new path
 		I.Initialize()
 		if(!I.id)
-			qdel(I)
+			spent(I)
 			continue
 		instrument_data[I.id] = I

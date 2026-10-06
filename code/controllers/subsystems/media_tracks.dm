@@ -217,7 +217,7 @@ SYSTEM_DEF(media_tracks)
 	for(var/datum/track/T in all_tracks)
 		if(T.title == track || T.url == track)
 			all_tracks -= T
-			qdel(T)
+			spent(T)
 			report_progress("Media track removed by [user.client]: [track]")
 			sort_tracks()
 			return
@@ -242,7 +242,7 @@ SYSTEM_DEF(media_tracks)
 
 	report_progress("Media track removed by [user]: [T.title]")
 	all_tracks -= T
-	qdel(T)
+	spent(T, user)
 	sort_tracks()
 	return
 

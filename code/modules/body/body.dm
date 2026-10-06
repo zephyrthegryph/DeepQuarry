@@ -107,7 +107,7 @@
 			unlink_affliction(A)
 		else
 			remove_affliction(A)
-		qdel(A)
+		destroyed(A)
 	..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.

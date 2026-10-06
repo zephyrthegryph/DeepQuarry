@@ -63,8 +63,8 @@
 					break
 	target.canmove = 1
 	target.reset_perspective() // Fixes a blackscreen
-	qdel(animation)
-	qdel(holder)
+	spent(animation)
+	spent(holder)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
 	animation.icon_state = "liquify"

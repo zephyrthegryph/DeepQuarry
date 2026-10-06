@@ -79,7 +79,7 @@
 	if(uses_integrity && max_integrity > 0)
 		take_damage(max_integrity, BRUTE)
 	else
-		qdel(src) // ALLOW(lifecycle): a non-integrity object has no break state: the rupture destroys it outright
+		spent(src)
 
 /// Applies conserved heat exchange, differential-pressure fatigue, and both
 /// wetted- and exterior-surface corrosion. Returns TRUE while another sample
@@ -144,7 +144,7 @@
 			var/release_ratio = 1 - 2.718281828 ** (-0.04 * elapsed_seconds * sqrt(abs(internal_pressure - external_pressure) / max(internal_pressure, external_pressure, 0.1)))
 			var/datum/gas_mixture/leaked = source.remove_ratio(release_ratio)
 			destination.merge(leaked)
-			qdel(leaked) // ALLOW(lifecycle): a gas mixture is a plain arena-handle datum with no holder slot; the lifecycle verbs only take atoms
+			spent(leaked)
 			var/turf/open/open_turf = get_turf(src)
 			if(istype(open_turf))
 				open_turf.air_update_turf(FALSE, FALSE)
@@ -173,7 +173,7 @@
 		if(uses_integrity && max_integrity > 0)
 			take_damage(max_integrity, BURN)
 		else
-			qdel(src) // ALLOW(lifecycle): a non-integrity object has no break state: exterior corrosion destroys it outright
+			spent(src)
 	return TRUE
 
 /obj/proc/process_material_reagent_liner(datum/reagents/contents, elapsed_seconds = 0)
@@ -214,7 +214,7 @@
 	var/turf/spill_target = get_turf(src)
 	if(spill_target)
 		reagents?.splash(spill_target, reagents.total_volume)
-	qdel(src) // ALLOW(lifecycle): the perforated vessel spills and is destroyed now
+	destroyed(src)
 
 /obj/item/reagent_containers/examine(mob/user)
 	. = ..()

@@ -65,8 +65,7 @@
 				D.open()
 		if(istype(T,/turf/simulated/wall))
 			T.dismantle_wall(1)
-	// ALLOW(lifecycle): the charge is spent once it detonates
-	qdel(src)
+	spent(src)
 
 CAPABILITIES(/obj/item/syndie/c4explosive)
 	op("link_detonator", item(/obj/item/flame/lighter/zippo/c4detonator), passes(), then(PROC_REF(detonator_linked)))

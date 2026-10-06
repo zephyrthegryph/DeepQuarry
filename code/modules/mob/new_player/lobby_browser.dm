@@ -194,9 +194,8 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 
 		observer.set_respawn_timer(time_till_respawn()) // Will keep their existing time if any, or return 0 and pass 0 into set_respawn_timer which will use the defaults
 		observer.client.init_verbs()
-		qdel(mind) // mind is a relation view: the framework clears it as the mind dies
-		// ALLOW(lifecycle): the lobby mob is discarded once its player observes
-		qdel(src)
+		consumed(mind, src) // mind is a relation view: the framework clears it as the mind dies
+		spent(src)
 
 		// pAI notify if we have be pAI invite on
 		SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round

@@ -525,7 +525,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 		if(breath_masked)
 			item_flags &= ~AIRTIGHT
 	to_chat(user, span_notice(gaiterstring))
-	qdel(mob_overlay) // we're gonna need to refresh these
+	spent(mob_overlay, user) // we're gonna need to refresh these
 	update_clothing_icon()	//so our mob-overlays update
 
 /obj/item/clothing/accessory/gaiter/half //functions like a gaiter

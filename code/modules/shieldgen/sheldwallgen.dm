@@ -225,7 +225,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		T2 = T
 		if(locate_on(T, /obj/machinery/shieldwall))
 			F = (locate_on(T, /obj/machinery/shieldwall))
-			qdel(F)
+			spent(F)
 
 		if(locate_on(T, /obj/machinery/shieldwallgen))
 			G = (locate_on(T, /obj/machinery/shieldwallgen))
@@ -295,13 +295,11 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 /obj/machinery/shieldwall/machine_step()
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
-			// ALLOW(lifecycle): the shield wall collapses without both generators
-			qdel(src)
+			spent(src)
 			return
 
 		if(!(gen_primary.active)||!(gen_secondary.active))
-			// ALLOW(lifecycle): the shield wall collapses when a generator turns off
-			qdel(src)
+			spent(src)
 			return
 
 		if(prob(50))

@@ -110,7 +110,7 @@
 
 	// Telegraph the targeted tiles for the duration of the windup (auto-clears).
 	for(var/turf/T as anything in swing_tiles)
-		new /obj/effect/temp_visual/swing_telegraph(T, windup)
+		make(/obj/effect/temp_visual/swing_telegraph, at = T, duration = windup)
 
 	// Pull-back animation.
 	do_windup_animation(target, windup)

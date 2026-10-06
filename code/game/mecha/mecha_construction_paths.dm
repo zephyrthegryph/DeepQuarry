@@ -91,7 +91,7 @@
 	new result(get_turf(target))
 	if(feedback_key)
 		feedback_inc(feedback_key, 1)
-	qdel(target)
+	spent(target, actor)
 
 // ---------------------------------------------------------------------------
 // Parts-phase edges: one per required part, available from any "p<mask>"

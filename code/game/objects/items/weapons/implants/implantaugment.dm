@@ -37,7 +37,7 @@
 			expire(1)
 
 		else
-			qdel(NewOrgan)
+			spent(NewOrgan, M)
 			to_chat(H, span_warning("You feel a pinching sensation in your [part]. The implant remains."))
 
 /obj/item/implant/organ/islegal()
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/prompt/choice/augment_location)
 		expire(1)
 
 	else
-		qdel(NewOrgan)
+		consumed(NewOrgan, src)
 		to_chat(H, span_warning("You feel a pinching sensation in your [part]. The implant remains."))
 
 /obj/item/implant/organ/limbaugment/proc/setup_augment_slots(mob/living/carbon/human/H, obj/item/organ/internal/augment/armmounted/I, target_choice)

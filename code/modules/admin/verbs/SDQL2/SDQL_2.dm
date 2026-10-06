@@ -393,9 +393,9 @@ CAPABILITIES(/datum/SDQL2_query)
 	if(!allow_admin_interact)
 		return
 	if(!delete_click)
-		rel_set(src, nameof(delete_click), new /obj/effect/statclick/SDQL2_delete(null, "INITIALIZING", src))
+		rel_set(src, nameof(delete_click), make(/obj/effect/statclick/SDQL2_delete, at = null, name = "INITIALIZING", target = src))
 	if(!action_click)
-		rel_set(src, nameof(action_click), new /obj/effect/statclick/SDQL2_action(null, "INITIALIZNG", src))
+		rel_set(src, nameof(action_click), make(/obj/effect/statclick/SDQL2_action, at = null, name = "INITIALIZNG", target = src))
 	var/list/L = list()
 	L[++L.len] = list("[id] ", "[delete_click.update("DELETE QUERY | STATE : [text_state()] | ALL/ELIG/FIN \
 	[islist(obj_count_all)? length(obj_count_all) : (isnull(obj_count_all)? "0" : obj_count_all)]/\
@@ -435,8 +435,7 @@ CAPABILITIES(/datum/SDQL2_query)
 	var/msg = "[key_name(user)] has stopped + deleted query #[id]"
 	message_admins(msg)
 	log_admin(msg)
-	// ALLOW(lifecycle): an admin stopped and deleted this query
-	qdel(src)
+	spent(src, user)
 
 /datum/SDQL2_query/proc/set_option(name, value)
 	switch(name)
@@ -504,8 +503,7 @@ CAPABILITIES(/datum/SDQL2_query)
 				dq_admin_report_html(showmob, "SDQL Result", text)
 		show_next_to_key = null
 	if(qdel_on_finish)
-		// ALLOW(lifecycle): a query marked delete-on-finish ends when its run finishes
-		qdel(src)
+		spent(src)
 
 /datum/SDQL2_query/proc/PreSearch()
 	SDQL2_HALT_CHECK
@@ -918,7 +916,7 @@ CAPABILITIES(/datum/SDQL2_query)
 			query_tree += val
 		pos++
 
-	qdel(parser)
+	spent(parser, user)
 	return querys
 
 /proc/SDQL_testout(list/query_tree, indent = 0, mob/user = null)

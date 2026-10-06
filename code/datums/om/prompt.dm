@@ -179,8 +179,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /datum/tgui_list_input/om
 	var/datum/om/prompt/om_prompt
@@ -201,8 +200,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /datum/tgui_input_text/om
 	var/datum/om/prompt/om_prompt
@@ -223,8 +221,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /datum/tgui_input_number/om
 	var/datum/om/prompt/om_prompt
@@ -245,8 +242,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /datum/tgui_color_picker/om
 	var/datum/om/prompt/om_prompt
@@ -267,8 +263,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /datum/tgui_checkbox_input/om
 	var/datum/om/prompt/om_prompt
@@ -289,8 +284,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /// kind "colormatrix": the ColorMate window. "preview" is the atom (painted in place) or the
 /// path (a preview made for the window and deleted with it); the answer is the matrix.
@@ -313,12 +307,11 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)
 
 /datum/tgui_input_colormatrix/om/on_destroy(force)
 	if(was_path && target())
-		qdel(target())
+		destroyed(target())
 	..()
 
 /// kind "bitfield": the flag checkboxes. Submit answers the value; cancel or close cancels.
@@ -344,5 +337,4 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
-	// ALLOW(lifecycle): the prompt window lives only while it is open
-	qdel(src)
+	spent(src, user)

@@ -23,16 +23,6 @@ FLOOR SAFES
 	var/maxspace = 24	//the maximum combined w_class of stuff in the safe
 
 
-// ALLOW(init/INSTANCE_STATE): tumbler_1_pos, tumbler_1_open, tumbler_2_pos and tumbler_2_open rolled at random for each instance
-/obj/structure/safe/Initialize(mapload)
-	. = ..()
-	tumbler_1_pos = rand(0, 72)
-	tumbler_1_open = rand(0, 72)
-
-	tumbler_2_pos = rand(0, 72)
-	tumbler_2_open = rand(0, 72)
-
-
 /// Takes in the items lying on its turf, as space allows.
 /obj/structure/safe/proc/take_loose_items(datum/act/timer/A)
 	for(var/obj/item/I in contents_of(loc))
@@ -93,6 +83,10 @@ CAPABILITIES(/obj/structure/safe)
 	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
 	op("retrieve", ui_act("retrieve", arg("ref")), then(PROC_REF(ui_act_retrieve)))
 	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(safe/not_human))))
+	rolls(nameof(tumbler_1_pos), range_of(0, 72))
+	rolls(nameof(tumbler_1_open), range_of(0, 72))
+	rolls(nameof(tumbler_2_pos), range_of(0, 72))
+	rolls(nameof(tumbler_2_open), range_of(0, 72))
 
 MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 

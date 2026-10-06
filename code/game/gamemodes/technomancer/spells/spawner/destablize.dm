@@ -45,8 +45,7 @@
 /// A pulse every half second until pulses_remaining runs out.
 /obj/effect/temporary_effect/destablize/proc/radiate_loop()
 	if(!pulses_remaining)
-		// ALLOW(lifecycle): the destabilizing field ends after its last pulse
-		qdel(src)
+		spent(src)
 		return
 	after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))
 

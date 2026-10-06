@@ -335,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 		if(N.body)
 			N.body.remove_affliction(N)
 		if(!own_remove(src, nameof(detached_afflictions), N))
-			qdel(N)
+			spent(N)
 	integrity_dirty = TRUE
 
 /obj/item/organ/external/proc/is_dislocated()
@@ -412,7 +412,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 		return FALSE
 	var/obj/item/organ/external/placeholder = joint_limb.slot_lookup(SLOT_ID_PART_CHILD, organ_tag)
 	if(placeholder?.is_stump())
-		qdel(placeholder)
+		spent(placeholder)
 	return place_into(joint_limb, SLOT_ID_PART_CHILD)
 
 /// Born inside `M`: onto the limb our parent_organ names, or into the root.
@@ -803,7 +803,7 @@ This function completely restores a damaged organ to perfect condition.
 	for(var/datum/affliction/wound/other as anything in current_wounds)
 		if(other.can_merge(new_wound))
 			other.merge_wound(new_wound)
-			qdel(new_wound)
+			consumed(new_wound)
 			return other
 	add_wound(new_wound)
 	return new_wound
@@ -1099,8 +1099,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for(var/obj/item/I in slot_contents())
 				if(I.w_class > ITEMSIZE_SMALL && !istype(I,/obj/item/organ))
 					slot_remove(I, droploc, null, LEDGER_MOVE_FORCED)
-			// ALLOW(lifecycle): the limb burns to ash
-			qdel(src)
+			spent(src)
 		if(DROPLIMB_BLUNT)
 			var/obj/effect/decal/cleanable/blood/gibs/gore
 			if(is_robotic())
@@ -1118,8 +1117,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(slot_remove(thing, droploc, null, LEDGER_MOVE_FORCED))
 					thing.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
-			// ALLOW(lifecycle): the limb is blown apart
-			qdel(src)
+			spent(src)
 
 		if(DROPLIMB_ACID)
 			appearance_flags &= ~PIXEL_SCALE
@@ -1364,7 +1362,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			// Deleting an organ detaches it (the hook clears every cache).
 			for(var/obj/item/organ/thing as anything in slot_contents(SLOT_ID_PART_ORGANS))
 				if(!thing.vital)
-					qdel(thing)
+					spent(thing)
 
 		owner.refresh_modular_limb_verbs()
 

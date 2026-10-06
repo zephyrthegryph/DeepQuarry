@@ -24,7 +24,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 		if(O.target == src.mind)
 			if(O.owner && O.owner.current)
 				to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
-			qdel(O)
+			spent(O)
 
 	//Resleeving cleanup
 	if(mind)
@@ -44,13 +44,13 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 		GLOB.PDA_Manifest.Cut()
 	for(var/datum/data/record/R in GLOB.data_core.medical)
 		if((R.fields["name"] == src.real_name))
-			qdel(R)
+			spent(R)
 	for(var/datum/data/record/T in GLOB.data_core.security)
 		if((T.fields["name"] == src.real_name))
-			qdel(T)
+			spent(T)
 	for(var/datum/data/record/G in GLOB.data_core.general)
 		if((G.fields["name"] == src.real_name))
-			qdel(G)
+			spent(G)
 
 	//This removes them from being 'active' list on join screen
 	src.mind.assigned_role = null

@@ -1,7 +1,7 @@
 # escape_hatches ceilings (tools/analyze/src/lints/lifeforms.rs): the Initialize(), qdel and usr sites the lifecycle forms replace that remain.
 # Shrink-only: `analyze baseline --update --lint escape_hatches` lowers them; a kind at 0 has no line, so its next site fails (the hard ban).
-init_allow 660
-lifecycle_allow 524
-qdel_content 1443
-usr_allow 86
-usr_content 246
+init_allow 547
+lifecycle_allow 2
+qdel_content 8
+usr_allow 60
+usr_content 210

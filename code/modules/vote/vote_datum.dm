@@ -131,8 +131,7 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	if(remaining() == 0)
 		var/result = calculate_result()
 		handle_result(result)
-		// ALLOW(lifecycle): the vote ends once its result is handled
-		qdel(src)
+		spent(src)
 
 // SSvote forgets it.
 /datum/vote/lifecycle_dematerialize()

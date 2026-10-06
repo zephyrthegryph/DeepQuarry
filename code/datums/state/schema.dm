@@ -157,7 +157,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 	. = ctx.serialize_root(D)
 	if(ctx.errors && errors)
 		errors += ctx.errors
-	qdel(ctx)
+	spent(ctx)
 
 /// Creates a new object from `blob` at `loc`. Returns null on failure.
 /proc/state_materialize(list/blob, loc, flags = STATE_FULL, list/errors)
@@ -165,7 +165,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 	. = ctx.materialize_root(blob, loc)
 	if(ctx.errors && errors)
 		errors += ctx.errors
-	qdel(ctx)
+	spent(ctx)
 
 /// Writes `blob` onto the existing object `D`. The blob's type must be D's type
 /// (after migration). Returns TRUE on success.
@@ -174,7 +174,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 	. = ctx.apply_root(D, blob)
 	if(ctx.errors && errors)
 		errors += ctx.errors
-	qdel(ctx)
+	consumed(ctx, src)
 
 /// The encoded delta of `D` alone (no contents or components), or null if refused.
 /proc/state_delta(datum/D, list/errors)
@@ -208,7 +208,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 	var/datum/state_context/ctx = new(NONE)
 	var/list/baseline = ctx.list_baseline_of(path)
 	. = isnull(baseline[var_name]) ? null : ctx.decode_value(baseline[var_name])
-	qdel(ctx)
+	spent(ctx)
 
 /// Canonical text of a blob: keys sorted, numbers normalized. Equal state gives equal text.
 /proc/state_canonical(list/blob)

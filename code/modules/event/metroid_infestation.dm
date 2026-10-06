@@ -53,7 +53,7 @@ CAPABILITIES(/datum/event/metroid_infestation)
 		var/area/metroid_area = get_area(M)
 		if(!metroid_area) //Huh, really?
 			if(!get_turf(M)) //No turf either?
-				qdel(M) //Must have been nullspaced
+				spent(M) //Must have been nullspaced
 			continue
 		area_names |= metroid_area.name
 	if(area_names.len && active_metroid_event == TRUE)

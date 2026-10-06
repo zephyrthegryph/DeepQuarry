@@ -68,11 +68,12 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/effect/spider/stickyweb/Initialize(mapload)
-	if(prob(50))
-		icon_state = "stickyweb2"
-	return ..()
+CAPABILITIES(/obj/effect/spider/stickyweb)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/spider/stickyweb/proc/roll_icon_state(datum/roller/R)
+	return R.chance(50) ? "stickyweb2" : icon_state
 
 /obj/effect/spider/stickyweb/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /mob/living/simple_mob/animal/giant_spider))
@@ -309,16 +310,12 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 	icon_state = "cocoon1"
 	max_integrity = 15
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/effect/spider/cocoon/Initialize(mapload)
-	. = ..()
-	icon_state = pick("cocoon1","cocoon2","cocoon3")
-
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
 CAPABILITIES(/obj/effect/spider/cocoon)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	rolls(nameof(icon_state), pick_one(list("cocoon1", "cocoon2", "cocoon3")))
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

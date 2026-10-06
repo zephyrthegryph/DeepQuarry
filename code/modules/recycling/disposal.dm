@@ -85,7 +85,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 		for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 			AM.forceMove(T)
 			AM.pipe_eject(0)
-		qdel(H)
+		spent(H)
 		return
 
 	if(!T.is_plating() && istype(T,/turf/simulated/floor)) //intact floor, pop the tile
@@ -109,7 +109,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 				AM.throw_at(target, 100, 1)
 
 			H.vent_gas(T)
-			qdel(H)
+			spent(H)
 
 	else	// no specified direction, so throw in random direction
 
@@ -124,7 +124,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 				AM.throw_at(target, 5, 1)
 
 			H.vent_gas(T)	// all gas vent to turf
-			qdel(H)
+			spent(H)
 
 	return
 
@@ -152,7 +152,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(T)
 				AM.pipe_eject(0)
-			qdel(H)
+			spent(H)
 			return
 
 		// otherwise, do normal expel from turf
@@ -249,7 +249,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(T)
 				AM.pipe_eject(0)
-			qdel(H)
+			destroyed(H)
 			..()
 			return
 
@@ -394,8 +394,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 // called when welded
 /obj/structure/disposalpipe/broken/welded()
-	// ALLOW(lifecycle): welding a broken pipe clears it away
-	qdel(src)
+	destroyed(src)
 
 // called when movable is expelled from a disposal pipe or outlet
 // by default does nothing, override for special behaviour

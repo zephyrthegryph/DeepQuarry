@@ -287,8 +287,7 @@
 	if(parent_ui())
 		parent_ui().children -= src
 	rel_clear(src, nameof(parent_ui))
-	// ALLOW(lifecycle): a closed tgui window record ends
-	qdel(src)
+	spent(src)
 
 /**
  * public

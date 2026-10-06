@@ -78,7 +78,7 @@
 					var/mob/M = AM
 					if(M.client)
 						continue
-				qdel(AM)
+				spent(AM)
 			T.ChangeTurf(turf_wall, tell_universe = FALSE)
 			if(++n % 200 == 0)
 				CHECK_TICK

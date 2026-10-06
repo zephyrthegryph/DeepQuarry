@@ -73,8 +73,7 @@
 
 /obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
-	// ALLOW(lifecycle): the generator is taken apart with nothing salvaged
-	qdel(src)
+	destroyed(src, user)
 
 /obj/machinery/atmospheric_field_generator/perma/Initialize(mapload)
 	. = ..()
@@ -143,7 +142,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		else
 			icon_state = "arfg_off"
 			for(var/obj/structure/atmospheric_retention_field/F in contents_of(loc))
-				qdel(F)
+				spent(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
 			set_use_power(USE_POWER_IDLE)
 			isactive = FALSE

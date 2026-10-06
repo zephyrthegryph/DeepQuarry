@@ -657,7 +657,7 @@
 	if(lattice)
 		// Lattices seem a bit too flimsy to hold up a massive exosuit.
 		lattice.visible_message(span_danger("\The [lattice] collapses under the weight of \the [src]!"))
-		qdel(lattice)
+		spent(lattice)
 
 	// Then call parent to have us actually fall
 	return ..()
@@ -703,8 +703,7 @@
 	else
 		for(var/atom/movable/A in contents_of(src))
 			A.fall_impact(hit_atom, damage_min, damage_max, silent = TRUE)
-		// ALLOW(lifecycle): the exosuit is destroyed by a planetary fall
-		qdel(src)
+		destroyed(src)
 
 	// And hurt the floor.
 	if(istype(hit_atom, /turf/simulated/floor))

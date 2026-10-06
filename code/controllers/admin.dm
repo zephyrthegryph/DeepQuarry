@@ -6,15 +6,12 @@
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 
-// ALLOW(init/CTOR_ARGS): text and target are constructor arguments from whoever builds it
-/obj/effect/statclick/Initialize(mapload, text, target)
-	. = ..()
-	name = text
-	src.target = target
+CAPABILITIES(/obj/effect/statclick)
+	param(nameof(name), pos = 1)
+	param(nameof(target), pos = 2)
 
 /obj/effect/statclick/proc/cleanup()
-	// ALLOW(lifecycle): the stat panel link is dropped when its panel entry is cleared
-	qdel(src)
+	spent(src)
 
 /obj/effect/statclick/proc/update(text)
 	name = text

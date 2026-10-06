@@ -92,7 +92,7 @@ CAPABILITIES(/datum/system/radio)
 	if(range)
 		start_point = get_turf(source)
 		if(!start_point)
-			qdel(signal)
+			spent(signal)
 			return 0
 	if (radio_filter)
 		send_to_filter(source, signal, radio_filter, start_point, range)

@@ -9,12 +9,8 @@
 	/// What should the info button display when clicked?
 	var/info_text
 
-// ALLOW(init/CTOR_ARGS): info_text is a constructor argument from whoever builds it
-/obj/effect/abstract/info/Initialize(mapload, info_text)
-	. = ..()
-
-	if (!isnull(info_text))
-		src.info_text = info_text
+CAPABILITIES(/obj/effect/abstract/info)
+	param(nameof(info_text), pos = 1)
 
 /obj/effect/abstract/info/Click()
 	. = ..()

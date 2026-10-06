@@ -874,7 +874,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	log_admin("[key_name(admin)] stuffed [frommob.ckey] into [tomob.name].")
 	feedback_add_details("admin_verb","CGD")
 	tomob.ckey = frommob.ckey
-	qdel(frommob)
+	spent(frommob)
 	return 1
 
 ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn", "Force an antagonist template to spawn.", ADMIN_CATEGORY_EVENTS)

@@ -24,8 +24,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 /datum/managed_browser/feedback_viewer/New(client/new_client)
 	if(!check_rights_for(new_client, R_ADMIN|R_DEBUG|R_EVENT)) // Just in case someone figures out a way to spawn this as non-staff.
 		message_admins("[new_client] tried to view feedback with insufficent permissions.")
-		// ALLOW(lifecycle): a feedback viewer opened without staff rights is refused at once
-		qdel(src)
+		spent(src)
 		return
 
 	..()
