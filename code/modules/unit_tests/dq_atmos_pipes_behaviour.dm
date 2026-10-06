@@ -36,6 +36,11 @@
 		stoplag()
 	am_settle()
 
+/// Time for the algae farm's own work (one service interval of it).
+/proc/ap_algae_tick(obj/machinery/atmospherics/binary/algae_farm/F)
+	F.machine_step()
+	am_settle()
+
 /// A radio command packet to a pipe device with radio tag `tag` (its `id`).
 /proc/ap_radio(obj/machinery/atmospherics/D, tag, list/command)
 	var/datum/signal/signal = new
@@ -768,3 +773,36 @@
 		qdel(placed)
 	qdel(built)
 	take_down_lines()
+
+// =====================================================================================================================
+// The algae farm
+// =====================================================================================================================
+
+/// Switched on with algae and carbon dioxide on its input, the farm turns the CO2 into oxygen on its output and graphite in its store; out of
+/// CO2 it stops, and new CO2 starts it again.
+/datum/unit_test/dq_atmos_m/pipes/algae_farm_converts
+/datum/unit_test/dq_atmos_m/pipes/algae_farm_converts/run_gate()
+	var/obj/machinery/atmospherics/binary/algae_farm/filled/F = pipe_device(/obj/machinery/atmospherics/binary/algae_farm/filled)
+	var/mob/living/carbon/human/H = person()
+	F.air1.adjust_gas(GAS_CO2, 5)
+	gas_touched(F.air1)
+	ap_press(src, H, F, "toggle")
+	TEST_ASSERT_EQUAL(F.use_power, USE_POWER_ACTIVE, "the button switches its grow lights on")
+	for(var/i in 1 to 3)
+		ap_algae_tick(F)
+	TEST_ASSERT(F.air2.get_moles(GAS_O2) > 0.5, "oxygen comes out ([F.air2.get_moles(GAS_O2)])")
+	TEST_ASSERT(F.stored_material[MAT_GRAPHITE] > 0, "graphite is stored")
+	var/algae = F.stored_material[MAT_ALGAE]
+	F.air1.adjust_gas(GAS_CO2, -F.air1.get_moles(GAS_CO2))
+	gas_touched(F.air1)
+	for(var/i in 1 to 3)
+		ap_algae_tick(F)
+	TEST_ASSERT(F.ui_error, "out of CO2 it says so")
+	var/algae_idle = F.stored_material[MAT_ALGAE]
+	ap_algae_tick(F)
+	TEST_ASSERT_EQUAL(F.stored_material[MAT_ALGAE], algae_idle, "and uses no algae")
+	F.air1.adjust_gas(GAS_CO2, 5)
+	gas_touched(F.air1)
+	for(var/i in 1 to 3)
+		ap_algae_tick(F)
+	TEST_ASSERT(F.stored_material[MAT_ALGAE] < algae_idle, "new CO2 starts it again")
