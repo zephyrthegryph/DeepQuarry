@@ -192,9 +192,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 // ALLOW(init/INSTANCE_STATE): a machine faces the way it is built and, made after the map, checks its power
 /obj/machinery/Initialize(mapload)
 	. = ..()
-	var/initial_held = stat & MACHINE_STAT_HELD // a type's default BROKEN or NOPOWER moves into the stat layer
+	var/initial_held = stat & MACHINE_STAT_HELD // ALLOW(sys_stat_bits): a type's default BROKEN or NOPOWER moves into the stat layer
 	if(initial_held)
-		stat &= ~initial_held
+		stat &= ~initial_held // ALLOW(sys_stat_bits): moves the default bits into the stat layer, once
 		stat_add(initial_held)
 	if(isnum(dir_at_make))
 		set_dir(dir_at_make)

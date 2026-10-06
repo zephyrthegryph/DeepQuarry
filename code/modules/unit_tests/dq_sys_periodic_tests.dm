@@ -107,7 +107,7 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 
 /// TRUE while `M` has started work that may run now (a machine with none never does): the old "is a DM process() subscriber" question.
 /proc/machine_stepping(obj/machinery/M)
-	return !!cap_of(M, CAP_STARTED_WORK) && work_started(M)
+	return !!cap_of(M, CAP_STARTED_WORK) && test_work_allowed(M)
 
 /// The machine's periodic work may run now: it is started, its `when` holds and its gate passes.
 /proc/test_work_allowed(obj/machinery/M)

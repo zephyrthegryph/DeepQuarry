@@ -2433,3 +2433,9 @@ Design and migration: `doc/rewrite/power_grid.md`.
   calls); `area.lights` is `lights_here()`. A machine moved between areas takes its draw and its power state with it in one step.
 * **Rarely, a load shows that the tallies had lost.** A subclass that wrote its draw outside the setters, or a machine moved while it was still
   initialising, used to leave the area's load wrong until someone retallied; the APC now carries exactly what the machines in the area ask.
+## Machines: NOPOWER and BROKEN are stats (rewrite/machine-stats)
+
+* `NOPOWER` is the `has_power` stat held false by `SRC_GRID` (set_powered() is the one writer); `BROKEN` is the `intact` stat held false by `SRC_DAMAGE`.
+  `has_stat()`, `stat_add()`, `stat_remove()`, `set_stat()` and `stat_bits_now()` are shims over them (and over the `stat` bits POWEROFF, MAINT and EMPED, which
+  are still bits), so every existing caller keeps its behaviour. A type's default `stat = BROKEN` or `NOPOWER` moves into the stat layer at Initialize.
+* The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it; it does today (not changed here). Left to the grid work.
