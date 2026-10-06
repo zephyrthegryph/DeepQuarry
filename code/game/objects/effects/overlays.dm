@@ -54,11 +54,17 @@
 	layer = ABOVE_MOB_LAYER
 	mouse_opacity = 0
 
-// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
-/obj/effect/overlay/wallrot/Initialize(mapload)
-	. = ..()
-	pixel_x += rand(-10, 10)
-	pixel_y += rand(-10, 10)
+CAPABILITIES(/obj/effect/overlay/wallrot)
+	rolls(nameof(pixel_x), PROC_REF(roll_pixel_x))
+	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/overlay/wallrot/proc/roll_pixel_x(datum/roller/R)
+	return pixel_x + (R.number(-10, 10))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/overlay/wallrot/proc/roll_pixel_y(datum/roller/R)
+	return pixel_y + (R.number(-10, 10))
 
 /obj/effect/overlay/snow
 	name = "snow"

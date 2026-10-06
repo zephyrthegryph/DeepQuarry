@@ -78,7 +78,7 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 	ending_causes[thing] = list(cause, by)
 
 /// Ends `thing` with `cause`. The one place a caused ending deletes: returns TRUE when it ended it.
-/proc/lifeform_end(datum/thing, cause, datum/by = null)
+/proc/lifeform_end(datum/thing, cause, datum/by = null, force = FALSE)
 	if(isnull(thing))
 		return FALSE
 	if(!isdatum(thing)) // an image, an icon: nothing to announce, qdel() hard-deletes it as before
@@ -87,12 +87,12 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 	if(QDELETED(thing))
 		return FALSE
 	ending_cause(thing, cause, by)
-	qdel(thing)
+	qdel(thing, force)
 	return TRUE
 
-/// Used up: a charge, a single-use tool, a spent cartridge.
-/proc/spent(datum/thing, datum/by = null)
-	return lifeform_end(thing, END_SPENT, by)
+/// Used up: a charge, a single-use tool, a spent cartridge. `force` is qdel()'s: a thing that refuses deletion (a lighting object) ends anyway.
+/proc/spent(datum/thing, datum/by = null, force = FALSE)
+	return lifeform_end(thing, END_SPENT, by, force)
 
 /// Eaten, drunk or absorbed by `by`.
 /proc/consumed(datum/thing, datum/by = null)

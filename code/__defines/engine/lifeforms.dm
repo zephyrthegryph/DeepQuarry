@@ -77,3 +77,5 @@
 #define INPUT_CLICK_ON "click_on"
 #define INPUT_DRAG_ONTO "drag_onto"
 #define INPUT_HOVER "hover"
+/// What a click_on()/drag_onto() handler returns to let the type's own native Click()/MouseDrop() (its parent's) run after it.
+#define INPUT_FALLTHROUGH "\[input:fallthrough]"

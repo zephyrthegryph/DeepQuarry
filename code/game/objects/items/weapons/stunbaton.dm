@@ -29,6 +29,7 @@
 CAPABILITIES(/obj/item/melee/baton)
 	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /obj/item/melee/baton/Initialize(mapload)
 	. = ..()
@@ -37,9 +38,10 @@ CAPABILITIES(/obj/item/melee/baton)
 /obj/item/melee/baton/get_cell()
 	return bcell
 
-/obj/item/melee/baton/MouseDrop(obj/over_object as obj)
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native weapon drag supplies the actor before preserving its conditional parent routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/melee/baton/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/melee/baton/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)

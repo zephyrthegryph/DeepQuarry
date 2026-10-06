@@ -1327,7 +1327,7 @@ expire(after) · replace_with(path, ...) · consume(item, actor) · slot_clear(s
   <h4>9. Input with an actor</h4>
   <div class="sig">click_on(PROC_REF(x) | "op.key") · drag_onto(PROC_REF(x) | "op.key", onto = /T) · hover(PROC_REF(x))     <span class="c">// x(datum/act/input/A): A.actor, A.over, A.entered</span>
 tooltip(PROC_REF(x), theme = null)                                                          <span class="c">// x(mob/user) answers list(title, content)</span>
-with_actor(actor, CALLBACK(...))</div>
+with_actor(actor, CALLBACK(...)) · with_actor(actor, target | GLOBAL_PROC, PROC_REF(x), args...)   <span class="c">// the second where CALLBACK is not allowed</span></div>
   <div class="prose">
     <ul>
       <li>BYOND hands DM the acting mob only in the client's native hooks, as <code>usr</code>. For a type that declares one of these entries, <code>analyze gen declare</code> writes the native override (<code>Click()</code>, <code>MouseDrop()</code>, <code>MouseEntered()</code>/<code>MouseExited()</code>) into the generated engine code: it reads <code>usr</code> once and hands the engine the actor. An op key runs through <code>perform_op()</code> with that actor.</li>

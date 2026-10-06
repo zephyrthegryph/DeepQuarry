@@ -149,6 +149,7 @@ CAPABILITIES(/obj/item/rig/protean)
 	op("protean_rig_item", item(/obj/item), then(PROC_REF(protean_rig_item)))
 	op("protean_removebag_verb", menu(), label("Remove Stored Bag"), needs(carried()), then(PROC_REF(protean_removebag_verb)))
 	op("protean_removerig_verb", menu(), label("Remove Assimilated Rig"), needs(carried()), then(PROC_REF(protean_removerig_verb)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
 /// (the old ..(), which used to run before the closing).
@@ -727,9 +728,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	else
 		to_chat(user, "[src] has not assimilated a RIG. Use one on it to assimilate.")
 
-/obj/item/rig/protean/MouseDrop(obj/over_object as obj)
-	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native protean cluster drag supplies its actor before unchanged conditional parent inventory routing.
-		return ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/rig/protean/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /obj/item/rig/protean/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(get_dormancy()) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.
