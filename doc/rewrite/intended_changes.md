@@ -1906,3 +1906,4 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
 - EFTPOS: settings answers resume again. Since the EFTPOS window moved to ops, `eftpos_settings_resume()` looked for a legacy row that no longer existed and dropped every answer.
 - Email administration: its buttons need the network access again (`needs(req(PROC_REF(network_admin_access), silent = TRUE))`). The old `ui_act_allowed()` guard had stopped running when the window moved to ops.
 - Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
+- tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.
