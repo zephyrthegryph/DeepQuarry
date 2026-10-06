@@ -42,17 +42,24 @@ CAPABILITIES(/obj/structure/prop/tyr_elevator)
 	var/list/lastattempt
 	var/codelen = 6
 
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("The door is locked."))
-	open_request(src, /datum/prompt/text, PROC_REF(code_entered), answerer = user, title = "Deca-Code Lock", question = "Enter [codelen] digits. All digits must be unique.", default = "", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(tyrdoor/locked, "The door is locked.")
 
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(datum/act/request/A)
-	var/mob/user = A.request.answerer
-	if(!A.answer)
+CAPABILITIES(/obj/machinery/door/blast/puzzle/tyrdoor/keypad)
+	op("enter_code", tool(TOOL_MULTITOOL), label("Enter the code"), priority(OP_PRIORITY_PART), wait(0), begins(MSG(tyrdoor/locked)),
+		asks(/datum/prompt/text, fields = list("title" = "Deca-Code Lock", "question" = computed(PROC_REF(code_question)), "default" = "", "timeout" = 0)),
+		then(PROC_REF(code_entered)))
+
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_question(datum/act/A)
+	return "Enter [codelen] digits. All digits must be unique."
+
+/// The code typed into the keypad: a right one opens the door.
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	if(!R)
 		to_chat(user, span_notice("You leave the lock alone."))
-		return
-	var/input = A.answer.value
+		return OP_OK
+	var/input = R.value
 	var/list/sanitised = list()
 	var/sanitycheck = TRUE
 	for(var/i in 1 to length(input))
@@ -69,7 +76,7 @@ CAPABILITIES(/obj/structure/prop/tyr_elevator)
 		open()
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/check_input(input)
 	if(length(input) != codelen)
