@@ -1,0 +1,5 @@
+/obj/structure/bedsheetbin icon: icons/obj/structures.dmi
+/obj/structure/bedsheetbin state: linenbin-full
+/obj/structure/bedsheetbin dir: 2
+/obj/structure/bedsheetbin overlay: icons/obj/structures.dmi:linenbin-full:8:#000000
+

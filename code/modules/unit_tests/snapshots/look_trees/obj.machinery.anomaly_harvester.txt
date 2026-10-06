@@ -1,0 +1,5 @@
+/obj/machinery/anomaly_harvester icon: icons/obj/machines/anomaly_harvester.dmi
+/obj/machinery/anomaly_harvester state: harvester
+/obj/machinery/anomaly_harvester dir: 2
+/obj/machinery/anomaly_harvester overlay: icons/obj/machines/anomaly_harvester.dmi:harvester:8:#000000
+

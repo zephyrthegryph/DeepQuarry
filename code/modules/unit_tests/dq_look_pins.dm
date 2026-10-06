@@ -31,15 +31,7 @@
 	var/turf/T = test_floor()
 	var/list/actual_by_type = list()
 	for(var/type in expected_by_type)
-		rand_seed(dq_test_seed_for("[type]"))
-		var/atom/target = dq_snapshot_allocate(type, T)
-		if(QDELETED(target))
-			actual_by_type[type] = list("deleted itself on creation")
-			continue
-		appearance_flush()
-		actual_by_type[type] = dq_look_pin_lines(target)
-		qdel(target)
-		own_turf_contents(T)
+		actual_by_type[type] = dq_look_capture(type, T)
 	var/report = dq_snapshot_compare(DQ_LOOK_PIN_DIR, "looks", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
@@ -74,21 +66,29 @@
 				continue
 			if(is_abstract(type) || (type in uncreatables))
 				continue
-			rand_seed(dq_test_seed_for("[type]"))
-			var/atom/target = dq_snapshot_allocate(type, T)
-			if(QDELETED(target))
-				rows += "[type] deleted itself on creation"
-				continue
-			appearance_flush()
-			for(var/line in dq_look_pin_lines(target))
+			for(var/line in dq_look_capture(type, T))
 				rows += "[type] [line]"
-			qdel(target)
-			own_turf_contents(T)
 		actual_by_type[root] = rows
 	var/report = dq_snapshot_compare(DQ_LOOK_TREE_DIR, "look_trees", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
 #undef DQ_LOOK_TREE_DIR
+
+/// Makes one `type` on T (the RNG reseeded from its path), lets the presentation lane settle and returns its look rows; a
+/// runtime while it is made or drawn is a row of its own, so one broken type does not end the pin.
+/datum/unit_test/proc/dq_look_capture(type, turf/T)
+	rand_seed(dq_test_seed_for("[type]"))
+	try
+		var/atom/target = dq_snapshot_allocate(type, T)
+		if(QDELETED(target))
+			. = list("deleted itself on creation")
+		else
+			appearance_flush()
+			. = dq_look_pin_lines(target)
+			qdel(target)
+	catch(var/exception/e)
+		. = list("runtime: [e.name]")
+	own_turf_contents(T)
 
 /// The look rows of one atom (see the file comment), sorted so the file diffs cleanly.
 /proc/dq_look_pin_lines(atom/target)

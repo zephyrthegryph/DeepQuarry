@@ -1,0 +1,5 @@
+/obj/item/tk_grab icon: icons/obj/magic.dmi
+/obj/item/tk_grab state: 2
+/obj/item/tk_grab dir: 2
+/obj/item/tk_grab overlay: icons/obj/magic.dmi:2:8:#000000
+

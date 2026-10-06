@@ -1,0 +1,9 @@
+/obj/machinery/floodlight icon: icons/obj/machines/floodlight.dmi
+/obj/machinery/floodlight state: flood00
+/obj/machinery/floodlight dir: 2
+/obj/machinery/floodlight overlay: icons/obj/machines/floodlight.dmi:flood00:8:#000000
+/obj/machinery/floodlight/starts_on icon: icons/obj/machines/floodlight.dmi
+/obj/machinery/floodlight/starts_on state: flood01
+/obj/machinery/floodlight/starts_on dir: 2
+/obj/machinery/floodlight/starts_on overlay: icons/obj/machines/floodlight.dmi:flood01:8:#000000
+

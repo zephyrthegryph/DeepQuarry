@@ -1,0 +1,20 @@
+/obj/machinery/gear_dispenser/suit_fancy icon: icons/obj/suitdispenser.dmi
+/obj/machinery/gear_dispenser/suit_fancy state: suit_storage
+/obj/machinery/gear_dispenser/suit_fancy dir: 2
+/obj/machinery/gear_dispenser/suit_fancy overlay: icons/obj/suitdispenser.dmi:suit_storage_map:8:#000000
+/obj/machinery/gear_dispenser/suit_fancy/autolok icon: icons/obj/suitdispenser.dmi
+/obj/machinery/gear_dispenser/suit_fancy/autolok state: suit_storage
+/obj/machinery/gear_dispenser/suit_fancy/autolok dir: 2
+/obj/machinery/gear_dispenser/suit_fancy/autolok overlay: icons/obj/suitdispenser.dmi:frame_grey:-32767
+/obj/machinery/gear_dispenser/suit_fancy/autolok overlay: icons/obj/suitdispenser.dmi:suit_storage_map:8:#000000 x2
+/obj/machinery/gear_dispenser/suit_fancy/aether icon: icons/obj/suitdispenser.dmi
+/obj/machinery/gear_dispenser/suit_fancy/aether state: suit_storage
+/obj/machinery/gear_dispenser/suit_fancy/aether dir: 2
+/obj/machinery/gear_dispenser/suit_fancy/aether overlay: icons/obj/suitdispenser.dmi:frame_purple:-32767
+/obj/machinery/gear_dispenser/suit_fancy/aether overlay: icons/obj/suitdispenser.dmi:suit_storage_map:8:#000000 x2
+/obj/machinery/gear_dispenser/suit_fancy/commonwealth icon: icons/obj/suitdispenser.dmi
+/obj/machinery/gear_dispenser/suit_fancy/commonwealth state: suit_storage
+/obj/machinery/gear_dispenser/suit_fancy/commonwealth dir: 2
+/obj/machinery/gear_dispenser/suit_fancy/commonwealth overlay: icons/obj/suitdispenser.dmi:frame_red:-32767
+/obj/machinery/gear_dispenser/suit_fancy/commonwealth overlay: icons/obj/suitdispenser.dmi:suit_storage_map:8:#000000 x2
+

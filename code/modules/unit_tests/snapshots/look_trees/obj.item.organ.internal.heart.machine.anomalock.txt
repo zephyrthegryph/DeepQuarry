@@ -1,0 +1,6 @@
+/obj/item/organ/internal/heart/machine/anomalock icon: icons/obj/surgery.dmi
+/obj/item/organ/internal/heart/machine/anomalock state: anomalock_heart
+/obj/item/organ/internal/heart/machine/anomalock dir: 2
+/obj/item/organ/internal/heart/machine/anomalock overlay: icons/obj/surgery.dmi:anomalock_heart:8:#000000
+/obj/item/organ/internal/heart/machine/anomalock/prebuilt runtime: Cannot execute null.add overlay().
+

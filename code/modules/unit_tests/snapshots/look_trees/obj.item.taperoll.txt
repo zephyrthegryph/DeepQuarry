@@ -1,0 +1,25 @@
+/obj/item/taperoll icon: icons/policetape.dmi
+/obj/item/taperoll state: tape
+/obj/item/taperoll dir: 2
+/obj/item/taperoll overlay: icons/policetape.dmi:tape:8:#000000
+/obj/item/taperoll/medical icon: icons/policetape.dmi
+/obj/item/taperoll/medical state: tape
+/obj/item/taperoll/medical dir: 2
+/obj/item/taperoll/medical overlay: icons/policetape.dmi:tape:8:#000000
+/obj/item/taperoll/police icon: icons/policetape.dmi
+/obj/item/taperoll/police state: tape
+/obj/item/taperoll/police dir: 2
+/obj/item/taperoll/police color: #ff3333
+/obj/item/taperoll/police overlay: icons/policetape.dmi:tape:8:#000000
+/obj/item/taperoll/engineering icon: icons/policetape.dmi
+/obj/item/taperoll/engineering state: tape
+/obj/item/taperoll/engineering dir: 2
+/obj/item/taperoll/engineering color: #ffff00
+/obj/item/taperoll/engineering overlay: icons/policetape.dmi:tape:8:#000000
+/obj/item/taperoll/engineering/applied deleted itself on creation
+/obj/item/taperoll/atmos icon: icons/policetape.dmi
+/obj/item/taperoll/atmos state: tape
+/obj/item/taperoll/atmos dir: 2
+/obj/item/taperoll/atmos color: #00e1ff
+/obj/item/taperoll/atmos overlay: icons/policetape.dmi:tape:8:#000000
+

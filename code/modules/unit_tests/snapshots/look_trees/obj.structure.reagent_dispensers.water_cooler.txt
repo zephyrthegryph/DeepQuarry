@@ -1,0 +1,10 @@
+/obj/structure/reagent_dispensers/water_cooler icon: icons/obj/vending.dmi
+/obj/structure/reagent_dispensers/water_cooler state: water_cooler
+/obj/structure/reagent_dispensers/water_cooler dir: 2
+/obj/structure/reagent_dispensers/water_cooler overlay: icons/obj/vending.dmi:water_cooler:8:#000000
+/obj/structure/reagent_dispensers/water_cooler/full icon: icons/obj/vending.dmi
+/obj/structure/reagent_dispensers/water_cooler/full state: water_cooler
+/obj/structure/reagent_dispensers/water_cooler/full dir: 2
+/obj/structure/reagent_dispensers/water_cooler/full overlay: icons/obj/vending.dmi:water_cooler:8:#000000
+/obj/structure/reagent_dispensers/water_cooler/full overlay: icons/obj/vending.dmi:water_cooler_bottle:-32767
+

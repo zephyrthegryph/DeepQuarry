@@ -1,0 +1,120 @@
+/obj/item/reagent_containers/chem_canister icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister state: container
+/obj/item/reagent_containers/chem_canister dir: 2
+/obj/item/reagent_containers/chem_canister overlay: icons/obj/chemical.dmi:container:8:#000000
+/obj/item/reagent_containers/chem_canister/water icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/water state: container
+/obj/item/reagent_containers/chem_canister/water dir: 2
+/obj/item/reagent_containers/chem_canister/water overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/water overlay: icons/obj/chemical.dmi:container_c100:-32767:#0064c8
+/obj/item/reagent_containers/chem_canister/sugar icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/sugar state: container
+/obj/item/reagent_containers/chem_canister/sugar dir: 2
+/obj/item/reagent_containers/chem_canister/sugar overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/sugar overlay: icons/obj/chemical.dmi:container_c100:-32767
+/obj/item/reagent_containers/chem_canister/hydrogen icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/hydrogen state: container
+/obj/item/reagent_containers/chem_canister/hydrogen dir: 2
+/obj/item/reagent_containers/chem_canister/hydrogen overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/hydrogen overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/lithium icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/lithium state: container
+/obj/item/reagent_containers/chem_canister/lithium dir: 2
+/obj/item/reagent_containers/chem_canister/lithium overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/lithium overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/carbon icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/carbon state: container
+/obj/item/reagent_containers/chem_canister/carbon dir: 2
+/obj/item/reagent_containers/chem_canister/carbon overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/carbon overlay: icons/obj/chemical.dmi:container_c100:-32767:#1c1300
+/obj/item/reagent_containers/chem_canister/nitrogen icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/nitrogen state: container
+/obj/item/reagent_containers/chem_canister/nitrogen dir: 2
+/obj/item/reagent_containers/chem_canister/nitrogen overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/nitrogen overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/oxygen icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/oxygen state: container
+/obj/item/reagent_containers/chem_canister/oxygen dir: 2
+/obj/item/reagent_containers/chem_canister/oxygen overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/oxygen overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/fluorine icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/fluorine state: container
+/obj/item/reagent_containers/chem_canister/fluorine dir: 2
+/obj/item/reagent_containers/chem_canister/fluorine overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/fluorine overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/sodium icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/sodium state: container
+/obj/item/reagent_containers/chem_canister/sodium dir: 2
+/obj/item/reagent_containers/chem_canister/sodium overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/sodium overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/aluminum icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/aluminum state: container
+/obj/item/reagent_containers/chem_canister/aluminum dir: 2
+/obj/item/reagent_containers/chem_canister/aluminum overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/aluminum overlay: icons/obj/chemical.dmi:container_c100:-32767:#a8a8a8
+/obj/item/reagent_containers/chem_canister/silicon icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/silicon state: container
+/obj/item/reagent_containers/chem_canister/silicon dir: 2
+/obj/item/reagent_containers/chem_canister/silicon overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/silicon overlay: icons/obj/chemical.dmi:container_c100:-32767:#a8a8a8
+/obj/item/reagent_containers/chem_canister/phosphorus icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/phosphorus state: container
+/obj/item/reagent_containers/chem_canister/phosphorus dir: 2
+/obj/item/reagent_containers/chem_canister/phosphorus overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/phosphorus overlay: icons/obj/chemical.dmi:container_c100:-32767:#832828
+/obj/item/reagent_containers/chem_canister/sulfur icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/sulfur state: container
+/obj/item/reagent_containers/chem_canister/sulfur dir: 2
+/obj/item/reagent_containers/chem_canister/sulfur overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/sulfur overlay: icons/obj/chemical.dmi:container_c100:-32767:#bf8c00
+/obj/item/reagent_containers/chem_canister/chlorine icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/chlorine state: container
+/obj/item/reagent_containers/chem_canister/chlorine dir: 2
+/obj/item/reagent_containers/chem_canister/chlorine overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/chlorine overlay: icons/obj/chemical.dmi:container_c100:-32767:#808080
+/obj/item/reagent_containers/chem_canister/potassium icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/potassium state: container
+/obj/item/reagent_containers/chem_canister/potassium dir: 2
+/obj/item/reagent_containers/chem_canister/potassium overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/potassium overlay: icons/obj/chemical.dmi:container_c100:-32767:#a0a0a0
+/obj/item/reagent_containers/chem_canister/iron icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/iron state: container
+/obj/item/reagent_containers/chem_canister/iron dir: 2
+/obj/item/reagent_containers/chem_canister/iron overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/iron overlay: icons/obj/chemical.dmi:container_c100:-32767:#353535
+/obj/item/reagent_containers/chem_canister/copper icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/copper state: container
+/obj/item/reagent_containers/chem_canister/copper dir: 2
+/obj/item/reagent_containers/chem_canister/copper overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/copper overlay: icons/obj/chemical.dmi:container_c100:-32767:#6e3b08
+/obj/item/reagent_containers/chem_canister/mercury icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/mercury state: container
+/obj/item/reagent_containers/chem_canister/mercury dir: 2
+/obj/item/reagent_containers/chem_canister/mercury overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/mercury overlay: icons/obj/chemical.dmi:container_c100:-32767:#484848
+/obj/item/reagent_containers/chem_canister/radium icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/radium state: container
+/obj/item/reagent_containers/chem_canister/radium dir: 2
+/obj/item/reagent_containers/chem_canister/radium overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/radium overlay: icons/obj/chemical.dmi:container_c100:-32767:#c7c7c7
+/obj/item/reagent_containers/chem_canister/ethanol icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/ethanol state: container
+/obj/item/reagent_containers/chem_canister/ethanol dir: 2
+/obj/item/reagent_containers/chem_canister/ethanol overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/ethanol overlay: icons/obj/chemical.dmi:container_c100:-32767:#404030
+/obj/item/reagent_containers/chem_canister/sacid icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/sacid state: container
+/obj/item/reagent_containers/chem_canister/sacid dir: 2
+/obj/item/reagent_containers/chem_canister/sacid overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/sacid overlay: icons/obj/chemical.dmi:container_c100:-32767:#db5008
+/obj/item/reagent_containers/chem_canister/tungsten icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/tungsten state: container
+/obj/item/reagent_containers/chem_canister/tungsten dir: 2
+/obj/item/reagent_containers/chem_canister/tungsten overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/tungsten overlay: icons/obj/chemical.dmi:container_c100:-32767:#dcdcdc
+/obj/item/reagent_containers/chem_canister/calcium icon: icons/obj/chemical.dmi
+/obj/item/reagent_containers/chem_canister/calcium state: container
+/obj/item/reagent_containers/chem_canister/calcium dir: 2
+/obj/item/reagent_containers/chem_canister/calcium overlay: icons/obj/chemical.dmi:container:8:#000000 x2
+/obj/item/reagent_containers/chem_canister/calcium overlay: icons/obj/chemical.dmi:container_c100:-32767:#e9e6e4
+

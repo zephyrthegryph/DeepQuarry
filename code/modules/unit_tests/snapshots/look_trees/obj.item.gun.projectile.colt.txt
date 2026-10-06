@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/colt icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/colt state: m1911
+/obj/item/gun/projectile/colt dir: 2
+/obj/item/gun/projectile/colt overlay: icons/obj/gun.dmi:m1911:8:#000000
+/obj/item/gun/projectile/colt/detective icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/colt/detective state: m1911
+/obj/item/gun/projectile/colt/detective dir: 2
+/obj/item/gun/projectile/colt/detective overlay: icons/obj/gun.dmi:m1911:8:#000000
+

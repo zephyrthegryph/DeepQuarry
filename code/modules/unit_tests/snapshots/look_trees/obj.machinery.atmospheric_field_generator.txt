@@ -1,0 +1,21 @@
+/obj/machinery/atmospheric_field_generator icon: icons/obj/atm_fieldgen.dmi
+/obj/machinery/atmospheric_field_generator state: arfg_off
+/obj/machinery/atmospheric_field_generator dir: 2
+/obj/machinery/atmospheric_field_generator overlay: icons/obj/atm_fieldgen.dmi:arfg_off:8:#000000
+/obj/machinery/atmospheric_field_generator/impassable icon: icons/obj/atm_fieldgen.dmi
+/obj/machinery/atmospheric_field_generator/impassable state: arfg_off
+/obj/machinery/atmospheric_field_generator/impassable dir: 2
+/obj/machinery/atmospheric_field_generator/impassable overlay: icons/obj/atm_fieldgen.dmi:arfg_off:8:#000000
+/obj/machinery/atmospheric_field_generator/perma icon: icons/obj/atm_fieldgen.dmi
+/obj/machinery/atmospheric_field_generator/perma state: arfg_on
+/obj/machinery/atmospheric_field_generator/perma dir: 2
+/obj/machinery/atmospheric_field_generator/perma overlay: icons/obj/atm_fieldgen.dmi:arfg_off:8:#000000
+/obj/machinery/atmospheric_field_generator/perma/impassable icon: icons/obj/atm_fieldgen.dmi
+/obj/machinery/atmospheric_field_generator/perma/impassable state: arfg_on
+/obj/machinery/atmospheric_field_generator/perma/impassable dir: 2
+/obj/machinery/atmospheric_field_generator/perma/impassable overlay: icons/obj/atm_fieldgen.dmi:arfg_off:8:#000000
+/obj/machinery/atmospheric_field_generator/perma/underdoors icon: icons/obj/atm_fieldgen.dmi
+/obj/machinery/atmospheric_field_generator/perma/underdoors state: arfg_on
+/obj/machinery/atmospheric_field_generator/perma/underdoors dir: 2
+/obj/machinery/atmospheric_field_generator/perma/underdoors overlay: icons/obj/atm_fieldgen.dmi:arfg_off:8:#000000
+

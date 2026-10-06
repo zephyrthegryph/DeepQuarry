@@ -325,6 +325,7 @@ def main():
     ap.add_argument("--types", nargs="*", help="convert: only the components holding these types (or their subtypes)")
     ap.add_argument("--report", help="convert: write the components (converted, covered, untracked reads, residue) as JSON")
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--show", action="store_true", help="convert: print the generated draws")
     ap.add_argument("--sites", action="store_true")
     ap.add_argument("--paths", nargs="*", default=None)
     args = ap.parse_args()

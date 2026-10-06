@@ -1,0 +1,5 @@
+/obj/machinery/message_server icon: icons/obj/machines/research.dmi
+/obj/machinery/message_server state: server-on
+/obj/machinery/message_server dir: 2
+/obj/machinery/message_server overlay: icons/obj/machines/research.dmi:server:8:#000000
+

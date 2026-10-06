@@ -1,0 +1,9 @@
+/obj/machinery/pda_multicaster icon: icons/obj/stationobjs.dmi
+/obj/machinery/pda_multicaster state: pdamulti
+/obj/machinery/pda_multicaster dir: 2
+/obj/machinery/pda_multicaster overlay: icons/obj/stationobjs.dmi:pdamulti:8:#000000
+/obj/machinery/pda_multicaster/prebuilt icon: icons/obj/stationobjs.dmi
+/obj/machinery/pda_multicaster/prebuilt state: pdamulti
+/obj/machinery/pda_multicaster/prebuilt dir: 2
+/obj/machinery/pda_multicaster/prebuilt overlay: icons/obj/stationobjs.dmi:pdamulti:8:#000000
+

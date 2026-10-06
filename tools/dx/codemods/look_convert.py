@@ -88,6 +88,7 @@ class Index:
         self.procs = collections.defaultdict(set)  # T -> proc names defined there
         self.proc_defs = collections.defaultdict(list)  # (T, name) -> [(rel, start, end)]
         self.tracked = collections.defaultdict(set)  # T -> vars tracked from T down
+        self.writes = collections.defaultdict(set)  # T -> vars its procs write (bare, src. or through set_<var>())
         self.po = {}
         for rel in rels:
             f = File(rel)
@@ -147,6 +148,16 @@ class Index:
                         end -= 1
                     self.procs[t].add(name)
                     self.proc_defs[(t, name)].append((rel, i, end))
+                    if name in ("ownership", "relations"):
+                        for k in range(i + 1, end):
+                            for rm in re.finditer(r"\b(?:owns|owns_one|owns_many|refs|rel_one|rel_many|ref_one|ref_many|link\w*)\(\s*nameof\((\w+)\)", strip_code(L[k])):
+                                self.tracked[t].add(rm.group(1))
+                    for k in range(i + 1, end):
+                        code = strip_code(L[k])
+                        for wm in re.finditer(r"(?<![\w.])(?:src\.)?([a-z_]\w*)\s*(?:=(?!=)|\+=|-=|\|=|&=|\+\+|--)", code):
+                            self.writes[t].add(wm.group(1))
+                        for wm in re.finditer(r"(?<![\w.])(?:src\.)?set_(\w+)\(", code):
+                            self.writes[t].add(wm.group(1))
                     if name == "appearance_overlays":
                         self.providers[t].append((rel, i, end))
                     elif name == "draw":
@@ -515,6 +526,15 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
         if name in locals_:
             return stmt
         raise Residue("writes_state:" + name)
+    if code in ("break", "continue"):
+        return stmt
+    # a call on a local (a matrix being turned, an image being built) changes nothing of the holder
+    lm = re.match(r"^([A-Za-z_]\w*)\s*\??\.\s*[A-Za-z_]\w*\s*\(.*\)$", code)
+    if lm and lm.group(1) in locals_:
+        return fix_expr(stmt, state_reads)
+    # a shared appearance cache filled on a miss (GLOB.x_cache[key] = built) is a memo, not state
+    if re.match(r"^GLOB\.\w*cache\w*\[[^\]]*\]\s*=(?!=)", code):
+        return fix_expr(stmt, state_reads)
     cm = re.match(r"^([A-Za-z_][\w]*)\s*\((.*)\)$", code)
     if cm:
         name = cm.group(1)
@@ -633,9 +653,6 @@ def plan_component(ix, comp):
         for k in ("APPEARANCE_LEVEL", "APPEARANCE_EMISSIVE", "APPEARANCE_SLOT"):
             if k in kinds:
                 raise Residue(k.split("_")[1].lower())
-        if "APPEARANCE_NONE" in kinds:
-            if any(a in members for a in ix.chain(t)[1:]):
-                raise Residue("none")
         if len(ix.providers.get(t, [])) > 1 or len(ix.draws.get(t, [])) > 1:
             raise Residue("multi_def")
         if ix.providers.get(t) and "DECLARE_APPEARANCE_PROC" not in kinds and not any("DECLARE_APPEARANCE_PROC" in [d[0] for d in ix.decls.get(a, [])] for a in ix.chain(t)):
@@ -645,6 +662,9 @@ def plan_component(ix, comp):
         lines = []
         anc = [a for a in ix.chain(t)[1:] if a in members]
         for kind, rel, first, last, raw in ix.decls.get(t, []):
+            if kind == "APPEARANCE_NONE":
+                lines += none_lines(t, [plans[a]["lines"] for a in anc if a in plans])
+                continue
             if kind == "APPEARANCE_TEMPLATE":
                 args = macro_args(raw)
                 if len(args) != 2 or not re.match(r'^"[^"]*"$', args[1]):
@@ -679,15 +699,56 @@ def plan_component(ix, comp):
     return plans
 
 
+def none_lines(t, ancestor_lines):
+    """APPEARANCE_NONE as a draw: the type keeps its mapped sprite and none of what its ancestors' converted declarations draw.
+    Possible when those draw only literal states and overlays (look.hide() drops an overlay by its state); Residue otherwise."""
+    states = False
+    hides = []
+    if not any(ancestor_lines):
+        return []
+    for lines in ancestor_lines:
+        for x in lines:
+            code = strip_code(x)
+            if re.search(r"\blook\.(set_icon|set_color|set_alpha|light|light_off|play_flick|set_layer|set_plane|set_dir|set_transform)\(", code):
+                raise Residue("none_dynamic")
+            if "look.state(" in code:
+                states = True
+            for m in re.finditer(r"\blook\.overlay\(", code):
+                arg = x[m.end():]
+                lm = re.match(r'^("(?:[^"\\\[]|\\.)*")\)', arg)
+                if not lm:
+                    raise Residue("none_dynamic")
+                if lm.group(1) not in hides:
+                    hides.append(lm.group(1))
+    out = ["\t// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers"]
+    if states:
+        out.append("\tlook.state(null)")
+    for h in hides:
+        out.append("\tlook.hide(%s)" % h)
+    return out
+
+
 def verdict(ix, comp, plans):
     """(covered, untracked names) for the component's draws."""
     untracked = set()
+    written = set()
+    for w, vs in ix.writes.items():
+        if any(ix.related(w, m) for m in comp):
+            written |= vs
+
+    def covered_var(t, v):
+        # tracked, or never written by a proc of the chain (a type constant: icon, a base state...)
+        return ix.tracked_on(t, v) or v not in written
+
     for t in comp:
         reads, calls, hops = body_reads(ix, t, plans[t]["lines"])
         for h in hops:
-            untracked.add(h + ".*")
+            if not ix.tracked_on(t, h) or True:
+                untracked.add(h + ".*")
         for v in reads:
-            if not ix.tracked_on(t, v):
+            if v in hops:
+                continue
+            if not covered_var(t, v):
                 untracked.add(v)
         for c in calls:
             sub = proc_reads(ix, t, c, 0, set())
@@ -695,7 +756,7 @@ def verdict(ix, comp, plans):
                 untracked.add(c + "()")
                 continue
             for v in sub:
-                if not ix.tracked_on(t, v):
+                if not covered_var(t, v):
                     untracked.add("%s (via %s())" % (v, c))
     return not untracked, sorted(untracked)
 
@@ -797,6 +858,11 @@ def run(args, root, rels, live_after):
         try:
             plans = plan_component(ix, comp)
             covered, untracked = verdict(ix, comp, plans)
+            if getattr(args, "show", False):
+                for t in comp:
+                    print("%s/draw(datum/look/look)  // %s" % (t, "covered" if covered else "uncovered: " + ", ".join(untracked)))
+                    print("\t..()")
+                    print("\n".join(plans[t]["lines"]))
             if args.apply:
                 apply_component(ix, comp, plans, covered, untracked, edits)
         except Residue as e:

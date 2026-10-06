@@ -1,0 +1,5 @@
+/obj/machinery/shieldgen icon: icons/obj/objects.dmi
+/obj/machinery/shieldgen state: shieldoff
+/obj/machinery/shieldgen dir: 2
+/obj/machinery/shieldgen overlay: icons/obj/objects.dmi:shieldoff:8:#000000
+

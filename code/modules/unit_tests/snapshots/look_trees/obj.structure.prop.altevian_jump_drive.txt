@@ -1,0 +1,15 @@
+/obj/structure/prop/altevian_jump_drive icon: icons/obj/props/decor128x128.dmi
+/obj/structure/prop/altevian_jump_drive state: altevian_jump_drive
+/obj/structure/prop/altevian_jump_drive dir: 2
+/obj/structure/prop/altevian_jump_drive overlay: icons/obj/props/decor128x128.dmi:altevian_jump_drive:8:#000000
+/obj/structure/prop/altevian_jump_drive overlay: icons/obj/props/decor128x128.dmi:jump_drive_misc_anim_overlay:-32767
+/obj/structure/prop/altevian_jump_drive/active icon: icons/obj/props/decor128x128.dmi
+/obj/structure/prop/altevian_jump_drive/active state: altevian_jump_drive-active
+/obj/structure/prop/altevian_jump_drive/active dir: 2
+/obj/structure/prop/altevian_jump_drive/active overlay: icons/obj/props/decor128x128.dmi:altevian_jump_drive-active:8:#000000
+/obj/structure/prop/altevian_jump_drive/active overlay: icons/obj/props/decor128x128.dmi:jump_drive_misc_anim_overlay:-32767
+/obj/structure/prop/altevian_jump_drive/wrecked icon: icons/obj/props/decor128x128.dmi
+/obj/structure/prop/altevian_jump_drive/wrecked state: altevian_jump_drive_wrecked
+/obj/structure/prop/altevian_jump_drive/wrecked dir: 2
+/obj/structure/prop/altevian_jump_drive/wrecked overlay: icons/obj/props/decor128x128.dmi:altevian_jump_drive_wrecked:8:#000000
+

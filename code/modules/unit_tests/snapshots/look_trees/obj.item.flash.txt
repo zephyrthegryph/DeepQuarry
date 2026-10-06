@@ -1,0 +1,13 @@
+/obj/item/flash icon: icons/obj/device.dmi
+/obj/item/flash state: flash
+/obj/item/flash dir: 2
+/obj/item/flash overlay: icons/obj/device.dmi:flash:8:#000000
+/obj/item/flash/synthetic icon: icons/obj/device.dmi
+/obj/item/flash/synthetic state: sflash
+/obj/item/flash/synthetic dir: 2
+/obj/item/flash/synthetic overlay: icons/obj/device.dmi:sflash:8:#000000
+/obj/item/flash/robot icon: icons/obj/device.dmi
+/obj/item/flash/robot state: flash
+/obj/item/flash/robot dir: 2
+/obj/item/flash/robot overlay: icons/obj/device.dmi:flash:8:#000000
+

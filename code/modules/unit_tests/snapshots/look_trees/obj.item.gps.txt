@@ -1,0 +1,154 @@
+/obj/item/gps icon: icons/obj/gps.dmi
+/obj/item/gps state: gps-gen
+/obj/item/gps dir: 2
+/obj/item/gps overlay: icons/obj/gps.dmi:gps-gen:8:#000000
+/obj/item/gps/emergency_beacon icon: icons/obj/gps.dmi
+/obj/item/gps/emergency_beacon state: gps-gen
+/obj/item/gps/emergency_beacon dir: 2
+/obj/item/gps/emergency_beacon overlay: icons/obj/gps.dmi:gps-gen:8:#000000
+/obj/item/gps/on icon: icons/obj/gps.dmi
+/obj/item/gps/on state: gps-gen
+/obj/item/gps/on dir: 2
+/obj/item/gps/on overlay: icons/obj/gps.dmi:gps-gen:8:#000000 x2
+/obj/item/gps/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/command icon: icons/obj/gps.dmi
+/obj/item/gps/command state: gps-com
+/obj/item/gps/command dir: 2
+/obj/item/gps/command overlay: icons/obj/gps.dmi:gps-com:8:#000000
+/obj/item/gps/command/on icon: icons/obj/gps.dmi
+/obj/item/gps/command/on state: gps-com
+/obj/item/gps/command/on dir: 2
+/obj/item/gps/command/on overlay: icons/obj/gps.dmi:gps-com:8:#000000 x2
+/obj/item/gps/command/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/security icon: icons/obj/gps.dmi
+/obj/item/gps/security state: gps-sec
+/obj/item/gps/security dir: 2
+/obj/item/gps/security overlay: icons/obj/gps.dmi:gps-sec:8:#000000
+/obj/item/gps/security/on icon: icons/obj/gps.dmi
+/obj/item/gps/security/on state: gps-sec
+/obj/item/gps/security/on dir: 2
+/obj/item/gps/security/on overlay: icons/obj/gps.dmi:gps-sec:8:#000000 x2
+/obj/item/gps/security/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/security/hos icon: icons/obj/gps.dmi
+/obj/item/gps/security/hos state: gps-sec-hos
+/obj/item/gps/security/hos dir: 2
+/obj/item/gps/security/hos overlay: icons/obj/gps.dmi:gps-sec-hos:8:#000000
+/obj/item/gps/security/hos/on icon: icons/obj/gps.dmi
+/obj/item/gps/security/hos/on state: gps-sec-hos
+/obj/item/gps/security/hos/on dir: 2
+/obj/item/gps/security/hos/on overlay: icons/obj/gps.dmi:gps-sec-hos:8:#000000 x2
+/obj/item/gps/security/hos/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/medical icon: icons/obj/gps.dmi
+/obj/item/gps/medical state: gps-med
+/obj/item/gps/medical dir: 2
+/obj/item/gps/medical overlay: icons/obj/gps.dmi:gps-med:8:#000000
+/obj/item/gps/medical/on icon: icons/obj/gps.dmi
+/obj/item/gps/medical/on state: gps-med
+/obj/item/gps/medical/on dir: 2
+/obj/item/gps/medical/on overlay: icons/obj/gps.dmi:gps-med:8:#000000 x2
+/obj/item/gps/medical/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/medical/cmo icon: icons/obj/gps.dmi
+/obj/item/gps/medical/cmo state: gps-med-cmo
+/obj/item/gps/medical/cmo dir: 2
+/obj/item/gps/medical/cmo overlay: icons/obj/gps.dmi:gps-med-cmo:8:#000000
+/obj/item/gps/medical/cmo/on icon: icons/obj/gps.dmi
+/obj/item/gps/medical/cmo/on state: gps-med-cmo
+/obj/item/gps/medical/cmo/on dir: 2
+/obj/item/gps/medical/cmo/on overlay: icons/obj/gps.dmi:gps-med-cmo:8:#000000 x2
+/obj/item/gps/medical/cmo/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/science icon: icons/obj/gps.dmi
+/obj/item/gps/science state: gps-sci
+/obj/item/gps/science dir: 2
+/obj/item/gps/science overlay: icons/obj/gps.dmi:gps-sci:8:#000000
+/obj/item/gps/science/on icon: icons/obj/gps.dmi
+/obj/item/gps/science/on state: gps-sci
+/obj/item/gps/science/on dir: 2
+/obj/item/gps/science/on overlay: icons/obj/gps.dmi:gps-sci:8:#000000 x2
+/obj/item/gps/science/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/science/rd icon: icons/obj/gps.dmi
+/obj/item/gps/science/rd state: gps-sci-rd
+/obj/item/gps/science/rd dir: 2
+/obj/item/gps/science/rd overlay: icons/obj/gps.dmi:gps-sci-rd:8:#000000
+/obj/item/gps/science/rd/on icon: icons/obj/gps.dmi
+/obj/item/gps/science/rd/on state: gps-sci-rd
+/obj/item/gps/science/rd/on dir: 2
+/obj/item/gps/science/rd/on overlay: icons/obj/gps.dmi:gps-sci-rd:8:#000000 x2
+/obj/item/gps/science/rd/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/engineering icon: icons/obj/gps.dmi
+/obj/item/gps/engineering state: gps-eng
+/obj/item/gps/engineering dir: 2
+/obj/item/gps/engineering overlay: icons/obj/gps.dmi:gps-eng:8:#000000
+/obj/item/gps/engineering/on icon: icons/obj/gps.dmi
+/obj/item/gps/engineering/on state: gps-eng
+/obj/item/gps/engineering/on dir: 2
+/obj/item/gps/engineering/on overlay: icons/obj/gps.dmi:gps-eng:8:#000000 x2
+/obj/item/gps/engineering/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/engineering/atmos icon: icons/obj/gps.dmi
+/obj/item/gps/engineering/atmos state: gps-eng-atm
+/obj/item/gps/engineering/atmos dir: 2
+/obj/item/gps/engineering/atmos overlay: icons/obj/gps.dmi:gps-eng-atm:8:#000000
+/obj/item/gps/engineering/atmos/on icon: icons/obj/gps.dmi
+/obj/item/gps/engineering/atmos/on state: gps-eng-atm
+/obj/item/gps/engineering/atmos/on dir: 2
+/obj/item/gps/engineering/atmos/on overlay: icons/obj/gps.dmi:gps-eng-atm:8:#000000 x2
+/obj/item/gps/engineering/atmos/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/engineering/ce icon: icons/obj/gps.dmi
+/obj/item/gps/engineering/ce state: gps-eng-ce
+/obj/item/gps/engineering/ce dir: 2
+/obj/item/gps/engineering/ce overlay: icons/obj/gps.dmi:gps-eng-ce:8:#000000
+/obj/item/gps/engineering/ce/on icon: icons/obj/gps.dmi
+/obj/item/gps/engineering/ce/on state: gps-eng-ce
+/obj/item/gps/engineering/ce/on dir: 2
+/obj/item/gps/engineering/ce/on overlay: icons/obj/gps.dmi:gps-eng-ce:8:#000000 x2
+/obj/item/gps/engineering/ce/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/mining icon: icons/obj/gps.dmi
+/obj/item/gps/mining state: gps-mine
+/obj/item/gps/mining dir: 2
+/obj/item/gps/mining overlay: icons/obj/gps.dmi:gps-mine:8:#000000
+/obj/item/gps/mining/on icon: icons/obj/gps.dmi
+/obj/item/gps/mining/on state: gps-mine
+/obj/item/gps/mining/on dir: 2
+/obj/item/gps/mining/on overlay: icons/obj/gps.dmi:gps-mine:8:#000000 x2
+/obj/item/gps/mining/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/explorer icon: icons/obj/gps.dmi
+/obj/item/gps/explorer state: gps-exp
+/obj/item/gps/explorer dir: 2
+/obj/item/gps/explorer overlay: icons/obj/gps.dmi:gps-exp:8:#000000
+/obj/item/gps/explorer/on icon: icons/obj/gps.dmi
+/obj/item/gps/explorer/on state: gps-exp
+/obj/item/gps/explorer/on dir: 2
+/obj/item/gps/explorer/on overlay: icons/obj/gps.dmi:gps-exp:8:#000000 x2
+/obj/item/gps/explorer/on overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/robot icon: icons/obj/gps.dmi
+/obj/item/gps/robot state: gps-borg
+/obj/item/gps/robot dir: 2
+/obj/item/gps/robot overlay: icons/obj/gps.dmi:gps-borg:8:#000000 x2
+/obj/item/gps/robot overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/internal icon: icons/obj/gps.dmi
+/obj/item/gps/internal state: internal
+/obj/item/gps/internal dir: 2
+/obj/item/gps/internal overlay: icons/obj/gps.dmi:internal:8:#000000 x2
+/obj/item/gps/internal overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/internal/base icon: icons/obj/gps.dmi
+/obj/item/gps/internal/base state: internal
+/obj/item/gps/internal/base dir: 2
+/obj/item/gps/internal/base overlay: icons/obj/gps.dmi:internal:8:#000000 x2
+/obj/item/gps/internal/base overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/internal/poi icon: icons/obj/gps.dmi
+/obj/item/gps/internal/poi state: internal
+/obj/item/gps/internal/poi dir: 2
+/obj/item/gps/internal/poi overlay: icons/obj/gps.dmi:internal:8:#000000 x2
+/obj/item/gps/internal/poi overlay: icons/obj/gps.dmi:working:-32767
+/obj/item/gps/syndie icon: icons/obj/gps.dmi
+/obj/item/gps/syndie state: gps-syndie
+/obj/item/gps/syndie dir: 2
+/obj/item/gps/syndie overlay: icons/obj/gps.dmi:gps-syndie:8:#000000
+/obj/item/gps/watch icon: icons/obj/gps.dmi
+/obj/item/gps/watch state: gps-gen
+/obj/item/gps/watch dir: 2
+/obj/item/gps/watch overlay: icons/obj/gps.dmi:gps-gen:8:#000000
+/obj/item/gps/computer icon: icons/obj/survival_pod_comp.dmi
+/obj/item/gps/computer state: pod_computer
+/obj/item/gps/computer dir: 2
+/obj/item/gps/computer overlay: icons/obj/survival_pod_comp.dmi:pod_computer:8:#000000
+

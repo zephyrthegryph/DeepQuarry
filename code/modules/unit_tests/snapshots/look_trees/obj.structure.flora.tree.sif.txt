@@ -1,0 +1,6 @@
+/obj/structure/flora/tree/sif icon: icons/obj/flora/deadtrees.dmi
+/obj/structure/flora/tree/sif state: tree_sif2
+/obj/structure/flora/tree/sif dir: 2
+/obj/structure/flora/tree/sif overlay: icons/obj/flora/deadtrees.dmi:tree_sif3_glow:-32767
+/obj/structure/flora/tree/sif overlay: icons/obj/flora/deadtrees.dmi:tree_sif3_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+

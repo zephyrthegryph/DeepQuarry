@@ -1,0 +1,5 @@
+/obj/machinery/partslathe icon: icons/obj/partslathe_vr.dmi
+/obj/machinery/partslathe state: partslathe-idle
+/obj/machinery/partslathe dir: 2
+/obj/machinery/partslathe overlay: icons/obj/partslathe_vr.dmi:partslathe-idle:8:#000000
+

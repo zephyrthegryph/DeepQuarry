@@ -1,0 +1,5 @@
+/obj/item/storage/bag/trash/holding icon: icons/obj/janitor.dmi
+/obj/item/storage/bag/trash/holding state: trashbag0
+/obj/item/storage/bag/trash/holding dir: 2
+/obj/item/storage/bag/trash/holding overlay: icons/obj/janitor.dmi:bluetrashbag:8:#000000
+

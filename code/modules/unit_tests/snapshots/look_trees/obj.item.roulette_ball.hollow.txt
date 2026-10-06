@@ -1,0 +1,5 @@
+/obj/item/roulette_ball/hollow icon: icons/obj/casino.dmi
+/obj/item/roulette_ball/hollow state: roulette_ball_glass
+/obj/item/roulette_ball/hollow dir: 2
+/obj/item/roulette_ball/hollow overlay: icons/obj/casino.dmi:roulette_ball_glass:8:#000000
+

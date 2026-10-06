@@ -1,0 +1,14 @@
+/obj/item/beartrap icon: icons/obj/items.dmi
+/obj/item/beartrap state: beartrap0
+/obj/item/beartrap dir: 2
+/obj/item/beartrap overlay: icons/obj/items.dmi:beartrap0:8:#000000
+/obj/item/beartrap/start_active icon: icons/obj/items.dmi
+/obj/item/beartrap/start_active state: beartrap0
+/obj/item/beartrap/start_active dir: 2
+/obj/item/beartrap/start_active overlay: icons/obj/items.dmi:beartrap0:8:#000000
+/obj/item/beartrap/hunting icon: icons/obj/items.dmi
+/obj/item/beartrap/hunting state: beartrap0
+/obj/item/beartrap/hunting dir: 2
+/obj/item/beartrap/hunting color: #c9dce1
+/obj/item/beartrap/hunting overlay: icons/obj/items.dmi:beartrap0:8:#000000
+

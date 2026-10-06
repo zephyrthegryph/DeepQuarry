@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/as24 icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/automatic/as24 state: ashot
+/obj/item/gun/projectile/automatic/as24 dir: 2
+/obj/item/gun/projectile/automatic/as24 overlay: icons/obj/gun.dmi:ashot-empty:8:#000000
+

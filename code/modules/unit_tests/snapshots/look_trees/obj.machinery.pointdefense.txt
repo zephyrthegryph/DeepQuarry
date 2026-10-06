@@ -1,0 +1,5 @@
+/obj/machinery/pointdefense icon: icons/obj/pointdefense.dmi
+/obj/machinery/pointdefense state: pointdefense2_off
+/obj/machinery/pointdefense dir: 2
+/obj/machinery/pointdefense overlay: icons/obj/pointdefense.dmi:pointdefense2:8:#000000
+

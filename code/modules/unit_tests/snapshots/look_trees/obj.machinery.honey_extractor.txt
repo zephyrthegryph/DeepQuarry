@@ -1,0 +1,5 @@
+/obj/machinery/honey_extractor icon: icons/obj/beekeeping.dmi
+/obj/machinery/honey_extractor state: centrifuge
+/obj/machinery/honey_extractor dir: 2
+/obj/machinery/honey_extractor overlay: icons/obj/beekeeping.dmi:centrifuge:8:#000000
+

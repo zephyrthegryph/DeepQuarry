@@ -1,0 +1,25 @@
+/obj/item/gun/projectile/p92x icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/p92x state: p92x
+/obj/item/gun/projectile/p92x dir: 2
+/obj/item/gun/projectile/p92x overlay: icons/obj/gun.dmi:p92x-e:8:#000000
+/obj/item/gun/projectile/p92x/rubber icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/p92x/rubber state: p92x
+/obj/item/gun/projectile/p92x/rubber dir: 2
+/obj/item/gun/projectile/p92x/rubber overlay: icons/obj/gun.dmi:p92x-e:8:#000000
+/obj/item/gun/projectile/p92x/brown icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/p92x/brown state: p92xb
+/obj/item/gun/projectile/p92x/brown dir: 2
+/obj/item/gun/projectile/p92x/brown overlay: icons/obj/gun.dmi:p92xb-e:8:#000000
+/obj/item/gun/projectile/p92x/large icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/p92x/large state: p92x
+/obj/item/gun/projectile/p92x/large dir: 2
+/obj/item/gun/projectile/p92x/large overlay: icons/obj/gun.dmi:p92x-e:8:#000000
+/obj/item/gun/projectile/p92x/large/preban icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/p92x/large/preban state: p92x
+/obj/item/gun/projectile/p92x/large/preban dir: 2
+/obj/item/gun/projectile/p92x/large/preban overlay: icons/obj/gun.dmi:p92x-e:8:#000000
+/obj/item/gun/projectile/p92x/large/preban/hp icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/p92x/large/preban/hp state: p92x
+/obj/item/gun/projectile/p92x/large/preban/hp dir: 2
+/obj/item/gun/projectile/p92x/large/preban/hp overlay: icons/obj/gun.dmi:p92x-e:8:#000000
+

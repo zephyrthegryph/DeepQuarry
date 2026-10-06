@@ -1,0 +1,5 @@
+/obj/machinery/bomb_tester icon: icons/obj/machines/bomb_tester_vr.dmi
+/obj/machinery/bomb_tester state: generic0
+/obj/machinery/bomb_tester dir: 2
+/obj/machinery/bomb_tester overlay: icons/obj/machines/bomb_tester_vr.dmi:generic:8:#000000
+

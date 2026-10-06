@@ -1,0 +1,5 @@
+/obj/item/shield_diffuser icon: icons/obj/machines/shielding.dmi
+/obj/item/shield_diffuser state: hdiffuser_off
+/obj/item/shield_diffuser dir: 2
+/obj/item/shield_diffuser overlay: icons/obj/machines/shielding.dmi:hdiffuser_off:8:#000000
+
