@@ -20,10 +20,17 @@
 
 /mob/living/carbon/human/dq_grants_hiding
 
-DECLARE_VERB(/obj/item/dq_grants_declared, /obj/proc/dq_sys_grants_test_obj_verb)
-DECLARE_VERB_IF(/obj/item/dq_grants_declared, /obj/proc/dq_sys_grants_test_flag_verb, "dq_flag")
-DECLARE_VERB_HIDE(/mob/living/carbon/human/dq_grants_hiding, /mob/verb/observe)
-DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_test_obj_verb)
+TRACKED(/obj/item/dq_grants_declared, dq_flag)
+
+CAPABILITIES(/obj/item/dq_grants_declared)
+	verb_entry(/obj/proc/dq_sys_grants_test_obj_verb)
+	verb_entry(/obj/proc/dq_sys_grants_test_flag_verb, when = nameof(dq_flag))
+
+CAPABILITIES(/mob/living/carbon/human/dq_grants_hiding)
+	verb_entry(/mob/verb/observe, hidden = TRUE)
+
+CAPABILITIES(/obj/item/dq_grants_declared/hiding)
+	verb_entry(/obj/proc/dq_sys_grants_test_obj_verb, hidden = TRUE)
 
 /datum/unit_test/dq_sys_grants_verb_follows_sources
 
@@ -94,20 +101,23 @@ DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_t
 	om_revoke(H, GRANT_VERB_HIDE, verb_path, hider)
 	TEST_ASSERT(verb_path in H.verbs, "lifting the hide shows the granted verb")
 
-/// DECLARE_VERB, DECLARE_VERB_IF and DECLARE_VERB_HIDE apply at init and keep no store entry.
+/// verb_entry(), conditional verb_entry() and hidden verb_entry() apply at init and keep no store entry.
 /datum/unit_test/dq_sys_grants_declared_verbs
 
 /datum/unit_test/dq_sys_grants_declared_verbs/Run()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	set_global("dview_mob", GLOB.dview_mob)
 	var/obj/item/dq_grants_declared/D = allocate(/obj/item/dq_grants_declared, test_floor())
-	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "DECLARE_VERB puts the verb on at init")
-	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs), "DECLARE_VERB_IF stays off while the var is false")
+	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "verb_entry() puts the verb on at init")
+	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs), "conditional verb_entry() stays off while the var is false")
 	TEST_ASSERT(!D.om_rec?.contribs, "declared verbs keep no per-instance store entry")
 
-	D.dq_flag = TRUE
-	verb_store_refresh(D, /obj/proc/dq_sys_grants_test_flag_verb)
+	D.set_dq_flag(TRUE)
+	test_time(0.2 SECONDS)
 	TEST_ASSERT(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs, "refreshing after the var turns true adds it")
-	D.dq_flag = FALSE
-	verb_store_refresh(D, /obj/proc/dq_sys_grants_test_flag_verb)
+	D.set_dq_flag(FALSE)
+	test_time(0.2 SECONDS)
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs), "and removes it when the var turns false")
 
 	var/obj/item/source = allocate(/obj/item, test_floor())
@@ -116,12 +126,12 @@ DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_t
 	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "a revoke keeps a declared verb")
 
 	var/obj/item/dq_grants_declared/hiding/H = allocate(/obj/item/dq_grants_declared/hiding, test_floor())
-	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a subtype's DECLARE_VERB_HIDE overrides the parent's DECLARE_VERB")
+	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a subtype's hidden verb_entry() overrides the parent's verb_entry()")
 	om_grant(H, GRANT_VERB, /obj/proc/dq_sys_grants_test_obj_verb, source)
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a declared hide beats a runtime grant")
 
 	var/mob/living/carbon/human/dq_grants_hiding/M = allocate(/mob/living/carbon/human/dq_grants_hiding, test_floor())
-	TEST_ASSERT(!(/mob/verb/observe in M.verbs), "DECLARE_VERB_HIDE strips an inherited /type/verb/")
+	TEST_ASSERT(!(/mob/verb/observe in M.verbs), "hidden verb_entry() strips an inherited /type/verb/")
 
 /// VERB_NAMED: a renamed verb instance, granted and revoked by its key.
 /datum/unit_test/dq_sys_grants_named_verb
@@ -145,7 +155,7 @@ DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_t
 			found = TRUE
 	TEST_ASSERT(!found, "and out of the verbs list")
 
-/// Turf verbs are declared (DECLARE_VERB_IF on climbable): toggling needs no store entry on the turf.
+/// Turf verbs are declared (conditional verb_entry() on climbable): toggling needs no store entry on the turf.
 /datum/unit_test/dq_sys_grants_turf_declared
 
 /datum/unit_test/dq_sys_grants_turf_declared/Run()

@@ -44,7 +44,7 @@ ACTION(speak, message, language)
 ACTION(emote, emote_key)
 ACTION(slash, mob/living/slasher, FIXED)
 // Gates the legacy before/ events were: an emit site asks the action first and goes on only when nothing refused or took it over. A caller that has a
-// result to give back (a flag word, a name) reads ACT_REPLY of the hook that took it over. See doc/rewrite/codemod_rules.md "om_hook residue".
+// result to give back (a flag word, a name) reads ACT_REPLY of the hook that took it over. See doc/rewrite/codemod_rules.md.
 ACTION(attackby, obj/item/item, mob/user, params, notice = /datum/notice/attacked_by)
 ACTION(attack_hand, mob/user, notice = /datum/notice/hand_attacked)
 ACTION(attack_self, mob/user, notice = /datum/notice/self_attacked)
