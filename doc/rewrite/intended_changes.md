@@ -1796,3 +1796,14 @@ RTG output per rating); unchanged.
 - The altevian reactor's fuel, toggle (a silicon's remote touch through `binds(remote())`) and fuel gauge (`draw()`); the void core's cell
   (`owns_one(..., starts = starting_cell)` replaces the built subtypes' ownership tables); hits are `extend(/datum/act/hit/...)`.
 - Every look is `draw()`; the reactor's glow is `look.light()`.
+
+## Power plants: the gravity generator (rewrite/power-plants)
+
+Pinned by `dq_pp/gravgen_*` (2 charge a step, gravity at 100 and off at 0, the breaker's spin-up and spin-down); unchanged.
+
+- Its spin is `every(MACHINE_SERVICE_INTERVAL, when = spinning)` (`charging_state` and `broken_state` are tracked vars; the spin constants are
+  `GRAVGEN_IDLE/UP/DOWN` in `code/__defines/power.dm`).
+- The repair ladder (screwdriver, welder, 10 plasteel, wrench) is four ops on every part of the generator; a part's empty hand opens the
+  generator's window (`perform_op(..., "ui_open")`) instead of re-running the main part's legacy attack procs. The window opens to an empty hand
+  (the legacy "Use"); held tools no longer show a "Use" entry that did nothing.
+- The middle part draws the charge overlay from its main part (`draw()`); no raw overlays. Hits are `extend(/datum/act/hit/...)`.

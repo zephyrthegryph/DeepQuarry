@@ -64,7 +64,6 @@
 		/obj/machinery/floodlight,
 		/obj/machinery/floor_light,
 		/obj/machinery/food_replicator,
-		/obj/machinery/gravity_generator/main,
 		/obj/machinery/hologram/holopad,
 		/obj/machinery/igniter,
 		/obj/machinery/iv_drip,
