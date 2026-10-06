@@ -611,7 +611,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/deep, src)
-	TEST_ASSERT(abs(om_clock_rate_of(H, CLOCK_BIO) - 0.1) < 0.001, "deep stasis holds the biology clock at 0.1, got [om_clock_rate_of(H, CLOCK_BIO)]")
+	TEST_ASSERT(abs(H.clock_rate_bio - 0.1) < 0.001, "deep stasis holds the biology clock at 0.1, got [H.clock_rate_bio]")
 	var/biology = 0
 	var/frames_before = life_test_frames(H)
 	for(var/i in 1 to 20)
@@ -621,7 +621,7 @@
 	TEST_ASSERT_EQUAL(biology, 2, "deep stasis runs biology on 2 frames in 20")
 	TEST_ASSERT_EQUAL(life_test_frames(H), frames_before + 20, "the frame itself keeps running in stasis")
 	H.set_stasis(/datum/body_effect/stasis/total, src)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(H, CLOCK_BIO), 0, "total stasis stops the biology clock")
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 0, "total stasis stops the biology clock")
 	biology = 0
 	for(var/i in 1 to 10)
 		seq_run_frame_now(H, LIFE_SEQ)
@@ -629,7 +629,7 @@
 			biology++
 	TEST_ASSERT_EQUAL(biology, 0, "total stasis never runs biology")
 	H.set_stasis(null, src)
-	TEST_ASSERT_EQUAL(om_clock_rate_of(H, CLOCK_BIO), 1, "leaving stasis restores the clock")
+	TEST_ASSERT_EQUAL(H.clock_rate_bio, 1, "leaving stasis restores the clock")
 	seq_run_frame_now(H, LIFE_SEQ)
 	TEST_ASSERT(!H.body.stasis_paused, "biology runs every frame again")
 
@@ -1120,11 +1120,11 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.germ_level = 0
-	H.germs_rolled_at = om_clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE
+	H.germs_rolled_at = clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE
 	H.life_germs()
 	TEST_ASSERT(H.germ_level >= 5 && H.germ_level <= 7, "20 cycles at 30% should give 6 germs, gave [H.germ_level]")
 	var/datum/stasis_source = new
-	om_hold(H, EFFECT_CLOCK_BIO_INHIBIT, stasis_source, 1)
+	hold(H, STAT_CLOCK_RATE_BIO, 0, stasis_source, clock = HOLD_CLOCK_WORLD)
 	var/level = H.germ_level
 	life_test_advance(LIFE_CYCLE_SECONDS * 20)
 	H.life_germs()

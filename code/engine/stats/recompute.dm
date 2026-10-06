@@ -220,6 +220,8 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		relevance_changed(E, new_value || RELEVANCE_NONE)
 	else if(def.id == STAT_SUSPENDED)
 		suspended_changed(E)
+	else if(def.id == STAT_CLOCK_RATE_BIO)
+		bio_clock_rate_changed(E)
 	return TRUE
 
 /// The value a stat holds now, without computing it.

@@ -5,9 +5,9 @@
 // (set_stasis(level, source)), which contributes BF_STASIS, a 0..1 share of life processes
 // suspended (max rule).
 //
-// Stasis is the biology clock (doc/rewrite/life_on_om.md §8). While applied, each stasis
-// source holds EFFECT_CLOCK_BIO_INHIBIT = its depth on the mob (the deepest wins), so the
-// mob's CLOCK_BIO rate is 1 - stasis. The body reads that rate in ONE place,
+// Stasis is the biology clock (doc/rewrite/final_api.html section 3). While applied, each stasis
+// source holds the stat clock_rate_bio (MIN, base 1) at 1 - its depth on the mob (the deepest wins),
+// so the mob's CLOCK_BIO rate is 1 - stasis. The body reads that rate in ONE place,
 // advance_stasis(), which the Life frame calls once at its start (/datum/seq_frame/life/begin()).
 // It runs a fractional counter: each frame adds the rate, and the frame runs biology only when
 // the counter fills. Every other frame is "paused". A paused frame skips:
@@ -22,7 +22,7 @@
 // for diagnosis readouts; nothing in the life pipeline reads it.
 
 /datum/body
-	/// Fractional biology counter: + the CLOCK_BIO rate per frame.
+	/// Fractional biology counter: + the clock_rate_bio rate per frame.
 	var/tmp/stasis_clock = 0
 	/// TRUE when stasis paused the current frame.
 	var/tmp/stasis_paused = FALSE
@@ -30,15 +30,8 @@
 /// Advance the biology counter by one frame. Returns TRUE if this frame is paused. The only
 /// reader of the biology clock in the life pipeline.
 /datum/body/proc/advance_stasis()
-	// No contributions on the mob: nothing can slow its biology clock (the common case).
-	var/datum/om/rec/rec = owner?.om_rec
-	var/rate = 1
-	if(rec?.contribs)
-		var/static/bio_idx
-		if(!bio_idx)
-			var/datum/om/clock_def/C = om_registry().clock_by_id[CLOCK_BIO]
-			bio_idx = C.idx
-		rate = om_clock_rate(rec, bio_idx)
+	var/mob/living/L = owner
+	var/rate = istype(L) ? L.clock_rate_bio : 1
 	if(rate >= 1)
 		stasis_clock = 0
 		stasis_paused = FALSE
@@ -76,10 +69,10 @@
 	return clamp(factors?[BF_STASIS] || 0, 0, 1)
 
 /datum/body_effect/stasis/on_start(mob/living/L)
-	om_hold(L, EFFECT_CLOCK_BIO_INHIBIT, L, stasis_depth(), type)
+	hold(L, STAT_CLOCK_RATE_BIO, 1 - stasis_depth(), src, clock = HOLD_CLOCK_WORLD)
 
 /datum/body_effect/stasis/on_end(mob/living/L, expired)
-	om_release(L, EFFECT_CLOCK_BIO_INHIBIT, L, type)
+	release(L, STAT_CLOCK_RATE_BIO, src)
 
 /// Life at half speed.
 /datum/body_effect/stasis/light
@@ -112,7 +105,7 @@
 /mob/living
 	/// Stasis by source: a per-hold key (STASIS_NO_SOURCE without a source) -> an owned
 	/// /datum/stasis_hold naming the source and the /datum/body_effect/stasis level it holds
-	/// the mob in. Each holds EFFECT_CLOCK_BIO_INHIBIT at its depth, keyed by the same key. Lazy.
+	/// the mob in. Each holds clock_rate_bio at 1 - its depth, with itself as the source. Lazy.
 	var/list/stasis_sources
 
 /// One source's stasis on a mob, owned by the mob's stasis_sources.
@@ -148,8 +141,9 @@
 /// Put this mob in stasis `stasis_type` (a /datum/body_effect/stasis path) held by
 /// `source`, replacing whatever stasis that source applied before. A null type
 /// releases the source's stasis. Other sources are untouched. Returns TRUE if
-/// anything changed.
-/mob/living/proc/set_stasis(stasis_type, datum/source)
+/// anything changed. `holds_rate` FALSE records the level without holding clock_rate_bio: the
+/// stat's own bridge (clock_rate_bio_changed()), whose level follows the rate rather than setting it.
+/mob/living/proc/set_stasis(stasis_type, datum/source, holds_rate = TRUE)
 	if(stasis_type && !ispath(stasis_type, /datum/body_effect/stasis))
 		stack_trace("set_stasis() given [stasis_type], not a /datum/body_effect/stasis")
 		return FALSE
@@ -158,7 +152,8 @@
 	if(current == stasis_type)
 		return FALSE
 	if(key)
-		om_release(src, EFFECT_CLOCK_BIO_INHIBIT, src, key)
+		var/datum/stasis_hold/old_hold = stasis_sources[key]
+		release(src, STAT_CLOCK_RATE_BIO, old_hold)
 		rel_add(src, nameof(stasis_sources), null, key)
 		if(!length(stasis_sources))
 			own_clear(src, nameof(stasis_sources), OWN_DELETE)
@@ -171,7 +166,8 @@
 		if(source)
 			rel_set(hold, nameof(hold.source), source)
 		rel_add(src, nameof(stasis_sources), hold, key)
-		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
+		if(holds_rate)
+			hold(src, STAT_CLOCK_RATE_BIO, 1 - level.stasis_depth(), hold, clock = HOLD_CLOCK_WORLD)
 	invalidate_factors()
 	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
@@ -208,7 +204,7 @@ GLOBAL_DATUM_INIT(stasis_rate_source, /datum/stasis_rate_source, new)
 /// does not exceed 1 - rate. A rate of 1 releases it. The on_change hook in the /mob/living block (code/modules/combat_ai/integration/mob_living.dm)
 /// runs this at the drain after the stat moved.
 /mob/living/proc/clock_rate_bio_changed(datum/act/A)
-	set_stasis(stasis_type_for_rate(clock_rate_bio), GLOB.stasis_rate_source)
+	set_stasis(stasis_type_for_rate(clock_rate_bio), GLOB.stasis_rate_source, holds_rate = FALSE)
 
 /// The stasis level a biological clock rate stands for: the deepest whose depth is at most 1 - rate, or null for a rate of 1 or more.
 /proc/stasis_type_for_rate(rate)

@@ -85,7 +85,7 @@
 	/// Reagent ID -> product of every affliction's interferes_with factor for
 	/// it (drug-interaction markers). Null when nothing interferes.
 	var/list/reagent_interference
-	/// om_clock_now(CLOCK_BIO) when regeneration was last read into the snapshot, or null.
+	/// clock_now(CLOCK_BIO) when regeneration was last read into the snapshot, or null.
 	var/tmp/regeneration_read_at
 
 /datum/body/New(mob/living/new_owner)
@@ -308,11 +308,11 @@
 	return treatment_snapshot
 
 /// Natural regeneration depends on sleep and nutrition, which change without touching the
-/// reagent snapshot. It is re-read at most once per biological instant (om_clock_now(CLOCK_BIO),
+/// reagent snapshot. It is re-read at most once per biological instant (clock_now(CLOCK_BIO),
 /// which stasis stops) and patched into the snapshot, so ticking bodies no longer rebuild the
 /// whole treatment snapshot every cycle (audit C11).
 /datum/body/proc/refresh_regeneration()
-	var/now = owner ? om_clock_now(owner, CLOCK_BIO) : 0
+	var/now = owner ? clock_now(owner, CLOCK_BIO) : 0
 	if(now == regeneration_read_at)
 		return
 	regeneration_read_at = now

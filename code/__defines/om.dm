@@ -168,8 +168,6 @@
 #define CLOCK_BIO "bio"
 #define CLOCK_MACHINE "machine"
 #define CLOCK_CHEM "chem"
-#define EFFECT_CLOCK_BIO_MULT "clock:bio:mult"
-#define EFFECT_CLOCK_BIO_INHIBIT "clock:bio:inhibit"
 #define EFFECT_CLOCK_MACHINE_MULT "clock:machine:mult"
 #define EFFECT_CLOCK_MACHINE_INHIBIT "clock:machine:inhibit"
 #define EFFECT_CLOCK_CHEM_MULT "clock:chem:mult"

@@ -2092,3 +2092,7 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
   out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
   door's catch-all for held items.
+- **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
+  `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
+  (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
+  nothing outside the OM tests did. The unused `stasis_occupant` relation is deleted.

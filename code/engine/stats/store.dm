@@ -56,7 +56,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /// The time on `clock` for entity E: the scheduler's for WORLD and OWN, the entity's biological clock for BIO. Deciseconds.
 /proc/stat_clock_now(datum/E, clock)
 	if(clock == HOLD_CLOCK_BIO)
-		return om_clock_now(E, CLOCK_BIO)
+		return clock_now(E, CLOCK_BIO)
 	return om_time_of(E)
 
 // ---- validation ----

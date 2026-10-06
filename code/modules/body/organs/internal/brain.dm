@@ -18,7 +18,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	/// Biological time the defibrillation window has run down, deciseconds (audit D10). Read it
 	/// through defib_window_left(); sync_defib_window() charges it on the body clock.
 	var/defib_elapsed = 0
-	/// om_clock_now(CLOCK_BIO) of the last sync, or null before the first.
+	/// clock_now(CLOCK_BIO) of the last sync, or null before the first.
 	var/tmp/defib_clock_at
 	/// Whether that reading came from the owner's clock (TRUE) or the loose brain's own.
 	var/tmp/defib_clock_on_owner = FALSE
@@ -49,7 +49,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 /// reader may call it; death, revival, removal and insertion call it at the transition.
 /obj/item/organ/internal/brain/proc/sync_defib_window()
 	var/on_owner = !!owner
-	var/now = om_clock_now(owner || src, CLOCK_BIO)
+	var/now = clock_now(owner || src, CLOCK_BIO)
 	if(!isnull(defib_clock_at) && on_owner == defib_clock_on_owner && now > defib_clock_at)
 		var/span = now - defib_clock_at
 		if(defib_decaying)

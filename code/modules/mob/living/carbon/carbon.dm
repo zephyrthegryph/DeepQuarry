@@ -17,14 +17,14 @@
 /// nullspace (it followed ..() in the old carbon Life()).
 /mob/living/carbon
 	fire_heats_body = TRUE
-	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
+	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 	var/germs_rolled_at
 
 /mob/living/carbon/proc/life_germs(datum/seq_frame/life/F)
 	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
 	// stage idles and comes back on its rewake), so stasis stops the creep too.
-	var/now = om_clock_now(src, CLOCK_BIO)
+	var/now = clock_now(src, CLOCK_BIO)
 	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
 	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
 	var/cycles = !isnull(src.germs_rolled_at) ? clamp((now - src.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
