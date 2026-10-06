@@ -58,7 +58,7 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		own_take(src, nameof(scan))
+		rel_take(src, nameof(scan))
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE

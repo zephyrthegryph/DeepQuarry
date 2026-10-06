@@ -315,7 +315,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 	if(istype(O,/obj/machinery/microwave))
 		return ..()
 	if(istype (O, /obj/machinery/seed_extractor))
-		var/obj/item/seeds/extracted = own_take(src, nameof(pit))
+		var/obj/item/seeds/extracted = rel_take(src, nameof(pit))
 		extracted?.forceMove(O.loc) //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
 		consume(src, user)
 		return
@@ -324,7 +324,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
 	to_chat(user, span_notice("You squeeze \the [src], juicing it into \the [O]."))
 	reagents.trans_to(O, reagents.total_volume)
 	user.drop_from_inventory(src)
-	var/obj/item/seeds/dropped_pit = own_take(src, nameof(pit))
+	var/obj/item/seeds/dropped_pit = rel_take(src, nameof(pit))
 	dropped_pit?.forceMove(user.loc)
 	consume(src, user)
 

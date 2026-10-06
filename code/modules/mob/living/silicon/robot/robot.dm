@@ -430,7 +430,7 @@
 	var/datum/source = A.target
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
-		own_take(mount, nameof(mount.wrapped))
+		rel_take(mount, nameof(mount.wrapped))
 		mount.installed = ROBOT_PART_MISSING
 	set_cell(null)
 
@@ -1090,7 +1090,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
 	bolt.forceMove(get_turf(src))
-	own_take(src, nameof(bolt))
+	rel_take(src, nameof(bolt))
 	to_chat(user, span_filter_notice("You remove the restraining bolt."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -1402,7 +1402,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 	var/obj/item/old_hat = hat
 	if(!old_hat)
 		return null
-	own_take(src, nameof(hat))
+	rel_take(src, nameof(hat))
 	old_hat.forceMove(drop_loc)
 	update_icon()
 	return old_hat

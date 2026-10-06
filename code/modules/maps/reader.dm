@@ -183,7 +183,7 @@ CAPABILITIES(/datum/parsed_map)
 	newfriend.key_len = key_len
 	newfriend.line_len = line_len
 	newfriend.grid_models = grid_models.Copy()
-	own_take_all(newfriend, nameof(newfriend.gridSets))
+	rel_take_all(newfriend, nameof(newfriend.gridSets))
 	for(var/datum/grid_set/source_set as anything in gridSets) // each map owns its own grid sets
 		var/datum/grid_set/set_copy = new
 		set_copy.xcrd = source_set.xcrd

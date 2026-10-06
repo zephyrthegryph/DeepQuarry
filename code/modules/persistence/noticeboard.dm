@@ -25,7 +25,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	. = ..()
 
 	// Grab any mapped notices.
-	own_take_all(src, nameof(notices))
+	rel_take_all(src, nameof(notices))
 	for(var/obj/item/paper/note in get_turf(src))
 		move_into(src, nameof(src.notices), note)
 		if(LAZYLEN(notices) >= max_notices)

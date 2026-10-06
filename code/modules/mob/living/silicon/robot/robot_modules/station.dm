@@ -121,7 +121,7 @@ CAPABILITIES(/obj/item/robot_module)
 	modules -= robot.idcard // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
-	own_take(robot, nameof(robot.module))
+	rel_take(robot, nameof(robot.module))
 	consume(src, robot)
 
 

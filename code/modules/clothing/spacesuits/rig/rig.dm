@@ -210,7 +210,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 			reset()
 		// Off a mob the slow step no longer runs (carried_by_mob), so let go of the wearer here.
 		if(wearer()?.wearing_rig == src)
-			own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+			rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
 		rel_clear(src, nameof(wearer))
 
 	// If we've lost any parts, grab them back.
@@ -798,7 +798,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
-		own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+		rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
 	rel_clear(src, nameof(wearer))
 
 //Todo

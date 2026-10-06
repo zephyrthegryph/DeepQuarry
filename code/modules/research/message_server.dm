@@ -322,7 +322,7 @@ CAPABILITIES(/obj/machinery/blackbox_recorder)
 		BR.msg_service = msg_service
 		// The feedback datums move over one by one (the replacement takes the list over).
 		own_clear(BR, nameof(BR.feedback), OWN_DELETE)
-		for(var/datum/entry as anything in own_take_all(src, nameof(feedback)))
+		for(var/datum/entry as anything in rel_take_all(src, nameof(feedback)))
 			rel_add(BR, nameof(BR.feedback), entry)
 		BR.messages = messages
 		BR.messages_admin = messages_admin

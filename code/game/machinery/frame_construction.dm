@@ -174,7 +174,7 @@
 /datum/interaction/construction/frame/remove_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
 	frame.circuit.forceMove(frame.loc)
-	own_take(frame, nameof(frame.circuit))
+	rel_take(frame, nameof(frame.circuit))
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.req_components = null
 	frame.update_desc()
