@@ -19,19 +19,8 @@
 	VAR_PRIVATE/just_donated = FALSE
 	VAR_PRIVATE/datum/internal_wiki/page/P
 
-/obj/machinery/librarywikicomp/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/wikicomp_open_ui,
-	)
-	..()
-
-/// Old attack_hand: `if(..()) return; ` then percussive maintenance / open the interface.
-/datum/interaction/machine_hand/wikicomp_open_ui
-	id = "wikicomp_open_ui"
-	name = "Use"
-	effect = /obj/machinery/librarywikicomp/proc/interaction_open_ui_impl
-
-/obj/machinery/librarywikicomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarywikicomp/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(crash)
 		act_message(user, src, MSG_SELF("You try to smack some sense into %T%."), MSG_OTHERS("%U% performs percussive maintenance on %T%."))
 		if(prob(10))
@@ -54,6 +43,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	op("setsubcat", ui_act("setsubcat", arg("data")), then(PROC_REF(ui_act_setsubcat)))
 	op("search", ui_act("search", arg("data", schema_text(4096))), then(PROC_REF(ui_act_search)))
 	op("donate", ui_act("donate", arg("donate", num())), asks(/datum/prompt/number, fields = list("question" = "Enter pin code", "title" = "Donation", "timeout" = 0), step = "pin", when = PROC_REF(donation_needs_pin)), then(PROC_REF(ui_act_donate)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/librarywikicomp/ui_opening(mob/user, datum/tgui/ui)
 	just_donated = FALSE

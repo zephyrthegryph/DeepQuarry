@@ -20,24 +20,33 @@
 	if(panel_open)
 		to_chat(user, "The maintenance panel is open.")
 
-/obj/machinery/disperser/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/disperser/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open)
 		to_chat(user, span_notice("The maintenance panel must be screwed open for this!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	act_message(user, src, MSG_SELF(span_notice("You rotate %T% with %I%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " rotates %T% with %I%.")), \
 		item = tool)
 	set_dir(turn(dir, 90))
 	play_sfx(src, SFX_ITEMS_JAWS_PRY)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/disperser/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/disperser/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/disperser/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/machinery/disperser)
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+
+/obj/machinery/disperser/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(default_part_replacement(user, tool))
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/disperser/front
 	name = "obstruction removal ballista beam generator"

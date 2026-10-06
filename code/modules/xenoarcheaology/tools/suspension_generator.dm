@@ -21,6 +21,11 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	without("ui_open")
 	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert power cell"), then(PROC_REF(interaction_insert_cell)))
+	op("swipe_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe card"), then(PROC_REF(interaction_swipe_card)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 /// Holds its field (draining its cell) while it has one.
 /obj/machinery/suspension_gen/Initialize(mapload)
 	. = ..()
@@ -47,20 +52,8 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		if(cell.charge <= 0)
 			deactivate()
 
-/obj/machinery/suspension_gen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/suspension_gen_insert_cell,
-		/datum/interaction/machine_item/suspension_gen_swipe_card,
-		/datum/interaction/machine_hand/ungated/suspension_gen_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/suspension_gen_use
-	id = "suspension_gen_use"
-	name = "Use"
-	effect = /obj/machinery/suspension_gen/proc/interaction_use
-
-/obj/machinery/suspension_gen/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suspension_gen/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
 		tgui_interact(user)
 	else if(cell)
@@ -114,14 +107,16 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		set_locked(!locked)
 		return TRUE
 
-/obj/machinery/suspension_gen/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/suspension_gen/proc/screwdriver_used(datum/act/op/A)
 	if(locked || suspension_field)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/suspension_gen/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/suspension_gen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(suspension_field)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
@@ -133,15 +128,11 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		icon_state = "suspension"
 	play_sfx(loc, SFX_ITEMS_RATCHET, 0.8, vary = FALSE)
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/datum/interaction/machine_item/suspension_gen_insert_cell
-	id = "suspension_gen_insert_cell"
-	name = "Insert power cell"
-	held_type = /obj/item/cell
-	effect = /obj/machinery/suspension_gen/proc/interaction_insert_cell
-
-/obj/machinery/suspension_gen/proc/interaction_insert_cell(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/suspension_gen/proc/interaction_insert_cell(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(panel_open)
 		if(cell)
 			to_chat(user, span_warning("There is a power cell already installed."))
@@ -152,13 +143,9 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 			icon_state = "suspension"
 	return TRUE
 
-/datum/interaction/machine_item/suspension_gen_swipe_card
-	id = "suspension_gen_swipe_card"
-	name = "Swipe card"
-	held_type = /obj/item/card
-	effect = /obj/machinery/suspension_gen/proc/interaction_swipe_card
-
-/obj/machinery/suspension_gen/proc/interaction_swipe_card(mob/user, obj/item/card/I, datum/interaction/interaction)
+/obj/machinery/suspension_gen/proc/interaction_swipe_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/I = A.held
 	if(!auth_card())
 		if(attempt_unlock(I, user))
 			to_chat(user, span_info("You swipe [I], the console flashes \'<i>Access granted.</i>\'"))

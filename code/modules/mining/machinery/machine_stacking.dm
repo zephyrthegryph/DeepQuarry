@@ -19,18 +19,8 @@
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
 		return INITIALIZE_HINT_QDEL
 
-/obj/machinery/mineral/stacking_unit_console/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/stacking_console_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/stacking_console_use
-	id = "stacking_console_use"
-	name = "Use"
-	effect = /obj/machinery/mineral/stacking_unit_console/proc/interaction_use
-
-/obj/machinery/mineral/stacking_unit_console/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/mineral/stacking_unit_console/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE
@@ -39,6 +29,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 	interface("MiningStackingConsole")
 	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
 	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /// /obj/machinery/mineral/stacking_unit_console's window data.
 /obj/machinery/mineral/stacking_unit_console/ui_data(datum/act/eval/A)

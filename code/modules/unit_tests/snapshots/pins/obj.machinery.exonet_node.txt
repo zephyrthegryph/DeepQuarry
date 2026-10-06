@@ -58,5 +58,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-keys: drag_buckle, exonet_open_ui, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, toggle_communicator_port, toggle_newscaster_port, toggle_PDA_port, toggle_power, ui_open
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, toggle_communicator_port, toggle_newscaster_port, toggle_PDA_port, toggle_power, ui_open
 

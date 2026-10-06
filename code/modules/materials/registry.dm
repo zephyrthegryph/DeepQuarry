@@ -107,6 +107,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 // Safety proc to make sure the material list exists before trying to grab from it.
 /proc/get_material_by_name(name)
+	READS_FROM()
 	return GLOB.name_to_material[name]
 
 /proc/material_display_name(name)

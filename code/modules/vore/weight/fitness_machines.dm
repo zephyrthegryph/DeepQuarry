@@ -59,16 +59,19 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 			"You hammer the clown right in it's face with your fist",
 			"A honk emits from the punching bag as you hit it")
 
-/obj/machinery/fitness/heavy/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/fitness/heavy/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
 		MSG_OTHERS(span_warning("%U% has [anchored ? "un" : ""]secured %T%.")))
 	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/fitness/heavy)
 	op("heavy_fitness_safety_hand", hand(), then(PROC_REF(heavy_fitness_safety_hand)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 /// Old attack_hand: safety checks; FALSE goes on to the workout.
 /obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(datum/act/op/A)

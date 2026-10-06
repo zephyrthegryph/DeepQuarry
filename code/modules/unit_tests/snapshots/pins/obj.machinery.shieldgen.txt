@@ -22,7 +22,8 @@ human|/obj/item/tool/screwdriver menu: Insert cell (refused: needs a power cell)
 human|/obj/item/tool/screwdriver menu: Repair wiring (refused: needs a cable coil)
 human|/obj/item/tool/screwdriver menu: Toggle
 human|/obj/item/tool/screwdriver menu: Toggle lock (refused: needs an identification card or a PDA)
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/crowbar menu: Insert cell (refused: needs a power cell)
@@ -36,7 +37,8 @@ human|/obj/item/tool/wrench menu: Insert cell (refused: needs a power cell)
 human|/obj/item/tool/wrench menu: Repair wiring (refused: needs a cable coil)
 human|/obj/item/tool/wrench menu: Toggle
 human|/obj/item/tool/wrench menu: Toggle lock (refused: needs an identification card or a PDA)
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/wirecutters menu: Insert cell (refused: needs a power cell)
@@ -94,5 +96,5 @@ human|/obj/item/card/emag menu: Repair wiring (refused: needs a cable coil)
 human|/obj/item/card/emag menu: Toggle
 human|/obj/item/card/emag menu: Toggle lock (refused: needs an identification card or a PDA)
 human|/obj/item/card/emag click: nothing
-keys: climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock
+keys: climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, use_screwdriver, use_wrench
 

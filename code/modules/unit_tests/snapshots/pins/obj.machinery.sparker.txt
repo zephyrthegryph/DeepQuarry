@@ -1,0 +1,20 @@
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Ignite
+robot|none click: Click: Ignite
+ai|none menu: Ignite
+ai|none click: Click: Ignite
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, sparker_silicon_trigger, use_screwdriver
+

@@ -11,7 +11,7 @@
 		add_trait(disk, TRAIT_NODROP, "interim_nuclear_sticky_disk")
 		TEST_ASSERT(user.release_refusal(disk, user), "the actual inventory refuses release of the held disk")
 		if(route == "item")
-			bomb.interaction_insert_disk(user, disk, null)
+			test_op_handler(bomb, "interaction_insert_disk", user, disk)
 		else
 			op_ui_act(user, bomb, "auth")
 		TEST_ASSERT_NULL(bomb.auth(), "refused [route] release records no authentication relation")
@@ -19,7 +19,7 @@
 		TEST_ASSERT_EQUAL(user.get_active_hand(), disk, "refused [route] release preserves the exact hand")
 		remove_trait(disk, TRAIT_NODROP, "interim_nuclear_sticky_disk")
 		if(route == "item")
-			bomb.interaction_insert_disk(user, disk, null)
+			test_op_handler(bomb, "interaction_insert_disk", user, disk)
 		else
 			op_ui_act(user, bomb, "auth")
 		TEST_ASSERT_EQUAL(bomb.auth(), disk, "allowed [route] insertion records the original disk")

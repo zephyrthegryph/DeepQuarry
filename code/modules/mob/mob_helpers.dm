@@ -6,6 +6,7 @@
 	return 0
 
 /proc/issmall(A)
+	READS_FROM(A)
 	if(A && isliving(A))
 		var/mob/living/L = A
 		return L.mob_size <= MOB_SMALL

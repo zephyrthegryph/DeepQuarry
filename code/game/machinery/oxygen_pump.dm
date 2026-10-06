@@ -27,6 +27,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump), because = MSG(oxygen_pump/no_tank))), then(PROC_REF(oxygen_pump_interaction_hand)))
 	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
 	op("oxygen_pump_settings", menu(), label("Show Tank Settings"), then(PROC_REF(oxygen_pump_settings)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
@@ -169,15 +170,16 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
 	return TRUE
 
-/obj/machinery/oxygen_pump/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/oxygen_pump/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.is_incorporeal())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(!stat_remove(MAINT))
 		stat_add(MAINT)
 	act_message(user, src, MSG_SELF(span_notice("You [has_stat(MAINT) ? "open" : "close"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [has_stat(MAINT) ? "opens" : "closes"] %T%.")))
 	icon_state = (has_stat(MAINT)) ? icon_state_open : icon_state_closed
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/oxygen_pump/examine(mob/user)
 	. = ..()

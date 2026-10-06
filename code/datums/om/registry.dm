@@ -173,8 +173,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 /datum/om/registry/proc/build_clocks()
 	var/list/rows = list(
 		CLOCK_BIO = list("min" = 0, "max" = 10),
-		CLOCK_MACHINE = list("min" = 0, "max" = 10),
-		CLOCK_CHEM = list("min" = 0, "max" = 10),
 	)
 	for(var/datum/om/bundle/B as anything in bundles)
 		for(var/id in B.clocks)

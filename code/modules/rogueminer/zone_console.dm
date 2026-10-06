@@ -32,19 +32,8 @@
 	if(!GLOB.rm_controller)
 		GLOB.rm_controller = new /datum/controller/rogue()
 
-/obj/machinery/computer/roguezones/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/roguezones_use,
-	)
-	..()
-
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/roguezones_use
-	id = "roguezones_use"
-	name = "Use"
-	effect = /obj/machinery/computer/roguezones/proc/interaction_use
-
-/obj/machinery/computer/roguezones/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/roguezones/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
 		return TRUE
@@ -56,6 +45,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	interface("RogueZones")
 	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
 	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/computer/roguezones/ui_data(datum/act/eval/A)
 	var/list/data = list()

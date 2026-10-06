@@ -747,14 +747,6 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	LAZYADD(S.extras, stage_type)
 	om_pipe_replan(E, T.pipeline, S)
 
-/proc/om_stage_remove(datum/E, stage_type)
-	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
-	var/datum/om/frame/S = T && om_pipe_state(E, T.pipeline)
-	if(!S || !(stage_type in S.extras))
-		return
-	LAZYREMOVE(S.extras, stage_type)
-	om_pipe_replan(E, T.pipeline, S)
-
 /proc/om_pipe_replan(datum/E, P, datum/om/frame/S)
 	var/datum/om/pipeline/def = om_registry().behaviour(P)
 	var/datum/om/plan/plan = def.plan_for(E, S.extras)
@@ -809,28 +801,11 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 			return
 	def.run_frame(E, def.step_interval || def.every / 10)
 
-/// Frames `P` has run on the live scheduler (or `sched`).
-/proc/om_pipeline_frames(list/entities, P)
-	. = 0
-	for(var/datum/E as anything in entities)
-		var/datum/om/frame/F = om_pipe_state(E, P)
-		if(F)
-			. += F.frames
-
 /// Entities parked in `P` on the live scheduler (or `sched`).
 /proc/om_pipeline_parked_count(P, datum/om/scheduler/sched)
 	sched = sched || GLOB.om_live_sched || om_scheduler()
 	var/datum/om/pipeline/def = om_registry().behaviour(P)
 	return length(def.parked_on(sched))
-
-/// The variant of family `stage_type` that serves `E`, whether or not its plan has it.
-/proc/om_stage_for(datum/E, stage_type)
-	var/datum/om/registry/reg = om_registry()
-	var/datum/om/stage/listed = reg.stage_by_type[stage_type]
-	if(!listed)
-		return null
-	var/datum/om/pipeline/P = reg.behaviour(listed.pipeline)
-	return P.resolve(listed.family, E.type)
 
 // ---------------------------------------------------------------- missed-wake audit
 
@@ -1014,11 +989,6 @@ GLOBAL_LIST_EMPTY(om_traced_bits)
 /proc/om_traced_count(datum/E)
 	var/n = GLOB.om_traced[E]
 	return n ? n - 1 : 0
-
-/// Tests: the union of the change bits every traced on_wake to `E` arrived with (a watch
-/// wake is CHANGE_RELATED, a MACHINE_WAKE() CHANGE_EXPLICIT, a power change its own channel).
-/proc/om_traced_wake_bits(datum/E)
-	return GLOB.om_traced_bits[E] || 0
 
 /proc/om_untrace(datum/E)
 	GLOB.om_traced -= E

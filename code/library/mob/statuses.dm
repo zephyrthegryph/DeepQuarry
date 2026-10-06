@@ -61,8 +61,8 @@ SOURCE_DEF(mutation_hulk)
 	var/max_units = 0
 	/// Increases pass through the mob's status_scale() (resistances).
 	var/scaled = FALSE
-	/// A refusable event sent before an increase (amount): COMPONENT_NO_STUN in its result refuses it.
-	var/veto
+	/// The generated publish proc of the notice an increase announces (amount), before it applies: remote view ends on it.
+	var/announce
 	/// A screen alert while active (category and type), and a status indicator (icon state).
 	var/alert
 	var/alert_type
@@ -76,16 +76,16 @@ SOURCE_DEF(mutation_hulk)
 
 /// The policy table's source rows: list(STAT_X, field = value, ...).
 GLOBAL_LIST_INIT(status_policy_rows, list(
-		list(STAT_STUNNED, "scaled" = TRUE, "veto" = /datum/om/event/living_status_stun, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
+		list(STAT_STUNNED, "scaled" = TRUE, "announce" = /proc/publish_living_status_stun, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed),
-		list(STAT_WEAKENED, "scaled" = TRUE, "veto" = /datum/om/event/living_status_weaken, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
+		list(STAT_WEAKENED, "scaled" = TRUE, "announce" = /proc/publish_living_status_weaken, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_knocked_down, "on_end" = /mob/proc/status_incapacitation_changed),
-		list(STAT_PARALYZED, "scaled" = TRUE, "veto" = /datum/om/event/living_status_paralyze, "alert" = "paralyzed", "alert_type" = /atom/movable/screen/alert/paralyzed, "indicator" = "paralysis",
+		list(STAT_PARALYZED, "scaled" = TRUE, "announce" = /proc/publish_living_status_paralyze, "alert" = "paralyzed", "alert_type" = /atom/movable/screen/alert/paralyzed, "indicator" = "paralysis",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_passed_out, "on_end" = /mob/proc/status_incapacitation_changed),
-		list(STAT_SLEEPING, "scaled" = TRUE, "veto" = /datum/om/event/before/living_status_sleep, "alert" = "asleep", "alert_type" = /atom/movable/screen/alert/asleep, "indicator" = "sleeping",
+		list(STAT_SLEEPING, "scaled" = TRUE, "announce" = /proc/publish_living_status_sleep, "alert" = "asleep", "alert_type" = /atom/movable/screen/alert/asleep, "indicator" = "sleeping",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed),
 		list(STAT_CONFUSED, "scaled" = TRUE, "alert" = "confused", "alert_type" = /atom/movable/screen/alert/confused, "indicator" = "confused"),
-		list(STAT_BLINDED, "scaled" = TRUE, "veto" = /datum/om/event/living_status_blind, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned),
+		list(STAT_BLINDED, "scaled" = TRUE, "announce" = /proc/publish_living_status_blind, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned),
 		list(STAT_BLURRY),
 		list(STAT_NEARSIGHTED),
 		list(STAT_DEAFENED, "on_start" = /mob/proc/status_deafness_started, "on_end" = /mob/proc/status_deafness_ended),
@@ -249,14 +249,13 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 	if(P.on_increase && ismob(src))
 		call(src, P.on_increase)()
 
-/// Admission of an increase: the immunity, then the status's veto event.
+/// Admission of an increase: the immunity; an admitted one is announced (its notice) before it applies.
 /datum/proc/status_admit(datum/status_policy/P, amount)
 	if(status_immune(P.id))
 		return FALSE
-	var/event_path = P.veto
-	if(!event_path || !om_wants(src, event_path))
-		return TRUE
-	return !(om_emit(src, new event_path(amount)) & COMPONENT_NO_STUN)
+	if(P.announce)
+		call(P.announce)(src, amount)
+	return TRUE
 
 /// Units of status `id` that wear off per LIFE_CYCLE on this entity.
 /datum/proc/status_rate(id)

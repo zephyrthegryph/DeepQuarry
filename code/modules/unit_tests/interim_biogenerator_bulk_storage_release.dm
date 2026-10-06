@@ -17,7 +17,7 @@
 	bag.show_to(user)
 	TEST_ASSERT_NOTNULL(bag.hud, "the actual storage display creates its real HUD without a fabricated client")
 	TEST_ASSERT(first.plane != initial(first.plane) || first.layer != initial(first.layer), "the actual displayed fruit has storage HUD appearance")
-	generator.interaction_insert(user, bag, null)
+	test_op_handler(generator, "interaction_insert", user, bag)
 	TEST_ASSERT_EQUAL(first.loc, generator, "actual bulk insertion moves the first original fruit into the generator")
 	TEST_ASSERT_EQUAL(second.loc, generator, "actual bulk insertion moves the second original fruit into the generator")
 	TEST_ASSERT_EQUAL(length(bag.slot_contents(CONTAINER_SLOT_STORAGE)), 0, "actual bulk insertion empties the real source ledger")

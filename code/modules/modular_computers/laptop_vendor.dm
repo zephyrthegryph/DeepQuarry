@@ -42,6 +42,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 	op("hw_tesla", ui_act("hw_tesla", arg("tesla", num())), then(PROC_REF(ui_act_hw_tesla)))
 	op("hw_nanoprint", ui_act("hw_nanoprint", arg("print", num())), then(PROC_REF(ui_act_hw_nanoprint)))
 	op("hw_card", ui_act("hw_card", arg("card", num())), then(PROC_REF(ui_act_hw_card)))
+	op("pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), then(PROC_REF(interaction_pay)))
 
 // Removes all traces of old order and allows you to begin configuration from scratch.
 /obj/machinery/lapvend/proc/reset_order()
@@ -242,13 +243,6 @@ CAPABILITIES(/obj/machinery/lapvend)
 
 
 
-/obj/machinery/lapvend/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/lapvend_pay,
-	)
-	..()
-
 /obj/machinery/lapvend/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
 		return FALSE
@@ -274,14 +268,9 @@ CAPABILITIES(/obj/machinery/lapvend)
 
 	return data
 
-/// The old attackby: while awaiting payment, swiped a card; else fell through to ..().
-/datum/interaction/machine_item/lapvend_pay
-	id = "lapvend_pay"
-	name = "Pay"
-	held_type = /obj/item
-	effect = /obj/machinery/lapvend/proc/interaction_pay
-
-/obj/machinery/lapvend/proc/interaction_pay(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/lapvend/proc/interaction_pay(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/card/id/I = W.GetID()
 	// Awaiting payment state
 	if(state == 2)
@@ -304,7 +293,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 			set_state(3)
 			return TRUE
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 // Simplified payment processing, returns 1 on success.
 /obj/machinery/lapvend/proc/process_payment(mob/user, obj/item/card/id/I, obj/item/ID_container)

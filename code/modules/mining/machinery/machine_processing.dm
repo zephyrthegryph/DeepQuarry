@@ -46,39 +46,33 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	op("speed_toggle", ui_act(), then(PROC_REF(ui_act_speed_toggle)))
 	op("power", ui_act(), then(PROC_REF(ui_act_power)))
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/processing_console_insert_id,
-		/datum/interaction/machine_hand/processing_console_open_ui,
-	)
-	..()
-
-/// Old attackby: an ID card scanned. `!powered()` silently returned, so it stays in the effect.
-/datum/interaction/machine_item/processing_console_insert_id
-	id = "processing_console_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id
-
-/obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
+/obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = A.held
 	if(!powered())
 		return TRUE
 	if(!inserted_id && move_into(src, nameof(src.inserted_id), I, user))
 		SStgui.update_uis(src)
 	return TRUE
 
-/// Old attack_hand: `if(..()) return; if(!allowed(user)) ...; tgui_interact(user)`.
-/datum/interaction/machine_hand/processing_console_open_ui
-	id = "processing_console_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/mineral/processing_unit_console/proc/lets_in, "access denied"))
-	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl
-
 /obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/obj/machinery/mineral/processing_unit_console/proc/lets_in_holds(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/mineral/processing_unit_console/proc/lets_in_refusal(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return istext(answer) ? answer : "access denied"
+
+/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

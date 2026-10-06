@@ -50,6 +50,9 @@ CAPABILITIES(/obj/machinery/microwave)
 	without("ui_open")
 	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
 	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
@@ -259,25 +262,31 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		return TRUE
 	return FALSE
 
-/obj/machinery/microwave/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/microwave/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(broken == REALLY_BROKEN)
 		do_repair_step(user, tool, FALSE)
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/microwave/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/microwave/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(broken == KINDA_BROKEN)
 		do_repair_step(user, tool, TRUE)
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/microwave/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/microwave/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(panel_open)
-		return ..()
+		return OP_DECLINE
 	act_message(user, src, MSG_SELF(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%.")))
 	om_task_start(/datum/om/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /datum/om/task/timed/microwave_secure
 	complete_proc = /obj/machinery/microwave/proc/secure_done

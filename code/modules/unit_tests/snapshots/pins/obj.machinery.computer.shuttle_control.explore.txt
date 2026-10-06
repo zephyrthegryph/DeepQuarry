@@ -62,5 +62,5 @@ human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Use (refused: access denied)
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use item
-keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag, force, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, move, pick, plot_expedition, set_codes, shuttle_control_open_ui, use_gripper, use_item
+keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag, force, gen_hand_interaction_open_ui, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, move, pick, plot_expedition, set_codes, use_gripper, use_item
 

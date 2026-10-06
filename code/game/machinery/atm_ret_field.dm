@@ -38,38 +38,43 @@
 	active_power_usage = 1500
 	field_type = /obj/structure/atmospheric_retention_field/impassable
 
-/obj/machinery/atmospheric_field_generator/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/atmospheric_field_generator/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isactive)
 		to_chat(user, span_warning("You can't open the ARF-G whilst it's running!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You [hatch_open ? "close" : "open"] \the [src]'s access hatch."))
 	hatch_open = !hatch_open
 	update_icon()
 	if(alwaysactive && wires_intact)
 		generate_field()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/atmospheric_field_generator/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!hatch_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive ? "emergency" : "always-on"]."))
 	alwaysactive = !alwaysactive
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/wirecutter_act(mob/user, obj/item/tool)
+/obj/machinery/atmospheric_field_generator/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!hatch_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
 	wires_intact = !wires_intact
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
+/obj/machinery/atmospheric_field_generator/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!hatch_open)
-		return NONE
+		return OP_DECLINE
 	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start to disassemble \the [src].", start_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
@@ -102,6 +107,10 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	emp_disable(7.5 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_generator_blast))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// A pulse took it down (the field drops) or its outage ended (the field comes back if it was on, or is always on).
 /obj/machinery/atmospheric_field_generator/proc/emp_state_changed(datum/act/A)

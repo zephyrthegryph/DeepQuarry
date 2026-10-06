@@ -1,0 +1,28 @@
+human|none menu: Override
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Override
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Override
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Override
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Override
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Override
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Override
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Override
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Override
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Override
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Override
+human|/obj/item/card/id click: nothing
+keys: department_control_override, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

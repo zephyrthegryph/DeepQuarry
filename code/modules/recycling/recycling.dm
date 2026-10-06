@@ -29,11 +29,9 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 /**
  * Generic procs common to all
  */
-/obj/machinery/recycling/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/recycling_feed,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/recycling, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_feed), "Feed", REQ_FIELD_NOT("working", "it's busy; wait until it's idle")), \
+)
 
 /**
  * Old attackby: several silent guards (actor must be living and adjacent, not busy), then
@@ -41,14 +39,6 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
  * it never called ..() (unconditionally intercepts every item) and the guards mix silent
  * returns with messaged refusals.
  */
-/datum/interaction/machine_item/recycling_feed
-	id = "recycling_feed"
-	name = "Feed"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	effect = /obj/machinery/recycling/proc/interaction_feed
-	also_requires = list(REQ_FIELD_NOT("working", "it's busy; wait until it's idle"))
-
 /obj/machinery/recycling/proc/interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!isliving(user) || !Adjacent(user))
 		return TRUE

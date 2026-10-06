@@ -19,6 +19,7 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
 	ref_many(nameof(shared_soul_links))
 	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.

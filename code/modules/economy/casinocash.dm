@@ -13,20 +13,12 @@
 // exact-integer float range (2**24 - 1) and can't lose precision or overflow.
 #define CHIPMACHINE_MAX_WORTH 16777215
 
-/obj/machinery/chipmachine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/chipmachine_exchange,
-	)
-	..()
+CAPABILITIES(/obj/machinery/chipmachine)
+	op("exchange", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Exchange"), then(PROC_REF(interaction_exchange)))
 
-/// Old attackby: cash -> chips, or chips -> cash. Never called `..()`, so any item is consumed.
-/datum/interaction/machine_item/chipmachine_exchange
-	id = "chipmachine_exchange"
-	name = "Exchange"
-	held_type = /obj/item
-	effect = /obj/machinery/chipmachine/proc/interaction_exchange
-
-/obj/machinery/chipmachine/proc/interaction_exchange(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/chipmachine/proc/interaction_exchange(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/spacecash))
 		var/obj/item/spacecash/cash = I
 		var/worth = clamp(cash.worth, 0, CHIPMACHINE_MAX_WORTH)

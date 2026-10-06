@@ -10,19 +10,8 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/igniter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/igniter_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/igniter_toggle
-	id = "igniter_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/igniter/proc/interaction_toggle
-
-/obj/machinery/igniter/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/igniter/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	use_power(50)
 	set_on(!(on))
@@ -34,6 +23,7 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/igniter)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/igniter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
@@ -76,7 +66,9 @@ DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON
 	else
 		icon_state = "[base_state]-p"
 
-/obj/machinery/sparker/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/sparker/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	disable = !disable
 	playsound(src, tool.usesound, 50, TRUE)
@@ -86,12 +78,10 @@ DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON
 	else
 		act_message(user, src, MSG_SELF(span_warning("You fix the connection to %T%.")), MSG_OTHERS(span_warning("%U% has reconnected %T%!")))
 		icon_state = powered() ? "[base_state]" : "[base_state]-p"
-	return ITEM_INTERACT_SUCCESS
-
-EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(sparker_silicon_trigger)))
+	return OP_OK
 
 /// Old attack_ai: the AI triggers it directly while it is anchored.
-/obj/machinery/sparker/proc/sparker_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/sparker/proc/sparker_silicon_trigger(datum/act/op/A)
 	if(anchored)
 		ignite()
 	return TRUE
@@ -114,6 +104,8 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 
 CAPABILITIES(/obj/machinery/sparker)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(sparker_emp))))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("sparker_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Ignite"), then(PROC_REF(sparker_silicon_trigger)))
 
 /// An EMP makes a working sparker spark.
 /obj/machinery/sparker/proc/sparker_emp(datum/act/hit/emp/A)
@@ -126,17 +118,8 @@ CAPABILITIES(/obj/machinery/sparker)
 	name = "ignition switch"
 	desc = "A remote control switch for a mounted igniter."
 
-/obj/machinery/button/ignition/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ignition_button_trigger,
-	)
-	..()
-
-/datum/interaction/machine_hand/ignition_button_trigger
-	id = "ignition_button_trigger"
-	name = "Trigger"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/button/ignition/proc/interaction_trigger
+CAPABILITIES(/obj/machinery/button/ignition)
+	op("trigger", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), then(PROC_REF(interaction_trigger)))
 
 /// Sparkers and igniters sharing our id (keyed).
 /obj/machinery/button/ignition/var/list/obj/machinery/sparker/controlled_sparkers
@@ -152,7 +135,7 @@ CAPABILITIES(/obj/machinery/sparker)
 	. = ..()
 	. += rel_key(nameof(id))
 
-/obj/machinery/button/ignition/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/ignition/proc/interaction_trigger(datum/act/op/A)
 	use_power(5)
 
 	if(active)

@@ -401,20 +401,12 @@ CAPABILITIES(/obj/item/roulette_ball/hollow)
 CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 
-/obj/machinery/wheel_of_fortune/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/wheel_of_fortune_use,
-		/datum/interaction/machine_item/wheel_of_fortune_id,
-		/datum/interaction/machine_item/wheel_of_fortune_cash,
-		/datum/interaction/machine_verb/wheel_of_fortune_setinterval,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/wheel_of_fortune_use
-	id = "wheel_of_fortune_use"
-	name = "Use"
-	also_requires = list(REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/not_spinning), "the wheel of fortune is already spinning"))
-	effect = /obj/machinery/wheel_of_fortune/proc/interaction_use
+EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use), REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/not_spinning), "the wheel of fortune is already spinning")), \
+	INTERACT_INSERT(list(/obj/item/card/id, /obj/item/pda), PROC_REF(interaction_id), "Management controls", REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null), REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_manage)), \
+	INTERACT_INSERT(/obj/item/spacecasinocash, PROC_REF(interaction_cash), "Buy lottery ticket", REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null), REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_buy_ticket)), \
+	INTERACT_VERB("Change interval", PROC_REF(interaction_setinterval_verb), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
+)
 
 /// Requirement: the wheel isn't mid-spin.
 /obj/machinery/wheel_of_fortune/proc/not_spinning(mob/user, atom/target, obj/item/held)
@@ -445,14 +437,6 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 			if("Set the interval")
 				wheel_interval_stage(user, list())
 	return TRUE
-
-/datum/interaction/machine_item/wheel_of_fortune_id
-	id = "wheel_of_fortune_id"
-	name = "Management controls"
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null))
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_manage))
-	effect = /obj/machinery/wheel_of_fortune/proc/interaction_id
 
 /// Requirement: the swiped card carries management access.
 /obj/machinery/wheel_of_fortune/proc/can_manage(mob/user, atom/target, obj/item/held)
@@ -516,14 +500,6 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 					lottery_tickets_ckeys = null
 	return TRUE
 
-/datum/interaction/machine_item/wheel_of_fortune_cash
-	id = "wheel_of_fortune_cash"
-	name = "Buy lottery ticket"
-	held_type = /obj/item/spacecasinocash
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null))
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_buy_ticket))
-	effect = /obj/machinery/wheel_of_fortune/proc/interaction_cash
-
 /// Requirement: TRUE, or why no ticket can be bought.
 /obj/machinery/wheel_of_fortune/proc/can_buy_ticket(mob/user, atom/target, obj/item/held)
 	if(lottery_sale == "disabled")
@@ -581,12 +557,6 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 
 		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, and the winner is [result]!"))
 
-/datum/interaction/machine_verb/wheel_of_fortune_setinterval
-	id = "wheel_of_fortune_setinterval"
-	name = "Change interval"
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/wheel_of_fortune/proc/interaction_setinterval_verb
-
 /obj/machinery/wheel_of_fortune/proc/interaction_setinterval_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_setinterval(user)
 	return TRUE
@@ -633,20 +603,12 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
 
-/obj/machinery/casinosentientprize_handler/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/casinosentientprize_use,
-		/datum/interaction/machine_item/casinosentientprize_cash,
-		/datum/interaction/machine_item/casinosentientprize_collar,
-		/datum/interaction/machine_item/casinosentientprize_id,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/casinosentientprize_use
-	id = "casinosentientprize_use"
-	name = "Use"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_use_spasm))
-	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_use
+EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_use_spasm)), \
+	INTERACT_INSERT(/obj/item/spacecasinocash, PROC_REF(interaction_cash), "Buy prize", REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_buy_prize)), \
+	INTERACT_INSERT(/obj/item/clothing/accessory/collar/casinosentientprize, PROC_REF(interaction_collar), "Release prize", REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_release_collar)), \
+	INTERACT_INSERT(list(/obj/item/card/id, /obj/item/pda), PROC_REF(interaction_id), "Management controls", REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_manage)), \
+)
 
 /// Requirement: TRUE, or why the SPASM can't be used (an incapacitated user is refused silently by the effect).
 /obj/machinery/casinosentientprize_handler/proc/can_use_spasm(mob/user, atom/target, obj/item/held)
@@ -736,14 +698,6 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 				spawn_casinochips(casinosentientprize_price, src.loc)
 	return TRUE
 
-/datum/interaction/machine_item/casinosentientprize_cash
-	id = "casinosentientprize_cash"
-	name = "Buy prize"
-	held_type = /obj/item/spacecasinocash
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null))
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_buy_prize))
-	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_cash
-
 /// Requirement: TRUE, or why no prize can be bought.
 /obj/machinery/casinosentientprize_handler/proc/can_buy_prize(mob/user, atom/target, obj/item/held)
 	if(casinosentientprize_sale == "disabled")
@@ -767,14 +721,6 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 		return TRUE
 	to_chat(user, span_warning("This Sentient Prize is already owned! If you are the owner you can release the prize by swiping the collar on the SPASM!"))
 	return TRUE
-
-/datum/interaction/machine_item/casinosentientprize_collar
-	id = "casinosentientprize_collar"
-	name = "Release prize"
-	held_type = /obj/item/clothing/accessory/collar/casinosentientprize
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null))
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_release_collar))
-	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_collar
 
 /// Requirement: the collar belongs to the user (as prize or owner).
 /obj/machinery/casinosentientprize_handler/proc/can_release_collar(mob/user, atom/target, obj/item/clothing/accessory/collar/casinosentientprize/held)
@@ -804,14 +750,6 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 			C.sentientprizeckey = null
 			rel_remove(src, nameof(collar_list), C)
 	return TRUE
-
-/datum/interaction/machine_item/casinosentientprize_id
-	id = "casinosentientprize_id"
-	name = "Management controls"
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null))
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_manage))
-	effect = /obj/machinery/casinosentientprize_handler/proc/interaction_id
 
 /// Requirement: the swiped card carries management access.
 /obj/machinery/casinosentientprize_handler/proc/can_manage(mob/user, atom/target, obj/item/held)

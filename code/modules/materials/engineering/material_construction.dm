@@ -90,7 +90,7 @@
 
 /// This object's blueprint singleton, or null if it has no material composition.
 /obj/proc/get_material_template() as /datum/material_template
-	if(!material_template)
+	if(!material_template) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return null
 	if(material_template == /datum/material_template/mix)
 		return declared_material_mix()
@@ -109,7 +109,7 @@
 	if(material_id)
 		return material_id
 	if(role == MATERIAL_ROLE_BULK && material_template == /datum/material_template/bulk)
-		return material_bulk_material
+		return material_bulk_material // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 	var/datum/material_template/template = get_material_template()
 	return template?.default_material(role)
 

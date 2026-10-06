@@ -21,8 +21,8 @@ B1:code/controllers/subsystems/profiler.dm:SSmobs 1
 B1:code/controllers/subsystems/ticker.dm:SSemergency_shuttle 1
 B1:code/datums/behaviours/sellable.dm:SSsupply 2
 B1:code/datums/datum.dm:SSgarbage 1
-B1:code/datums/entity_state/antags/changeling/changeling.dm:SStranscore 2
-B1:code/datums/entity_state/species/shadekin/powers/dark_tunnel/dark_tunneling.dm:SSmapping 1
+B1:code/game/gamemodes/changeling/state/changeling.dm:SStranscore 2
+B1:code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_tunnel/dark_tunneling.dm:SSmapping 1
 B1:code/datums/ghost_spawn_options.dm:SSticker 1
 B1:code/datums/lifecycle/batch.dm:SSair 2
 B1:code/datums/loot/loot.dm:SSatoms 1

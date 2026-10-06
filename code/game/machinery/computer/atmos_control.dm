@@ -22,6 +22,7 @@ CAPABILITIES(/obj/machinery/computer/atmoscontrol)
 	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control)
 	op("use", inputs(hand(), remote()), label("Use"), wait(0), needs(req(PROC_REF(console_works), because = MSG(machine/inoperable))), then(PROC_REF(open_console)))
 	emag(then(PROC_REF(emag_screen)), say = MSG(atmoscontrol/emagged), powered = FALSE)
+	op("atmoscontrol_robot_use", remote(), priority(OP_PRIORITY_NORMAL + 1), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Use"), then(PROC_REF(atmoscontrol_robot_use)))
 
 /obj/machinery/computer/atmoscontrol/laptop //[TO DO] Change name to PCU and update mapdata to include replacement computers
 	name = "\improper Atmospherics PCU"
@@ -54,11 +55,11 @@ CAPABILITIES(/obj/machinery/computer/atmoscontrol)
 
 
 // A cyborg with access interfaces remotely as the AI does (FALSE: the robot adapter's default); without it, only by hand from next to it.
-EXTEND_INTERACTIONS(/obj/machinery/computer/atmoscontrol, INTERACT_ROBOT("Use", PROC_REF(atmoscontrol_robot_use)))
 
-/obj/machinery/computer/atmoscontrol/proc/atmoscontrol_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/atmoscontrol/proc/atmoscontrol_robot_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(allowed(user))
-		return FALSE
+		return OP_DECLINE
 	if(Adjacent(user))
 		attack_hand(user)
 	return TRUE

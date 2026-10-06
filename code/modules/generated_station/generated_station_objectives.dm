@@ -85,18 +85,9 @@
 	var/station_id
 	var/uploaded = FALSE
 
-/obj/machinery/generated_station_upload_terminal/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/generated_station_upload,
-	)
-	..()
-
-/// The old attack_hand: never called ..(), uploaded the control payload.
-/datum/interaction/machine_hand/ungated/generated_station_upload
-	id = "generated_station_upload"
-	name = "Upload payload"
-	also_requires = list(REQ_FIELD_NOT("uploaded", "the payload is already resident"))
-	effect = /obj/machinery/generated_station_upload_terminal/proc/interaction_upload
+EXTEND_INTERACTIONS(/obj/machinery/generated_station_upload_terminal, \
+	INTERACT_HAND_UNGATED("Upload payload", PROC_REF(interaction_upload), REQ_FIELD_NOT("uploaded", "the payload is already resident")), \
+)
 
 /obj/machinery/generated_station_upload_terminal/proc/interaction_upload(mob/user, obj/item/held, datum/interaction/interaction)
 	act_message(user, null, MSG_SELF(span_notice("You begin uploading the malware payload.")), \

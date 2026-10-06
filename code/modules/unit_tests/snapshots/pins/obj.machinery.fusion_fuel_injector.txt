@@ -26,21 +26,24 @@ human|/obj/item/tool/screwdriver menu: Rotate Clockwise
 human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
 human|/obj/item/tool/screwdriver menu: Secure (refused: needs a wrench)
 human|/obj/item/tool/screwdriver menu: Turn Around
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Rotate Clockwise
 human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
 human|/obj/item/tool/crowbar menu: Secure (refused: needs a wrench)
 human|/obj/item/tool/crowbar menu: Turn Around
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wrench menu: Rotate Clockwise
 human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
 human|/obj/item/tool/wrench menu: Secure
 human|/obj/item/tool/wrench menu: Turn Around
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Rotate Clockwise
@@ -85,5 +88,5 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Secure (refused: needs a wrench)
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_robot_interaction_swallow, insert, insert_blitz, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_id, take
+keys: drag_buckle, gen_robot_interaction_swallow, insert, insert_blitz, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_id, take, use_crowbar, use_screwdriver, use_wrench
 

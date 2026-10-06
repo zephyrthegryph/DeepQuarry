@@ -19,11 +19,9 @@ CAPABILITIES(/obj/machinery/computer/rcon)
 	owns_one(nameof(rcon), starts = /datum/tgui_module/rcon)
 
 
-/obj/machinery/computer/rcon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/rcon, \
+	INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui)), \
+)
 
 // Proc: ui_interact()
 // Description: Uses dark magic (TGUI) to render this machine's UI

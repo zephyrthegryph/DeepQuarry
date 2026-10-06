@@ -51,20 +51,11 @@
 		"criminal" = list("*Arrest*", "Incarcerated", "Parolled", "Released", "None"),
 	)
 
-/obj/machinery/computer/secure_data/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/secure_data_eject_id,
-		/datum/interaction/machine_item/secure_data_insert_id,
-		/datum/interaction/machine_hand/secure_data_use,
-	)
-	..()
-
-/datum/interaction/machine_verb/secure_data_eject_id
-	id = "secure_data_eject_id"
-	name = "Eject ID Card"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id
+EXTEND_INTERACTIONS(/obj/machinery/computer/secure_data, \
+	INTERACT_VERB("Eject ID Card", PROC_REF(interaction_secure_data_eject_id), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
+	INTERACT_INSERT(/obj/item/card/id, PROC_REF(interaction_secure_data_insert_id), "Insert ID", OFFERED_WHEN(REQ_ON(PRED_TARGET, /obj/machinery/computer/secure_data/proc/has_free_slot, null))), \
+	INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint)), \
+)
 
 /obj/machinery/computer/secure_data/proc/interaction_secure_data_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(scan)
@@ -77,14 +68,6 @@
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
 
-/// The old attackby: insert an ID card into the free slot.
-/datum/interaction/machine_item/secure_data_insert_id
-	id = "secure_data_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/secure_data/proc/has_free_slot, null))
-	effect = /obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id
-
 /obj/machinery/computer/secure_data/proc/has_free_slot(mob/actor, atom/target, obj/item/held)
 	return !scan
 
@@ -96,11 +79,6 @@
 	return TRUE
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
-/datum/interaction/machine_hand/secure_data_use
-	id = "secure_data_use"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui_fingerprint
-
 CAPABILITIES(/obj/machinery/computer/secure_data)
 	interface("SecurityRecords", title = "Security Records")
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))

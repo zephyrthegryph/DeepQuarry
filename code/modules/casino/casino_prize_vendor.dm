@@ -239,20 +239,9 @@
 		else
 			after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 
-/obj/machinery/casino_prize_dispenser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/casino_prize_dispenser_attackby,
-		/datum/interaction/machine_hand/ungated/casino_prize_dispenser_use,
-	)
-	..()
-
-/datum/interaction/machine_item/casino_prize_dispenser_attackby
-	id = "casino_prize_dispenser_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_attackby
-
-/obj/machinery/casino_prize_dispenser/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/casino_prize_dispenser/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(currently_vending())
 		if(istype(W, /obj/item/spacecasinocash))
 			to_chat(user, span_warning("Please select prize on display with sufficient amount of chips."))
@@ -263,14 +252,10 @@
 	if(istype(W, /obj/item/spacecasinocash))
 		attack_hand(user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/datum/interaction/machine_hand/ungated/casino_prize_dispenser_use
-	id = "casino_prize_dispenser_use"
-	name = "Use"
-	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_use
-
-/obj/machinery/casino_prize_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/casino_prize_dispenser/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
@@ -314,6 +299,8 @@ CAPABILITIES(/obj/machinery/casino_prize_dispenser)
 	interface("CasinoPrizeDispenser")
 	without("ui_open")
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/casino_prize_dispenser/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor

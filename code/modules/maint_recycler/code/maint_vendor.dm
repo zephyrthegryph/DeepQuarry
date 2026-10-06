@@ -34,6 +34,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	owns_many(nameof(product_datums))
 	interface("RecyclerVendor")
 	op("purchase", ui_act("purchase", arg("index", num())), then(PROC_REF(ui_act_purchase)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
@@ -71,18 +72,8 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
 
-/obj/machinery/maint_vendor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/maint_vendor_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_hand/maint_vendor_open_ui
-	id = "maint_vendor_open_ui"
-	name = "Use"
-	effect = /obj/machinery/maint_vendor/proc/interaction_open_ui_impl
-
-/obj/machinery/maint_vendor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/maint_vendor/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 

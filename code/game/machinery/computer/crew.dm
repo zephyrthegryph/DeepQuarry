@@ -12,21 +12,11 @@
 
 CAPABILITIES(/obj/machinery/computer/crew)
 	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor, starts = /datum/tgui_module/crew_monitor)
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 
-/obj/machinery/computer/crew/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/crew_monitor_use,
-	)
-	..()
-
-/// Old attack_hand: `add_fingerprint(user); if(stat & (BROKEN|NOPOWER)) return; tgui_interact(user)`.
-/datum/interaction/machine_hand/ungated/crew_monitor_use
-	id = "crew_monitor_use"
-	name = "Use"
-	effect = /obj/machinery/computer/crew/proc/interaction_use
-
-/obj/machinery/computer/crew/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/crew/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
 		return TRUE

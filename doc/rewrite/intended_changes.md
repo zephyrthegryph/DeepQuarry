@@ -2141,16 +2141,20 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the OM timers and cadences read the stat;
   `suspended_changed()` resumes them. No behaviour change intended. `life_sweep` after both: h512 149.8 ms/s for 3413
   frames, mix 33.4 ms/s.
+- **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
+  `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
+  (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
+  nothing outside the OM tests did. The unused `stasis_occupant` relation is deleted.
+- **Mob alpha and push blocking are stats.** `alpha_mult` (PRODUCT, base 1, a source re-holding replaces its value) and
+  `unpushable` (ANY) on `/mob/living`, held under `SRC_ALPHA_*` / `SRC_PUSH_*` source ids (or a datum). The unused OM
+  effect rows (slowed, armour, insulation, move speed, power draw, vitals HUD) and the vitals HUD behaviour are deleted.
+  No behaviour change intended.
 - **Grave markers ask, then carve at once**: the screwdriver asks the name and then the epitaph as op steps and carves both together
   (the legacy carving took the material's hardness per line, after the questions; a tool op's wait always comes before its questions,
   so the wait is gone rather than put in front of them). The item marker no longer also strikes after asking (its proc returned NONE).
 - **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
   out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
   door's catch-all for held items.
-- **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
-  `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
-  (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
-  nothing outside the OM tests did. The unused `stasis_occupant` relation is deleted.
 - **DECLARE_EMAG is gone from code/game/objects and code/game/turfs** (ceiling 0). The sleevemate's sequencer asks what to make of it as
   an op step and spends a card use only when a hack is picked (the legacy one spent it when it asked). Pinned by `dq_items_emag_ops`.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
@@ -2187,3 +2191,38 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `TRACKED`). **The crematorium button** needs crematorium access through `req_access()`.
 - **`req_mutation(M, of = ON_ACTOR)`**: an engine requirement on the actor's mutations (reads `MOB_KEY_CONDITIONS`); the girder's hulk
   smash is `when(req_mutation(HULK))`.
+
+## Leftovers: the machinery sweep (rewrite/leftovers)
+
+Every machine still on datum interactions or tool procs was pinned first (`code/modules/unit_tests/snapshots/pins/`, recorded on the legacy
+code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs to `tool(Q)` ops with `wait(0)`), `tools/codemods/interaction_datums.py`
+(now also lowers the machinery bases `machine_hand`/`machine_item`/`machine_alt`/`machine_drag`/`machine_verb` and the shared `open_ui` and
+`part_replacement` datums) and `tools/dx/codemods/interact_declare.py` (compact specs to ops; the shared effects are the shared op handlers
+`op_open_ui`, `op_swallow`, `op_part_replacement`, ... in `code/datums/interactions/shared_effects.dm`). All three take `--prefix /type` now.
+
+- **A converted op answers after the ops the type already had** (`priority(OP_PRIORITY_DEFAULT - 1)`): the legacy interaction or tool proc it
+  replaces ran only when no op answered, so a click an existing op took (the window's `ui_open`, a library panel or wire op) still goes there.
+  Where no op answered, the click now resolves to the converted op by label instead of reaching the legacy attack chain ("nothing" in the old
+  pins); the effect is the same proc.
+- **The master R&D server's "no doing anything to it" op takes every item**, its library tool ops included (the legacy handler's comment was
+  the intent; the pin showed the library ops answering first).
+- **The pandemic's screwdriver ejection is gone**: the computer's own screwdriver op (disconnect) always answered first, so it was unreachable.
+- **The DNA scanner's and the suit storage unit's "climb in" checks run in the op's effect**, with their legacy refusal text: they read the
+  occupant slot, which the generated reads cannot follow.
+- **Left on the legacy forms** (residue of the codemods, not converted here): 58 types with `declare_interactions()`, 93 compact
+  `EXTEND_INTERACTIONS` sites (the lowered form the op codemod could not finish: silicon and observer specs, questions opened from the handler,
+  shared handlers, key clashes), 55 tool procs (handlers that open a request, call `..()` or return an expression), and the ten machines whose
+  conversion would have opened a request from an op effect (cable layer, floor layer, holoposter, mass driver, point defence, protean
+  reconstitutor, requests console, fax machine, conveyor and its switch).
+## Life's OM events are actions (rewrite/om-life)
+
+- The status increase events (stun, weaken, paralyze, sleep, blind) were refusable OM events no handler ever refused;
+  they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
+  (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
+  listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).
+
+## The machine and chem clock domains are gone (rewrite/om-life)
+
+- `CLOCK_MACHINE` and `CLOCK_CHEM` had no effect held on them anywhere, so they always ran at world speed. They are
+  deleted: a machine's timers run on its own clock (suspension still pauses them), and the reflector lane measures its
+  dt on world time. The final API's clocks are CLOCK_WORLD, CLOCK_OWN and CLOCK_BIO. No behaviour change intended.

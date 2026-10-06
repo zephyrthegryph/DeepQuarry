@@ -28,6 +28,7 @@
 CAPABILITIES(/obj/machinery/computer/arcade)
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
+	op("redeem_tickets", item(/obj/item/stack/arcadeticket), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), needs(req(PROC_REF(can_redeem_tickets_holds), because = PROC_REF(can_redeem_tickets_refusal))), then(PROC_REF(interaction_redeem_tickets)))
 
 /// A generic cabinet (no circuit) rolls which arcade it is, then becomes that machine once its init is over.
 /obj/machinery/computer/arcade/var/rolled_board
@@ -59,28 +60,25 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 		if(istype(prizeselect, /obj/item/clothing/suit/syndicatefake)) //Helmet is part of the suit
 			new	/obj/item/clothing/head/syndicatefake(src.loc)
 
-/obj/machinery/computer/arcade/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/arcade_ticket_redeem,
-	)
-	..()
-
-/// Turn in 2 arcade tickets for a prize.
-/datum/interaction/machine_item/arcade_ticket_redeem
-	id = "arcade_ticket_redeem"
-	name = "Redeem tickets"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/arcadeticket
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/arcade/proc/can_redeem_tickets))
-	effect = /obj/machinery/computer/arcade/proc/interaction_redeem_tickets
-
 /// Requirement: a prize costs two tickets.
 /obj/machinery/computer/arcade/proc/can_redeem_tickets(mob/user, atom/target, obj/item/stack/arcadeticket/T)
 	if(istype(T) && T.get_amount() < ARCADE_TICKETS_PER_PRIZE)
 		return "you need [ARCADE_TICKETS_PER_PRIZE] tickets to claim a prize"
 	return TRUE
 
-/obj/machinery/computer/arcade/proc/interaction_redeem_tickets(mob/user, obj/item/stack/arcadeticket/T, datum/interaction/interaction)
+/// Requirement (was REQ_* can_redeem_tickets): the legacy check answers TRUE to pass.
+/obj/machinery/computer/arcade/proc/can_redeem_tickets_holds(datum/act/op/A)
+	var/answer = can_redeem_tickets(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_redeem_tickets_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/arcade/proc/can_redeem_tickets_refusal(datum/act/op/A)
+	var/answer = can_redeem_tickets(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/computer/arcade/proc/interaction_redeem_tickets(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/arcadeticket/T = A.held
 	prizevend(user)
 	T.pay_tickets()
 	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
@@ -145,11 +143,8 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 	enemy_name = replacetext((name_part1 + name_part2), "the ", "")
 	name = (name_action + name_part1 + name_part2)
 
-/obj/machinery/computer/arcade/battle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/arcade/battle, \
+)
 
 CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	interface("ArcadeBattle")

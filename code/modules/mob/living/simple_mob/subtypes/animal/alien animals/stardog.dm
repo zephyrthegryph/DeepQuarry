@@ -937,17 +937,9 @@ CAPABILITIES(/obj/structure/control_pod)
 	pixel_y = -16
 	clicksound = SFX_VORE_SQUISH1
 
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/dog_eye_swallow,
-	)
-	..()
-
-/// The old attackby did nothing at all with any item, and never called ..(): swallow it silently.
-/datum/interaction/machine_item/dog_eye_swallow
-	id = "dog_eye_swallow"
-	name = "Use"
-	effect = /atom/proc/interaction_swallow
+EXTEND_INTERACTIONS(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, \
+	INTERACT_ITEM("Use", TYPE_PROC_REF(/atom, interaction_swallow)), \
+)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()

@@ -129,30 +129,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 		filling.color = beaker.reagents.get_color()
 		. += filling
 
-/obj/machinery/reagent_refinery/furnace/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/reagent_furnace_use,
-		/datum/interaction/machine_verb/reagent_furnace_set_filter,
-		/datum/interaction/machine_verb/reagent_furnace_flip,
-	)
-	..()
-
-/// The old attack_hand: never called ..(), just invoked the "Set Sintering Chemical" verb.
-/datum/interaction/machine_hand/ungated/reagent_furnace_use
-	id = "reagent_furnace_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/furnace/proc/interaction_use
+EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/furnace, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
+	INTERACT_VERB("Set Sintering Chemical", PROC_REF(interaction_set_filter)), \
+	INTERACT_VERB("Flip Furnace Direction", PROC_REF(interaction_flip)), \
+)
 
 /obj/machinery/reagent_refinery/furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_set_filter(user, held, interaction)
 	return TRUE
-
-/// The old "Set Sintering Chemical" object verb.
-/datum/interaction/machine_verb/reagent_furnace_set_filter
-	id = "reagent_furnace_set_filter"
-	name = "Set Sintering Chemical"
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter
 
 /obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.stat || user.restrained())
@@ -198,13 +183,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 		beaker.reagents.clear_reagents()
 		update_icon()
 	return TRUE
-
-/// The old "Flip Furnace Direction" object verb.
-/datum/interaction/machine_verb/reagent_furnace_flip
-	id = "reagent_furnace_flip"
-	name = "Flip Furnace Direction"
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/reagent_refinery/furnace/proc/interaction_flip
 
 /obj/machinery/reagent_refinery/furnace/proc/interaction_flip(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.stat || user.restrained() || anchored)

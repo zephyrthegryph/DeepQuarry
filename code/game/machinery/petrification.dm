@@ -154,11 +154,8 @@ CAPABILITIES(/obj/machinery/petrification)
 	SStgui.update_uis(src)
 	return TRUE
 
-/obj/machinery/petrification/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/petrification, \
+)
 
 /obj/machinery/petrification/ui_data(datum/act/eval/A)
 	var/list/data = list()

@@ -12,7 +12,8 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Attach container (refused: needs a Container)
 human|/obj/item/tool/screwdriver menu: Remove container
 human|/obj/item/tool/screwdriver menu: Toggle Mode
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Attach container (refused: needs a Container)
 human|/obj/item/tool/crowbar menu: Remove container
 human|/obj/item/tool/crowbar menu: Toggle Mode
@@ -50,5 +51,5 @@ human|/obj/item/reagent_containers menu: Attach container
 human|/obj/item/reagent_containers menu: Remove container
 human|/obj/item/reagent_containers menu: Toggle Mode
 human|/obj/item/reagent_containers click: nothing
-keys: drag_buckle, gen_hand_ungated_iv_drip_interaction_hand, gen_insert_iv_drip_interaction_item, gen_robot_interaction_swallow, gen_verb_iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, gen_hand_ungated_iv_drip_interaction_hand, gen_insert_iv_drip_interaction_item, gen_robot_interaction_swallow, gen_verb_iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_screwdriver
 

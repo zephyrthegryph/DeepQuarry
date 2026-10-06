@@ -14,16 +14,9 @@
 MSG_DEF_SELF(robotics/access_denied, "Access denied.")
 MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
 
-/obj/machinery/computer/robotics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/robotics_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/robotics_use
-	id = "robotics_use"
-	name = "Use"
-	effect = /obj/machinery/computer/robotics/proc/interaction_use
+EXTEND_INTERACTIONS(/obj/machinery/computer/robotics, \
+	INTERACT_HAND("Use", PROC_REF(interaction_use)), \
+)
 
 /obj/machinery/computer/robotics/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!operable())

@@ -21,21 +21,8 @@ Deployable items
 
 DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(APPEARANCE_ICON_STATE = "barrier0"), "1" = list(APPEARANCE_ICON_STATE = "barrier1")))
 
-/obj/machinery/deployable/barrier/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/barrier_swipe_id,
-		/datum/interaction/machine_item/barrier_hit,
-	)
-	..()
-
-/// Old attackby: the ID-card branch. Every path inside returns, so nothing ever fell through.
-/datum/interaction/machine_item/barrier_swipe_id
-	id = "barrier_swipe_id"
-	name = "Swipe ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/deployable/barrier/proc/interaction_swipe_id
-
-/obj/machinery/deployable/barrier/proc/interaction_swipe_id(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/deployable/barrier/proc/interaction_swipe_id(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
 		if(emagged < 2.0)
@@ -54,15 +41,9 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 			return TRUE
 	return TRUE
 
-/// Old attackby: the "anything else" branch. Ends in `..()`, so the effect always declines afterwards.
-/datum/interaction/machine_item/barrier_hit
-	id = "barrier_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	effect = /obj/machinery/deployable/barrier/proc/interaction_hit
-
-/obj/machinery/deployable/barrier/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/deployable/barrier/proc/interaction_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	switch(W.obj_damage_type())
 		if(BURN)
@@ -70,16 +51,17 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.5)
 	play_sfx(src, SFX_WEAPONS_SMASH)
-	return FALSE
+	return OP_DECLINE
 
-/obj/machinery/deployable/barrier/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/deployable/barrier/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_integrity() >= max_integrity && !emagged)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	repair_damage(max_integrity)
 	set_emagged(FALSE)
 	req_access = list(ACCESS_SECURITY)
 	act_message(user, src, others = span_warning("%U% repairs %T%!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // At zero integrity the barrier blows apart.
 /obj/machinery/deployable/barrier/atom_destruction(damage_flag)
@@ -92,6 +74,9 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	// Two stages (the access lock, then the anchoring); a fully shorted mechanism takes no third card use.
 	extend("emag.use", needs(req(PROC_REF(emag_stage_left), because = MSG(emag/already))))
 	extend("emag.subvert", needs(req(PROC_REF(emag_stage_left), because = MSG(emag/already))))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
+	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
 /// Is there an emag stage left to break (emagged 0: the access lock, 1: the anchoring)?
 /obj/machinery/deployable/barrier/proc/emag_stage_left(datum/act/A)

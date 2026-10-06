@@ -33,6 +33,7 @@
 
 CAPABILITIES(/obj/machinery/slot_machine)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/slot_machine/appearance_overlays()
@@ -59,27 +60,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
-/obj/machinery/slot_machine/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/slot_machine/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(om_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/slot_machine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/slot_machine_use,
-	)
-	..()
-
-/datum/interaction/machine_item/slot_machine_use
-	id = "slot_machine_use"
-	name = "Insert chip"
-	held_type = /obj/item
-	also_requires = list(
-		REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/slot_machine/proc/not_running), "the slot machine is currently running"),
-		REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured"),
-	)
-	effect = /obj/machinery/slot_machine/proc/interaction_attackby
+EXTEND_INTERACTIONS(/obj/machinery/slot_machine, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Insert chip", REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/slot_machine/proc/not_running), "the slot machine is currently running"), REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured")), \
+)
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)
@@ -182,6 +172,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 
 CAPABILITIES(/obj/machinery/station_slot_machine)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/station_slot_machine/appearance_overlays()
@@ -208,27 +199,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
-/obj/machinery/station_slot_machine/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/station_slot_machine/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(om_busy(src))
 		to_chat(user, span_notice("The slot machine is currently running."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/station_slot_machine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/station_slot_machine_use,
-	)
-	..()
-
-/datum/interaction/machine_item/station_slot_machine_use
-	id = "station_slot_machine_use"
-	name = "Insert cash"
-	held_type = /obj/item
-	also_requires = list(
-		REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/station_slot_machine/proc/not_running), "the slot machine is currently running"),
-		REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured"),
-	)
-	effect = /obj/machinery/station_slot_machine/proc/interaction_attackby
+EXTEND_INTERACTIONS(/obj/machinery/station_slot_machine, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Insert cash", REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/station_slot_machine/proc/not_running), "the slot machine is currently running"), REQ_BECAUSE(REQ_ANCHORED, "the slot machine isn't secured")), \
+)
 
 /// Requirement: the reels aren't spinning.
 /obj/machinery/station_slot_machine/proc/not_running(mob/user, atom/target, obj/item/held)

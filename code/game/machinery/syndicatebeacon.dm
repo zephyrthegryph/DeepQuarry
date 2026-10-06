@@ -16,18 +16,9 @@
 	var/selfdestructing = 0
 	var/charges = 1
 
-/obj/machinery/syndicate_beacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/syndicate_beacon_talk,
-	)
-	..()
-
-/// Old attack_hand: never called ..(). single-conversation device; tgui_alert is the right
-/// primitive. The dynamic "you can switch teams" branch becomes a labelled button on the alert.
-/datum/interaction/machine_hand/ungated/syndicate_beacon_talk
-	id = "syndicate_beacon_talk"
-	name = "Use"
-	effect = /obj/machinery/syndicate_beacon/proc/interaction_talk
+EXTEND_INTERACTIONS(/obj/machinery/syndicate_beacon, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_talk)), \
+)
 
 /obj/machinery/syndicate_beacon/proc/interaction_talk(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
@@ -137,20 +128,8 @@
 	if(user)
 		to_chat(user, span_notice("You deactivate the beacon."))
 
-/obj/machinery/power/singularity_beacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/singularity_beacon_toggle,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/singularity_beacon_toggle
-	id = "singularity_beacon_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/power/singularity_beacon/proc/interaction_toggle
-
-/obj/machinery/power/singularity_beacon/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/singularity_beacon/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(anchored)
 		if(active)
 			Deactivate(user)
@@ -160,23 +139,25 @@
 		to_chat(user, span_danger("You need to screw the beacon to the floor first!"))
 	return TRUE
 
-/obj/machinery/power/singularity_beacon/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/power/singularity_beacon/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(active)
 		to_chat(user, span_danger("You need to deactivate the beacon first!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(anchored)
 		set_anchored(FALSE)
 		to_chat(user, span_notice("You unscrew the beacon from the floor."))
 		playsound(src, tool.usesound, 50, TRUE)
 		disconnect_from_network()
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(!connect_to_network())
 		to_chat(user, "This device must be placed over an exposed cable.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_anchored(TRUE)
 	to_chat(user, span_notice("You screw the beacon to the floor and attach the cable."))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // an active beacon deactivates.
 /obj/machinery/power/singularity_beacon/on_destroy(force)
@@ -188,6 +169,8 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/power/singularity_beacon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/power/singularity_beacon/proc/work_step(datum/act/timer/A)
 	if(draw_power(1500) < 1500)

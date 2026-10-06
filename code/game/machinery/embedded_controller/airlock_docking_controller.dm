@@ -17,6 +17,7 @@
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 	owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
 
 // ALLOW(init/INSTANCE_STATE): its docking program is made from the program tag and name the map set
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
@@ -27,12 +28,14 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 	if(display_name)
 		docking_program.display_name = display_name
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/embedded_controller/radio/airlock/docking_port/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/datum/embedded_program/docking/airlock/docking_program = program
 	var/code = docking_program.docking_codes
 	code = code ? stars(code) : "N/A"
 	to_chat(user, "[tool]'s screen displays '[code]'")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/airlock/docking_port/ui_data(datum/act/eval/A)

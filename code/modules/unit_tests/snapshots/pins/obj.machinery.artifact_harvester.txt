@@ -16,11 +16,13 @@ human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Ui open
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
@@ -58,5 +60,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
-keys: artifact_harvester_use, artifact_harvester_use_item, drag_buckle, drainbattery, ejectbattery, gen_robot_interaction_swallow, harvest, machine_anchor, machine_deconstruct, machine_panel, machine_repair, stopharvest, ui_open
+keys: artifact_harvester_use_item, drag_buckle, drainbattery, ejectbattery, gen_robot_interaction_swallow, harvest, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_powered_fingerprint, stopharvest, ui_open, use_crowbar, use_screwdriver
 

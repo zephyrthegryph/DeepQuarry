@@ -1,51 +1,43 @@
 human|none menu: Deconstruct (refused: needs a crowbar)
-human|none menu: Lay cable (refused: needs a cable coil)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Deconstruct (refused: needs a crowbar)
-robot|none menu: Lay cable (refused: needs a cable coil)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/tool/screwdriver menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
-human|/obj/item/tool/crowbar menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/tool/wrench menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wrench menu: Toggle
 human|/obj/item/tool/wrench click: Click: Toggle
 human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/tool/wirecutters menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/multitool menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/weldingtool menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/cable_coil menu: Lay cable
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Lay cable
 human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/stack/material/steel menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
-human|/obj/item/card/id menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id click: nothing
-keys: add_fuel, anchor.toggle, drag_buckle, eject, emag.subvert, emag.use, gen_robot_interaction_swallow, higher_power, lower_power, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, power_cable_place, toggle_power, ui_open
+keys: add_fuel, anchor.toggle, cable_place, drag_buckle, eject, emag.subvert, emag.use, gen_robot_interaction_swallow, higher_power, lower_power, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, toggle_power, ui_open, use_crowbar, use_screwdriver
 
