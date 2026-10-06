@@ -52,7 +52,7 @@
 
 // --- Trait systems ------------------------------------------------------------------------------
 
-// Per-trait Life work is contributed: a trait state (code/datums/entity_state/traits/_trait_state.dm) declares its
+// Per-trait Life work is contributed: a trait state (code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm) declares its
 // step in its own life_steps() and joins the mob's Life table while attached (seq_extra_add()).
 
 // --- Upkeep ---------------------------------------------------------------------------------------
@@ -137,12 +137,11 @@
 /// Genetic mutation effects.
 /mob/living/proc/life_mutations(datum/seq_frame/life/F)
 	SHOULD_CALL_PARENT(TRUE)
-	if(OM_EMIT(src, /datum/om/event/before/handle_mutations) & COMPONENT_BLOCK_LIVING_MUTATIONS)
-		return COMPONENT_BLOCK_LIVING_MUTATIONS
+	return
 
-/// The root only feeds its signal's listeners.
+/// The root has nothing to do (humans override it).
 /mob/living/proc/life_mutations_due()
-	return om_wants(src, /datum/om/event/before/handle_mutations)
+	return FALSE
 
 /// Radiation dose decay and effects.
 /mob/living/proc/life_radiation_rewake()
@@ -502,7 +501,7 @@
 
 /// Adapts the darkness overlay to the light level and the mob's darksight.
 /mob/living/proc/life_hud_darksight()
-	OM_EMIT(src, /datum/om/event/mob_handle_hud_darksight)
+	PUBLISH(src, mob_handle_hud_darksight)
 	if(!src.seedarkness) //Cheap 'always darksight' var
 		src.dsoverlay.alpha = 255
 		return
@@ -535,13 +534,13 @@
 /// Variants set their sight, then call ..() last to send the vision signal.
 /mob/living/proc/life_vision()
 	SHOULD_CALL_PARENT(TRUE)
-	OM_EMIT(src, /datum/om/event/mob_handle_vision)
+	PUBLISH(src, mob_handle_vision)
 
 /// The root only notifies listeners (remote view); sight inputs wake it.
 /// Every override's inputs are channel-reported (LIFE_VISION_CHANNELS), so all of them idle once they have
 /// run, unless a listener (remote view) wants the signal every cycle.
 /mob/living/proc/life_vision_idle()
-	return !om_wants(src, /datum/om/event/mob_handle_vision)
+	return !notice_wanted(src, /datum/notice/mob_handle_vision)
 
 /mob/living/proc/life_vision_rewake_delay()
 	return src.client ? 5 SECONDS : 0
@@ -551,7 +550,8 @@
 // the generated set_<name>() setters (or om_set()); stages that read them wake on them.
 
 /// Technomancer instability.
-OM_FIELD(/mob/living, instability, 0, CHANGE_MOB_CONDITIONS)
+/mob/living/var/instability = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, instability, CHANGE_MOB_CONDITIONS)
 /// Gross boolean for keeping VR mobs in VR.
 /mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
 TRACKED_BRIDGED(/mob/living, virtual_reality_mob, CHANGE_MOB_CONDITIONS)

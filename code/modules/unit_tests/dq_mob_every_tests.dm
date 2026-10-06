@@ -138,3 +138,33 @@ GLOBAL_LIST_EMPTY(life_test_bio_hits)
 	life_test_advance(0.6)
 	TEST_ASSERT("bio" in GLOB.life_test_bio_hits, "the timer fires once its clock passed 2 seconds")
 	qdel(source)
+
+/// Hears a status announcement (remote view's use of it).
+/datum/life_test_status_listener
+	var/heard = 0
+	var/last_amount
+
+/datum/life_test_status_listener/proc/on_stun(datum/act/notice/N)
+	var/datum/notice/living_status_stun/stun = N
+	heard++
+	last_amount = stun.amount
+
+/// An admitted stun increase announces itself (the notice remote view ends on) with its amount, before scaling; an immune
+/// mob's is refused before anything is announced.
+/datum/unit_test/life_om/status_increase_is_announced
+
+/datum/unit_test/life_om/status_increase_is_announced/run_life()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
+	var/datum/life_test_status_listener/L = new
+	observe(H, /datum/notice/living_status_stun, L, then(TYPE_PROC_REF(/datum/life_test_status_listener, on_stun)))
+	H.status_at_least(STAT_STUNNED, 3)
+	TEST_ASSERT_EQUAL(L.heard, 1, "the increase was announced")
+	TEST_ASSERT_EQUAL(L.last_amount, 3, "with its amount")
+	H.status_end(STAT_STUNNED)
+	H.enable_godmode()
+	H.status_at_least(STAT_STUNNED, 3)
+	TEST_ASSERT_EQUAL(L.heard, 1, "an immune mob announces nothing")
+	H.disable_godmode()
+	unobserve(H, /datum/notice/living_status_stun, L)
+	qdel(L)
