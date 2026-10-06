@@ -753,3 +753,30 @@
 #undef PP_FG_STEP
 #undef PP_EMITTER_STEP
 #undef PP_GEN_STEP
+
+// ============================================================================================ the tesla coils
+
+/// Coil curves with the default (rating 1) capacitor: a plain coil keeps half (power_loss 2) at x1; a relay passes 0.9; a prism splits into 2
+/// bolts; an amplifier gains 7.5%; a recaster reaches 6 tiles; a collector takes it all at x2 and does not arc; every coil zaps every 1 s.
+/datum/unit_test/dq_pp/tesla_coil_curves
+
+/datum/unit_test/dq_pp/tesla_coil_curves/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/power/tesla_coil/C = allocate(/obj/machinery/power/tesla_coil, run[1])
+	TEST_ASSERT_EQUAL(C.power_loss, 2, "a coil keeps half")
+	TEST_ASSERT_EQUAL(C.input_power_multiplier, 1, "at x1 with a basic capacitor")
+	TEST_ASSERT_EQUAL(C.zap_cooldown, 10, "and zaps every second")
+	TEST_ASSERT_EQUAL(C.zap_range, 5, "5 tiles out")
+	var/obj/machinery/power/tesla_coil/relay/R = allocate(/obj/machinery/power/tesla_coil/relay, run[1])
+	TEST_ASSERT(pp_close(R.relay_efficiency, 0.9, 0.0001), "a relay passes 90%: [R.relay_efficiency]")
+	TEST_ASSERT_EQUAL(R.power_loss, 1, "and loses nothing itself")
+	var/obj/machinery/power/tesla_coil/splitter/S = allocate(/obj/machinery/power/tesla_coil/splitter, run[1])
+	TEST_ASSERT_EQUAL(S.split_count, 1, "a prism adds one bolt")
+	var/obj/machinery/power/tesla_coil/amplifier/A = allocate(/obj/machinery/power/tesla_coil/amplifier, run[1])
+	TEST_ASSERT(pp_close(A.amp_eff, 1.075, 0.0001), "an amplifier gains 7.5%: [A.amp_eff]")
+	var/obj/machinery/power/tesla_coil/recaster/RC = allocate(/obj/machinery/power/tesla_coil/recaster, run[1])
+	TEST_ASSERT_EQUAL(RC.zap_range, 6, "a recaster reaches 6 tiles")
+	var/obj/machinery/power/tesla_coil/collector/CO = allocate(/obj/machinery/power/tesla_coil/collector, run[1])
+	TEST_ASSERT_EQUAL(CO.input_power_multiplier, 2, "a collector takes it all at x2")
+	TEST_ASSERT_EQUAL(CO.zap_range, 0, "and does not arc")
+	TEST_ASSERT_EQUAL(CO.power_loss, 1, "and loses nothing")
