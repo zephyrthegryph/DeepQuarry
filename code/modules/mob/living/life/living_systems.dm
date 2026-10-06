@@ -255,7 +255,7 @@
 
 	src.update_pulling()
 
-	for(var/obj/item/grab/G in src)
+	FOR_CONTENTS(var/obj/item/grab/G, src)
 		G.periodic_step()
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.

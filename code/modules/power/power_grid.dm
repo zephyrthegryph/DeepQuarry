@@ -194,7 +194,7 @@
 	if(!grid)
 		return
 	grid[PGRID_PROBLEM_TIMED] = TRUE
-	after(null, max(duration, 1), GLOBAL_PROC_REF(power_warn_expire), key = "power_warn:[id]", with = list(id))
+	after(null, max(duration, 0.1 SECONDS), GLOBAL_PROC_REF(power_warn_expire), key = "power_warn:[id]", with = list(id))
 	power_grid_sync_problem(id)
 
 /// Ends a timed power_warn() on region `id` once its duration has run out.
