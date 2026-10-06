@@ -118,6 +118,9 @@ EXTEND_INTERACTIONS(/obj/structure/barricade, \
 /obj/structure/barricade/sandbag
 	barricade_material = MAT_CLOTH
 
+CAPABILITIES(/obj/structure/barricade/sandbag)
+	smoothing()
+
 /obj/structure/barricade/sandbag/build_of(material_name)
 	..()
 	if(QDELETED(src))

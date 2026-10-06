@@ -1,38 +1,16 @@
-human|none menu: Carve (refused: not possible right now)
-human|none menu: Use (refused: needs a grab)
 human|none click: nothing
-robot|none menu: Carve (refused: not possible right now)
-robot|none menu: Use (refused: needs a grab)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Carve (refused: not possible right now)
-human|/obj/item/tool/screwdriver menu: Use (refused: needs a grab)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Carve (refused: not possible right now)
-human|/obj/item/tool/crowbar menu: Use (refused: needs a grab)
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Carve (refused: not possible right now)
-human|/obj/item/tool/wrench menu: Use (refused: needs a grab)
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Carve (refused: not possible right now)
-human|/obj/item/tool/wirecutters menu: Use (refused: needs a grab)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Carve (refused: not possible right now)
-human|/obj/item/multitool menu: Use (refused: needs a grab)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Carve (refused: not possible right now)
-human|/obj/item/weldingtool menu: Use (refused: needs a grab)
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Carve (refused: not possible right now)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use (refused: needs a grab)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Carve (refused: not possible right now)
-human|/obj/item/stack/material/steel menu: Use (refused: needs a grab)
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Carve (refused: not possible right now)
-human|/obj/item/card/id menu: Use (refused: needs a grab)
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, kitchenspike_hand, kitchenspike_item
+keys: carve, gen_drag_interaction_drag_buckle, spike
 

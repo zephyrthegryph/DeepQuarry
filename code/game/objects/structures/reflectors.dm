@@ -23,6 +23,9 @@
 	var/list/has_projectiles // Lazy: caught beam damage, angle text -> summed damage (numbers; the beams themselves are deleted on catch)
 	var/bullet_act_in_progress = FALSE
 
+TRACKED(/obj/structure/reflector, finished)
+TRACKED(/obj/structure/reflector, admin)
+
 DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "reflector_base")))
 
 /obj/structure/reflector/Initialize(mapload)
@@ -112,24 +115,26 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	P.ignore_source_check = TRUE
 	return 2
 
-/obj/structure/reflector/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/reflector_item,
-		/datum/interaction/entry_alt/reflector_alt,
-	)
-	..()
-
-/// Old attackby: lock rotation, dismantle/weld, or finish the frame with material.
-/datum/interaction/entry_item/reflector_item
-	id = "reflector_item"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/reflector/proc/reflector_not_admin, null))
-	effect = /obj/structure/reflector/proc/interaction_item
+CAPABILITIES(/obj/structure/reflector)
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin_holds), because = PROC_REF(reflector_not_admin_refusal))), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
 
 /obj/structure/reflector/proc/reflector_not_admin(mob/actor, atom/target, obj/item/held)
 	return !admin
 
-/obj/structure/reflector/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement (was REQ_* reflector_not_admin): the legacy check answers TRUE to pass.
+/obj/structure/reflector/proc/reflector_not_admin_holds(datum/act/op/A)
+	var/answer = reflector_not_admin(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why reflector_not_admin_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/reflector/proc/reflector_not_admin_refusal(datum/act/op/A)
+	var/answer = reflector_not_admin(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/reflector/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		can_rotate = !can_rotate
 		to_chat(user, span_notice("You [can_rotate ? "unlock" : "lock"] [src]'s rotation."))
@@ -218,17 +223,16 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 		return
 	setAngle(SIMPLIFY_DEGREES(A.answer.value))
 
-/// Old click_alt: rotate the finished reflector.
-/datum/interaction/entry_alt/reflector_alt
-	id = "reflector_alt"
-	name = "Rotate"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/reflector/proc/reflector_finished, null))
-	effect = /obj/structure/reflector/proc/interaction_alt
-
 /obj/structure/reflector/proc/reflector_finished(mob/actor, atom/target, obj/item/held)
 	return !!finished
 
-/obj/structure/reflector/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* reflector_finished): the legacy check answers TRUE to pass.
+/obj/structure/reflector/proc/reflector_finished_holds(datum/act/op/A)
+	var/answer = reflector_finished(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/obj/structure/reflector/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!CanUseTopic(user))
 		return TRUE
 	rotate(user)

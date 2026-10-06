@@ -207,12 +207,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_RE
 /obj/structure/atmospheric_retention_field/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles() //Force ZAS update
-	update_connections(1)
 	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
 CAPABILITIES(/obj/structure/atmospheric_retention_field)
+	smoothing()
 	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.

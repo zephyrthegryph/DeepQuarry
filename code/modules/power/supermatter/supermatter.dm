@@ -127,7 +127,7 @@
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
-	owns_one(nameof(soundloop), /datum/looping_sound/supermatter)
+	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))
 	interface("AiSupermatter", input = remote())
 	ui_shape(detonating = num(), integrity_percentage = num(), ambient_temp = num(), ambient_pressure = num())
@@ -137,11 +137,14 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
+
+/// Its hum: the calm loop, playing from the start.
+/obj/machinery/power/supermatter/proc/make_soundloop(datum/act/A)
+	return new /datum/looping_sound/supermatter(list(src), TRUE)
 
 // an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/on_destroy(force)

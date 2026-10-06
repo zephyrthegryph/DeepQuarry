@@ -54,8 +54,8 @@ CAPABILITIES(/obj/item/computer_hardware/battery_module)
 	hardware_size = 1
 	battery_rating = 30000
 
-/obj/item/computer_hardware/battery_module/lambda/Initialize(mapload)
-	. = ..(mapload, /obj/item/cell/infinite)
+/obj/item/computer_hardware/battery_module/lambda
+	cell_type = /obj/item/cell/infinite
 
 /obj/item/computer_hardware/battery_module/get_slot_var()
 	return "battery_module"

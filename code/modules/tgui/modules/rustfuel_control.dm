@@ -35,7 +35,7 @@ CAPABILITIES(/datum/tgui_module/rustfuel_control)
 	var/list/data = list()
 	var/list/fuels = list()
 
-	for(var/obj/machinery/fusion_fuel_injector/FI in REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS))
+	for(var/obj/machinery/fusion_fuel_injector/FI in registry_all(REGISTRY_FUEL_INJECTORS, fuel_tag))
 		if(FI.id_tag == fuel_tag)
 			fuels.Add(list(list(
 				"name" = FI.name,

@@ -275,7 +275,6 @@ B1:code/modules/shuttles/shuttle_console_multi.dm:SSshuttles 3
 B1:code/modules/shuttles/shuttle_supply.dm:SSsupply 2
 B1:code/modules/shuttles/shuttles_multi.dm:SSshuttles 1
 B1:code/modules/shuttles/shuttles_web.dm:SSshuttles 13
-B1:code/modules/tables/tables.dm:SSticker 1
 B1:code/modules/tgs_commands/vorestation.dm:SSjob 1
 B1:code/modules/tgui/modules/admin_shuttle_controller.dm:SSshuttles 3
 B1:code/modules/tgui/modules/communications.dm:SSemergency_shuttle 3

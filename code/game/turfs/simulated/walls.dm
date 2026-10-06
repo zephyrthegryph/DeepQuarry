@@ -36,6 +36,7 @@
 TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 
 CAPABILITIES(/turf/simulated/wall)
+	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
 	param(nameof(wall_material_key), pos = 1)
 	param(nameof(reinf_material_key), pos = 2)
 	param(nameof(girder_material_key), pos = 3)
@@ -203,8 +204,8 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/on_update_integrity(old_value, new_value)
 	. = ..()
-	// Inside a map-load batch the batch redraws every queued wall once (atoms.dm).
-	if(!SSatoms?.batch_defer(BATCH_WORK_WALL_SMOOTHING, src))
+	// Inside a map-load batch the batch redraws every queued wall once (BATCH_WORK_ADJACENCY, code/engine/lifeforms/adjacency.dm).
+	if(!SSatoms?.batch_defer(BATCH_WORK_ADJACENCY, src))
 		update_icon()
 
 /turf/simulated/wall/atom_destruction(damage_flag)
