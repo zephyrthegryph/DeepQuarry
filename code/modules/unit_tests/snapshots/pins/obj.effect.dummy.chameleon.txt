@@ -1,57 +1,27 @@
 human|none menu: Disrupt
-human|none menu: Insert a mop (refused: needs a mop)
-human|none menu: Insert a soap (refused: needs a soap)
-human|none click: nothing
+human|none click: Click: Disrupt
 robot|none menu: Disrupt
-robot|none menu: Insert a mop (refused: needs a mop)
-robot|none menu: Insert a soap (refused: needs a soap)
-robot|none click: nothing
+robot|none click: Click: Disrupt
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Disrupt
-human|/obj/item/tool/screwdriver menu: Insert a mop (refused: needs a mop)
-human|/obj/item/tool/screwdriver menu: Insert a soap (refused: needs a soap)
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Disrupt
 human|/obj/item/tool/crowbar menu: Disrupt
-human|/obj/item/tool/crowbar menu: Insert a mop (refused: needs a mop)
-human|/obj/item/tool/crowbar menu: Insert a soap (refused: needs a soap)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Disrupt
 human|/obj/item/tool/wrench menu: Disrupt
-human|/obj/item/tool/wrench menu: Insert a mop (refused: needs a mop)
-human|/obj/item/tool/wrench menu: Insert a soap (refused: needs a soap)
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Disrupt
 human|/obj/item/tool/wirecutters menu: Disrupt
-human|/obj/item/tool/wirecutters menu: Insert a mop (refused: needs a mop)
-human|/obj/item/tool/wirecutters menu: Insert a soap (refused: needs a soap)
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Disrupt
 human|/obj/item/multitool menu: Disrupt
-human|/obj/item/multitool menu: Insert a mop (refused: needs a mop)
-human|/obj/item/multitool menu: Insert a soap (refused: needs a soap)
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Disrupt
 human|/obj/item/weldingtool menu: Disrupt
-human|/obj/item/weldingtool menu: Insert a mop (refused: needs a mop)
-human|/obj/item/weldingtool menu: Insert a soap (refused: needs a soap)
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Disrupt
 human|/obj/item/stack/cable_coil menu: Disrupt
-human|/obj/item/stack/cable_coil menu: Insert a mop (refused: needs a mop)
-human|/obj/item/stack/cable_coil menu: Insert a soap (refused: needs a soap)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Disrupt
 human|/obj/item/stack/material/steel menu: Disrupt
-human|/obj/item/stack/material/steel menu: Insert a mop (refused: needs a mop)
-human|/obj/item/stack/material/steel menu: Insert a soap (refused: needs a soap)
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Disrupt
 human|/obj/item/card/id menu: Disrupt
-human|/obj/item/card/id menu: Insert a mop (refused: needs a mop)
-human|/obj/item/card/id menu: Insert a soap (refused: needs a soap)
-human|/obj/item/card/id click: nothing
-human|/obj/item/mop_deploy menu: Disrupt
-human|/obj/item/mop_deploy menu: Insert a mop
-human|/obj/item/mop_deploy menu: Insert a soap (refused: needs a soap)
-human|/obj/item/mop_deploy click: nothing
-human|/obj/item/soap menu: Disrupt
-human|/obj/item/soap menu: Insert a mop (refused: needs a mop)
-human|/obj/item/soap menu: Insert a soap
-human|/obj/item/soap click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_disrupt, gen_insert_interaction_pass, gen_item_interaction_disrupt
+human|/obj/item/card/id click: Click: Disrupt
+keys: disrupt, gen_drag_interaction_drag_buckle, pass_insert, pass_insert_2
 
