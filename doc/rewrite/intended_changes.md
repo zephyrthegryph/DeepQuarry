@@ -1751,6 +1751,13 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
   when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
 - A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- Smoothing is adjacency(): walls, low walls, tables, catwalks, windows, bay grilles, sandbag barricades and retention fields share
+  ADJ_KIND_SMOOTH, each joining what its connects proc accepts (walls take walls of a blending material and the low walls they join;
+  structures the anchored structures they connect to). The index tells every member whose neighbours changed, so a removed table,
+  catwalk or wall now redraws its neighbours (before, they kept joining the gone piece, pinned by dq_smoothing_pins), placing and anchoring
+  reach them too, and the hand propagation (update_connections(1) in Initialize/on_destroy, the low walls' and bay grilles' after-init
+  connect, windows refreshing nearby tables) is gone. A map load recomputes each member once when the batch closes
+  (BATCH_WORK_ADJACENCY replaces the wall smoothing batch). The look of a placed layout is unchanged (the pin's placed rows).
 - More native input reads its actor from the input: the vitals monitor, the backpack-style packs (defib, shield generator, bluespace
   radio, proton pack, medigun), the cup on a cooler, a mob dragged onto its dragger (`drag_onto()`), the mob nametag tooltip (`hover()`),
   the debug and ticket stat buttons and the rig stat buttons (`click_on()`). Admin rights checks with an actor in scope read its client
@@ -1980,6 +1987,18 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
   to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
   runs it through a thin `<verb>_op(A)` effect.
 
+## Mob repeats on every() (rewrite/om-life)
+
+The mob DECLARE_REPEATs (dizzy and jittery shakes, dreaming, autofire, AI follow-camera, pAI door hack, robot transform
+sounds, the eclipse's volleys, the macrophage's deathwatch, the jellyfish's chained attacks) are type-level every()
+entries gated on a tracked var; the drift and stagger helpers are after() steps.
+
+- **Shakes end on death at the next shake.** The dizzy and jittery statuses ended on the OM death event; the shake now
+  ends its status when it finds its mob dead, within a decisecond. A status started on a dead mob ends the same way.
+- **Follow camera with no eye cancels tracking.** The AI's tracking loop used to stop silently and leave `cameraFollow`
+  set; it now cancels tracking ("Follow camera mode terminated"), so the next track starts clean.
+- **Polled gates for relation views.** The AI's and pAI's repeats are gated on relation views (`cameraFollow`,
+  `hackdoor`), which do not publish like tracked vars, so their every() polls (once a second) instead of parking.
 - **Registries are `registry()`** (the lifecycle form): radiation collectors and singularities (an energy ball's miniballs stay out through
   the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
@@ -2028,3 +2047,21 @@ Pinned by `dq_leftovers/*` (organ butchery, peridaxon revival, robotic limb patc
   `interface()` brings it.
 - **The fuel injection console's automation is started work** while `automation` (now `TRACKED`, was an `OM_FIELD`) holds; switching it on
   restarts work a missing radio stopped. Both left the machine pipeline roster and their pipeline stages.
+## Reagents: holders, reaction and metabolism maths (rewrite/reagents)
+
+Pinned by `dq_reagents_start_snapshot` (the starting reagents of every type under each declaring root, recorded on the legacy code),
+`dq_chem_reaction_progress_pin` and `dq_chem_metabolism_pin` (recorded on the DM maths), `dq_forms_reagents` and `dq_decl_reagents`.
+Design: `reagents.md`.
+
+* **Starting reagents: no change.** 698 `DECLARE_REAGENTS*` lines and the reagent tanks' legacy `capabilities()` entries became `reagents()`
+  entries; every pinned row matched. The holder is made in the capability's preinit hook, at the same point of `Initialize()` as before.
+  The reagent tanks' holder (the legacy capability's) is now made there too, before the other capabilities' init rather than after it.
+* **A holder declared with more reagents than its volume** still warns (`WARNING`), now from the capability.
+* **Metabolism is planned per cycle.** Each holder works out every reagent's uptake rate at the start of a Life cycle (the body's share once,
+  then each reagent's), and the dose and overdose for all of them in one Rust call; each reagent's effects then run in the old order. Before,
+  each reagent's rate read the heart, stomach and filtering organs after the previous reagent's effects had run, so an effect that changed the
+  pulse or an organ in the same cycle moved the next reagent's rate one cycle earlier than now. The `prob()` rolls of filtering organs
+  (toxins) now come before the cycle's effects instead of between them: the same odds, a different draw order.
+* **An overdose() override that changes the reagent before calling `..()`** gets the base injury the cycle computed from the volume at the
+  cycle's start. Every override in the tree calls `..()` first or unchanged.
+* **A reaction with yield below 1 and no product amount** no longer divides by zero (it skips the yield limit); none exists in the tree.

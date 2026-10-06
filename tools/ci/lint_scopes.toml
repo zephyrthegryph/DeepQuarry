@@ -309,7 +309,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 admin_rights_shrink_only_baseline_one_mechanism_admin_can = 22
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 107
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
-objects_ratchet_on_legacy_interactions = 140
+objects_ratchet_on_legacy_interactions = 137
 objects_ratchet_on_tool_act_overrides = 8
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 1
@@ -377,4 +377,11 @@ banned = [
   "om_act_ask = asks() on the op; the handler reads A.step_value()",
   "ui_modal_opened = an op bound to \"modal:<id>\" that asks() its question",
   "ui_modal_answered = an op bound to \"modal:<id>\"; its handler reads A.step_value()",
+  "DECLARE_REAGENTS = reagents(volume, starts = list(...)) in the type's CAPABILITIES block; a subtype adds with configure(reagents(add = list(...))) (code/library/reagents/reagents.dm, doc/rewrite/reagents.md)",
+  "DECLARE_REAGENTS_TINTED = reagents(..., tint = TRUE), or configure(reagents(add = ..., tint = TRUE)) on a subtype",
+  "DECLARE_REAGENTS_TYPED = reagents(..., holder = /datum/reagents/x)",
+  "DECLARE_REAGENT_FROM_VAR = reagents(nameof(volume_var), starts_from = list(nameof(id_var) = nameof(amount_var)))",
+  "DECLARE_NO_REAGENTS = without(CAP_REAGENTS) in the type's CAPABILITIES block",
+  "set_reagent_var = reagents(..., starts_from = ...) in CAPABILITIES",
+  "create_reagents_on = reagents() in CAPABILITIES makes the holder (its preinit hook)",
 ]

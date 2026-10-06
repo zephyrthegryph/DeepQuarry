@@ -1,0 +1,4 @@
+/obj/machinery/portable_atmospherics/powered/reagent_distillery vol=600 holder=/datum/reagents/distilling 
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test vol=600 holder=/datum/reagents/distilling 
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial vol=600 holder=/datum/reagents/distilling 
+

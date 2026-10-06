@@ -43,7 +43,6 @@
 
 	var/heat = 0
 
-DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 /obj/machinery/radiocarbon_spectrometer/declare_interactions(list/into)
 	into += list(
@@ -106,6 +105,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
+	reagents(100) // COOLANT_MAX (a file-local define the generated table cannot see)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("XenoarchSpectrometer")
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))

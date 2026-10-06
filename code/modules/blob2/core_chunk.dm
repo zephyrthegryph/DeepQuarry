@@ -20,13 +20,13 @@
 	drop_sound = SFX_EFFECTS_SLIME_SQUISH
 
 CAPABILITIES(/obj/item/blobcore_chunk)
+	reagents(120)
 	owns_one(nameof(blob_type), /datum/blob_type)
 	param(nameof(parent_blob_type), pos = 1, apply = PROC_REF(setup_blobtype), keep = FALSE)
 
 /obj/item/blobcore_chunk/is_open_container()
 	return 1
 
-DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
 
 /// The blob type the chunk comes from (its constructor param, dropped once set up).
 /obj/item/blobcore_chunk/var/tmp/datum/blob_type/parent_blob_type

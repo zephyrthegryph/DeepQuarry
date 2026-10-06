@@ -240,7 +240,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/milk, null, list(REAGENT_ID_MILK = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
+	configure(reagents(add = list(REAGENT_ID_MILK = 50)))
 
 /obj/item/reagent_containers/food/drinks/soymilk
 	name = "soymilk carton"
@@ -253,7 +254,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/milk, null, list(REAGE
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/soymilk, null, list(REAGENT_ID_SOYMILK = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
+	configure(reagents(add = list(REAGENT_ID_SOYMILK = 50)))
 
 /obj/item/reagent_containers/food/drinks/smallmilk
 	name = "small milk carton"
@@ -267,7 +269,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/soymilk, null, list(RE
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallmilk, null, list(REAGENT_ID_MILK = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
+	configure(reagents(add = list(REAGENT_ID_MILK = 30)))
 
 /obj/item/reagent_containers/food/drinks/smallchocmilk
 	name = "small chocolate milk carton"
@@ -281,7 +284,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallmilk, null, list(
 	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
 	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallchocmilk, null, list(REAGENT_ID_CHOCOLATEMILK = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
+	configure(reagents(add = list(REAGENT_ID_CHOCOLATEMILK = 30)))
 
 /obj/item/reagent_containers/food/drinks/coffee
 	name = "\improper Robust Coffee"
@@ -294,7 +298,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallchocmilk, null, l
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/coffee, null, list(REAGENT_ID_COFFEE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
+	configure(reagents(add = list(REAGENT_ID_COFFEE = 30)))
 
 /obj/item/reagent_containers/food/drinks/tea
 	name = "cup of Duke Purple tea"
@@ -308,7 +313,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/coffee, null, list(REA
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/tea, null, list(REAGENT_ID_TEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
+	configure(reagents(add = list(REAGENT_ID_TEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/decaf_tea
 	name = "cup of Count Mauve decaffeinated tea"
@@ -322,7 +328,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/tea, null, list(REAGEN
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf_tea, null, list(REAGENT_ID_TEADECAF = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf_tea)
+	configure(reagents(add = list(REAGENT_ID_TEADECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/ice
 	name = "cup of ice"
@@ -330,7 +337,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf_tea, null, list(
 	icon_state = "ice"
 	center_of_mass_x = 15
 	center_of_mass_y = 10
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/ice, null, list(REAGENT_ID_ICE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/ice)
+	configure(reagents(add = list(REAGENT_ID_ICE = 30)))
 
 /obj/item/reagent_containers/food/drinks/h_chocolate
 	name = "cup of Counselor's Choice hot cocoa"
@@ -344,7 +352,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/ice, null, list(REAGEN
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/h_chocolate, null, list(REAGENT_ID_HOTCOCO = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
+	configure(reagents(add = list(REAGENT_ID_HOTCOCO = 30)))
 
 /obj/item/reagent_containers/food/drinks/greentea
 	name = "cup of green tea"
@@ -358,7 +367,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/h_chocolate, null, lis
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/greentea, null, list(REAGENT_ID_GREENTEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
+	configure(reagents(add = list(REAGENT_ID_GREENTEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/chaitea
 	name = "cup of chai tea"
@@ -372,7 +382,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/greentea, null, list(R
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/chaitea, null, list(REAGENT_ID_CHAITEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
+	configure(reagents(add = list(REAGENT_ID_CHAITEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/decaf
 	name = "cup of decaf coffee"
@@ -386,7 +397,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/chaitea, null, list(RE
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf, null, list(REAGENT_ID_DECAF = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
+	configure(reagents(add = list(REAGENT_ID_DECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/dry_ramen
 	name = "Cup Ramen"
@@ -399,7 +411,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf, null, list(REAG
 	drop_sound = SFX_ITEMS_DROP_PAPERCUP
 	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(REAGENT_ID_DRYRAMEN = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
+	configure(reagents(add = list(REAGENT_ID_DRYRAMEN = 30)))
 
 /obj/item/reagent_containers/food/drinks/sillycup
 	name = "paper cup"

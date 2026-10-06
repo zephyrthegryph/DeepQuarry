@@ -1,0 +1,4 @@
+/obj/item/pen/reagent vol=30 holder=/datum/reagents 
+/obj/item/pen/reagent/sleepy vol=30 holder=/datum/reagents chloralhydrate=22
+/obj/item/pen/reagent/paralysis vol=30 holder=/datum/reagents cryptobiolin=10,zombiepowder=5
+

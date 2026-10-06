@@ -30,24 +30,15 @@
 				C.delete_me = TRUE
 			else
 				consume(C)
-	update_connections(1)
 	update_icon()
 
 // neighbouring catwalks redraw and things on it may fall.
 /obj/structure/catwalk/on_destroy(force)
-	redraw_nearby_catwalks()
 	update_falling()
 	..()
 
 /obj/structure/catwalk/proc/update_falling()
 	if(istype(loc, /turf/simulated/open)) after(loc, 0.1 SECONDS, TYPE_PROC_REF(/turf/simulated/open, update)) //We get called in Destroy() and things: the open turf, not us, owns the update.
-
-/obj/structure/catwalk/proc/redraw_nearby_catwalks()
-	for(var/direction in GLOB.alldirs)
-		var/obj/structure/catwalk/L = locate_within(get_step(src, direction), /obj/structure/catwalk)
-		if(L)
-			L.update_connections()
-			L.update_icon() //so siding get updated properly
 
 DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/catwalk/appearance_overlays()
@@ -155,6 +146,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 	update_icon()
 
 CAPABILITIES(/obj/structure/catwalk)
+	smoothing()
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/structure/catwalk/proc/crowbar_used(datum/act/op/A)

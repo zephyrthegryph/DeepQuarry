@@ -1,0 +1,10 @@
+/obj/item/material/kitchen/utensil vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/fork vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/fork/plastic vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/foon vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/foon/plastic vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/spork vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/spork/plastic vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/spoon vol=5 holder=/datum/reagents 
+/obj/item/material/kitchen/utensil/spoon/plastic vol=5 holder=/datum/reagents 
+

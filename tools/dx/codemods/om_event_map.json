@@ -1539,8 +1539,6 @@
    "gibbed"
   ],
   "listeners": [
-   "code/datums/entity_state/animations/dizzy.dm",
-   "code/datums/entity_state/animations/jittery.dm",
    "code/engine/_generated/event_twins.dm"
   ],
   "notice_fields": [

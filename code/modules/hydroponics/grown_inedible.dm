@@ -8,9 +8,9 @@
 	var/plantname
 	var/potency = 1
 
-DECLARE_REAGENTS(/obj/item/grown, 50, null)
 
 CAPABILITIES(/obj/item/grown)
+	reagents(50)
 	param(nameof(planttype_at_make), pos = 1)
 
 /// The plant an inedible harvest is made from (its constructor param).

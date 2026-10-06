@@ -40,7 +40,8 @@
 	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
-DECLARE_REAGENTS(/obj/vehicle/train/engine/janicart, 600, null)
+CAPABILITIES(/obj/vehicle/train/engine/janicart)
+	reagents(600)
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()

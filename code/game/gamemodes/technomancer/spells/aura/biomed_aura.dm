@@ -17,7 +17,7 @@
 	var/regen_tick = 0
 	var/heal_allies_only = 1
 
-/obj/item/spell/aura/biomed/periodic_step()
+/obj/item/spell/aura/biomed/aura_step(datum/act/timer/A)
 	if(!pay_energy(75))
 		spent(src)
 		return

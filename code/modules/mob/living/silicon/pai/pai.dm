@@ -105,6 +105,7 @@
 	vore_capacity_ex = list("stomach" = 1)
 
 CAPABILITIES(/mob/living/silicon/pai)
+	every(1 SECOND, then(PROC_REF(hack_tick)), when = nameof(hackdoor))
 	owns_one(nameof(pai_fold_display), /atom/movable/screen/pai)
 	owns_one(nameof(sradio), starts = /obj/item/radio/integrated/signal)
 	owns_one(nameof(communicator), starts = /obj/item/communicator/integrated)
@@ -201,9 +202,9 @@ CAPABILITIES(/mob/living/silicon/pai)
 
 // `card` is the card we live in and `radio` is the card's radio: both relations (the card owns
 // the radio). The cable is ours (implicit OWN, deleted with us); records belong to the datacore.
-/// The airlock being hacked. A relation view: the brute-force runs every second while it is set.
+/// The airlock being hacked. A relation view: the brute-force runs every second while it is set (its every() in
+/// CAPABILITIES(/mob/living/silicon/pai)).
 OM_FIELD_VIEW(/mob/living/silicon/pai, obj/machinery/door, hackdoor, CHANGE_MOB_CONDITIONS)
-DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 
 // releases its prey and retracts its cable.
 /mob/living/silicon/pai/on_destroy(force)

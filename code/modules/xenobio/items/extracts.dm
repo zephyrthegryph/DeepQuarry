@@ -14,7 +14,8 @@
 	var/slime_type
 	flags = OPENCONTAINER
 
-DECLARE_REAGENTS(/obj/item/slime_extract, 60, null)
+CAPABILITIES(/obj/item/slime_extract)
+	reagents(60)
 
 DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

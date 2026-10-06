@@ -172,21 +172,23 @@
 	to_chat(U, "Now tracking [target.name] on camera.")
 	target.tracking_initiated()
 
-	ai_track_step() // the first look is immediate; the declared repeat follows from here
+	ai_track_step() // the first look is immediate; the every() follows from here
 
 	return TRUE
 
 /// Delay until the next follow-camera step: a second, or ten while the target is out of coverage.
 /mob/living/silicon/ai/var/track_delay = 1 SECOND
 
-DECLARE_REPEAT(/mob/living/silicon/ai, "track_delay", ai_track_step, "cameraFollow")
+/// The every() interval of ai_track_step(): track_delay.
+/mob/living/silicon/ai/proc/track_interval(datum/act/A)
+	return track_delay
 
 /// Follow camera mode: keeps the eye on `cameraFollow` every second (every ten while it is out of
-/// camera coverage) while tracking.
-/mob/living/silicon/ai/proc/ai_track_step()
+/// camera coverage) while tracking (its every() in CAPABILITIES(/mob/living/silicon/ai)).
+/mob/living/silicon/ai/proc/ai_track_step(datum/act/A)
 	var/mob/living/target = cameraFollow
 	if(QDELETED(target))
-		return REPEAT_STOP
+		return
 	switch(target.tracking_status())
 		if(TRACKING_NO_COVERAGE)
 			to_chat(src, "Target is not near any active cameras.")
@@ -200,7 +202,8 @@ DECLARE_REPEAT(/mob/living/silicon/ai, "track_delay", ai_track_step, "cameraFoll
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		view_core()
-		return REPEAT_STOP
+		ai_cancel_tracking(1)
+		return
 	eyeobj.setLoc(get_turf(target), 0)
 
 // camera.dm declares the camera's other interactions.

@@ -115,10 +115,6 @@
 /// Every 0.2 seconds (continuous lanes need a reason).
 #define CADENCE_FAST /datum/cadence/fast
 
-/// The reagents capability's key (reagents(), code/datums/capabilities/library/reagents.dm): refine(CAP_REAGENTS,
-/// starts = ...) adds to the inherited contents, without(., CAP_REAGENTS) drops the holder.
-#define CAP_REAGENTS /datum/capability/reagents
-
 /// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
 #define ALL_ENTRIES "all_entries"
 

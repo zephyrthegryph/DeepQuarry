@@ -21,9 +21,9 @@
 
 	var/list/food_inserted_micros
 
-DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 
 CAPABILITIES(/obj/item/material/kitchen/utensil)
+	reagents(nameof(scoop_volume))
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.

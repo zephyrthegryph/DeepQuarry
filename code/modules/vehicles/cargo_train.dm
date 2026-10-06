@@ -394,9 +394,9 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, TYPE_PROC_REF(/atom, appearan
 	flags = OPENCONTAINER
 	paint_color = "#efdd16"
 
-DECLARE_REAGENTS(/obj/vehicle/train/trolley_tank, CARGOTANKER_VOLUME, null)
 
 CAPABILITIES(/obj/vehicle/train/trolley_tank)
+	reagents(CARGOTANKER_VOLUME)
 	climb()
 	// the tank's own uses answer before the vehicle's generic item use (a hit), one tier above it
 	op("fill_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_PART + 1), then(PROC_REF(fill_container)))

@@ -9,7 +9,8 @@
 	bitesize = 1
 
 // REAGENT_ID_AMATOXIN would suit the lore of this being a strange bioengineered thing to mess with organic things, but it's one of two food sources
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/weatherlily, null, list(REAGENT_ID_LUMINOL = 1, REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/weatherlily)
+	configure(reagents(add = list(REAGENT_ID_LUMINOL = 1, REAGENT_ID_PROTEIN = 1)))
 
 //The source of the materials
 /obj/structure/outcrop/weathered_gate
@@ -74,7 +75,8 @@ CAPABILITIES(/obj/structure/flora/tyr/flowers)
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mutatedmeat, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mutatedmeat)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/prop/alien/prototype
 	name = "alien prototype"

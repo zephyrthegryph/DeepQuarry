@@ -41,8 +41,8 @@
 #define ATOM_RUN_FIELDS 5
 
 /// Deferred batch work, flushed once at the end of the batch that owns it, in this order.
-/// Walls smooth once each, with their neighbours.
-#define BATCH_WORK_WALL_SMOOTHING 1
+/// Members of the adjacency index (code/engine/lifeforms/adjacency.dm) recompute their joins once each, when every atom of the load exists.
+#define BATCH_WORK_ADJACENCY 1
 /// Cables bind their power nodes in one Rust call.
 #define BATCH_WORK_CABLE_BINDS 2
 /// Number of BATCH_WORK_* kinds (length of a batch's work list).

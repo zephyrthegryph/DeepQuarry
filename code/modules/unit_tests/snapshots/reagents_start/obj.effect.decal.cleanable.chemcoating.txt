@@ -1,0 +1,2 @@
+/obj/effect/decal/cleanable/chemcoating vol=100 holder=/datum/reagents 
+

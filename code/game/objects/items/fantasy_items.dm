@@ -70,6 +70,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, TYPE_PROC_REF(/atom, appearance
 	return .
 
 CAPABILITIES(/obj/structure/bed/bath)
+	reagents(300)
 	op("bath_interaction_item", item(/obj/item), then(PROC_REF(bath_interaction_item)))
 
 /// Old attackby.
@@ -113,7 +114,6 @@ CAPABILITIES(/obj/structure/bed/bath)
 			MSG_BLIND(span_notice("You hear metal clanking.")))
 	consume(I, user)
 
-DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 
 //oven
 

@@ -33,9 +33,13 @@
 	var/tmp/atom/autofire_target
 	var/tmp/autofire_params = null
 
-/// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay.
-OM_FIELD_TYPED(/mob/living, tmp, autofire_on, FALSE, CHANGE_MOB_CONDITIONS)
-DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
+/// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
+/mob/living/var/tmp/autofire_on = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, autofire_on, CHANGE_MOB_CONDITIONS)
+
+/// The every() interval of autofire_tick(): the wait the last tick set.
+/mob/living/proc/autofire_interval(datum/act/A)
+	return autofire_delay
 
 /// Begin (or retarget) a held-trigger autofire session with gun G at target.
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
@@ -64,7 +68,7 @@ DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
 
 /// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is
 /// ready and sets the wait before the next one; a stop condition ends the session.
-/mob/living/proc/autofire_tick()
+/mob/living/proc/autofire_tick(datum/act/A)
 	var/obj/item/gun/G = autofire_gun()
 	var/atom/target = autofire_target()
 	// Stop conditions: gun gone / not in hand / no longer automatic / KO'd or
@@ -72,7 +76,7 @@ DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
 	if(QDELETED(src) || stat || QDELETED(G) || !G.automatic \
 			|| get_active_hand() != G || QDELETED(target))
 		stop_autofire()
-		return REPEAT_STOP
+		return
 
 	var/delay
 	if(COOLDOWN_FINISHED(G, next_fire_time))
@@ -80,7 +84,7 @@ DECLARE_REPEAT(/mob/living, "autofire_delay", autofire_tick, "autofire_on")
 		// Re-check: Fire()/handle_click_empty may have ended the session
 		// (dropped gun, ran dry) this tick.
 		if(!autofire_on)
-			return REPEAT_STOP
+			return
 		delay = max(1, G.fire_delay)
 	else
 		// Not ready yet (mid-burst or cooling down): wait exactly until it is.

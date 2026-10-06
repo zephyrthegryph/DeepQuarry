@@ -149,13 +149,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 	var/visible = 0
 	anchored = TRUE
 
-DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
-
 /obj/effect/beam/i_beam/proc/hit()
 	master()?.trigger_beam()
 	consume(src)
 
-/obj/effect/beam/i_beam/periodic_step()
+/obj/effect/beam/i_beam/proc/i_beam_step(datum/act/timer/A)
 	if(loc?.density || !master())
 		consume(src)
 		return
@@ -165,6 +163,7 @@ DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 
 CAPABILITIES(/obj/effect/beam/i_beam)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	every(2 SECONDS, then(PROC_REF(i_beam_step)))
 
 /// Something walked into it (the bump action's notice).
 /obj/effect/beam/i_beam/proc/bumped_into(datum/act/A)

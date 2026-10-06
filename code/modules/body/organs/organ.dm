@@ -70,7 +70,6 @@ TRACKED(/obj/item/organ, robotic)
 /obj/item/organ/proc/update_health()
 	return
 
-DECLARE_REAGENTS(/obj/item/organ, 5, null)
 
 /obj/item/organ/Initialize(mapload, internal)
 	. = ..()
@@ -572,6 +571,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
+	reagents(5)
 	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))

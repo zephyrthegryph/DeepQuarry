@@ -46,7 +46,7 @@ BASES = {
     "entry_alt": "ALT",
     "entry_drag": "DRAG",
 }
-FIELDS = {"id", "name", "effect", "held_type", "stance", "requires", "also_requires"}
+FIELDS = {"id", "name", "effect", "held_type", "stance", "requires", "also_requires", "offered_when"}
 
 
 def rel(p):
@@ -242,6 +242,13 @@ def main(argv):
                             why = "datum_field"
                             break
                         reqs += rl
+                    if "offered_when" in fields:
+                        # not offered at all unless these hold: interact_declare.py makes each a when() of the op, never a refusal
+                        rl = list_items(fields["offered_when"])
+                        if rl is None:
+                            why = "datum_field"
+                            break
+                        reqs += ["OFFERED_WHEN(%s)" % r for r in rl]
                     kind = BASES[base]
                     name = fields.get("name", "null")
                     eff = "PROC_REF(%s)" % em.group(2)

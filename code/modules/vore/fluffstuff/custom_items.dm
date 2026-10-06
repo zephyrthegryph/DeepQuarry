@@ -1222,7 +1222,8 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	name = "flask of expensive alcohol"
 	desc = "A standard vacuum-flask filled with good and expensive drink."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor, null, list(REAGENT_ID_PWINE = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor)
+	configure(reagents(add = list(REAGENT_ID_PWINE = 60)))
 
 //RadiantAurora: Tiemli Kroto
 /obj/item/clothing/glasses/welding/tiemgogs
@@ -1328,7 +1329,8 @@ TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_
 	filling_states = list(15, 30, 50, 60, 80, 100)
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, null, list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask)
+	configure(reagents(add = list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20)))
 
 DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/appearance_overlays()

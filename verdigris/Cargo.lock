@@ -1538,6 +1538,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "vg-chem"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+]
+
+[[package]]
 name = "vg-core"
 version = "0.1.0"
 dependencies = [
@@ -1560,6 +1567,7 @@ dependencies = [
  "nom",
  "rustc-hash",
  "serde_json",
+ "vg-chem",
  "vg-core",
  "vg-gas",
  "vg-heat",

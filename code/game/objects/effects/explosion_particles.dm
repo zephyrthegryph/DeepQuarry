@@ -23,7 +23,7 @@
 /datum/effect/system/expl_particles/proc/emit_one_particle()
 	var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.get_location())
 	var/direct = pick(GLOB.alldirs)
-	om_after_drift(expl, direct, pick(1;25,2;50,3,4;200), 1)
+	expl.drift(direct, pick(1;25,2;50,3,4;200), 1)
 
 /datum/effect/system/expl_particles/proc/start()
 	var/i = 0

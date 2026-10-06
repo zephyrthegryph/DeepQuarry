@@ -8,7 +8,8 @@
 	volume = 50
 	max_transfer_amount = 50
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bluespace_coffee, null, list(REAGENT_ID_COFFEE = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bluespace_coffee)
+	configure(reagents(add = list(REAGENT_ID_COFFEE = 50)))
 
 // Infinite Coffee: what a sip took is back a moment after it.
 /obj/item/reagent_containers/food/drinks/bluespace_coffee/On_Consume(mob/living/eater, mob/feeder, changed = FALSE)

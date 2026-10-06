@@ -518,6 +518,7 @@ CAPABILITIES(/obj/structure/urinal)
 	var/reaction_volume = 200
 
 CAPABILITIES(/obj/machinery/shower)
+	reagents(nameof(reaction_volume), starts_from = list(nameof(reagent_id) = nameof(reaction_volume)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	owns_one(nameof(soundloop), /datum/looping_sound/showering)
 
@@ -525,7 +526,6 @@ CAPABILITIES(/obj/machinery/shower)
 	. = ..()
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 
-DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
 /// Washes its tile every machine step while running.
 /obj/structure/toilet/proc/crowbar_used(datum/act/op/A)
