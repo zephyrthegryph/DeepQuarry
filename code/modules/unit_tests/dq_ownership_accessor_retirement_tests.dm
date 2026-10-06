@@ -64,6 +64,14 @@ CAPABILITIES(/obj/ownership_retirement_state_probe)
 
 /datum/unit_test/ownership_retirement_gas_watch_policy_pin/Run()
 	var/obj/ownership_retirement_state_probe/H = allocate(/obj/ownership_retirement_state_probe)
+	var/obj/machinery/atmospherics/pipe/simple/P = allocate(/obj/machinery/atmospherics/pipe/simple)
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/HE = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
+	var/obj/machinery/atmospherics/pipeturbine/T = allocate(/obj/machinery/atmospherics/pipeturbine)
+	var/obj/machinery/power/generator/G = allocate(/obj/machinery/power/generator)
+	for(var/list/pair as anything in list(list(P, nameof(P.leak_watches)), list(HE, nameof(HE.glow_watches)), list(T, nameof(T.side_watches)), list(G, nameof(G.loop_watches))))
+		var/datum/holder = pair[1]
+		var/list/entry = own_table_of(holder).entries[pair[2]]
+		TEST_ASSERT(entry && entry[OWNE_KIND] == OWNK_OWN && entry[OWNE_LIST] && entry[OWNE_ARG] == OWN_DELETE, "Every current gas-watch consumer declares a DELETE many: [holder.type].[pair[2]]")
 	var/datum/gas_mixture/air = allocate(/datum/gas_mixture, 70)
 	gas_watch_many(H, nameof(H.watches), list(air, air), GAS_DEPENDENCY_ALL, TYPE_PROC_REF(/obj/ownership_retirement_state_probe, watch_heard))
 	TEST_ASSERT_EQUAL(length(H.watches), 1, "Repeated mixture IDs create exactly one real native watch")
@@ -114,7 +122,7 @@ CAPABILITIES(/obj/ownership_retirement_state_probe)
 
 /datum/unit_test/ownership_retirement_card_shuffle/Run()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
-	for(var/path in list(/obj/item/deck, /obj/item/deck/tarot, /obj/item/deck/dark_tarot))
+	for(var/path in list(/obj/item/deck/cards, /obj/item/deck/tarot, /obj/item/deck/dark_tarot))
 		var/obj/item/deck/D = allocate(path)
 		var/list/cards = D.cards.Copy()
 		TEST_ASSERT(length(cards) > 0, "The actual deck must contain cards before shuffle")

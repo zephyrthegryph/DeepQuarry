@@ -287,7 +287,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 /obj/machinery/particle_smasher/proc/DumpContents()
 	// Everything goes to the floor below: detach the owned slots first.
 	rel_take(src, nameof(target))
-	own_take(src, nameof(reagent_container))
+	rel_take(src, nameof(reagent_container))
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
