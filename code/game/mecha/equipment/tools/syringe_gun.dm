@@ -16,6 +16,7 @@
 	required_type = list(/obj/mecha/medical)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
+	reagents(nameof(max_volume))
 	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
 	interface("MechaSyringeGun")
 	without("ui_open")
@@ -23,7 +24,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
 
-DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
 OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
 OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, list("chassis", "processed_reagents"))

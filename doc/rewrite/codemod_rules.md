@@ -387,3 +387,22 @@ The target (doc section 13): a type's look is `draw(datum/look/look)`, the one o
 
 Residue codes, with the reason in the report. The proc stays as it is when: `reads_icon_state` (it reads `icon_state` other than `initial(icon_state)`: the new draw cannot see the previous state), `side_effect` (a call that is not a look call: a sound, a light, a flick: it moves to the handler that changes the state), `writes_state` (it writes `name`, `desc`, `pixel_x` or any var of the holder), `dot_use` (`.` used as a value), `returns_value`, `super_late` (`..()` not first), `overlay_expr` (`. += x` of an expression whose kind is unknown), `appearance_other` (the type or an ancestor also has `APPEARANCE_TEMPLATE`, `APPEARANCE_LEVEL`, `APPEARANCE_EMISSIVE`, `APPEARANCE_SLOT`, `APPEARANCE_NONE` or `DECLARE_APPEARANCE`), `related_def` (a related type defines `appearance_overlays` too: a chain converts whole or not at all), `derived_declared` (a type in the chain has a `derived()`: it declares the draw's reads with `drawn_from`, by hand), `hop_read` (it reads through a var, `paddles.combat`: the far var must be tracked by hand), `handler_shape`, `non_atom`, and `var:<code>:<name>` when a var it reads cannot be tracked: `shared_name` (its name is declared on unrelated types, so a write `O.name = x` cannot be assigned to this one), `write_form` (a write inside a larger statement or a macro), `builtin_var`, `decl_shape`, `field_shared` (another legacy macro names the OM_FIELD).
 Evidence: the cell charger (`7bce9a692a`), which also dropped its `add_overlay()` call in Initialize. The tracked var's setter publishes the change; the draw is the output the refresh engine re-runs. Tests: `dq_gap/converted_draw_follows_its_tracked_var`.
+
+## reagents: DECLARE_REAGENTS family -> reagents() entries
+
+`python tools/dx/codemods/reagents_decl.py [--check]` (a text codemod; design: `reagents.md`).
+
+| Old | New, in the type's `CAPABILITIES` block |
+|---|---|
+| a declaration on a type with no declaring ancestor | `reagents(V, starts = C, tint =, holder =, starts_from =)` with the type's whole effective declaration |
+| a declaration on a subtype | `configure(reagents(volume = V, add = C, tint = TRUE, holder = H))` with only what its own lines give; nothing when they give nothing |
+| `DECLARE_NO_REAGENTS(T)` under a declaring ancestor | `without(CAP_REAGENTS)` |
+| `DECLARE_NO_REAGENTS(T)` then a declaration on the same type | `configure(reagents(starts = C))` (and `volume =` when it changed) |
+| a string volume or var name | `nameof(v)` |
+
+The chain is read over the whole tree first (an ancestor is a path prefix; no declaring type sets `parent_type`). The entry goes under the
+type's existing header in any file, else the first declaration line becomes the block in place; a trailing comment stays on the entry.
+Residue: `parse`, `trailing_code`, `indented_next` (the new block would swallow an indented line after it), `parent_traits` (drop then
+re-declare under a tinted or typed parent), `from_var_subtype`. The run on master had none. Evidence: `dq_reagents_start_snapshot`
+recorded every declaring root's subtree on the legacy code and matched after. A file-local `#define` used as a volume cannot be read by
+the generated table (`COOLANT_MAX` in the radiocarbon spectrometer): write the number.

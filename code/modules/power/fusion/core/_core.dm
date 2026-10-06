@@ -33,7 +33,6 @@
 /obj/machinery/power/fusion_core/mapped
 	anchored = TRUE
 
-DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
 MSG_DEF_SELF(fusion_core/field_on, "The fusion field must be shut down before opening the material cradle.")
 MSG_DEF_SELF(fusion_core/cradle_full, "The material cradle is already occupied.")
@@ -46,6 +45,7 @@ MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment c
 TRACKED(/obj/machinery/power/fusion_core, id_tag)
 
 CAPABILITIES(/obj/machinery/power/fusion_core)
+	reagents(10000)
 	registry(REGISTRY_FUSION_CORES, key = nameof(id_tag))
 	owns_one(nameof(owned_field), /obj/effect/fusion_em_field)
 	owns_one(nameof(material_sample), /obj/item/stack/material/processed_alloy, on_destroy = ON_DESTROY_SPILL)

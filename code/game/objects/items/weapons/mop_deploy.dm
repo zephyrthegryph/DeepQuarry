@@ -15,7 +15,6 @@
 	var/mopping = 0
 	var/mopcount = 0
 
-DECLARE_REAGENTS(/obj/item/mop_deploy, 5, null)
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))
@@ -50,6 +49,7 @@ CAPABILITIES(/obj/effect)
 	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())
 
 CAPABILITIES(/obj/item/mop_deploy)
+	reagents(5)
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 

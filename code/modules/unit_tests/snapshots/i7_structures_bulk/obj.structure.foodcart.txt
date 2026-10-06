@@ -1,6 +1,5 @@
-/obj/structure/foodcart|human|none => foodcart_hand|foodcart_item:needs a Container
-/obj/structure/foodcart|robot|none => foodcart_hand|foodcart_item:needs a Container
+/obj/structure/foodcart|human|none => |
+/obj/structure/foodcart|robot|none => |
 /obj/structure/foodcart|ai|none => |
 /obj/structure/foodcart|ghost|none => |
-/obj/structure/foodcart|human|/obj/item/reagent_containers/food => foodcart_item,foodcart_hand|
 

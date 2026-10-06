@@ -9,7 +9,8 @@
 	var/acidtype = REAGENT_ID_STOMACID	// Incase you want some stomach organ with, say, polyacid instead, or sulphuric.
 	var/max_acid_volume = 30
 
-DECLARE_REAGENTS(/obj/item/organ/internal/stomach, 30, null)
+CAPABILITIES(/obj/item/organ/internal/stomach)
+	configure(reagents(volume = 30))
 
 /obj/item/organ/internal/stomach/handle_organ_proc_special(cycles)
 	if(owner && ishuman(owner))

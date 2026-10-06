@@ -1,0 +1,2 @@
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous vol=60 holder=/datum/reagents impedrezene=15,toxin=45
+

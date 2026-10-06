@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
 TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	reagents(120)
 	// A resistive heater on its pipeline's gas toward the thermostat: one joule of heat per joule drawn.
 	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE))
 	gas_watch(air = nameof(air_contents), changed = PROC_REF(gas_changed))
@@ -46,7 +47,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	var/pumping = FALSE
 	var/reagent_cooling = 0
 
-DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 
 /obj/machinery/atmospherics/unary/heater/Initialize(mapload)
 	. = ..()

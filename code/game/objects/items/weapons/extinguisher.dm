@@ -50,10 +50,10 @@
 	sprite_name = "atmos_extinguisher"
 	rand_overlays = 0
 
-DECLARE_REAGENTS(/obj/item/extinguisher, "max_water", list(REAGENT_ID_FIREFOAM = 300))
-DECLARE_NO_REAGENTS(/obj/item/extinguisher/mini)
-DECLARE_REAGENTS(/obj/item/extinguisher/mini, "max_water", list(REAGENT_ID_FIREFOAM = 150))
-DECLARE_REAGENTS(/obj/item/extinguisher/atmo, null, list(REAGENT_ID_FIREFOAM = 300)) // 600 total
+CAPABILITIES(/obj/item/extinguisher/mini)
+	configure(reagents(starts = list(REAGENT_ID_FIREFOAM = 150)))
+CAPABILITIES(/obj/item/extinguisher/atmo)
+	configure(reagents(add = list(REAGENT_ID_FIREFOAM = 300))) // 600 total
 
 /obj/item/extinguisher/Initialize(mapload)
 	if(rand_overlays)
@@ -67,6 +67,7 @@ DECLARE_REAGENTS(/obj/item/extinguisher/atmo, null, list(REAGENT_ID_FIREFOAM = 3
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
+	reagents(nameof(max_water), starts = list(REAGENT_ID_FIREFOAM = 300))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

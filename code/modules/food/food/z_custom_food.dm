@@ -13,7 +13,6 @@
 	var/image/topping
 	var/image/filling
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/customizable, null, list(REAGENT_ID_NUTRIMENT = 3))
 
 /obj/item/reagent_containers/food/snacks/customizable/Initialize(mapload,ingredient)
 	. = ..()
@@ -23,6 +22,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/customizable, null, li
 
 // A food put in it is one more ingredient, up to a limit; a custom food cannot be put in another.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 3)))
 	op("add", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Add it"),
 		needs(req(PROC_REF(has_room_for), because = MSG(custom/stuffed)), req(PROC_REF(not_custom_itself), because = PROC_REF(custom_refusal))), then(PROC_REF(ingredient_added)))
 	owns_many(nameof(ingredients))
@@ -229,6 +229,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bun)
 
 // A flat dough + a food = a pizza.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/flatdough)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 	op("start_pizza", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), needs(req(PROC_REF(holds_plain_food), because = MSG(custom/recursive))), label("Make a pizza"), then(PROC_REF(pizza_started)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/flatdough/proc/pizza_started(datum/act/op/A)

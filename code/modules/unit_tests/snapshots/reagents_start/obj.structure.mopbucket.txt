@@ -1,0 +1,2 @@
+/obj/structure/mopbucket vol=300 holder=/datum/reagents 
+

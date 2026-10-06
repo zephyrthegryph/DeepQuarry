@@ -15,7 +15,8 @@
 	var/separate_force_bottle = FALSE
 	var/separate_force_canister = FALSE
 
-DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
+CAPABILITIES(/obj/machinery/smart_centrifuge)
+	reagents(CARGOTANKER_VOLUME)
 OM_FIELD(/obj/machinery/smart_centrifuge, working, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reagent_seperate, "working")
 

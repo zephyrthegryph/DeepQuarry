@@ -52,6 +52,9 @@
 	/// A list of traits to apply while the reagent is being metabolized.
 	var/list/metabolized_traits
 
+	/// This cycle's base overdose injury, set by on_mob_life() around its overdose() call (Rust worked it out with the cycle).
+	var/tmp/overdose_injury
+
 	var/coolant_modifier = -0.5 // this is multiplied by the volume of the reagent. Most things are not good coolant. EX: Water is 1, coolant is 2. -1 would be a bad reagent for cooling.
 
 	var/glass_icon_file = null
@@ -180,103 +183,24 @@
 /datum/reagent/proc/touch_turf(turf/T, amount) // Cleaner cleaning, lube lubbing, etc, all go here
 	return
 
-/datum/reagent/proc/on_mob_life(mob/living/carbon/M, alien, datum/reagents/metabolism/location) // Currently, on_mob_life is called on carbons. Any interaction with non-carbon mobs (lube) will need to be done in touch_mob.
+/// One Life cycle of this reagent in `location`, a mob's bloodstream, stomach or skin (Currently, on_mob_life is called on carbons. Any
+/// interaction with non-carbon mobs (lube) will need to be done in touch_mob). The holder worked out this cycle's uptake for every reagent
+/// at once (/datum/reagents/metabolism/proc/metabolize(): the rates in DM, the dose and overdose maths in Rust, vg_chem); this applies it:
+/// the dose, the effects by route, the species' reactions, the overdose, and the units taken out of the holder.
+/datum/reagent/proc/on_mob_life(mob/living/carbon/M, alien, datum/reagents/metabolism/location)
 	if(!istype(M))
 		return
-	if(!affects_dead && M.stat == DEAD && !M.has_body_effect(/datum/body_effect/bloodpump_corpse))
-		return
-	if(HAS_SYNTHETIC_BIOLOGY(M) && (!M.synth_reag_processing || !affects_robots))
+	if(!metabolizes_in(M))
 		return
 	if(!istype(location))
 		return
 
 	var/datum/reagents/metabolism/active_metab = location
-	var/removed = metabolism
-
-	var/ingest_rem_mult = 1
-	var/ingest_abs_mult = 1
-
-	if(!mrate_static == TRUE)
-		// Body factors: species, traits, modifiers, afflictions.
-		var/metabolism = M.factor(BF_METABOLISM)
-		removed *= metabolism
-		ingest_rem_mult *= metabolism
-		// Metabolism
-		removed *= active_metab.metabolism_speed
-		ingest_rem_mult *= active_metab.metabolism_speed
-
-		if(ishuman(M))
-			var/mob/living/carbon/human/H = M
-			if(!HAS_SYNTHETIC_BIOLOGY(H))
-				if(H.species.has_organ[O_HEART] && (active_metab.metabolism_class == CHEM_BLOOD))
-					var/obj/item/organ/internal/heart/Pump = H.organ_in(O_HEART)
-					if(!Pump)
-						removed *= 0.1
-					else if(Pump.standard_pulse_level == PULSE_NONE)	// No pulse normally means chemicals process a little bit slower than normal.
-						removed *= 0.8
-					else	// Otherwise, chemicals process as per percentage of your current pulse, or, if you have no pulse but are alive, by a miniscule amount.
-						removed *= max(0.1, H.pulse / Pump.standard_pulse_level)
-
-				if(H.species.has_organ[O_STOMACH] && (active_metab.metabolism_class == CHEM_INGEST))
-					var/obj/item/organ/internal/stomach/Chamber = H.organ_in(O_STOMACH)
-					if(Chamber)
-						ingest_rem_mult *= max(0.1, 1 - (Chamber.damage / Chamber.max_damage))
-					else
-						ingest_rem_mult = 0.1
-
-				if(H.species.has_organ[O_INTESTINE] && (active_metab.metabolism_class == CHEM_INGEST))
-					var/obj/item/organ/internal/intestine/Tube = H.organ_in(O_INTESTINE)
-					if(Tube)
-						ingest_abs_mult *= max(0.1, 1 - (Tube.damage / Tube.max_damage))
-					else
-						ingest_abs_mult = 0.1
-
-			else
-				var/obj/item/organ/internal/heart/machine/Pump = H.organ_in(O_PUMP)
-				var/obj/item/organ/internal/stomach/machine/Cycler = H.organ_in(O_CYCLER)
-				var/obj/item/organ/internal/nano/refactory/Refactory = H.organ_in(O_FACT) // ition: Proteans
-
-				if(active_metab.metabolism_class == CHEM_BLOOD)
-					if(Pump)
-						removed *= 1.1 - Pump.damage / Pump.max_damage
-					else if(Refactory) // ition: Proteans
-						removed *= 1.1 - Refactory.damage / Refactory.max_damage
-					else
-						removed *= 0.1
-
-				else if(active_metab.metabolism_class == CHEM_INGEST)	// If the pump is damaged, we waste chems from the tank.
-					if(Pump)
-						ingest_abs_mult *= max(0.25, 1 - Pump.damage / Pump.max_damage)
-					else if(Refactory) // ition: Proteans
-						ingest_abs_mult *= max(0.25, 1 - Refactory.damage / Refactory.max_damage)
-					else
-						ingest_abs_mult *= 0.2
-
-					if(Cycler)	// If we're damaged, we empty our tank slower.
-						ingest_rem_mult = max(0.1, 1 - (Cycler.damage / Cycler.max_damage))
-					else if(Refactory) // ition: Proteans
-						ingest_rem_mult = max(0.1, 1 - (Refactory.damage / Refactory.max_damage))
-					else
-						ingest_rem_mult = 0.1
-
-				else if(active_metab.metabolism_class == CHEM_TOUCH)	// Machines don't exactly absorb chemicals.
-					removed *= 0.5
-
-			if(filtered_organs && filtered_organs.len)
-				for(var/organ_tag in filtered_organs)
-					var/obj/item/organ/internal/O = H.organ_in(organ_tag)
-					if(O && !O.is_broken() && prob(max(0, O.max_damage - O.damage)))
-						removed *= 0.8
-						if(active_metab.metabolism_class == CHEM_INGEST)
-							ingest_rem_mult *= 0.8
-
-	if(ingest_met && (active_metab.metabolism_class == CHEM_INGEST))
-		removed = ingest_met * ingest_rem_mult
-	if(touch_met && (active_metab.metabolism_class == CHEM_TOUCH))
-		removed = touch_met
-	removed = min(removed, volume)
-	max_dose = max(volume, max_dose)
-	dose = min(dose + removed, max_dose)
+	var/list/taken = active_metab.cycle_taken(src)
+	var/removed = taken[CHEM_TAKEN_REMOVED]
+	var/ingest_abs_mult = taken[CHEM_TAKEN_ABSORBED]
+	max_dose = taken[CHEM_TAKEN_MAX_DOSE]
+	dose = taken[CHEM_TAKEN_DOSE]
 	if(M.species.medallergens & medallergen_type) // Medical allergies don't gain ANY benefits (the reaction is a body factor)...
 		remove_self(removed)
 		return
@@ -302,10 +226,47 @@
 		if(CHEM_TOUCH)
 			apply_species_injuries(M, species_injuries_touch, removed)
 	on_mob_metabolize(M, location)
-	if(overdose && (volume > overdose * M?.species.chemOD_threshold) && (active_metab.metabolism_class != CHEM_TOUCH || can_overdose_touch))
+	if(taken[CHEM_TAKEN_OVERDOSING])
+		overdose_injury = taken[CHEM_TAKEN_OVERDOSE_INJURY]
 		overdose(M, alien, removed)
+		overdose_injury = null
 	remove_self(removed)
 	return
+
+/// Whether this reagent does anything in `M` this cycle: a corpse only for what affects the dead (or a body kept pumping), a synthetic
+/// only for what affects robots and when its chemistry runs.
+/datum/reagent/proc/metabolizes_in(mob/living/carbon/M)
+	if(!affects_dead && M.stat == DEAD && !M.has_body_effect(/datum/body_effect/bloodpump_corpse))
+		return FALSE
+	if(HAS_SYNTHETIC_BIOLOGY(M) && (!M.synth_reag_processing || !affects_robots))
+		return FALSE
+	return TRUE
+
+/// The units `M` takes up of this reagent this cycle from `location`, at most: its metabolism times the body's (`location`'s
+/// cycle_body(): species, traits, the heart's pulse, the stomach, a machine's pump), slowed by the organs that filter it; or its fixed
+/// ingest_met / touch_met. `ingest_rem_mult` is the body's ingest rate (passed so a filter can slow it). Returns list(rate, absorbed share).
+/datum/reagent/proc/cycle_rate(mob/living/carbon/M, datum/reagents/metabolism/location, list/body)
+	var/removed = metabolism
+	var/ingest_rem_mult = 1
+	var/ingest_abs_mult = 1
+	if(!mrate_static == TRUE)
+		for(var/factor in body[CHEM_BODY_REMOVED])
+			removed *= factor
+		ingest_rem_mult = body[CHEM_BODY_INGEST_REMOVED]
+		ingest_abs_mult = body[CHEM_BODY_INGEST_ABSORBED]
+		if(ishuman(M) && filtered_organs && filtered_organs.len)
+			var/mob/living/carbon/human/H = M
+			for(var/organ_tag in filtered_organs)
+				var/obj/item/organ/internal/O = H.organ_in(organ_tag)
+				if(O && !O.is_broken() && prob(max(0, O.max_damage - O.damage)))
+					removed *= 0.8
+					if(location.metabolism_class == CHEM_INGEST)
+						ingest_rem_mult *= 0.8
+	if(ingest_met && (location.metabolism_class == CHEM_INGEST))
+		removed = ingest_met * ingest_rem_mult
+	if(touch_met && (location.metabolism_class == CHEM_TOUCH))
+		removed = touch_met
+	return list(removed, ingest_abs_mult)
 
 /datum/reagent/proc/affect_blood(mob/living/carbon/M, alien, removed)
 	return
@@ -329,7 +290,11 @@
 	// 6 damage per unit at minimum, scales with excessive reagents. Rounding should help keep damage consistent between ingest / inject, but isn't perfect.
 	// Hardcapped at 3.6 damage per tick, or 18 damage per unit at 0.2 metabolic rate so that you can't instakill people with overdoses by feeding them infinite periadaxon.
 	// Overall, max damage is slightly less effective than hydrophoron, and 1/5 as effective as cyanide.
-	M.injure(INJURY_TOXIN, min(removed * od_mod * round(3 + 3 * volume / overdose), 3.6), source = src)
+	// The number is Rust's (vg_chem::metabolism): the holder's cycle worked it out; a call outside a cycle asks for this one reagent.
+	var/injury = overdose_injury
+	if(isnull(injury))
+		injury = vg_chem_overdose_injury(removed, od_mod, volume, overdose)
+	M.injure(INJURY_TOXIN, injury, source = src)
 
 // --- Body heat (B15 / P2-S10) ---------------------------------------------------
 // Reagents heat and cool through the mob's one temperature writer, scaled by the

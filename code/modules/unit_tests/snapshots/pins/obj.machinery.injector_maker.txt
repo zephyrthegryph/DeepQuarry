@@ -1,0 +1,147 @@
+human|none menu: Add container (refused: needs a  , a glass, or a shaker)
+human|none menu: Add injector (refused: needs a large autoinjector)
+human|none menu: Add injector (refused: needs an autoinjector)
+human|none menu: Add plastic (refused: needs a plastic)
+human|none menu: Add plastic (refused: needs an item)
+human|none menu: Eject beaker (refused: not possible right now)
+human|none menu: Use
+human|none menu: Use (refused: needs an item)
+human|none click: nothing
+robot|none menu: Add container (refused: needs a  , a glass, or a shaker)
+robot|none menu: Add injector (refused: needs a large autoinjector)
+robot|none menu: Add injector (refused: needs an autoinjector)
+robot|none menu: Add plastic (refused: needs a plastic)
+robot|none menu: Add plastic (refused: needs an item)
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Eject beaker (refused: not possible right now)
+robot|none menu: Use
+robot|none menu: Use (refused: needs an item)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/tool/screwdriver menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/tool/screwdriver menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/tool/screwdriver menu: Add plastic (refused: needs a plastic)
+human|/obj/item/tool/screwdriver menu: Add plastic (refused: needs an item)
+human|/obj/item/tool/screwdriver menu: Eject beaker (refused: not possible right now)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/tool/crowbar menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/tool/crowbar menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/tool/crowbar menu: Add plastic (refused: needs a plastic)
+human|/obj/item/tool/crowbar menu: Add plastic (refused: needs an item)
+human|/obj/item/tool/crowbar menu: Eject beaker (refused: not possible right now)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/tool/wrench menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/tool/wrench menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/tool/wrench menu: Add plastic (refused: needs a plastic)
+human|/obj/item/tool/wrench menu: Add plastic (refused: needs an item)
+human|/obj/item/tool/wrench menu: Eject beaker (refused: not possible right now)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/tool/wirecutters menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/tool/wirecutters menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/tool/wirecutters menu: Add plastic (refused: needs a plastic)
+human|/obj/item/tool/wirecutters menu: Add plastic (refused: needs an item)
+human|/obj/item/tool/wirecutters menu: Eject beaker (refused: not possible right now)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/multitool menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/multitool menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/multitool menu: Add plastic (refused: needs a plastic)
+human|/obj/item/multitool menu: Add plastic (refused: needs an item)
+human|/obj/item/multitool menu: Eject beaker (refused: not possible right now)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/weldingtool menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/weldingtool menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/weldingtool menu: Add plastic (refused: needs a plastic)
+human|/obj/item/weldingtool menu: Add plastic (refused: needs an item)
+human|/obj/item/weldingtool menu: Eject beaker (refused: not possible right now)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/stack/cable_coil menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/stack/cable_coil menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/stack/cable_coil menu: Add plastic (refused: needs a plastic)
+human|/obj/item/stack/cable_coil menu: Add plastic (refused: needs an item)
+human|/obj/item/stack/cable_coil menu: Eject beaker (refused: not possible right now)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/stack/material/steel menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/stack/material/steel menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/stack/material/steel menu: Add plastic (refused: needs a plastic)
+human|/obj/item/stack/material/steel menu: Add plastic (refused: not possible right now)
+human|/obj/item/stack/material/steel menu: Eject beaker (refused: not possible right now)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/card/id menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/card/id menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/card/id menu: Add plastic (refused: needs a plastic)
+human|/obj/item/card/id menu: Add plastic (refused: needs an item)
+human|/obj/item/card/id menu: Eject beaker (refused: not possible right now)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: nothing
+human|/obj/item/reagent_containers/glass menu: Add container
+human|/obj/item/reagent_containers/glass menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/reagent_containers/glass menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/reagent_containers/glass menu: Add plastic (refused: needs a plastic)
+human|/obj/item/reagent_containers/glass menu: Add plastic (refused: needs an item)
+human|/obj/item/reagent_containers/glass menu: Eject beaker (refused: not possible right now)
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass menu: Use
+human|/obj/item/reagent_containers/glass click: nothing
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Add injector
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Add plastic (refused: needs a plastic)
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Add plastic (refused: needs an item)
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Eject beaker (refused: not possible right now)
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Use
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty click: nothing
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add injector
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add plastic (refused: needs a plastic)
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add plastic (refused: needs an item)
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Eject beaker (refused: not possible right now)
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Use
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty click: nothing
+human|/obj/item/stack/material menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/stack/material menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/stack/material menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/stack/material menu: Add plastic (refused: needs a plastic)
+human|/obj/item/stack/material menu: Add plastic (refused: not possible right now)
+human|/obj/item/stack/material menu: Eject beaker (refused: not possible right now)
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material click: nothing
+human|/obj/item menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item menu: Add injector (refused: needs an autoinjector)
+human|/obj/item menu: Add plastic (refused: needs a plastic)
+human|/obj/item menu: Add plastic (refused: needs an item)
+human|/obj/item menu: Eject beaker (refused: not possible right now)
+human|/obj/item menu: Use
+human|/obj/item click: nothing
+human|/obj/item/stack/material/plastic menu: Add container (refused: needs a  , a glass, or a shaker)
+human|/obj/item/stack/material/plastic menu: Add injector (refused: needs a large autoinjector)
+human|/obj/item/stack/material/plastic menu: Add injector (refused: needs an autoinjector)
+human|/obj/item/stack/material/plastic menu: Add plastic
+human|/obj/item/stack/material/plastic menu: Add plastic (refused: not possible right now)
+human|/obj/item/stack/material/plastic menu: Eject beaker (refused: not possible right now)
+human|/obj/item/stack/material/plastic menu: Use
+human|/obj/item/stack/material/plastic click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, injector_maker_add_beaker, injector_maker_add_large_injector, injector_maker_add_plastic, injector_maker_add_small_injector, injector_maker_drag_add_plastic, injector_maker_eject_beaker, injector_maker_swallow, injector_maker_use, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

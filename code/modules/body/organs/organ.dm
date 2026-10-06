@@ -65,7 +65,6 @@ OM_FIELD(/obj/item/organ, robotic, 0, CHANGE_EXPLICIT)
 /obj/item/organ/proc/update_health()
 	return
 
-DECLARE_REAGENTS(/obj/item/organ, 5, null)
 
 /obj/item/organ/Initialize(mapload, internal)
 	. = ..()

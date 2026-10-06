@@ -1,39 +1,29 @@
-human|none menu: Burn
 human|none menu: Rip down
-human|none click: nothing
-robot|none menu: Burn
+human|none click: Click: Rip down
 robot|none menu: Rip down
-robot|none click: nothing
+robot|none click: Click: Rip down
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Burn
 human|/obj/item/tool/screwdriver menu: Rip down
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
-human|/obj/item/tool/crowbar menu: Burn
 human|/obj/item/tool/crowbar menu: Rip down
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Burn
+human|/obj/item/tool/crowbar click: Click: Rip down
 human|/obj/item/tool/wrench menu: Rip down
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Burn
+human|/obj/item/tool/wrench click: Click: Rip down
 human|/obj/item/tool/wirecutters menu: Rip down
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Burn
+human|/obj/item/tool/wirecutters click: Click: Rip down
 human|/obj/item/multitool menu: Rip down
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Rip down
 human|/obj/item/weldingtool menu: Burn
 human|/obj/item/weldingtool menu: Rip down
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Burn
+human|/obj/item/weldingtool click: Click: Burn
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Rip down
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Burn
+human|/obj/item/stack/cable_coil click: Click: Rip down
 human|/obj/item/stack/material/steel menu: Rip down
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Burn
+human|/obj/item/stack/material/steel click: Click: Rip down
 human|/obj/item/card/id menu: Rip down
-human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, sign_flag_item, sign_flag_rip, use_screwdriver
+human|/obj/item/card/id click: Click: Rip down
+keys: burn, gen_drag_interaction_drag_buckle, rip, use_screwdriver
 

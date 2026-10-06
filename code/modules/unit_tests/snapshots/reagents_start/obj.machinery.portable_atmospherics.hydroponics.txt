@@ -1,0 +1,4 @@
+/obj/machinery/portable_atmospherics/hydroponics vol=200 holder=/datum/reagents 
+/obj/machinery/portable_atmospherics/hydroponics/soil vol=200 holder=/datum/reagents 
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible runtime
+

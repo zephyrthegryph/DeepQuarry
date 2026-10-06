@@ -1635,9 +1635,17 @@ CAPABILITIES(/obj/item/sign)
 	P.flagtype = type
 	consume(src, user)
 
+MSG_DEF(flag/burning, "You start to burn %T% down!", "%U% starts to burn %T% down!")
+MSG_DEF(flag/burnt, "You burn %T% down!", "%U% burns %T% down!")
+
 CAPABILITIES(/obj/structure/sign/flag)
 	links(/obj/structure/sign/flag::linked_flag, /obj/structure/sign/flag::linked_flag)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(flag_blast)))
+	op("rip", hand(), label("Rip down"),
+		asks(/datum/prompt/yes_no, fields = list("title" = "You think...", "question" = computed(PROC_REF(rip_question)), "timeout" = 0)),
+		then(PROC_REF(rip_answered)))
+	op("burn", inputs(item(/obj/item/flame/lighter), tool(TOOL_WELDER)), label("Burn"), wait(2 SECONDS), costs(RES_FUEL, 0), begins(MSG(flag/burning)),
+		says(MSG(flag/burnt)), then(PROC_REF(burnt_down)))
 
 /// A flag that survives a blast is torn.
 /obj/structure/sign/flag/proc/flag_blast(datum/act/A)
@@ -1656,32 +1664,21 @@ CAPABILITIES(/obj/structure/sign/flag)
 		spent(linked_flag, user) //otherwise you're going to get weird duping nonsense
 	consume(src, user)
 
-/obj/structure/sign/flag/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/sign_flag_rip,
-		/datum/interaction/entry_item/sign_flag_item,
-	)
-	..()
+/// The rip's question names the flag.
+/obj/structure/sign/flag/proc/rip_question(datum/act/A)
+	return "Do you want to rip \the [src] from its place?"
 
-/// Old attack_hand: rip the flag from its place.
-/datum/interaction/entry_hand/sign_flag_rip
-	id = "sign_flag_rip"
-	name = "Rip down"
-	effect = /obj/structure/sign/flag/proc/interaction_rip
-
-/obj/structure/sign/flag/proc/interaction_rip(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/yes_no, PROC_REF(rip_answered), answerer = user, title = "You think...", question = "Do you want to rip \the [src] from its place?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/structure/sign/flag/proc/rip_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/mob/user = A.request.answerer
+/// A hand rips the flag from its place, once the actor says yes.
+/obj/structure/sign/flag/proc/rip_answered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value)
+		return OP_OK
+	var/mob/user = A.actor
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!" ))
 	play_sfx(src.loc, SFX_ITEMS_POSTER_RIPPED)
 	add_fingerprint(user)
 	rip()
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/flag/proc/rip(rip_linked = TRUE)
 	var/icon/I = new('icons/obj/flags.dmi', icon_state)
@@ -1694,26 +1691,15 @@ CAPABILITIES(/obj/structure/sign/flag)
 	if(linked_flag && rip_linked)
 		linked_flag.rip(FALSE) //Prevents an infinite ripping loop
 
-/// Old attackby: burn the flag down.
-/datum/interaction/entry_item/sign_flag_item
-	id = "sign_flag_item"
-	name = "Burn"
-	effect = /obj/structure/sign/flag/proc/interaction_item
-
-/obj/structure/sign/flag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
-		act_message(user, src, others = span_warning("%U% starts to burn %T% down!"))
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return TRUE
-
-/obj/structure/sign/flag/proc/attackby_timed_done(mob/user)
-	act_message(user, src, others = span_warning("%U% burns %T% down!"))
+/// A lighter or a welder's wait ran out: the flag (and its other half) burns to ash.
+/obj/structure/sign/flag/proc/burnt_down(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src.loc, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT, volume = 100, extrarange = 0)
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)
 		consumed(linked_flag, src)
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/flag/blank/left
 	icon_state = "flag_l"

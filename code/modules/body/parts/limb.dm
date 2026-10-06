@@ -15,6 +15,7 @@
 	var/list/detached_afflictions
 
 CAPABILITIES(/obj/item/organ)
+	reagents(5)
 	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))

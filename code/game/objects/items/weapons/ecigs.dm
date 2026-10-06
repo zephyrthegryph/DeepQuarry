@@ -216,51 +216,60 @@ CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge)
 	name = "flavorless nicotine cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says you can add whatever flavoring agents you want."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/blanknico, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/blanknico)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/ecig_cartridge/med_nicotine
 	name = "tobacco flavour cartridge"
 	desc =  "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its tobacco flavored."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/med_nicotine, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 15))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/med_nicotine)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 15)))
 
 /obj/item/reagent_containers/ecig_cartridge/high_nicotine
 	name = "high nicotine tobacco flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its tobacco flavored, with extra nicotine."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/high_nicotine, null, list(REAGENT_ID_NICOTINE = 10, REAGENT_ID_WATER = 10))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/high_nicotine)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 10, REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/ecig_cartridge/orange
 	name = "orange flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its orange flavored."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/orange, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_ORANGEJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/orange)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_ORANGEJUICE = 5)))
 
 /obj/item/reagent_containers/ecig_cartridge/mint
 	name = "mint flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its mint flavored."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/mint, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_MENTHOL = 5))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/mint)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_MENTHOL = 5)))
 
 /obj/item/reagent_containers/ecig_cartridge/watermelon
 	name = "watermelon flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its watermelon flavored."
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/watermelon, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_WATERMELONJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/watermelon)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_WATERMELONJUICE = 5)))
 
 /obj/item/reagent_containers/ecig_cartridge/grape
 	name = "grape flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its grape flavored."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/grape, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_GRAPEJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/grape)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_GRAPEJUICE = 5)))
 
 /obj/item/reagent_containers/ecig_cartridge/lemonlime
 	name = "lemon-lime flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its lemon-lime flavored."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/lemonlime, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_LEMONLIME = 5))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/lemonlime)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_LEMONLIME = 5)))
 
 /obj/item/reagent_containers/ecig_cartridge/coffee
 	name = "coffee flavour cartridge"
 	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label says its coffee flavored."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/ecig_cartridge/coffee, null, list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_COFFEE = 5))
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge/coffee)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 5, REAGENT_ID_WATER = 10, REAGENT_ID_COFFEE = 5)))

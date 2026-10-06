@@ -137,9 +137,14 @@ GLOBAL_LIST_INIT(cap_reserved_vars, list("cap_id", "selector", "params", "ctor",
 	copy.cap_id = def.cap_id
 	var/list/ctor = def.ctor ? def.ctor.Copy() : list()
 	def.carry_over(copy)
+	copy.reconfigure_ctor(ctor, changes)
+	return cap_build(copy, info, ctor)
+
+/// configure(): writes the params `changes` names into `ctor` (the inherited params). The default replaces each; a capability whose
+/// param accumulates down the tree (reagents()' `add`) merges it here instead.
+/datum/capability/proc/reconfigure_ctor(list/ctor, list/changes)
 	for(var/name in changes)
 		ctor[name] = changes[name]
-	return cap_build(copy, info, ctor)
 
 /// A definition rebuilt by configure() keeps what its params do not carry (a graph capability's compiled graph).
 /datum/capability/proc/carry_over(datum/capability/copy)

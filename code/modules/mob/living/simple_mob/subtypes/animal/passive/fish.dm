@@ -327,7 +327,8 @@ TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "
 	endurance = 50
 	meat_amount = 0
 
-DECLARE_REAGENTS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, 60, list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
+	reagents(60, starts = list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
 
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/life_type_post_due()
 	return TRUE

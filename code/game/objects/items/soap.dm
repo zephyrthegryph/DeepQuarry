@@ -16,9 +16,9 @@
 	var/cleanspeed = 35
 	var/bites = 0
 
-DECLARE_REAGENTS(/obj/item/soap, 5, null)
 
 CAPABILITIES(/obj/item/soap)
+	reagents(5)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.

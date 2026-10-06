@@ -225,9 +225,9 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 /obj/item/organ/internal/brain/slime/is_open_container()
 	return 1
 
-DECLARE_REAGENTS(/obj/item/organ/internal/brain/slime, 50, null)
 
 CAPABILITIES(/obj/item/organ/internal/brain/slime)
+	configure(reagents(volume = 50))
 	after_init(0, then(PROC_REF(match_core_color)))
 
 /// Matches the core to the Promethean's starting colour, once the body has placed it.
