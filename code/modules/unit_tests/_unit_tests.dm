@@ -359,6 +359,7 @@
 #include "dx_ui_validators_tests.dm"
 #include "dq_om_key_tests.dm"
 #include "dq_om_periodic_tests.dm"
+#include "dq_machine_state_tests.dm"
 #include "dq_world_lanes_tests.dm"
 #include "dq_world_lanes_f3_tests.dm"
 #include "dq_system_ports_a_tests.dm"
