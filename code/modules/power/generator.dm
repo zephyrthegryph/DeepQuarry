@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 
 /// Whether it has work, and the watches it sleeps on: its circulators' four mixtures, re-armed each time (a rebuilt loop is a new mixture).
 /obj/machinery/power/generator/proc/reconsider(datum/act/A)
-	own_clear(src, nameof(loop_watches), OWN_DELETE)
+	gas_watch_many_clear(src, nameof(loop_watches))
 	if(!anchored || !circ1() || !circ2() || !operable())
 		set_generating(FALSE)
 		return
@@ -104,15 +104,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 		set_generating(TRUE)
 		return
 	set_generating(FALSE)
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(circ1().air1, circ1().air2, circ2().air1, circ2().air2))
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	for(var/id in mixture_ids)
-		var/datum/native_watch/gas/W = gas_dependency_watch(src, id, GAS_DEPENDENCY_PRESSURE, PROC_REF(loop_heard))
-		if(W)
-			rel_add(src, nameof(loop_watches), W)
+	gas_watch_many(src, nameof(loop_watches), list(circ1().air1, circ1().air2, circ2().air1, circ2().air2), GAS_DEPENDENCY_PRESSURE, PROC_REF(loop_heard))
 
 /// Rust reported a change of one of its loops while it slept.
 /obj/machinery/power/generator/proc/loop_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)

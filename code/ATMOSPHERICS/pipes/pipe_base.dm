@@ -173,18 +173,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /// A stable leak sleeps: it watches both mixtures either side of it (Rust reports their changes) and wakes only once they no longer match,
 /// which is when the network's leak transaction has something to move.
 /obj/machinery/atmospherics/pipe/proc/hibernate_stable_leak()
-	clear_leak_gas_dependencies()
-	var/datum/gas_mixture/environment = loc?.return_air()
-	var/datum/gas_mixture/pipe_air = parent?.air
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(environment, pipe_air))
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	for(var/id in mixture_ids)
-		var/datum/native_watch/gas/W = gas_dependency_watch(src, id, GAS_DEPENDENCY_ALL, PROC_REF(leak_heard))
-		if(W)
-			rel_add(src, nameof(leak_watches), W)
+	gas_watch_many(src, nameof(leak_watches), list(loc?.return_air(), parent?.air), GAS_DEPENDENCY_ALL, PROC_REF(leak_heard))
 
 /// Rust reported a change of one side of a sleeping leak.
 /obj/machinery/atmospherics/pipe/proc/leak_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
@@ -195,7 +184,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())
 
 /obj/machinery/atmospherics/pipe/proc/clear_leak_gas_dependencies()
-	own_clear(src, nameof(leak_watches), OWN_DELETE)
+	gas_watch_many_clear(src, nameof(leak_watches))
 
 /obj/machinery/atmospherics/pipe/proc/wake_from_leak()
 	clear_leak_gas_dependencies()

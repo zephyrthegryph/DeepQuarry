@@ -814,3 +814,26 @@
 		ap_algae_tick(F)
 	TEST_ASSERT(F.stored_material[MAT_ALGAE] < algae_idle, "new CO2 starts it again")
 	take_down_lines()
+
+// =====================================================================================================================
+// The gas turbine
+// =====================================================================================================================
+
+/// Bolted down with a pressure head across it, a turbine spins up and its two sides draw together; unbolted, it stops.
+/datum/unit_test/dq_atmos_m/pipes/turbine_spins
+/datum/unit_test/dq_atmos_m/pipes/turbine_spins/run_gate()
+	var/obj/machinery/atmospherics/pipeturbine/T = allocate(/obj/machinery/atmospherics/pipeturbine, tile(3, 3))
+	var/mob/living/carbon/human/H = person(null, tile(2, 3))
+	var/obj/item/tool/wrench/W = tool(/obj/item/tool/wrench, tile(2, 3))
+	T.air_in.adjust_gas(GAS_N2, 200)
+	heat_set(T.air_in, T20C, HEAT_SOURCE_OTHER)
+	var/head = T.air_in.return_pressure() - T.air_out.return_pressure()
+	ap_click(H, T, W)
+	TEST_ASSERT(T.anchored, "the wrench bolts it down")
+	for(var/i in 1 to 3)
+		am_settle()
+	TEST_ASSERT(T.kin_energy > 0, "the head spins it ([T.kin_energy])")
+	var/after = T.air_in.return_pressure() - T.air_out.return_pressure()
+	TEST_ASSERT(abs(after) < head * 0.1, "and draws its sides together ([head] kPa -> [after] kPa)")
+	ap_click(H, T, W)
+	TEST_ASSERT(!T.anchored, "the wrench frees it")

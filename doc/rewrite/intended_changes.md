@@ -1578,3 +1578,15 @@ Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
   a tracked `lastgenlev`; the circulators' hot/cold overlays are set when the level changes, not from inside the TEG's appearance proc.
 - The circulator's and the TEG's wrenches are ops; the circulator's "running" display times out on a keyed `after()` (was `om_after_replace`),
   and its look is `draw(look)` from a tracked `run_state` and `temperature_overlay`. The TEG joins `REGISTRY_TURBINES` with `membership()`.
+
+## The gas turbine and its motor (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
+
+- The turbine works on `every(when = spinning)` (bolted, whole, and spinning or with a head across it); asleep it watches its two sides with
+  `gas_watch_many()` (the shared multi-mixture watch, also used now by the TEG and a pipe's sleeping leak). The motor works on
+  `every(when = converting)`, which the turbine's step reconsiders instead of MACHINE_WAKE. OM derived fields, the periodic declarations, the OM
+  watch and the `ownership()` table proc are gone; both left the machine pipeline roster. Their wrenches are ops; the turbine's look is
+  `draw(look)` from tracked `driven` and `speed_band`.
+- **Bug fixed:** after a stroke the turbine handed its input side `remove(volume_ratio)` (0.2 moles) instead of `remove_ratio(volume_ratio)` (its
+  share by volume), so nearly all the gas was dumped to the output and the head flipped. Its two sides now settle at one pressure.

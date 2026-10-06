@@ -18,9 +18,7 @@
 		// Atmospherics devices with DM-side work (the "machine_step" section below). Devices whose
 		// flow law is a Rust device edge (vent pumps, dual-port vents and scrubbers, pumps, valves, passive gates, filters and mixers)
 		// and plain pipes have no DM work at all and don't join.
-		/obj/machinery/atmospherics/pipeturbine,
 		/obj/machinery/atmospherics/pipe/simple/heat_exchanging,
-		/obj/machinery/power/turbinemotor,
 		/obj/machinery/power/thermoregulator,
 		/obj/machinery/air_sensor,
 		/obj/machinery/computer/general_air_control/fuel_injection,
