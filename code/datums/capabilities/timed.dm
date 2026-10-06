@@ -79,23 +79,6 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 		return
 	timed_write(D, var_name, pending[TIMED_PRIOR])
 
-/**
- * The one timer (the third time form, next to timed_set() and COOLDOWN_*): calls `handler` after `delay`
- * deciseconds, a PROC_REF on `owner` or a GLOBAL_PROC_REF called with `with`. Stored as a TIMER relation on the
- * owner, so the owner's teardown drops it.
- *	after(src, vend_delay, PROC_REF(finish_vend), with = list(product, user))
- *	after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", with = list(FALSE))
- * - `key`: names the timer; scheduling the same key on the same owner again replaces the pending one, and
- *   cancel_after() / after_pending() / after_left() find it.
- * - `clock`: CLOCK_OWN (the owner's clock: paused in stasis or suspension) or CLOCK_WORLD (real time; held by
- *   ref, so the timer never keeps a deleted owner alive).
- * - `with`: the handler's arguments. A datum argument deleted meanwhile arrives as null, so cleanup always
- *   happens; the handler checks its args (null policy). Only the owner's own deletion drops the call.
- * Returns the timer id (never store it in a var; use a key).
- */
-/proc/after(datum/owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null)
-	return rx_after(owner, delay, handler, key, clock, with, TRUE)
-
 /// Steps `steps` times in `direction`, one step every `delay` deciseconds (the old sleep()/step() drift loop), on
 /// this atom's clock; deleting it drops the rest.
 /atom/movable/proc/drift(direction, steps, delay)
@@ -105,19 +88,6 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 /atom/movable/proc/drift_step(direction, steps, delay)
 	step(src, direction)
 	drift(direction, steps - 1, delay)
-
-/// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
-/// (counted and logged by the scheduler).
-/proc/after_if_alive(datum/owner, delay, handler, list/with = null)
-	return om_after_list(owner, delay, handler, with, nulls_for_gone = FALSE)
-
-/// Deciseconds left on the pending timer of `key` on `owner` (on the clock it was armed on), or 0 when none is.
-/proc/after_left(datum/owner, key)
-	var/datum/holder = owner || om_global_owner()
-	var/list/pending = holder.rx?.timer_ids?[key]
-	if(!pending)
-		return 0
-	return om_timer_left(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1]) || 0
 
 /// Deciseconds until var_name reverts (0 when nothing is pending), on the clock it was set on.
 /proc/time_left(datum/D, var_name)
