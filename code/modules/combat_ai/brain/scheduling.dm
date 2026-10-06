@@ -71,13 +71,33 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 	loop_flag = DQAI_FASTPROCESSING
 
 /datum/capability/ai_loop/tactical/entries()
-	return list(every(0.25 SECONDS, then(CAP_PROC(tactical_tick)), when = STAT_RELEVANCE))
+	return list(every(TYPE_PROC_REF(/mob/living, ai_action_interval), then(CAP_PROC(tactical_tick)), when = STAT_RELEVANCE))
 
 /datum/capability/ai_loop/tactical/proc/tactical_tick(datum/act/timer/A)
 	if(!dq_ai_runlevel_ok())
 		return
 	var/datum/ai_brain/brain = brain_of(A.holder)
 	brain?.tactical_tick()
+
+/// The action loop's cadence, asked before every run (every() with an interval proc): the active behaviour's own interval.
+/mob/living/proc/ai_action_interval(datum/act/timer/A)
+	return ai_brain?.action_interval() || DQ_ACTION_TICK
+
+/// Deciseconds to the loop's next run: the active behaviour's interval_for(), else the combat rate (it is re-selecting).
+/datum/ai_brain/proc/action_interval()
+	var/interval = DQ_ACTION_TICK
+	if(active_behavior_type)
+		interval = dq_get_behavior(active_behavior_type).interval_for(src)
+	armed_interval = interval
+	return interval
+
+/// An event (damage, a new target, a finished behaviour) wants the loop to run now rather than at its armed interval: a loop armed
+/// longer than the combat rate (a stretched idle behaviour) is re-armed, which runs it at the combat rate again.
+/datum/ai_brain/proc/poke_action_loop()
+	if(armed_interval > DQ_ACTION_TICK && (process_flags & DQAI_FASTPROCESSING))
+		trace("action loop poked (armed at [armed_interval] ds)")
+		stop_loop(DQAI_FASTPROCESSING)
+		start_loop(DQAI_FASTPROCESSING)
 
 /// One run of the tactical loop (the capability's every(), and tests driving a brain by hand).
 /datum/ai_brain/proc/tactical_tick()

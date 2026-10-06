@@ -84,6 +84,10 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 	/// a held item).
 	var/requires_held_source = FALSE
 
+	/// Deciseconds between ticks of this behaviour while it is the active one: null is DQ_ACTION_TICK (today's rate for every behaviour).
+	/// IDLE and BACKGROUND behaviours stretch x3 while their mob is below RELEVANCE_VISIBLE (interval_for()); NORMAL and above never do.
+	var/tick_interval = null
+
 // ---------------------------------------------------------------------------
 // Lifecycle hooks. Override in subtypes.
 // ---------------------------------------------------------------------------
@@ -142,3 +146,11 @@ GLOBAL_LIST_EMPTY(dq_behaviors)
 /// in evaluate() because the brain caches eligibility once per slow tick.
 /datum/ai_behavior/proc/applicable_to(mob/living/owner)
 	return TRUE
+
+/// Deciseconds until this behaviour's next tick for `brain`'s mob: its tick_interval, stretched x3 for an IDLE or BACKGROUND
+/// behaviour whose mob no player can see (below RELEVANCE_VISIBLE). NORMAL and higher never stretch.
+/datum/ai_behavior/proc/interval_for(datum/ai_brain/brain)
+	var/t = isnull(tick_interval) ? DQ_ACTION_TICK : tick_interval
+	if(priority_class <= DQ_BEHAVIOR_PRIORITY_IDLE && brain?.holder && stat_value(brain.holder, STAT_RELEVANCE) < RELEVANCE_VISIBLE)
+		t *= DQ_IDLE_STRETCH
+	return t

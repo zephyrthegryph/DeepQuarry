@@ -107,3 +107,11 @@
 // so files included before this modular block can still see them.
 
 #endif // DQ_COMBAT_AI_DEFINES_DM
+
+// Action loop cadence (brain/scheduling.dm, ai_packs.md B2).
+/// The action loop's default interval (and the rate an active behaviour ticks at unless it sets tick_interval).
+#define DQ_ACTION_TICK (0.25 SECONDS)
+/// IDLE and BACKGROUND behaviours below RELEVANCE_VISIBLE tick this many times slower.
+#define DQ_IDLE_STRETCH 3
+/// While engaged the brain re-selects at least this often even without an event.
+#define DQ_ENGAGED_RECHECK (1 SECOND)

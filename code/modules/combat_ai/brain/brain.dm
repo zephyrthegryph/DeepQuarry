@@ -67,6 +67,10 @@
 	/// brain uses a long discovery cadence while combat stays responsive.
 	EXPIRY_DECLARE(next_strategic_at)
 	var/idle_strategic_interval = 10 SECONDS
+	/// The interval the action loop was last armed with (action_interval()); poke_action_loop() re-arms a stretched one.
+	var/tmp/armed_interval = 0
+	/// world.time of the last behaviour selection (pick_and_run()); engaged brains re-select at least every DQ_ENGAGED_RECHECK.
+	EXPIRY_DECLARE(last_pick_at)
 	/// While hibernating: the chunks it watches (watch_mob_chunks()).
 	var/tmp/list/react_sleep_tokens
 
@@ -213,6 +217,12 @@ CAPABILITIES(/datum/ai_brain)
 		var/result = B.tick(src, active_target(), active_source())
 		switch(result)
 			if(DQ_BEHAVIOR_CONTINUE)
+				// Still running: re-select only on an event (selection_dirty) or, engaged, once DQ_ENGAGED_RECHECK has passed.
+				if(!primary_threat || (!selection_dirty && BEFORE(src, last_pick_at + DQ_ENGAGED_RECHECK, CLOCK_WORLD)))
+					return
+				if(!selection_dirty)
+					trace("engaged recheck (minimum interval)")
+				pick_and_run()
 				return
 			if(DQ_BEHAVIOR_DONE)
 				stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
@@ -316,6 +326,7 @@ CAPABILITIES(/datum/ai_brain)
 /// use this to decide whether a calm brain may hibernate), FALSE otherwise.
 /datum/ai_brain/proc/pick_and_run()
 	selection_dirty = FALSE
+	EXPIRY_STAMP(src, last_pick_at, CLOCK_WORLD)
 	if(!effective_behaviors || !length(effective_behaviors))
 		return FALSE
 
@@ -406,6 +417,7 @@ CAPABILITIES(/datum/ai_brain)
 	next_strategic_at = 0
 	wake_from_chunks()
 	sync_fast_processing()
+	poke_action_loop()
 
 /// Keeps the quarter-second tactical loop limited to brains that have a combat
 /// target or a tick-driven behavior in flight (an idle walk still needs to step).
