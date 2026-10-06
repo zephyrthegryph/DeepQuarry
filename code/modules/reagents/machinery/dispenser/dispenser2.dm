@@ -221,7 +221,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		C.reagents.trans_to(container, amount)
-		MACHINE_WAKE(src)
+		work_start(src)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_remove(datum/act/op/A, amount_out, reagent)
@@ -327,7 +327,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 			// Allows copying recipes
 			play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 			var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
-			MACHINE_WAKE(src)
+			work_start(src)
 			if(dispense_amount != amount_actually_dispensed)
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 				to_chat(user, span_warning("[src] was only able to dispense [amount_actually_dispensed ? amount_actually_dispensed : 0]u out of [dispense_amount]u requested of <b>[label]</b>!"))

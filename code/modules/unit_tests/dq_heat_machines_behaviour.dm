@@ -54,7 +54,7 @@
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, room[1])
 	heater.set_temperature = 303
 	heater.set_state(1)
-	MACHINE_WAKE(heater)
+	work_start(heater)
 	var/charge0 = heater.cell.charge
 	var/e0 = heat_bt_air_energy(room)
 	heat_bt_run(20)
@@ -77,7 +77,7 @@
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, room[1])
 	heater.set_temperature = 293
 	heater.set_state(1)
-	MACHINE_WAKE(heater)
+	work_start(heater)
 	var/charge0 = heater.cell.charge
 	var/e0 = heat_bt_air_energy(room)
 	heat_bt_run(20)

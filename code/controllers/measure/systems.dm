@@ -124,8 +124,6 @@
 	// Not a static: this runs while the OM registry builds inside the global variable controller's New(), before
 	// proc statics holding type paths are set up (a static here read as null and the table came out empty).
 	var/list/rows = list(
-		// code/game/machinery/: the machine pipeline (the machine system is a kernel work item).
-		"machines" = list(/datum/om/pipeline/machine),
 		// code/datums/om/: the scheduler's own behaviours (expiry, rates, timers, tasks, io, ui pushes, edges) and
 		// the sleeper/timed bases in pipeline.dm.
 		"om_core" = list(/datum/om/behaviour/internal, /datum/om/behaviour/sleeper/timed),

@@ -50,3 +50,6 @@ APPEARANCE_WATCH(/obj/vehicle, list("stat"))
 /// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
 /// sprites drawn from damage declare "get_integrity" and redraw on hits and repairs by themselves.
 OM_DERIVE_FIELD(/atom, get_integrity, list(CHANGE_INTEGRITY))
+
+/// TRUE: a machine in high gear (the mining and conveyor lines read it; their work runs at the same interval either way).
+OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)

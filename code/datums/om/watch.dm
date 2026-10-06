@@ -43,7 +43,7 @@
 // (if any) and then, if `channel` is set, changed(entity, channel) -- which is all an
 // OM-pipeline (polls = FALSE) machine needs to reschedule itself. A polling (polls = TRUE)
 // legacy machine instead supplies a wake_callback that does its old wake_gas_subscriber()
-// branch inline (typically STOP watching + MACHINE_WAKE(src)).
+// branch inline (typically STOP watching + work_start(src)).
 
 /// One band: a field name, a comparison edge, the threshold value and a hysteresis margin (in
 /// the field's own units) so a value sitting exactly on the edge doesn't chatter.

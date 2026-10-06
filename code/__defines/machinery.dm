@@ -189,11 +189,6 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 
 // Note - I would prefer these be defined machines.dm, but some are used prior in file order. ~Leshana
 
-/// Gives a machine step work on the machine pipeline (code/game/machinery/machinery.dm machine_wake()).
-#define MACHINE_WAKE(M) machine_wake(M)
-/// Ends a machine's step work until the next MACHINE_WAKE().
-#define MACHINE_SLEEP(M) machine_sleep(M)
-
 // LINDA owns pipenets via SSair; SSair.process_pipenets is the live
 // dispatcher. Without this redirect, /datum/pipe_network/reconcile() never runs
 // and reconcile_air is silent — multi-pipeline networks don't equalize.

@@ -103,16 +103,17 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 			if(!call(M, test)(null))
 				return TRUE
 		return test_step_machine(M) == PROCESS_KILL
-	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
-		return TRUE
-	return M.machine_step() == PROCESS_KILL
+	return TRUE // no declared work: nothing runs
 
-/// The machine's periodic work may run now: for started work, it is started, its `when` holds and its gate passes; else the legacy
-/// started step of a machine still on the machine pipeline (machine_stepping()).
+/// TRUE while `M` has started work that may run now (a machine with none never does): the old "is a DM process() subscriber" question.
+/proc/machine_stepping(obj/machinery/M)
+	return !!cap_of(M, CAP_STARTED_WORK) && work_started(M)
+
+/// The machine's periodic work may run now: it is started, its `when` holds and its gate passes.
 /proc/test_work_allowed(obj/machinery/M)
 	var/datum/capability/lib/started_work/work = cap_of(M, CAP_STARTED_WORK)
 	if(!work)
-		return machine_stepping(M)
+		return FALSE
 	kernel_drain_now() // a change that starts the work reaches it at the drain
 	if(!work_started(M))
 		return FALSE
@@ -123,14 +124,12 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 			return FALSE
 	return TRUE
 
-/// One step of a machine's periodic work: its started work's step (work_step()), or the legacy machine_step().
+/// One step of a machine's periodic work: its started work's step (work_step()).
 /proc/test_step_machine(obj/machinery/M)
-	if(hascall(M, "work_step"))
-		. = call(M, "work_step")(null)
-		if(. == PROCESS_KILL && cap_of(M, CAP_STARTED_WORK))
-			key_set(M, STARTED_WORK_ACTIVE, FALSE) // what the library's step does with PROCESS_KILL
-		return .
-	return M.machine_step()
+	. = call(M, "work_step")(null)
+	if(. == PROCESS_KILL && cap_of(M, CAP_STARTED_WORK))
+		key_set(M, STARTED_WORK_ACTIVE, FALSE) // what the library's step does with PROCESS_KILL
+	return .
 
 /// Cross-entity derived input: the holder's work follows a field on the entity its relation names.
 /datum/sys_periodic_test_target

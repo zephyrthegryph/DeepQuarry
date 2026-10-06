@@ -33,7 +33,7 @@ const RULES: &[RuleMeta] = &[
 ];
 
 /// The runtime and the scheduler core start/stop work on purpose.
-const SKIP: &[&str] = &["code/datums/sys/periodic.dm", "code/datums/om/", "code/game/machinery/machine_pipeline.dm"];
+const SKIP: &[&str] = &["code/datums/sys/periodic.dm", "code/datums/om/"];
 
 const STEP_PROCS: &[&str] = &["periodic_step", "machine_step"];
 const STOP_OK: &[&str] = &["periodic_step", "machine_step", "on_dematerialize", "lifecycle_dematerialize", "on_destroy", "lifecycle_prerelease"];

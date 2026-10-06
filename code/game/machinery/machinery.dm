@@ -129,14 +129,6 @@ Class Procs:
 	var/material_emp_resistance = 0
 	/// Monotonic diagnostic counter for exact dependency-wake assertions.
 	var/tmp/gas_dependency_wake_count = 0
-	/// Monotonic diagnostic counter: MACHINE_WAKE() calls on this machine.
-	var/tmp/machine_wake_count = 0
-	/// Set when the machine is told what to do (MACHINE_WAKE(), sleep_until_keys()) while its first
-	/// wake is still pending (first_wake_pending()): that direction replaces the declared start condition.
-	var/tmp/materialize_directed = FALSE
-	/// TRUE for a type whose machine_step() reconciles its state with its power: every power or
-	/// break change (power_change(), atom_break(), atom_fix()) runs one step.
-	var/step_on_power_change = FALSE
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
@@ -194,20 +186,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// into a real /obj/item/circuitboard when something needs the physical
 	// item (deconstruction, admin var edit, a frame move). See
 	// materialize_circuit().
-	// Machines start asleep (roadmap S5): a type with machine_step() work joins the machine
-	// pipeline through /datum/om/decl/pipeline_machines, gets one frame to find out whether it
-	// has anything to do, and parks until a wake (MACHINE_WAKE(), its channels or watches).
 	if(!mapload)
 		power_change()
 
-/// A machine in fast mode (speed_process) runs machine_step() on the fast periodic pipeline while
-/// it is live. A subtype's MACHINE_PIPELINE declaration replaces this one and its runtime moves the
-/// work between the machine pipeline and the fast lane on speed_process (code/datums/sys/periodic.dm).
-DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
-
 // the base machine: board and parts deleted, occupants put out.
 /obj/machinery/on_destroy(force)
-	cancel_sleep_keys()
 	om_watch_disarm_all(src)
 	// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the
 	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
@@ -219,112 +202,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 		H.reset_perspective()
 	..()
 
-/// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,
-/// /datum/om/stage/machine/power/step): the same contract process() had on SSmachines' roster.
-/// Return PROCESS_KILL when there is nothing left to do -- the stage idles and the machine parks
-/// until a channel (power_change(), settings, MACHINE_WAKE()) or a gas watch wakes it.
-/// Anything else keeps it running every MACHINE_PIPELINE_INTERVAL.
-/obj/machinery/proc/machine_step()
-	set waitfor = FALSE // ALLOW(scheduler): core dispatch hook: guards the machine pipeline against an override that still sleeps
-	return PROCESS_KILL
-
-/// Once, when a machine on the machine pipeline materializes and the world is up (a zero-delay
-/// after() from joining): arm the watches that will wake it (arm_wakes()), then wake it if its
-/// declared start condition holds. Nothing else runs a machine at spawn.
-/obj/machinery/proc/materialize_wakes()
-	// Running now: it leaves the boot bulk queue (a timer-slot run has already left its slot).
-	rel_remove(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), src)
-	var/directed = materialize_directed
-	materialize_directed = FALSE
-	if(QDELETED(src))
-		return
-	arm_wakes()
-	// The start condition stands in for a first wake nobody gave. A machine already woken, or put
-	// to sleep on its keys, since it joined has had its first word: waking it again here would be
-	// a spurious wake of a machine whose input held steady.
-	if(!directed && step_start_condition())
-		MACHINE_WAKE(src)
-
-/// TRUE while this machine's first wake (materialize_wakes()) has not run yet: it waits in the
-/// boot bulk queue, or in its `first_wake` timer slot. Derived, never stored: firing, cancelling
-/// and deletion all end it on their own (a deleted machine's handle stops resolving).
-/obj/machinery/proc/first_wake_pending()
-	// rel_names(): the boot queue holds every machine, so a list scan here made the bulk pass quadratic.
-	return after_pending(src, "first_wake") || rel_names(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), src)
-
-/// Arms what wakes this machine later (gas watches, change watches). Default: nothing to arm.
-/obj/machinery/proc/arm_wakes()
-	return
-
-/// The declared start condition: TRUE when a freshly materialized machine has work right away
-/// (mapped on, holding fuel, timing). Default FALSE: machines start asleep.
+/// The declared start condition of a machine's started work (started_work(starts = PROC_REF(step_start_condition))): TRUE when it has work
+/// right away at initialization (mapped on, holding fuel, timing). Default FALSE.
 /obj/machinery/proc/step_start_condition()
 	return FALSE
-
-/// A machine in fast mode (speed_process) runs its machine_step() on the fast periodic pipeline.
-/obj/machinery/periodic_step(delta)
-	// A declared MACHINE_PIPELINE state that doesn't hold ends fast mode too; its declaration
-	// restarts it when the state holds again (code/datums/sys/periodic.dm).
-	if(!sys_periodic_allows(src, MACHINE_PIPELINE))
-		return PROCESS_KILL
-	return machine_step()
-
-/// Gives `M` step work: the machine pipeline runs its machine_step() from the next frame until
-/// it returns PROCESS_KILL. Joins the pipeline if `M` isn't on it yet (machines start asleep).
-/proc/machine_wake(obj/machinery/M)
-	if(!M || QDELETED(M))
-		return
-	// A machine whose work is declared (started_work(), code/library/machine/started_work.dm) is started there.
-	if(work_start(M))
-		return
-	// A DECLARE_PERIODIC_WHILE(..., MACHINE_PIPELINE, ...) whose state doesn't hold refuses (code/datums/sys/periodic.dm).
-	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
-		return
-	M.machine_wake_count++
-	M.set_step_active(TRUE)
-	M.set_step_waiting_power(FALSE)
-	if(!om_attached(M, /datum/om/pipeline/machine))
-		om_attach(M, /datum/om/pipeline/machine)
-		// Joined asleep (on_start); this wake is the reason it joined, so it is awake now.
-		var/datum/om/frame/S = om_pipe_state(M, /datum/om/pipeline/machine)
-		if(S)
-			om_pipe_set_all(S, FALSE, 0)
-	if(M.first_wake_pending())
-		M.materialize_directed = TRUE
-	om_wake(M, /datum/om/pipeline/machine)
-
-/// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
-/proc/machine_sleep(obj/machinery/M)
-	if(work_stop(M))
-		return
-	if(M)
-		M.set_step_active(FALSE)
-		M.set_step_waiting_power(FALSE)
-
-/// For machine_step(): the machine can't act without power (or while broken). Ends its step work
-/// until power returns and it is whole (power_change(), atom_fix()), then it runs again. Returns
-/// PROCESS_KILL: `return sleep_until_powered()`.
-/obj/machinery/proc/sleep_until_powered()
-	if(cap_of(src, CAP_STARTED_WORK))
-		return work_wait_for_power(src)
-	set_step_waiting_power(TRUE)
-	return PROCESS_KILL
-
-/// A player (or program) changed the machine through an interaction or its UI: a machine with step
-/// work re-evaluates it next frame (its machine_step() says whether there is anything to do).
-/obj/machinery/interaction_ran(mob/actor, datum/interaction/interaction)
-	if(om_attached(src, /datum/om/pipeline/machine))
-		MACHINE_WAKE(src)
-
-/// TRUE while `M` has step work on the machine pipeline (it was: on SSmachines' roster).
-/proc/machine_stepping(obj/machinery/M)
-	return M.step_active && om_attached(M, /datum/om/pipeline/machine)
-
-/// TRUE when machine_step() would have work to do right now: the device's own eligibility rule,
-/// the same test its gas watch arms. The machine pipeline's step stage reads it as its idle rule.
-/// The default: whatever its last machine_step() said (anything but PROCESS_KILL keeps it running).
-/obj/machinery/proc/step_has_work()
-	return step_active
 
 /obj/machinery/emp_act(severity, recursive)
 	if(material_emp_resistance && prob(material_emp_resistance))
@@ -762,49 +643,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	var/flipped = stat_remove(BROKEN) // raises CHANGE_MACHINE_BROKEN
 	..()
 	return flipped ? TRUE : FALSE
-
-// --- Sleeping until something changes (om_watch on change channels) ------------------------------
-
-/obj/machinery
-	/// While asleep on changes: the flat (entity, channel mask) pairs it watches. The machine's
-	/// own settings (CHANGE_MACHINE_SETTINGS), power and repair also wake it.
-	var/tmp/list/react_sleep_tokens
-
-/**
- * Ends the machine's step work until one of `watches` (a flat list of entity, channel mask
- * pairs; empty for "only my own settings or power") changes. The wake arrives at the machine
- * pipeline's step stage as CHANGE_RELATED, which restarts the work.
- */
-/obj/machinery/proc/sleep_until_keys(list/watches = list())
-	cancel_sleep_keys()
-	if(QDELETED(src))
-		return FALSE
-	if(!om_attached(src, /datum/om/pipeline/machine))
-		om_attach(src, /datum/om/pipeline/machine)
-	if(first_wake_pending())
-		materialize_directed = TRUE
-	react_sleep_tokens = watches.Copy()
-	for(var/i = 1; i <= length(watches); i += 2)
-		om_watch(src, watches[i], watches[i + 1], /datum/om/pipeline/machine)
-		if(istype(watches[i], /datum/mob_chunk))
-			GLOB.mob_chunk_watches++
-	// ALLOW(sys_periodic_toggle): this is the sleep-on-keys primitive itself (ends step work until a watched key fires); react_sleep_tokens is its bookkeeping, not a state the work runs while
-	MACHINE_SLEEP(src)
-	return TRUE
-
-/obj/machinery/proc/cancel_sleep_keys()
-	if(isnull(react_sleep_tokens))
-		return
-	var/list/watches = react_sleep_tokens
-	react_sleep_tokens = null
-	for(var/i = 1; i <= length(watches); i += 2)
-		om_unwatch(src, watches[i], /datum/om/pipeline/machine)
-		if(istype(watches[i], /datum/mob_chunk))
-			GLOB.mob_chunk_watches = max(GLOB.mob_chunk_watches - 1, 0)
-
-/// TRUE while the machine sleeps on changes and has no step work.
-/obj/machinery/proc/asleep_on_keys()
-	return !isnull(react_sleep_tokens) && !step_active
 
 // ---------------------------------------------------------------- configuration prompts (om_ask)
 

@@ -287,6 +287,6 @@ CAPABILITIES(/obj/machinery/power/sensor)
 	data["alarm"] = power_problem(power_region) ? 1 : 0
 	return data
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Its declared start condition (started_work(starts =)).
 /obj/machinery/power/sensor/step_start_condition()
 	return TRUE // schedules its history samples

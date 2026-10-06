@@ -1,5 +1,4 @@
 /obj/machinery/reagent_refinery
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/refinery_machines.dmi'
 	VAR_PROTECTED/default_max_vol = 120
@@ -47,7 +46,7 @@
 	for(var/direction in GLOB.cardinal)
 		var/obj/machinery/reagent_refinery/other = locate_within(get_step(get_turf(src), direction), /obj/machinery/reagent_refinery)
 		if(other)
-			MACHINE_WAKE(other)
+			work_start(other)
 
 /obj/machinery/reagent_refinery/interaction_ran(mob/actor, datum/interaction/interaction)
 	wake_refinery_line()

@@ -482,7 +482,7 @@
 
 // --- Machines ------------------------------------------------------------------------
 
-/// An APC settles and parks on the machine pipeline; an APC power failure is a timed hold.
+/// An APC is not polled; an APC power failure is a timed hold.
 /datum/unit_test/om_pipeline/apc_and_smes_park
 
 /datum/unit_test/om_pipeline/apc_and_smes_park/run_pipeline()
@@ -491,47 +491,35 @@
 	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
 	if(!A)
 		return
-	TEST_ASSERT(om_attached(A, /datum/om/pipeline/machine), "an APC runs the machine pipeline")
-	TEST_ASSERT(!machine_stepping(A), "and doesn't poll")
-	var/datum/om/frame/S = om_pipe_state(A, /datum/om/pipeline/machine, TRUE)
-	for(var/i in 1 to 3)
-		om_run_frame_now(A, /datum/om/pipeline/machine)
-	TEST_ASSERT(S.parked, "a settled APC parks")
+	TEST_ASSERT(!machine_stepping(A), "an APC doesn't poll")
 	A.energy_fail(1)
 	TEST_ASSERT(A.failure_left() > 0, "the failure is on")
 	TEST_ASSERT(hold_left(A, STAT_OPERABLE, SRC_POWER_FAILURE) > 0, "a timed hold ends the failure, no pipeline rewake")
 	A.end_power_failure()
 	TEST_ASSERT(!A.failure_left(), "a reboot ends it")
-	om_run_frame_now(A, /datum/om/pipeline/machine)
 	A.apply_area_power()
 	rel_set(src, nameof(sched), om_test_begin())
 
-/// A fire alarm parks once its (dead-code today) lockdown countdown is off, and a settings
-/// change (arming a countdown) wakes it until the countdown ends.
+/// A fire alarm has no work until a countdown is armed; arming one starts it, and it ends and parks when the alarm trips.
 /datum/unit_test/om_pipeline/firealarm_parks_and_wakes
 
 /datum/unit_test/om_pipeline/firealarm_parks_and_wakes/run_pipeline()
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for fire alarm pipeline test")
 	var/obj/machinery/firealarm/F = allocate(/obj/machinery/firealarm, T)
-	TEST_ASSERT(om_attached(F, /datum/om/pipeline/machine), "a fire alarm runs the machine pipeline")
-	TEST_ASSERT(!machine_stepping(F), "and doesn't poll")
-	var/datum/om/frame/S = om_pipe_state(F, /datum/om/pipeline/machine, TRUE)
-	for(var/i in 1 to 3)
-		om_run_frame_now(F, /datum/om/pipeline/machine)
-	TEST_ASSERT(S.parked, "an idle fire alarm parks")
-	F.stat_remove(NOPOWER | BROKEN)// the countdown only runs on a powered alarm
+	F.stat_remove(NOPOWER | BROKEN) // the countdown only runs on a powered alarm
+	TEST_ASSERT(!machine_stepping(F), "an idle fire alarm has no work")
 	F.time = 1
-	F.set_timing(1) // raises CHANGE_MACHINE_SETTINGS
-	sched.run_pass(1e9)
-	TEST_ASSERT(!S.parked, "arming a countdown wakes it")
-	var/frames = 0
-	while(F.timing && frames < 10)
-		om_run_frame_now(F, /datum/om/pipeline/machine)
-		frames++
+	F.set_timing(1)
+	kernel_drain_now()
+	TEST_ASSERT(machine_stepping(F), "arming a countdown starts its work")
+	for(var/i in 1 to 10)
+		if(!F.timing)
+			break
+		test_step_machine(F)
 	TEST_ASSERT(!F.timing, "the countdown ends and fires the alarm")
 	TEST_ASSERT(F.firewarn, "the countdown ending triggered alarm()")
-	TEST_ASSERT(S.parked, "the fire alarm parks again once the countdown ends")
+	TEST_ASSERT(!work_started(F), "the fire alarm parks again once the countdown ends")
 	qdel(F)
 
 /// A canister runs the machine pipeline, parks once it has no valve flow, reaction or material

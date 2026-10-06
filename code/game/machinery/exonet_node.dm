@@ -1,5 +1,4 @@
 /obj/machinery/exonet_node
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "exonet node"
 	desc = null // Gets written in New()

@@ -1,5 +1,4 @@
 /obj/machinery/auto_cloner
-	step_on_power_change = TRUE
 	name = "mysterious pod"
 	desc = "It's full of a viscous liquid, but appears dark and silent."
 	icon = 'icons/obj/cryogenics.dmi'

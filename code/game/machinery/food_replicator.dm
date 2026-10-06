@@ -1,5 +1,4 @@
 /obj/machinery/food_replicator
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'

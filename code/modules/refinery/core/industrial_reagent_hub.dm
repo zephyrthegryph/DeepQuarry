@@ -95,4 +95,4 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom
 /obj/machinery/reagent_refinery/hub/Crossed(atom/movable/AM)
 	. = ..()
 	if(istype(AM, /obj/vehicle/train/trolley_tank))
-		MACHINE_WAKE(src)
+		work_start(src)

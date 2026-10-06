@@ -12,8 +12,8 @@
 //   started_work(step = PROC_REF(x), gate = PROC_REF(y))        ...and a step runs only when y(A) answers TRUE (a computed test, asked each
 //                                                                interval; a list of PROC_REFs must all answer TRUE)
 //
-// This is the final form of the machine pipeline's step stage (machine_step() with MACHINE_WAKE()/PROCESS_KILL): the old wake and sleep
-// calls on a machine that declares started work reach work_start()/work_stop() (machine_wake(), machinery.dm).
+// This is the final form of the machine pipeline's step stage (the old machine_step() with MACHINE_WAKE() and PROCESS_KILL, deleted): the old wake and sleep
+// calls on a machine that declares started work were work_start() and work_stop().
 
 MSG_DEF_SELF(started_work/stopped, "It isn't running.")
 MSG_DEF_SELF(started_work/running, "It is running.")

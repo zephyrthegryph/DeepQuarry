@@ -35,7 +35,11 @@ FIRE ALARM
 	var/critwarn = FALSE // Looping Alarms
 	var/causalitywarn = FALSE // Looping Alarms
 
+/// TRUE while the fire alarm's lockdown countdown runs.
+OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
+
 CAPABILITIES(/obj/machinery/firealarm)
+	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), nameof(stat)))
 	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
 	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
 	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm)
@@ -187,15 +191,20 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		MSG_OTHERS(span_notice("%U% has [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit!")))
 	return OP_OK
 
-// Machine pipeline (doc/rewrite/machine_pipeline.dm, code/game/machinery/machine_pipeline.dm):
-// `polls = FALSE` below opts this type out of SSmachines' process() roster onto
-// the OM machine pipeline instead (see the "fire alarms" section there). Hotspots
-// call fire_act() directly while exposing their turf, so an idle alarm needs no
-// poll at all; the countdown path (nothing in this fork currently sets `timing`
-// on a plain firealarm — only /obj/machinery/partyalarm does — kept for parity
-// with any future lockdown caller) has no publish/subscribe event to hook, so it
-// rewakes on the pipeline's own MACHINE_PIPELINE_INTERVAL cadence while counting
-// down instead of a dedicated timer.
+/// One interval of the lockdown countdown (started_work): nothing in this fork starts it on a plain firealarm (only /obj/machinery/partyalarm has
+/// a live caller), so an idle alarm costs nothing; a powered one counts down while `timing` and trips the alarm at zero. Hotspots reach an alarm
+/// through its heat rule, not a poll.
+/obj/machinery/firealarm/proc/work_step(datum/act/timer/A)
+	if(time > 0)
+		time = max(time - (MACHINE_SERVICE_INTERVAL / 10), 0)
+	if(time <= 0)
+		alarm()
+		time = 0
+		set_timing(0)
+	if(detecting && (locate_within(loc, /obj/effect/hotspot)))
+		alarm()
+	if(!timing)
+		return PROCESS_KILL
 
 /obj/machinery/firealarm/power_change()
 	. = ..()

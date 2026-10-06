@@ -46,7 +46,6 @@
 				priority = "Undetermined"
 
 /obj/machinery/message_server
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/research.dmi'
 	icon_state = "server"
