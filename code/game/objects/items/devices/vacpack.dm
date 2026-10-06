@@ -292,6 +292,8 @@ CAPABILITIES(/obj/item/vac_attachment)
 			after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(L, user, auto_setting))
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
+	if(QDELETED(target) || QDELETED(user))
+		return
 	var/atom/movable/output_atom = output_dest
 
 	if(vac_owner) //Embedded vacs have special handling.
@@ -307,6 +309,8 @@ CAPABILITIES(/obj/item/vac_attachment)
 	after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(target, user, target_turf))
 
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
+	if(QDELETED(target) || QDELETED(user))
+		return
 	if(target_turf && target.loc != target_turf)
 		return
 	var/atom/movable/output_atom = output_dest

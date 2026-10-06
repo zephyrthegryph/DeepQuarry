@@ -86,7 +86,7 @@
 	if(has_buckled_mobs())
 		return
 
-	if(victim?.buckled_to() || victim.anchored)
+	if(!victim || victim.buckled_to() || victim.anchored)
 		return
 
 	//grabbing people

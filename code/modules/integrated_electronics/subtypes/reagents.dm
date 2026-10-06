@@ -108,7 +108,7 @@
 
 /// The injection, 3 seconds after do_work() announced it.
 /obj/item/integrated_circuit/reagent/injector/proc/inject_mob(mob/living/L)
-	if(!L.can_inject(null, 0)) // No error message on second check
+	if(!L || !L.can_inject(null, 0)) // No error message on second check
 		activate_pin(3)
 		return
 	var/contained = reagents.get_reagents()

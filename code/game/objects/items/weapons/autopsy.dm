@@ -163,6 +163,8 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 	after(src, 1 SECOND, PROC_REF(print_report), with = list(user, scan_data))
 
 /obj/item/autopsy_scanner/proc/print_report(mob/usr_mob, scan_data)
+	if(!usr_mob)
+		return
 	var/obj/item/paper/P = new(usr_mob.loc)
 	P.name = "Autopsy Data ([target_name])"
 	P.info = "<tt>[scan_data]</tt>"

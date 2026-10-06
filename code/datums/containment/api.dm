@@ -13,8 +13,8 @@
 // the new one (the slot's acceptance predicate, capacity, a keyed slot's
 // duplicate-key check, and /datum/act/check_insert). Nothing that can sleep
 // runs in between: the check procs and the check hooks' handlers are
-// EVENT_HANDLERs. Then the move commits with one forceMove, whose
-// bookkeeping (ledger.dm) fires /datum/om/event/slot_removed and /datum/om/event/slot_inserted and
+// synchronous typed action handlers. Then the move commits with one forceMove, whose
+// bookkeeping (ledger.dm) fires /datum/notice/slot_removed and /datum/notice/slot_inserted and
 // the thing's on_unslotted()/on_slotted() hooks. A refused move changes
 // nothing.
 //

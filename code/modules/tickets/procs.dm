@@ -23,7 +23,7 @@
 		return
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
-	om_grant_for(src, GRANT_VERB_HIDE, /client/verb/mentorhelp, om_grant_target(src), 1 MINUTES) // mentorhelp cooldown
+	grant(om_grant_target(src), granted_verb(/client/verb/mentorhelp, hidden = TRUE), om_grant_target(src), lasts = 1 MINUTES) // mentorhelp cooldown
 
 	feedback_add_details("admin_verb","Mentorhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket())
@@ -150,7 +150,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		return
 
 	//remove out adminhelp verb temporarily to prevent spamming of admins.
-	om_grant_for(src, GRANT_VERB_HIDE, /client/verb/adminhelp, om_grant_target(src), 2 MINUTES) // adminhelp cooldown
+	grant(om_grant_target(src), granted_verb(/client/verb/adminhelp, hidden = TRUE), om_grant_target(src), lasts = 2 MINUTES) // adminhelp cooldown
 
 	feedback_add_details("admin_verb","Adminhelp") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(current_ticket())
@@ -292,7 +292,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		return
 
 	//if they requested spice, then remove spice verb temporarily to prevent spamming
-	om_grant_for(src, GRANT_VERB_HIDE, /client/verb/adminspice, om_grant_target(src), 10 MINUTES) // spice request cooldown
+	grant(om_grant_target(src), granted_verb(/client/verb/adminspice, hidden = TRUE), om_grant_target(src), lasts = 10 MINUTES) // spice request cooldown
 
 //
 // MENTOR PROCS

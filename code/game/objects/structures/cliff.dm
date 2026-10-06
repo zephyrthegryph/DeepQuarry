@@ -237,6 +237,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 		after(src, fall_time, PROC_REF(fall_land), with = list(L, T, safe_fall, harm)) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
 
 /obj/structure/cliff/proc/fall_land(mob/living/L, turf/T, safe_fall, harm)
+	if(QDELETED(L))
+		return
 
 	if(safe_fall)
 		visible_message(span_notice("\The [L] lands on \the [T]."))

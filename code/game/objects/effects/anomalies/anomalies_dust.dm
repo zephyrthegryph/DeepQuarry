@@ -68,6 +68,8 @@
 			new /obj/effect/decal/cleanable/filth(ground)
 
 /obj/effect/anomaly/dust/proc/extraCough(mob/living/coughing)
+	if(!coughing)
+		return
 	coughing.emote("cough")
 	after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 

@@ -40,10 +40,12 @@
 
 		//MIND TRANSFER BEGIN
 		if(length(caster.mind.special_verbs)) //If the caster had any special verbs, remove them from the mob verb list.
-			om_revoke_each(caster, GRANT_VERB, caster.mind.special_verbs, caster.mind)//Mostly moot with the object spell system, but a safety nontheless.
+			for(var/granted_path in caster.mind.special_verbs)
+				revoke(caster, granted_verb(granted_path), caster.mind)//Mostly moot with the object spell system, but a safety nontheless.
 
 		if(length(victim.mind.special_verbs)) //Now remove all of the victim's verbs.
-			om_revoke_each(victim, GRANT_VERB, victim.mind.special_verbs, victim.mind)
+			for(var/granted_path in victim.mind.special_verbs)
+				revoke(victim, granted_verb(granted_path), victim.mind)
 
 		var/mob/observer/dead/ghost = victim.ghostize(0)
 		rel_add(ghost, nameof(ghost.spell_list), victim.spell_list) //If they have spells, transfer them. Now we basically have a backup mob.
@@ -57,7 +59,8 @@
 			caster.remove_spell(S) //remove the spells from the caster
 
 		if(length(victim.mind.special_verbs)) //To add all the special verbs for the original caster.
-			om_grant_each(caster, GRANT_VERB, caster.mind.special_verbs, caster.mind)//Not too important but could come into play.
+			for(var/granted_path in caster.mind.special_verbs)
+				grant(caster, granted_verb(granted_path), caster.mind)//Not too important but could come into play.
 
 		transfer_mind(ghost.mind, caster, "mind transfer spell", force = TRUE) // the ghost holds the key: force it along
 		for(var/datum/spell/S in ghost.spell_list)
@@ -65,7 +68,8 @@
 		rel_set(ghost, nameof(ghost.spell_list), list())
 
 		if(length(caster.mind.special_verbs)) //If they had any special verbs, we add them here.
-			om_grant_each(caster, GRANT_VERB, caster.mind.special_verbs, caster.mind)
+			for(var/granted_path in caster.mind.special_verbs)
+				grant(caster, granted_verb(granted_path), caster.mind)
 		//MIND TRANSFER END
 
 		//Target is handled in ..(), so we handle the caster here

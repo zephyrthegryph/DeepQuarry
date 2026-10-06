@@ -531,6 +531,10 @@
 	rel_clear(src, nameof(current_br))
 
 /obj/machinery/computer/transhuman/resleeving/proc/dispense_injector(obj/item/dnainjector/I)
+	if(!I)
+		gene_sequencing = FALSE
+		set_temp("Injector synthesis cancelled...")
+		return
 	I.forceMove(loc)
 	gene_sequencing = FALSE
 	set_temp("Injector dispensed...")

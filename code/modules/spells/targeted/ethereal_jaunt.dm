@@ -42,6 +42,9 @@
 
 /// The jaunt ends: steam where the jaunter will come out.
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	if(!target || !holder || !animation)
+		jaunt_finish(target, holder, animation)
+		return
 	var/mobloc = holder.last_valid_turf()
 	animation.forceMove(mobloc)
 	jaunt_steam(mobloc)
@@ -50,19 +53,23 @@
 	after(src, 2 SECONDS, PROC_REF(jaunt_reform), with = list(target, holder, animation))
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reform(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	if(!target || !holder || !animation)
+		jaunt_finish(target, holder, animation)
+		return
 	jaunt_reappear(animation, target)
 	after(src, 0.5 SECONDS, PROC_REF(jaunt_finish), with = list(target, holder, animation))
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_finish(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
-	var/mobloc = holder.last_valid_turf()
-	if(!target.forceMove(mobloc))
-		for(var/direction in list(1,2,4,8,5,6,9,10))
-			var/turf/T = get_step(mobloc, direction)
-			if(T)
-				if(target.forceMove(T))
-					break
-	target.canmove = 1
-	target.reset_perspective() // Fixes a blackscreen
+	var/mobloc = holder?.last_valid_turf() || get_turf(target)
+	if(target)
+		if(mobloc && !target.forceMove(mobloc))
+			for(var/direction in list(1,2,4,8,5,6,9,10))
+				var/turf/T = get_step(mobloc, direction)
+				if(T)
+					if(target.forceMove(T))
+						break
+		target.canmove = 1
+		target.reset_perspective() // Fixes a blackscreen
 	spent(animation)
 	spent(holder)
 

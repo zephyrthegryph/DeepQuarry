@@ -16,13 +16,15 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
-		om_grant_each(H, GRANT_VERB, power_verbs, src)
+		for(var/granted_path in power_verbs)
+			grant(H, granted_verb(granted_path), src)
 
 /datum/forms/protean/detach()
 	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
-		om_revoke_each(H, GRANT_VERB, power_verbs, src)
+		for(var/granted_path in power_verbs)
+			revoke(H, granted_verb(granted_path), src)
 	return ..()
 
 // the protean's rig forgets its protean.

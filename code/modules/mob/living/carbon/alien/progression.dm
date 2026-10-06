@@ -8,7 +8,7 @@
 		return
 
 	if(!adult_form)
-		om_grant(src, GRANT_VERB_HIDE, /mob/living/carbon/alien/verb/evolve, src) // nothing to evolve into
+		grant(src, granted_verb(/mob/living/carbon/alien/verb/evolve, hidden = TRUE), src) // nothing to evolve into
 		return
 
 	if(get_equipped_item(SLOT_ID_HANDCUFFED) || get_equipped_item(SLOT_ID_LEGCUFFED))

@@ -603,7 +603,7 @@
 
 /// The result of a pulse check started from examine, a moment later.
 /mob/living/carbon/human/proc/pulse_check_result(mob/user)
-	if(isobserver(user) || (Adjacent(user) && !user.stat)) // If you're a corpse then you can't exactly check their pulse, but ghosts can see anything
+	if(user && (isobserver(user) || (Adjacent(user) && !user.stat))) // If you're a corpse then you can't exactly check their pulse, but ghosts can see anything
 		if(pulse == PULSE_NONE)
 			to_chat(user, span_deadsay("[p_They()] [p_have()] no pulse[src.client ? "" : " and [p_their()] soul has departed"]..."))
 		else

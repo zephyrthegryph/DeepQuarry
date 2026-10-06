@@ -22,6 +22,14 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/weapon/proc/burst_fire(obj/item/projectile/P, atom/target, params)
+	if(QDELETED(P))
+		return
+	var/atom/movable/pilot
+	if(!QDELETED(chassis))
+		pilot = chassis.slot_item(MECHA_SLOT_PILOT)
+	if(QDELETED(pilot))
+		spent(P)
+		return
 	Fire(P, target, params)
 
 /obj/item/mecha_parts/mecha_equipment/weapon/action(atom/target, params)

@@ -1157,6 +1157,10 @@
 
 #include "round2_telescience_crystal_ejection.dm"
 
+#include "dq_timer_argument_core_tests.dm"
+#include "dq_timer_argument_mob_tests.dm"
+#include "dq_timer_argument_transport_tests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
