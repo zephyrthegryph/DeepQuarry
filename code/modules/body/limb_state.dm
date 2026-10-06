@@ -8,13 +8,10 @@
 /// How likely a fractured limb holding organs jolts with pain per cycle while the human keeps moving.
 #define LIMB_JOLT_CHANCE 10
 
-/mob/living/carbon/human
-	/// TRUE while a limb gives trouble the body checks each cycle (a poor stance, a broken or malfunctioning limb).
-	var/limb_trouble = FALSE
+/// TRUE while a limb gives trouble the body checks each cycle (a poor stance, a broken or malfunctioning limb): the body holds it.
+STAT(/mob/living/carbon/human, limb_trouble, ANY)
 
-TRACKED(/mob/living/carbon/human, limb_trouble)
-
-/// The limb checks' entries, for the human's CAPABILITIES block: `active` is nameof(limb_trouble).
+/// The limb checks' entries, for the human's CAPABILITIES block: `active` is STAT_LIMB_TROUBLE.
 /proc/limb_clock(active)
 	return every(LIFE_CYCLE, then(TYPE_PROC_REF(/mob/living/carbon/human, limb_step)), when = active)
 
@@ -31,7 +28,7 @@ TRACKED(/mob/living/carbon/human, limb_trouble)
 	if(QDELETED(src))
 		return
 	stance_damage = stance_from_limbs()
-	set_limb_trouble(is_alive() && limb_trouble_now())
+	body_hold_flag(STAT_LIMB_TROUBLE, is_alive() && limb_trouble_now())
 
 /mob/living/carbon/human/proc/limb_trouble_now()
 	if(stance_damage > 0)

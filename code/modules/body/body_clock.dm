@@ -33,13 +33,10 @@
 /// Below this body temperature (cryo) blood neither moves nor refills.
 #define BODY_CLOCK_CRYO_TEMPERATURE 170
 
-/mob/living/carbon/human
-	/// TRUE while something on the body clock has work: a wound heals or bleeds, or the blood is below full.
-	var/body_clock_active = FALSE
+/// TRUE while something on the body clock has work (a wound heals or bleeds, the blood is below full): the body holds it.
+STAT(/mob/living/carbon/human, body_clock_active, ANY)
 
-TRACKED(/mob/living/carbon/human, body_clock_active)
-
-/// The body clock's entries, for the human's CAPABILITIES block: `active` is nameof(body_clock_active).
+/// The body clock's entries, for the human's CAPABILITIES block: `active` is STAT_BODY_CLOCK_ACTIVE.
 /proc/body_clock(active)
 	return every(BODY_CLOCK_STEP, then(TYPE_PROC_REF(/mob/living/carbon/human, body_clock_step)), when = active)
 
@@ -56,7 +53,7 @@ TRACKED(/mob/living/carbon/human, body_clock_active)
 
 /// Raises or drops the clock from the body's state. Called whenever a wound or the blood changes.
 /mob/living/carbon/human/proc/body_clock_refresh()
-	set_body_clock_active(body_clock_has_work())
+	body_hold_flag(STAT_BODY_CLOCK_ACTIVE, body_clock_has_work())
 
 /// A reagent holder of this human changed (the vessel among them): the physiology reads the blood volume, and the clock
 /// refills it.
@@ -65,6 +62,15 @@ TRACKED(/mob/living/carbon/human, body_clock_active)
 	if(vessel && species?.blood_volume && should_have_organ(O_HEART))
 		body?.note_blood_fraction(vessel.get_reagent_amount(REAGENT_ID_BLOOD) / species.blood_volume)
 	body_clock_refresh()
+
+/// The body holds (or releases) a boolean stat on its human: it is the one source of the body's activity flags.
+/mob/living/carbon/human/proc/body_hold_flag(stat, on)
+	if(!body)
+		return
+	if(on)
+		hold(src, stat, null, body)
+	else
+		release(src, stat, body)
 
 /mob/living/carbon/human/proc/body_clock_has_work()
 	if(QDELETED(src) || !is_alive())
