@@ -11,7 +11,10 @@
 //! - `manual_push`        a hand call of `push_to_rust()` or the legacy `changed(E, channel)`: the push is generated, once per frame, from
 //!                        the state it reads.
 //! - `output_side_effect` an output (`ui_data`, `draw`, an `appearance_*` proc) that speaks or plays a sound (`to_chat`, `atom_say`,
-//!                        `playsound`, `play_sfx`, `balloon_alert`): outputs are read whenever a window or the look refreshes.
+//!                        `playsound`, `play_sfx`, `balloon_alert`); and a look (`draw(look)`, a chain's `look_parts(look)`) that changes an atom
+//!                        (`update_icon`, `update_held_icon`, `update_inv_*`, `regenerate_icons`, `add_overlay`, `cut_overlay(s)`, `set_light`,
+//!                        `forceMove`, on src or through another object). Outputs are read whenever a window or the look refreshes, and the
+//!                        look is applied by the engine.
 //! - `undef_then_used`    a `#undef X` followed, in the same file, by a use of X that no later `#define X` covers.
 //!
 //! Unit tests and the engine's own directories are exempt.
@@ -27,7 +30,7 @@ const RULES: &[RuleMeta] = &[
     RuleMeta { name: "nameof_unrelated", hint: "name a var of the holder's own type (nameof(var)); another type's var is not this holder's to name" },
     RuleMeta { name: "unkeyed_wire_after", hint: "give the timer a key (after(..., key = \"x\")) or make the pulse a timed hold (wires(), hold(..., lasts =))" },
     RuleMeta { name: "manual_push", hint: "write the state through its setter: the push is generated from what it reads (section 7)" },
-    RuleMeta { name: "output_side_effect", hint: "outputs (ui_data, draw, appearance) say and play nothing: move it to the op or handler that changes the state" },
+    RuleMeta { name: "output_side_effect", hint: "outputs (ui_data, draw, appearance) say and play nothing, and a look changes no atom (its own or another's): move it to the op or handler that changes the state, or draw it through the look (look.overlay(), look.light(), look.held_state())" },
     RuleMeta { name: "undef_then_used", hint: "#undef a file-local define after its last use, or define it in __defines" },
 ];
 
@@ -39,6 +42,8 @@ struct ProcCtx {
     name: String,
     effect: bool,
     output: bool,
+    /// draw(look) or look_parts(look): the look builder's procs, which change no atom either.
+    look: bool,
     told: bool,
 }
 
@@ -86,8 +91,9 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
                 block_type = Some(c.s(1).to_string());
             } else if let Some((type_path, name, args)) = header(code) {
                 let effect = args.contains("datum/act/op/");
-                let output = matches!(name.as_str(), "ui_data" | "tgui_data" | "draw" | "appearance_overlays" | "appearance_state");
-                ctx = Some(ProcCtx { type_path, name, effect, output, told: false });
+                let look = matches!(name.as_str(), "draw" | "look_parts") && args.contains("look");
+                let output = look || matches!(name.as_str(), "ui_data" | "tgui_data" | "appearance_overlays" | "appearance_state");
+                ctx = Some(ProcCtx { type_path, name, effect, output, look, told: false });
             }
             continue;
         }
@@ -131,6 +137,13 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
         }
         if c.output && pat!(r"(?<![\w.])(to_chat|atom_say|playsound|play_sfx|balloon_alert)\(").is_match(code) {
             out.push(("output_side_effect", number));
+        } else if c.look
+            && pat!(r"(?<![\w.])((?:[A-Za-z_]\w*(?:\(\))?\s*\??\.\s*)*)(update_icon|update_held_icon|update_inv_\w+|regenerate_icons|add_overlay|cut_overlays?|set_light|set_light_on|forceMove)\s*\(")
+                .captures_iter(code)
+                .iter()
+                .any(|m| !m.s(1).trim_start().starts_with("look"))
+        {
+            out.push(("output_side_effect", number));
         }
         if (c.name.contains("pulse") || c.name.contains("wire")) && pat!(r"(?<![\w.])after\(").is_match(code) && !code.contains("key =") && !code.contains("key=") {
             out.push(("unkeyed_wire_after", number));
@@ -166,6 +179,11 @@ fn selftest() -> Result<String, String> {
         "\treturn FOO",                                         // 17 undef_then_used
         "/obj/machinery/x/proc/fine(datum/act/op/A)",           // 18
         "\treturn OP_REFUSED",                                  // 19 nothing told: fine
+        "/obj/item/x/draw(datum/look/look)",                    // 20
+        "\tlook.overlay(\"a\")",                                // 21 the look: fine
+        "\tholder.update_inv_l_hand()",                         // 22 output_side_effect: another atom
+        "\tloc.update_icon()",                                  // 23 output_side_effect
+        "\tlook.light(2, 1)",                                   // 24 fine
     ];
     let f = SourceFile::from_text("code/x.dm", &fixture.join("\n"));
     let mut v = Vec::new();
@@ -180,6 +198,8 @@ fn selftest() -> Result<String, String> {
         ("manual_push", 11),
         ("output_side_effect", 13),
         ("undef_then_used", 17),
+        ("output_side_effect", 22),
+        ("output_side_effect", 23),
     ];
     if got != want {
         return Err(format!("dx_review selftest: got {:?}", got));

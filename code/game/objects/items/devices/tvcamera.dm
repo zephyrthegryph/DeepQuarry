@@ -10,8 +10,11 @@
 	var/obj/machinery/camera/network/thunder/camera
 	var/obj/item/radio/radio
 	var/showing_name
+	/// The camera streams: what the drone shows (its camera's status, which publishes nothing, mirrored here when it is toggled).
+	var/streaming = FALSE
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
+TRACKED(/obj/item/tvcamera, streaming)
 
 /// Relation view: the atom being broadcast; the feed follows it while set.
 OM_FIELD_VIEW(/obj/item/tvcamera, atom, showing, CHANGE_EXPLICIT)
@@ -107,19 +110,11 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 		show_tvs(loc)
 		update_feed()
 
+/// The look: lit while it streams; the hand or belt that carries it redraws with it (look_redraw_worn()).
 /obj/item/tvcamera/draw(datum/look/look)
 	..()
-	if(camera.status)
-		look.state("camcorder_on")
-		look.held_state("camcorder_on")
-	else
-		look.state("camcorder")
-		look.held_state("camcorder")
-	var/mob/living/carbon/human/H = loc
-	if(istype(H))
-		H.update_inv_r_hand()
-		H.update_inv_l_hand()
-		H.update_inv_belt()
+	look.state(streaming ? "camcorder_on" : "camcorder")
+	look.held_state(streaming ? "camcorder_on" : "camcorder")
 
 /obj/item/tvcamera/proc/update_feed()
 	if(camera.status)
@@ -327,6 +322,7 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 
 /obj/item/tvcamera/proc/camera_toggle_video(mob/user)
 	camera.set_status(!camera.status)
+	set_streaming(camera.status)
 	if(camera.status)
 		to_chat(user,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
 		show_tvs(loc)
@@ -335,8 +331,6 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 		hide_tvs()
 		for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 			ES.stop_showing()
-	changed(src)
-	changed(src)
 
 /obj/item/tvcamera/proc/camera_toggle_audio(mob/user)
 	radio.ToggleBroadcast()

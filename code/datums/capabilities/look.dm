@@ -397,8 +397,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
 		look_resync_emissive_blocker(A, old_icon, old_state)
 		if(isitem(A))
-			var/obj/item/I = A
-			I.update_held_icon() // a hand that holds it draws the new sprite
+			look_redraw_worn(A) // the slot that holds or wears it draws the new sprite
 	if(!isnull(color))
 		A.color = color
 		now |= LOOK_SET_COLOR
@@ -448,7 +447,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		var/obj/item/held_item = A
 		if(held_item.item_state != held_state)
 			held_item.item_state = held_state
-			held_item.update_held_icon()
+			look_redraw_worn(held_item)
 	if(A.look_overlays)
 		A.cut_overlay(A.look_overlays)
 		A.look_overlays = null
@@ -561,3 +560,13 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 		AM.cut_overlay(list(old), TRUE)
 		AM.add_overlay(list(blocker), TRUE)
 		return
+
+/// The mob that holds or wears `I` redraws that slot (its hand, belt, back...) through the slot's own redraw proc: a look that changed the
+/// item's sprite or inhand state is shown there too. Nothing when the item is not on a mob.
+/proc/look_redraw_worn(obj/item/I)
+	var/mob/M = I.loc
+	if(!ismob(M))
+		return
+	var/datum/om/relation/slot/body/def = dq_ledger(M)?.def_by_id(M.inventory_slot_id(I))
+	if(istype(def) && def.redraw)
+		call(M, def.redraw)()

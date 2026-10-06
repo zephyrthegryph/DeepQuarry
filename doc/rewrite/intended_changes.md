@@ -2346,7 +2346,9 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   `defibpaddles` for jumper cables too, the multitool's idle state was `multitool` for every disguised hacktool, and a casing mapped spent
   became `-spent-spent`. Each draws from its own type's `initial(icon_state)` now.
 * **`look.held_state()` and `look.identity()`** (code/datums/capabilities/look.dm): a draw sets the inhand state, the name and the description
-  through the look, and the hands holding an item redraw when its sprite or inhand state changes (providers called `update_held_icon()` by hand).
+  through the look, and the slot holding or wearing an item (a hand, the belt, the back...) redraws when its sprite or inhand state changes
+  (`look_redraw_worn()`; providers called `update_held_icon()` or a slot's `update_inv_*()` by hand). The press camera drone's look follows a
+  tracked `streaming` that mirrors its camera when it is toggled.
   A draw that does not set them leaves them as they are, so a rename or a reskin stays.
 * **The used autoinjector keeps its spent sprite** through a draw of its own; its init wrote the state by hand, which a draw would redraw over.
 * **A generic emissive blocker follows the sprite a look draws** (`look_resync_emissive_blocker()`, `code/datums/capabilities/look.dm`). The blocker
