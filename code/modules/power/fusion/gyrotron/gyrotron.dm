@@ -1,4 +1,5 @@
-
+// The gyrotron: an emitter suited for heating a fusion core's field (doc/rewrite/final_api.html section 16). It fires every `rate` seconds at a
+// beam power its console sets (set_beam_power()), takes a part replacer, and a multitool sets the ident tag its console finds it by.
 
 /obj/machinery/power/emitter/gyrotron
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -18,13 +19,26 @@
 
 /obj/machinery/power/emitter/gyrotron/anchored
 	anchored = TRUE
-	state = 2
+	state = FLOOR_WELD_WELDED
 
-REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
+CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
+	membership(joins = REGISTRY_GYROTRONS)
+	part_replacement()
+	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), when(cond_not(nameof(anomalous))),
+		asks(/datum/prompt/text, fields = list("title" = "Gyrotron", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
+		then(PROC_REF(ident_entered)))
 
 /obj/machinery/power/emitter/gyrotron/Initialize(mapload)
 	default_apply_parts()
 	return ..()
+
+/obj/machinery/power/emitter/gyrotron/proc/ident_entered(datum/act/op/A)
+	var/datum/prompt/text/answer = A.answer
+	var/new_ident = answer?.value
+	if(!new_ident || !A.actor?.Adjacent(src))
+		return OP_REFUSED
+	id_tag = new_ident
+	return OP_OK
 
 /obj/machinery/power/emitter/gyrotron/proc/set_beam_power(new_power)
 	mega_energy = new_power
@@ -41,33 +55,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	E.damage = mega_energy * 50
 	return E
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/gyrotron, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/emitter/gyrotron/appearance_overlays()
-	. = list()
-	if (active && power_region && avail(active_power_usage))
-		icon_state = "emitter-on"
-	else
-		icon_state = "emitter-off"
-
-/obj/machinery/power/emitter/gyrotron/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/gyrotron_set_ident,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
-
-/datum/interaction/machine_item/gyrotron_set_ident
-	id = "gyrotron_set_ident"
-	name = "Set ident tag"
-	category = INTERACTION_CAT_CONFIGURE
-	tool = TOOL_MULTITOOL
-	tool_volume = 0
-	effect = /obj/machinery/power/emitter/gyrotron/proc/interaction_set_ident
-
-/obj/machinery/power/emitter/gyrotron/proc/interaction_set_ident(mob/user, obj/item/held, datum/interaction/interaction)
-	var/new_ident = rerun_ask(user, "k70", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Gyrotron", default = id_tag, max_length = MAX_NAME_LEN)
-	if(isnull(new_ident))
-		return
-	if(new_ident && user.Adjacent(src))
-		id_tag = new_ident
-	return TRUE
+/obj/machinery/power/emitter/gyrotron/emitter_look(datum/look/look)
+	look.state((active && power_region && avail(active_power_usage)) ? "emitter-on" : "emitter-off")

@@ -562,6 +562,7 @@
 /// TRUE while a running task claims `D`: as the thing doing the work (its actor, tool or
 /// machine) or as the exclusive target of someone's work.
 /proc/om_busy(datum/D)
+	READS_FROM() // whether a task claims it is asked when a choice is made, never cached
 	return !isnull(om_claiming_task(D))
 
 /// TRUE while a running task claims `D` as its exclusive target (someone is working on it),

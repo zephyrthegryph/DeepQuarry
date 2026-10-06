@@ -18,20 +18,13 @@
 		rel_clear(src, nameof(pinned_target))
 		set_density(TRUE)
 
-/obj/structure/target_stake/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/target_stake_item,
-		/datum/interaction/entry_hand/target_stake_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/target_stake)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
-/// Old attackby: put a target on the stake.
-/datum/interaction/entry_item/target_stake_item
-	id = "target_stake_item"
-	name = "Use"
-	effect = /obj/structure/target_stake/proc/interaction_item
-
-/obj/structure/target_stake/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/target_stake/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// Putting objects on the stake. Most importantly, targets
 	if(pinned_target)
 		return TRUE // get rid of that pinned target first!
@@ -56,13 +49,8 @@
 		to_chat(user, "You slide the target into the stake.")
 	return TRUE
 
-/// Old attack_hand: take pinned targets off.
-/datum/interaction/entry_hand/target_stake_hand
-	id = "target_stake_hand"
-	name = "Use"
-	effect = /obj/structure/target_stake/proc/interaction_hand
-
-/obj/structure/target_stake/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/target_stake/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	// taking pinned targets off!
 	if(pinned_target)
 		set_density(TRUE)

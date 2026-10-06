@@ -260,6 +260,7 @@ TRACKED(/obj/item/rms, charge_cost)
 CAPABILITIES(/obj/item/rms)
 	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))),
 		asks(/datum/prompt/choice/rms_material, keeps = 0), then(PROC_REF(material_chosen)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
 /obj/item/rms/proc/operator_living(datum/act/op/A)
 	return isliving(A.actor)
@@ -314,13 +315,14 @@ CAPABILITIES(/obj/item/rms)
 	play_sfx(src.loc, SFX_EFFECTS_POP)
 	return OP_OK
 
-/obj/item/rms/multitool_act(mob/user, obj/item/tool)
+/obj/item/rms/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	overcharge = !overcharge
 	if(overcharge)
 		to_chat(user, span_notice("The Rapid Material Synthesizer quietly whirrs..."))
 	else
 		to_chat(user, span_notice("The Rapid Material Synthesizer resumes normal operation."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 #undef RMS_STEEL
 #undef RMS_GLASS

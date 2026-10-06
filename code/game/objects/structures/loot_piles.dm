@@ -26,19 +26,11 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
 
-/obj/structure/loot_pile/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/loot_pile_search,
-	)
-	..()
+CAPABILITIES(/obj/structure/loot_pile)
+	op("search", hand(), label("Search"), then(PROC_REF(interaction_search)))
 
-/// Old attack_hand: search the pile for loot.
-/datum/interaction/entry_hand/loot_pile_search
-	id = "loot_pile_search"
-	name = "Search"
-	effect = /obj/structure/loot_pile/proc/interaction_search
-
-/obj/structure/loot_pile/proc/interaction_search(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/loot_pile/proc/interaction_search(datum/act/op/A)
+	var/mob/user = A.actor
 	//Human mob
 	if(isliving(user))
 		var/mob/living/L = user

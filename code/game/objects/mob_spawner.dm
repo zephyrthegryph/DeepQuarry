@@ -32,6 +32,7 @@ DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
 CAPABILITIES(/obj/structure/mob_spawner)
 	ref_many(nameof(spawned_mobs))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()
@@ -81,18 +82,18 @@ CAPABILITIES(/obj/structure/mob_spawner)
 	if(L in spawned_mobs)
 		rel_remove(src, nameof(spawned_mobs), L)
 
-DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/mob_spawner/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/mob_spawner/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(!I.force || I.flags & NOBLUDGEON || !destructible)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with %I% by %T%."), item = I)
 	receive_weapon_hit(I, user, silent = FALSE)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/mob_spawner/damage_sink(datum/damage_packet/packet)
 	if(!destructible)

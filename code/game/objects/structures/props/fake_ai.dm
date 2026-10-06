@@ -6,20 +6,12 @@
 	icon = 'icons/mob/AI.dmi'
 	icon_state = "ai"
 
-/obj/structure/prop/fake_ai/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/fake_ai_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/prop/fake_ai)
+	op("item", item(/obj/item/aicard), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Old attackby: an AI card doesn't fit this fake core.
-/datum/interaction/entry_item/fake_ai_item
-	id = "fake_ai_item"
-	name = "Use"
-	held_type = /obj/item/aicard
-	effect = /obj/structure/prop/fake_ai/proc/interaction_item
-
-/obj/structure/prop/fake_ai/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/prop/fake_ai/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	to_chat(user, span_warning("This core does not appear to have a suitable port to use \the [O] on..."))
 	return TRUE
 

@@ -1,7 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
-REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
-
 /obj/singularity/
 	name = "gravitational singularity"
 	desc = "A gravitational singularity."
@@ -31,8 +29,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 
 	var/chained = 0//Adminbus chain-grab
 
-DECLARE_PERIODIC(/obj/singularity, PERIODIC_SLOW)
-
 // ALLOW(init/CTOR_ARGS): starting_energy is a constructor argument from whoever builds it
 /obj/singularity/Initialize(mapload, starting_energy = 50)
 	//CARN: admin-alert for chuckle-fuckery.
@@ -44,24 +40,33 @@ DECLARE_PERIODIC(/obj/singularity, PERIODIC_SLOW)
 			target = singubeacon
 			break
 
+// The singularity (doc/rewrite/final_api.html section 16): its step every 2 s (singularity_frame(): eat, dissipate, grow or shrink, and from stage
+// two wander, pulse the collectors and maybe an event), the registry it joins, its touch and its bump (whatever meets it is consumed), and what
+// hits do to it: a blast feeds it (or rarely disperses it), a projectile passes through.
 CAPABILITIES(/obj/singularity)
-	op("singularity_touch", hand(), then(PROC_REF(interaction_singularity_touch)))
+	membership(joins = REGISTRY_SINGULARITIES)
+	every(SINGULARITY_STEP_INTERVAL, then(PROC_REF(singularity_frame)))
+	op("singularity_touch", hand(), then(PROC_REF(touched)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
 
-/// Old attack_hand: touching it is fatal.
-/obj/singularity/proc/interaction_singularity_touch(datum/act/op/A)
-	var/mob/user = A.actor
-	consume(user)
-	return TRUE
+/// Touching it is fatal.
+/obj/singularity/proc/touched(datum/act/op/A)
+	consume(A.actor)
+	return OP_OK
 
-DAMAGE_REACTION(/obj/singularity, DAMAGE_EXPLOSION, PROC_REF(singularity_blast))
-//Will there be an impact? Who knows. Will we see it? No.
-DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
+/// Whatever walks or drifts into it is consumed.
+/obj/singularity/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	if(N.bumper && !QDELETED(N.bumper))
+		consume(N.bumper)
 
 /// A blast feeds the singularity, or (rarely, when devastating) disperses it. It takes no damage.
-/obj/singularity/proc/singularity_blast(datum/damage_packet/packet)
+/obj/singularity/proc/singularity_blast(datum/act/hit/explosion/A)
 	if(current_size == STAGE_SUPER)//IT'S UNSTOPPABLE
-		return DAMAGE_REACTION_BLOCK
-	switch(packet.severity)
+		return TRUE
+	switch(A.packet.severity)
 		if(1.0)
 			if(prob(25))
 				investigate_log("has been destroyed by an explosion.", I_SINGULO)
@@ -71,15 +76,17 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 				energy += 50
 		if(2.0 to 3.0)
 			energy += round((rand(20,60)/2),1)
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
+
+/// Will there be an impact? Who knows. Will we see it? No.
+/obj/singularity/proc/projectile_passes(datum/act/hit/projectile/A)
+	return TRUE
 
 /obj/singularity/Bump(atom/A)
 	consume(A)
 
-/obj/singularity/Bumped(atom/A)
-	consume(A)
-
-/obj/singularity/periodic_step()
+/// One step of the singularity (every SINGULARITY_STEP_INTERVAL).
+/obj/singularity/proc/singularity_frame(datum/act/timer/A)
 	eat()
 	dissipate()
 	check_energy()
@@ -491,5 +498,5 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 		var/gain = (energy/2)
 		var/dist = max((current_size - 2), 1)
 		explosion(src.loc,(dist),(dist*2),(dist*4))
-		om_qdel_after(src, 0)
+		after(src, 0, GLOBAL_PROC_REF(qdel), with = list(src))
 		return gain

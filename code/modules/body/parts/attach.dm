@@ -178,7 +178,6 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		rel_remove(M, nameof(M.organs), part)
 		if(M.organs_by_name?[part.organ_tag] == part)
 			M.organs_by_name -= part.organ_tag
-		rel_remove(M, nameof(M.bad_external_organs), part)
 
 /// `part` and every part below it, parents before children, read from the
 /// ledger's tree slots.

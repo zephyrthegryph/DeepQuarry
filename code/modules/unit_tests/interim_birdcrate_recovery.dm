@@ -9,7 +9,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(tool), "The real actor holds the original crowbar after crate construction")
 	var/list/before = turf_contents_of_type(T, /mob/living/simple_mob/animal/passive/bird)
 	var/list/wood_before = turf_contents_of_type(T, /obj/item/stack/material/wood)
-	TEST_ASSERT(crate.crowbar_act(actor, tool), "The actual public bird-crate opening succeeds")
+	TEST_ASSERT(test_op_handler(crate, "crowbar_used", actor, tool), "The actual public bird-crate opening succeeds")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(crate), "The real opening consumes its exact original crate")
 	TEST_ASSERT(!QDELETED(book) && book.loc == T, "The actual opening releases the exact original gathered book onto its floor")

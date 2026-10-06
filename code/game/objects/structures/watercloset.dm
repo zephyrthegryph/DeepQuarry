@@ -35,6 +35,8 @@
 
 CAPABILITIES(/obj/structure/toilet)
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
@@ -483,20 +485,12 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	density = FALSE
 	anchored = TRUE
 
-/obj/structure/urinal/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/urinal_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/urinal)
+	op("item", item(/obj/item/grab), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Old attackby: slam a grabbed mob into the urinal.
-/datum/interaction/entry_item/urinal_item
-	id = "urinal_item"
-	name = "Use"
-	held_type = /obj/item/grab
-	effect = /obj/structure/urinal/proc/interaction_item
-
-/obj/structure/urinal/proc/interaction_item(mob/user, obj/item/grab/G, datum/interaction/interaction)
+/obj/structure/urinal/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grab/G = A.held
 	var/mob/living/GM = G?.grab_target()
 	if(isliving(GM))
 		if(G.state>1)
@@ -535,11 +529,12 @@ DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id",
 /// Washes its tile every machine step while running.
 DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
 
-/obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
+/obj/structure/toilet/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
 	play_sfx(src, SFX_EFFECTS_STONEDOOR_OPENCLOSE)
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/toilet/proc/crowbar_act_timed_done(mob/user)
 	act_message(user, null, MSG_SELF(span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!")), \
@@ -548,15 +543,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shower, MACHINE_PIPELINE, "on")
 	cistern = !cistern
 	update_icon()
 
-/obj/structure/toilet/wrench_act(mob/user, obj/item/I)
+/obj/structure/toilet/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cistern)
-		return TRUE
+		return OP_OK
 	if(refilling)
 		to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You begin to dismantle \the [src]..."))
 	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/toilet/proc/wrench_act_timed_done(mob/user)
 	to_chat(user, span_notice("You dismantle \the [src]."))
@@ -1069,13 +1065,6 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	add_hose_connector(/datum/hose_connector/endless_source/water)
 	add_hose_connector(/datum/hose_connector/endless_drain)
 
-/// Old MouseDrop_T: tip a dragged open container out into the sink.
-/datum/interaction/entry_drag/sink_empty
-	id = "sink_empty"
-	name = "Empty into sink"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/sink/proc/can_empty))
-	effect = /obj/structure/sink/proc/interaction_drag
-
 /obj/structure/sink/proc/interaction_drag(mob/user, obj/item/thing, datum/interaction/interaction)
 	if(!istype(thing) || !thing.is_open_container())
 		return FALSE
@@ -1087,20 +1076,11 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	thing.update_icon()
 	return INTERACTION_HANDLED_PASS
 
-/obj/structure/sink/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/sink_wash,
-		/datum/interaction/entry_item/sink_item,
-		/datum/interaction/entry_drag/sink_empty,
-	)
-	..()
-
-/// Old attack_hand: wash your hands.
-/datum/interaction/entry_hand/sink_wash
-	id = "sink_wash"
-	name = "Wash hands"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/sink/proc/can_wash))
-	effect = /obj/structure/sink/proc/interaction_wash
+EXTEND_INTERACTIONS(/obj/structure/sink, \
+	INTERACT_HAND("Wash hands", PROC_REF(interaction_wash), REQ_TARGET_STATE(/obj/structure/sink/proc/can_wash)), \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/sink/proc/can_use_sink)), \
+	INTERACT_DRAG("Empty into sink", PROC_REF(interaction_drag), REQ_TARGET_STATE(/obj/structure/sink/proc/can_empty)), \
+)
 
 /// Requirement for washing: TRUE, or why the user can't.
 /obj/structure/sink/proc/can_wash(mob/user, atom/target, obj/item/held)
@@ -1165,13 +1145,6 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 /obj/structure/sink/proc/attack_hand_timed_failed(mob/user)
 	to_chat(user, span_notice("You stop washing your hands."))
 	return
-
-/// Old attackby: fill an open container, or charge a baton.
-/datum/interaction/entry_item/sink_item
-	id = "sink_item"
-	name = "Use"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/sink/proc/can_use_sink))
-	effect = /obj/structure/sink/proc/interaction_item
 
 /obj/structure/sink/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	var/obj/item/reagent_containers/RG = O

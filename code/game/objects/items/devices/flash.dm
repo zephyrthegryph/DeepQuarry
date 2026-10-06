@@ -49,13 +49,17 @@
 CAPABILITIES(/obj/item/flash)
 	owns_one(nameof(power_supply), starts = nameof(cell_type))
 	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(flash_emp)))
 
-/obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/flash/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!broken)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
+		return OP_DECLINE
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
 	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/om/task/timed/tool_job/flash_repair)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/flash/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
 	if(!(can_repair))
@@ -297,9 +301,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 
 	return
 
-DAMAGE_REACTION(/obj/item/flash, DAMAGE_EMP, PROC_REF(flash_emp))
 /// An EMP sets a working flash off in its holder's face.
-/obj/item/flash/proc/flash_emp(datum/damage_packet/packet)
+/obj/item/flash/proc/flash_emp(datum/act/A)
 	if(broken)
 		return
 	flash_recharge()

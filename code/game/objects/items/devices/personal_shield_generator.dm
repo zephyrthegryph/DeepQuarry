@@ -41,6 +41,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -82,10 +83,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		if(bcell.rigged)
 			. += "A red flashing 'WARNING' is visible on the display, noting that the cell is unstable and requires replacement."
 
-DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield_generator_emp))
-/// An EMP on a running shield may burn or corrupt its cell.
-/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/damage_packet/packet)
-	var/severity = packet.severity
+/// An EMP on a running shield may burn or corrupt its cell (on_notice in its CAPABILITIES).
+/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	if(bcell && shield_active)
 		switch(severity)
 			if(1) //Point blank EMP shots have a good chance of burning the cell charge.
@@ -466,11 +467,12 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack
 	icon_state = "modkit"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/personal_shield_generator/belt/mining/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/borg/upgrade/shield_upgrade, PROC_REF(interaction_upgrade), "Upgrade"))
-	..()
+CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
+	op("upgrade", item(/obj/item/borg/upgrade/shield_upgrade), label("Upgrade"), then(PROC_REF(interaction_upgrade)))
 
-/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(mob/user, obj/item/borg/upgrade/shield_upgrade/W, datum/interaction/interaction)
+/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/borg/upgrade/shield_upgrade/W = A.held
 	if(modifier_type == /datum/body_effect/shield_projection/mining/strong)
 		to_chat(user, span_warning("This shield generator is already upgraded!"))
 		return TRUE

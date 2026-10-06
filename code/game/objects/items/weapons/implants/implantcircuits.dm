@@ -19,6 +19,7 @@ CAPABILITIES(/obj/item/implant/integrated_circuit)
 	op("add_electronics", item(/obj/item/integrated_electronics), passes(), label("Add"), then(PROC_REF(circuit_attacked)))
 	op("add_circuit", item(/obj/item/integrated_circuit), passes(), label("Add"), then(PROC_REF(circuit_attacked)))
 	op("add_cell", item(/obj/item/cell/device), passes(), label("Add"), then(PROC_REF(circuit_attacked)))
+	op("assembly_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER), label("Work the assembly"), wait(0), then(PROC_REF(assembly_tool_used)))
 
 /obj/item/implant/integrated_circuit/get_data()
 	var/dat = {"
@@ -49,11 +50,11 @@ CAPABILITIES(/obj/item/implant/integrated_circuit)
 	IC.attackby(A.held, A.actor)
 	return OP_OK
 
-/obj/item/implant/integrated_circuit/crowbar_act(mob/user, obj/item/tool)
-	return IC.crowbar_act(user, tool)
-
-/obj/item/implant/integrated_circuit/screwdriver_act(mob/user, obj/item/tool)
-	return IC.screwdriver_act(user, tool)
+/// A crowbar or a screwdriver on the implant works its assembly, as the assembly's own tool use does.
+/obj/item/implant/integrated_circuit/proc/assembly_tool_used(datum/act/op/A)
+	var/obj/item/tool = A.held
+	var/result = tool.has_tool_quality(TOOL_CROWBAR) ? IC.crowbar_act(A.actor, tool) : IC.screwdriver_act(A.actor, tool)
+	return ITEM_INTERACT_CONSUMED(result) ? OP_OK : OP_DECLINE
 
 /// Using the implant uses the assembly.
 /obj/item/implant/integrated_circuit/proc/circuit_use(datum/act/op/A)

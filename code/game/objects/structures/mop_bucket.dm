@@ -15,25 +15,16 @@ DECLARE_REAGENTS(/obj/structure/mopbucket, 300, null)
 
 CAPABILITIES(/obj/structure/mopbucket)
 	climb()
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/structure/mopbucket/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
 		. += "It contains [reagents.total_volume] unit\s of water!"
 
-/obj/structure/mopbucket/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/mopbucket_item,
-	)
-	..()
-
-/// Old attackby: wet a mop/soap/rag in the bucket.
-/datum/interaction/entry_item/mopbucket_item
-	id = "mopbucket_item"
-	name = "Use"
-	effect = /obj/structure/mopbucket/proc/interaction_item
-
-/obj/structure/mopbucket/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/mopbucket/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap) || istype(I, /obj/item/reagent_containers/glass/rag)) // "Allows soap and rags to be used on mopbuckets"
 		if(reagents.total_volume < 1)
 			user.balloon_alert(user, "\the [src] is out of water!")

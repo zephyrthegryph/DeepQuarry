@@ -110,6 +110,8 @@
 
 CAPABILITIES(/obj/item/melee/energy)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle energy weapon"), then(PROC_REF(energy_power_requested)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
 /obj/item/melee/energy/proc/energy_power_requested(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -162,24 +164,26 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 				to_chat(user, span_notice("[src] already has a cell."))
 	return FALSE
 
-/obj/item/melee/energy/multitool_act(mob/user, obj/item/tool)
+/obj/item/melee/energy/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!colorable || active)
-		return ..()
+		return OP_DECLINE
 	rainbow = !rainbow
 	to_chat(user, span_notice("You manipulate the color controller in [src]."))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/melee/energy/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/melee/energy/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!use_cell || !bcell)
-		return ..()
+		return OP_DECLINE
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
 	own_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/melee/energy/get_cell()
 	return bcell

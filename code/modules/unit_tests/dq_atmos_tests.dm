@@ -4212,7 +4212,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/power/generator/G = new(test_turf)
 	G.set_anchored(FALSE)
-	TEST_ASSERT(test_machine_idle(G), "unanchored thermoelectric generator retained timed polling")
+	G.reconsider()
+	TEST_ASSERT(!G.generating, "an unanchored thermoelectric generator has no work")
 	qdel(G)
 
 /datum/unit_test/dq_idle_teg_wakes_from_pressure
@@ -4226,15 +4227,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	rel_set(G, nameof(G.circ1), first)
 	rel_set(G, nameof(G.circ2), second)
 	G.set_stat(0)
-	TEST_ASSERT(test_machine_idle(G), "idle thermoelectric generator retained timed polling")
-	TEST_ASSERT(om_watch_armed(G), "idle thermoelectric generator did not subscribe to its circulator gases")
+	G.reconsider()
+	TEST_ASSERT(!G.generating, "an idle thermoelectric generator has no work")
+	TEST_ASSERT(length(G.loop_watches), "an idle thermoelectric generator sleeps on its circulator gases")
 	heat_set(first.air1, T20C, HEAT_SOURCE_OTHER)
 	first.air1.adjust_moles(/datum/gas/oxygen, 100)
-	for(var/generator_i in 1 to 4096)
-		SSmachines.wake_dirty_gas_subscribers()
-		if(machine_stepping(G))
-			break
-	TEST_ASSERT(machine_stepping(G), "circulator pressure change did not wake sleeping generator")
+	G.loop_heard(G.loop_watches[1])
+	TEST_ASSERT(G.generating, "a pressure head on a circulator wakes the sleeping generator")
 	qdel(G)
 	qdel(first)
 	qdel(second)
@@ -5010,7 +5009,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SM.power = 200
 	var/initial_damage = SM.damage
 
-	SM.machine_step()
+	SM.sm_step(null)
 
 	var/post_damage = SM.damage
 
@@ -5283,7 +5282,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// station Z, detonates immediately (exploded / grav_pulling). Assert the
 	// observable delamination consequence, not the damage value we just set.
 	SM.damage = SM.explosion_point + 100
-	SM.machine_step()
+	SM.sm_step(null)
 	TEST_ASSERT(SM.causalitywarn, \
 		"supermatter past explosion_point did not flag causalitywarn — delamination path never fired")
 	TEST_ASSERT(SM.final_countdown || SM.exploded || SM.grav_pulling, \

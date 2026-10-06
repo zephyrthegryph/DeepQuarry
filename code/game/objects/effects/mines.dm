@@ -28,6 +28,11 @@ CAPABILITIES(/obj/effect/mine)
 	on_wire(WIRE_EXPLODE_DELAY, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(delay_wire_pulsed))
 	on_wire(WIRE_DISARM, cut = PROC_REF(disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
 	on_wire(WIRE_BADDISARM, cut = PROC_REF(bad_disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(mine_shot))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mine_blast)))
 
 
 /obj/effect/mine/proc/wire_lights()
@@ -115,16 +120,16 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
-DAMAGE_REACTION(/obj/effect/mine, DAMAGE_PROJECTILE, PROC_REF(mine_shot))
 /// A round may set the mine off; either way it takes no damage.
-/obj/effect/mine/proc/mine_shot(datum/damage_packet/packet)
+/obj/effect/mine/proc/mine_shot(datum/act/hit/projectile/A)
 	if(prob(50))
 		explode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
-DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 /// A blast sets the mine off (always if heavy).
-/obj/effect/mine/proc/mine_blast(datum/damage_packet/packet)
+/obj/effect/mine/proc/mine_blast(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 2 || prob(50))
 		explode()
 
@@ -149,25 +154,29 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		if(!(dq_get_hovering(mob) || mob.flying || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
 			explode(M)
 
-/obj/effect/mine/screwdriver_act(mob/living/user, obj/item/tool)
+/obj/effect/mine/proc/screwdriver_used(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/tool = A.held
 	panel_open = !panel_open
 	act_message(user, null, MSG_SELF(span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% very carefully screws the mine's panel [panel_open ? "open" : "closed"].")))
 	playsound(src, tool.usesound, 50, 1)
 	alpha = camo_net ? (panel_open ? 255 : 50) : 255
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/effect/mine/wirecutter_act(mob/living/user, obj/item/tool)
+/obj/effect/mine/proc/wirecutter_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	interact(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/effect/mine/multitool_act(mob/living/user, obj/item/tool)
+/obj/effect/mine/proc/multitool_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	interact(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/effect/mine/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))
@@ -367,13 +376,9 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 
 	var/list/allowed_gadgets = null
 
-DECLARE_INTERACTIONS(/obj/item/mine, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/mine/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mine/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
 	act_message(user, null, MSG_SELF("You start priming \the [src.name]. Hold still!"), MSG_OTHERS("%U% starts priming \the [src.name]."))
@@ -389,7 +394,9 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	prime(user, TRUE)
 
 /// Old attackby.
-/obj/item/mine/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/mine/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(LAZYLEN(allowed_gadgets) && !trap)
 		var/allowed = FALSE
 
@@ -401,7 +408,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		if(allowed)
 			move_into(src, nameof(src.trap), W, user)
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/mine/proc/prime(mob/user as mob, explode_now = FALSE)
 	visible_message("\The [src.name] beeps as the priming sequence completes.")
@@ -476,12 +483,18 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		return FALSE
 	return ..()
 
-/obj/item/mine/screwdriver_act(mob/living/user, obj/item/tool)
+CAPABILITIES(/obj/item/mine)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/obj/item/mine/proc/screwdriver_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!trap)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You begin removing \the [trap]."))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/mine/proc/screwdriver_act_timed_done(mob/living/user)
 	if(!(trap))

@@ -44,6 +44,17 @@
 CAPABILITIES(/obj/machinery/account_database)
 	climb()
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
+	interface("AccountsTerminal")
+	without("ui_open")
+	op("create_account", ui_act("create_account"), then(PROC_REF(ui_act_create_account)))
+	op("add_funds", ui_act("add_funds"), asks(/datum/prompt/number/account_ui_funds/add, step = "amount", when = PROC_REF(central_access)), then(PROC_REF(ui_act_add_funds)))
+	op("remove_funds", ui_act("remove_funds"), asks(/datum/prompt/number/account_ui_funds/remove, step = "amount", when = PROC_REF(central_access)), then(PROC_REF(ui_act_remove_funds)))
+	op("toggle_suspension", ui_act("toggle_suspension"), then(PROC_REF(ui_act_toggle_suspension)))
+	op("finalise_create_account", ui_act("finalise_create_account", arg("holder_name", schema_text(4096)), arg("starting_funds", num())), then(PROC_REF(ui_act_finalise_create_account)))
+	op("view_account_detail", ui_act("view_account_detail", arg("account_index", num())), then(PROC_REF(ui_act_view_account_detail)))
+	op("view_accounts_list", ui_act("view_accounts_list"), then(PROC_REF(ui_act_view_accounts_list)))
+	op("revoke_payroll", ui_act("revoke_payroll"), then(PROC_REF(ui_act_revoke_payroll)))
+	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 
 /obj/machinery/account_database/Initialize(mapload)
 	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
@@ -89,10 +100,16 @@ CAPABILITIES(/obj/machinery/account_database)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/account_database, "AccountsTerminal")
 
-
-UI_DATA(/obj/machinery/account_database, "machine_id:text", "creating_new_account:num", "merge:ui_data_obj_machinery_account_database{id_inserted:bool,id_card:unknown,access_level:unknown,detailed_account_view:bool,station_account_number:num,account_number:num,owner_name:text,money:num,suspended:num,transactions:unknown,accounts:list}")
+/obj/machinery/account_database/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["machine_id"] = machine_id
+	data["creating_new_account"] = creating_new_account
+	var/list/merged_1 = ui_data_obj_machinery_account_database(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/account_database's window data (declared on its UI_DATA row).
 /obj/machinery/account_database/proc/ui_data_obj_machinery_account_database(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -143,27 +160,29 @@ UI_DATA(/obj/machinery/account_database, "machine_id:text", "creating_new_accoun
 
 	return data
 
-/obj/machinery/account_database/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/account_database/proc/ui_gate(datum/act/op/A)
+	var/action = A.window_action()
 	var/access_level = get_access_level()
 	if(action != "insert_card" && !access_level)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "create_account", ui_act_create_account)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_create_account)
+/obj/machinery/account_database/proc/ui_act_create_account(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	creating_new_account = 1
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "add_funds", ui_act_add_funds)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_add_funds)
-	var/access_level = get_access_level()
-	if(access_level < 2)
+/obj/machinery/account_database/proc/ui_act_add_funds(datum/act/op/A)
+	if(!ui_gate(A))
 		return FALSE
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/number/account_ui_funds/add, TYPE_PROC_REF(/datum/tgui, account_add_funds_answered), subject = src, answerer = ui.user)
+	if(get_access_level() < 2)
+		return FALSE
+	return apply_ui_add_funds(A.actor, A.step_value("amount"))
+
+/// The silent fund buttons ask their amount only of a central command card.
+/obj/machinery/account_database/proc/central_access(datum/act/op/A)
+	return held_card && (ACCESS_CENT_CAPTAIN in held_card.access) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens (get_access_level() 2)
 
 /obj/machinery/account_database/proc/apply_ui_add_funds(mob/user, amount)
 	if(detailed_account_view() && isnum(amount) && amount > 0)
@@ -171,22 +190,21 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_add_funds)
 		detailed_account_view().credit(allowed_amount, user.real_name, "Authorized account adjustment", machine_id)
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "remove_funds", ui_act_remove_funds)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_remove_funds)
-	var/access_level = get_access_level()
-	if(access_level < 2)
+/obj/machinery/account_database/proc/ui_act_remove_funds(datum/act/op/A)
+	if(!ui_gate(A))
 		return FALSE
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/number/account_ui_funds/remove, TYPE_PROC_REF(/datum/tgui, account_remove_funds_answered), subject = src, answerer = ui.user)
+	if(get_access_level() < 2)
+		return FALSE
+	return apply_ui_remove_funds(A.actor, A.step_value("amount"))
 
 /obj/machinery/account_database/proc/apply_ui_remove_funds(mob/user, amount)
 	if(detailed_account_view() && isnum(amount) && amount > 0)
 		detailed_account_view().debit(min(amount, detailed_account_view().money), user.real_name, "Authorized account adjustment", machine_id)
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "toggle_suspension", ui_act_toggle_suspension)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_toggle_suspension)
+/obj/machinery/account_database/proc/ui_act_toggle_suspension(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/access_level = get_access_level()
 	if(access_level < 2)
 		return FALSE
@@ -195,10 +213,11 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_toggle_suspension)
 		OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "finalise_create_account", ui_act_finalise_create_account, UI_ARG_TEXT("holder_name"), UI_ARG_NUM("starting_funds"))
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_finalise_create_account)
-	var/account_name = params["holder_name"]
-	var/starting_funds = max(params["starting_funds"], 0)
+/obj/machinery/account_database/proc/ui_act_finalise_create_account(datum/act/op/A, holder_name, starting_funds_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/account_name = holder_name
+	var/starting_funds = max(starting_funds_arg, 0)
 
 	starting_funds = CLAMP(starting_funds, 0, GLOB.station_account.money)	// Not authorized to put the station in debt.
 	starting_funds = min(starting_funds, fund_cap)						// Not authorized to give more than the fund cap.
@@ -226,21 +245,24 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_finalise_create_account)
 			move_into(src, nameof(src.held_card), C, user)
 	return OP_OK
 
-UI_ACT(/obj/machinery/account_database, "view_account_detail", ui_act_view_account_detail, UI_ARG_NUM("account_index"))
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_account_detail)
-	var/index = params["account_index"]
+/obj/machinery/account_database/proc/ui_act_view_account_detail(datum/act/op/A, account_index)
+	if(!ui_gate(A))
+		return FALSE
+	var/index = account_index
 	if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
 		rel_set(src, nameof(/obj/machinery/account_database::detailed_account_view), REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "view_accounts_list", ui_act_view_accounts_list)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_accounts_list)
+/obj/machinery/account_database/proc/ui_act_view_accounts_list(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	rel_clear(src, nameof(/obj/machinery/account_database::detailed_account_view))
 	creating_new_account = 0
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "revoke_payroll", ui_act_revoke_payroll)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_revoke_payroll)
+/obj/machinery/account_database/proc/ui_act_revoke_payroll(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/access_level = get_access_level()
 	if(access_level < 2 || !detailed_account_view() || detailed_account_view().is_budget_account)
 		return FALSE
@@ -249,8 +271,9 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_revoke_payroll)
 		transfer_account_funds(detailed_account_view(), GLOB.station_account, funds, "Revoke payroll", machine_id)
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "print", ui_act_print)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
+/obj/machinery/account_database/proc/ui_act_print(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	print()
 	return TRUE
 
@@ -340,44 +363,13 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
 	return detailed_account_view
 
 // Original account-terminal windows own these scalar continuations.
-/datum/tgui/proc/account_add_funds_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/account_database/terminal = context.request.subject
-	if(terminal.apply_ui_add_funds(user, context.answer.value))
-		SStgui.update_uis(terminal)
-
-/datum/tgui/proc/account_remove_funds_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/machinery/account_database/terminal = context.request.subject
-	if(terminal.apply_ui_remove_funds(user, context.answer.value))
-		SStgui.update_uis(terminal)
-
 /datum/prompt/number/account_ui_funds
 	timeout = 0
-	recheck_on_open = TRUE
-	var/action_key
 
 /datum/prompt/number/account_ui_funds/add
 	title = "Silently add funds"
 	question = "Enter the amount you wish to add"
-	action_key = "add_funds"
 
 /datum/prompt/number/account_ui_funds/remove
 	title = "Silently remove funds"
 	question = "Enter the amount you wish to remove"
-	action_key = "remove_funds"
-
-/datum/prompt/number/account_ui_funds/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	var/obj/machinery/account_database/terminal = subject
-	if(!istype(original_ui) || QDELETED(original_ui) || !istype(terminal) || QDELETED(terminal) || QDELETED(answerer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!terminal.ui_act_allowed(original_ui.user, action_key, original_ui, original_ui.state()))
-		return "the account action is unavailable"
-	if(terminal.get_access_level() < 2)
-		return "the account action requires central command access"
-	return null

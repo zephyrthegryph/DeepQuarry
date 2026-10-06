@@ -140,21 +140,12 @@
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 	return TRUE
 
-/obj/structure/window/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/window_bang,
-		/datum/interaction/entry_hand/window_hand,
-		/datum/interaction/entry_item/window_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_TK("Knock", PROC_REF(interaction_tk)))
-	..()
-
-/// Old attack_hand's harm branch: bang on (or claw at) the window (combat mode only).
-/datum/interaction/entry_hand/window_bang
-	id = "window_bang"
-	name = "Bang on"
-	effect = /obj/structure/window/proc/interaction_bang
-	stance = I_HURT
+EXTEND_INTERACTIONS(/obj/structure/window, \
+	INTERACT_HAND_AS(I_HURT, "Bang on", PROC_REF(interaction_bang)), \
+	INTERACT_HAND("Knock", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+	INTERACT_TK("Knock", PROC_REF(interaction_tk)), \
+)
 
 /obj/structure/window/proc/interaction_bang(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.has_mutation(HULK))
@@ -173,12 +164,6 @@
 		MSG_OTHERS(span_danger("%U% bangs against %T%!")), \
 		MSG_BLIND("You hear a banging sound."))
 	return TRUE
-
-/// Old attack_hand: a Hulk smashes through, or a knock.
-/datum/interaction/entry_hand/window_hand
-	id = "window_hand"
-	name = "Knock"
-	effect = /obj/structure/window/proc/interaction_hand
 
 /obj/structure/window/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
@@ -207,12 +192,6 @@
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
 	return 1
-
-/// Old attackby: slam a grabbed mob, wire for tinting, build a frame, or take a hit.
-/datum/interaction/entry_item/window_item
-	id = "window_item"
-	name = "Use"
-	effect = /obj/structure/window/proc/interaction_item
 
 /obj/structure/window/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// Slamming.
@@ -640,13 +619,20 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 		rel_set(multitool, nameof(multitool.connectable), src)
 		multitool.update_icon()
 
-/obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)
+MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
+
+CAPABILITIES(/obj/machinery/button/windowtint)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(windowtint/wires_cut)), then(PROC_REF(wires_cut)))
+
+/// The cutters through an open panel: the wires come out and the button comes off the wall.
+/obj/machinery/button/windowtint/proc/wires_cut(datum/act/op/A)
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
+		return OP_DECLINE // a shut panel: the cutters go on to the legacy tool handling, as before
 	playsound(src, tool.usesound, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	dismantle()
+	return OP_OK
 
 /* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/structure/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)

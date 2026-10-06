@@ -46,14 +46,25 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 		return
 	tgui_interact(my_client().mob)
 
-DECLARE_UI_STATE(/datum/managed_browser/feedback_form, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/managed_browser/feedback_form, "FeedbackForm")
+CAPABILITIES(/datum/managed_browser/feedback_form)
+	interface("FeedbackForm", state = nameof(GLOB.tgui_always_state))
+	op("edit_body", ui_act("edit_body"), asks(/datum/prompt/text/feedback_body, fields = list("default" = computed(PROC_REF(body_default))), step = "body"), then(PROC_REF(ui_act_edit_body)))
+	op("set_hide_author", ui_act("set_hide_author", arg("hide", bool())), then(PROC_REF(ui_act_set_hide_author)))
+	op("choose_topic", ui_act("choose_topic"), asks(/datum/prompt/choice/feedback_topic, fields = list("choices" = computed(PROC_REF(topic_choices))), step = "topic"), then(PROC_REF(ui_act_choose_topic)))
+	op("submit", ui_act("submit"), asks(/datum/prompt/choice/feedback_submit, step = "confirm", when = PROC_REF(feedback_submittable)), then(PROC_REF(ui_act_submit)))
 
 /datum/managed_browser/feedback_form/ui_title(mob/user)
 	return title
 
-UI_DATA_REPLACE(/datum/managed_browser/feedback_form, "topic=feedback_topic", "hide_author=feedback_hide_author:num", "merge:ui_data_datum_managed_browser_feedback_form{body:bool,author_ckey:text,author_hashed:unknown,can_be_private:bool,topics:unknown,max_length:num,cooldown_days:num}")
+/datum/managed_browser/feedback_form/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["topic"] = feedback_topic
+	data["hide_author"] = feedback_hide_author
+	var/list/merged_1 = ui_data_datum_managed_browser_feedback_form(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/managed_browser/feedback_form's window data (declared on its UI_DATA row).
 /datum/managed_browser/feedback_form/proc/ui_data_datum_managed_browser_feedback_form(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -67,37 +78,35 @@ UI_DATA_REPLACE(/datum/managed_browser/feedback_form, "topic=feedback_topic", "h
 	data["cooldown_days"] = CONFIG_GET(number/sqlite_feedback_cooldown)
 	return data
 
-/datum/managed_browser/feedback_form/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/managed_browser/feedback_form/proc/ui_gate(datum/act/op/A)
 	if(!my_client())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/managed_browser/feedback_form, "edit_body", ui_act_edit_body)
-UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_edit_body)
-	var/client/recipient = my_client()
-	if(!istype(ui) || QDELETED(ui) || !ismob(recipient?.mob) || QDELETED(recipient.mob))
-		return
-	open_request(ui, /datum/prompt/text/feedback_body, TYPE_PROC_REF(/datum/tgui, feedback_body_answered), answerer = recipient.mob, default = feedback_body)
+/datum/managed_browser/feedback_form/proc/ui_act_edit_body(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	apply_feedback_body(A.step_value("body"))
+	return TRUE
 
-UI_ACT(/datum/managed_browser/feedback_form, "set_hide_author", ui_act_set_hide_author, UI_ARG_BOOL("hide"))
-UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_set_hide_author)
+/datum/managed_browser/feedback_form/proc/ui_act_set_hide_author(datum/act/op/A, hide)
+	if(!ui_gate(A))
+		return FALSE
 	if(!can_be_private())
 		feedback_hide_author = FALSE
 	else
-		feedback_hide_author = !!params["hide"]
+		feedback_hide_author = !!hide
 	return TRUE
 
-UI_ACT(/datum/managed_browser/feedback_form, "choose_topic", ui_act_choose_topic)
-UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_choose_topic)
-	var/client/recipient = my_client()
-	if(!istype(ui) || QDELETED(ui) || !ismob(recipient?.mob) || QDELETED(recipient.mob))
-		return
-	open_request(ui, /datum/prompt/choice/feedback_topic, TYPE_PROC_REF(/datum/tgui, feedback_topic_answered), answerer = recipient.mob, choices = CONFIG_GET(str_list/sqlite_feedback_topics))
+/datum/managed_browser/feedback_form/proc/ui_act_choose_topic(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	apply_feedback_topic(A.step_value("topic"))
+	return TRUE
 
-UI_ACT(/datum/managed_browser/feedback_form, "submit", ui_act_submit)
-UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
+/datum/managed_browser/feedback_form/proc/ui_act_submit(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(length(feedback_body) > MAX_FEEDBACK_LENGTH)
 		to_chat(my_client(), span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
 		limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
@@ -108,10 +117,17 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 		to_chat(my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
 		return TRUE
 
-	var/client/recipient = my_client()
-	if(!istype(ui) || QDELETED(ui) || !ismob(recipient?.mob) || QDELETED(recipient.mob))
-		return
-	open_request(ui, /datum/prompt/choice/feedback_submit, TYPE_PROC_REF(/datum/tgui, feedback_submit_answered), answerer = recipient.mob)
+	return apply_feedback_submission(A.step_value("confirm"))
+
+/datum/managed_browser/feedback_form/proc/body_default(datum/act/op/A)
+	return feedback_body
+
+/datum/managed_browser/feedback_form/proc/topic_choices(datum/act/op/A)
+	return CONFIG_GET(str_list/sqlite_feedback_topics)
+
+/// The submission is confirmed only for a body that fits and says something (the handler tells the writer otherwise).
+/datum/managed_browser/feedback_form/proc/feedback_submittable(datum/act/op/A)
+	return length(feedback_body) && length(feedback_body) <= MAX_FEEDBACK_LENGTH // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 
 /datum/managed_browser/feedback_form/proc/apply_feedback_submission(selected)
 	if(selected != "Yes")
@@ -140,54 +156,20 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 	if(value)
 		feedback_topic = value
 
-/datum/tgui/proc/feedback_body_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/managed_browser/feedback_form/form = src_object()
-	form.apply_feedback_body(context.answer.value)
-	SStgui.update_uis(form)
-
-/datum/tgui/proc/feedback_topic_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/managed_browser/feedback_form/form = src_object()
-	form.apply_feedback_topic(context.answer.value)
-	SStgui.update_uis(form)
-
 /datum/prompt/text/feedback_body
 	question = "Please write your feedback here."
 	title = "Feedback Body"
 	max_len = MAX_TGUI_INPUT
 	multiline = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/text/feedback_body/normalize(given)
 	return istext(given) ? given : null
-
-/datum/prompt/text/feedback_body/recheck_extra()
-	return feedback_request_ui_reason(owner, answerer, "edit_body")
 
 /datum/prompt/choice/feedback_topic
 	question = "Choose the topic you want to submit your feedback under."
 	title = "Feedback Topic"
 	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/feedback_topic/recheck_extra()
-	return feedback_request_ui_reason(owner, answerer, "choose_topic")
-
-/proc/feedback_request_ui_reason(datum/tgui/original_ui, mob/original_actor, selected_action)
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(original_actor))
-		return "gone"
-	var/datum/managed_browser/feedback_form/form = original_ui.src_object()
-	if(!istype(form) || QDELETED(form))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!form.ui_act_allowed(original_ui.user, selected_action, original_ui, original_ui.state()))
-		return "the feedback action is unavailable"
-	return null
 
 /datum/prompt/choice/feedback_submit
 	question = "Are you sure you want to submit your feedback?"
@@ -195,37 +177,4 @@ UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
 	choices = list("No", "Yes")
 	buttons = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
 
-/datum/prompt/choice/feedback_submit/recheck_extra()
-	var/reason = feedback_request_ui_reason(owner, answerer, "submit")
-	if(reason)
-		return reason
-	var/datum/tgui/original_ui = owner
-	var/datum/managed_browser/feedback_form/form = original_ui.src_object()
-	if(length(form.feedback_body) > MAX_FEEDBACK_LENGTH)
-		return "feedback is too long"
-	if(!sanitize(form.feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE))
-		return "feedback is empty or invalid"
-	return null
-
-/datum/tgui/proc/feedback_submit_answered(datum/act/request/context)
-	var/datum/managed_browser/feedback_form/form = src_object()
-	if(!istype(form) || QDELETED(form))
-		return
-	var/datum/request/request = context.request
-	if(!context.answer)
-		if(request.outcome != REQ_CANCELLED || isnull(request.value))
-			return
-		switch(request.last_error)
-			if("feedback is too long")
-				to_chat(form.my_client(), span_warning("Your feedback is too long, at [length(form.feedback_body)] characters, where as the \
-					limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
-			if("feedback is empty or invalid")
-				to_chat(form.my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
-			else
-				return
-		SStgui.update_uis(form)
-		return
-	if(form.apply_feedback_submission(context.answer.value) && !QDELETED(form))
-		SStgui.update_uis(form)

@@ -324,7 +324,7 @@
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 10 * removed)
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			if(dq_reagent_knit_fracture(O))
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)

@@ -31,6 +31,7 @@ TRACKED(/obj/item/flame/candle, wax)
 CAPABILITIES(/obj/item/flame/candle)
 	op("snuff", in_hand(), then(PROC_REF(snuffed)))
 	op("light_from", item(/obj/item), passes(), when(req(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 
 /// The held thing is a flame that burns: a lit lighter, match or candle.
@@ -46,11 +47,13 @@ CAPABILITIES(/obj/item/flame/candle)
 	light(user = A.actor)
 	return OP_OK
 
-/obj/item/flame/candle/welder_act(mob/user, obj/item/W)
+/obj/item/flame/candle/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.isOn())
 		light(span_notice("\The [user] casually lights the [src] with [W]."))
-	return TRUE
+	return OP_OK
 
 
 /obj/item/flame/candle/proc/light(flavor_text, mob/user)

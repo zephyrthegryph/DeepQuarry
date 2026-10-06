@@ -22,6 +22,7 @@
 
 CAPABILITIES(/obj/item/pizzavoucher)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Old attack_self.
 /obj/item/pizzavoucher/proc/interaction_self(datum/act/op/A)
@@ -43,17 +44,18 @@ CAPABILITIES(/obj/item/pizzavoucher)
 		to_chat(user, span_warning("The [src] is spent!"))
 	return TRUE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/pizzavoucher, PROC_REF(on_emag), null)
-/obj/item/pizzavoucher/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/pizzavoucher/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(spent)
 		to_chat(user, span_warning("The [src] is spent!"))
-		return
+		return OP_DECLINE
 	if(!special_delivery)
 		to_chat(user, span_warning("You activate the special delivery protocol on the [src]!"))
 		special_delivery = TRUE
-		return 1
+		return OP_OK
 	else
 		to_chat(user, span_warning("The [src] is already in special delivery mode!"))
+	return OP_DECLINE
 
 /obj/effect/falling_effect/pizza_delivery
 	name = "PIZZA PIE POWER!"
