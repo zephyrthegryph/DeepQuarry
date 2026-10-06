@@ -43,6 +43,14 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
 	drag_onto(PROC_REF(drop_input))
+	// the screwdriver takes the cell out; a built-in shield cell asks first, because taking it out destroys it
+	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(cond_not(PROC_REF(cell_builtin))), then(PROC_REF(screwdriver_used)))
+	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(PROC_REF(cell_builtin)), needs(req(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
+		asks(/datum/prompt/choice, fields = list("title" = "Selection List", "question" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "choices" = list("Cancel", "Remove"), "buttons" = TRUE, "timeout" = 0)),
+		then(PROC_REF(destroy_cell_answered)))
+	op("recolor", tool(TOOL_MULTITOOL), wait(0), label("Set the shield colour"),
+		asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the shield to!", "default" = "effect_color", "timeout" = 0)),
+		then(PROC_REF(shield_color_chosen)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -186,15 +194,18 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		return OP_DECLINE
 	return TRUE
 
-/obj/item/personal_shield_generator/screwdriver_act(mob/user, obj/item/tool)
+/// A built-in shield cell (not the parry one): taking it out destroys it.
+/obj/item/personal_shield_generator/proc/cell_builtin(datum/act/A)
+	return istype(bcell, /obj/item/cell/device/shield_generator) && !istype(bcell, /obj/item/cell/device/shield_generator/parry)
+
+/// The screwdriver takes an ordinary cell out; the parry cell stays.
+/obj/item/personal_shield_generator/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bcell)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(istype(bcell, /obj/item/cell/device/shield_generator/parry))
 		to_chat(user, span_notice("You cannot remove the cell from this device."))
-		return ITEM_INTERACT_BLOCKING
-	if(istype(bcell, /obj/item/cell/device/shield_generator))
-		open_request(src, /datum/prompt/choice/shield_cell_destroy, PROC_REF(destroy_cell_answered), answerer = user, subject = src)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
 	own_take(src, nameof(bcell))
@@ -203,34 +214,16 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/// Removing a built-in cell destroys it. Re-checked on the answer: still next to it, and the cell is still a removable built-in one.
-/datum/prompt/choice/shield_cell_destroy
-	title = "Selection List"
-	question = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?"
-	choices = list("Cancel", "Remove")
-	buttons = TRUE
-	timeout = 0
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
-/datum/prompt/choice/shield_cell_destroy/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	var/obj/item/personal_shield_generator/gen = subject
-	if(!istype(gen.bcell, /obj/item/cell/device/shield_generator) || istype(gen.bcell, /obj/item/cell/device/shield_generator/parry))
-		return "no removable cell"
-	return null
-
-/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/act/request/context)
-	if(!context.answer || context.answer.value != "Remove")
-		return
-	return destroy_cell_apply(context)
-
-/obj/item/personal_shield_generator/proc/destroy_cell_apply(datum/act/request/context)
-	var/datum/prompt/choice/shield_cell_destroy/ask = context.answer
-	var/mob/user = ask.answerer
+/// "Remove": the built-in cell comes out and is destroyed (re-checked on the answer: still a built-in one, still beside it).
+/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(R?.value != "Remove")
+		return OP_OK
+	var/mob/user = A.actor
 	fx_sparks(src, 5)
 	own_clear(src, nameof(bcell), OWN_DELETE)
 	if(active_weapon)
@@ -238,17 +231,14 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/personal_shield_generator/multitool_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/color, PROC_REF(shield_color_chosen), answerer = user, question = "Choose a color to set the shield to!", default = effect_color, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value)
-		effect_color = A.answer.value
+/// The multitool sets the shield's colour.
+/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		effect_color = R.value
+	return OP_OK
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)

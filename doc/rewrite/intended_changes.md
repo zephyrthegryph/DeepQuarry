@@ -2028,3 +2028,9 @@ Design: `reagents.md`.
   with a lighter or any welder (lit or not, as before) after 2 s.
 - **The girder's hulk smash**: its offered_when asked a girder proc of the actor, which never answered, so it was never offered; the
   girder stays legacy (it reads mob mutations) and keeps that.
+- **Grave markers ask, then carve at once**: the screwdriver asks the name and then the epitaph as op steps and carves both together
+  (the legacy carving took the material's hardness per line, after the questions; a tool op's wait always comes before its questions,
+  so the wait is gone rather than put in front of them). The item marker no longer also strikes after asking (its proc returned NONE).
+- **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
+  out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
+  door's catch-all for held items.
