@@ -48,6 +48,7 @@
 CAPABILITIES(/obj/effect/fusion_em_field)
 	owns_many(nameof(particle_catchers))
 
+// ALLOW(init/CTOR_ARGS): new_owned_core is a constructor argument from whoever builds it
 /obj/effect/fusion_em_field/Initialize(mapload, obj/machinery/power/fusion_core/new_owned_core)
 	. = ..()
 
@@ -126,6 +127,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 /obj/effect/fusion_em_field/periodic_step()
 	//make sure the field generator is still intact
 	if(!owned_core || QDELETED(owned_core))
+		// ALLOW(lifecycle): the field ends without its core
 		qdel(src)
 		return
 
@@ -618,6 +620,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
 		after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, with = list(things_in_range)) // the core's clock: the field is gone by then
+	// ALLOW(lifecycle): the field collapses in a cascade
 	qdel(src)
 	return
 
@@ -638,6 +641,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 			TT.assume_air(plasma)
 			TT.hotspot_expose(plasma_temperature)
 			plasma = null
+	// ALLOW(lifecycle): the field collapses in a flux cascade
 	qdel(src)
 	return
 
@@ -655,6 +659,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		TT.hotspot_expose(plasma_temperature)
 		plasma = null
 	owned_core.Shutdown()
+	// ALLOW(lifecycle): the field is quenched
 	qdel(src)
 	return
 
@@ -672,6 +677,7 @@ CAPABILITIES(/obj/effect/fusion_em_field)
 		explosion(pick(things_in_range), -1, 5, 5, 5)
 		empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	owned_core.Shutdown()
+	// ALLOW(lifecycle): the field collapses in a bluespace quench
 	qdel(src)
 	return
 

@@ -419,6 +419,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 // Flares burn fuel while lit (they have no cell, so power_use is off).
 DECLARE_PERIODIC_WHILE(/obj/item/flashlight/flare, PERIODIC_SLOW, "on")
 
+// ALLOW(init/INSTANCE_STATE): fuel rolled at random for each instance
 /obj/item/flashlight/flare/Initialize(mapload)
 	fuel += rand(0, 200)
 	. = ..()
@@ -480,6 +481,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/flashlight/flare, PERIODIC_SLOW, "on")
 
 DECLARE_PERIODIC_WHILE(/obj/item/flashlight/glowstick, PERIODIC_SLOW, "on")
 
+// ALLOW(init/INSTANCE_STATE): fuel rolled at random for each instance
 /obj/item/flashlight/glowstick/Initialize(mapload)
 	fuel += rand(0, 400)
 	. = ..()

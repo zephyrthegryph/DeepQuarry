@@ -127,6 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain/proc/replace_self_with(replace_path)
 	var/mob/living/carbon/human/tmp_owner = owner
+	// ALLOW(lifecycle): the brain makes way for the replacement brain made in its slot
 	qdel(src)
 	if(tmp_owner)
 		new replace_path(tmp_owner, 1) // takes the freed brain slot
@@ -279,6 +280,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 
 	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 
+	// ALLOW(lifecycle): the core is spent once it revives a body
 	qdel(src)
 	return 1
 

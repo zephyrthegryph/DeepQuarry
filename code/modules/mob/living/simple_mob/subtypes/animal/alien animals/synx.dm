@@ -888,6 +888,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	faction = "SYN"
 
 
+// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
 /mob/living/simple_mob/animal/synx/ai/pet/greed/synth/Initialize(mapload)
 	. = ..()
 	name = "SYN-KinC-([rand(100,999)])"

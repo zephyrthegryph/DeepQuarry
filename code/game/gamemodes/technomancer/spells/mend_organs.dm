@@ -42,7 +42,7 @@
 					continue
 				H.mend(TREAT_BURN_CARE, heal_power / 4, O)
 
-			for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
+			for(var/obj/item/organ/E in H.damaged_limbs()) // Fix bones
 				var/obj/item/organ/external/affected = E
 				if(affected.is_fractured())
 					affected.mend_fracture()

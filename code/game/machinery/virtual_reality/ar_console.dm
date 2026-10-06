@@ -18,6 +18,7 @@
 	perfect_replica = TRUE //All alien VR sleepers make perfect replicas.
 	spawn_with_clothing = FALSE //alien VR sleepers do not spawn with clothing.
 
+// ALLOW(init/INSTANCE_STATE): rolls which species this pod produces
 /obj/machinery/vr_sleeper/alien/Initialize(mapload)
 	. = ..()
 	if(possible_species && possible_species.len)

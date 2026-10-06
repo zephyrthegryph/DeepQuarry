@@ -34,20 +34,12 @@
 			load_vehicle(I)
 	update_icon()
 
-/obj/structure/vehiclecage/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/vehiclecage_hand,
-		/datum/interaction/entry_drag/vehiclecage_load,
-	)
-	..()
+CAPABILITIES(/obj/structure/vehiclecage)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load vehicle"), then(PROC_REF(interaction_drag)))
 
-/// Old attack_hand: a hint that you need a wrench.
-/datum/interaction/entry_hand/vehiclecage_hand
-	id = "vehiclecage_hand"
-	name = "Use"
-	effect = /obj/structure/vehiclecage/proc/interaction_hand
-
-/obj/structure/vehiclecage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/vehiclecage/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You need a wrench to take this apart!"))
 	return TRUE
 
@@ -86,25 +78,21 @@ DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appeara
 		showcase.layer = src.layer - 0.1
 		underlays += showcase
 
-/// Old MouseDrop_T: load a dragged vehicle into the cage.
-/datum/interaction/entry_drag/vehiclecage_load
-	id = "vehiclecage_load"
-	name = "Load vehicle"
-	effect = /obj/structure/vehiclecage/proc/interaction_drag
-
-/obj/structure/vehiclecage/proc/interaction_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/structure/vehiclecage/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(user && (user?.buckled_to() || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C)))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/vehicle/V
 	if(istype(C, /obj/vehicle))
 		V = C
 	if(!V)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(!my_vehicle())
 		load_vehicle(V, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/vehiclecage/proc/load_vehicle(obj/vehicle/V, mob/user as mob)
 	if(user)

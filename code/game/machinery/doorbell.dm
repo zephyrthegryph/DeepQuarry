@@ -90,6 +90,7 @@ DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(
 	use_power = USE_POWER_OFF
 	flags = WALL_ITEM
 
+// ALLOW(init/CTOR_ARGS): dir and building are constructor arguments from whoever builds it
 /obj/machinery/button/doorbell/Initialize(mapload, dir, building = FALSE)
 	. = ..()
 	if(building)

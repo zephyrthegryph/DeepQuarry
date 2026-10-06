@@ -282,6 +282,7 @@
 
 DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellies
 
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/belly/Initialize(mapload)
 	belly_share_lists() // before anything reads the list vars
 	. = ..()

@@ -17,6 +17,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	climb()
 	owns_one(nameof(mouse_nest), starts = /obj/structure/mob_spawner/mouse_nest)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/trash_pile/Initialize(mapload)
 	. = ..()
 	icon_state = pick(

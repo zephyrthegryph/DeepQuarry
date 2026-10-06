@@ -18,6 +18,7 @@
 CAPABILITIES(/obj/machinery/computer/security)
 	owns_one(nameof(camera), /datum/tgui_module/camera)
 
+// ALLOW(init/INSTANCE_STATE): its camera view is built for the networks the map gave it
 /obj/machinery/computer/security/Initialize(mapload)
 	. = ..()
 	if(!LAZYLEN(network))

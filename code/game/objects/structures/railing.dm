@@ -26,6 +26,7 @@
 	icon_modifier = "grey_"
 	icon_state = "grey_railing0"
 
+// ALLOW(init/CTOR_ARGS): constructed is a constructor argument from whoever builds it
 /obj/structure/railing/Initialize(mapload, constructed = 0)
 	. = ..()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
@@ -37,6 +38,9 @@
 
 CAPABILITIES(/obj/structure/railing)
 	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// A railing that is not anchored breaks under whoever climbed it.
 /obj/structure/railing/proc/climbed_over(mob/living/climber)
@@ -217,36 +221,42 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 
 	return TRUE
 
-/obj/structure/railing/wrench_act(mob/user, obj/item/W)
+/obj/structure/railing/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(anchored)
-		return TRUE
+		return OP_OK
 	playsound(src, W.usesound, 50, 1)
 	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/railing/proc/wrench_act_timed_done(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
-/obj/structure/railing/welder_act(mob/user, obj/item/W)
+/obj/structure/railing/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(get_integrity() >= max_integrity)
-		return TRUE
+		return OP_OK
 	var/obj/item/weldingtool/F = W.get_welder()
 	if(F.welding)
 		playsound(src, F.usesound, 50, 1)
 		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/railing/proc/welder_act_timed_done(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You repair some damage to %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
 	repair_damage(max_integrity / 5)
 
-/obj/structure/railing/screwdriver_act(mob/user, obj/item/W)
+/obj/structure/railing/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	act_message(user, src, others = span_info(span_bold("%U%") + " begins [anchored ? "unscrewing" : "fastening"] %T%."))
 	playsound(src, W.usesound, 75, 1)
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/railing/proc/screwdriver_act_timed_done(mob/user)
 	set_anchored(!anchored)

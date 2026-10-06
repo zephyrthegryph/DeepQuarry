@@ -19,10 +19,12 @@
 
 CAPABILITIES(/obj/structure/gravemarker)
 	climb()
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 CAPABILITIES(/datum/prompt/text/grave_carving)
 	ref_one(nameof(tool), /obj/item)
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/structure/gravemarker/Initialize(mapload, material_name)
 	. = ..()
 	if(!material_name)
@@ -99,9 +101,11 @@ CAPABILITIES(/datum/prompt/text/grave_carving)
 	epitaph += carving_2
 	update_icon()
 
-/obj/structure/gravemarker/wrench_act(mob/user, obj/item/W)
+/obj/structure/gravemarker/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0, start_self = "You start taking down \the [src.name].", start_others = "[user] starts taking down \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)
 	act_message(user, null, MSG_SELF("You take down \the [src.name]."), MSG_OTHERS("%U% takes down \the [src.name]."))

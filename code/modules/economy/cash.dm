@@ -95,6 +95,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_ove
 			update_icon()
 		return worth
 	else
+		// ALLOW(lifecycle): a cash stack spent down to nothing is gone
 		qdel(src)
 		return 0
 

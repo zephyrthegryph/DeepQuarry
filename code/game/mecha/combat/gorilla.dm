@@ -27,17 +27,12 @@
 	zoom_possible = 1
 	thrusters_possible = 1
 
-/obj/mecha/combat/gorilla/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src) // This thing basically cannot function without an external power supply.
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/cannon(src)
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive(src)
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg(src)
-	ME.attach(src)
-	return
+TYPE_TABLE(/obj/mecha/combat/gorilla, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/cannon, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg \
+		))
 
 /obj/mecha/combat/gorilla/mechstep(direction)
 	var/result = step(src,direction)

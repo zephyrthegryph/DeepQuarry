@@ -136,6 +136,7 @@
 	new /obj/item/thecake_layer/five(T)
 	new /obj/item/thecake_layer/six(T)
 
+	// ALLOW(lifecycle): the cake grenade is used up once it has spawned the cake
 	qdel(src)
 	return
 
@@ -150,6 +151,7 @@
 	new /obj/item/technomancer_catalog/universal(T)
 	new /obj/item/technomancer_core/universal(T)
 
+	// ALLOW(lifecycle): the grenade is used up once it has spawned its kit
 	qdel(src)
 	return
 

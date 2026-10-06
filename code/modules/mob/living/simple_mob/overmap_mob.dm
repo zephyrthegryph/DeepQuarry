@@ -30,6 +30,7 @@
 	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
+// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
 /obj/effect/overmap/visitable/simplemob/Initialize(mapload, new_parent)
 	. = ..()
 	rel_set(src, nameof(parent), new_parent)
@@ -118,6 +119,7 @@
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable/simplemob)
 
+// ALLOW(init/CTOR_ARGS): new_child is a constructor argument from whoever builds it
 /mob/living/simple_mob/vore/overmap/Initialize(mapload, new_child)
 	. = ..()
 	rel_set(src, nameof(child_om_marker), new_child)
@@ -167,6 +169,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
+// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
 /obj/effect/overmap/visitable/ship/simplemob/Initialize(mapload, new_parent)
 	. = ..()
 	rel_set(src, nameof(parent), new_parent)

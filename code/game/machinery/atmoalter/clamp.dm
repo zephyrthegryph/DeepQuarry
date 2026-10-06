@@ -13,6 +13,7 @@
 	var/datum/pipe_network/network_node1
 	var/datum/pipe_network/network_node2
 
+// ALLOW(init/CTOR_ARGS): to_attach is a constructor argument from whoever builds it
 /obj/machinery/clamp/Initialize(mapload, obj/machinery/atmospherics/pipe/simple/to_attach = null)
 	. = ..()
 	if(istype(to_attach))
@@ -130,6 +131,7 @@ CAPABILITIES(/obj/item/clamp)
 		return OP_FAILED
 	var/atom/pipe = A.target
 	new /obj/machinery/clamp(pipe.loc, pipe)
+	// ALLOW(lifecycle): the clamp item becomes the clamp machine fitted onto the pipe
 	qdel(src)
 	return OP_OK
 

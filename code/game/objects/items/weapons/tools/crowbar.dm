@@ -95,6 +95,7 @@
 	item_state = "crowbar_red"
 	random_color = FALSE
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/tool/prybar/Initialize(mapload)
 	. = ..()
 	if(random_color)

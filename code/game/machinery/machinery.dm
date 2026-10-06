@@ -163,6 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
 	return gen
 
+// ALLOW(init/CTOR_ARGS): d is a constructor argument from whoever builds it
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(isnum(d))
@@ -683,6 +684,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	A.update_desc()
 	A.update_icon()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
+	// ALLOW(lifecycle): the dismantled machine is replaced by the frame built above
 	qdel(src)
 	return 1
 

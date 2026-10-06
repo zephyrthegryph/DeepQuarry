@@ -61,6 +61,7 @@ MSG_DEF_SELF(stage/lightswitch/finished, "It is finished.")
 	var/x_offset = 26
 	var/y_offset = 26
 
+// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
 /obj/structure/construction/Initialize(mapload, ndir, building = FALSE)
 	. = ..()
 	if(ndir)

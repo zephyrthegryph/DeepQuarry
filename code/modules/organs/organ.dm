@@ -326,6 +326,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	return 0
 
 /obj/item/organ/proc/remove_rejuv()
+	// ALLOW(lifecycle): a rejuvenation removes the organ
 	qdel(src)
 
 /obj/item/organ/proc/rejuvenate(ignore_prosthetic_prefs)
@@ -663,6 +664,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 		for(var/obj/contained_object in contents)
 			contained_object.forceMove(newtarget)
 
+	// ALLOW(lifecycle): the butchered organ is gone once its meat is made
 	qdel(src)
 
 /obj/item/organ/proc/organ_can_feel_pain()

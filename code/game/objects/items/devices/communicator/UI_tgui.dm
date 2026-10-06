@@ -36,6 +36,7 @@ CAPABILITIES(/obj/item/communicator)
 	op("edit", ui_act("edit"), asks(/datum/prompt/text/communicator/note, fields = list("title" = computed(PROC_REF(device_name)), "default" = computed(PROC_REF(note_default))), step = "note"), then(PROC_REF(ui_act_edit)))
 	op("Light", ui_act("Light"), then(PROC_REF(ui_act_light)))
 	op("newsfeed", ui_act("newsfeed", arg("newsfeed", num())), then(PROC_REF(ui_act_newsfeed)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(communicator_emp)))
 
 
 // Proc: setup_tgui_camera()

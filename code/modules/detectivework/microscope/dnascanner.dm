@@ -18,6 +18,7 @@
 OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning")
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/dnaforensics/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

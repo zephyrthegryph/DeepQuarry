@@ -128,6 +128,7 @@ DAMAGE_REACTION(/obj/item/mecha_parts/mecha_tracking, DAMAGE_EMP, TYPE_PROC_REF(
 	var/obj/mecha/M = in_mecha()
 	if(M)
 		M.emp_act(EMP_HARMLESS)
+	// ALLOW(lifecycle): the tracking beacon burns out after its shock
 	qdel(src)
 
 /obj/item/mecha_parts/mecha_tracking/proc/get_mecha_log()

@@ -29,6 +29,7 @@
 
 TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
+// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
 /obj/item/material/Initialize(mapload, material_key)
 	var/forced_material = TYPE_TABLE_GET(src, weapon_forced_material)
 	if(forced_material)
@@ -71,6 +72,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 /obj/item/material/proc/set_material(new_material)
 	material = get_material_by_name(new_material)
 	if(!material)
+		// ALLOW(lifecycle): a weapon made of an unknown material cannot exist
 		qdel(src)
 	else
 		if(named_from_material)

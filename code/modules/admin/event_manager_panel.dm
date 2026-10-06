@@ -39,6 +39,7 @@ CAPABILITIES(/datum/event_manager_panel)
 
 /datum/event_manager_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the event panel lives only while its window is open
 	qdel(src)
 
 /// The computed part of /datum/event_manager_panel's window data (declared on its UI_DATA row).

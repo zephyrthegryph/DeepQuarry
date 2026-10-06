@@ -36,6 +36,7 @@
 			else
 				gender = NEUTER
 	else
+		// ALLOW(lifecycle): a shard of an unknown material cannot exist
 		qdel(src)
 
 DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearance_overlays), list())

@@ -15,6 +15,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_solgov_rank_fleet_enlisted, list(
 	"e9_alt4" = list("name" = "ranks (E-9 master chief petty officer of the Fleet)", "desc" = "Insignia denoting the rank of Master Chief Petty Officer of the Fleet."),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/solgov/rank/fleet/enlisted/Initialize(mapload)
 	apply_variant()
 	. = ..()

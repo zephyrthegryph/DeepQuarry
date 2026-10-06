@@ -197,6 +197,7 @@ CAPABILITIES(/obj/item/toy/plushie/customizable)
 	op("set_overlay_alpha", ui_act("set_overlay_alpha", arg("alpha", num()), arg("icon_state", schema_text(4096))), then(PROC_REF(ui_act_set_overlay_alpha)))
 	op("import_config", ui_act("import_config", arg("config")), then(PROC_REF(ui_act_import_config)))
 	op("rename", ui_act("rename", arg("name", schema_text(4096))), then(PROC_REF(ui_act_rename)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /obj/item/toy/plushie/customizable/proc/ui_act_clear(datum/act/op/A)
 	add_fingerprint(A.actor)
@@ -220,10 +221,9 @@ CAPABILITIES(/obj/item/toy/plushie/customizable)
 	adjusted_name = sane_name
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/customizable, INTERACT_ALT(null, PROC_REF(interaction_alt)))
-
 /// Old click_alt.
-/obj/item/toy/plushie/customizable/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/plushie/customizable/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

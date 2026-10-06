@@ -34,7 +34,7 @@
 	if(direct)
 		recovered = wall_poster.roll_and_drop(T)
 	else
-		TEST_ASSERT_EQUAL(wall_poster.wirecutter_act(user, tool), ITEM_INTERACT_SUCCESS, "the actual wirecutter removal succeeds")
+		TEST_ASSERT_EQUAL(test_op_handler(wall_poster, "wirecutter_used", user, tool), OP_OK, "the actual wirecutter removal succeeds")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(wall_poster), "actual removal consumes the original wall poster")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/structure/sign/poster)), 0, "actual removal leaves no duplicate wall poster")

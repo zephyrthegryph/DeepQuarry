@@ -54,6 +54,7 @@
 
 	attack_injury_kind = INJURY_PIERCE
 
+// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
 /mob/living/simple_mob/animal/passive/lizard/large/Initialize(mapload)
 	. = ..()
 	adjust_scale(rand(12, 20) / 10)

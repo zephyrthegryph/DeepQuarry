@@ -35,6 +35,7 @@
 
 TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 
+// ALLOW(init/CTOR_ARGS): materialtype, rmaterialtype and girdertype are constructor arguments from whoever builds it
 /turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)
@@ -1303,11 +1304,13 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			var/datum/material/M = GLOB.name_to_material[the_rcd.material_to_use]
 			new_T.set_material(M, the_rcd.make_rwalls ? M : null, girder_material)
 			new_T.add_hiddenprint(user)
+			// ALLOW(lifecycle): the girder becomes the wall the RCD just raised over it
 			qdel(src)
 			return TRUE
 
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
+			// ALLOW(lifecycle): the RCD deconstructs the girder
 			qdel(src)
 			return TRUE
 
@@ -1326,6 +1329,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
+			// ALLOW(lifecycle): the RCD deconstructs the window
 			qdel(src)
 			return TRUE
 	return FALSE
@@ -1378,6 +1382,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
+			// ALLOW(lifecycle): the RCD deconstructs the grille
 			qdel(src)
 			return TRUE
 		if(RCD_WINDOWGRILLE)
@@ -1443,6 +1448,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
+			// ALLOW(lifecycle): the RCD deconstructs the airlock
 			qdel(src)
 			return TRUE
 	return FALSE
@@ -1797,6 +1803,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 /// simply removes its atom goes through here, so the removal has one site (D-qdel).
 /atom/proc/rcd_deconstruct(mob/living/user)
 	to_chat(user, span_notice("You deconstruct \the [src]."))
+	// ALLOW(lifecycle): the RCD deconstructs the target
 	qdel(src)
 
 /// Shared rcd_values() results, keyed by "mode|delay|cost". Callers only read them.

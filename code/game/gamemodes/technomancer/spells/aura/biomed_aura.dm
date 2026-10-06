@@ -19,6 +19,7 @@
 
 /obj/item/spell/aura/biomed/periodic_step()
 	if(!pay_energy(75))
+		// ALLOW(lifecycle): the aura collapses when its caster runs out of energy
 		qdel(src)
 		return
 	regen_tick++

@@ -1,4 +1,5 @@
-/mob/living/carbon/human/ai_controlled/greytide/Initialize(mapload, new_species)
+// ALLOW(init/INSTANCE_STATE): to_wear_r_hand, to_wear_mask, to_wear_helmet and to_wear_gloves rolled at random for each instance
+/mob/living/carbon/human/ai_controlled/greytide/Initialize(mapload)
 	to_wear_r_hand = pick(
 		prob(20); /obj/item/storage/toolbox/electrical,
 		prob(20); /obj/item/storage/toolbox/mechanical,

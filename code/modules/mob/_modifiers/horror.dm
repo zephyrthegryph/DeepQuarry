@@ -548,7 +548,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		if(I.status & ORGAN_DEAD && (I.damage < I.is_broken()) && (I.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			I.restore_status()
 
-	for(var/obj/item/organ/external/limb in unfortunate_soul.bad_external_organs)
+	for(var/obj/item/organ/external/limb in unfortunate_soul.damaged_limbs())
 		limb.germ_level = max(0, limb.germ_level - 25)
 		if(limb.status & ORGAN_DEAD && (limb.damage < limb.is_broken()) && (limb.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			limb.set_status(0)

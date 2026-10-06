@@ -133,20 +133,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	junk.add_fingerprint(user)
 	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/card/emag)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/card/emag/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/card/emag/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/stack/telecrystal))
 		var/obj/item/stack/telecrystal/T = O
 		if(T.get_amount() < 1)
 			to_chat(user, span_notice("You are not adding enough telecrystals to fuel \the [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
 		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
 		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
 		consume(O, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/card/emag/borg
 	uses = 12
@@ -327,6 +330,7 @@ CAPABILITIES(/obj/item/card_fluff)
 /obj/item/card/emag/used
 	uses = 1
 
+// ALLOW(init/INSTANCE_STATE): uses rolled at random for each instance
 /obj/item/card/emag/used/Initialize(mapload)
 	. = ..()
 	uses = rand(1, 5)

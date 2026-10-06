@@ -32,6 +32,7 @@
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK
 	resistance_flags = FIRE_PROOF | ACID_PROOF | LAVA_PROOF
 
+// ALLOW(init/CTOR_ARGS): new_gen is a constructor argument from whoever builds it
 /obj/effect/energy_field/Initialize(mapload, new_gen)
 	. = ..()
 	update_integrity(0) // Fields start down; the generator charges them.

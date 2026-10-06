@@ -230,7 +230,7 @@
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
 		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_knit_fracture(O)
 			dq_reagent_close_wounds(O, wound_heal)
 
@@ -1068,29 +1068,19 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 	name = "bottle of Benzilate pills"
 	desc = "This just hurts to look at with how many words of caution are scrawled on the lable. Better eat all of 'em!"
 
-/obj/item/storage/pill_bottle/benzilate/Initialize(mapload)
-	. = ..()
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
+/obj/item/storage/pill_bottle/benzilate
+	starts_with = list(
+		/obj/item/reagent_containers/pill/benzilate = 7,
+	)
 
 /obj/item/storage/pill_bottle/phenethylamine
 	name = "bottle of Phenethylamine pills"
 	desc = "Looks like someone drew a happy face on the label, replacing whatever was previously present."
 
-/obj/item/storage/pill_bottle/phenethylamine/Initialize(mapload)
-	. = ..()
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
+/obj/item/storage/pill_bottle/phenethylamine
+	starts_with = list(
+		/obj/item/reagent_containers/pill/phenethylamine = 7,
+	)
 
 
 // === merged from other_vr.dm during hard-fork de-suffix (verified no override-order change) ===

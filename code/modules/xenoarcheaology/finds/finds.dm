@@ -19,6 +19,7 @@
 CAPABILITIES(/obj/item/strangerock)
 	owns_one(nameof(geologic_data), /datum/geosample)
 
+// ALLOW(init/CTOR_ARGS): inside_item_type is a constructor argument from whoever builds it
 /obj/item/strangerock/Initialize(mapload, inside_item_type = 0)
 	. = ..()
 	pixel_x = rand(0,16)-8

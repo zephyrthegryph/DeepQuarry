@@ -125,6 +125,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 
 	explosion(src.loc,-1,-1,0)
 	if(delete_after && !QDELETED(src))
+		// ALLOW(lifecycle): the barrier is blown apart when it is set to go
 		qdel(src)
 
 /// A sequencer breaks the access lock, a second one the anchoring.
@@ -244,8 +245,7 @@ CAPABILITIES(/obj/structure/barricade/cutout)
 
 /obj/structure/barricade/cutout/proc/cutout_paint_done(choice)
 	var/picked_type = cutout_types[choice]
-	new picked_type(loc)
-	qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
+	replace_with(src, picked_type) // Technically heals it too: the new cutout is a fresh one.
 
 //Variants
 /obj/structure/barricade/cutout/greytide

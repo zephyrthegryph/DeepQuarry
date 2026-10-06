@@ -28,6 +28,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("volume_adj", ui_act("volume_adj", arg("vol", num())), then(PROC_REF(ui_act_volume_adj)))
 
+// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)

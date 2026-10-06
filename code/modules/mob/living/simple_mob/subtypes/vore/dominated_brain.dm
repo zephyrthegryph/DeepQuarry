@@ -20,6 +20,7 @@
 CAPABILITIES(/mob/living/dominated_brain)
 	verb_entry(/mob/living/dominated_brain/proc/resist_control)
 
+// ALLOW(init/CTOR_ARGS): pred, preyname and prey are constructor arguments from whoever builds it
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
 	prey_name = preyname
 	if(prey)
@@ -165,6 +166,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [returning_prey?.key].", pred_body)
 	pred_body.absorb_langs()
 	pred_body.prey_controlled = FALSE
+	// ALLOW(lifecycle): the dominating prey mind is dissolved once control returns
 	qdel(src)
 
 /mob/living/proc/absorb_langs()		//This should be called on the predator in the exchange
@@ -765,5 +767,6 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	to_chat(prey_body, span_warning("Your connection to [pred_body] fades, and you awaken back in your own body!"))
 	to_chat(pred_body, span_warning("You feel as though a piece of yourself is missing, as \the [src] returns to their body."))
 	log_admin("[prey_body] ([prey_body.ckey]) has returned to their body from [pred_body].")
+	// ALLOW(lifecycle): the dominated brain is dissolved once its prey returns
 	qdel(src)
 

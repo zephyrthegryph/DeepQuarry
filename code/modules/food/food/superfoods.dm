@@ -431,6 +431,7 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 	nutriment_amt = 4
 	volume = 80
 
+// ALLOW(init/INSTANCE_STATE): rolls which chaos cake slice it is
 /obj/item/reagent_containers/food/snacks/chaoscakeslice/Initialize(mapload)
 	. = ..()
 	var/i = rand(1,6)

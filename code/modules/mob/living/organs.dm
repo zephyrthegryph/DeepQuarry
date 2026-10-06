@@ -3,13 +3,13 @@
 /mob/living
 	var/list/organs
 	var/list/organs_by_name // map organ names to organs
-	var/list/bad_external_organs // organs we check until they are good.
 
 /mob/living/proc/get_bodypart_name(zone)
 	var/obj/item/organ/external/E = get_organ(zone)
 	if(E) . = E.name
 
 /mob/living/proc/get_organ(zone)
+	RETURN_TYPE(/obj/item/organ/external)
 	if(!zone)
 		zone = BP_TORSO
 	else if (zone in list( O_EYES, O_MOUTH ))

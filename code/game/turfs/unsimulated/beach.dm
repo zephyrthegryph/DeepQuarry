@@ -55,6 +55,7 @@
 	icon_state = "desert"
 	initial_flooring = /datum/decl/flooring/sand/desert
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /turf/simulated/floor/beach/sand/desert/Initialize(mapload)
 	. = ..()
 	if(prob(5))

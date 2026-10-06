@@ -18,6 +18,7 @@ TYPE_TABLE(/obj/mecha/medical, mecha_starting_components, list( \
 		))
 
 
+// ALLOW(init/INSTANCE_STATE): an exosuit made on a player level carries a tracking beacon
 /obj/mecha/medical/Initialize(mapload)
 	. = ..()
 	var/turf/T = get_turf(src)

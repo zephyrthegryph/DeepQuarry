@@ -42,6 +42,7 @@
 	return 0
 
 /proc/in_range(source, user)
+	READS_FROM() // positions are asked when a choice is made, never cached
 	if(get_dist(source, user) <= 1)
 		return 1
 

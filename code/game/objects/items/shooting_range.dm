@@ -27,15 +27,18 @@
 	// a stake's density to 0 meaning it can't be pushed anymore. Instead of pushing
 	// the stake now, we have to push the target.
 
-/obj/item/target/welder_act(mob/user, obj/item/W)
+/obj/item/target/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
 		cut_overlays()
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/item/target)
 	op("unpin", hand(), when(req(PROC_REF(is_pinned))), then(PROC_REF(unpinned)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// The stake this target is pinned to, if one is near.
 /obj/item/target/proc/pinning_stake()

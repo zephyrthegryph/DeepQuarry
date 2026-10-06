@@ -225,28 +225,31 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/robot_parts/chest)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/robot_parts/chest/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/robot_parts/chest/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(src.cell)
 			to_chat(user, span_warning("You have already inserted a cell!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			if(!move_into(src, nameof(src.cell), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, span_notice("You insert the cell!"))
 	if(istype(W, /obj/item/stack/cable_coil))
 		if(src.wires_const)
 			to_chat(user, span_warning("You have already inserted wire!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			var/obj/item/stack/cable_coil/coil = W
 			coil.use(1)
 			src.wires_const = 1.0
 			to_chat(user, span_notice("You insert the wire!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby's flash branch (declared with the head's other interactions in tvcamera.dm).
 /obj/item/robot_parts/head/proc/head_insert_flash(mob/user, obj/item/W, datum/interaction/interaction)

@@ -56,6 +56,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	latent_discard()
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 		consume(O)
+	// ALLOW(lifecycle): the mimic crate is blasted apart
 	qdel(src)
 	return TRUE
 
@@ -182,6 +183,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 		else
 			qdel(src.loc)
 			new/obj/machinery/door/airlock/maintenance/common (src.loc) //Places the Airlock
+			// ALLOW(lifecycle): the mimic reverts into the airlock it imitated
 			qdel(src)//Deletes the "mimic"
 			return ..()
 	else
@@ -229,6 +231,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
 	rel_clear(src, nameof(real_crate))
+	// ALLOW(lifecycle): the airlock mimic dies back into a plain airlock
 	qdel(src)
 	return TRUE
 
@@ -353,10 +356,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 
 /obj/effect/floormimic/proc/awaken(mob/living/L)
 	if(!mimic_active)
+		// ALLOW(lifecycle): an inactive floor mimic is just floor and goes
 		qdel(src)
 		return
 	mimic_active = FALSE
 	if(!prob(mimic_chance))
+		// ALLOW(lifecycle): the floor mimic failed its roll and goes
 		qdel(src)
 		return
 	var/mob/living/simple_mob/vore/aggressive/mimic/floor/new_mimic = new mimic_type(drop_location())
@@ -413,6 +418,7 @@ CAPABILITIES(/obj/effect/floormimic)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
+	// ALLOW(lifecycle): the floor mimic leaves no corpse when it dies
 	qdel(src)
 	return TRUE
 

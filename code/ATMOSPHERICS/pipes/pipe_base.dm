@@ -48,6 +48,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1
 
+// ALLOW(init/INSTANCE_STATE): level taken from where this instance is placed
 /obj/machinery/atmospherics/pipe/Initialize(mapload)
 	if(istype(get_turf(src), /turf/simulated/wall) || istype(get_turf(src), /turf/simulated/shuttle/wall) || istype(get_turf(src), /turf/unsimulated/wall))
 		level = 1
@@ -121,6 +122,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /obj/machinery/atmospherics/pipe/proc/burst_from_pressure()
 	visible_message(span_danger("\The [src] bursts!"))
 	play_sfx(src, SFX_EFFECTS_BANG, 0.5)
+	// ALLOW(lifecycle): the overpressured pipe bursts apart
 	qdel(src)
 
 /obj/machinery/atmospherics/pipe/return_air()

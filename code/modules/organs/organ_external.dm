@@ -40,7 +40,6 @@
 	// Damage vars.
 	var/brute_mod = 1                  // Multiplier for incoming brute damage.
 	var/burn_mod = 1                   // As above for burn.
-	var/last_dam = -1                  // used in healing/processing calculations.
 	var/spread_dam = 0
 	// Appearance vars.
 	var/nonsolid                       // Snowflake warning, reee. Used for slime limbs.
@@ -63,7 +62,6 @@
 	var/digi_prosthetic = FALSE 		//is it a prosthetic that can be digitigrade
 
 	// Wound and structural data.
-	var/wound_update_accuracy = 1      // how often wounds should be updated, a higher number means less often
 	// Wounds are /datum/affliction/wound located on this limb: see get_wounds() (body/parts/limb.dm).
 	var/obj/item/organ/external/parent // Master-limb.
 	var/list/children                  // Sub-limbs.
@@ -371,6 +369,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	dislocated = 1
 	if(istype(owner))
 		grant(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
+		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/proc/relocate()
 	if(dislocated == -1)
@@ -383,6 +382,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 
 		// Each dislocated limb grants the verb; it stays while another limb is still out.
 		revoke(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
+		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/update_health()
 	recalc_integrity()
@@ -623,8 +623,6 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 
 	//Sync the organ's damage with its wounds
 	src.update_damages()
-	if(owner)
-		src.update_wounds()
 
 	var/result = update_damage_state()
 	return result
@@ -817,35 +815,11 @@ This function completely restores a damaged organ to perfect condition.
 //external organs handle brokenness a bit differently when it comes to damage. Instead get_trauma() is checked in update_damages()
 //this also ensures that an external organ cannot be "broken" without broken_description being set.
 /obj/item/organ/external/is_broken()
-	return ((status & ORGAN_CUT_AWAY) || is_fractured() && (!splinted || (splinted && (splinted?.loc == src) && prob(30))))
-
-//Determines if we even need to process this organ.
-/obj/item/organ/external/proc/need_process()
-	if((status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED)) || is_fractured())
-		return 1
-	var/current_dam = get_trauma() + get_burn()
-	if(current_dam) // But they do for medichines! ---&& (!is_robotic())) //Robot limbs don't autoheal and thus don't need to process when damaged
-		return 1
-	if(last_dam != current_dam) // Process when we are fully healed up.
-		last_dam = current_dam
-		return 1
-	else
-		last_dam = current_dam
-	if(germ_level)
-		return 1
-	// Afflictions riding a detached limb keep ticking offline.
-	if(LAZYLEN(detached_afflictions))
-		return 1
-	if(number_wounds)
-		return 1
-	return 0
+	// A splint in place holds the bone: a splinted fracture is not broken for grip and stance.
+	return ((status & ORGAN_CUT_AWAY) || (is_fractured() && !(splinted && splinted.loc == src)))
 
 /obj/item/organ/external/periodic_step()
 	if(owner)
-
-		// Process wounds, doing healing etc. Only do this every few ticks to save processing power
-		if(owner.is_alive() && owner.life_tick % wound_update_accuracy == 0)
-			update_wounds()
 
 		//Chem traces slowly vanish
 		if(owner.life_tick % 10 == 0)
@@ -957,55 +931,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
-//Updating wounds. Handles natural wound healing, scar removal and infections of wounds.
-/obj/item/organ/external/proc/update_wounds()
-	var/list/current_wounds = get_wounds()
-	if((is_robotic()) || (data.get_species_flags() & UNDEAD)) //Robotic and dead limbs don't heal or get worse.
-		var/removed_any = FALSE
-		for(var/datum/affliction/wound/W as anything in current_wounds) //Repaired wounds disappear though
-			if(W.damage <= 0)  //and they disappear right away
-				remove_wound(W)
-				removed_any = TRUE
-		if(removed_any)
-			update_damages()
-			if(update_damage_state())
-				owner?.UpdateDamageIcon(1)
-		return
-
-	var/wound_count = length(current_wounds)
-	for(var/datum/affliction/wound/W as anything in current_wounds)
-		// wounds can disappear after 10 minutes at the earliest
-		if(W.damage <= 0 && ELAPSED(W, created, CLOCK_WORLD) >= 10 MINUTES)
-			remove_wound(W)
-			continue
-		// slow healing
-		var/heal_amt = 0
-
-		// if damage >= 50 AFTER treatment then it's probably too severe to heal within the timeframe of a round.
-		if (W.can_autoheal() && W.wound_damage() < 50)
-			heal_amt += 0.5
-
-		//we only update wounds once in [wound_update_accuracy] ticks so have to emulate realtime
-		heal_amt = heal_amt * wound_update_accuracy
-		//configurable regen speed woo, no-regen hardcore or instaheal hugbox, choose your destiny
-		heal_amt = heal_amt * CONFIG_GET(number/organ_regeneration_multiplier)
-		// amount of healing is spread over all the wounds
-		heal_amt = heal_amt / (wound_count + 1)
-		// making it look prettier on scanners
-		heal_amt = round(heal_amt,0.1)
-		if(heal_amt > 0)
-			W.heal_damage(heal_amt)
-
-		// Salving also helps against infection
-		if(W.germ_level > 0 && W.salved && prob(2))
-			W.disinfected = 1
-			W.germ_level = 0
-
-	// sync the organ's damage with its wounds
-	src.update_damages()
-	if (update_icon())
-		owner?.UpdateDamageIcon(1)
-
 /// Rebuilds limb integrity from its wounds and updates the BLEEDING status
 /// and fractures.
 /obj/item/organ/external/proc/update_damages()
@@ -1017,13 +942,11 @@ Note that amputating the affected organ does in fact remove the infection from t
 		H = owner
 
 	var/can_bleed = !(is_robotic()) && H && H.should_have_organ(O_HEART) && !(H.species.flags & NO_BLOOD)
-	var/bio_now = can_bleed ? om_clock_now(H, CLOCK_BIO) : 0
-	for(var/datum/affliction/wound/W as anything in get_wounds())
-		var/bleeding = can_bleed && W.bleeding()
-		if(can_bleed)
-			W.run_bleed_clock(bio_now, bleeding)
-		if(bleeding)
-			set_status(status | ORGAN_BLEEDING)
+	if(can_bleed)
+		for(var/datum/affliction/wound/W as anything in get_wounds())
+			if(W.bleeding())
+				set_status(status | ORGAN_BLEEDING)
+				break
 
 	// An open, unclamped surgical site bleeds.
 	var/datum/affliction/surgical_incision/incision = get_incision()
@@ -1176,6 +1099,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for(var/obj/item/I in slot_contents())
 				if(I.w_class > ITEMSIZE_SMALL && !istype(I,/obj/item/organ))
 					slot_remove(I, droploc, null, LEDGER_MOVE_FORCED)
+			// ALLOW(lifecycle): the limb burns to ash
 			qdel(src)
 		if(DROPLIMB_BLUNT)
 			var/obj/effect/decal/cleanable/blood/gibs/gore
@@ -1194,6 +1118,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(slot_remove(thing, droploc, null, LEDGER_MOVE_FORCED))
 					thing.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
+			// ALLOW(lifecycle): the limb is blown apart
 			qdel(src)
 
 		if(DROPLIMB_ACID)

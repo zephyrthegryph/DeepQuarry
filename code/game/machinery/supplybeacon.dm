@@ -47,6 +47,7 @@ OM_FIELD(/obj/machinery/power/supply_beacon, expended, FALSE, CHANGE_MACHINE_SET
 /// Draws power (and arms the drop) while switched on and not yet spent.
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE, list("use_power", "!expended"))
 
+// ALLOW(init/INSTANCE_STATE): drop_type rolled at random for each instance
 /obj/machinery/power/supply_beacon/Initialize(mapload)
 	. = ..()
 	if(!drop_type) drop_type = pick(GLOB.supply_drop)

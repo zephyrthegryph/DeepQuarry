@@ -66,6 +66,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 
 	pass_flags = PASSTABLE | PASSGRILLE
 
+// ALLOW(init/INSTANCE_STATE): rolls the disease that hardens it
 /mob/living/simple_mob/vore/aggressive/macrophage/Initialize(mapload)
 	. = ..()
 	var/datum/affliction/contagion/engineered/random/macrophage/D = new

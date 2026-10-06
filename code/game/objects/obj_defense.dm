@@ -122,6 +122,7 @@
 		item.forceMove(get_turf(src))
 
 	//delete our self
+	// ALLOW(lifecycle): this is the generic deconstruct once the debris has dropped
 	qdel(src)
 
 ///what happens when the obj's integrity reaches zero.

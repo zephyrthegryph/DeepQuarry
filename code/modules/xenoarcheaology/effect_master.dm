@@ -65,6 +65,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 /datum/artifact_master/New(atom/new_holder)
 	. = ..()
 	if(!istype(new_holder) || new_holder.artifact_master)
+		// ALLOW(lifecycle): the holder already has an artifact master, which is kept instead
 		qdel(src)
 		return
 	rel_set(src, nameof(holder), new_holder)
@@ -433,6 +434,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
 		om_task_periodic_stop(src)
 		if(!QDELETED(src))
+			// ALLOW(lifecycle): the artifact master ends with its holder
 			qdel(src)
 			return
 

@@ -11,6 +11,7 @@
 //similar to weeds, but only barfed out by nurses manually
 CAPABILITIES(/obj/effect/spider)
 	op("hit_web", item(/obj/item), then(PROC_REF(interaction_hit_web)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby: any item hits the web (afterattack still follows, as before).
 /obj/effect/spider/proc/interaction_hit_web(datum/act/op/A)
@@ -27,15 +28,17 @@ CAPABILITIES(/obj/effect/spider)
 	receive_weapon_hit(W, user, W.force / 4)
 	return OP_PASS
 
-/obj/effect/spider/welder_act(mob/user, obj/item/tool)
+/obj/effect/spider/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_warning("%U% has been burned with %I% by %T%."), item = tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \
@@ -65,6 +68,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/spider/stickyweb/Initialize(mapload)
 	if(prob(50))
 		icon_state = "stickyweb2"
@@ -91,6 +95,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	var/spider_type = /obj/effect/spider/spiderling
 	var/faction = FACTION_SPIDERS
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
@@ -159,6 +164,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier, \
 			/mob/living/simple_mob/animal/giant_spider/ion))
 
+// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
 /obj/effect/spider/spiderling/Initialize(mapload, atom/parent)
 	. = ..()
 	pixel_x = rand(6,-6)
@@ -302,6 +308,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 	icon_state = "cocoon1"
 	max_integrity = 15
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/effect/spider/cocoon/Initialize(mapload)
 	. = ..()
 	icon_state = pick("cocoon1","cocoon2","cocoon3")

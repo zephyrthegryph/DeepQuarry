@@ -45,6 +45,7 @@
 CAPABILITIES(/obj/item/uav)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/uav/loaded
 	cell_type = /obj/item/cell/high
@@ -158,11 +159,13 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	power_down()
 	move_into(src, nameof(src.cell), I, user)
 
-/obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/uav/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!cell)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/uav/proc/screwdriver_act_timed_done(mob/user, obj/item/tool)
 	if(!(cell))
@@ -361,6 +364,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	visible_message(span_danger("[src] shorts out and explodes!"))
 	power_down()
 	var/turf/T = get_turf(src)
+	// ALLOW(lifecycle): the drone shorts out and explodes
 	qdel(src)
 	explosion(T, -1, 0, 1, 2) //Not very large
 

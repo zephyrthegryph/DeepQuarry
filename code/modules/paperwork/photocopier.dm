@@ -19,6 +19,7 @@
 	var/maxcopies = 10	//how many copies can be copied at once- idea shamelessly stolen from bs12's copier!
 	var/copying = FALSE // Is the printer busy with something? Sanity check variable.
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/photocopier/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

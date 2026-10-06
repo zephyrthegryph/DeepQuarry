@@ -30,7 +30,7 @@ static META: Meta = Meta {
             "`// ALLOW(lifecycle): <reason>` doesn't count.",
             "Shrink-only: after a sweep, `python tools/ci/qdel_src_lint.py --update`.",
         ],
-        banned: &[],
+        banned: &["qdel_src"],
     },
     rules: &[RuleMeta {
         name: "qdel_src",

@@ -12,6 +12,7 @@
 	nitrogen = 0
 	phoron = 0
 
+// ALLOW(init/CTOR_ARGS): color is a constructor argument from whoever builds it
 /turf/simulated/sky/Initialize(mapload, color = "#FFFFFF")
 	. = ..()
 	// SSplanets.addTurf(src) Handled by parent

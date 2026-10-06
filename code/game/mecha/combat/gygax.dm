@@ -128,6 +128,7 @@ CAPABILITIES(/obj/mecha/combat/gygax/serenity)
 /obj/mecha/combat/gygax/old
 	desc = "A lightweight, security exosuit. Popular among private and corporate security. This one is particularly worn looking and likely isn't as sturdy."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/combat/gygax/old/Initialize(mapload)
 	. = ..()
 	max_integrity = 250	//Just slightly worse.

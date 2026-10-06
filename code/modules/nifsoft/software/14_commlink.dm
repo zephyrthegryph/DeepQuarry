@@ -42,6 +42,7 @@ TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
 	var/obj/item/nif/nif
 	var/tmp/datum/nifsoft/commlink/nifsoft
 
+// ALLOW(init/CTOR_ARGS): soft is a constructor argument from whoever builds it
 /obj/item/communicator/commlink/Initialize(mapload, soft)
 	. = ..()
 	rel_set(src, nameof(nif), loc)

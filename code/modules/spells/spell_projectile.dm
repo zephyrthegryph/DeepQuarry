@@ -35,6 +35,7 @@ CAPABILITIES(/obj/item/projectile/spell_projectile)
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)
 		carried().prox_cast(targets, src)
+		// ALLOW(lifecycle): the spell projectile is spent once it casts
 		qdel(src)
 	return
 

@@ -9,6 +9,7 @@
 	var/art_color
 	var/art_shade
 
+// ALLOW(init/CTOR_ARGS): main, shade, type and new_age are constructor arguments from whoever builds it
 /obj/effect/decal/cleanable/crayon/Initialize(mapload, main = "#FFFFFF",shade = "#000000",type = "rune", new_age = 0)
 	name = type
 	desc = "A [type] drawn in crayon."

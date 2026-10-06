@@ -24,6 +24,7 @@
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T?.return_air()
 	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)
+		// ALLOW(lifecycle): the artifact breaks apart in the heat
 		qdel(src)
 		return PROCESS_KILL
 	var/datum/om_watch/W = om_watch_arm_bands(src, "heat", env?.arena_id(), list(new /datum/om_watch_band("temperature", TRUE, ARTIFACT_HEAT_BREAK)), null, om_callable(src, PROC_REF(heat_wake)))
@@ -40,6 +41,7 @@
 		MACHINE_WAKE(src)
 
 
+// ALLOW(init/INSTANCE_STATE): rolls its look and the trigger of its effect
 /obj/machinery/artifact/Initialize(mapload)
 
 	if(artifact_master_type)

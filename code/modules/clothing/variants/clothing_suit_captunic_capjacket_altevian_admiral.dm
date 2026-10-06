@@ -8,6 +8,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_captunic_capjacket_altevian_admiral, list(
 	"yellow" = list("name" = "yellow altevian officer's suit", "icon_state" = "altevian-admiral-yellow"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/suit/captunic/capjacket/altevian_admiral/Initialize(mapload)
 	apply_variant()
 	. = ..()

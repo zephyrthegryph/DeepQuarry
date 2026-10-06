@@ -54,6 +54,7 @@ CAPABILITIES(/obj/structure/dispenser)
 	interface("TankDispenser", state = nameof(GLOB.tgui_physical_state))
 	op("phoron", ui_act("phoron"), then(PROC_REF(ui_act_phoron)))
 	op("oxygen", ui_act("oxygen"), then(PROC_REF(ui_act_oxygen)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/structure/dispenser/ui_data(datum/act/eval/A)
 	return list("oxygen" = oxygentanks, "phoron" = phorontanks)
@@ -97,10 +98,11 @@ CAPABILITIES(/obj/structure/dispenser)
 	update_icon()
 	return TRUE
 
-/obj/structure/dispenser/wrench_act(mob/user, obj/item/I)
+/obj/structure/dispenser/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench [src] into place" : "lean down and unwrench [src]"]."))
-	return TRUE
+	return OP_OK
 
 #undef TANK_DISPENSER_CAPACITY
 

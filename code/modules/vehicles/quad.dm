@@ -31,6 +31,7 @@
 	. = ..()
 	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
+// ALLOW(init/CTOR_ARGS): assembly is a constructor argument from whoever builds it
 /obj/vehicle/train/engine/quadbike/Initialize(mapload, assembly)
 	. = ..()
 	if(!assembly)
@@ -42,6 +43,7 @@
 /obj/vehicle/train/engine/quadbike/built/Initialize(mapload)
 	. = ..(mapload, TRUE)
 
+// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
 /obj/vehicle/train/engine/quadbike/random/Initialize(mapload)
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
@@ -195,6 +197,7 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom,
 
 	paint_color = "#ffffff"
 
+// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
 /obj/vehicle/train/trolley/trailer/random/Initialize(mapload)
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()

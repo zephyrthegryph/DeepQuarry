@@ -857,6 +857,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	pickup_sound = SFX_ITEMS_PICKUP_CARD
 	drop_sound = SFX_ITEMS_DROP_CARD
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /obj/item/paiparts/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-10,10)

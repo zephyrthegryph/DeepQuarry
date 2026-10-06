@@ -228,6 +228,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	var/module_mode = ""
 	var/obj/item/rig_module/module
 
+// ALLOW(init/INSTANCE_STATE): binds to the rig module it is made inside
 /atom/movable/stat_rig_module/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(module), loc)
@@ -265,6 +266,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 /atom/movable/stat_rig_module/DblClick()
 	return Click()
 
+// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
 /atom/movable/stat_rig_module/activate/Initialize(mapload)
 	. = ..()
 	if(!istype(module))
@@ -277,6 +279,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 /atom/movable/stat_rig_module/activate/CanUse()
 	return module.toggleable && !module.active
 
+// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
 /atom/movable/stat_rig_module/deactivate/Initialize(mapload)
 	. = ..()
 	if(!istype(module))
@@ -291,6 +294,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 /atom/movable/stat_rig_module/deactivate/CanUse()
 	return module.toggleable && module.active
 
+// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
 /atom/movable/stat_rig_module/engage/Initialize(mapload)
 	. = ..()
 	if(!istype(module))

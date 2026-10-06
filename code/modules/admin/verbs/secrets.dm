@@ -22,6 +22,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 DECLARE_UI_STATE(/datum/secrets_menu, ADMIN_STATE(R_HOLDER))
 
 /datum/secrets_menu/tgui_close()
+	// ALLOW(lifecycle): the secrets menu lives only while its window is open
 	qdel(src)
 
 DECLARE_UI(/datum/secrets_menu, "Secrets")

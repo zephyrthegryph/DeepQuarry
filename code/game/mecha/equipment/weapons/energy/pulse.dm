@@ -16,5 +16,6 @@
 	A.bullet_act(src, def_zone)
 	src.life -= 10
 	if(life <= 0)
+		// ALLOW(lifecycle): the heavy pulse is spent when its life runs out
 		qdel(src)
 	return

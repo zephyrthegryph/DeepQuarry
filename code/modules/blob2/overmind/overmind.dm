@@ -36,6 +36,7 @@ CAPABILITIES(/mob/observer/blob)
 /// The languages the overmind knows.
 TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 
+// ALLOW(init/CTOR_ARGS): pre_placed, starting_points and desired_blob_type are constructor arguments from whoever builds it
 /mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
 	blob_points = starting_points
 	if(pre_placed) //we already have a core!

@@ -28,6 +28,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_teshari_beltcloak_standard, list(
 	"brown_grey" = list("name" = "brown belted cloak", "icon_state" = "tesh_beltcloak_brg"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/suit/storage/teshari/beltcloak/standard/Initialize(mapload)
 	apply_variant()
 	. = ..()

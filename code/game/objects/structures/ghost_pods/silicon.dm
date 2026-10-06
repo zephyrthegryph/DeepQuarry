@@ -80,6 +80,7 @@
 		span_notice("Impalers have an energy-lance."),
 		span_notice("General drones have the unique ability to produce one of each of these two types of shells per generation.")))
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): the ghost pod is spent once its occupant is made
 		qdel(src)
 
 /obj/structure/ghost_pod/ghost_activated/swarm_drone/event/Initialize(mapload)

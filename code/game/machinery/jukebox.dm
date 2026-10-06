@@ -56,6 +56,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_cut_heard)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_pulse_heard)))
 
+// ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

@@ -129,7 +129,8 @@
 	overlays = W.overlays
 
 /// Old attack_self.
-/obj/item/ducttape/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ducttape/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stuck)
 		return TRUE
 
@@ -144,26 +145,27 @@
 	return TRUE
 
 /// Old attackby.
-/obj/item/ducttape/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/ducttape/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!(istype(src, /obj/item/handcuffs/cable/tape) || istype(src, /obj/item/clothing/mask/muzzle/tape)))
-		return FALSE
+		return OP_DECLINE
 	else
 		user.drop_from_inventory(I)
 		I.forceMove(src)
 		consume(I, user)
 		to_chat(user, span_notice("You place \the [I] back into \the [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/ducttape, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/ducttape)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/item/ducttape/proc/interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+/obj/item/ducttape/proc/interaction_hand(datum/act/op/A)
 	set_anchored(FALSE)
-	return FALSE // Pick it up now that it's unanchored.
+	return OP_DECLINE // Pick it up now that it's unanchored.
 
 /obj/item/ducttape/afterattack(A, mob/user, flag, params)
 

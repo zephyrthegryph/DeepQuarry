@@ -23,6 +23,7 @@
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null
 	VAR_PROTECTED/poster_type = /obj/structure/sign/poster
 
+// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
 /obj/item/poster/Initialize(mapload, datum/decl/poster/P = null)
 	if(ispath(poster_decl))
 		poster_decl = get_poster_decl(poster_decl, TRUE, null)
@@ -98,6 +99,7 @@
 	VAR_PROTECTED/roll_type = /obj/item/poster
 	VAR_PRIVATE/ruined = FALSE
 
+// ALLOW(init/CTOR_ARGS): placement_dir and P are constructor arguments from whoever builds it
 /obj/structure/sign/poster/Initialize(mapload, placement_dir = null, obj/item/poster/P = null)
 	. = ..()
 
@@ -136,7 +138,12 @@
 
 	flick("poster_being_set", src) // If you don't see this animation, check that the decl/poster's icon_override dmi file has the icon states for poster_being_set and poster_ripped in it.
 
-/obj/structure/sign/poster/wirecutter_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/structure/sign/poster)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+
+/obj/structure/sign/poster/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 100, 1)
 	if(ruined)
 		to_chat(user, span_notice("You remove the remnants of the poster."))
@@ -144,7 +151,7 @@
 	else
 		to_chat(user, span_notice("You carefully remove the poster from the wall."))
 		roll_and_drop(get_turf(user), user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
 

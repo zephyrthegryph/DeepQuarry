@@ -69,8 +69,6 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 		couple_to_pipeline()
 		set_in_space(istype(loc, /turf/space))
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/Initialize(mapload)
-	. = ..()
 // BubbleWrap END
 	color = "#404040" //we don't make use of the fancy overlay system for colours, use this to set the default.
 
@@ -159,6 +157,7 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 			rel_set(src, nameof(node2), target)
 			break
 	if(!node1 && !node2)
+		// ALLOW(lifecycle): a pipe that connects to nothing on either end is removed at setup
 		qdel(src)
 		return
 
@@ -286,6 +285,7 @@ TRACKED(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, in_space)
 			break
 
 	if(!node1&&!node2)
+		// ALLOW(lifecycle): a junction that connects to nothing on either end is removed at setup
 		qdel(src)
 		return
 

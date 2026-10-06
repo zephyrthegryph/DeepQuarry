@@ -964,6 +964,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	rel_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
 	C.update_icon()
 	new/obj/item/robot_parts/chest(loc)
+	// ALLOW(lifecycle): the gutted cyborg leaves its frame and chest behind
 	qdel(src)
 	return TRUE
 

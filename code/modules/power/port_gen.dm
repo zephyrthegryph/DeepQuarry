@@ -99,6 +99,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 
 /obj/machinery/power/port_gen/proc/explode()
 	explosion(src.loc, -1, 3, 5, -1)
+	// ALLOW(lifecycle): the generator explodes
 	qdel(src)
 
 #define TEMPERATURE_DIVISOR 40
@@ -474,6 +475,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	)
 
 	explosion(src.loc, 3, 3, 5, 3)
+	// ALLOW(lifecycle): the generator explodes
 	qdel(src)
 
 /obj/machinery/power/port_gen/pacman/mrs
@@ -496,6 +498,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 /obj/machinery/power/port_gen/pacman/mrs/explode()
 	//no special effects, but the explosion is pretty big (same as a supermatter shard).
 	explosion(src.loc, 3, 6, 12, 16, 1)
+	// ALLOW(lifecycle): the generator explodes
 	qdel(src)
 
 #undef TEMPERATURE_DIVISOR
@@ -823,6 +826,7 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 	// qdel here only completes that lifecycle; ordinary shell damage enters through
 	// the inherited obj_integrity projectile path before arming the core.
 	if(going_kaboom)
+		// ALLOW(lifecycle): the armed core finishes its detonation
 		qdel(src)
 	else
 		asplod()
@@ -879,6 +883,7 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(vo
 		span_warningplain("You hear a loud electrical crack!"))
 	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	var/turf/T = get_turf(src)
+	// ALLOW(lifecycle): the core collapses into a singularity
 	qdel(src)
 	new /obj/singularity(T)
 
@@ -1160,13 +1165,16 @@ DECLARE_APPEARANCE(/obj/machinery/power/port_gen/large_altevian, "appearance_fue
 	plane = ABOVE_MOB_PLANE
 	layer = ABOVE_MOB_LAYER
 
-/obj/machinery/power/rtg/antimatter_core/Initialize(mapload)
-	. = ..()
-	set_light(3, 6, "#66FFFF")
+/obj/machinery/power/rtg/antimatter_core
+	light_range = 3
+	light_power = 6
+	light_color = "#66FFFF"
+	light_on = TRUE
 
 /obj/machinery/power/rtg/antimatter_core/proc/asplod()
 	visible_message(span_danger("\The [src] ruptures!"), span_danger("You hear a loud reverberating bang!"))
 	var/turf/T = get_turf(src)
+	// ALLOW(lifecycle): the antimatter core ruptures
 	qdel(src)
 	if(T)
 		radiation_pulse(
