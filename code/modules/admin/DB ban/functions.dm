@@ -190,8 +190,7 @@
 	var/mob/banned_mob = ask.subject
 	if(banned_mob && !QDELETED(banned_mob))
 		ban_args[2] = banned_mob
-	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks
-	DB_ban_record(arglist(ban_args + list(TRUE, admin)))
+	with_actor(arglist(list(admin, src, PROC_REF(DB_ban_record)) + ban_args + list(TRUE, admin)))
 
 /datum/admins/proc/DB_ban_edit(client/user, banid = null, param = null, value = null)
 	if(!GLOB.prompt_flow)
@@ -314,8 +313,7 @@
 		value = unban_ask.value
 		banid = unban_ask.banid
 		param = unban_ask.param
-	usr = admin // ALLOW(sys_usr_outside_verb): legacy prompt-flow I/O captures this initiating admin for login and cancellation checks
-	DB_ban_edit(admin.client, banid, param, value)
+	with_actor(admin, src, PROC_REF(DB_ban_edit), admin.client, banid, param, value)
 
 /datum/admins/proc/DB_ban_unban_by_id(id, mob/actor)
 	if(!GLOB.prompt_flow)

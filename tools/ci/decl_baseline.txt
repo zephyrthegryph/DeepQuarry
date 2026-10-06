@@ -199,7 +199,6 @@ init_visuals	code/modules/food/drinkingglass/shaker.dm	cut_overlays()
 init_visuals	code/modules/food/drinkingglass/shaker.dm	cut_overlays()
 init_visuals	code/modules/food/food/snacks.dm	icon_state = "nugget_[shape]"
 init_visuals	code/modules/food/food/superfoods.dm	icon_state = "chaoscake_slice-[i]"
-init_visuals	code/modules/food/glass/bottle.dm	icon_state = "bottle-[rand(1,4)]"
 init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
 init_visuals	code/modules/holomap/mapper.dm	icon_state = initial(icon_state) + (in_list ? "_on" : "")
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
@@ -237,7 +236,6 @@ init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state
 init_visuals	code/modules/power/gravitygenerator.dm	middle().add_overlay("activated")
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
 init_visuals	code/modules/reagents/reagent_containers/hypospray.dm	icon_state = "[initial(icon_state)]0"
-init_visuals	code/modules/reagents/reagent_containers/pill.dm	icon_state = "[base_state][rand(1, 4)]" //preset pills only use colour changing or unique icons
 init_visuals	code/modules/research/tg/server.dm	add_overlay("RD-server-objective-stripes")
 init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
 init_visuals	code/modules/vehicles/Securitrain.dm	add_overlay(I)

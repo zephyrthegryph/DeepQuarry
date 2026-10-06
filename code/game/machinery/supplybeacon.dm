@@ -47,10 +47,12 @@ OM_FIELD(/obj/machinery/power/supply_beacon, expended, FALSE, CHANGE_MACHINE_SET
 /// Draws power (and arms the drop) while switched on and not yet spent.
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE, list("use_power", "!expended"))
 
-// ALLOW(init/INSTANCE_STATE): drop_type rolled at random for each instance
-/obj/machinery/power/supply_beacon/Initialize(mapload)
-	. = ..()
-	if(!drop_type) drop_type = pick(GLOB.supply_drop)
+CAPABILITIES(/obj/machinery/power/supply_beacon)
+	rolls(nameof(drop_type), PROC_REF(roll_drop_type), when = cond_not(nameof(drop_type)))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/machinery/power/supply_beacon/proc/roll_drop_type(datum/roller/R)
+	return R.choose(GLOB.supply_drop)
 
 /obj/machinery/power/supply_beacon/supermatter
 	name = "supermatter supply beacon"

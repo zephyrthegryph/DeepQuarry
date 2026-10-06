@@ -77,3 +77,28 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 	var/datum/capability/lib/gas_watch/def = cap_of(target, CAP_GAS_WATCH)
 	if(def?.changed)
 		holder_call(target, def.changed, observation, observation_index)
+
+// ---- a holder that sleeps on several mixtures ----
+//
+//   gas_watch_many(src, nameof(loop_watches), list(circ1.air1, circ1.air2), GAS_DEPENDENCY_PRESSURE, PROC_REF(loop_heard))
+//
+// A machine whose work stops until one of several mixtures changes (a generator's loops, a turbine's two sides, a leak's two faces) arms one native
+// watch per mixture into a list var it owns (owns_many(nameof(x), /datum/native_watch/gas)); re-arming replaces them (a rebuilt network is a new
+// mixture), gas_watch_many_clear() drops them. The handler is x(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index).
+
+/// Arms `holder`'s watches (its list var `watches_var`) on each of `mixtures`, replacing the ones it had.
+/proc/gas_watch_many(datum/holder, watches_var, list/mixtures, mask, callback)
+	gas_watch_many_clear(holder, watches_var)
+	var/list/ids = list()
+	for(var/datum/gas_mixture/air as anything in mixtures)
+		var/id = air?.arena_id()
+		if(!isnull(id))
+			ids |= id
+	for(var/id in ids)
+		var/datum/native_watch/gas/W = gas_dependency_watch(holder, id, mask, callback)
+		if(W)
+			rel_add(holder, watches_var, W)
+
+/// Drops `holder`'s watches in its list var `watches_var`.
+/proc/gas_watch_many_clear(datum/holder, watches_var)
+	own_clear(holder, watches_var, OWN_DELETE)

@@ -336,7 +336,7 @@ codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py
 | `qdel(src)` after the last charge, bite, dissolve or break | `spent(src, user)`, `consumed(src, eater)`, `dissolved(src)`, `destroyed(src, user, BRUTE)`; timed: `expire(delay)`; transform: `replace_with(/T)` |
 | `Click()` / `MouseDrop()` overrides reading `usr` | `click_on(PROC_REF(x))` / `drag_onto(PROC_REF(x), onto = /T)`; `x(datum/act/input/A)` reads `A.actor`; an op key binds the op |
 | `MouseEntered()` / `MouseExited()` with `openToolTip(usr, ...)` | `tooltip(PROC_REF(x))`, `x(mob/user)` answers `list(title, content)`; `hover(PROC_REF(x))` for anything else |
-| admin or callback code that sets `usr` to call a proc as someone | `with_actor(admin_mob, CALLBACK(target, TYPE_PROC_REF(...)))` |
+| admin or callback code that sets `usr` to call a proc as someone | `with_actor(admin_mob, target, PROC_REF(x), args...)` (or a `CALLBACK` where the core allows one) |
 
 What to know:
 
