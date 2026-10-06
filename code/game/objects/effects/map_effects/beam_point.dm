@@ -15,6 +15,8 @@
 	var/make_beams_on_init = FALSE
 	var/static/list/on_duration = list(2 SECONDS, 2 SECONDS, 2 SECONDS) // How long the beam should stay on for, if use_timer is true. Alternates between each duration in the list.
 	var/static/list/off_duration = list(3 SECONDS, 0.5 SECOND, 0.5 SECOND) // How long it should stay off for. List length is not needed to be the same as on_duration.
+	/// Turns the beams on and off on a timer while set (only while a client is near).
+	var/use_timer = FALSE
 	var/timer_on_index = 1 // Index to use for on_duration list.
 	var/timer_off_index = 1// Ditto, for off_duration list.
 	var/initial_delay = 0 // How long to wait before first turning on the beam, to sync beam times or create a specific pattern.
@@ -32,9 +34,15 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 
-/// Turns the beams on and off on a timer while set.
-OM_FIELD(/obj/effect/map_effect/beam_point, use_timer, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam_timer, "use_timer")
+TRACKED(/obj/effect/map_effect/beam_point, use_timer)
+
+/// The timer runs while a client is near (STAT_RELEVANCE); with nobody around it parks.
+CAPABILITIES(/obj/effect/map_effect/beam_point)
+	every(PROC_REF(beam_delay), then(PROC_REF(handle_beam_timer)), when = cond_all(nameof(use_timer), STAT_RELEVANCE))
+
+/// The deciseconds to the next beam change.
+/obj/effect/map_effect/beam_point/proc/beam_delay(datum/act/A)
+	return next_beam_delay
 
 /obj/effect/map_effect/beam_point/Initialize(mapload)
 	if(make_beams_on_init)
@@ -124,9 +132,9 @@ DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam
 	return TRUE
 
 // This code makes me sad.
-/obj/effect/map_effect/beam_point/proc/handle_beam_timer()
+/obj/effect/map_effect/beam_point/proc/handle_beam_timer(datum/act/A)
 	if(QDELETED(src))
-		return REPEAT_STOP
+		return
 
 	if(length(my_beams)) // Currently on.
 		destroy_all_beams()
@@ -139,11 +147,6 @@ DECLARE_REPEAT(/obj/effect/map_effect/beam_point, "next_beam_delay", handle_beam
 		next_beam_delay = off_duration[timer_off_index]
 
 	else // Currently off.
-		// If nobody's around, keep the beams off to avoid wasteful beam process(), if they have one.
-		if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-			next_beam_delay = retry_delay
-			return
-
 		create_beams()
 		color = "#00FF00"
 

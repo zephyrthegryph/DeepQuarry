@@ -491,8 +491,7 @@
 	var/obj/item/ghost_trap/trap = allocate(/obj/item/ghost_trap, test_floor())
 	TEST_ASSERT(!trap.periodic_pipe, "an empty ghost trap runs")
 	var/obj/effect/map_effect/interval/effect = allocate(/obj/effect/map_effect/interval, T)
-	effect.always_run = FALSE
-	TEST_ASSERT_EQUAL(effect.periodic_step(20), PROCESS_KILL, "an interval effect with nobody near kept stepping")
+	TEST_ASSERT_EQUAL(stat_value(effect, STAT_RELEVANCE), RELEVANCE_NONE, "an interval effect with nobody near is relevant")
 
 	// One timer instead of a countdown.
 	var/obj/structure/timer_door/door = allocate(/obj/structure/timer_door, test_floor())
