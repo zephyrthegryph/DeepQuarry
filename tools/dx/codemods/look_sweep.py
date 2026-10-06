@@ -25,6 +25,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "tools", "codemods"))
+sys.path.insert(0, HERE)
 from dmlib import File, strip_code  # noqa: E402
 
 DRAW_DECL = re.compile(r"^(APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|APPEARANCE_SLOT|DECLARE_APPEARANCE|DECLARE_APPEARANCE_PROC)\((/[\w/]+)")
@@ -134,7 +135,7 @@ def run_dead(args):
     residue = collections.Counter()
     sites = []
     for rel, f in files.items():
-        if rel.startswith(NO_EDIT) or not any(rel.startswith(p) for p in args.paths):
+        if rel.startswith(NO_EDIT) or not any(rel.startswith(p) for p in (args.paths or ["code/"])):
             continue
         lines = f.lines
         n = len(lines)
@@ -241,14 +242,20 @@ def run_dead(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["dead"])
+    ap.add_argument("mode", choices=["dead", "convert"])
+    ap.add_argument("--types", nargs="*", help="convert: only the components holding these types (or their subtypes)")
+    ap.add_argument("--report", help="convert: write the components (converted, covered, untracked reads, residue) as JSON")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--sites", action="store_true")
-    ap.add_argument("--paths", nargs="*", default=["code/"])
+    ap.add_argument("--paths", nargs="*", default=None)
     args = ap.parse_args()
     os.chdir(ROOT)
     if args.mode == "dead":
         return run_dead(args)
+    if args.mode == "convert":
+        import look_convert
+        look_convert.run(args, ROOT, code_files(), None)
+        return 0
     return 0
 
 

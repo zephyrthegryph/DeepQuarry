@@ -49,10 +49,17 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	touched = FALSE
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
-/// that draws its own broken state after ..()).
+/// that draws its own broken state after ..()). Returns `name`, so a draw that builds on the state it
+/// chose can keep it: `state = look.state("[base]-open")`.
 /datum/look/proc/state(name)
 	icon_state = name
 	touched = TRUE
+	return name
+
+/// The base icon_state this draw has chosen so far (a parent's draw, a capability), else the one `A` shows now.
+/// A draw that refines the state ("[state]-busy") starts from it.
+/datum/look/proc/state_so_far(atom/A)
+	return isnull(icon_state) ? A.icon_state : icon_state
 
 /// An overlay icon_state (or an image / mutable_appearance), added only `when` is true. `icon`
 /// draws the state from another icon file than the holder's (one shared image per icon and state).
@@ -280,6 +287,11 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		return
 	light_spec = list(range, power, color)
 
+/// The holder's light is off while this look shows (set_light(0)), even when its type starts lit.
+/datum/look/proc/light_off()
+	touched = TRUE
+	light_spec = list(0, 0, null)
+
 /// A one-shot animation state, played when this look is applied.
 /datum/look/proc/play_flick(name)
 	flick_state = name
@@ -390,7 +402,9 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_LAYER)
 		A.layer = initial(A.layer)
 	if(light_spec)
-		if(light_spec[3])
+		if(!light_spec[1])
+			A.set_light(0) // light_off(): the range only, so the power and colour stay for the next light
+		else if(light_spec[3])
 			A.set_light(light_spec[1], light_spec[2], light_spec[3])
 		else
 			A.set_light(light_spec[1], light_spec[2])
