@@ -3,3 +3,4 @@
 /obj/machinery/seed_storage|ai|none => |
 /obj/machinery/seed_storage|ghost|none => |
 /obj/machinery/seed_storage|human|/obj/item/card/emag => emag_gated|
+

@@ -62,5 +62,11 @@ human|/obj/item/disk/body_record menu: Insert disk
 human|/obj/item/disk/body_record menu: Use
 human|/obj/item/disk/body_record menu: Use item
 human|/obj/item/disk/body_record click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Insert disk (refused: needs a Body Design Disk)
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_hand_ungated_body_designer_interaction_hand, gen_insert_body_designer_interaction_insert_disk, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
 

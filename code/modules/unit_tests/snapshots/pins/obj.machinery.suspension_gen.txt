@@ -54,5 +54,15 @@ human|/obj/item/card/emag menu: Open maintenance panel (refused: needs a screwdr
 human|/obj/item/card/emag menu: Swipe card
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Swipe card
+human|/obj/item/cell menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/cell menu: Insert power cell
+human|/obj/item/cell menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert power cell
+human|/obj/item/card menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/card menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card menu: Swipe card
+human|/obj/item/card menu: Use
+human|/obj/item/card click: Click: Swipe card
 keys: drag_buckle, emag, gen_robot_interaction_swallow, insert_cell, lock, machine_anchor, machine_deconstruct, machine_panel, machine_repair, swipe_card, toggle_field, use, use_screwdriver, use_wrench
 

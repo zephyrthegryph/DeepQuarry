@@ -97,5 +97,13 @@ human|/obj/item/card/emag menu: Start gibbing
 human|/obj/item/card/emag menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Start gibbing
+human|/obj/item menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item menu: Empty Gibber
+human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item menu: Start gibbing
+human|/obj/item menu: Unsecure (refused: needs a wrench)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Start gibbing
 keys: drag_buckle, emag, gen_robot_interaction_swallow, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

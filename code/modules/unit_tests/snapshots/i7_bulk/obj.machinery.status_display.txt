@@ -2,3 +2,4 @@
 /obj/machinery/status_display|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/status_display|ai|none => |
 /obj/machinery/status_display|ghost|none => |
+

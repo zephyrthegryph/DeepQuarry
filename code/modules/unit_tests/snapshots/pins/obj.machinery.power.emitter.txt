@@ -68,5 +68,23 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: Click: Toggle
+human|/obj/item/pda menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/pda menu: Rotate Clockwise
+human|/obj/item/pda menu: Rotate Counter Clockwise
+human|/obj/item/pda menu: Toggle (refused: Access denied.)
+human|/obj/item/pda menu: Turn Around
+human|/obj/item/pda click: Click: Toggle
+human|/obj/item/card/emag menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/emag menu: Rotate Clockwise
+human|/obj/item/card/emag menu: Rotate Counter Clockwise
+human|/obj/item/card/emag menu: Turn Around
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/anomaly_scanner menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/anomaly_scanner menu: Rotate Clockwise
+human|/obj/item/anomaly_scanner menu: Rotate Counter Clockwise
+human|/obj/item/anomaly_scanner menu: Toggle anomalous mode
+human|/obj/item/anomaly_scanner menu: Turn Around
+human|/obj/item/anomaly_scanner click: Click: Toggle anomalous mode
 keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, gen_robot_interaction_swallow, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, particle, repair, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle
 

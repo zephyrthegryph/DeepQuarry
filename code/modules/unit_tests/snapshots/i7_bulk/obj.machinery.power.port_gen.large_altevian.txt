@@ -2,3 +2,4 @@
 /obj/machinery/power/port_gen/large_altevian|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/port_gen/large_altevian|ai|none => |
 /obj/machinery/power/port_gen/large_altevian|ghost|none => |
+

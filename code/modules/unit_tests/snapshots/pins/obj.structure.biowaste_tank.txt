@@ -23,5 +23,7 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 keys: drag_buckle, eject, emag.subvert, emag.use
 

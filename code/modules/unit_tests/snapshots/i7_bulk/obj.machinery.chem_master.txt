@@ -2,3 +2,4 @@
 /obj/machinery/chem_master|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/chem_master|ai|none => |
 /obj/machinery/chem_master|ghost|none => |
+

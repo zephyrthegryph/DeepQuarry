@@ -3,3 +3,4 @@
 /obj/machinery/power/breakerbox|ai|none => gen_silicon_breakerbox_silicon_toggle|
 /obj/machinery/power/breakerbox|ghost|none => |
 /obj/machinery/power/breakerbox|human|/obj/item => breakerbox_toggle,breakerbox_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

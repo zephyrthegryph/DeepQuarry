@@ -2,3 +2,4 @@
 /obj/machinery/power/supply_beacon|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/supply_beacon|ai|none => |
 /obj/machinery/power/supply_beacon|ghost|none => |
+

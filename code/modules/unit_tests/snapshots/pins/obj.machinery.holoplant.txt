@@ -35,5 +35,9 @@ human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Toggle
+human|/obj/item/card/emag menu: Toggle
+human|/obj/item/card/emag menu: Unsecure (refused: needs a wrench)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 keys: drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, toggle
 

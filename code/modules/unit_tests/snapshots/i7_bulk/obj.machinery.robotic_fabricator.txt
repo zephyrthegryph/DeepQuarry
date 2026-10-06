@@ -2,3 +2,4 @@
 /obj/machinery/robotic_fabricator|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/robotic_fabricator|ai|none => |
 /obj/machinery/robotic_fabricator|ghost|none => |
+

@@ -35,5 +35,12 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/stack/material menu: Insert metal
+human|/obj/item/stack/material menu: Ui open
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material click: Click: Ui open
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
 keys: build_chest, build_frame, build_head, build_l_arm, build_l_leg, build_r_arm, build_r_leg, drag_buckle, gen_robot_interaction_swallow, insert_steel, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reject, ui_open
 

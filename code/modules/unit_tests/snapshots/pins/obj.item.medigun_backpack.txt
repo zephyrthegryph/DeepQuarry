@@ -94,5 +94,12 @@ human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
+human|/obj/item menu: Collect (refused: needs a storage)
+human|/obj/item menu: Customise (refused: needs an item)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pick up
+human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: cancel_healing, celleject, drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hand, item, rem_bin, rem_cap, rem_laser, rem_mani, rem_smodule, toggle_maintenance
 

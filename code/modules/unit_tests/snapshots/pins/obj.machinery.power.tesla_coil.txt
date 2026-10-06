@@ -47,7 +47,6 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Secure (refused: needs a wrench)
 human|/obj/item/card/id click: nothing
-human|/obj/item/storage/part_replacer menu: Buckle
 human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/storage/part_replacer menu: Empty contents
 human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)

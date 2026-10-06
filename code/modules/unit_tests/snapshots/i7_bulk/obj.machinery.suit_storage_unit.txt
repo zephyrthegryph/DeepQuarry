@@ -2,3 +2,4 @@
 /obj/machinery/suit_storage_unit|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/suit_storage_unit|ai|none => |
 /obj/machinery/suit_storage_unit|ghost|none => |
+

@@ -29,5 +29,17 @@ human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: need
 human|/obj/item/stack/material/steel click: Click: Load metal
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id click: nothing
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/pipe menu: Flip Pipe
+human|/obj/item/pipe menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/pipe menu: Recycle pipe
+human|/obj/item/pipe click: Click: Recycle pipe
+human|/obj/item/stack/material menu: Load metal (refused: It only takes steel.)
+human|/obj/item/stack/material menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/stack/material click: Click: Load metal
 keys: auto_dismantle, dismantle, drag_buckle, eject, gen_robot_interaction_swallow, load, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, pipe_type, recycle, toggle
 

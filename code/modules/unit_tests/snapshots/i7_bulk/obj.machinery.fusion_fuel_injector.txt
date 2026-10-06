@@ -2,3 +2,4 @@
 /obj/machinery/fusion_fuel_injector|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/fusion_fuel_injector|ai|none => |
 /obj/machinery/fusion_fuel_injector|ghost|none => |
+

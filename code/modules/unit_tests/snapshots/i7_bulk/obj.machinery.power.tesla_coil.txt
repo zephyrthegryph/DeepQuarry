@@ -2,3 +2,4 @@
 /obj/machinery/power/tesla_coil|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/tesla_coil|ai|none => |
 /obj/machinery/power/tesla_coil|ghost|none => |
+

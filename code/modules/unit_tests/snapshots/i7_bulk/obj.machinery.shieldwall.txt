@@ -1,4 +1,5 @@
-/obj/machinery/shieldwall|human|none => gen_hand_ungated_interaction_swallow|
-/obj/machinery/shieldwall|robot|none => gen_hand_ungated_interaction_swallow|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/shieldwall|human|none => |
+/obj/machinery/shieldwall|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shieldwall|ai|none => |
 /obj/machinery/shieldwall|ghost|none => |
+

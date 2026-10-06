@@ -46,5 +46,15 @@ human|/obj/item/card/id menu: Interaction hit weeds
 human|/obj/item/card/id menu: Interaction touch weeds
 human|/obj/item/card/id menu: Tear up (refused: combat mode is off)
 human|/obj/item/card/id click: nothing
+human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy menu: Interaction hit weeds
+human|/obj/item/mop_deploy menu: Interaction touch weeds
+human|/obj/item/mop_deploy menu: Tear up (refused: combat mode is off)
+human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Interaction hit weeds
+human|/obj/item/soap menu: Interaction touch weeds
+human|/obj/item/soap menu: Tear up (refused: combat mode is off)
+human|/obj/item/soap click: Click: Insert a soap
 keys: drag_buckle, gen_hand_interaction_touch_weeds, gen_item_interaction_hit_weeds, pass_insert, pass_insert_2, use_welder
 

@@ -3,3 +3,4 @@
 /obj/machinery/telepad|ai|none => |
 /obj/machinery/telepad|ghost|none => |
 /obj/machinery/telepad|human|/obj/item => gen_insert_interaction_part_replacement_impl|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

@@ -37,5 +37,20 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Insert cartridge
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Open or close the lid
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Set Cartridge Label
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Set transfer amount
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Splash (refused: The lid is closed.)
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Ui open
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Unsecure (refused: needs a wrench)
+human|/obj/item/reagent_containers/chem_disp_cartridge click: Click: Insert cartridge
+human|/obj/item/reagent_containers/chem_canister menu: Refill cartridge
+human|/obj/item/reagent_containers/chem_canister menu: Ui open
+human|/obj/item/reagent_containers/chem_canister menu: Unsecure (refused: needs a wrench)
+human|/obj/item/reagent_containers/chem_canister click: Click: Refill cartridge
+human|/obj/item/reagent_containers menu: Ui open
+human|/obj/item/reagent_containers menu: Unsecure (refused: needs a wrench)
+human|/obj/item/reagent_containers click: Click: Ui open
 keys: add_cartridge, amount, cancel_recording, clear_recipes, dispense, dispense_recipe, drag_buckle, ejectBeaker, gen_observer_chemical_dispenser_ghost_view, gen_robot_interaction_swallow, import_config, machine_anchor, machine_deconstruct, machine_panel, machine_repair, record_recipe, refill_cartridge, remove, remove_recipe, save_recording, set_container, ui_open
 

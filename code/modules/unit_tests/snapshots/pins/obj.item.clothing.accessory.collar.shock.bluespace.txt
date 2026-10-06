@@ -172,5 +172,19 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Accessory attached hand
+human|/obj/item/assembly/signaler menu: Accessory attached hand
+human|/obj/item/assembly/signaler menu: Clothing accessory hand
+human|/obj/item/assembly/signaler menu: Clothing accessory item
+human|/obj/item/assembly/signaler menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/assembly/signaler menu: Clothing remove accessory alt
+human|/obj/item/assembly/signaler menu: Collar tag item
+human|/obj/item/assembly/signaler menu: Collar tag self (refused: not in your hand)
+human|/obj/item/assembly/signaler menu: Collect (refused: needs a storage)
+human|/obj/item/assembly/signaler menu: Customise (refused: needs an item)
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Pick up
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/assembly/signaler menu: Wire signaler
+human|/obj/item/assembly/signaler click: Click: Wire signaler
 keys: accessory_attached_hand, bluespace_collar_wire_signaler, code, controls, drag_buckle, freq, gen_alt_clothing_remove_accessory_alt, gen_hand_interaction_pick_up, gen_hand_ungated_clothing_accessory_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_clothing_accessory_item, gen_item_collar_tag_item, gen_self_clothing_circuit_self, gen_self_collar_tag_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, power, size, tag
 

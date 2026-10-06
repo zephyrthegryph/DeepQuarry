@@ -1,10 +1,10 @@
 human|none menu: Climb
 human|none menu: Use
-human|none click: nothing
+human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Use
-robot|none click: nothing
+robot|none click: Click: Use
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
@@ -46,5 +46,10 @@ human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_hand_interaction_open_ui, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_gripper, use_item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui, use_gripper, use_item
 

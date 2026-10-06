@@ -33,5 +33,8 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: decrement, drag_buckle, increment, item, open, retrieve, ui_open
 
