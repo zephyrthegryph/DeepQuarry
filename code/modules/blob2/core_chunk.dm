@@ -21,16 +21,15 @@
 
 CAPABILITIES(/obj/item/blobcore_chunk)
 	owns_one(nameof(blob_type), /datum/blob_type)
+	param(nameof(parent_blob_type), pos = 1, apply = PROC_REF(setup_blobtype), keep = FALSE)
 
 /obj/item/blobcore_chunk/is_open_container()
 	return 1
 
 DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
 
-// ALLOW(init/CTOR_ARGS): parentblob is a constructor argument from whoever builds it
-/obj/item/blobcore_chunk/Initialize(mapload, datum/blob_type/parentblob = null)
-	. = ..()
-	setup_blobtype(parentblob)
+/// The blob type the chunk comes from (its constructor param, dropped once set up).
+/obj/item/blobcore_chunk/var/tmp/datum/blob_type/parent_blob_type
 
 /obj/item/blobcore_chunk/proc/setup_blobtype(datum/blob_type/parentblob = null)
 	if(!parentblob)

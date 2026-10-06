@@ -250,10 +250,12 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	icon_state = "debris"
 	w_class = ITEMSIZE_NORMAL
 
-// ALLOW(init/CTOR_ARGS): matter_init is a constructor argument from whoever builds it
-/obj/item/debris_pack/Initialize(mapload, list/matter_init)
-	set_material_mix(matter_init.Copy())
-	. = ..()
+/// The matter a debris pack holds (its constructor param, dropped once set).
+/obj/item/debris_pack/var/tmp/list/matter_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/debris_pack/proc/hold_matter(list/matter_init)
+	set_material_mix(matter_init?.Copy())
 
 /obj/item/material_dust
 	name = "dust"
@@ -263,10 +265,8 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	w_class = ITEMSIZE_SMALL
 	var/material_name
 
-// ALLOW(init/CTOR_ARGS): mat is a constructor argument from whoever builds it
-/obj/item/material_dust/Initialize(mapload, mat)
-	material_name = mat
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The dust is named and coloured for its material.
+/obj/item/material_dust/proc/dust_of(mat)
 	name = "[material_name] [initial(name)]"
 	var/datum/material/M = get_material_by_name(material_name)
 	color = M?.icon_colour
-	. = ..()

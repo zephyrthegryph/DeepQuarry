@@ -53,15 +53,14 @@ CAPABILITIES(/mob/observer)
 	sight = SEE_TURFS | SEE_MOBS | SEE_OBJS | SEE_SELF
 	see_invisible = SEE_INVISIBLE_OBSERVER
 
-// ALLOW(init/CTOR_ARGS): aghost is a constructor argument from whoever builds it
-/mob/observer/dead/Initialize(mapload, aghost = FALSE)
+// ALLOW(init/INSTANCE_STATE): a ghost copies the look, name and place of the body it leaves (its loc) before its init
+/mob/observer/dead/Initialize(mapload)
 
 	appearance = loc
 	invisibility = initial(invisibility)
 	layer = initial(layer)
 	plane = initial(plane)
 	alpha = initial(alpha)
-	admin_ghosted = aghost
 
 	see_in_dark = world.view //I mean. I don't even know if byond has occlusion culling... but...
 

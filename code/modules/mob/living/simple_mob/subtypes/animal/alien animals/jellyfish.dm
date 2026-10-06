@@ -107,12 +107,16 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 		if(prob(25))
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
-// ALLOW(init/CTOR_ARGS): jellyfish is a constructor argument from whoever builds it
-/mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload, jellyfish)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)
+
+/// The jellyfish this one budded from (its constructor param).
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/var/tmp/mob/living/simple_mob/vore/alienanimals/space_jellyfish/budded_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/join_swarm(mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent)
 	enable_swarming()
-	GLOB.jellyfish_count ++
-	var/mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent = jellyfish
+	GLOB.jellyfish_count++
 	if(parent)
 		parent.faction = faction
 
@@ -168,8 +172,11 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	var/inherited_nutriment = 0
 
-// ALLOW(init/CTOR_ARGS): inherit is a constructor argument from whoever builds it
-/obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload, inherit)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
+	param(nameof(inherited_nutriment), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): a core fills with the nutriment of the jellyfish it came from
+/obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload)
 	. = ..()
-	nutriment_amt += inherit
+	nutriment_amt += inherited_nutriment
 	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc) // ALLOW(decl): amount from the parent core, data arg

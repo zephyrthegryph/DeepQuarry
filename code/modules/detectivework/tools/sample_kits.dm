@@ -4,9 +4,11 @@
 	w_class = ITEMSIZE_TINY
 	var/list/evidence
 
-// ALLOW(init/CTOR_ARGS): supplied is a constructor argument from whoever builds it
-/obj/item/sample/Initialize(mapload, atom/supplied)
-	. = ..()
+/// What the sample was taken from (its constructor param, dropped once copied).
+/obj/item/sample/var/tmp/atom/taken_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/sample/proc/copy_from(atom/supplied)
 	if(supplied && supplied.forensic_data)
 		copy_evidence(supplied)
 		name = "[initial(name)] (\the [supplied])"
@@ -45,6 +47,7 @@
 CAPABILITIES(/obj/item/sample)
 	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req(PROC_REF(matching_sample))),
 		needs(req(PROC_REF(sample_releasable), because = PROC_REF(sample_release_refusal))), then(PROC_REF(sample_merged)))
+	param(nameof(taken_from), pos = 1, apply = PROC_REF(copy_from), keep = FALSE)
 
 /// Compiled DM type identities are immutable; this helper reads no mutable entity state.
 /proc/forensic_sample_same_type(obj/item/sample/target, obj/item/sample/donor)

@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/item/computer_hardware/battery_module)
 	owns_one(nameof(battery), /obj/item/cell)
+	param(nameof(cell_type), pos = 1, apply = PROC_REF(fit_cell))
 
 /obj/item/computer_hardware/battery_module/advanced
 	name = "advanced battery"
@@ -63,15 +64,17 @@ CAPABILITIES(/obj/item/computer_hardware/battery_module)
 	..()
 	to_chat(user, "Internal battery charge: [battery.charge]/[battery.maxcharge] CU")
 
-// ALLOW(init/CTOR_ARGS): cell_type is a constructor argument from whoever builds it
-/obj/item/computer_hardware/battery_module/Initialize(mapload, cell_type)
-	if(ispath(cell_type))
-		rel_set(src, nameof(battery), new cell_type(src))
+/// The cell type the module is made with (its constructor param), or null for a basic cell.
+/obj/item/computer_hardware/battery_module/var/cell_type
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The module's cell, empty, at the module's rating.
+/obj/item/computer_hardware/battery_module/proc/fit_cell(path)
+	if(ispath(path))
+		rel_set(src, nameof(battery), new path(src))
 	else
 		rel_set(src, nameof(battery), new/obj/item/cell(src))
 	battery.maxcharge = battery_rating
 	battery.charge = 0
-	. = ..()
 
 
 /obj/item/computer_hardware/battery_module/proc/charge_to_full()

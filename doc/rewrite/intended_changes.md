@@ -1751,6 +1751,18 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
   when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
 - A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- Constructor arguments are params (`param(pos =)`); the work an argument drove runs through the param's setter (`apply =`) at the root of
+  init, where the old override ran it after `..()`: before its parents' code after `..()` rather than after it. A value only built from is
+  `keep = FALSE` (a mob a holder takes in, the victim of a grab, the construct a bin is built from, a mob's predecessor). A construction the
+  setter refuses (a grab with no victim in reach, a shield wall between inactive generators, a field by a diffuser) is spent at init instead
+  of returning INITIALIZE_HINT_QDEL. Converted: mob holders, farmbots, protean buttons and rigs, overmap mob markers, jellyfish, spores,
+  commlinks, bluespace rifts, engine exhaust, pointers, magnetic bores, dominated brains and prey, grabs, NIFs, AR souls, ship landmarks
+  (a visiting landmark now lives_while() its master), paper and paper planes (their offsets rolled), graffiti (its scrawl rolled), magazines,
+  broken guns, projectile guns, blobs and their cores, chunks and overminds, samples, fake attackers, produce, slices, seeds, vines, vine
+  soil, circuit cameras, emissive blockers, stacks, alloys, shovels, resonance fields, battery modules, hoists, drop pod doors, conveyors,
+  disposal parts and bins (the construct is consumed), debris and dust, infomorphs, shields, boats and oars, quad bikes, digestion remains,
+  finds (rolled when not given) and strange rocks; silicons, AIs, humans, teppis, mice and slimes take their arguments as params and keep
+  an Initialize() for the rest.
 
 ## Atmospherics looks (rewrite/pipenet-full)
 

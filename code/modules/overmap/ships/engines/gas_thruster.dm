@@ -182,17 +182,22 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
 	light_color = "#ed9200"
 	anchored = TRUE
 
-// ALLOW(init/CTOR_ARGS): ndir and flame are constructor arguments from whoever builds it
-/obj/effect/engine_exhaust/Initialize(mapload, ndir, flame)
-	. = ..()
-	if(flame)
+CAPABILITIES(/obj/effect/engine_exhaust)
+	param(nameof(dir), pos = 1)
+	param(nameof(flame), pos = 2, apply = PROC_REF(ignite))
+
+/// Whether the exhaust is a flame (its constructor param).
+/obj/effect/engine_exhaust/var/flame = FALSE
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/engine_exhaust/proc/ignite(is_flame)
+	if(is_flame)
 		icon_state = "exhaust"
 		if(isturf(loc))
 			var/turf/T = loc
 			T.hotspot_expose(1000,125)
 		set_light(0.5, 3)
-	set_dir(ndir)
-	expire(20)
+	expire(2 SECONDS)
 
 /obj/item/circuitboard/unary_atmos/engine //why don't we move this elsewhere?
 	name = T_BOARD("gas thruster")

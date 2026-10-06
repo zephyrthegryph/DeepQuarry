@@ -63,6 +63,8 @@ CAPABILITIES(/obj/effect/plant)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 	op("hit_plant", item(/obj/item), then(PROC_REF(interaction_hit_plant)))
 	op("touch_plant", hand(), then(PROC_REF(interaction_touch_plant)))
+	param(nameof(seed_at_make), pos = 1)
+	param(nameof(parent), pos = 2)
 
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)
@@ -76,21 +78,23 @@ CAPABILITIES(/obj/effect/plant)
 /obj/effect/plant/single
 	spread_chance = 0
 
-// ALLOW(init/CTOR_ARGS): newseed and newparent are constructor arguments from whoever builds it
-/obj/effect/plant/Initialize(mapload, datum/seed/newseed, obj/effect/plant/newparent)
+/// The seed a vine grows from (its constructor param), or null for the default seed.
+/obj/effect/plant/var/datum/seed/seed_at_make
+
+// ALLOW(init/INSTANCE_STATE): a vine takes its seed's traits, growth and spread
+/obj/effect/plant/Initialize(mapload)
 	. = ..()
 	if(isopenturf(loc))
 		return INITIALIZE_HINT_QDEL
 
-	if(!newparent)
+	if(!parent)
 		rel_set(src, nameof(parent), src)
-	else
-		rel_set(src, nameof(parent), newparent)
 
 	if(!SSplants)
 		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
 		return INITIALIZE_HINT_QDEL
 
+	var/datum/seed/newseed = seed_at_make
 	if(!istype(newseed))
 		newseed = SSplants.seeds[DEFAULT_SEED]
 	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed

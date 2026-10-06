@@ -23,6 +23,9 @@
 CAPABILITIES(/obj/structure/blob/core)
 	after_init(0, then(PROC_REF(make_overmind_after_init)))
 	owns_one(nameof(Q), /datum/ghost_query)
+	param(nameof(controller), pos = 1)
+	param(nameof(point_rate), pos = 2)
+	param(nameof(placed_at_make), pos = 3)
 
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player
@@ -108,14 +111,15 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	/// FALSE when it was placed by an overmind or came with one: then it makes none after init.
 	var/tmp/make_overmind = TRUE
 
-// ALLOW(init/CTOR_ARGS): its overmind, point rate and whether it was placed are constructor arguments
-/obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
+/// A core placed by its player rather than spawned (its constructor param).
+/obj/structure/blob/core/var/placed_at_make = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a core shows itself at once, and a placed core or one with an overmind makes none of its own
+/obj/structure/blob/core/Initialize(mapload)
 	. = ..()
 	update_icon() //so it atleast appears
-	point_rate = new_rate
-	rel_set(src, nameof(controller), new_overmind)
 
-	if(placed || overmind)
+	if(placed_at_make || overmind)
 		make_overmind = FALSE
 
 /// A core spawned without an overmind (not placed by one) makes its own.

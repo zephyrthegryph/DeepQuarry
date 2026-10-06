@@ -15,22 +15,24 @@
 	var/graffiti_age = 0
 	var/author = "unknown"
 
-// ALLOW(init/CTOR_ARGS): _age, _message and _author are constructor arguments from whoever builds it
-/obj/effect/decal/writing/Initialize(mapload, _age, _message, _author)
-	var/list/random_icon_states = icon_states_fast(icon)
-	for(var/obj/effect/decal/writing/writing in contents_of(loc))
-		random_icon_states.Remove(writing.icon_state)
-	if(length(random_icon_states))
-		icon_state = pick(random_icon_states)
+CAPABILITIES(/obj/effect/decal/writing)
+	param(nameof(graffiti_age), pos = 1)
+	param(nameof(message), pos = 2)
+	param(nameof(author), pos = 3)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+// ALLOW(init/INSTANCE_STATE): graffiti not loaded with the map is tracked for persistence
+/obj/effect/decal/writing/Initialize(mapload)
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/graffiti)
 	. = ..()
-	if(!isnull(_age))
-		graffiti_age = _age
-	if(!isnull(_message))
-		message = _message
-	if(!isnull(author))
-		author = _author
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): a scrawl unlike the others on its turf.
+/obj/effect/decal/writing/proc/roll_icon_state(datum/roller/R)
+	var/list/random_icon_states = icon_states_fast(icon)
+	for(var/obj/effect/decal/writing/writing in contents_of(loc))
+		random_icon_states.Remove(writing.icon_state)
+	return length(random_icon_states) ? R.choose(random_icon_states) : icon_state
 
 // persistent graffiti forgets it.
 /obj/effect/decal/writing/lifecycle_dematerialize()

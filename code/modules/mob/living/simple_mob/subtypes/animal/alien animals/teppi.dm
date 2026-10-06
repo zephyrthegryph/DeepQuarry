@@ -765,14 +765,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	teppi_sound()
 	return TRUE
 
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	param(nameof(parent_one), pos = 1, keep = FALSE)
+	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
+
+/// The teppi (or the baby) a teppi is made from, and the second parent (its constructor params, dropped once inherited).
+/mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_one
+/mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_two
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_made(second)
+	if(parent_one && !parent_two)
+		inherit_from_baby(parent_one)
+	else if(parent_one && parent_two)
+		inherit_from_parents(parent_one, parent_two)
+
 //Handles both growing up from a baby and also passing parent details to new babies.
-// ALLOW(init/CTOR_ARGS): teppi1 and teppi2 are constructor arguments from whoever builds it
-/mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload, teppi1, teppi2)
+// ALLOW(init/INSTANCE_STATE): a teppi is counted, numbered and granted its age's verbs at init
+/mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload)
 	GLOB.teppi_count ++
-	if(teppi1 && !teppi2)
-		inherit_from_baby(teppi1)
-	else if (teppi1 && teppi2)
-		inherit_from_parents(teppi1, teppi2)
 	. = ..()
 	if(name == initial(name))
 		name = "[name] ([rand(1, 1000)])"

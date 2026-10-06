@@ -30,13 +30,15 @@
 	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
-// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
-/obj/effect/overmap/visitable/simplemob/Initialize(mapload, new_parent)
-	. = ..()
-	rel_set(src, nameof(parent), new_parent)
+CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
+	param(nameof(parent), pos = 1, apply = PROC_REF(link_parent))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
+/obj/effect/overmap/visitable/simplemob/proc/link_parent(parent_mob)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
 		rel_set(src, nameof(parent), P)
@@ -118,18 +120,18 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable/simplemob)
+	param(nameof(child_om_marker), pos = 1, apply = PROC_REF(link_marker))
 
-// ALLOW(init/CTOR_ARGS): new_child is a constructor argument from whoever builds it
-/mob/living/simple_mob/vore/overmap/Initialize(mapload, new_child)
-	. = ..()
-	rel_set(src, nameof(child_om_marker), new_child)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
+/mob/living/simple_mob/vore/overmap/proc/link_marker(marker)
 	if(child_om_marker)
 		om_link(src, child_om_marker, /datum/om/relation/overmap_mob_marker)
 	if(!om_child_type)
 		log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	// Maps with no overmap can still spawn overmap mobs (e.g. admin
-	// summon, unit tests). Skip the marker — there's nothing for it
+	// summon, unit tests). Skip the marker: there's nothing for it
 	// to render against, and a marker that fails to initialise takes
 	// us with it through the overmap_mob_marker relation.
 	if(!using_map?.use_overmap)
@@ -169,13 +171,15 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
-// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
-/obj/effect/overmap/visitable/ship/simplemob/Initialize(mapload, new_parent)
-	. = ..()
-	rel_set(src, nameof(parent), new_parent)
+CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
+	param(nameof(parent), pos = 1, apply = PROC_REF(link_parent))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
+/obj/effect/overmap/visitable/ship/simplemob/proc/link_parent(parent_mob)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
 		rel_set(src, nameof(parent), P)

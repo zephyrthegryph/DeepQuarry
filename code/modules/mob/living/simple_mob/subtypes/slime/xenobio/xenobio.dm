@@ -23,8 +23,16 @@
 	var/number = 0 // This is used to make the slime semi-unique for indentification.
 	var/harmless = FALSE // Set to true when pacified. Makes the slime harmless, not get hungry, and not be able to grow/reproduce.
 
-// ALLOW(init/CTOR_ARGS): my_predecessor is a constructor argument from whoever builds it
-/mob/living/simple_mob/slime/xenobio/Initialize(mapload, mob/living/simple_mob/slime/xenobio/my_predecessor)
+/// The slime this one split from (its constructor param, dropped once inherited).
+/mob/living/simple_mob/slime/xenobio/var/tmp/mob/living/simple_mob/slime/xenobio/predecessor
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/slime/xenobio/proc/inherit_made(mob/living/simple_mob/slime/xenobio/from)
+	if(from)
+		inherit_information(from)
+
+// ALLOW(init/INSTANCE_STATE): a slime shares its type's mutation table and is numbered before its parents' init
+/mob/living/simple_mob/slime/xenobio/Initialize(mapload)
 	if(slime_mutation)
 		slime_mutation = shared_type_list(type, "slime_mutation", slime_mutation)
 	//legacy ASSERT against ai_holder_type removed; slimes now use the
@@ -34,8 +42,6 @@
 
 	. = ..()
 
-	if(my_predecessor)
-		inherit_information(my_predecessor)
 
 // it lets go of its victim.
 /mob/living/simple_mob/slime/xenobio/on_destroy(force)

@@ -448,15 +448,17 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	icon_state = "beacon"
 	var/tmp/mob/living/parent_human
 
-// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
-/mob/observer/eye/ar_soul/Initialize(mapload, human)
+CAPABILITIES(/mob/observer/eye/ar_soul)
+	param(nameof(parent_human), pos = 1)
+
+// ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob, follows its owner's body and dresses as its owner's character
+/mob/observer/eye/ar_soul/Initialize(mapload)
 	. = ..()
 	var/mob/brainmob = loc
 	if(!istype(brainmob) || !brainmob.client)
 		return INITIALIZE_HINT_QDEL
 
 	brainmob.take_eye(src)			//Look through us
-	rel_set(src, nameof(parent_human), human)			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name

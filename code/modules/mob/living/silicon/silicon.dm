@@ -45,13 +45,17 @@ CAPABILITIES(/mob/living/silicon)
 	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot)
 	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot)
 	owns_many(nameof(queued_alarms))
+	param(nameof(decoy), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): is_decoy is a constructor argument from whoever builds it
-/mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
+/// A decoy silicon (its constructor param): no ID, language or subsystems.
+/mob/living/silicon/var/decoy = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a silicon that is not a decoy gets its ID, its language and its subsystems at init
+/mob/living/silicon/Initialize(mapload)
 	if(silicon_subsystems)
 		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
 	. = ..()
-	if(!is_decoy)
+	if(!decoy)
 		init_id(idcard_type)
 		add_language(LANGUAGE_GALCOM)
 		apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])

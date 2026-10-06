@@ -47,6 +47,7 @@
 
 CAPABILITIES(/obj/item/holder)
 	drag_onto(PROC_REF(drop_input))
+	param(nameof(held_at_make), pos = 1, apply = PROC_REF(take_held), keep = FALSE)
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dropped onto its dragger, the held mob
 /// moves into their hands; the native drop goes on either way.

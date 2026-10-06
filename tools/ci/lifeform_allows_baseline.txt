@@ -50,7 +50,6 @@ allow_matches_form	code/game/objects/items/fantasy_items.dm	// ALLOW(init/CTOR_A
 allow_matches_form	code/game/objects/items/stacks/marker_beacons.dm	// ALLOW(init/CTOR_ARGS): set_color is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/stacks/sandbags.dm	// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/items/stacks/sandbags.dm	// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
-allow_matches_form	code/game/objects/items/stacks/stack.dm	// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/trash.dm	// ALLOW(init/CTOR_ARGS): _age is a constructor argument from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/RCD.dm	// ALLOW(init/CTOR_ARGS): rcd_delay and rcd_status are constructor arguments from whoever builds it
 allow_matches_form	code/game/objects/items/weapons/inducer.dm	// ALLOW(init/CTOR_ARGS): H is a constructor argument from whoever builds it
@@ -123,66 +122,12 @@ allow_matches_form	code/game/objects/structures/window.dm	// ALLOW(init/CTOR_ARG
 allow_matches_form	code/game/turfs/simulated/floor.dm	// ALLOW(init/CTOR_ARGS): floortype is a constructor argument from whoever builds it
 allow_matches_form	code/game/turfs/simulated/outdoors/sky.dm	// ALLOW(init/CTOR_ARGS): color is a constructor argument from whoever builds it
 allow_matches_form	code/game/turfs/simulated/walls.dm	// ALLOW(init/CTOR_ARGS): materialtype, rmaterialtype and girdertype are constructor arguments from whoever builds it
-allow_matches_form	code/modules/blob2/blobs/base_blob.dm	// ALLOW(init/CTOR_ARGS): new_overmind is a constructor argument from whoever builds it
-allow_matches_form	code/modules/blob2/blobs/core.dm	// ALLOW(init/CTOR_ARGS): its overmind, point rate and whether it was placed are constructor arguments
-allow_matches_form	code/modules/blob2/core_chunk.dm	// ALLOW(init/CTOR_ARGS): parentblob is a constructor argument from whoever builds it
-allow_matches_form	code/modules/blob2/overmind/overmind.dm	// ALLOW(init/CTOR_ARGS): pre_placed, starting_points and desired_blob_type are constructor arguments from whoever builds it
 allow_matches_form	code/modules/clothing/accessories/hands.dm	// ALLOW(init/CTOR_ARGS): new_material is a constructor argument from whoever builds it
 allow_matches_form	code/modules/clothing/accessories/rings.dm	// ALLOW(init/CTOR_ARGS): new_material is a constructor argument from whoever builds it
 allow_matches_form	code/modules/clothing/spacesuits/rig/modules/modules.dm	var/mob/user = usr // ALLOW(sys_usr_outside_verb): native stat-panel Click supplies the initiating rig-module actor
-allow_matches_form	code/modules/detectivework/tools/sample_kits.dm	// ALLOW(init/CTOR_ARGS): supplied is a constructor argument from whoever builds it
-allow_matches_form	code/modules/flufftext/fake_attacker.dm	// ALLOW(init/CTOR_ARGS): targeting_mob and clone_appearance_from are constructor arguments from whoever builds it
-allow_matches_form	code/modules/hydroponics/grown.dm	// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
-allow_matches_form	code/modules/hydroponics/grown.dm	// ALLOW(init/CTOR_ARGS): S is a constructor argument from whoever builds it
-allow_matches_form	code/modules/hydroponics/grown_inedible.dm	// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
-allow_matches_form	code/modules/hydroponics/seed_packets.dm	// ALLOW(init/CTOR_ARGS): _seed_type is a constructor argument from whoever builds it
-allow_matches_form	code/modules/hydroponics/spreading/spreading.dm	// ALLOW(init/CTOR_ARGS): newseed and newparent are constructor arguments from whoever builds it
-allow_matches_form	code/modules/hydroponics/trays/tray_soil.dm	// ALLOW(init/CTOR_ARGS): newseed is a constructor argument from whoever builds it
-allow_matches_form	code/modules/integrated_electronics/subtypes/camera.dm	// ALLOW(init/CTOR_ARGS): network_id and darkvis are constructor arguments from whoever builds it
-allow_matches_form	code/modules/lighting/emissive_blocker.dm	// ALLOW(init/CTOR_ARGS): source is a constructor argument from whoever builds it
-allow_matches_form	code/modules/materials/sheets/_sheets.dm	// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mining/mine_items.dm	// ALLOW(init/CTOR_ARGS): _mat is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mining/resonator.dm	// ALLOW(init/CTOR_ARGS): new_creator and timetoburst are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/dead/observer/observer.dm	// ALLOW(init/CTOR_ARGS): aghost is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/holder.dm	// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/holder.dm	// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/bot/farmbot.dm	// ALLOW(init/CTOR_ARGS): newTank is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/bot/farmbot.dm	// ALLOW(init/CTOR_ARGS): theTank is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/carbon/human/human.dm	// ALLOW(init/CTOR_ARGS): new_species is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	// ALLOW(init/CTOR_ARGS): new_power is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/silicon/ai/ai.dm	// ALLOW(init/CTOR_ARGS): is_decoy, L, B and safety are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/silicon/silicon.dm	// ALLOW(init/CTOR_ARGS): is_decoy is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/overmap_mob.dm	// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/overmap_mob.dm	// ALLOW(init/CTOR_ARGS): new_child is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/overmap_mob.dm	// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	// ALLOW(init/CTOR_ARGS): jellyfish is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	// ALLOW(init/CTOR_ARGS): inherit is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	// ALLOW(init/CTOR_ARGS): teppi1 and teppi2 are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	// ALLOW(init/CTOR_ARGS): keep_parent_data is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	// ALLOW(init/CTOR_ARGS): my_factory is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/metroid/metObjects.dm	// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	// ALLOW(init/CTOR_ARGS): my_predecessor is a constructor argument from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/dominated_brain.dm	// ALLOW(init/CTOR_ARGS): pred, preyname and prey are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/living/simple_mob/subtypes/vore/morph/morph.dm	// ALLOW(init/CTOR_ARGS): pmind, parent and prey are constructor arguments from whoever builds it
-allow_matches_form	code/modules/mob/mob_grab.dm	// ALLOW(init/CTOR_ARGS): victim is a constructor argument from whoever builds it
-allow_matches_form	code/modules/modular_computers/hardware/battery_module.dm	// ALLOW(init/CTOR_ARGS): cell_type is a constructor argument from whoever builds it
-allow_matches_form	code/modules/multiz/hoist.dm	// ALLOW(init/CTOR_ARGS): ndir is a constructor argument from whoever builds it
-allow_matches_form	code/modules/nifsoft/nif.dm	// ALLOW(init/CTOR_ARGS): wear and load_data are constructor arguments from whoever builds it
-allow_matches_form	code/modules/nifsoft/software/13_soulcatcher.dm	// ALLOW(init/CTOR_ARGS): human is a constructor argument from whoever builds it
-allow_matches_form	code/modules/nifsoft/software/14_commlink.dm	// ALLOW(init/CTOR_ARGS): soft is a constructor argument from whoever builds it
 allow_matches_form	code/modules/organs/internal/malignant/malignant.dm	// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
 allow_matches_form	code/modules/organs/organ_stump.dm	// ALLOW(init/CTOR_ARGS): internal and limb are constructor arguments from whoever builds it
 allow_matches_form	code/modules/organs/subtypes/machine.dm	// ALLOW(init/CTOR_ARGS): internal and installed are constructor arguments from whoever builds it
-allow_matches_form	code/modules/overmap/bluespace_rift.dm	// ALLOW(init/CTOR_ARGS): new_partner is a constructor argument from whoever builds it
-allow_matches_form	code/modules/overmap/ships/engines/gas_thruster.dm	// ALLOW(init/CTOR_ARGS): ndir and flame are constructor arguments from whoever builds it
-allow_matches_form	code/modules/overmap/ships/landable.dm	// ALLOW(init/CTOR_ARGS): shuttle_name is a constructor argument from whoever builds it
-allow_matches_form	code/modules/overmap/ships/landable.dm	// ALLOW(init/CTOR_ARGS): master and _name are constructor arguments from whoever builds it
-allow_matches_form	code/modules/paperwork/paper.dm	// ALLOW(init/CTOR_ARGS): text and title are constructor arguments from whoever builds it
-allow_matches_form	code/modules/paperwork/paperplane.dm	// ALLOW(init/CTOR_ARGS): newPaper is a constructor argument from whoever builds it
-allow_matches_form	code/modules/persistence/graffiti.dm	// ALLOW(init/CTOR_ARGS): _age, _message and _author are constructor arguments from whoever builds it
-allow_matches_form	code/modules/point/point.dm	// ALLOW(init/CTOR_ARGS): set_invis is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/apc.dm	// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
 allow_matches_form	code/modules/power/cable.dm	// ALLOW(init/CTOR_ARGS): length, param_color and material_id are constructor arguments from whoever builds it
 allow_matches_form	code/modules/power/fusion/core/core_field.dm	// ALLOW(init/CTOR_ARGS): new_owned_core is a constructor argument from whoever builds it
@@ -195,25 +140,3 @@ allow_matches_form	code/modules/power/singularity/particle_accelerator/particle.
 allow_matches_form	code/modules/power/singularity/singularity.dm	// ALLOW(init/CTOR_ARGS): starting_energy is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/solar.dm	// ALLOW(init/CTOR_ARGS): glass_type is a constructor argument from whoever builds it
 allow_matches_form	code/modules/power/tesla/energy_ball.dm	// ALLOW(init/CTOR_ARGS): starting_energy and is_miniball are constructor arguments from whoever builds it
-allow_matches_form	code/modules/projectiles/ammunition.dm	// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-allow_matches_form	code/modules/projectiles/broken.dm	// ALLOW(init/CTOR_ARGS): path is a constructor argument from whoever builds it
-allow_matches_form	code/modules/projectiles/guns/projectile.dm	// ALLOW(init/CTOR_ARGS): starts_loaded is a constructor argument from whoever builds it
-allow_matches_form	code/modules/projectiles/projectile/magnetic.dm	// ALLOW(init/CTOR_ARGS): range_mod is a constructor argument from whoever builds it
-allow_matches_form	code/modules/random_map/drop/droppod_doors.dm	// ALLOW(init/CTOR_ARGS): autoopen is a constructor argument from whoever builds it
-allow_matches_form	code/modules/recycling/conveyor2.dm	// ALLOW(init/CTOR_ARGS): newdir and on are constructor arguments from whoever builds it
-allow_matches_form	code/modules/recycling/disposal-construction.dm	// ALLOW(init/CTOR_ARGS): newtype, newdir, flipped and newsubtype are constructor arguments from whoever builds it
-allow_matches_form	code/modules/recycling/disposal_machines.dm	// ALLOW(init/CTOR_ARGS): make_from is a constructor argument from whoever builds it
-allow_matches_form	code/modules/recycling/recycling.dm	// ALLOW(init/CTOR_ARGS): matter_init is a constructor argument from whoever builds it
-allow_matches_form	code/modules/recycling/recycling.dm	// ALLOW(init/CTOR_ARGS): mat is a constructor argument from whoever builds it
-allow_matches_form	code/modules/resleeving/sleevecard.dm	// ALLOW(init/CTOR_ARGS): our_name and db_key are constructor arguments from whoever builds it
-allow_matches_form	code/modules/shieldgen/directional_shield.dm	// ALLOW(init/CTOR_ARGS): new_projector is a constructor argument from whoever builds it
-allow_matches_form	code/modules/shieldgen/energy_field.dm	// ALLOW(init/CTOR_ARGS): new_gen is a constructor argument from whoever builds it
-allow_matches_form	code/modules/shieldgen/sheldwallgen.dm	// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
-allow_matches_form	code/modules/vehicles/boat.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-allow_matches_form	code/modules/vehicles/boat.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-allow_matches_form	code/modules/vehicles/boat.dm	// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-allow_matches_form	code/modules/vehicles/quad.dm	// ALLOW(init/CTOR_ARGS): assembly is a constructor argument from whoever builds it
-allow_matches_form	code/modules/vore/eating/leave_remains.dm	// ALLOW(init/CTOR_ARGS): pred and prey are constructor arguments from whoever builds it
-allow_matches_form	code/modules/xenoarcheaology/finds/find_spawning.dm	// ALLOW(init/CTOR_ARGS): new_item_type is a constructor argument from whoever builds it
-allow_matches_form	code/modules/xenoarcheaology/finds/finds.dm	// ALLOW(init/CTOR_ARGS): inside_item_type is a constructor argument from whoever builds it
-allow_matches_form	code/tests/engine/e1_fixtures.dm	// ALLOW(init/CTOR_ARGS): label_arg is a constructor argument from whoever builds it

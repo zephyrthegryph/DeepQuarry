@@ -126,11 +126,10 @@ CAPABILITIES(/obj/effect/hoist_hook)
 
 CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
+	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
 
-// ALLOW(init/CTOR_ARGS): ndir is a constructor argument from whoever builds it
-/obj/structure/hoist/Initialize(mapload, ndir)
-	. = ..()
-	dir = ndir
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
+/obj/structure/hoist/proc/hang_hook(ndir)
 	var/turf/newloc = get_step(src, dir)
 	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
 	rel_set(source_hook, nameof(source_hook.source_hoist), src)
