@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	if (!id)
 		assign_uid()
-		id = num2text(uid)
+		set_id(num2text(uid))
 	update_icon()
 
 APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:off}")

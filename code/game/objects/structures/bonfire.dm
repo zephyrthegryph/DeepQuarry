@@ -23,6 +23,11 @@ TRACKED(/obj/structure/bonfire, burning)
 CAPABILITIES(/obj/structure/bonfire)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
 	param(nameof(fuel_material), pos = 1, apply = PROC_REF(build_of))
+	op("build", item(/obj/item/stack/rods), label("Use"), when(cond_not(nameof(can_buckle))), when(cond_not(nameof(grill))),
+		asks(/datum/prompt/choice, fields = list("title" = "Bonfire", "question" = "What would you like to construct?", "choices" = list("Stake", "Grill"), "timeout" = 0)),
+		then(PROC_REF(construction_chosen)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 
@@ -51,6 +56,8 @@ TYPE_TABLE(/obj/structure/bonfire/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
 // ition Start
+TRACKED(/obj/structure/bonfire, grill)
+
 /obj/structure/bonfire/examine(mob/user)
 	. = ..()
 	var/X = get_fuel_amount()
@@ -61,41 +68,28 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 		. += "[src] has a makeshift stake built in it, perfect for witches and space templars."
 // ition end
 
-/obj/structure/bonfire/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/bonfire_item,
-		/datum/interaction/entry_hand/bonfire_hand,
-	)
-	..()
-
-/// Old attackby: build a stake or grill from rods, add wood/logs as fuel, or ignite with a hot item.
-/datum/interaction/entry_item/bonfire_item
-	id = "bonfire_item"
-	name = "Use"
-	effect = /obj/structure/bonfire/proc/interaction_item
-
-/obj/structure/bonfire/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
-		open_request(src, /datum/prompt/choice, PROC_REF(construction_chosen), answerer = user, subject = W, title = "Bonfire", question = "What would you like to construct?", choices = list("Stake","Grill"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-		return TRUE
-	else if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
+/// Old attackby: add wood or logs as fuel, or ignite it with a hot item.
+/obj/structure/bonfire/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
 	else if(W.is_hot())
 		ignite()
-	return TRUE
+	return OP_OK
 
-/obj/structure/bonfire/proc/construction_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/obj/item/stack/rods/R = A.request.subject
-	if(can_buckle || grill)
-		return
-	switch(A.answer.value)
+/// Old attackby with rods: build a stake or a grill into it (the rods held throughout).
+/obj/structure/bonfire/proc/construction_chosen(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	if(!P)
+		return OP_OK
+	var/mob/user = A.actor
+	var/obj/item/stack/rods/R = A.held
+	switch(P.value)
 		if("Stake")
 			R.use(1)
-			can_buckle = TRUE
+			set_can_buckle(TRUE)
 			buckle_require_restraints = TRUE
 			to_chat(user, span_notice("You add a rod to \the [src]."))
 			var/mutable_appearance/rod_underlay = mutable_appearance('icons/obj/structures.dmi', "bonfire_rod")
@@ -104,24 +98,19 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 			underlays += rod_underlay
 		if("Grill")
 			R.use(1)
-			grill = TRUE
+			set_grill(TRUE)
 			to_chat(user, span_notice("You add a grill to \the [src]."))
 			update_icon()
+	return OP_OK
 
-/// Old attack_hand: take out fuel, or dismantle if it's empty. The buckle unbuckle check now
-/// runs earlier, in hand_gate() (code/game/objects/buckling.dm), before this interaction is tried.
-/datum/interaction/entry_hand/bonfire_hand
-	id = "bonfire_hand"
-	name = "Use"
-	effect = /obj/structure/bonfire/proc/interaction_hand
-
-/obj/structure/bonfire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: take out fuel, or dismantle it when it is empty.
+/obj/structure/bonfire/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_fuel_amount())
 		remove_fuel(user)
 	else
 		dismantle(user)
-	return TRUE
-
+	return OP_OK
 
 /obj/structure/bonfire/proc/dismantle(mob/user)
 	if(!burning)

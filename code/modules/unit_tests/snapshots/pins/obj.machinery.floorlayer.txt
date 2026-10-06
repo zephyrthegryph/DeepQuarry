@@ -38,5 +38,5 @@ human|/obj/item/card/id click: nothing
 human|/obj/item/stack/tile menu: Load tile
 human|/obj/item/stack/tile menu: Toggle
 human|/obj/item/stack/tile click: nothing
-keys: floorlayer_load_tile, floorlayer_toggle, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, floorlayer_load_tile, floorlayer_toggle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

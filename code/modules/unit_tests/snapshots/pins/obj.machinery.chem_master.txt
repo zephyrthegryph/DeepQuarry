@@ -58,5 +58,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Ui open
-keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, eject, ejectp, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print, remove, removecustom, toggle, ui_open
+keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, drag_buckle, eject, ejectp, gen_robot_interaction_swallow, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print, remove, removecustom, toggle, ui_open
 

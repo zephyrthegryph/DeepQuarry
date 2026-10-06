@@ -33,32 +33,32 @@ CAPABILITIES(/obj/item/material/butterflyconstruction)
 	force_divisor = 0.1
 	thrown_force_divisor = 0.1
 
-EXTEND_INTERACTIONS(/obj/item/material/butterflyhandle, INTERACT_ITEM(null, PROC_REF(butterflyhandle_interaction_item), REQ_TARGET_STATE(/obj/item/material/butterflyhandle/proc/can_attach_blade)))
-
-/// Both concealed-knife ingredients must be releasable before assembly changes them.
-/obj/item/material/butterflyhandle/proc/can_attach_blade(mob/user, atom/target, obj/item/held)
-	if(!istype(held, /obj/item/material/butterflyblade))
-		return TRUE
+/// Both concealed-knife ingredients must be releasable before assembly changes them: null, or why not.
+/obj/item/material/butterflyhandle/proc/attach_refusal(mob/user, obj/item/held)
 	var/reason = loc?.release_refusal(src, user)
 	if(reason)
 		return reason
-	reason = held.loc?.release_refusal(held, user)
-	if(reason)
-		return reason
-	return TRUE
+	return held.loc?.release_refusal(held, user)
 
-/// Old attackby. It never called ..(): any item stops here (no repair, no storage pickup), but afterattack still follows.
-/obj/item/material/butterflyhandle/proc/butterflyhandle_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+CAPABILITIES(/obj/item/material/butterflyhandle)
+	op("handle_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(butterflyhandle_interaction_item)))
+
+/// Old attackby: a blade goes on the grip. It never called ..(): any item stops here (no repair, no storage pickup), but afterattack still follows.
+/obj/item/material/butterflyhandle/proc/butterflyhandle_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/material/butterflyblade))
 		var/obj/item/material/butterflyblade/B = W
-		if(can_attach_blade(user, src, B) != TRUE)
-			return INTERACTION_HANDLED_PASS
+		var/why = attach_refusal(user, B)
+		if(why)
+			to_chat(user, span_warning(capitalize("[why].")))
+			return OP_PASS
 		if(!loc.release_to(src, user.loc, null, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!B.loc.release_to(B, user.loc, null, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, "You attach the two concealed blade parts.")
 		new /obj/item/material/butterflyconstruction(user.loc, B.material.name)
 		consume(W, user)
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS

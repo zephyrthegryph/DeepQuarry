@@ -82,5 +82,5 @@ human|/obj/item/anomaly_scanner menu: Open maintenance panel (refused: needs a s
 human|/obj/item/anomaly_scanner menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/anomaly_scanner menu: Secure (refused: needs a wrench)
 human|/obj/item/anomaly_scanner click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_attach_scanner, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, release_all, release_sample
+keys: drag_buckle, gen_insert_interaction_attach_scanner, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, release_all, release_sample
 

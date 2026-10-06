@@ -80,5 +80,5 @@ human|/obj/item/card/id menu: Toggle door
 human|/obj/item/card/id menu: Toggle Power
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
-keys: change_output, gen_alt_oven_interaction_toggle_door, gen_drag_interaction_drag_buckle, gen_hand_appliance_interaction_hand, gen_item_appliance_interaction_item, gen_item_appliance_interaction_part_replace, gen_robot_interaction_swallow, gen_verb_appliance_toggle_power_effect, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remote_power, remove_menu, slot, toggle_door, toggle_power, toggle_safety
+keys: change_output, drag_buckle, gen_alt_oven_interaction_toggle_door, gen_hand_appliance_interaction_hand, gen_item_appliance_interaction_item, gen_item_appliance_interaction_part_replace, gen_robot_interaction_swallow, gen_verb_appliance_toggle_power_effect, machine_anchor, machine_deconstruct, machine_panel, machine_repair, remote_power, remove_menu, slot, toggle_door, toggle_power, toggle_safety
 

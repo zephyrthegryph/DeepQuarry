@@ -64,5 +64,5 @@ human|/obj/item menu: Hit
 human|/obj/item menu: Swipe ID (refused: needs an identification card or a PDA)
 human|/obj/item menu: Toggle (refused: the shield generator needs to be firmly secured to the floor first)
 human|/obj/item click: nothing
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_toggle, gen_insert_interaction_hit, gen_insert_interaction_id_swipe, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, gen_hand_ungated_interaction_toggle, gen_insert_interaction_hit, gen_insert_interaction_id_swipe, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_wrench
 

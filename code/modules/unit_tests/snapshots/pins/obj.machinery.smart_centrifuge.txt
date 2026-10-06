@@ -122,5 +122,5 @@ human|/obj/item menu: Unsecure (refused: needs a wrench)
 human|/obj/item menu: Use
 human|/obj/item menu: Use (refused: not possible right now)
 human|/obj/item click: nothing
-keys: centrifuge_attackby, centrifuge_drain_tank, centrifuge_isolate_reagents, centrifuge_isolate_reagents_bottle, centrifuge_isolate_reagents_canisters, centrifuge_use, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: centrifuge_attackby, centrifuge_drain_tank, centrifuge_isolate_reagents, centrifuge_isolate_reagents_bottle, centrifuge_isolate_reagents_canisters, centrifuge_use, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

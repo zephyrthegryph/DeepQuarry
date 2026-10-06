@@ -56,14 +56,16 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 		var/obj/item/tool = removal_tool
 		. += span_notice("\The [src] can be removed with \a [initial(tool.name)].")
 
+CAPABILITIES(/obj/structure/flora)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
 /obj/structure/flora/proc/get_harvestable_desc()
 	return span_notice("\The [src] seems to have something hanging from it.")
 
-EXTEND_INTERACTIONS(/obj/structure/flora, \
-	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
-)
-
-/obj/structure/flora/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: harvest with the harvest tool, or uproot with the removal tool.
+/obj/structure/flora/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 
 	if(can_harvest(W))
 		var/harvest_spawn = pickweight(harvest_loot)
@@ -72,14 +74,14 @@ EXTEND_INTERACTIONS(/obj/structure/flora, \
 			to_chat(user, span_notice("You harvest \the [AM] from \the [src]."))
 		else
 			to_chat(user, span_notice("You fail to harvest anything from \the [src]."))
-		return TRUE
+		return OP_OK
 
 	if(removal_tool && istype(W, removal_tool))
 		to_chat(user, span_warning("You start uprooting \the [src]..."))
 		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return TRUE
+		return OP_OK
 
-	return TRUE
+	return OP_OK
 
 /obj/structure/flora/proc/attackby_timed_done(mob/living/user)
 	act_message(user, src, others = span_notice("%U% uproots and discards %T%!"))
@@ -286,42 +288,31 @@ TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("
 	plane = OBJ_PLANE
 	var/obj/item/stored_item
 
+// the pot's own Use and Insert replace flora's harvest and uproot (the original overrides never called ..())
+CAPABILITIES(/obj/structure/flora/pottedplant)
+	owns_one(nameof(stored_item), /obj/item)
+	without("item")
+	op("hide", item(/obj/item), label("Hide item"), when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))),
+		needs(req(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), then(PROC_REF(interaction_hide_item)))
+	op("search", hand(), label("Search"), then(PROC_REF(interaction_hand)))
+
 /obj/structure/flora/pottedplant/examine(mob/user)
 	. = ..()
 	if(in_range(user, src) && stored_item)
 		. += span_filter_notice(span_italics("You can see something in there..."))
 
-// Pottedplant's Use and Insert fully replace flora's harvest/uproot ones (the original
-// overrides never called ..()), so it declares its own interactions instead of flora's.
-/obj/structure/flora/pottedplant/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/pottedplant_item,
-		/datum/interaction/entry_hand/pottedplant_hand,
-	)
+/// Requirement: nothing is hidden in the pot yet.
+/obj/structure/flora/pottedplant/proc/pot_empty(datum/act/op/A)
+	return !stored_item
 
-/// Old attackby: hide a tiny item in the pot.
-/datum/interaction/entry_item/pottedplant_item
-	id = "pottedplant_item"
-	name = "Hide item"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/flora/pottedplant/proc/can_hide_item))
-	effect = /obj/structure/flora/pottedplant/proc/interaction_hide_item
+MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be something in here.")
 
-/// Requirement: one tiny item fits in the pot.
-/obj/structure/flora/pottedplant/proc/can_hide_item(mob/user, atom/target, obj/item/I)
-	if(issilicon(user) || !istype(I))
-		return TRUE // the effect declines silently
-	if(stored_item)
-		return "[I] won't fit in, there already appears to be something in here"
-	if(I.w_class > ITEMSIZE_TINY)
-		return "[I] is too big to fit inside it"
-	return TRUE
-
-/obj/structure/flora/pottedplant/proc/interaction_hide_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(issilicon(user))
-		return TRUE // Don't try to put modules in here, you're a borg. TODO: Inventory refactor to not be ass.
-
+/// Old attackby: hide a tiny item in the pot (never a cyborg's module).
+/obj/structure/flora/pottedplant/proc/interaction_hide_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, I = I)
-	return TRUE
+	return OP_OK
 
 /datum/om/task/timed/pottedplant_attackby
 	duration = 1 SECOND
@@ -341,17 +332,13 @@ TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("
 	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
 
 /// Old attack_hand: find whatever is hidden in the pot.
-/datum/interaction/entry_hand/pottedplant_hand
-	id = "pottedplant_hand"
-	name = "Search"
-	effect = /obj/structure/flora/pottedplant/proc/interaction_hand
-
-/obj/structure/flora/pottedplant/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/flora/pottedplant/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stored_item)
 		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
 	else
 		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
@@ -805,7 +792,3 @@ APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{
 	icon = 'icons/obj/flora/amayastuff.dmi'
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
-
-/obj/structure/flora/pottedplant/ownership()
-	. = ..()
-	. += owns(nameof(stored_item), policy = OWN_CONTAINED)

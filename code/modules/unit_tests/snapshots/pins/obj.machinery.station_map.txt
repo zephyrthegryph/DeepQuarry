@@ -62,5 +62,5 @@ human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Touch
 human|/obj/item menu: Watch
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_watch, gen_insert_interaction_fingerprint, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, gen_hand_ungated_interaction_watch, gen_insert_interaction_fingerprint, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

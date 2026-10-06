@@ -49,5 +49,5 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
 wires: Failsafes, Grounding, Input, Output, RCon
-keys: add_cable, cable_place, cut_terminal, failing, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, input, install_coil, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, output, rcon_tag, swallow, tryinput, tryoutput, ui_open, weld
+keys: add_cable, cable_place, cut_terminal, drag_buckle, failing, gen_robot_interaction_swallow, input, install_coil, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, output, rcon_tag, swallow, tryinput, tryoutput, ui_open, weld
 

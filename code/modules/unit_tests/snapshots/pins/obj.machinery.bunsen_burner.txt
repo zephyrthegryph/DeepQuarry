@@ -56,5 +56,5 @@ human|/obj/item/card/id menu: Place container
 human|/obj/item/card/id menu: Remove container
 human|/obj/item/card/id menu: Secure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Place container
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, place_container, remove_container, use_crowbar
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, place_container, remove_container, use_crowbar
 

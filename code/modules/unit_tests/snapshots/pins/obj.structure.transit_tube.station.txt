@@ -23,5 +23,5 @@ human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
-keys: gen_drag_interaction_drag_buckle, toggle
+keys: drag_buckle, toggle
 

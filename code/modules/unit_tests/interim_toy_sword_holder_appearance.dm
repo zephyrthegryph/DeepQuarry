@@ -32,7 +32,7 @@
 		if(entry && entry.icon_state == "esword_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
-	sword.interaction_self(holder, sword, null)
+	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(sword.active, "the actual toy interaction extends its blade")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
 	holder.left_redraws = 0
@@ -50,7 +50,7 @@
 			active_blades++
 	TEST_ASSERT_EQUAL(active_blades, 1, "the actual extended appearance contains exactly one blade overlay")
 	TEST_ASSERT_EQUAL(holder.get_active_hand(), sword, "appearance generation preserves actual held ownership")
-	sword.interaction_self(holder, sword, null)
+	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(!sword.active, "the actual toy interaction retracts its blade")
 	km_synthetic_click(bystander, sword)
 	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count, "retracting the actual blade restores its inherited appearance count")

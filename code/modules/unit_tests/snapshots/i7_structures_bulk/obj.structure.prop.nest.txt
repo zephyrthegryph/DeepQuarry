@@ -1,5 +1,5 @@
-/obj/structure/prop/nest|human|none => nest_disturb|
-/obj/structure/prop/nest|robot|none => nest_disturb|
+/obj/structure/prop/nest|human|none => |
+/obj/structure/prop/nest|robot|none => |
 /obj/structure/prop/nest|ai|none => |
 /obj/structure/prop/nest|ghost|none => |
 

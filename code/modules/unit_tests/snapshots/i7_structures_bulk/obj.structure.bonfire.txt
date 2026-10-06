@@ -1,5 +1,5 @@
-/obj/structure/bonfire|human|none => bonfire_item,bonfire_hand|
-/obj/structure/bonfire|robot|none => bonfire_item,bonfire_hand|
+/obj/structure/bonfire|human|none => |
+/obj/structure/bonfire|robot|none => |
 /obj/structure/bonfire|ai|none => |
 /obj/structure/bonfire|ghost|none => |
 

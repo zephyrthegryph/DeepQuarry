@@ -1,5 +1,5 @@
-/obj/structure/m_tray|human|none => gen_hand_interaction_hand,gen_drag_interaction_drag|
-/obj/structure/m_tray|robot|none => gen_hand_interaction_hand,gen_drag_interaction_drag|
+/obj/structure/m_tray|human|none => |
+/obj/structure/m_tray|robot|none => |
 /obj/structure/m_tray|ai|none => |
 /obj/structure/m_tray|ghost|none => |
 

@@ -38,22 +38,24 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 	if(get_dist(user, src) == 0)
 		. += span_notice("It currently holds [stored_matter]/30 fabrication-units.")
 
-/// Old attackby.
-/obj/item/rsf/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a matter cartridge refills it (the click goes on).
+/obj/item/rsf/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/rcd_ammo))
 
 		if ((stored_matter + 10) > 30)
 			balloon_alert(user, "the fabricator can't hold any more matter.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(!consume(W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		stored_matter += 10
 		play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 		balloon_alert(user,"the fabricator now holds [stored_matter]/30 fabrication-units.")
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/item/rsf/item_ctrl_click(mob/living/user)
 	if(!Adjacent(user) || !istype(user))
@@ -71,13 +73,8 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 		balloon_alert(user, "container chosen: [glass_choice]")
 		glasstype_name = glass_choice
 
-DECLARE_INTERACTIONS(/obj/item/rsf, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attack_self.
-/obj/item/rsf/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// What it can make, with the pictures the radial shows.
+/obj/item/rsf/proc/product_choices(datum/act/A)
 	var/options = list(
 		"card deck" = image(icon = 'icons/obj/playing_cards.dmi', icon_state = "deck"),
 		"card deck (big)" = image(icon = 'icons/obj/playing_cards.dmi', icon_state = "deck"),
@@ -88,18 +85,21 @@ DECLARE_INTERACTIONS(/obj/item/rsf, \
 		"dice pack (gaming)" = image(icon = 'icons/obj/dice.dmi', icon_state = "magicdicebag"),
 		"paper" = image(icon = 'icons/obj/bureaucracy.dmi', icon_state = "paper"),
 		"pen" = image(icon = 'icons/obj/bureaucracy.dmi', icon_state = "pen"))
-	open_request(src, /datum/prompt/choice, PROC_REF(product_chosen), answerer = user, choices = options, anchor = user, radius = 40, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
-	return TRUE
+	return options
 
-/obj/item/rsf/proc/product_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
+/// Old attack_self: pick what it makes from the radial.
+/obj/item/rsf/proc/product_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/choice = R?.value
 	if(choice)
 		mode = choice
 		play_sfx(src, SFX_EFFECTS_POP)
-		balloon_alert(user, "you will synthesize: [mode]")
+		balloon_alert(A.actor, "you will synthesize: [mode]")
+	return OP_OK
+
+CAPABILITIES(/obj/item/rsf)
+	op("pick_product", in_hand(), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(product_choices)), "radial" = TRUE, "radius" = 40, "autopick_single_option" = TRUE, "timeout" = 0)), then(PROC_REF(product_chosen)))
+	op("refill", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /obj/item/rsf/afterattack(atom/A, mob/user as mob, proximity)
 

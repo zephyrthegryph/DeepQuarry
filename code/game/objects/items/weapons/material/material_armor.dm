@@ -287,50 +287,54 @@
 	name = "plate insert"
 	desc = "used to craft armor plates for a plate carrier. Trim with a welder for light armor or add a second for heavy armor"
 
-EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_REF(armor_plating_item)))
+CAPABILITIES(/obj/item/material/armor_plating)
+	op("plate_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(armor_plating_item)))
 
 /// Old attackby: wire the plate, or join two plates into makeshift armour.
-/obj/item/material/armor_plating/proc/armor_plating_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/material/armor_plating/proc/armor_plating_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/S = O
 		if(wired)
 			to_chat(user, span_warning("This already has enough wires on it."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(S.use(20))
 			to_chat(user, span_notice("You attach several wires to \the [src].  Now it needs another plate."))
 			wired = TRUE
 			icon_state = "[initial(icon_state)]_wired"
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user, span_notice("You need more wire for that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(O, /obj/item/material/armor_plating))
 		var/obj/item/material/armor_plating/second_plate = O
 		if(!wired && !second_plate.wired)
 			to_chat(user, span_warning("You need something to hold the two pieces of plating together."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(second_plate.material != src.material)
 			to_chat(user, span_warning("Both plates need to be the same type of material."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_from_inventory(src)
 		user.drop_from_inventory(second_plate)
 		var/obj/item/clothing/suit/armor/material/makeshift/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
 		consume(second_plate, user)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
-
+		return OP_PASS
+	return OP_DECLINE
 
 /// Old attackby: make plating inserts for modular armour. The old body ran its parent's first, so this does too.
-/obj/item/material/armor_plating/insert/armor_plating_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/material/armor_plating/insert/armor_plating_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	. = ..()
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O
 		if(second_plate.material != src.material)
 			to_chat(user, span_warning("Both plates need to be the same type of material."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You bond the two plates together."))
 		user.drop_from_inventory(src)
 		user.drop_from_inventory(second_plate)
@@ -338,7 +342,7 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_R
 		user.put_in_hands(new_armor)
 		consume(second_plate, user)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(O, /obj/item/stack/material))
 		var/obj/item/stack/material/S = O
@@ -349,7 +353,7 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_R
 				var/obj/item/clothing/accessory/material/makeshift/legguards/new_armor = new(null, src.material.name)
 				user.put_in_hands(new_armor)
 				consume(src, user)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 /obj/item/material/armor_plating/insert/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -1,0 +1,136 @@
+human|none menu: Crawl
+human|none menu: Cut through the plating (refused: needs a welder)
+human|none menu: Draw graffiti (refused: hold Grab)
+human|none menu: Floor item
+human|none menu: Graffiti
+human|none menu: Hit the floor (refused: combat mode is off)
+human|none menu: Hit the floor (refused: hold Disarm)
+human|none menu: Interface
+human|none menu: Touch
+human|none menu: Turf item
+human|none click: nothing
+robot|none menu: Crawl
+robot|none menu: Cut through the plating (refused: needs a welder)
+robot|none menu: Draw graffiti (refused: hold Grab)
+robot|none menu: Floor item
+robot|none menu: Graffiti
+robot|none menu: Hit the floor (refused: combat mode is off)
+robot|none menu: Hit the floor (refused: hold Disarm)
+robot|none menu: Interface
+robot|none menu: Touch
+robot|none menu: Turf item
+robot|none click: nothing
+ai|none menu: Interface
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Crawl
+human|/obj/item/tool/screwdriver menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/tool/screwdriver menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Fill
+human|/obj/item/tool/screwdriver menu: Floor item
+human|/obj/item/tool/screwdriver menu: Graffiti
+human|/obj/item/tool/screwdriver menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Interface
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver menu: Turf item
+human|/obj/item/tool/screwdriver click: Click: Fill
+human|/obj/item/tool/crowbar menu: Crawl
+human|/obj/item/tool/crowbar menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/tool/crowbar menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Fill
+human|/obj/item/tool/crowbar menu: Floor item
+human|/obj/item/tool/crowbar menu: Graffiti
+human|/obj/item/tool/crowbar menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Interface
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar menu: Turf item
+human|/obj/item/tool/crowbar click: Click: Fill
+human|/obj/item/tool/wrench menu: Crawl
+human|/obj/item/tool/wrench menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/tool/wrench menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Fill
+human|/obj/item/tool/wrench menu: Floor item
+human|/obj/item/tool/wrench menu: Graffiti
+human|/obj/item/tool/wrench menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Interface
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench menu: Turf item
+human|/obj/item/tool/wrench click: Click: Fill
+human|/obj/item/tool/wirecutters menu: Crawl
+human|/obj/item/tool/wirecutters menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/tool/wirecutters menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Fill
+human|/obj/item/tool/wirecutters menu: Floor item
+human|/obj/item/tool/wirecutters menu: Graffiti
+human|/obj/item/tool/wirecutters menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Interface
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters menu: Turf item
+human|/obj/item/tool/wirecutters click: Click: Fill
+human|/obj/item/multitool menu: Crawl
+human|/obj/item/multitool menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/multitool menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/multitool menu: Fill
+human|/obj/item/multitool menu: Floor item
+human|/obj/item/multitool menu: Graffiti
+human|/obj/item/multitool menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/multitool menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/multitool menu: Interface
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool menu: Turf item
+human|/obj/item/multitool click: Click: Fill
+human|/obj/item/weldingtool menu: Crawl
+human|/obj/item/weldingtool menu: Cut through the plating
+human|/obj/item/weldingtool menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/weldingtool menu: Fill
+human|/obj/item/weldingtool menu: Floor item
+human|/obj/item/weldingtool menu: Graffiti
+human|/obj/item/weldingtool menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Interface
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool menu: Turf item
+human|/obj/item/weldingtool click: Click: Fill
+human|/obj/item/stack/cable_coil menu: Crawl
+human|/obj/item/stack/cable_coil menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/stack/cable_coil menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Fill
+human|/obj/item/stack/cable_coil menu: Floor item
+human|/obj/item/stack/cable_coil menu: Graffiti
+human|/obj/item/stack/cable_coil menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Interface
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil menu: Turf item
+human|/obj/item/stack/cable_coil click: Click: Fill
+human|/obj/item/stack/material/steel menu: Crawl
+human|/obj/item/stack/material/steel menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/stack/material/steel menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Fill
+human|/obj/item/stack/material/steel menu: Floor item
+human|/obj/item/stack/material/steel menu: Graffiti
+human|/obj/item/stack/material/steel menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Interface
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel menu: Turf item
+human|/obj/item/stack/material/steel click: Click: Fill
+human|/obj/item/card/id menu: Crawl
+human|/obj/item/card/id menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/card/id menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/card/id menu: Fill
+human|/obj/item/card/id menu: Floor item
+human|/obj/item/card/id menu: Graffiti
+human|/obj/item/card/id menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/card/id menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/card/id menu: Interface
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id menu: Turf item
+human|/obj/item/card/id click: Click: Fill
+keys: gen_alt_floor_graffiti_alt, gen_drag_turf_drag, gen_hand_ungated_nanites_hand, gen_hand_ungated_turf_hand, gen_item_floor_item, gen_item_turf_item, gen_silicon_nanites_silicon_interface, water_fill, water_fishing
+

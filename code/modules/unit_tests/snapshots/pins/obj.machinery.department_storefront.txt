@@ -49,5 +49,5 @@ human|/obj/item menu: Stock (refused: only Civilian staff may stock this storefr
 human|/obj/item menu: Use
 human|/obj/item menu: Use (refused: needs an identification card)
 human|/obj/item click: nothing
-keys: buy, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, set_markup, set_price, storefront_id_fallthrough, storefront_stock, withdraw
+keys: buy, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui_ungated, machine_panel, machine_repair, set_markup, set_price, storefront_id_fallthrough, storefront_stock, withdraw
 

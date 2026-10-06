@@ -91,5 +91,5 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: Click: Toggle
-keys: anomalous, cable_place, climb.climb, climb.climb_menu, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, particle, part_replacement.replace, repair, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_ident, toggle
+keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, gen_robot_interaction_swallow, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, particle, part_replacement.replace, repair, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_ident, toggle
 

@@ -69,5 +69,5 @@ human|/obj/item menu: Drain (refused: needs a  , a glass, or a shaker)
 human|/obj/item menu: Insert
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, grinder_insert, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_refinery_drain
+keys: drag_buckle, gen_robot_interaction_swallow, grinder_insert, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reagent_refinery_drain
 

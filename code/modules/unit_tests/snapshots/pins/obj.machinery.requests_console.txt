@@ -63,5 +63,5 @@ human|/obj/item/stamp menu: Swipe ID (refused: needs an identification card)
 human|/obj/item/stamp menu: Ui open
 human|/obj/item/stamp menu: Use
 human|/obj/item/stamp click: Click: Ui open
-keys: department, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, print, requests_console_id, requests_console_stamp, sendAnnouncement, setScreen, toggleSilent, ui_open, write, writeAnnouncement
+keys: department, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, print, requests_console_id, requests_console_stamp, sendAnnouncement, setScreen, toggleSilent, ui_open, write, writeAnnouncement
 

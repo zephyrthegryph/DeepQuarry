@@ -27,5 +27,5 @@ human|/obj/item/stack/material/steel menu: Ui open (refused: It isn't bolted dow
 human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Ui open (refused: It isn't bolted down and working.)
 human|/obj/item/card/id click: Click: Ui open
-keys: anchor, cable_place, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ui_open
+keys: anchor, cable_place, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, ui_open
 

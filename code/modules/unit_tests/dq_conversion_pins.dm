@@ -52,7 +52,18 @@
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
 	var/list/actual_by_type = list()
+	// a turf is pinned in place of the tile beside the actors and turned back afterwards (a turf is never qdel'd)
+	var/turf/beside = get_step(T, EAST)
+	var/beside_type = beside?.type
 	for(var/type in expected_by_type)
+		if(ispath(type, /turf))
+			if(!beside)
+				actual_by_type[type] = list("no tile to pin a turf on")
+				continue
+			var/turf/changed = beside.ChangeTurf(type)
+			actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			beside = changed.ChangeTurf(beside_type)
+			continue
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")

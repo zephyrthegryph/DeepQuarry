@@ -96,5 +96,5 @@ human|/obj/item/card/emag menu: Repair wiring (refused: needs a cable coil)
 human|/obj/item/card/emag menu: Toggle
 human|/obj/item/card/emag menu: Toggle lock (refused: needs an identification card or a PDA)
 human|/obj/item/card/emag click: nothing
-keys: climb.climb, climb.climb_menu, emag, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, use_screwdriver, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, use_screwdriver, use_wrench
 

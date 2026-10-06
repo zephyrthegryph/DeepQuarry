@@ -73,5 +73,5 @@ human|/obj/item/reagent_containers/glass menu: Open or close the lid
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
 human|/obj/item/reagent_containers/glass click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_honey_extractor_collect, gen_insert_interaction_honey_extractor_load_frame, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench
+keys: drag_buckle, gen_insert_interaction_honey_extractor_collect, gen_insert_interaction_honey_extractor_load_frame, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench
 

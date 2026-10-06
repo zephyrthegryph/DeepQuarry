@@ -13,45 +13,56 @@
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/teleportation_scroll/proc/can_read)))
+TRACKED(/obj/item/teleportation_scroll, uses)
 
-/// Requirement: only a wizard can make sense of the markings.
-/obj/item/teleportation_scroll/proc/can_read(mob/user, atom/target, obj/item/held)
-	if(user.mind && !GLOB.wizards.is_antagonist(user.mind))
-		return "you stare at the scroll but cannot make sense of the markings"
-	return TRUE
+CAPABILITIES(/obj/item/teleportation_scroll)
+	// the old attack_self: how many uses are left, then where to (a person, free, with a use left)
+	op("read", in_hand(), needs(req(PROC_REF(can_read), because = MSG(teleportation_scroll/unreadable))),
+		asks(/datum/prompt/choice, fields = list("title" = "Teleportation Scroll", "question" = computed(PROC_REF(uses_question)), "choices" = list("Teleport", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "teleport"),
+		asks(/datum/prompt/choice, fields = list("title" = "Teleportation Scroll", "question" = "Area to jump to:", "choices" = computed(PROC_REF(area_choices)), "timeout" = 0), step = "area", when = PROC_REF(teleport_chosen)),
+		then(PROC_REF(area_chosen)))
 
-/// Old attack_self.
-/obj/item/teleportation_scroll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	// single-action panel; tgui_alert with the existing
-	// uses count is the right primitive.
+/// Requirement: only a wizard (or a mindless body) can make sense of the markings.
+/obj/item/teleportation_scroll/proc/can_read(datum/act/op/A)
+	return reads_wizard_markings(A.actor)
+
+/// Can `user` read a wizard's markings?
+/proc/reads_wizard_markings(mob/user)
+	READS_FROM() // a mind's antagonist roles are not round state an op could watch
+	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
+
+MSG_DEF_SELF(teleportation_scroll/unreadable, "You stare at the scroll but cannot make sense of the markings.")
+
+/obj/item/teleportation_scroll/proc/uses_question(datum/act/A)
+	return "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells."
+
+/obj/item/teleportation_scroll/proc/area_choices(datum/act/A)
+	return GLOB.teleportlocs
+
+/// "Teleport", by a free person, with a use left: the area comes next.
+/obj/item/teleportation_scroll/proc/teleport_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["teleport"]
+	return R?.value == "Teleport" && scroll_user_free(A.actor) && uses >= 1
+
+/proc/scroll_user_free(mob/user)
+	READS_FROM() // a restraint is asked when the question is
+	return ishuman(user) && !user.restrained()
+
+/// The scroll jumps its reader to a clear tile of the chosen area, in a puff of smoke.
+/obj/item/teleportation_scroll/proc/area_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["area"]
+	if(!R)
+		return OP_OK
+	var/mob/user = A.actor
 	user.set_machine(src)
-	open_request(src, /datum/prompt/choice, PROC_REF(scroll_answered), answerer = user, title = "Teleportation Scroll", buttons = TRUE, choices = list("Teleport", "Cancel"), ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, timeout = 0, question = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.")
-	return TRUE
-
-/obj/item/teleportation_scroll/proc/scroll_answered(datum/act/request/A)
-	if(!A.answer || A.answer.value != "Teleport")
-		return
-	var/mob/living/carbon/human/user = A.request.answerer
-	if(ishuman(user) && !user.restrained() && uses >= 1)
-		teleportscroll(user)
-
-
-/obj/item/teleportation_scroll/proc/teleportscroll(mob/user)
-	open_request(src, /datum/prompt/choice, PROC_REF(area_chosen), answerer = user, title = "Teleportation Scroll", question = "Area to jump to:", choices = GLOB.teleportlocs, ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, timeout = 0)
-
-/obj/item/teleportation_scroll/proc/area_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/area/thearea = GLOB.teleportlocs[A.answer.value]
+	var/area/thearea = GLOB.teleportlocs[R.value]
 	if(!thearea || uses < 1)
-		return
+		return OP_OK
 
 	if (user.restrained())
-		return
+		return OP_OK
 	if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
-		return
+		return OP_OK
 
 	var/datum/effect/effect/system/smoke_spread/smoke = new /datum/effect/effect/system/smoke_spread()
 	smoke.set_up(5, 0, user.loc)
@@ -70,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 
 	if(!L.len)
 		to_chat(user, span_warning("The spell matrix was unable to locate a suitable teleport destination for an unknown reason. Sorry."))
-		return
+		return OP_OK
 
 	if(user && user?.buckled_to())
 		var/atom/movable/_tmp_buck_8 = user?.buckled_to()
@@ -92,4 +103,6 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 		user.forceMove(pick(L))
 
 	smoke.start()
-	src.uses -= 1
+	set_uses(uses - 1)
+	return OP_OK
+

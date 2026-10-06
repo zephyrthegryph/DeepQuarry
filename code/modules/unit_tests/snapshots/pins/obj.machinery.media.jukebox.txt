@@ -82,5 +82,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
 wires: Hack, Next, Prev, Primary Power, Reverse, Speeddown, Speedup, Start, Stop
-keys: add_new_track, change_track, climb.climb, climb.climb_menu, emag.subvert, emag.use, gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_interact, gen_insert_interaction_fingerprint, gen_robot_interaction_swallow, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_repair, play, remove_new_track, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
+keys: add_new_track, change_track, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, gen_hand_ungated_interaction_interact, gen_insert_interaction_fingerprint, gen_robot_interaction_swallow, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_repair, play, remove_new_track, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
 

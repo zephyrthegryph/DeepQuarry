@@ -1,7 +1,5 @@
-/obj/machinery/shower|human|none => shower_toggle,shower_set_temperature|shower_analyze:needs a gas analyzer,shower_swallow:needs an item
-/obj/machinery/shower|robot|none => shower_toggle,shower_set_temperature|gen_robot_interaction_swallow:not possible right now,shower_analyze:needs a gas analyzer,shower_swallow:needs an item
+/obj/machinery/shower|human|none => |
+/obj/machinery/shower|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/shower|ai|none => |
 /obj/machinery/shower|ghost|none => |
-/obj/machinery/shower|human|/obj/item/analyzer => shower_toggle,shower_analyze,shower_swallow,shower_set_temperature|
-/obj/machinery/shower|human|/obj/item => shower_toggle,shower_swallow,shower_set_temperature|shower_analyze:needs a gas analyzer
 

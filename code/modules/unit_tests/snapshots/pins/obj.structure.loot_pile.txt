@@ -23,5 +23,5 @@ human|/obj/item/stack/material/steel menu: Search
 human|/obj/item/stack/material/steel click: Click: Search
 human|/obj/item/card/id menu: Search
 human|/obj/item/card/id click: Click: Search
-keys: gen_drag_interaction_drag_buckle, search
+keys: drag_buckle, search
 

@@ -87,5 +87,5 @@ human|/obj/item/card/emag menu: Insert card
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Ui open
-keys: atm_deposit_cash, atm_insert_card, atm_use, attempt_auth, balance_statement, change_security_level, emag_gated, e_withdrawal, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert_card, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print_transaction, transfer, ui_open, withdrawal
+keys: atm_deposit_cash, atm_insert_card, atm_use, attempt_auth, balance_statement, change_security_level, drag_buckle, emag_gated, e_withdrawal, gen_robot_interaction_swallow, insert_card, logout, machine_anchor, machine_deconstruct, machine_panel, machine_repair, print_transaction, transfer, ui_open, withdrawal
 

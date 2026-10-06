@@ -50,6 +50,8 @@
 // ---- DM-owned keys (reactor.md §4). Kinds past S1's own (1-3). ----
 /// An atom's integrity changed. Id: the atom's reactor id.
 #define RULE_KEY_INTEGRITY 16
+/// The change key an atom publishes when its integrity changes (update_integrity()): what a condition reading get_integrity_damage() watches.
+#define ATOM_INTEGRITY_KEY "atom_integrity"
 
 /// hold_for bookkeeping: the rule fired during the current spell. Rate model ids can be 0.
 #define RULE_HOLD_SPENT "spent"

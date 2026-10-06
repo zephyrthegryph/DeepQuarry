@@ -97,5 +97,5 @@ human|/obj/item/card/emag menu: Start gibbing
 human|/obj/item/card/emag menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Start gibbing
-keys: emag, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, emag, gen_robot_interaction_swallow, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

@@ -1,5 +1,5 @@
-/obj/structure/prop/machine/isolator|human|none => |prop_hand:not possible right now
-/obj/structure/prop/machine/isolator|robot|none => |prop_hand:not possible right now
+/obj/structure/prop/machine/isolator|human|none => |
+/obj/structure/prop/machine/isolator|robot|none => |
 /obj/structure/prop/machine/isolator|ai|none => |
 /obj/structure/prop/machine/isolator|ghost|none => |
 

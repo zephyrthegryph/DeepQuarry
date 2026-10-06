@@ -1,71 +1,69 @@
 human|none menu: Hug
-human|none menu: Poke (refused: hold Disarm)
-human|none menu: Punch (refused: combat mode is off)
-human|none menu: Strangle (refused: hold Grab)
-human|none menu: Use
-human|none click: nothing
+human|none menu: Poke
+human|none menu: Punch
+human|none menu: Strangle
+human|none click: Click: Hug
 robot|none menu: Hug
-robot|none menu: Poke (refused: hold Disarm)
-robot|none menu: Punch (refused: combat mode is off)
-robot|none menu: Strangle (refused: hold Grab)
-robot|none menu: Use
-robot|none click: nothing
+robot|none menu: Poke
+robot|none menu: Punch
+robot|none menu: Strangle
+robot|none click: Click: Hug
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Hug
-human|/obj/item/tool/screwdriver menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/screwdriver menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/screwdriver menu: Strangle (refused: hold Grab)
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Item
+human|/obj/item/tool/screwdriver menu: Poke
+human|/obj/item/tool/screwdriver menu: Punch
+human|/obj/item/tool/screwdriver menu: Strangle
+human|/obj/item/tool/screwdriver click: Click: Item
 human|/obj/item/tool/crowbar menu: Hug
-human|/obj/item/tool/crowbar menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/crowbar menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/crowbar menu: Strangle (refused: hold Grab)
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Item
+human|/obj/item/tool/crowbar menu: Poke
+human|/obj/item/tool/crowbar menu: Punch
+human|/obj/item/tool/crowbar menu: Strangle
+human|/obj/item/tool/crowbar click: Click: Item
 human|/obj/item/tool/wrench menu: Hug
-human|/obj/item/tool/wrench menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/wrench menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/wrench menu: Strangle (refused: hold Grab)
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Item
+human|/obj/item/tool/wrench menu: Poke
+human|/obj/item/tool/wrench menu: Punch
+human|/obj/item/tool/wrench menu: Strangle
+human|/obj/item/tool/wrench click: Click: Item
 human|/obj/item/tool/wirecutters menu: Hug
-human|/obj/item/tool/wirecutters menu: Poke (refused: hold Disarm)
-human|/obj/item/tool/wirecutters menu: Punch (refused: combat mode is off)
-human|/obj/item/tool/wirecutters menu: Strangle (refused: hold Grab)
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Item
+human|/obj/item/tool/wirecutters menu: Poke
+human|/obj/item/tool/wirecutters menu: Punch
+human|/obj/item/tool/wirecutters menu: Strangle
+human|/obj/item/tool/wirecutters click: Click: Item
 human|/obj/item/multitool menu: Hug
-human|/obj/item/multitool menu: Poke (refused: hold Disarm)
-human|/obj/item/multitool menu: Punch (refused: combat mode is off)
-human|/obj/item/multitool menu: Strangle (refused: hold Grab)
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool menu: Item
+human|/obj/item/multitool menu: Poke
+human|/obj/item/multitool menu: Punch
+human|/obj/item/multitool menu: Strangle
+human|/obj/item/multitool click: Click: Item
 human|/obj/item/weldingtool menu: Hug
-human|/obj/item/weldingtool menu: Poke (refused: hold Disarm)
-human|/obj/item/weldingtool menu: Punch (refused: combat mode is off)
-human|/obj/item/weldingtool menu: Strangle (refused: hold Grab)
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Item
+human|/obj/item/weldingtool menu: Poke
+human|/obj/item/weldingtool menu: Punch
+human|/obj/item/weldingtool menu: Strangle
+human|/obj/item/weldingtool click: Click: Item
 human|/obj/item/stack/cable_coil menu: Hug
+human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Poke (refused: hold Disarm)
-human|/obj/item/stack/cable_coil menu: Punch (refused: combat mode is off)
-human|/obj/item/stack/cable_coil menu: Strangle (refused: hold Grab)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil menu: Poke
+human|/obj/item/stack/cable_coil menu: Punch
+human|/obj/item/stack/cable_coil menu: Strangle
+human|/obj/item/stack/cable_coil click: Click: Item
 human|/obj/item/stack/material/steel menu: Hug
-human|/obj/item/stack/material/steel menu: Poke (refused: hold Disarm)
-human|/obj/item/stack/material/steel menu: Punch (refused: combat mode is off)
-human|/obj/item/stack/material/steel menu: Strangle (refused: hold Grab)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel menu: Item
+human|/obj/item/stack/material/steel menu: Poke
+human|/obj/item/stack/material/steel menu: Punch
+human|/obj/item/stack/material/steel menu: Strangle
+human|/obj/item/stack/material/steel click: Click: Item
 human|/obj/item/card/id menu: Hug
-human|/obj/item/card/id menu: Poke (refused: hold Disarm)
-human|/obj/item/card/id menu: Punch (refused: combat mode is off)
-human|/obj/item/card/id menu: Strangle (refused: hold Grab)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_punch, gen_hand_ungated_interaction_hand, gen_item_interaction_item
+human|/obj/item/card/id menu: Item
+human|/obj/item/card/id menu: Poke
+human|/obj/item/card/id menu: Punch
+human|/obj/item/card/id menu: Strangle
+human|/obj/item/card/id click: Click: Item
+keys: drag_buckle, hug, item, poke, punch, strangle
 

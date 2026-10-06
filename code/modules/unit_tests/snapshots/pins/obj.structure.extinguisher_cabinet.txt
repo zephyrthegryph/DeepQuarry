@@ -22,5 +22,5 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-keys: gen_drag_interaction_drag_buckle, hand, item, tk, unwrench, wrench_toggle
+keys: drag_buckle, hand, item, tk, unwrench, wrench_toggle
 

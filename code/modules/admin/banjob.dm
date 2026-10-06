@@ -15,6 +15,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 
 //returns a reason if M is banned from rank, returns 0 otherwise
 /proc/jobban_isbanned(mob/M, rank)
+	READS_FROM() // the job bans are admin records, not round state
 	if(M && rank)
 		/*
 		if(_jobban_isbanned(M, rank)) return "Reason Unspecified"	//for old jobban
@@ -30,6 +31,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 	return 0
 
 /proc/ckey_is_jobbanned(check_key, rank)
+	READS_FROM() // the job ban list is an admin record, not round state
 	for(var/s in GLOB.jobban_keylist)
 		if(findtext(s,"[check_key] - [rank]") == 1 )
 			var/startpos = findtext(s, "## ")+3

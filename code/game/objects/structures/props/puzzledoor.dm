@@ -49,72 +49,50 @@
 	. = ..()
 	. += rel_many(nameof(locks), back = nameof(/obj/structure/prop/lock::linked_objects))
 
-/obj/machinery/door/blast/puzzle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/puzzle_door_touch,
-		/datum/interaction/machine_item/puzzle_door_use/help,
-		/datum/interaction/machine_item/puzzle_door_use/disarm,
-		/datum/interaction/machine_item/puzzle_door_use/grab,
-		/datum/interaction/machine_item/puzzle_door_use/harm,
-	)
-	..()
+CAPABILITIES(/obj/machinery/door/blast/puzzle)
+	// the puzzle door answers to its locks: its own touch and its own item use replace the blast door's open, close, pry and swallow
+	without("doors.open")
+	without("doors.close")
+	without("pry")
+	without("pry_broken")
+	without("swallow")
+	op("touch", hand(), ungated(), label("Open"), then(PROC_REF(interaction_touch)))
+	op("use", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_use)))
+	op("puzzle_strike", item(/obj/item), stance(I_HURT), label("Strike"), then(PROC_REF(interaction_strike)))
 
 /// Old attack_hand (never called ..()): try the puzzle door's locks.
-/datum/interaction/machine_hand/ungated/puzzle_door_touch
-	id = "puzzle_door_touch"
-	name = "Open"
-	effect = /obj/machinery/door/blast/puzzle/proc/interaction_touch
-
-/obj/machinery/door/blast/puzzle/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/door/blast/puzzle/proc/interaction_touch(datum/act/op/A)
+	var/mob/user = A.actor
 	if(check_locks())
 		force_toggle(1, user)
 	else
 		to_chat(user, span_notice("\The [src] does not respond to your touch."))
-	return TRUE
+	return OP_OK
 
-/**
- * Old attackby: pry it, hit it or plastique it. One effect with the whole old body, declared
- * once per stance, since the branches share overlapping conditions (pry vs combat mode vs item type).
- */
-/datum/interaction/machine_item/puzzle_door_use
-	held_type = /obj/item
-	effect = /obj/machinery/door/blast/puzzle/proc/interaction_use
+/// Old attackby: pry it (only the locks open it), hit it, or lose a plastique to it.
+/obj/machinery/door/blast/puzzle/proc/interaction_use(datum/act/op/A)
+	return puzzle_item_used(A, FALSE)
 
-/datum/interaction/machine_item/puzzle_door_use/help
-	id = "puzzle_door_use_help"
-	name = "Use"
-	stance = I_HELP
+/// Combat mode: a strike leaves no mark (a broken door still pries).
+/obj/machinery/door/blast/puzzle/proc/interaction_strike(datum/act/op/A)
+	return puzzle_item_used(A, TRUE)
 
-/datum/interaction/machine_item/puzzle_door_use/disarm
-	id = "puzzle_door_use_disarm"
-	name = "Use"
-	stance = I_DISARM
-
-/datum/interaction/machine_item/puzzle_door_use/grab
-	id = "puzzle_door_use_grab"
-	name = "Use"
-	stance = I_GRAB
-
-/datum/interaction/machine_item/puzzle_door_use/harm
-	id = "puzzle_door_use_harm"
-	name = "Strike"
-	stance = I_HURT
-
-/obj/machinery/door/blast/puzzle/proc/interaction_use(mob/user, obj/item/C, datum/interaction/interaction)
-	var/harming = interaction.stance == I_HURT
+/obj/machinery/door/blast/puzzle/proc/puzzle_item_used(datum/act/op/A, harming)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if(C.pry == 1 && (!harming || (has_stat(BROKEN))))
 		if(istype(C,/obj/item/material/twohanded/fireaxe))
 			var/obj/item/material/twohanded/fireaxe/F = C
 			if(!F.wielded)
 				to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-				return TRUE
+				return OP_OK
 
 		if(check_locks())
 			force_toggle(1, user)
 
 		else
 			to_chat(user, span_notice("[src]'s arcane workings resist your effort."))
-		return TRUE
+		return OP_OK
 
 	else if(src.density && harming)
 		var/obj/item/W = C
@@ -126,8 +104,8 @@
 	else if(istype(C, /obj/item/plastique))
 		to_chat(user, span_danger("On contacting \the [src], a flash of light envelops \the [C] as it is turned to ash. Oh."))
 		consume(C, user)
-		return TRUE
-	return TRUE
+		return OP_OK
+	return OP_OK
 
 /obj/machinery/door/blast/puzzle/smashed_by(datum/act/hit/generic/A)
 	var/mob/user = A.attacker

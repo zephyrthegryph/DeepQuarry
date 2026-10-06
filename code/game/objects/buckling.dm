@@ -43,26 +43,17 @@
 	/// mounted another way (riding animals use their mount verb) and so ignore the drag.
 	var/drag_buckle = TRUE
 
-/// Every movable's default drag: buckle the dragged mob.
-/atom/movable/declare_interactions(list/into)
-	..()
-	var/static/list/drag_spec = INTERACT_DRAG_DEFAULT("Buckle", PROC_REF(interaction_drag_buckle))
-	var/datum/interaction/generic/drag = dq_interaction_from_spec(/atom/movable, drag_spec)
-	drag.applies_proc = PROC_REF(offers_drag_buckle)
-	into += drag
+TRACKED(/atom/movable, can_buckle)
+TRACKED(/atom/movable, drag_buckle)
 
-/// Whether the default drag does anything here: something can be buckled to it (climbing is the climb capability's own drag).
-/atom/movable/proc/offers_drag_buckle()
-	return drag_buckle && can_buckle
-
-/atom/movable/proc/interaction_drag_buckle(mob/user, atom/movable/dropping, datum/interaction/interaction)
-	if(!drag_buckle)
-		return TRUE
-	var/mob/living/M = dropping
-	if(can_buckle && istype(M))
-		if(user_buckle_mob(M, user))
-			return TRUE
-	return FALSE
+/// Every movable's default drag (op "drag_buckle", in CAPABILITIES(/atom/movable), code/modules/lighting/lighting_atom.dm): a mob dragged onto it is
+/// buckled to it, while something can be buckled to it (climbing is the climb capability's own drag; a buckle() seat answers first, at its own tier).
+/atom/movable/proc/interaction_drag_buckle(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/M = A.held
+	if(istype(M) && user_buckle_mob(M, user))
+		return OP_OK
+	return OP_DECLINE
 
 /atom/movable/proc/has_buckled_mobs()
 	return LAZYLEN(src?.buckled_mob_list())

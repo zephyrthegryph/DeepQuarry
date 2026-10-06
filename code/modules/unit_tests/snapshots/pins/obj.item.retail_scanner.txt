@@ -129,5 +129,5 @@ human|/obj/item/card/emag menu: Pick up
 human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: nothing
-keys: add, clear, clear_entry, controls, custom_order, emag_gated, gen_alt_interaction_alt, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, link_account, refund_transaction, reset_log, set_amount, subtract, toggle_lock
+keys: add, clear, clear_entry, controls, custom_order, drag_buckle, emag_gated, gen_alt_interaction_alt, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, link_account, refund_transaction, reset_log, set_amount, subtract, toggle_lock
 

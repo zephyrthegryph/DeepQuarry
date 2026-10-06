@@ -50,5 +50,5 @@ human|/obj/item menu: Examine sample (refused: the microscope has no sample to e
 human|/obj/item menu: Insert sample
 human|/obj/item menu: Remove sample
 human|/obj/item click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, microscope_examine, microscope_insert_sample, microscope_remove_sample
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, microscope_examine, microscope_insert_sample, microscope_remove_sample
 
