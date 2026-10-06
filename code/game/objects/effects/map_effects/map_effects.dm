@@ -6,13 +6,16 @@
 	invisibility = INVISIBILITY_BADMIN // So a badmin can go view these by changing their see_invisible.
 	icon = 'icons/effects/map_effects.dmi'
 
-	// Below vars concern check_for_player_proximity() and is used to not waste effort if nobody is around to appreciate the effects.
-	var/always_run = FALSE				// If true, the game will not try to suppress this from firing if nobody is around to see it.
-	var/proximity_needed = 12			// How many tiles a mob with a client must be for this to run.
-	var/ignore_ghosts = FALSE			// If true, ghosts won't satisfy the above requirement.
-	var/ignore_afk = TRUE				// If true, AFK people (5 minutes) won't satisfy it as well.
-	var/retry_delay = 5 SECONDS			// How long until we check for players again.
-	EXPIRY_DECLARE(next_attempt) // Next time we're going to do ACTUAL WORK
+	// Map effects are ambient: the proximity tracker (code/controllers/subsystems/proximity.dm) holds them relevant while a client eye is near.
+	proximity_tracked = TRUE
+	/// If true, the effect is held relevant everywhere: it runs even with nobody around to see it.
+	var/always_run = FALSE
+
+// ALLOW(init/INSTANCE_STATE): an always_run effect holds itself relevant from the start
+/obj/effect/map_effect/Initialize(mapload)
+	. = ..()
+	if(always_run)
+		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, src)
 
 /obj/effect/map_effect/singularity_pull()
 	return
@@ -25,23 +28,20 @@
 	var/interval_lower_bound = 5 SECONDS // Lower number for how often the map_effect will trigger.
 	var/interval_upper_bound = 5 SECONDS // Higher number for above.
 
-DECLARE_PERIODIC(/obj/effect/map_effect/interval, PERIODIC_SLOW)
+/// Runs trigger() every interval while a client is near (STAT_RELEVANCE); parks the rest of the time.
+CAPABILITIES(/obj/effect/map_effect/interval)
+	every(PROC_REF(interval_delay), then(PROC_REF(interval_fire)), when = STAT_RELEVANCE)
 
 // Override this for the specific thing to do.
 /obj/effect/map_effect/interval/proc/trigger()
 	return
 
-// Handles the delay and making sure it doesn't run when it would be bad.
-/// Triggers, then sleeps on a timer for its next interval; with nobody near it sleeps until a
-/// player comes within proximity_needed.
-/obj/effect/map_effect/interval/periodic_step()
-	// Check to see if we're useful first.
-	if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-		return sleep_until_mob_near(proximity_needed, TRUE)
-	EXPIRY_SET(src, next_attempt, rand(interval_lower_bound, interval_upper_bound), CLOCK_WORLD)
+/// The deciseconds to the next trigger.
+/obj/effect/map_effect/interval/proc/interval_delay(datum/act/A)
+	return rand(interval_lower_bound, interval_upper_bound)
+
+/obj/effect/map_effect/interval/proc/interval_fire(datum/act/A)
 	trigger()
-	after(src, max(next_attempt - world.time, 0.1 SECONDS), /datum/proc/periodic_resume)
-	return PROCESS_KILL
 
 // Helper proc to optimize the use of effects by making sure they do not run if nobody is around to perceive it.
 /proc/check_for_player_proximity(atom/proximity_to, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE)

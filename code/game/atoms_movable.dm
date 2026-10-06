@@ -50,6 +50,8 @@
 	// L3 (doc/rewrite/lifecycle.md §5): a declared `lifetime` self-arms here
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
 	lifecycle_arm_lifetime()
+	if(proximity_tracked)
+		SSproximity.member_update(src)
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -342,6 +344,8 @@
 		heat_recouple()
 	if(GLOB.heat_followers_of[src])
 		heat_followers_moved(src)
+	if(proximity_tracked)
+		SSproximity.member_update(src)
 	if(lifeform_moves)
 		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
 	return TRUE
@@ -354,6 +358,7 @@
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()
+		SSproximity.eye_update(client)
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
